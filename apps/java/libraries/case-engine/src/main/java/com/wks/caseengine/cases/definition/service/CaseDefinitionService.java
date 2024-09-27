@@ -15,6 +15,13 @@ import java.util.List;
 import java.util.Optional;
 
 import com.wks.caseengine.cases.definition.CaseDefinition;
+import com.wks.caseengine.rest.entity.CaseCauseCategory;
+import com.wks.caseengine.rest.entity.CaseCauseDescription;
+import com.wks.caseengine.rest.entity.CaseDetails;
+import com.wks.caseengine.rest.entity.CaseStatus;
+import com.wks.caseengine.rest.entity.FaultCategory;
+import com.wks.caseengine.rest.entity.FaultHistory;
+import com.wks.caseengine.rest.model.CasePayload;
 
 public interface CaseDefinitionService {
 
@@ -27,5 +34,19 @@ public interface CaseDefinitionService {
 	CaseDefinition update(final String caseDefId, CaseDefinition caseDefinition);
 
 	void delete(final String caseDefinitionId);
+
+	List<FaultCategory> findCaseCatagories();
+	
+	List<CaseStatus> getAllCaseStatus();
+	
+	List<CaseCauseCategory> getAllCategories();
+	
+	List<CaseCauseDescription> getDescriptionsByCategory(Long categoryId);
+
+	CaseDetails saveCaseDetails(CasePayload  casePayload);
+
+	List<FaultHistory> getAllEvents(List<Long> eventIds);
+
+//	Case saveCase(Case caseData);
 
 }

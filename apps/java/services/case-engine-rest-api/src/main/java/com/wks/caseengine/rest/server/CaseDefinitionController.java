@@ -11,8 +11,10 @@
  */
 package com.wks.caseengine.rest.server;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,8 +31,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
+import com.wks.caseengine.rest.entity.CaseCauseCategory;
+import com.wks.caseengine.rest.entity.CaseCauseDescription;
+import com.wks.caseengine.rest.entity.CaseDetails;
+import com.wks.caseengine.rest.entity.CaseStatus;
+import com.wks.caseengine.rest.entity.FaultCategory;
+import com.wks.caseengine.rest.entity.FaultHistory;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
+import com.wks.caseengine.rest.model.CasePayload;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -44,8 +53,34 @@ public class CaseDefinitionController {
 
 	@GetMapping
 	public ResponseEntity<List<CaseDefinition>> find(@RequestParam(required = false) Boolean deployed) {
+		System.out.println("Called.. Cakkcvdshgcvshkdgcvkshcvkhsagvckhgvdks");
 		return ResponseEntity.ok(caseDefinitionService.find(Optional.ofNullable(deployed)));
 	}
+	@GetMapping(value = "/fault-category")
+	public ResponseEntity<List<FaultCategory>> getFaultCategory() {
+		return ResponseEntity.ok(caseDefinitionService.findCaseCatagories());
+	}
+	
+	@GetMapping(value = "/case-status")
+	public ResponseEntity<List<CaseStatus>> getCaseStatus() {
+		return ResponseEntity.ok(caseDefinitionService.getAllCaseStatus());
+	}
+	
+	@GetMapping("/categories")
+    public List<CaseCauseCategory> getCategories() {
+        return caseDefinitionService.getAllCategories();
+    }
+
+    @GetMapping("/descriptions")
+    public ResponseEntity<List<CaseCauseDescription>> getDescriptions(@RequestParam Long categoryId) {
+        return ResponseEntity.ok(caseDefinitionService.getDescriptionsByCategory(categoryId));
+    }
+    
+    @PostMapping("/case-details")
+    public void createCaseDetails(@RequestBody CasePayload casePayload) {
+        CaseDetails savedCaseDetails = caseDefinitionService.saveCaseDetails(casePayload);
+//        return caseDefinitionService.saveCaseDetails(caseDetails);
+    }
 
 	@GetMapping(value = "/{caseDefId}")
 	public ResponseEntity<CaseDefinition> get(@PathVariable final String caseDefId) {
@@ -55,6 +90,16 @@ public class CaseDefinitionController {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
 	}
+	
+	@GetMapping(value = "/fault-history/eventIds")
+	public ResponseEntity<List<FaultHistory>> getFaultHistoryByEventIds(@RequestParam List<Long> eventIds) {
+        List<FaultHistory> faultHistories = new ArrayList<FaultHistory>();
+        String eventIdsString = eventIds.stream()
+                .map(String::valueOf) // Convert Long to String
+                .collect(Collectors.joining(","));
+        System.out.println("eventIds: "+eventIdsString);
+        return ResponseEntity.ok(caseDefinitionService.getAllEvents(eventIds));
+    }
 
 	@PostMapping
 	public ResponseEntity<CaseDefinition> save(@RequestBody final CaseDefinition caseDefinition) {
@@ -64,6 +109,12 @@ public class CaseDefinitionController {
 			throw new RestInvalidArgumentException("caseDefinitionId", e);
 		}
 	}
+	
+//	@PostMapping("/save-case")
+//    public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
+//        Case savedCase = caseDefinitionService.saveCase(caseData);
+//        return ResponseEntity.ok(savedCase);
+//    }
 
 	@PutMapping(value = "/{caseDefId}")
 	public ResponseEntity<CaseDefinition> update(@PathVariable final String caseDefId,

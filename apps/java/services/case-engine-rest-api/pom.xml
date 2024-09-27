@@ -83,6 +83,19 @@
 		    <artifactId>spring-security-test</artifactId>
 		    <scope>test</scope>
 		</dependency>
+		
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.20</version>
+		</dependency>
+		
+		<dependency>
+	        <groupId>com.microsoft.sqlserver</groupId>
+	        <artifactId>mssql-jdbc</artifactId>
+	        <version>11.2.0.jre17</version> <!-- Ensure compatibility with your Java version -->
+	    </dependency>
+		
 	</dependencies>
 
 	<build>
