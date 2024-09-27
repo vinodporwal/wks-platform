@@ -30,6 +30,7 @@ import com.wks.caseengine.cases.definition.command.FindCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.GetCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.UpdateCaseDefinitionCmd;
 import com.wks.caseengine.command.CommandExecutor;
+import com.wks.caseengine.rest.entity.Case;
 //import com.wks.caseengine.rest.entity.Case;
 //import com.wks.caseengine.rest.entity.CaseAndOwnerMapping;
 import com.wks.caseengine.rest.entity.CaseCauseCategory;
@@ -47,6 +48,7 @@ import com.wks.caseengine.rest.model.FaultDetail;
 import com.wks.caseengine.rest.repository.CaseCauseCategoryRepository;
 import com.wks.caseengine.rest.repository.CaseCauseDescriptionRepository;
 import com.wks.caseengine.rest.repository.CaseDetailsRepository;
+import com.wks.caseengine.rest.repository.CaseRepository;
 //import com.wks.caseengine.rest.repository.CaseRepository;
 import com.wks.caseengine.rest.repository.CaseStatusRepository;
 import com.wks.caseengine.rest.repository.FaultCategoryRepository;
@@ -77,8 +79,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     @Autowired
     private FaultHistoryRepository faultHistoryRepository; 
     
-//    @Autowired
-//    private CaseRepository caseRepository;
+    @Autowired
+    private CaseRepository caseRepository;
     
 //    @Autowired
 //    private CaseAndOwnerMappingRepository caseAndOwnerMappingRepository;
@@ -206,17 +208,15 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return faultHistoryRepository.getAllFaultHistoryFromEventIds(eventIds);
 	}
 
-//	@Override
-//	public Case saveCase(Case caseData) {
-////		OwnerDetails owner = ownerDetailsRepository.save(caseData.getOwnerDetails());
-//		Case caseDetails  = caseRepository.save(caseData);
-////		CaseAndOwnerMapping mapping = new CaseAndOwnerMapping();
-////		System.out.println("Case Primary Key :" + caseDetails.getCasePkId());
-////		System.out.println("Owner Details Primary Key :" + owner.getId());
-////		mapping.setCasePkId(caseDetails.getCasePkId());
-////		mapping.setOwnerPkId(owner.getId());
-////		caseAndOwnerMappingRepository.save(mapping);
-//		return caseDetails;
-//	}
+	@Override
+	public Case saveCase(Case caseData) {
+		OwnerDetails owner = caseData.getOwner();
+		System.out.println(owner.getEmail());
+		System.out.println(owner.getName());
+		System.out.println(owner.getPhone());
+		System.out.println(owner.getId());
+		Case caseDetails  = caseRepository.save(caseData);
+		return caseDetails;
+	}
 
 }

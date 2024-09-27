@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.wks.caseengine.cases.definition.CaseDefinition;
+import com.wks.caseengine.rest.entity.Case;
 import com.wks.caseengine.rest.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
@@ -47,6 +48,6 @@ public interface CaseDefinitionService {
 
 	List<FaultHistory> getAllEvents(List<Long> eventIds);
 
-//	Case saveCase(Case caseData);
+	Case saveCase(Case caseData);
 
 }

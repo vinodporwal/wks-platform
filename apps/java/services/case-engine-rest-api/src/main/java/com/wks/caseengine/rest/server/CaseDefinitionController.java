@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
+import com.wks.caseengine.rest.entity.Case;
 import com.wks.caseengine.rest.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
@@ -110,11 +111,11 @@ public class CaseDefinitionController {
 		}
 	}
 	
-//	@PostMapping("/save-case")
-//    public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
-//        Case savedCase = caseDefinitionService.saveCase(caseData);
-//        return ResponseEntity.ok(savedCase);
-//    }
+	@PostMapping("/save-case")
+    public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
+        Case savedCase = caseDefinitionService.saveCase(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
 
 	@PutMapping(value = "/{caseDefId}")
 	public ResponseEntity<CaseDefinition> update(@PathVariable final String caseDefId,
