@@ -57,6 +57,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [manualInitProcessDefs, setManualInitProcessDefs] = useState([])
 
   const [isFollowing, setIsFollowing] = useState(false)
+  const [isFormData, setIsFormData] = useState(false)
+  
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing)
   }
@@ -84,27 +86,120 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     setAnchorEl(null)
   }
 
+
+  // const getCaseInfo = (aCase) => {
+  //   CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
+  //     .then((data) => {
+  //       setCaseDef(data)
+  //       setStages(
+  //         data.stages.sort((a, b) => a.index - b.index).map((o) => o.name),
+  //       )
+  //       return FormService.getByKey(keycloak, data.formKey)
+  //     })
+  //     .then((data) => {
+  //       setForm(data)
+  //       console.log('data', data);
+  //       return CaseService.getCaseById(keycloak, aCase.businessKey)
+  //     })
+  //     .then((caseData) => {
+  //       setComments(
+  //         caseData?.comments?.sort(
+  //           (a, b) =>
+  //             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  //         ),
+  //       )
+  //       setDocuments(caseData?.documents)
+  //       setFormData({
+  //         data: caseData.attributes.reduce(
+  //           (obj, item) =>
+  //             Object.assign(obj, {
+  //               [item.name]: tryParseJSONObject(item.value)
+  //                 ? JSON.parse(item.value)
+  //                 : item.value,
+  //             }),
+  //           {},
+  //         ),
+  //         metadata: {},
+  //         isValid: true,
+  //       })
+  //       setActiveStage(caseData.stage)
+  //     })
+  //     .catch((err) => {
+  //       console.log(err.message)
+  //     })
+  // }
+  
+  
   const getCaseInfo = (aCase) => {
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
-      .then((data) => {
-        setCaseDef(data)
+      .then(async (data) => {
+        setCaseDef(data);
         setStages(
-          data.stages.sort((a, b) => a.index - b.index).map((o) => o.name),
-        )
-        return FormService.getByKey(keycloak, data.formKey)
-      })
-      .then((data) => {
-        setForm(data)
-        return CaseService.getCaseById(keycloak, aCase.businessKey)
+          data.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
+        );
+        const formData = await FormService.getByKey(keycloak, data.formKey);
+        if (formData && formData.structure && formData.structure.components) {
+          const updatedFormStructure = { ...formData };
+          console.log('formData', formData);
+  
+          // Disable fields (with proper null checks)
+          const level1 = updatedFormStructure.structure.components[0];
+          if (level1 && level1.components) {
+            const level2 = level1.components[0];
+            const level7 = level1.components.length > 8 ? level1.components[8] : null;
+            if (level2 && level2.components) {
+              const caseDescriptionField = level2.components.length > 1 ? level2.components[1] : null;
+              if (caseDescriptionField) {
+                caseDescriptionField.disabled = true;
+              }
+  
+              const recommendation = level1.components.length > 5 ? level1.components[5] : null;
+              if (recommendation) {
+                recommendation.disabled = true;
+              }
+  
+              if (level2.components[0] && level2.components[0].columns) {
+                const caseTitleField = level2.components[0].columns.length > 1 ? level2.components[0].columns[1].components[0] : null;
+                if (caseTitleField) {
+                  caseTitleField.disabled = true;
+                }
+  
+                const caseAssign = level2.components[0].columns.length > 2 ? level2.components[0].columns[2].components[0] : null;
+                if (caseAssign) {
+                  caseAssign.disabled = true;
+                }
+              }
+  
+              if (level7 && level7.columns) {
+                const saveAsDraft = level7.columns.length > 2 ? level7.columns[2].components[0] : null;
+                if (saveAsDraft) {
+                  saveAsDraft.hidden = true;
+                }
+  
+                const saveButton = level7.columns.length > 3 ? level7.columns[3].components[0] : null;
+                if (saveButton) {
+                  saveButton.hidden = true;
+                }
+              }
+            }
+          }
+  
+          // Trigger re-render with the updated form structure
+          setForm(updatedFormStructure);
+        } else {
+          console.error("Form structure or components are undefined.");
+        }
+        setIsFormData(true)
+        // Fetch the case details
+        return CaseService.getCaseById(keycloak, aCase.businessKey);
       })
       .then((caseData) => {
         setComments(
           caseData?.comments?.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          ),
-        )
-        setDocuments(caseData?.documents)
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        );
+        setDocuments(caseData?.documents);
         setFormData({
           data: caseData.attributes.reduce(
             (obj, item) =>
@@ -113,19 +208,20 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   ? JSON.parse(item.value)
                   : item.value,
               }),
-            {},
+            {}
           ),
           metadata: {},
           isValid: true,
-        })
-        setActiveStage(caseData.stage)
+        });
+        setActiveStage(caseData.stage);
       })
       .catch((err) => {
-        console.log(err.message)
-      })
-  }
-
+        console.log(err.message);
+      });
+  };
+  
   const handleMainTabChanged = (event, newValue) => {
+    console.log(event, newValue)
     setMainTabIndex(newValue)
   }
 
@@ -197,9 +293,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 <div>
                   {caseDef.name}: {aCase?.businessKey}
                 </div>
-                <div style={{ fontSize: '13px' }}>
+                {/* <div style={{ fontSize: '13px' }}>
                   {aCase?.statusDescription}
-                </div>
+                </div> */}
               </Typography>
               {aCase.status === CaseStatus.WipCaseStatus.description && (
                 <Button
@@ -252,14 +348,20 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   </Button>
                 </React.Fragment>
               )}
-              <Button
+              {/* <Button
                 color='inherit'
                 onClick={handleFollowClick}
                 startIcon={<NotificationsActiveIcon />}
               >
                 {isFollowing ? 'Unfollow' : 'Follow'}
-              </Button>
+              </Button> */}
 
+              <Button
+                color='inherit'
+                // onClick={handleFollowClick}
+              >
+                {'Save'}
+              </Button>
               {/* Case Actions Menu */}
               <IconButton
                 edge='end'
@@ -315,12 +417,20 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           </Box>
 
           <Grid container spacing={2} sx={{ paddingLeft: 1, paddingRight: 1 }}>
-            <Grid item xs={12} sm={8}>
+            <Grid item xs={12}>
               <Box>
                 <Tabs value={mainTabIndex} onChange={handleMainTabChanged}>
                   <Tab
                     label={t('pages.caseform.tabs.details')}
                     {...a11yProps(0)}
+                  />
+                  <Tab
+                    label={t('pages.caseform.tabs.attachments')}
+                    {...a11yProps(1)}
+                  />
+                  <Tab
+                    label={t('pages.caseform.tabs.comments')}
+                    {...a11yProps(2)}
                   />
                 </Tabs>
               </Box>
@@ -352,59 +462,21 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         <QuestionCircleOutlined />
                       </Tooltip>
                     </Box>
-                    <Form
+                    {isFormData && <Form
                       form={form.structure}
                       submission={formData}
                       options={{
-                        readOnly: true,
+                        // readOnly: true,
                         fileService: new StorageService(),
                       }}
-                    />
+                    />}
                   </Grid>
                 </TabPanel>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <Box>
-                <Tabs value={rightTabIndex} onChange={handleRightTabChanged}>
-                  <Tab
-                    label={t('pages.caseform.tabs.tasks')}
-                    {...a11yProps(0)}
-                  />
-                  <Tab
-                    label={t('pages.caseform.tabs.emails')}
-                    {...a11yProps(1)}
-                  />
-                  <Tab
-                    label={t('pages.caseform.tabs.attachments')}
-                    {...a11yProps(2)}
-                  />
-                  <Tab
-                    label={t('pages.caseform.tabs.comments')}
-                    {...a11yProps(3)}
-                  />
-                </Tabs>
-              </Box>
-              <Box
-                sx={{ border: 1, borderColor: 'divider', borderRadius: '5px' }}
-              >
-                <TabPanel value={rightTabIndex} index={0}>
-                  <TaskList
-                    businessKey={aCase.businessKey}
-                    callback={updateActiveState}
-                  />
-                </TabPanel>
-
-                <TabPanel value={rightTabIndex} index={1}>
-                  <CaseEmailsList caseInstanceBusinessKey={aCase.businessKey} />
-                </TabPanel>
-
-                <TabPanel value={rightTabIndex} index={2}>
+                <TabPanel value={mainTabIndex} index={1}>
                   <Documents aCase={aCase} initialValue={documents || []} />
                 </TabPanel>
 
-                <TabPanel value={rightTabIndex} index={3}>
+                <TabPanel value={mainTabIndex} index={2}>
                   <Grid
                     container
                     spacing={2}
@@ -421,6 +493,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 </TabPanel>
               </Box>
             </Grid>
+
+
           </Grid>
         </Dialog>
 

@@ -23,6 +23,8 @@ import React, {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CaseService } from '../../services'
+import { Grid, GridColumn } from '@progress/kendo-react-grid';
+import '@progress/kendo-theme-material/dist/all.css';
 
 const DataGrid = lazy(() =>
   import('@mui/x-data-grid').then((module) => ({ default: module.DataGrid })),
@@ -113,20 +115,30 @@ export const CaseList = ({ status, caseDefId }) => {
   const makeColumns = () => {
     return [
       {
+        field: 'caseNumber',
+        headerName: t('pages.caselist.datagrid.columns.caseNumber'),
+        width: 150,
+      },
+      {
+        field: 'caseTitle',
+        headerName: t('pages.caselist.datagrid.columns.caseTitle'),
+        width: 150,
+      },
+      {
         field: 'businessKey',
         headerName: t('pages.caselist.datagrid.columns.businesskey'),
         width: 150,
       },
-      {
-        field: 'statusDescription',
-        headerName: t('pages.caselist.datagrid.columns.statusdescription'),
-        width: 150,
-      },
-      {
-        field: 'stage',
-        headerName: t('pages.caselist.datagrid.columns.stage'),
-        width: 220,
-      },
+      // {
+      //   field: 'statusDescription',
+      //   headerName: t('pages.caselist.datagrid.columns.statusdescription'),
+      //   width: 150,
+      // },
+      // {
+      //   field: 'stage',
+      //   headerName: t('pages.caselist.datagrid.columns.stage'),
+      //   width: 220,
+      // },
       {
         field: 'createdAt',
         headerName: t('pages.caselist.datagrid.columns.createdat'),
@@ -138,11 +150,11 @@ export const CaseList = ({ status, caseDefId }) => {
         width: 150,
         valueGetter: (value, row) => row?.owner?.name,
       },
-      {
-        field: 'queueId',
-        headerName: t('pages.caselist.datagrid.columns.queue'),
-        width: 200,
-      },
+      // {
+      //   field: 'queueId',
+      //   headerName: t('pages.caselist.datagrid.columns.queue'),
+      //   width: 200,
+      // },
       {
         field: 'action',
         headerName: '',
@@ -163,6 +175,19 @@ export const CaseList = ({ status, caseDefId }) => {
       },
     ]
   }
+
+  const handleOpenCaseForm = (selectedCase) => {
+    setACase(selectedCase);  // Set the selected case to be displayed in the form
+    setOpenCaseForm(true);   // Open the case form modal
+  };
+
+  const handlePageChange = (event) => {
+    const newPage = {
+      limit: event.page.take,
+      skip: event.page.skip,
+    };
+    fetchCases(setFetching, keycloak, caseDefId, setStages, status, newPage, setCases, setFilter);
+  };
 
   const handleCloseCaseForm = () => {
     setOpenCaseForm(false)
@@ -435,6 +460,38 @@ export const CaseList = ({ status, caseDefId }) => {
               </Suspense>
             </div>
           )}
+          {/* {view === 'list' && (
+            <div>
+              <Grid
+                data={cases}
+                style={{ height: '500px', width: '100%' }}
+                sortable={true}
+                pageable={true}
+                total={cases.length}
+                skip={filter.skip}
+                pageSize={filter.limit}
+                onPageChange={handlePageChange}
+              >
+                {makeColumns().map((col, idx) => (
+                  <GridColumn key={idx} field={col.field} title={col.title} width={col.width} />
+                ))}
+                <GridColumn
+                  field="action"
+                  title=""
+                  sortable={false}
+                  cell={(props) => {
+                    return (
+                      <td>
+                        <Button onClick={() => handleOpenCaseForm(props.dataItem)}>
+                          {t('pages.caselist.datagrid.action.details')}
+                        </Button>
+                      </td>
+                    );
+                  }}
+                />
+              </Grid>
+            </div>
+          )} */}
           {view === 'kanban' && (
             <Suspense fallback={<div>Loading...</div>}>
               <Kanban
@@ -502,7 +559,32 @@ function fetchCases(
     })
     .then((resp) => {
       const { data, paging } = resp
-      setCases(data)
+       const updatedCases = data.map((singleCase) => {
+        let caseTitle = "";
+        let caseNumber = "";
+
+        try {
+          const containerValue = singleCase.attributes.find(
+            (attr) => attr.name === "container"
+          )?.value;
+
+          if (containerValue) {
+            const parsedValue = JSON.parse(containerValue);
+            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
+            caseNumber = parsedValue?.textField || parsedValue.caseNo;
+          }
+        } catch (error) {
+          console.error("Error parsing container value:", error);
+        }
+
+        return {
+          ...singleCase,
+          caseTitle,
+          caseNumber,
+        };
+      });
+
+      setCases(updatedCases)
       setFilter({
         ...filter,
         cursors: paging.cursors,

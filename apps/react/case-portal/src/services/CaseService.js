@@ -14,6 +14,9 @@ export const CaseService = {
   addComment,
   updateComment,
   deleteComment,
+  getFaultCategories,
+  getCaseStatus,
+  saveCase,
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -36,6 +39,44 @@ async function getAllByStatus(keycloak, status, limit) {
     return await Promise.reject(e)
   }
 }
+
+async function getCaseStatus(keycloak) {
+  const url = `${Config.CaseEngineUrl}/case-definition/case-status`;
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+    Accept: 'application/json',
+  };
+
+  try {
+    const resp = await fetch(url, { headers });
+    const data = await json(keycloak, resp);  
+    return data;
+  } catch (e) {
+    console.log('Error fetching case status:', e);
+    return await Promise.reject(e);
+  }
+}
+
+
+async function getFaultCategories(keycloak) {
+  const url = `${Config.CaseEngineUrl}/case-definition/fault-category`;
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+    Accept: 'application/json',
+  };
+
+  try {
+    const resp = await fetch(url, { headers });
+    const data = await json(keycloak, resp);
+    return data;
+  } catch (e) {
+    console.log('Error fetching fault categories:', e);
+    return await Promise.reject(e);
+  }
+}
+
 
 async function getCaseDefinitions(keycloak) {
   const url = `${Config.CaseEngineUrl}/case-definition?deployed=true`
@@ -130,6 +171,26 @@ async function patch(keycloak, id, body) {
 
 async function createCase(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+
+async function saveCase(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/save-case`
 
   try {
     const resp = await fetch(url, {

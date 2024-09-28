@@ -1,3 +1,135 @@
 legend {
   width: auto;
 }
+
+.card-header {
+  background-color: #1A1A1A !important;
+  color: #fff !important;
+}
+
+.text-muted {
+  color: #fff !important;
+}
+
+.btn-primary {
+  background-color: #1A1A1A !important;
+  border-color: #1A1A1A;
+}
+
+.css-1arz8k-MuiPaper-root-MuiAppBar-root {
+  background-color: #1A1A1A !important;
+}
+
+.input-group-text {
+  display: flex;
+  align-items: center;
+  /* padding: 0.375rem 0.75rem; */
+  font-size: 1.5rem;
+  /* font-weight: 400; */
+  /* line-height: 2.5; */
+  /* color: #fff; */
+  text-align: center;
+  white-space: nowrap;
+  /* background-color: #e9ecef; */
+  /* border: 0px solid #fff; */
+  border-radius: .375rem;
+}
+
+.field-content {
+  flex: 98;
+  align-self: center;
+}
+
+.formio-component-datagrid .datagrid-table, .formio-component-datagrid .datagrid-table td, .formio-component-datagrid .datagrid-table th {
+  font-weight: 400;
+  border: 1px solid #ddd !important;
+  /* padding: 10px; */
+}
+
+.custom-fault-description {
+  width: 400px;
+}
+
+.custom-select-height .choices__inner {
+  min-height: 20px; /* Adjust this value to decrease height */
+  line-height: 20px; /* Match the line-height to the min-height for proper text alignment */
+}
+
+.custom-select-height .choices__list--single {
+  min-height: 20px;
+  line-height: 20px;
+}
+
+.choices__item.choices__item--selectable {
+  white-space: nowrap;
+  overflow: hidden;
+  /* padding-right: 25px; */
+  /* text-overflow: ellipsis; */
+}
+
+
+.builder-group-button.btn {
+  color: #fff;
+  border-color: #1A1A1A;
+}
+.btn:first-child:hover, :not(.btn-check)+.btn:hover {
+  color: #fff;
+  background-color: #1A1A1A;
+  border-color: #1A1A1A;
+}
+
+.nav-link {
+  display: block;
+  padding: var(--bs-nav-link-padding-y) var(--bs-nav-link-padding-x);
+  font-size: var(--bs-nav-link-font-size);
+  font-weight: var(--bs-nav-link-font-weight);
+  color: white;
+  text-decoration: none;
+  transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out;
+}
+
+.nav {
+  --bs-nav-link-padding-x: 1rem;
+  --bs-nav-link-padding-y: 0.5rem;
+  --bs-nav-link-font-weight: ;
+  --bs-nav-link-color: var(--bs-link-color);
+  --bs-nav-link-hover-color: white;
+  --bs-nav-link-disabled-color: #6c757d;
+  display: flex;
+  flex-wrap: wrap;
+  padding-left: 0;
+  margin-bottom: 0;
+  list-style: none;
+}
+
+.disabled-field {
+  background-color: #fff;
+  border: 0px;
+}
+
+input[disabled][id*="textField2"].form-control {
+  border: 0px !important;
+  background-color: #ffffff !important;
+}
+
+input[disabled][id*="textField3"].form-control {
+  border: 0px !important;     
+  background-color: #ffffff !important; 
+}
+
+input[disabled][id*="textField1"].form-control {
+  border: 0px !important;     
+  background-color: #ffffff !important; 
+}
+
+input[disabled][id*="textField4"].form-control {
+  border: 0px !important;     
+  background-color: #ffffff !important; 
+}
+
+@media (min-width: 768px) {
+  .col-md-1 {
+      flex: 0 0 auto;
+      width: 60px;
+  }
+}

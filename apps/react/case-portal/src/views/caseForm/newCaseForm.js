@@ -38,6 +38,7 @@ export const NewCaseForm = ({
         return FormService.getByKey(keycloak, data.formKey)
       })
       .then((data) => {
+        console.log("form data", data);
         setForm(data)
         setFormData({
           data: {},
@@ -48,6 +49,8 @@ export const NewCaseForm = ({
       .catch((err) => {
         console.log(err.message)
       })
+
+
   }, [open, caseDefId])
 
   const onSave = () => {
@@ -85,6 +88,43 @@ export const NewCaseForm = ({
       })
   }
 
+  const onSubmitForm = () => {
+    const caseAttributes = []
+    Object.keys(formData.data).forEach((key) => {
+      caseAttributes.push({
+        name: key,
+        value:
+          typeof formData.data[key] !== 'object'
+            ? formData.data[key]
+            : JSON.stringify(formData.data[key]),
+        type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+      })
+    })
+
+    CaseService.saveCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: caseDefId,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '',
+        },
+        attributes: caseAttributes,
+      }),
+    )
+      .then((data) => {
+        setLastCreatedCase(data)
+        handleClose()
+      })
+      .catch((err) => {
+        console.log(err.message)
+      })
+  };
+  
+  
+
   return (
     <div>
       <Dialog
@@ -106,9 +146,9 @@ export const NewCaseForm = ({
             <Typography sx={{ ml: 2, flex: 1 }} component='div'>
               <div>{caseDef.name}</div>
             </Typography>
-            <Button color='inherit' onClick={onSave}>
-              Save
-            </Button>
+            {/* <Button color='inherit' onClick={onSave}>
+              Save As Draft
+            </Button> */}
           </Toolbar>
         </AppBar>
 
@@ -119,9 +159,9 @@ export const NewCaseForm = ({
         >
           <Grid item xs={12} sx={{ m: 3 }}>
             <Box sx={{ pb: 1, display: 'flex', flexDirection: 'row' }}>
-              <Typography variant='h5' color='textSecondary' sx={{ pr: 0.5 }}>
+              {/* <Typography variant='h5' color='textSecondary' sx={{ pr: 0.5 }}>
                 {form.title}
-              </Typography>
+              </Typography> */}
               {form.toolTip && (
                 <Tooltip title={form.toolTip}>
                   <QuestionCircleOutlined />
@@ -134,7 +174,16 @@ export const NewCaseForm = ({
               options={{
                 fileService: new StorageService(),
               }}
+              onCustomEvent={(event) => {
+                if (event.component.key === 'saveAsDraft') {
+                  onSave(event.data); 
+                } 
+                else if (event.component.key === 'onSave') {
+                  onSubmitForm(event.data); 
+                }
+              }}
             />
+
           </Grid>
         </Grid>
       </Dialog>

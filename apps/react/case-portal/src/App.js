@@ -20,9 +20,19 @@ const App = () => {
   useEffect(() => {
     const { keycloak } = sessionStore.bootstrap()
 
+    const storedToken = localStorage.getItem('keycloakToken')
+    if (storedToken) {
+      keycloak.token = storedToken
+    }
+
     keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
+
+      if (authenticated) {
+        localStorage.setItem('keycloakToken', keycloak.token)
+      }
+
       buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
       RegisteOptions(keycloak)
@@ -41,6 +51,8 @@ const App = () => {
             console.info('Token refreshed: ' + refreshed)
             RegisterInjectUserSession(keycloak)
             RegisteOptions(keycloak)
+
+            localStorage.setItem('keycloakToken', keycloak.token)
           } else {
             console.info(
               'Token not refreshed, valid for ' +
@@ -55,12 +67,14 @@ const App = () => {
         })
         .catch(() => {
           console.error('Failed to refresh token')
+          localStorage.removeItem('keycloakToken')
         })
     }
   }, [])
 
   async function forceLogoutIfUserNoMinimalRoleForSystem(keycloak) {
     if (!accountStore.hasAnyRole(keycloak)) {
+      localStorage.removeItem('keycloakToken')
       return keycloak.logout({ redirectUri: window.location.origin })
     }
   }
