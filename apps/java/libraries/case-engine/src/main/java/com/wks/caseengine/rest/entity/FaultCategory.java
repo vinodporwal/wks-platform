@@ -14,6 +14,8 @@ public class FaultCategory {
     private Long id;
 
     private String name;
+    
+    private Boolean recommendationFlag;
 
     // Constructors
     public FaultCategory() {
@@ -40,7 +42,15 @@ public class FaultCategory {
         this.name = name;
     }
 
-    // toString method for easy debugging
+    public Boolean getRecommendationFlag() {
+		return recommendationFlag;
+	}
+
+	public void setRecommendationFlag(Boolean recommendationFlag) {
+		this.recommendationFlag = recommendationFlag;
+	}
+
+	// toString method for easy debugging
     @Override
     public String toString() {
         return "FaultCategory [id=" + id + ", name=" + name + "]";

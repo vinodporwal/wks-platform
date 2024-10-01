@@ -36,11 +36,13 @@ import com.wks.caseengine.rest.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseStatus;
+import com.wks.caseengine.rest.entity.EventEnrichment;
 import com.wks.caseengine.rest.entity.FaultCategory;
 import com.wks.caseengine.rest.entity.FaultHistory;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.CasePayload;
+import com.wks.caseengine.rest.model.FaultEvents;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -93,7 +95,7 @@ public class CaseDefinitionController {
 	}
 	
 	@GetMapping(value = "/fault-history/eventIds")
-	public ResponseEntity<List<FaultHistory>> getFaultHistoryByEventIds(@RequestParam List<Long> eventIds) {
+	public ResponseEntity<List<FaultEvents>> getFaultHistoryByEventIds(@RequestParam List<Long> eventIds) {
         List<FaultHistory> faultHistories = new ArrayList<FaultHistory>();
         String eventIdsString = eventIds.stream()
                 .map(String::valueOf) // Convert Long to String

@@ -20,9 +20,11 @@ import com.wks.caseengine.rest.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseStatus;
+import com.wks.caseengine.rest.entity.EventEnrichment;
 import com.wks.caseengine.rest.entity.FaultCategory;
 import com.wks.caseengine.rest.entity.FaultHistory;
 import com.wks.caseengine.rest.model.CasePayload;
+import com.wks.caseengine.rest.model.FaultEvents;
 
 public interface CaseDefinitionService {
 
@@ -46,7 +48,7 @@ public interface CaseDefinitionService {
 
 	CaseDetails saveCaseDetails(CasePayload  casePayload);
 
-	List<FaultHistory> getAllEvents(List<Long> eventIds);
+	List<FaultEvents> getAllEvents(List<Long> eventIds);
 
 	Case saveCase(Case caseData);
 

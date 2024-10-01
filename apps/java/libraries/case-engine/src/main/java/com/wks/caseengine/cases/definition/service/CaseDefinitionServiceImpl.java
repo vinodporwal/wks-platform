@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -37,13 +38,16 @@ import com.wks.caseengine.rest.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseStatus;
+import com.wks.caseengine.rest.entity.EventCategory;
+import com.wks.caseengine.rest.entity.EventEnrichment;
+import com.wks.caseengine.rest.entity.Events;
 import com.wks.caseengine.rest.entity.FaultCategory;
-import com.wks.caseengine.rest.entity.FaultHistory;
 import com.wks.caseengine.rest.entity.OwnerDetails;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.CaseContainer;
 import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultDetail;
+import com.wks.caseengine.rest.model.FaultEvents;
 //import com.wks.caseengine.rest.repository.CaseAndOwnerMappingRepository;
 import com.wks.caseengine.rest.repository.CaseCauseCategoryRepository;
 import com.wks.caseengine.rest.repository.CaseCauseDescriptionRepository;
@@ -51,6 +55,9 @@ import com.wks.caseengine.rest.repository.CaseDetailsRepository;
 import com.wks.caseengine.rest.repository.CaseRepository;
 //import com.wks.caseengine.rest.repository.CaseRepository;
 import com.wks.caseengine.rest.repository.CaseStatusRepository;
+import com.wks.caseengine.rest.repository.EventCategoryRepository;
+import com.wks.caseengine.rest.repository.EventEnrichmentRepository;
+import com.wks.caseengine.rest.repository.EventsRepository;
 import com.wks.caseengine.rest.repository.FaultCategoryRepository;
 import com.wks.caseengine.rest.repository.FaultHistoryRepository;
 //import com.wks.caseengine.rest.repository.OwnerDetailsRepository;
@@ -81,6 +88,15 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     
     @Autowired
     private CaseRepository caseRepository;
+    
+    @Autowired
+    private EventEnrichmentRepository eventEnrichmentRepository;
+    
+    @Autowired
+    private EventsRepository eventsRepository;
+    
+    @Autowired
+    private EventCategoryRepository eventCategoryRepository;
     
 //    @Autowired
 //    private CaseAndOwnerMappingRepository caseAndOwnerMappingRepository;
@@ -203,9 +219,25 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     }
 
 	@Override
-	public List<FaultHistory> getAllEvents(List<Long> eventIds) {
+	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
 		System.out.println("Calling repository method..");
-		return faultHistoryRepository.getAllFaultHistoryFromEventIds(eventIds);
+		List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
+		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
+		for(EventEnrichment eventEnrichment: eventEnrichmentList) {
+			UUID eventId = eventEnrichment.getEventPkId();
+			UUID eventCategoryId = eventEnrichment.getEventCategoryPkId();
+			
+			System.out.println("Event Ids: "+ eventId);
+			System.out.println("Event Categories Ids: "+ eventCategoryId);
+			Events event = eventsRepository.findByEventId(eventId);
+			EventCategory eventCategory = eventCategoryRepository.getCategoryById(eventCategoryId);
+			FaultEvents faultEvent = new FaultEvents();
+			faultEvent.setEvent(event);
+			faultEvent.setEventEnrichment(eventEnrichment);
+			faultEvent.setEventCategory(eventCategory);
+			faultEvents.add(faultEvent);
+		}
+		return faultEvents;
 	}
 
 	@Override
