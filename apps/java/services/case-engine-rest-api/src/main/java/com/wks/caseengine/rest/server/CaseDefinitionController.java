@@ -126,9 +126,11 @@ public class CaseDefinitionController {
     }
 	
 	@GetMapping("/cases")
-	public void getCases(@RequestParam String assetName, @RequestParam String hierarchyName) {
+	public ResponseEntity<List<Case>> getCases(@RequestParam String assetName, @RequestParam String hierarchyName) {
 		System.out.println("AssetName: "+assetName);
 		System.out.println("HierarchyName: "+hierarchyName);
+		List<Case> cases = caseDefinitionService.getCaseDetails(assetName, hierarchyName);
+		return ResponseEntity.ok(cases);
 	}
 
 	@PutMapping(value = "/{caseDefId}")

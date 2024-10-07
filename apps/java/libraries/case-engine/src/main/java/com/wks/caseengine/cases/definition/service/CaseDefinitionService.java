@@ -54,4 +54,6 @@ public interface CaseDefinitionService {
 
 	String CaseNoGenerator();
 
+	List<Case> getCaseDetails(String assetName, String hierarchyName);
+
 }

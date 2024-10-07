@@ -15,4 +15,7 @@ public interface EventEnrichmentRepository extends JpaRepository<EventEnrichment
 	@Query(value="SELECT * FROM EventEnrichments as ee where ee.Event_Enrichment_PK_ID IN (:eventIdsString);",nativeQuery = true)
 	List<EventEnrichment> getAllEventEnrichmentsByIds(@Param(value = "eventIdsString") List<Long> eventIdsString);
 
+	@Query(value="SELECT * FROM EventEnrichments as ee where ee.Event_Enrichment_PK_ID = :eventId;",nativeQuery = true)
+	EventEnrichment getEventEnrichmentByEventId(@Param(value = "eventId") String eventId);
+
 }

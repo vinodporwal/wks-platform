@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -254,20 +255,42 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		OwnerDetails owner = caseData.getOwner();
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
+		hierarchyNodePKID = caseRepository.gethierarchyNodePKID(assetName);
 		if(assetName!=null) {
-			hierarchyNodePKID = caseRepository.gethierarchyNodePKID(assetName);
+			
 			
 			System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
 		}
 		caseData.setHierarchyNodePKID(hierarchyNodePKID);
+		String caseNo = CaseNoGenerator();
+		caseData.setCaseNo(caseNo);
 		Case caseDetails  = caseRepository.save(caseData);
 		int i = 0;
 		System.out.println("Saving Case Details API....");
+		List<Long> eventIds = new ArrayList<Long>();
+		for(String eventId: caseData.getEventIds()) {
+			eventIds.add(Long.parseLong(eventId));
+		}
+		List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
+		HashMap<Long, String> map = new HashMap<Long, String>();
+		for(EventEnrichment eventEnrichment: eventEnrichmentList) {
+			System.out.println("printing detailsss...");
+			System.out.println(eventEnrichment.getEventEnrichmentPkId());
+			System.out.println(eventEnrichment.getEventPkId());
+			System.out.println(eventEnrichment.getExpression());
+			System.out.println(eventEnrichment.getEventPkId().toString());
+			map.put(eventEnrichment.getEventEnrichmentPkId().longValue(), eventEnrichment.getEventPkId().toString());
+		}
 		for(String eventId: caseData.getEventIds()) {
 			CasesAndEventsMapping mapping = new CasesAndEventsMapping();
 			mapping.setCaseNo(caseDetails.getCaseNo());
-//			mapping.setEventPK(eventId);
+			System.out.println("EventId : "+ eventId);
+			System.out.println("EventId : "+ eventId);
+			System.out.println("event Primary Id : "+ map.get(eventIds));
+			System.out.println("event primary Id : "+ map.get(eventIds));
+			mapping.setEventPK(map.get(eventIds));
 			casesAndEventsMappingRepository.save(mapping);
+			
 			System.out.println("EventId of: "+i+" is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
 		}
 		return caseDetails;
@@ -280,6 +303,16 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		caseId.setCaseNo(id+"");
 		caseIdSequenceRepository.save(caseId);
 		return caseId.getCaseNo();
+	}
+
+	@Override
+	public List<Case> getCaseDetails(String displayName, String hierarchyName) {
+		List<String> assetsPKIds = caseDetailsRepository.findNodesByHierarchyNameAndDisplayName(displayName, hierarchyName);
+//		for(String assetPKID: assetsPKIds) {
+//			System.out.println(assetPKID);
+//		}
+		List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
+		return cases;
 	}
 
 }
