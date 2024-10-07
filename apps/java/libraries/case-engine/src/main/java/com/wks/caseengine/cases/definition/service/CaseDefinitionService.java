@@ -52,4 +52,6 @@ public interface CaseDefinitionService {
 
 	Case saveCase(Case caseData);
 
+	String CaseNoGenerator();
+
 }

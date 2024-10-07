@@ -59,6 +59,7 @@ public class CaseDefinitionController {
 		System.out.println("Called.. Cakkcvdshgcvshkdgcvkshcvkhsagvckhgvdks");
 		return ResponseEntity.ok(caseDefinitionService.find(Optional.ofNullable(deployed)));
 	}
+	
 	@GetMapping(value = "/fault-category")
 	public ResponseEntity<List<FaultCategory>> getFaultCategory() {
 		return ResponseEntity.ok(caseDefinitionService.findCaseCatagories());
@@ -103,6 +104,11 @@ public class CaseDefinitionController {
         System.out.println("eventIds: "+eventIdsString);
         return ResponseEntity.ok(caseDefinitionService.getAllEvents(eventIds));
     }
+	
+	@GetMapping(value = "/case-no")
+	public ResponseEntity<String> getCaseNumber() {
+        return ResponseEntity.ok(caseDefinitionService.CaseNoGenerator());
+    }
 
 	@PostMapping
 	public ResponseEntity<CaseDefinition> save(@RequestBody final CaseDefinition caseDefinition) {
@@ -118,6 +124,12 @@ public class CaseDefinitionController {
         Case savedCase = caseDefinitionService.saveCase(caseData);
         return ResponseEntity.ok(savedCase);
     }
+	
+	@GetMapping("/cases")
+	public void getCases(@RequestParam String assetName, @RequestParam String hierarchyName) {
+		System.out.println("AssetName: "+assetName);
+		System.out.println("HierarchyName: "+hierarchyName);
+	}
 
 	@PutMapping(value = "/{caseDefId}")
 	public ResponseEntity<CaseDefinition> update(@PathVariable final String caseDefId,

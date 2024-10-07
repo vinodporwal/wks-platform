@@ -37,7 +37,9 @@ import com.wks.caseengine.rest.entity.Case;
 import com.wks.caseengine.rest.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
+import com.wks.caseengine.rest.entity.CaseIdSequences;
 import com.wks.caseengine.rest.entity.CaseStatus;
+import com.wks.caseengine.rest.entity.CasesAndEventsMapping;
 import com.wks.caseengine.rest.entity.EventCategory;
 import com.wks.caseengine.rest.entity.EventEnrichment;
 import com.wks.caseengine.rest.entity.Events;
@@ -52,9 +54,11 @@ import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.repository.CaseCauseCategoryRepository;
 import com.wks.caseengine.rest.repository.CaseCauseDescriptionRepository;
 import com.wks.caseengine.rest.repository.CaseDetailsRepository;
+import com.wks.caseengine.rest.repository.CaseIdSequenceRepository;
 import com.wks.caseengine.rest.repository.CaseRepository;
 //import com.wks.caseengine.rest.repository.CaseRepository;
 import com.wks.caseengine.rest.repository.CaseStatusRepository;
+import com.wks.caseengine.rest.repository.CasesAndEventsMappingRepository;
 import com.wks.caseengine.rest.repository.EventCategoryRepository;
 import com.wks.caseengine.rest.repository.EventEnrichmentRepository;
 import com.wks.caseengine.rest.repository.EventsRepository;
@@ -97,6 +101,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     
     @Autowired
     private EventCategoryRepository eventCategoryRepository;
+    
+    @Autowired
+    private CaseIdSequenceRepository caseIdSequenceRepository;
+    
+    @Autowired
+    private CasesAndEventsMappingRepository casesAndEventsMappingRepository;
     
 //    @Autowired
 //    private CaseAndOwnerMappingRepository caseAndOwnerMappingRepository;
@@ -220,7 +230,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Override
 	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
-		System.out.println("Calling repository method..");
 		List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
 		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
 		for(EventEnrichment eventEnrichment: eventEnrichmentList) {
@@ -243,12 +252,34 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	@Override
 	public Case saveCase(Case caseData) {
 		OwnerDetails owner = caseData.getOwner();
-		System.out.println(owner.getEmail());
-		System.out.println(owner.getName());
-		System.out.println(owner.getPhone());
-		System.out.println(owner.getId());
+		String assetName = "%"+caseData.getAssetName();
+		String hierarchyNodePKID = "";
+		if(assetName!=null) {
+			hierarchyNodePKID = caseRepository.gethierarchyNodePKID(assetName);
+			
+			System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
+		}
+		caseData.setHierarchyNodePKID(hierarchyNodePKID);
 		Case caseDetails  = caseRepository.save(caseData);
+		int i = 0;
+		System.out.println("Saving Case Details API....");
+		for(String eventId: caseData.getEventIds()) {
+			CasesAndEventsMapping mapping = new CasesAndEventsMapping();
+			mapping.setCaseNo(caseDetails.getCaseNo());
+//			mapping.setEventPK(eventId);
+			casesAndEventsMappingRepository.save(mapping);
+			System.out.println("EventId of: "+i+" is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
+		}
 		return caseDetails;
+	}
+	
+	@Override
+	public String CaseNoGenerator() {
+		CaseIdSequences caseId = caseIdSequenceRepository.findLastElement();
+		Long id = Long.parseLong(caseId.getCaseNo()) + 1;
+		caseId.setCaseNo(id+"");
+		caseIdSequenceRepository.save(caseId);
+		return caseId.getCaseNo();
 	}
 
 }
