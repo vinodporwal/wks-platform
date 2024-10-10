@@ -25,12 +25,13 @@ export const NewCaseForm = ({
   handleClose,
   caseDefId,
   setLastCreatedCase,
+  cases,
 }) => {
+  
   const [caseDef, setCaseDef] = useState([])
   const [form, setForm] = useState([])
   const [formData, setFormData] = useState(null)
   const keycloak = useSession()
-
   useEffect(() => {
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
@@ -38,7 +39,7 @@ export const NewCaseForm = ({
         return FormService.getByKey(keycloak, data.formKey)
       })
       .then((data) => {
-        console.log("form data", data);
+        console.log("new form data", data);
         setForm(data)
         setFormData({
           data: {},
@@ -54,6 +55,14 @@ export const NewCaseForm = ({
   }, [open, caseDefId])
 
   const onSave = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const assetName = urlParams.get('assetName') || 'default';
+    const hierarchyName = urlParams.get('hierarchyName') || 'default';
+    const eventIdsParam = urlParams.get('eventIds');
+    const sourceSystem = urlParams.get('sourceSystem') || 'default';
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+
     const caseAttributes = []
     Object.keys(formData.data).forEach((key) => {
       caseAttributes.push({
@@ -66,10 +75,14 @@ export const NewCaseForm = ({
       })
     })
 
-    CaseService.createCase(
+    CaseService.saveCase(
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        assetName: assetName,
+        hierarchyName: hierarchyName,
+        sourceSystem: sourceSystem,
+        eventIds: eventIds,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -89,6 +102,14 @@ export const NewCaseForm = ({
   }
 
   const onSubmitForm = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const assetName = urlParams.get('assetName') || 'default';
+    const hierarchyName = urlParams.get('hierarchyName') || 'default';
+    const eventIdsParam = urlParams.get('eventIds');
+    const sourceSystem = urlParams.get('sourceSystem') || 'default';
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+
     const caseAttributes = []
     Object.keys(formData.data).forEach((key) => {
       caseAttributes.push({
@@ -105,6 +126,10 @@ export const NewCaseForm = ({
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        assetName: assetName,
+        hierarchyName: hierarchyName,
+        sourceSystem: sourceSystem,
+        eventIds: eventIds,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',

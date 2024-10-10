@@ -25,6 +25,7 @@ import { useTranslation } from 'react-i18next'
 import { CaseService } from '../../services'
 import { Grid, GridColumn } from '@progress/kendo-react-grid';
 import '@progress/kendo-theme-material/dist/all.css';
+import { useLocation } from 'react-router-dom';
 
 const DataGrid = lazy(() =>
   import('@mui/x-data-grid').then((module) => ({ default: module.DataGrid })),
@@ -69,6 +70,7 @@ export const CaseList = ({ status, caseDefId }) => {
     hasPrevious: false,
     hasNext: false,
   })
+  const location = useLocation();
 
   useEffect(() => {
     if (Config.WebsocketsEnabled) {
@@ -92,6 +94,7 @@ export const CaseList = ({ status, caseDefId }) => {
       }
     }
   }, [])
+  
 
   useEffect(() => {
     fetchCases(
@@ -112,6 +115,16 @@ export const CaseList = ({ status, caseDefId }) => {
     })
   }, [])
 
+  // useEffect(() => {
+  //   const searchParams = new URLSearchParams(location.search);
+  //   const eventIds = searchParams.get('eventIds');
+
+  //   if (eventIds) {
+  //     setNewCaseDefId(caseDefId);
+  //     setOpenNewCaseForm(true);
+  //   }
+  // }, [location, caseDefId]);
+
   const makeColumns = () => {
     return [
       {
@@ -122,13 +135,13 @@ export const CaseList = ({ status, caseDefId }) => {
       {
         field: 'caseTitle',
         headerName: t('pages.caselist.datagrid.columns.caseTitle'),
-        width: 150,
+        width: 250,
       },
-      {
-        field: 'businessKey',
-        headerName: t('pages.caselist.datagrid.columns.businesskey'),
-        width: 150,
-      },
+      // {
+      //   field: 'businessKey',
+      //   headerName: t('pages.caselist.datagrid.columns.businesskey'),
+      //   width: 150,
+      // },
       // {
       //   field: 'statusDescription',
       //   headerName: t('pages.caselist.datagrid.columns.statusdescription'),
@@ -139,10 +152,20 @@ export const CaseList = ({ status, caseDefId }) => {
       //   headerName: t('pages.caselist.datagrid.columns.stage'),
       //   width: 220,
       // },
+      // {
+      //   field: 'createdAt',
+      //   headerName: t('pages.caselist.datagrid.columns.createdat'),
+      //   width: 220,
+      // },
+      // {
+      //   field: 'assetName',
+      //   headerName: 'Asset Name',
+      //   width: 150,
+      // },
       {
-        field: 'createdAt',
-        headerName: t('pages.caselist.datagrid.columns.createdat'),
-        width: 220,
+        field: 'hierarchyName',
+        headerName: 'Hierarchy Name',
+        width: 150,
       },
       {
         field: 'ownerName',
@@ -157,7 +180,7 @@ export const CaseList = ({ status, caseDefId }) => {
       // },
       {
         field: 'action',
-        headerName: '',
+        headerName: 'Action',
         sortable: false,
         renderCell: (data) => {
           const onClick = (e) => {
@@ -453,7 +476,7 @@ export const CaseList = ({ status, caseDefId }) => {
                   }}
                   rows={cases}
                   columns={makeColumns()}
-                  getRowId={(row) => row.businessKey}
+                  getRowId={(row) => row.caseNo}
                   loading={fetching}
                   components={{ Pagination: CustomPagination }}
                 />
@@ -521,6 +544,7 @@ export const CaseList = ({ status, caseDefId }) => {
       {openNewCaseForm && (
         <NewCaseForm
           handleClose={handleCloseNewCaseForm}
+          cases={cases}
           open={openNewCaseForm}
           caseDefId={newCaseDefId}
           setLastCreatedCase={setLastCreatedCase}
@@ -539,6 +563,67 @@ export const CaseList = ({ status, caseDefId }) => {
     </div>
   )
 }
+
+// function fetchCases(
+//   setFetching,
+//   keycloak,
+//   caseDefId,
+//   setStages,
+//   status,
+//   filter,
+//   setCases,
+//   setFilter,
+// ) {
+//   setFetching(true)
+
+//   CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+//     .then((resp) => {
+//       resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
+//       setStages(resp.stages)
+//       return CaseService.filterCase(keycloak, caseDefId, status, filter)
+//     })
+//     .then((resp) => {
+//       const { data, paging } = resp
+//       console.log('resp', resp)
+//        const updatedCases = data.map((singleCase) => {
+//         let caseTitle = "";
+//         let caseNumber = "";
+
+//         try {
+//           const containerValue = singleCase.attributes.find(
+//             (attr) => attr.name === "container"
+//           )?.value;
+
+//           if (containerValue) {
+//             const parsedValue = JSON.parse(containerValue);
+//             caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
+//             caseNumber = parsedValue?.textField || parsedValue.caseNo;
+//           }
+//         } catch (error) {
+//           console.error("Error parsing container value:", error);
+//         }
+
+//         return {
+//           ...singleCase,
+//           caseTitle,
+//           caseNumber,
+//         };
+//       });
+
+//       setCases(updatedCases)
+//       setFilter({
+//         ...filter,
+//         cursors: paging.cursors,
+//         hasPrevious: paging.hasPrevious,
+//         hasNext: paging.hasNext,
+//       })
+//     })
+//     .finally(() => {
+//       setFetching(false)
+//     })
+// }
+
+
 function fetchCases(
   setFetching,
   keycloak,
@@ -547,21 +632,21 @@ function fetchCases(
   status,
   filter,
   setCases,
-  setFilter,
+  setFilter
 ) {
-  setFetching(true)
+  setFetching(true);
+  const searchParams = new URLSearchParams(window.location.search);
+  const assetName = searchParams.get('assetName') || 'defaultAssetName';
+  const hierarchyName = searchParams.get('hierarchyName') || 'defaultHierarchyName';
 
-  CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+  CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
     .then((resp) => {
-      resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
-      setStages(resp.stages)
-      return CaseService.filterCase(keycloak, caseDefId, status, filter)
-    })
-    .then((resp) => {
-      const { data, paging } = resp
-       const updatedCases = data.map((singleCase) => {
+
+      const caseList = Array.isArray(resp) ? resp : [];
+
+      const updatedCases = caseList.map((singleCase) => {
         let caseTitle = "";
-        let caseNumber = "";
+        let caseNumber = singleCase.caseNo;
 
         try {
           const containerValue = singleCase.attributes.find(
@@ -571,7 +656,7 @@ function fetchCases(
           if (containerValue) {
             const parsedValue = JSON.parse(containerValue);
             caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
-            caseNumber = parsedValue?.textField || parsedValue.caseNo;
+            caseNumber = caseNumber || parsedValue.caseNo;
           }
         } catch (error) {
           console.error("Error parsing container value:", error);
@@ -584,15 +669,19 @@ function fetchCases(
         };
       });
 
-      setCases(updatedCases)
+      setCases(updatedCases); 
       setFilter({
         ...filter,
-        cursors: paging.cursors,
-        hasPrevious: paging.hasPrevious,
-        hasNext: paging.hasNext,
-      })
+        cursors: {}, // Reset cursors here
+        hasPrevious: false,
+        hasNext: false,
+      });
+    })
+    .catch((error) => {
+      console.error("Error fetching cases:", error);
     })
     .finally(() => {
-      setFetching(false)
-    })
+      setFetching(false);
+    });
 }
+

@@ -131,13 +131,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   
   
   const getCaseInfo = (aCase) => {
+
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {
         setCaseDef(data);
         setStages(
           data.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
         );
-        const formData = await FormService.getByKey(keycloak, data.formKey);
+
+        const formData = await FormService.getByKey(keycloak, 'case-management-system');
         if (formData && formData.structure && formData.structure.components) {
           const updatedFormStructure = { ...formData };
           console.log('formData', formData);
@@ -150,7 +152,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             if (level2 && level2.components) {
               const caseDescriptionField = level2.components.length > 1 ? level2.components[1] : null;
               if (caseDescriptionField) {
-                caseDescriptionField.disabled = true;
+                caseDescriptionField.disabled = false;
               }
   
               const recommendation = level1.components.length > 5 ? level1.components[5] : null;
@@ -168,6 +170,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 if (caseAssign) {
                   caseAssign.disabled = true;
                 }
+                
               }
   
               if (level7 && level7.columns) {
@@ -191,7 +194,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         }
         setIsFormData(true)
         // Fetch the case details
-        return CaseService.getCaseById(keycloak, aCase.businessKey);
+        // return CaseService.getCaseById(keycloak, aCase.caseNo);
+        return aCase
       })
       .then((caseData) => {
         setComments(
@@ -219,6 +223,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         console.log(err.message);
       });
   };
+  
   
   const handleMainTabChanged = (event, newValue) => {
     console.log(event, newValue)

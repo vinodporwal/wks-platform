@@ -17,6 +17,7 @@ export const CaseService = {
   getFaultCategories,
   getCaseStatus,
   saveCase,
+  getCasesById,
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -125,6 +126,34 @@ async function getCaseById(keycloak, id) {
     return await Promise.reject(e)
   }
 }
+async function getCasesById(keycloak, caseDefId = '', assetName = '', hierarchyName = '') {
+  // Use '/cases' in the URL directly, not appending the caseDefId
+  let url = `${Config.CaseEngineUrl}/case-definition/cases`;
+
+  // Append query parameters if provided
+  const queryParams = new URLSearchParams();
+  if (assetName) queryParams.append('assetName', assetName);
+  if (hierarchyName) queryParams.append('hierarchyName', hierarchyName);
+
+  // Add query parameters to the URL if they exist
+  if (queryParams.toString()) {
+    url += `?${queryParams.toString()}`;
+  }
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  };
+
+  try {
+    const resp = await fetch(url, { headers });
+    return json(keycloak, resp);
+  } catch (e) {
+    console.error(e);
+    return await Promise.reject(e);
+  }
+}
+
+
 
 async function filterCase(keycloak, caseDefId, status, cursor) {
   let url = `${Config.CaseEngineUrl}/case?`
