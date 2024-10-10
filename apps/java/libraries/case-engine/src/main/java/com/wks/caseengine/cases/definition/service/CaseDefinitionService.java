@@ -56,4 +56,6 @@ public interface CaseDefinitionService {
 
 	List<Case> getCaseDetails(String assetName, String hierarchyName);
 
+	List<Object> getUserList();
+
 }

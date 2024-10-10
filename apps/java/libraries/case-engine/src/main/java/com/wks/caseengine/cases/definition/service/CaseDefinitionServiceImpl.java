@@ -17,10 +17,19 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,10 +50,12 @@ import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseIdSequences;
 import com.wks.caseengine.rest.entity.CaseStatus;
 import com.wks.caseengine.rest.entity.CasesAndEventsMapping;
+import com.wks.caseengine.rest.entity.Equipments;
 import com.wks.caseengine.rest.entity.EventCategory;
 import com.wks.caseengine.rest.entity.EventEnrichment;
 import com.wks.caseengine.rest.entity.Events;
 import com.wks.caseengine.rest.entity.FaultCategory;
+import com.wks.caseengine.rest.entity.FaultHistory;
 import com.wks.caseengine.rest.entity.OwnerDetails;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.CaseContainer;
@@ -60,6 +71,7 @@ import com.wks.caseengine.rest.repository.CaseRepository;
 //import com.wks.caseengine.rest.repository.CaseRepository;
 import com.wks.caseengine.rest.repository.CaseStatusRepository;
 import com.wks.caseengine.rest.repository.CasesAndEventsMappingRepository;
+import com.wks.caseengine.rest.repository.EquipmentsRepository;
 import com.wks.caseengine.rest.repository.EventCategoryRepository;
 import com.wks.caseengine.rest.repository.EventEnrichmentRepository;
 import com.wks.caseengine.rest.repository.EventsRepository;
@@ -112,8 +124,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //    @Autowired
 //    private CaseAndOwnerMappingRepository caseAndOwnerMappingRepository;
 //    
-//    @Autowired
-//    private OwnerDetailsRepository ownerDetailsRepository;
+    @Autowired
+    private EquipmentsRepository equipmentsRepository;
 
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
@@ -232,21 +244,30 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	@Override
 	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
 		List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
+		List<FaultHistory> faultHistorys = faultHistoryRepository.getAllFaultHistoryFromEventIds(eventIds);
+		String equipmentName = "";
+		for(FaultHistory faultHistory: faultHistorys) {
+			equipmentName = equipmentsRepository.findEquipmentName(faultHistory.getEquipmentPkId().toString());
+			break;
+		}
 		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
+		
 		for(EventEnrichment eventEnrichment: eventEnrichmentList) {
 			UUID eventId = eventEnrichment.getEventPkId();
 			UUID eventCategoryId = eventEnrichment.getEventCategoryPkId();
 			
-			System.out.println("Event Ids: "+ eventId);
-			System.out.println("Event Categories Ids: "+ eventCategoryId);
 			Events event = eventsRepository.findByEventId(eventId);
 			EventCategory eventCategory = eventCategoryRepository.getCategoryById(eventCategoryId);
 			FaultEvents faultEvent = new FaultEvents();
 			faultEvent.setEvent(event);
 			faultEvent.setEventEnrichment(eventEnrichment);
 			faultEvent.setEventCategory(eventCategory);
+			faultEvent.setAssetName(equipmentName);
 			faultEvents.add(faultEvent);
 		}
+		
+		
+		
 		return faultEvents;
 	}
 
@@ -284,11 +305,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		for(String eventId: caseData.getEventIds()) {
 			CasesAndEventsMapping mapping = new CasesAndEventsMapping();
 			mapping.setCaseNo(caseDetails.getCaseNo());
-			System.out.println("EventId : "+ eventId);
-			System.out.println("EventId : "+ eventId);
-			System.out.println("event Primary Id : "+ map.get(eventIds));
-			System.out.println("event primary Id : "+ map.get(eventIds));
-			mapping.setEventPK(map.get(eventIds));
+//			System.out.println("EventId : "+ eventId);
+//			System.out.println("EventId : "+ eventId);
+//			System.out.println("event Primary Id : "+ map.get(eventIds));
+//			System.out.println("event primary Id : "+ map.get(eventIds));
+//			mapping.setEventPK(map.get(eventIds));
 			casesAndEventsMappingRepository.save(mapping);
 			
 			System.out.println("EventId of: "+i+" is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
@@ -314,5 +335,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
 		return cases;
 	}
-
+	
+	@Override
+	public List<Object> getUserList() {
+		return null;
+	}
 }

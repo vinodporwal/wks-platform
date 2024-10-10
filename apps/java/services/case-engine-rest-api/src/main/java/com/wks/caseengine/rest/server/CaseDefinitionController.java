@@ -142,6 +142,15 @@ public class CaseDefinitionController {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
 	}
+	
+	@GetMapping(value = "/users")
+	public ResponseEntity<List<Object>> getRecommondationUsers() {
+		try {
+			return ResponseEntity.ok(caseDefinitionService.getUserList());
+		} catch (CaseDefinitionNotFoundException e) {
+			throw new RestResourceNotFoundException(e.getMessage());
+		}
+	}
 
 	@DeleteMapping(value = "/{caseDefId}")
 	public ResponseEntity<Void> delete(@PathVariable final String caseDefId) {

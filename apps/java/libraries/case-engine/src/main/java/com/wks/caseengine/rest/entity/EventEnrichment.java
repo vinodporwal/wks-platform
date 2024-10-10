@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "EventEnrichments")
@@ -72,6 +73,10 @@ public class EventEnrichment {
 
     @Column(name = "Event_Category_PK_ID", nullable = false)
     private UUID eventCategoryPkId;
+    
+    @Transient
+    @Column(name = "Display_Name")
+    private String DisplayName;
 
 	public BigInteger getEventEnrichmentPkId() {
 		return eventEnrichmentPkId;
@@ -224,4 +229,26 @@ public class EventEnrichment {
 	public void setEventCategoryPkId(UUID eventCategoryPkId) {
 		this.eventCategoryPkId = eventCategoryPkId;
 	}
+
+	public String getDisplayName() {
+		return DisplayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		DisplayName = displayName;
+	}
+
+	@Override
+	public String toString() {
+		return "EventEnrichment [eventEnrichmentPkId=" + eventEnrichmentPkId + ", eventPkId=" + eventPkId
+				+ ", enrichmentKey=" + enrichmentKey + ", creationDate=" + creationDate + ", modifiedDate="
+				+ modifiedDate + ", displayNameTemplate=" + displayNameTemplate + ", descriptionTemplate="
+				+ descriptionTemplate + ", expression=" + expression + ", faultSeverity=" + faultSeverity
+				+ ", messageType=" + messageType + ", autoReset=" + autoReset + ", onTimerIntervalMinutes="
+				+ onTimerIntervalMinutes + ", offTimerIntervalMinutes=" + offTimerIntervalMinutes + ", destinationType="
+				+ destinationType + ", destinationJson=" + destinationJson + ", trendDetailJsonTemplate="
+				+ trendDetailJsonTemplate + ", modifiedUserPkId=" + modifiedUserPkId + ", eventCausePkId="
+				+ eventCausePkId + ", eventCategoryPkId=" + eventCategoryPkId + ", DisplayName=" + DisplayName + "]";
+	}
+	
 }

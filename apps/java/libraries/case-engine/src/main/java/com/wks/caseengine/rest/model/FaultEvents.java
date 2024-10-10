@@ -8,6 +8,7 @@ public class FaultEvents {
 	private EventEnrichment eventEnrichment;
 	private Events event;
 	private EventCategory eventCategory;
+	private String AssetName;
 	
 	public EventEnrichment getEventEnrichment() {
 		return eventEnrichment;
@@ -26,5 +27,11 @@ public class FaultEvents {
 	}
 	public void setEventCategory(EventCategory eventCategory) {
 		this.eventCategory = eventCategory;
+	}
+	public String getAssetName() {
+		return AssetName;
+	}
+	public void setAssetName(String assetName) {
+		AssetName = assetName;
 	}
 }
