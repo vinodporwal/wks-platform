@@ -50,6 +50,9 @@ public class Case {
     @Column(name = "hierarchy_node_pk_id")
     private String hierarchyNodePKID;
     
+    @Column(name = "business_key")
+    private String businessKey;
+    
 	public String getCaseNo() {
 		return caseNo;
 	}
@@ -120,6 +123,14 @@ public class Case {
 
 	public void setHierarchyNodePKID(String hierarchyNodePKID) {
 		this.hierarchyNodePKID = hierarchyNodePKID;
+	}
+
+	public String getBusinessKey() {
+		return businessKey;
+	}
+
+	public void setBusinessKey(String businessKey) {
+		this.businessKey = businessKey;
 	}
 	
 }

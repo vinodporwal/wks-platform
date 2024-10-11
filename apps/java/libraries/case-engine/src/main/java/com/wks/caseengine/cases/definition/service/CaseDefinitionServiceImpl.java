@@ -287,23 +287,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
 		HashMap<Long, String> map = new HashMap<Long, String>();
 		for(EventEnrichment eventEnrichment: eventEnrichmentList) {
-			System.out.println("printing detailsss...");
-			System.out.println(eventEnrichment.getEventEnrichmentPkId());
-			System.out.println(eventEnrichment.getEventPkId());
-			System.out.println(eventEnrichment.getExpression());
-			System.out.println(eventEnrichment.getEventPkId().toString());
 			map.put(eventEnrichment.getEventEnrichmentPkId().longValue(), eventEnrichment.getEventPkId().toString());
 		}
 		for(String eventId: caseData.getEventIds()) {
 			CasesAndEventsMapping mapping = new CasesAndEventsMapping();
 			mapping.setCaseNo(caseDetails.getCaseNo());
-//			System.out.println("EventId : "+ eventId);
-//			System.out.println("EventId : "+ eventId);
-//			System.out.println("event Primary Id : "+ map.get(eventIds));
-//			System.out.println("event primary Id : "+ map.get(eventIds));
-//			mapping.setEventPK(map.get(eventIds));
 			casesAndEventsMappingRepository.save(mapping);
-			
 			System.out.println("EventId of: "+i+" is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
 		}
 		return caseDetails;
