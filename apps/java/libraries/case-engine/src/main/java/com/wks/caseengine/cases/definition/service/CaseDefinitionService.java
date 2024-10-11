@@ -21,6 +21,7 @@ import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseStatus;
 import com.wks.caseengine.rest.entity.FaultCategory;
+import com.wks.caseengine.rest.entity.FunctionalLocation;
 import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.Users;
@@ -56,5 +57,7 @@ public interface CaseDefinitionService {
 	List<Case> getCaseDetails(String assetName, String hierarchyName);
 
 	List<Users> getUserList();
+
+	List<FunctionalLocation> getFunctionalLocations(List<Long> eventIds);
 
 }

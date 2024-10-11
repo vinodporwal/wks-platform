@@ -47,6 +47,7 @@ import com.wks.caseengine.rest.entity.EventEnrichment;
 import com.wks.caseengine.rest.entity.Events;
 import com.wks.caseengine.rest.entity.FaultCategory;
 import com.wks.caseengine.rest.entity.FaultHistory;
+import com.wks.caseengine.rest.entity.FunctionalLocation;
 import com.wks.caseengine.rest.entity.OwnerDetails;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.CaseContainer;
@@ -69,6 +70,7 @@ import com.wks.caseengine.rest.repository.EventEnrichmentRepository;
 import com.wks.caseengine.rest.repository.EventsRepository;
 import com.wks.caseengine.rest.repository.FaultCategoryRepository;
 import com.wks.caseengine.rest.repository.FaultHistoryRepository;
+import com.wks.caseengine.rest.repository.FunctionalLocationRepository;
 //import com.wks.caseengine.rest.repository.OwnerDetailsRepository;
 
 @Component
@@ -118,6 +120,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //    
     @Autowired
     private EquipmentsRepository equipmentsRepository;
+    
+    @Autowired
+    private FunctionalLocationRepository functionalLocationRepository;
 
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
@@ -338,5 +343,22 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	            users.add(user);
 	        }
 		return users; 
+	}
+	
+	@Override
+	public List<FunctionalLocation> getFunctionalLocations(List<Long> eventIds) {
+		List<FunctionalLocation> locations = new ArrayList<FunctionalLocation>();
+		System.out.println(eventIds);
+		List<FaultHistory> faultHistorys = faultHistoryRepository.getAllFaultHistoryFromEventIds(eventIds);
+		String equipmentName = "";
+		for(FaultHistory faultHistory: faultHistorys) {
+			equipmentName = equipmentsRepository.findEquipmentName(faultHistory.getEquipmentPkId().toString());
+			break;
+		}
+		locations = functionalLocationRepository.findByUasDisplayName(equipmentName);
+		if(locations.size()==0) {
+			locations = functionalLocationRepository.findAll();
+		}
+		return locations;
 	}
 }

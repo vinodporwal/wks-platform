@@ -38,6 +38,7 @@ import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseStatus;
 import com.wks.caseengine.rest.entity.FaultCategory;
 import com.wks.caseengine.rest.entity.FaultHistory;
+import com.wks.caseengine.rest.entity.FunctionalLocation;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.CasePayload;
@@ -152,6 +153,16 @@ public class CaseDefinitionController {
 		}
 	}
 
+	@GetMapping(value = "/funcational-locations")
+	public ResponseEntity<List<FunctionalLocation>> getRecommondationUsers(@RequestParam List<Long> eventIds) {
+		try {
+			System.out.println("EventId ...: "+eventIds);
+			return ResponseEntity.ok(caseDefinitionService.getFunctionalLocations(eventIds));
+		} catch (CaseDefinitionNotFoundException e) {
+			throw new RestResourceNotFoundException(e.getMessage());
+		}
+	}
+	
 	@DeleteMapping(value = "/{caseDefId}")
 	public ResponseEntity<Void> delete(@PathVariable final String caseDefId) {
 		try {
