@@ -36,13 +36,13 @@ import com.wks.caseengine.rest.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseStatus;
-import com.wks.caseengine.rest.entity.EventEnrichment;
 import com.wks.caseengine.rest.entity.FaultCategory;
 import com.wks.caseengine.rest.entity.FaultHistory;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.Users;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -144,7 +144,7 @@ public class CaseDefinitionController {
 	}
 	
 	@GetMapping(value = "/users")
-	public ResponseEntity<List<Object>> getRecommondationUsers() {
+	public ResponseEntity<List<Users>> getRecommondationUsers() {
 		try {
 			return ResponseEntity.ok(caseDefinitionService.getUserList());
 		} catch (CaseDefinitionNotFoundException e) {

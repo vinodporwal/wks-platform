@@ -21,15 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,7 +42,6 @@ import com.wks.caseengine.rest.entity.CaseDetails;
 import com.wks.caseengine.rest.entity.CaseIdSequences;
 import com.wks.caseengine.rest.entity.CaseStatus;
 import com.wks.caseengine.rest.entity.CasesAndEventsMapping;
-import com.wks.caseengine.rest.entity.Equipments;
 import com.wks.caseengine.rest.entity.EventCategory;
 import com.wks.caseengine.rest.entity.EventEnrichment;
 import com.wks.caseengine.rest.entity.Events;
@@ -62,6 +53,7 @@ import com.wks.caseengine.rest.model.CaseContainer;
 import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultDetail;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.Users;
 //import com.wks.caseengine.rest.repository.CaseAndOwnerMappingRepository;
 import com.wks.caseengine.rest.repository.CaseCauseCategoryRepository;
 import com.wks.caseengine.rest.repository.CaseCauseDescriptionRepository;
@@ -337,7 +329,25 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	public List<Object> getUserList() {
-		return null;
+	public List<Users> getUserList() {
+		List<Users> users = new ArrayList<Users>();
+		HashMap<String, Character> usersMap = new HashMap<String,Character>();
+		usersMap.put("Balasaheb.Chadile@ril.com", 'A');
+		usersMap.put("Balasubramanian,Krishnamoorthy@ril.com", 'A');
+		usersMap.put("Balasubramanian.R.Iyer@ril.com", 'A');
+		usersMap.put("Bhaumik.Darji@ril.com", 'A');
+		usersMap.put("Bhautik.Kansara", 'A');
+		 for (Map.Entry<String, Character> entry : usersMap.entrySet()) {
+	            String email = entry.getKey();
+	            char status = entry.getValue();
+	            
+	            // Create User object
+	            Users user = new Users(email, status);
+	            
+	            // Print or use the user object as needed
+	            System.out.println(user);
+	            users.add(user);
+	        }
+		return users; 
 	}
 }
