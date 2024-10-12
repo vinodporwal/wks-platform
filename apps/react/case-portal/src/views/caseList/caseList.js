@@ -45,6 +45,11 @@ const NewCaseForm = lazy(() =>
     default: module.NewCaseForm,
   })),
 )
+const CaseNewFormPage = lazy(() =>
+  import('../caseForm/NewCaseFormPage').then((module) => ({
+    default: module.NewCaseFormPage,
+  })),
+)
 
 export const CaseList = ({ status, caseDefId }) => {
   const PaginationContext = createContext()
@@ -540,9 +545,18 @@ export const CaseList = ({ status, caseDefId }) => {
           keycloak={keycloak}
         />
       )}
-
+{/* 
       {openNewCaseForm && (
         <NewCaseForm
+          handleClose={handleCloseNewCaseForm}
+          cases={cases}
+          open={openNewCaseForm}
+          caseDefId={newCaseDefId}
+          setLastCreatedCase={setLastCreatedCase}
+        />
+      )} */}
+      {openNewCaseForm && (
+        <CaseNewFormPage
           handleClose={handleCloseNewCaseForm}
           cases={cases}
           open={openNewCaseForm}

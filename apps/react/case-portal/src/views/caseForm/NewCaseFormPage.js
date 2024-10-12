@@ -88,7 +88,7 @@ export const NewCaseFormPage = ({
     CaseService.createCase(
       keycloak,
       JSON.stringify({
-        caseDefinitionId: aCase.caseDefinitionId,
+        caseDefinitionId: caseDefId,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -106,7 +106,7 @@ export const NewCaseFormPage = ({
         return CaseService.saveCase(
           keycloak,
           JSON.stringify({
-            caseDefinitionId: aCase.caseDefinitionId,
+            caseDefinitionId: caseDefId,
             assetName: assetName,
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
@@ -188,7 +188,7 @@ export const NewCaseFormPage = ({
     CaseService.createCase(
       keycloak,
       JSON.stringify({
-        caseDefinitionId: aCase.caseDefinitionId,
+        caseDefinitionId: caseDefId,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -206,7 +206,7 @@ export const NewCaseFormPage = ({
         return CaseService.saveCase(
           keycloak,
           JSON.stringify({
-            caseDefinitionId: aCase.caseDefinitionId,
+            caseDefinitionId: caseDefId,
             assetName: assetName,
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
