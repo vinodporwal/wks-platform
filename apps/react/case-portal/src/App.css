@@ -155,3 +155,15 @@ input[disabled][id*="TextFaultEndTimeDate"].form-control {
   background-color: gray !important;
   border: 1px solid gray !important;
 }
+
+.formio-error-wrapper {
+  color: #721c24;
+  background-color: #fff;
+   border-color: #fff;
+}
+
+.has-error>.help-block {
+  margin-top: 5px;
+  display: none;
+  margin-bottom: 10px;
+}

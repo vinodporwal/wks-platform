@@ -112,6 +112,7 @@ async function getCaseDefinitionsById(keycloak, caseDefId) {
 }
 
 async function getCaseById(keycloak, id) {
+  console.log('id', id)
   let url = `${Config.CaseEngineUrl}/case/${id}`
 
   const headers = {

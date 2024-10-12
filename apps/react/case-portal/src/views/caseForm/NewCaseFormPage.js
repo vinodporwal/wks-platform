@@ -34,6 +34,7 @@ export const NewCaseFormPage = ({
   const navigate = useNavigate();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessages, setSnackbarMessages] = useState([]);
+  const [currentParams, setCurrentParams ] = useState([]);
 
 
   useEffect(() => {
@@ -66,79 +67,10 @@ export const NewCaseFormPage = ({
 
 
   const onSave = () => {
+    const currentParams = window.location.search;
+    setCurrentParams(currentParams);
     const urlParams = new URLSearchParams(window.location.search);
-
-    const assetName = urlParams.get('assetName') || 'default';
-    const hierarchyName = urlParams.get('hierarchyName') || 'default';
-    const eventIdsParam = urlParams.get('eventIds');
-    const sourceSystem = urlParams.get('sourceSystem') || 'default';
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
-
-    const caseAttributes = []
-    Object.keys(formData.data).forEach((key) => {
-      caseAttributes.push({
-        name: key,
-        value:
-          typeof formData.data[key] !== 'object'
-            ? formData.data[key]
-            : JSON.stringify(formData.data[key]),
-        type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-      })
-    })
-
-    CaseService.saveCase(
-      keycloak,
-      JSON.stringify({
-        caseDefinitionId: caseDefId,
-        assetName: assetName,
-        hierarchyName: hierarchyName,
-        sourceSystem: sourceSystem,
-        eventIds: eventIds,
-        owner: {
-          id: keycloak.subject || '',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '',
-        },
-        attributes: caseAttributes,
-      }),
-    )
-      .then((data) => {
-        setLastCreatedCase(data)
-        handleClose()
-      })
-      .catch((err) => {
-        console.log(err.message)
-      })
-  }
-
-
-  const onSubmitRecommendation = (event) => {
-    console.log('event onSubmitRecommendation', event);
-
-    const { recommendationReviewer, recommendationAssignedTo1, recommendationHeadline, recommendationTargetCompletionDate1 } = event.data;
-
-    const missingFields = [];
-    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
-    if (!recommendationAssignedTo1) missingFields.push('Recommendation Assigned To');
-    if (!recommendationHeadline) missingFields.push('Recommendation Headline');
-    if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
-
-    if (missingFields.length > 0) {
-      setSnackbarMessages(missingFields);
-      setSnackbarOpen(true);
-      return;
-    }
-
-    setSnackbarMessages([]);
-    // event.component.disabled = true;
-  };
   
-  
-
-  const onSubmitForm = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-
     const assetName = urlParams.get('assetName') || 'default';
     const hierarchyName = urlParams.get('hierarchyName') || 'default';
     const eventIdsParam = urlParams.get('eventIds');
@@ -151,15 +83,12 @@ export const NewCaseFormPage = ({
         : JSON.stringify(formData.data[key]),
       type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
     }));
-
-    CaseService.saveCase(
+  
+    // First API call to createCase to get the businessKey
+    CaseService.createCase(
       keycloak,
       JSON.stringify({
-        caseDefinitionId: caseDefId,
-        assetName: assetName,
-        hierarchyName: hierarchyName,
-        sourceSystem: sourceSystem,
-        eventIds: eventIds,
+        caseDefinitionId: aCase.caseDefinitionId,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -170,29 +99,152 @@ export const NewCaseFormPage = ({
       })
     )
       .then((data) => {
+        const businessKey = data.businessKey; 
+        // setLastCreatedCase(data);
+  
+       
+        return CaseService.saveCase(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+          })
+        );
+      })
+      .then((data) => {
         setLastCreatedCase(data);
-        handleClose();
         setSnackOpen(true);
         setTimeout(() => {
-          navigate(`/case-list/create?businessKey=${data.businessKey}`);
-        }, 3000);
+          handleClose();
+        }, 6000);
       })
       .catch((err) => {
         console.error(err.message);
       });
   };
 
+
+
+  const onSubmitRecommendation = (event) => {
+    console.log('event onSubmitRecommendation', event);
+  
+    const { recommendationReviewer, recommendationAssignedTo1, recommendationHeadline, recommendationTargetCompletionDate1, RecommendationConfirm } = event.data;
+  
+    const missingFields = [];
+    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
+    if (!recommendationAssignedTo1) missingFields.push('Recommendation Assigned To');
+    if (!recommendationHeadline) missingFields.push('Recommendation Headline');
+    if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
+    
+    // New validation for RecommendationConfirm
+    if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
+      missingFields.push('Recommendation Confirm');
+    }
+  
+    if (missingFields.length > 0) {
+      setSnackbarMessages(missingFields);
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        setSnackbarOpen(false);
+      }, 6000);
+      return;
+    }
+  
+    setSnackbarMessages([]);
+    // event.component.disabled = true;
+  };
+  
+
+
+  const onSubmitForm = () => {
+    const currentParams = window.location.search;
+    setCurrentParams(currentParams);
+    const urlParams = new URLSearchParams(window.location.search);
+  
+    const assetName = urlParams.get('assetName') || 'default';
+    const hierarchyName = urlParams.get('hierarchyName') || 'default';
+    const eventIdsParam = urlParams.get('eventIds');
+    const sourceSystem = urlParams.get('sourceSystem') || 'default';
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value: typeof formData.data[key] !== 'object'
+        ? formData.data[key]
+        : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }));
+  
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '',
+        },
+        attributes: caseAttributes,
+      })
+    )
+      .then((data) => {
+        const businessKey = data.businessKey;
+        // setLastCreatedCase(data);
+  
+
+        return CaseService.saveCase(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+          })
+        );
+      })
+      .then((data) => {
+        setLastCreatedCase(data);
+        setSnackOpen(true);
+        setTimeout(() => {
+          handleClose();
+        }, 6000);
+      })
+      .catch((err) => {
+        console.error(err.message);
+      });
+  };
+  
   const snackAction = lastCreatedCase && (
     <React.Fragment>
       <Button
         color="primary"
         size="small"
         onClick={() => {
-          navigate(`/case-list/create?businessKey=${lastCreatedCase.businessKey}`);
+          navigate(`/case-list/create${currentParams}`);
           handleCloseSnack();
         }}
       >
-        {lastCreatedCase.businessKey}
+        {lastCreatedCase.caseNo}
       </Button>
       <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnack}>
         <CloseIcon fontSize="small" />
@@ -246,17 +298,22 @@ export const NewCaseFormPage = ({
               options={{
                 fileService: new StorageService(),
               }}
+              onSubmit={(submission) => {
+                console.log('Validation passed:', true); 
+                console.log('Form data:', submission); 
+
+                onSave(submission)
+              }}
               onCustomEvent={(event) => {
                 if (event.component.key === 'saveAsDraft') {
-                  onSave(); 
+                  onSubmitForm(); 
                 } else if (event.component.key === 'RecommendationSubmit') {
                   onSubmitRecommendation(event); 
-                } else if (event.component.key === 'onSave') {
-                  onSubmitForm(); 
                 }
+
               }}
             />
-<Snackbar
+      <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={() => setSnackbarOpen(false)}
