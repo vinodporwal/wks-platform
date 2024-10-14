@@ -39,6 +39,7 @@ import { TaskList } from '../taskList/taskList'
 import Documents from './Documents'
 import { Snackbar, SnackbarContent } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import logo from 'assets/images/logo.svg';
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -501,34 +502,200 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     handleCloseProcessesDialog()
   }
 
- 
-  const printCaseDetails = () => {
-    // Add CSS rules to hide buttons, icons, and borders for print
-    const printStyles = `
-      <style>
-        @media print {
-          button, input[type="button"], .print-hidden, .fa, [ref="icon"] {
-            display: none !important;
+ // Function to get label for a given fault category value from localStorage
+const getFaultCategoryLabel = (value) => {
+  // Retrieve options from localStorage
+  const options = JSON.parse(localStorage.getItem('faultCategoryOptions')) || [];
+
+  // Find the option with the matching value and return its label
+  const matchingOption = options.find(option => option.value === value);
+  return matchingOption ? matchingOption.label : value; // Fallback to value if no match is found
+};
+
+ // Function to get label for a given fault category value from localStorage
+ const getcaseStatusLabel = (value) => {
+  // Retrieve options from localStorage
+  const options = JSON.parse(localStorage.getItem('caseStatusOptions')) || [];
+
+  // Find the option with the matching value and return its label
+  const matchingOption = options.find(option => option.value === value);
+  return matchingOption ? matchingOption.label : value; // Fallback to value if no match is found
+};
+
+const getEquipmentFunctionLocationLabel = (id) => {
+  const locations = JSON.parse(localStorage.getItem('functionalLocationOptions')) || [];
+  const location = locations.find(location => location.value === id);
+  return location ? location.label : id; // Return label if found, otherwise fallback to ID
+};
+
+// Function to dynamically create labelMap from the form structure
+const createLabelMapFromStructure = (structure) => {
+  const labelMap = {};
+
+  const extractLabels = (components) => {
+    if (!components || !Array.isArray(components)) return;
+
+    components.forEach((component) => {
+      if (component.key && component.label) {
+        labelMap[component.key] = component.label;
+      }
+
+      // Recursively check nested components
+      if (component.components) {
+        extractLabels(component.components);
+      }
+
+      // Handle columns in case they contain components
+      if (component.columns) {
+        component.columns.forEach((col) => {
+          if (col.components) {
+            extractLabels(col.components);
           }
-          * {
-            border: none !important;
-          }
-        }
-      </style>
-    `;
-  
-    // Insert print styles into the document head
-    document.head.insertAdjacentHTML('beforeend', printStyles);
-  
-    // Print the current page
-    window.print();
-  
-    // Optionally, remove the print styles after printing to avoid affecting the current page view
-    const styleElement = document.head.querySelector('style');
-    if (styleElement) {
-      document.head.removeChild(styleElement);
-    }
+        });
+      }
+    });
   };
+
+  // Check for nested structure and extract components from it
+  const mainComponents = structure.components || (structure.structure && structure.structure.components);
+  if (mainComponents) {
+    extractLabels(mainComponents);
+  }
+
+  return labelMap;
+};
+
+// Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
+const formatDataGrid = (dataGrid, getLabel) => {
+  if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>';
+
+  const fieldsToSkip = ['textField1', 'RecommendationSubmit', 'recommendationAssignedTo1']; // Add any keys you want to skip here
+
+  return dataGrid.map(item => {
+    return `
+      <div style="display: flex; flex-wrap: wrap; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
+        ${Object.entries(item).map(([key, value]) => 
+          fieldsToSkip.includes(key) ? '' : `
+            <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
+              <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
+              <p style="margin: 0;">
+                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || ""}
+              </p>
+            </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+};
+
+
+const generatePrintContent = (aCase, structure) => {
+  const containerData = JSON.parse(aCase.attributes.find(attr => attr.name === "container").value);
+  const labelMap = createLabelMapFromStructure(structure);
+  const getLabel = (key) => labelMap[key] || key;
+
+  let content = `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <img src="${logo}" alt="Honeywell Logo" style="height: 50px; margin-right: 10px;">
+        <h2 style="text-align: center; margin: 0;">EED Case Management System</h2>
+      </div>
+
+      <!-- Case Information Panel -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("caseNo")}</strong>: ${aCase.caseNo}</p>
+          <p><strong>${getLabel("caseTitle")}</strong>: ${containerData.caseTitle}</p>
+          <p><strong>${getLabel("caseAssignedTo")}</strong>: ${containerData.caseAssignedTo}</p>
+          <p><strong>${getLabel("faultCategory")}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
+          <p><strong>${getLabel("caseDescription")}</strong>: ${containerData.caseDescription}</p>
+        </div>
+      </div>
+
+      <!-- Case Details -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("createdOn")}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
+          <p><strong>${getLabel("dueDate")}</strong>: ${containerData.dueDate || "N/A"}</p>
+          <p><strong>${getLabel("endDate")}</strong>: ${containerData.endDate || "N/A"}</p>
+          <p><strong>${getLabel("caseStatus")}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
+          <p><strong>${getLabel("analysisTeam")}</strong>: ${containerData.analysisTeam.join(", ")}</p>
+        </div>
+      </div>
+
+      <!-- Associated Faults -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
+        <p style="padding: 10px; margin: 0;"><strong>${getLabel("textField1")}</strong>: ${containerData.textField1}</p>
+        ${formatDataGrid(containerData.dataGrid2, getLabel)}
+      </div>
+  `;
+
+  // Conditional display based on RecommendationsRadio value
+  if (containerData.RecommendationsRadio === "no") {
+    content += `
+      <!-- Analysis -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("caseCauseCategory")}</strong>: ${containerData.caseCauseCategory}</p>
+          <p><strong>${getLabel("caseCauseDescription")}</strong>: ${containerData.caseCauseDescription?.label}</p>
+          <p><strong>${getLabel("analysisDesc")}</strong>: ${containerData.analysisDesc}</p>
+        </div>
+      </div>
+    `;
+  } else {
+    content += `
+      <!-- Data Grid 1 -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel("dataGrid1")}</h3>
+        ${formatDataGrid(containerData.dataGrid1, getLabel)}
+      </div>
+    `;
+  }
+
+  // Value Realization section
+  content += `
+      <!-- Value Realization -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("valueRealizationCategory")}</strong>: ${containerData.valueRealizationCategory}</p>
+          <p><strong>${getLabel("productionLoss")}</strong>: ${containerData.productionLoss}</p>
+          <p><strong>${getLabel("manHoursCost")}</strong>: ${containerData.manHoursCost}</p>
+          <p><strong>${getLabel("spareCost")}</strong>: ${containerData.spareCost}</p>
+          <p><strong>${getLabel("totalValueCaptured")}</strong>: ${containerData.totalValueCaptured}</p>
+          <p><strong>${getLabel("valueRealizationConclusion")}</strong>: ${containerData.valueRealizationConclusion}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return content;
+};
+
+
+// Print function
+const printCaseDetails = () => {
+  const printContent = generatePrintContent(aCase, formStructure);
+  
+  // Open a new window and print the generated content
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Print Case Details</title>
+      </head>
+      <body>
+        ${printContent}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
+};
   
 
   return (
