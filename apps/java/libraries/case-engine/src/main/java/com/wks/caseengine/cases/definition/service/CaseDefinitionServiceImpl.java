@@ -24,6 +24,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionFilter;
@@ -34,6 +35,7 @@ import com.wks.caseengine.cases.definition.command.GetCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.UpdateCaseDefinitionCmd;
 import com.wks.caseengine.command.CommandExecutor;
 import com.wks.caseengine.rest.entity.Case;
+import com.wks.caseengine.rest.entity.CaseAndRecommendationsMapping;
 //import com.wks.caseengine.rest.entity.Case;
 //import com.wks.caseengine.rest.entity.CaseAndOwnerMapping;
 import com.wks.caseengine.rest.entity.CaseCauseCategory;
@@ -54,12 +56,14 @@ import com.wks.caseengine.rest.model.CaseContainer;
 import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultDetail;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
 //import com.wks.caseengine.rest.repository.CaseAndOwnerMappingRepository;
 import com.wks.caseengine.rest.repository.CaseCauseCategoryRepository;
 import com.wks.caseengine.rest.repository.CaseCauseDescriptionRepository;
 import com.wks.caseengine.rest.repository.CaseDetailsRepository;
 import com.wks.caseengine.rest.repository.CaseIdSequenceRepository;
+import com.wks.caseengine.rest.repository.CaseRecommendationMappingRepository;
 import com.wks.caseengine.rest.repository.CaseRepository;
 //import com.wks.caseengine.rest.repository.CaseRepository;
 import com.wks.caseengine.rest.repository.CaseStatusRepository;
@@ -71,6 +75,8 @@ import com.wks.caseengine.rest.repository.EventsRepository;
 import com.wks.caseengine.rest.repository.FaultCategoryRepository;
 import com.wks.caseengine.rest.repository.FaultHistoryRepository;
 import com.wks.caseengine.rest.repository.FunctionalLocationRepository;
+
+import io.netty.util.internal.ThreadLocalRandom;
 //import com.wks.caseengine.rest.repository.OwnerDetailsRepository;
 
 @Component
@@ -115,8 +121,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     @Autowired
     private CasesAndEventsMappingRepository casesAndEventsMappingRepository;
     
-//    @Autowired
-//    private CaseAndOwnerMappingRepository caseAndOwnerMappingRepository;
+    @Autowired
+    private CaseRecommendationMappingRepository caseRecommendationMappingRepository;
 //    
     @Autowired
     private EquipmentsRepository equipmentsRepository;
@@ -280,27 +286,159 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
 		}
 		caseData.setHierarchyNodePKID(hierarchyNodePKID);
-		String caseNo = CaseNoGenerator();
-		caseData.setCaseNo(caseNo);
-		Case caseDetails  = caseRepository.save(caseData);
-		int i = 0;
-		System.out.println("Saving Case Details API....");
-		List<Long> eventIds = new ArrayList<Long>();
-		for(String eventId: caseData.getEventIds()) {
-			eventIds.add(Long.parseLong(eventId));
-		}
-		List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
-		HashMap<Long, String> map = new HashMap<Long, String>();
-		for(EventEnrichment eventEnrichment: eventEnrichmentList) {
-			map.put(eventEnrichment.getEventEnrichmentPkId().longValue(), eventEnrichment.getEventPkId().toString());
-		}
-		for(String eventId: caseData.getEventIds()) {
-			CasesAndEventsMapping mapping = new CasesAndEventsMapping();
-			mapping.setCaseNo(caseDetails.getCaseNo());
-			casesAndEventsMappingRepository.save(mapping);
-			System.out.println("EventId of: "+i+" is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
+		Case caseDetails = new Case();
+		String caseNo = caseData.getCaseNo();
+		if(caseNo==null || caseNo.length()==0) {
+			caseNo = CaseNoGenerator();
+			caseData.setCaseNo(caseNo);
+			caseDetails  = caseRepository.save(caseData);
+			int i = 0;
+			System.out.println("Saving New Case Details....");
+			List<Long> eventIds = new ArrayList<Long>();
+			for(String eventId: caseData.getEventIds()) {
+				eventIds.add(Long.parseLong(eventId));
+			}
+			List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
+			HashMap<Long, String> map = new HashMap<Long, String>();
+			for(EventEnrichment eventEnrichment: eventEnrichmentList) {
+				map.put(eventEnrichment.getEventEnrichmentPkId().longValue(), eventEnrichment.getEventPkId().toString());
+			}
+			for(String eventId: caseData.getEventIds()) {
+				CasesAndEventsMapping mapping = new CasesAndEventsMapping();
+				mapping.setCaseNo(caseDetails.getCaseNo());
+				casesAndEventsMappingRepository.save(mapping);
+				System.out.println("EventId of: "+i+" is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
+			}
+			List<Attribute> attributes = caseDetails.getAttributes();
+			for (Attribute attribute : attributes) {
+			    String attributeName = attribute.getName();
+			    String attributeValue = attribute.getValue();
+			    
+			    System.out.println("Attribute Name: " + attributeName);
+			    System.out.println("Attribute Value: " + attributeValue);
+			    saveRecommendations(attributeValue, caseNo);
+			}
+			
+		} else {
+			System.out.println("Saving Exsting Case Details....");
+			caseDetails  = caseRepository.save(caseData);
 		}
 		return caseDetails;
+	}
+	
+	private void saveRecommendations(String attributeValue, String caseNo) {
+		attributeValue = attributeValue.replace("\\\"", "\"");
+
+		System.out.println("Attribute Value: " + attributeValue);
+
+		try {
+		    ObjectMapper objectMapper = new ObjectMapper();
+		    JsonNode rootNode = objectMapper.readTree(attributeValue);
+
+		    // Navigate to the "dataGrid1" array
+		    JsonNode recommendationNode = rootNode.path("dataGrid1");
+		    if (recommendationNode.isArray()) {
+		        for (JsonNode dataGridEntry : recommendationNode) {
+		            System.out.println("recommendationHeadline: " + dataGridEntry.path("recommendationHeadline").asText());
+		            System.out.println("recommendationDescription1: " + dataGridEntry.path("recommendationDescription1").asText());
+		            System.out.println("recommendationAssignedTo1: " + dataGridEntry.path("recommendationAssignedTo1").asText());
+		            System.out.println("recommendationStatus: " + dataGridEntry.path("recommendationStatus").asText());
+		            System.out.println("equipmentFunctionLocation: " + dataGridEntry.path("equipmentFunctionLocation").asText());
+		            
+		            System.out.println("recommendationTargetCompletionDate1: " + dataGridEntry.path("recommendationTargetCompletionDate1").asText());
+		            System.out.println("recommendationReviewer: " + dataGridEntry.path("recommendationReviewer").asText());
+		            System.out.println("recommendationNo1: " + dataGridEntry.path("recommendationNo1").asText());
+		            System.out.println("RecommendationSubmit: " + dataGridEntry.path("RecommendationSubmit").asText());
+		            System.out.println("recommendationAssignedTo2: " + dataGridEntry.path("recommendationAssignedTo2").asText());
+		            
+		            Recommendations recommendation = new Recommendations();
+		            recommendation.setEquipmentFunctionLocation(dataGridEntry.path("equipmentFunctionLocation").asText());
+		            recommendation.setRecommendationAssignedTo1(dataGridEntry.path("recommendationAssignedTo1").asText());
+		            recommendation.setRecommendationAssignedTo2(dataGridEntry.path("recommendationAssignedTo2").asText());
+		            recommendation.setRecommendationDescription1(dataGridEntry.path("recommendationDescription1").asText());
+		            recommendation.setRecommendationHeadline(dataGridEntry.path("recommendationHeadline").asText());
+		            recommendation.setRecommendationNo1(dataGridEntry.path("recommendationNo1").asText());
+		            recommendation.setRecommendationReviewer(dataGridEntry.path("recommendationReviewer").asText());
+		            recommendation.setRecommendationStatus(dataGridEntry.path("recommendationStatus").asText());
+		            recommendation.setRecommendationSubmit(dataGridEntry.path("RecommendationSubmit").asText());
+		            recommendation.setRecommendationTargetCompletionDate1(dataGridEntry.path("recommendationTargetCompletionDate1").asText());
+		            
+		            String recommendationString = saveRecommendationMapping(dataGridEntry, caseNo);
+		            System.out.println(recommendationString);
+		        }
+		    }
+		} catch(Exception e) {
+		    e.printStackTrace();
+		}
+	}
+	
+	private String saveRecommendationMapping(JsonNode dataGridEntry, String caseNo) {
+		String recId = saveRecommendationGEAPMApi(dataGridEntry, caseNo);
+		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
+		caseRecommendationMapping.setCaseNo(caseNo);
+		caseRecommendationMapping.setRecId(recId);
+		caseRecommendationMapping.setRecommendationJson(dataGridEntry.toPrettyString().toString());
+		caseRecommendationMappingRepository.save(caseRecommendationMapping);
+		
+		return recId;
+	}
+	
+	private String saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo) {
+//		System.out.println("Calling Recommendation GEAPM API...");
+//		System.out.println("Calling Recommendation GEAPM API...");
+//		System.out.println(dataGridEntry.toPrettyString().toString());
+//		
+//		try {
+//			URL url = new URL("https://your-api-url.com/endpoint");
+//			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            conn.setRequestMethod("POST");
+//            conn.setRequestProperty("Content-Type", "application/json; utf-8");
+//            conn.setRequestProperty("Accept", "application/json");
+//            conn.setDoOutput(true);
+//            
+//            String jsonInputString = "{"
+//                    + "\"recommendationHeadline\":\"Headline\","
+//                    + "\"recommendationDescription1\":\"Description\","
+//                    + "\"recommendationAssignedTo1\":\"\","
+//                    + "\"recommendationStatus\":\"\","
+//                    + "\"equipmentFunctionLocation\":48,"
+//                    + "\"recommendationTargetCompletionDate1\":\"2024-10-15T00:00:00+05:30\","
+//                    + "\"recommendationReviewer\":\"Bhaumik.Darji@ril.com\","
+//                    + "\"recommendationNo1\":\"\","
+//                    + "\"RecommendationSubmit\":false,"
+//                    + "\"recommendationAssignedTo2\":\"Balasubramanian.R.Iyer@ril.com\","
+//                    + "\"RecommendationConfirm\":\"\""
+//                    + "}";
+//
+//            // Send the request
+//            try (OutputStream os = conn.getOutputStream()) {
+//                byte[] input = jsonInputString.getBytes("utf-8");
+//                os.write(input, 0, input.length);
+//            }
+//            
+//         // Read the response
+//            int responseCode = conn.getResponseCode();
+//            System.out.println("Response Code: " + responseCode);
+//
+//            try (Scanner scanner = new Scanner(conn.getInputStream())) {
+//                String responseBody = scanner.useDelimiter("\\A").next();
+//                System.out.println("Response Body: " + responseBody);
+//            }
+//
+//            conn.disconnect();
+//		} catch(Exception  e) {
+//			e.printStackTrace();
+//		}
+		 String prefix = "REC-";
+	        
+        // Generate a random number between 1 and 999999
+        int randomNumber = ThreadLocalRandom.current().nextInt(1, 1000000);
+        
+        // Format the random number as a 6-digit string with leading zeros
+        String formattedId = String.format("%06d", randomNumber);
+        
+        // Return the generated ID with the prefix
+        return prefix + formattedId;
 	}
 	
 	@Override

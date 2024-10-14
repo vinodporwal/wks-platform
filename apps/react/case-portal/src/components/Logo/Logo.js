@@ -6,7 +6,7 @@ const Logo = () => {
 
   return (
     <>
-      <img src={logo} alt='WKS Power' />
+      <img src={logo} width={120} height={70} alt='honeywell' />
 
       <svg
         width='118'

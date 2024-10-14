@@ -37,6 +37,8 @@ import { CaseService, FormService } from '../../services'
 import { tryParseJSONObject } from '../../utils/jsonStringCheck'
 import { TaskList } from '../taskList/taskList'
 import Documents from './Documents'
+import { Snackbar, SnackbarContent } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -57,6 +59,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [manualInitProcessDefs, setManualInitProcessDefs] = useState([])
 
   const [isFollowing, setIsFollowing] = useState(false)
+  const [isFormData, setIsFormData] = useState(false)
+
+  const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessages, setSnackbarMessages] = useState([]);
+  const [currentParams, setCurrentParams ] = useState([]);
+  const [lastCreatedCase, setLastCreatedCase] = useState(null);
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [formStructure, setFormStructure] = useState(null);
+  
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing)
   }
@@ -66,6 +78,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }, [open, aCase])
 
   useEffect(() => {
+    console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
     if (activeStage) {
       const stage = caseDef.stages.find((o) => o.name === activeStage)
       const stageProcesses = stage ? stage.processesDefinitions : []
@@ -84,27 +97,174 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     setAnchorEl(null)
   }
 
+  const handleCloseSnack = () => {
+    setSnackOpen(false);
+  };
+  
+
+
+  const snackAction = lastCreatedCase && (
+    <React.Fragment>
+      <Button
+        color="primary"
+        size="small"
+        onClick={() => {
+          navigate(`/case-list/create${currentParams}`);
+          handleCloseSnack();
+        }}
+      >
+        {lastCreatedCase.caseNo}
+      </Button>
+      <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnack}>
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </React.Fragment>
+  );
+
+
+
+
+  // const getCaseInfo = (aCase) => {
+  //   CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
+  //     .then((data) => {
+  //       setCaseDef(data)
+  //       setStages(
+  //         data.stages.sort((a, b) => a.index - b.index).map((o) => o.name),
+  //       )
+  //       return FormService.getByKey(keycloak, data.formKey)
+  //     })
+  //     .then((data) => {
+  //       setForm(data)
+  //       console.log('data', data);
+  //       return CaseService.getCaseById(keycloak, aCase.businessKey)
+  //     })
+  //     .then((caseData) => {
+  //       setComments(
+  //         caseData?.comments?.sort(
+  //           (a, b) =>
+  //             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  //         ),
+  //       )
+  //       setDocuments(caseData?.documents)
+  //       setFormData({
+  //         data: caseData.attributes.reduce(
+  //           (obj, item) =>
+  //             Object.assign(obj, {
+  //               [item.name]: tryParseJSONObject(item.value)
+  //                 ? JSON.parse(item.value)
+  //                 : item.value,
+  //             }),
+  //           {},
+  //         ),
+  //         metadata: {},
+  //         isValid: true,
+  //       })
+  //       setActiveStage(caseData.stage)
+  //     })
+  //     .catch((err) => {
+  //       console.log(err.message)
+  //     })
+  // }
+  
+  
   const getCaseInfo = (aCase) => {
+
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
-      .then((data) => {
-        setCaseDef(data)
+      .then(async (data) => {
+        setCaseDef(data);
         setStages(
-          data.stages.sort((a, b) => a.index - b.index).map((o) => o.name),
-        )
-        return FormService.getByKey(keycloak, data.formKey)
-      })
-      .then((data) => {
-        setForm(data)
-        return CaseService.getCaseById(keycloak, aCase.businessKey)
+          data.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
+        );
+
+        const formData = await FormService.getByKey(keycloak, data.formKey);
+        setFormStructure(formData)
+        if (formData && formData.structure && formData.structure.components) {
+          const updatedFormStructure = { ...formData };
+          console.log('formData', formData);
+  
+          // Disable fields (with proper null checks)
+          const level1 = updatedFormStructure.structure.components[0];
+          if (level1 && level1.components) {
+            const level2 = level1.components[0];
+            const level7 = level1.components.length > 8 ? level1.components[8] : null;
+            const level6 = level1.components.length > 6 ? level1.components[6] : null;
+            console.log('level6', level6)
+            if (level2 && level2.components) {
+              const caseDescriptionField = level2.components.length > 1 ? level2.components[1] : null;
+              if (caseDescriptionField) {
+                caseDescriptionField.disabled = false;
+              }
+  
+              const recommendation = level1.components.length > 5 ? level1.components[5] : null;
+              if (recommendation) {
+                recommendation.disabled = true;
+              }
+  
+              if (level2.components[0] && level2.components[0].columns) {
+                const caseNo = level2.components[0].columns.length > 1 ? level2.components[0].columns[0].components[0] : null;
+               
+                if (caseNo) {
+                  caseNo.calculateValue = `value = ${aCase.caseNo}`;
+                }
+
+                const caseTitleField = level2.components[0].columns.length > 1 ? level2.components[0].columns[1].components[0] : null;
+                if (caseTitleField) {
+                  caseTitleField.disabled = true;
+                }
+  
+                const caseAssign = level2.components[0].columns.length > 2 ? level2.components[0].columns[2].components[0] : null;
+                if (caseAssign) {
+                  caseAssign.disabled = true;
+                }
+                console.log('aCase', aCase)
+
+                // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
+                // console.log('caseAssign1', caseAssign1, aCase)
+                // if (caseAssign1) {
+                //   caseAssign1.defaultValue = `1_true`;
+                // }
+                
+              }
+  
+              if (level7 && level7.columns) {
+                const saveAsDraft = level7.columns.length > 2 ? level7.columns[2].components[0] : null;
+                if (saveAsDraft) {
+                  saveAsDraft.hidden = false;
+                }
+  
+                const saveButton = level7.columns.length > 3 ? level7.columns[3].components[0] : null;
+                if (saveButton) {
+                  saveButton.hidden = false;
+                }
+              }
+
+              if (level6) {
+                const recommendationDescription = level6.components[0].components[0].columns[0].components[1];
+                if (recommendationDescription) {
+                  recommendationDescription.disabled = !(aCase.owner?.email === keycloak.idTokenParsed?.email);
+                }
+                // console.log('saveAsDraft', recommendationDescription)
+              }
+            }
+          }
+  
+  
+          setForm(updatedFormStructure);
+        } else {
+          console.error("Form structure or components are undefined.");
+        }
+        setIsFormData(true)
+
+        return CaseService.getCaseById(keycloak, aCase.businessKey);
+
       })
       .then((caseData) => {
         setComments(
           caseData?.comments?.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          ),
-        )
-        setDocuments(caseData?.documents)
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        );
+        setDocuments(caseData?.documents);
         setFormData({
           data: caseData.attributes.reduce(
             (obj, item) =>
@@ -113,19 +273,189 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   ? JSON.parse(item.value)
                   : item.value,
               }),
-            {},
+            {}
           ),
           metadata: {},
           isValid: true,
-        })
-        setActiveStage(caseData.stage)
+        });
+        setActiveStage(caseData.stage);
       })
       .catch((err) => {
-        console.log(err.message)
-      })
-  }
+        console.log(err.message);
+      });
+  };
 
+
+
+  const onSave = () => {
+    const currentParams = window.location.search;
+    setCurrentParams(currentParams);
+    const urlParams = new URLSearchParams(window.location.search);
+  
+    const assetName = urlParams.get('assetName') || 'default';
+    const hierarchyName = urlParams.get('hierarchyName') || 'default';
+    const eventIdsParam = urlParams.get('eventIds');
+    const sourceSystem = urlParams.get('sourceSystem') || 'default';
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value: typeof formData.data[key] !== 'object'
+        ? formData.data[key]
+        : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }));
+  
+
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '',
+        },
+        attributes: caseAttributes,
+      })
+    )
+      .then((data) => {
+        const businessKey = data.businessKey; 
+
+        return CaseService.saveCase(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+          })
+        );
+      })
+      .then((data) => {
+        setLastCreatedCase(data);
+        setSnackOpen(true); 
+        setTimeout(() => {
+          handleClose();
+        }, 6000);
+      })
+      .catch((err) => {
+        console.error(err.message);
+      });
+  };
+
+
+
+  const onSubmitRecommendation = (event) => {
+    console.log('event onSubmitRecommendation', event);
+  
+    const { recommendationReviewer, recommendationAssignedTo1, recommendationHeadline, recommendationTargetCompletionDate1, RecommendationConfirm } = event.data;
+  
+    const missingFields = [];
+    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
+    if (!recommendationAssignedTo1) missingFields.push('Recommendation Assigned To');
+    if (!recommendationHeadline) missingFields.push('Recommendation Headline');
+    if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
+    
+    // New validation for RecommendationConfirm
+    if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
+      missingFields.push('Recommendation Confirm');
+    }
+  
+    if (missingFields.length > 0) {
+      setSnackbarMessages(missingFields);
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        setSnackbarOpen(false);
+      }, 6000);
+      return;
+    }
+  
+    setSnackbarMessages([]);
+    // event.component.disabled = true;
+  };
+
+
+  const onSubmitForm = () => {
+    const currentParams = window.location.search;
+    setCurrentParams(currentParams);
+    const urlParams = new URLSearchParams(window.location.search);
+  
+    const assetName = urlParams.get('assetName') || 'default';
+    const hierarchyName = urlParams.get('hierarchyName') || 'default';
+    const eventIdsParam = urlParams.get('eventIds');
+    const sourceSystem = urlParams.get('sourceSystem') || 'default';
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value: typeof formData.data[key] !== 'object'
+        ? formData.data[key]
+        : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }));
+  
+    // First API call to createCase to get the businessKey
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '',
+        },
+        attributes: caseAttributes,
+      })
+    )
+      .then((data) => {
+        const businessKey = data.businessKey; // Extract businessKey from the response
+        // setLastCreatedCase(data);
+  
+        // Second API call to saveCase with the businessKey
+        return CaseService.saveCase(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey, // Include businessKey in the payload
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+          })
+        );
+      })
+      .then((data) => {
+        setLastCreatedCase(data);
+        setSnackOpen(true); // Show success notification
+        setTimeout(() => {
+          handleClose();
+        }, 6000);
+      })
+      .catch((err) => {
+        console.error(err.message);
+      });
+  };
+  
+  
   const handleMainTabChanged = (event, newValue) => {
+    console.log(event, newValue)
     setMainTabIndex(newValue)
   }
 
@@ -171,6 +501,36 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     handleCloseProcessesDialog()
   }
 
+ 
+  const printCaseDetails = () => {
+    // Add CSS rules to hide buttons, icons, and borders for print
+    const printStyles = `
+      <style>
+        @media print {
+          button, input[type="button"], .print-hidden, .fa, [ref="icon"] {
+            display: none !important;
+          }
+          * {
+            border: none !important;
+          }
+        }
+      </style>
+    `;
+  
+    // Insert print styles into the document head
+    document.head.insertAdjacentHTML('beforeend', printStyles);
+  
+    // Print the current page
+    window.print();
+  
+    // Optionally, remove the print styles after printing to avoid affecting the current page view
+    const styleElement = document.head.querySelector('style');
+    if (styleElement) {
+      document.head.removeChild(styleElement);
+    }
+  };
+  
+
   return (
     aCase &&
     caseDef &&
@@ -197,9 +557,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 <div>
                   {caseDef.name}: {aCase?.businessKey}
                 </div>
-                <div style={{ fontSize: '13px' }}>
+                {/* <div style={{ fontSize: '13px' }}>
                   {aCase?.statusDescription}
-                </div>
+                </div> */}
               </Typography>
               {aCase.status === CaseStatus.WipCaseStatus.description && (
                 <Button
@@ -252,14 +612,26 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   </Button>
                 </React.Fragment>
               )}
-              <Button
+              {/* <Button
                 color='inherit'
                 onClick={handleFollowClick}
                 startIcon={<NotificationsActiveIcon />}
               >
                 {isFollowing ? 'Unfollow' : 'Follow'}
+              </Button> */}
+              <Button
+                color="inherit"
+                onClick={printCaseDetails}
+              >
+                {'Print'}
               </Button>
 
+              <Button
+                color='inherit'
+                onClick={onSave}
+              >
+                {'Save'}
+              </Button>
               {/* Case Actions Menu */}
               <IconButton
                 edge='end'
@@ -315,13 +687,21 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           </Box>
 
           <Grid container spacing={2} sx={{ paddingLeft: 1, paddingRight: 1 }}>
-            <Grid item xs={12} sm={8}>
+            <Grid item xs={12}>
               <Box>
                 <Tabs value={mainTabIndex} onChange={handleMainTabChanged}>
                   <Tab
                     label={t('pages.caseform.tabs.details')}
                     {...a11yProps(0)}
                   />
+                  <Tab
+                    label={t('pages.caseform.tabs.attachments')}
+                    {...a11yProps(1)}
+                  />
+                  {/* <Tab
+                    label={t('pages.caseform.tabs.comments')}
+                    {...a11yProps(2)}
+                  /> */}
                 </Tabs>
               </Box>
               <Box
@@ -352,59 +732,68 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         <QuestionCircleOutlined />
                       </Tooltip>
                     </Box>
-                    <Form
+                    {isFormData && <Form
                       form={form.structure}
                       submission={formData}
                       options={{
-                        readOnly: true,
+                        // readOnly: true,
                         fileService: new StorageService(),
                       }}
+                      onSubmit={(submission) => {
+                        console.log('Validation passed:', true); 
+                        console.log('Form data:', submission); 
+        
+                        onSave(submission)
+                      }}
+                      onCustomEvent={(event) => {
+                        if (event.component.key === 'saveAsDraft') {
+                          onSubmitForm(); 
+                        } else if (event.component.key === 'RecommendationSubmit') {
+                          onSubmitRecommendation(event); 
+                        }
+        
+                      }}
+                    />}
+                    <Snackbar
+                      open={snackbarOpen}
+                      autoHideDuration={6000}
+                      onClose={() => setSnackbarOpen(false)}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    >
+                      <SnackbarContent
+                        message={
+                          <div>
+                            <Typography variant="body2" color="error" component="div">
+                              The following fields are required:
+                            </Typography>
+                            {snackbarMessages.map((message, index) => (
+                              <Typography key={index} variant="body2" component="div">
+                                - {message}
+                              </Typography>
+                            ))}
+                          </div>
+                        }
+                        action={
+                          <Button color="secondary" size="small" onClick={() => setSnackbarOpen(false)}>
+                            Close
+                          </Button>
+                        }
+                      />
+                    </Snackbar>
+                    <Snackbar
+                      open={snackOpen}
+                      autoHideDuration={6000}
+                      message="Case saved as draft"
+                      onClose={handleCloseSnack}
+                      action={snackAction}
                     />
                   </Grid>
                 </TabPanel>
-              </Box>
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
-              <Box>
-                <Tabs value={rightTabIndex} onChange={handleRightTabChanged}>
-                  <Tab
-                    label={t('pages.caseform.tabs.tasks')}
-                    {...a11yProps(0)}
-                  />
-                  <Tab
-                    label={t('pages.caseform.tabs.emails')}
-                    {...a11yProps(1)}
-                  />
-                  <Tab
-                    label={t('pages.caseform.tabs.attachments')}
-                    {...a11yProps(2)}
-                  />
-                  <Tab
-                    label={t('pages.caseform.tabs.comments')}
-                    {...a11yProps(3)}
-                  />
-                </Tabs>
-              </Box>
-              <Box
-                sx={{ border: 1, borderColor: 'divider', borderRadius: '5px' }}
-              >
-                <TabPanel value={rightTabIndex} index={0}>
-                  <TaskList
-                    businessKey={aCase.businessKey}
-                    callback={updateActiveState}
-                  />
-                </TabPanel>
-
-                <TabPanel value={rightTabIndex} index={1}>
-                  <CaseEmailsList caseInstanceBusinessKey={aCase.businessKey} />
-                </TabPanel>
-
-                <TabPanel value={rightTabIndex} index={2}>
+                <TabPanel value={mainTabIndex} index={1}>
                   <Documents aCase={aCase} initialValue={documents || []} />
                 </TabPanel>
 
-                <TabPanel value={rightTabIndex} index={3}>
+                <TabPanel value={mainTabIndex} index={2}>
                   <Grid
                     container
                     spacing={2}
@@ -421,6 +810,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 </TabPanel>
               </Box>
             </Grid>
+
+
           </Grid>
         </Dialog>
 
@@ -452,6 +843,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 </React.Fragment>
               ))}
             </List>
+        
           </Dialog>
         )}
       </div>

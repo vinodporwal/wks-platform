@@ -43,6 +43,8 @@ const defs = {
     caselist: {
       datagrid: {
         columns: {
+          caseNumber: 'Case No.',
+          caseTitle: 'Case Title',
           businesskey: 'Business Key',
           statusdescription: 'Status',
           stage: 'Stage',

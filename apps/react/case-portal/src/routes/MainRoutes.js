@@ -10,6 +10,7 @@ import { ProcessDefList } from 'views/management/processDef/processDefList'
 import { FormList } from 'views/management/form/formList'
 import { RecordTypeList } from 'views/management/recordType/recordTypeList'
 import { QueueList } from 'views/management/queue/queueList'
+import { NewCaseFormPage } from 'views/caseForm/NewCaseFormPage'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -32,6 +33,10 @@ export const MainRoutes = (
       {
         path: 'home',
         element: <DashboardDefault />,
+      },
+      {
+        path: 'create',
+        element: <NewCaseFormPage />,
       },
       {
         path: 'case-list',
