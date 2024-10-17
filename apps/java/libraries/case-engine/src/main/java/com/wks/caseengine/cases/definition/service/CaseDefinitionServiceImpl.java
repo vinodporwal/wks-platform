@@ -338,6 +338,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		    // Navigate to the "dataGrid1" array
 		    JsonNode recommendationNode = rootNode.path("dataGrid1");
 		    if (recommendationNode.isArray()) {
+		    	int counter = 0;
 		        for (JsonNode dataGridEntry : recommendationNode) {
 		            System.out.println("recommendationHeadline: " + dataGridEntry.path("recommendationHeadline").asText());
 		            System.out.println("recommendationDescription1: " + dataGridEntry.path("recommendationDescription1").asText());
