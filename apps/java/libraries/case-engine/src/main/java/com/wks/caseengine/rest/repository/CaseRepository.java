@@ -15,4 +15,7 @@ public interface CaseRepository extends JpaRepository<Case, Long> {
 
 	@Query(value =" select * from cases where hierarchy_node_pk_id in (:assetsPKIds)", nativeQuery = true)
 	List<Case> findAllByAssetsPKID(@Param(value="assetsPKIds") List<String> assetsPKIds);
+
+	@Query(value =" select * from cases where case_no =:case_no", nativeQuery = true)
+	Case getByCaseNo(@Param(value="case_no") String case_no);
 }

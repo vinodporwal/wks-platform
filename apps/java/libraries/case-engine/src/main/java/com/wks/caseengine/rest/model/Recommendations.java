@@ -20,6 +20,14 @@ public class Recommendations {
     private String RecommendationSubmit;
     
     private String recommendationAssignedTo2;
+    
+    private boolean RecommendationSubmit3;
+    
+    private String RecommendationConfirmSAP3;
+    
+    private boolean deleteRowButton4;
+    
+    private String caseNo;
 
 	public String getRecommendationHeadline() {
 		return recommendationHeadline;
@@ -99,5 +107,37 @@ public class Recommendations {
 
 	public void setRecommendationAssignedTo2(String recommendationAssignedTo2) {
 		this.recommendationAssignedTo2 = recommendationAssignedTo2;
+	}
+
+	public boolean isRecommendationSubmit3() {
+		return RecommendationSubmit3;
+	}
+
+	public void setRecommendationSubmit3(boolean recommendationSubmit3) {
+		RecommendationSubmit3 = recommendationSubmit3;
+	}
+
+	public String getRecommendationConfirmSAP3() {
+		return RecommendationConfirmSAP3;
+	}
+
+	public void setRecommendationConfirmSAP3(String recommendationConfirmSAP3) {
+		RecommendationConfirmSAP3 = recommendationConfirmSAP3;
+	}
+
+	public boolean isDeleteRowButton4() {
+		return deleteRowButton4;
+	}
+
+	public void setDeleteRowButton4(boolean deleteRowButton4) {
+		this.deleteRowButton4 = deleteRowButton4;
+	}
+
+	public String getCaseNo() {
+		return caseNo;
+	}
+
+	public void setCaseNo(String caseNo) {
+		this.caseNo = caseNo;
 	}
 }

@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionFilter;
 import com.wks.caseengine.cases.definition.command.CreateCaseDefinitionCmd;
@@ -291,9 +293,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		if(caseNo==null || caseNo.length()==0) {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
-			caseDetails  = caseRepository.save(caseData);
-			int i = 0;
 			System.out.println("Saving New Case Details....");
+			caseDetails  = caseRepository.save(caseData);
+			
 			List<Long> eventIds = new ArrayList<Long>();
 			for(String eventId: caseData.getEventIds()) {
 				eventIds.add(Long.parseLong(eventId));
@@ -307,26 +309,32 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				CasesAndEventsMapping mapping = new CasesAndEventsMapping();
 				mapping.setCaseNo(caseDetails.getCaseNo());
 				casesAndEventsMappingRepository.save(mapping);
-				System.out.println("EventId of: "+i+" is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
+				System.out.println("EventId of is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
 			}
-			List<Attribute> attributes = caseDetails.getAttributes();
-			for (Attribute attribute : attributes) {
-			    String attributeName = attribute.getName();
-			    String attributeValue = attribute.getValue();
-			    
-			    System.out.println("Attribute Name: " + attributeName);
-			    System.out.println("Attribute Value: " + attributeValue);
-			    saveRecommendations(attributeValue, caseNo);
-			}
-			
 		} else {
 			System.out.println("Saving Exsting Case Details....");
 			caseDetails  = caseRepository.save(caseData);
 		}
+		
+		int i = 0;
+		List<Attribute> attributes = caseDetails.getAttributes();
+		for (Attribute attribute : attributes) {
+		    String attributeName = attribute.getName();
+		    String attributeValue = attribute.getValue();
+		    
+		    System.out.println("Attribute Name: " + attributeName);
+		    System.out.println("Attribute Value: " + attributeValue);
+		    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
+		    attribute.setValue(updatedAttribute);
+		}
+		System.out.println("After Updating Attributes...");
+		System.out.println(attributes.get(0).getValue());
+		caseData.setAttributes(attributes);
+		caseDetails = caseRepository.save(caseData);
 		return caseDetails;
 	}
 	
-	private void saveRecommendations(String attributeValue, String caseNo) {
+	private String saveRecommendations(String attributeValue, String caseNo) {
 		attributeValue = attributeValue.replace("\\\"", "\"");
 
 		System.out.println("Attribute Value: " + attributeValue);
@@ -364,13 +372,20 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		            recommendation.setRecommendationSubmit(dataGridEntry.path("RecommendationSubmit").asText());
 		            recommendation.setRecommendationTargetCompletionDate1(dataGridEntry.path("recommendationTargetCompletionDate1").asText());
 		            
-		            String recommendationString = saveRecommendationMapping(dataGridEntry, caseNo);
-		            System.out.println(recommendationString);
+		            String GEAPMrecommendationId = saveRecommendationMapping(dataGridEntry, caseNo);
+		            System.out.println("GEPM Recommendation ID: "+GEAPMrecommendationId);
+		            ((ObjectNode) dataGridEntry).put("recommendationNo1", GEAPMrecommendationId);
+		            
+		            System.out.println("Updated recommendationAssignedTo2: " + dataGridEntry.path("recommendationAssignedTo2").asText());
 		        }
 		    }
+		    String updatedAttributeValue = objectMapper.writeValueAsString(rootNode);
+            System.out.println("Updated Attribute Value: " + updatedAttributeValue);
+            return updatedAttributeValue;
 		} catch(Exception e) {
 		    e.printStackTrace();
 		}
+		return null;
 	}
 	
 	private String saveRecommendationMapping(JsonNode dataGridEntry, String caseNo) {
@@ -499,5 +514,65 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			locations = functionalLocationRepository.findAll();
 		}
 		return locations;
+	}
+	
+	
+	@Override
+	public Case addRecommendation(Recommendations recommendation) {
+		String caseNo = recommendation.getCaseNo();
+		Case caseDetails = caseRepository.getByCaseNo(caseNo);
+		for(Attribute attribute: caseDetails.getAttributes()) {
+			String attributeValue = attribute.getValue();
+			String updatedAttributeValue = saveRecommendations(attributeValue, caseNo, recommendation);
+			attribute.setValue(updatedAttributeValue);
+		}
+		System.out.println("After processing everything...");
+		System.out.println("..."+ caseDetails.getAttributes().get(0).getValue());
+		caseDetails = caseRepository.save(caseDetails);
+		return caseDetails;
+	}
+	
+	private String saveRecommendations(String attributeValue, String caseNo, Recommendations newRecommendation) {
+	    attributeValue = attributeValue.replace("\\\"", "\"");
+
+	    System.out.println("Attribute Value: " + attributeValue);
+
+	    try {
+	        ObjectMapper objectMapper = new ObjectMapper();
+	        JsonNode rootNode = objectMapper.readTree(attributeValue);
+
+	        // Navigate to the "dataGrid1" array
+	        JsonNode recommendationNode = rootNode.path("dataGrid1");
+	        if (recommendationNode.isArray()) {
+	            ArrayNode dataGridArray = (ArrayNode) recommendationNode; // Cast to ArrayNode for appending new elements
+
+	            // Convert the new recommendation object to a JSON node
+	            ObjectNode newRecommendationNode = objectMapper.createObjectNode();
+	            newRecommendationNode.put("recommendationHeadline", newRecommendation.getRecommendationHeadline());
+	            newRecommendationNode.put("recommendationDescription1", newRecommendation.getRecommendationDescription1());
+	            newRecommendationNode.put("recommendationAssignedTo1", newRecommendation.getRecommendationAssignedTo1());
+	            newRecommendationNode.put("recommendationAssignedTo2", newRecommendation.getRecommendationAssignedTo2());
+	            newRecommendationNode.put("recommendationStatus", newRecommendation.getRecommendationStatus());
+	            newRecommendationNode.put("equipmentFunctionLocation", newRecommendation.getEquipmentFunctionLocation());
+	            newRecommendationNode.put("recommendationTargetCompletionDate1", newRecommendation.getRecommendationTargetCompletionDate1());
+	            newRecommendationNode.put("recommendationReviewer", newRecommendation.getRecommendationReviewer());
+	            newRecommendationNode.put("recommendationNo1", newRecommendation.getRecommendationNo1());
+	            newRecommendationNode.put("RecommendationSubmit", newRecommendation.getRecommendationSubmit());
+
+	            // Append the new recommendation node to the dataGrid1 array
+	            
+	            String GEAPMrecommendationId = saveRecommendationMapping(newRecommendationNode, caseNo);
+	            
+	            newRecommendationNode.put("recommendationNo1", GEAPMrecommendationId);
+	            dataGridArray.add(newRecommendationNode);
+	            // Convert the updated root node back to a string
+	            String updatedAttributeValue = objectMapper.writeValueAsString(rootNode);
+	            System.out.println("Updated Attribute Value: " + updatedAttributeValue);
+	            return updatedAttributeValue;
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
 	}
 }

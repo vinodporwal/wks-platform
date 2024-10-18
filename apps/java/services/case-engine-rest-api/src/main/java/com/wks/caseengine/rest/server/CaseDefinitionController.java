@@ -43,6 +43,7 @@ import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -123,6 +124,12 @@ public class CaseDefinitionController {
 	@PostMapping("/save-case")
     public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
         Case savedCase = caseDefinitionService.saveCase(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	@PostMapping("/save-recommendation")
+    public ResponseEntity<Case> addRecommendation(@RequestBody Recommendations recommendations) {
+        Case savedCase = caseDefinitionService.addRecommendation(recommendations);
         return ResponseEntity.ok(savedCase);
     }
 	

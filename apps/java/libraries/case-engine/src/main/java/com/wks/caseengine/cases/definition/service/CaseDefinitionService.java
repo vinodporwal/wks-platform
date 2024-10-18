@@ -24,6 +24,7 @@ import com.wks.caseengine.rest.entity.FaultCategory;
 import com.wks.caseengine.rest.entity.FunctionalLocation;
 import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
 
 public interface CaseDefinitionService {
@@ -59,5 +60,7 @@ public interface CaseDefinitionService {
 	List<Users> getUserList();
 
 	List<FunctionalLocation> getFunctionalLocations(List<Long> eventIds);
+
+	Case addRecommendation(Recommendations recommendations);
 
 }
