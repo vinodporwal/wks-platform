@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -575,4 +576,13 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    }
 	    return null;
 	}
+	
+	@Scheduled(cron = "0 0/1 * * * ?")// You can adjust this cron expression to run at a specific time (e.g., every day at noon)
+    public void scheduleTask() {
+        System.out.println("Scheduler triggered");
+        List<Case> cases = caseRepository.findAll();
+        System.out.println("Cases fetahed: "+ cases.size());
+//        System.out.println("")
+    }
+
 }
