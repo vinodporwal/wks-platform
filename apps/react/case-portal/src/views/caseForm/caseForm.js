@@ -2,7 +2,6 @@ import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined'
 import { Form } from '@formio/react'
 import CloseIcon from '@mui/icons-material/Close'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import { Grid } from '@mui/material'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
@@ -32,14 +31,13 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProcessDefService } from 'services/ProcessDefService'
 import { Comments } from 'views/caseComment/Comments'
-import { CaseEmailsList } from 'views/caseEmail/caseEmailList'
 import { CaseService, FormService } from '../../services'
 import { tryParseJSONObject } from '../../utils/jsonStringCheck'
-import { TaskList } from '../taskList/taskList'
 import Documents from './Documents'
 import { Snackbar, SnackbarContent } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import logo from 'assets/images/logo.svg';
+import { DialogActions, DialogContent, DialogContentText } from '@mui/material';
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -48,7 +46,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [comments, setComments] = useState(null)
   const [documents, setDocuments] = useState(null)
   const [mainTabIndex, setMainTabIndex] = useState(0)
-  const [rightTabIndex, setRightTabIndex] = useState(0)
+  // const [rightTabIndex, setRightTabIndex] = useState(0)
   const [activeStage, setActiveStage] = React.useState(0)
   const [stages, setStages] = useState([])
   const { t } = useTranslation()
@@ -59,7 +57,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [openProcessesDialog, setOpenProcessesDialog] = useState(false)
   const [manualInitProcessDefs, setManualInitProcessDefs] = useState([])
 
-  const [isFollowing, setIsFollowing] = useState(false)
+  // const [isFollowing, setIsFollowing] = useState(false)
   const [isFormData, setIsFormData] = useState(false)
 
   const navigate = useNavigate();
@@ -69,10 +67,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [lastCreatedCase, setLastCreatedCase] = useState(null);
   const [snackOpen, setSnackOpen] = useState(false);
   const [formStructure, setFormStructure] = useState(null);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   
-  const handleFollowClick = () => {
-    setIsFollowing(!isFollowing)
-  }
+  // const handleFollowClick = () => {
+  //   setIsFollowing(!isFollowing)
+  // }
+  
 
   useEffect(() => {
     getCaseInfo(aCase)
@@ -100,6 +100,17 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const handleCloseSnack = () => {
     setSnackOpen(false);
+  };
+
+  const handleConfirmSubmit = () => {
+    // Proceed with the submit action if confirmed
+    console.log('Submit confirmed');
+    setIsConfirmationOpen(false); // Close the dialog
+    // Add your submission logic here
+  };
+
+  const handleCancelSubmit = () => {
+    setIsConfirmationOpen(false); // Close the dialog if canceled
   };
   
 
@@ -358,19 +369,45 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onSubmitRecommendation = (event) => {
     console.log('event onSubmitRecommendation', event);
+    let updatedFormData = JSON.parse(JSON.stringify(formData));
+
+    // Log the current formData to check its structure
+    console.log("Current formData:", updatedFormData);
   
-    const { recommendationReviewer, recommendationAssignedTo1, recommendationHeadline, recommendationTargetCompletionDate1, RecommendationConfirm } = event.data;
+    // Check if dataGrid1 exists inside the container
+    if (updatedFormData.data && updatedFormData.data.container && updatedFormData.data.container.dataGrid1) {
+      // Iterate through dataGrid1 and update the recommendationNo1 field for each row
+      updatedFormData.data.container.dataGrid1 = updatedFormData.data.container.dataGrid1.map((row, index) => {
+        console.log(`Updating row ${index}`, row);
+        // Set the recommendationNo1 field to '123'
+        return {
+          ...row,
+          recommendationNo1: '123'
+        };
+      });
+    } else {
+      console.error("dataGrid1 not found in the form data.");
+    }
+  
+    // Update the formData state with the modified values
+    setFormData(updatedFormData);
+  
+    // Log the updated formData to verify changes
+    console.log("Updated formData:", updatedFormData);
+  // Update the formData state with the new values
+  setFormData(updatedFormData);
+    const { recommendationReviewer, recommendationAssignedTo2, recommendationHeadline, recommendationTargetCompletionDate1 } = event.data;
   
     const missingFields = [];
     if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
-    if (!recommendationAssignedTo1) missingFields.push('Recommendation Assigned To');
+    if (!recommendationAssignedTo2) missingFields.push('Recommendation Assigned To');
     if (!recommendationHeadline) missingFields.push('Recommendation Headline');
     if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
     
     // New validation for RecommendationConfirm
-    if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
-      missingFields.push('Recommendation Confirm');
-    }
+    // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
+    //   missingFields.push('Recommendation Confirm');
+    // }
   
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields);
@@ -383,6 +420,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   
     setSnackbarMessages([]);
     // event.component.disabled = true;
+    setIsConfirmationOpen(true);
   };
 
 
@@ -456,13 +494,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   
   
   const handleMainTabChanged = (event, newValue) => {
-    console.log(event, newValue)
     setMainTabIndex(newValue)
   }
 
-  const handleRightTabChanged = (event, newValue) => {
-    setRightTabIndex(newValue)
-  }
+  // const handleRightTabChanged = (event, newValue) => {
+  //   setRightTabIndex(newValue)
+  // }
 
   const handleUpdateCaseStatus = (newStatus) => {
     CaseService.patch(
@@ -480,11 +517,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       })
   }
 
-  const updateActiveState = () => {
-    CaseService.getCaseById(keycloak, aCase.businessKey).then((data) =>
-      setActiveStage(data.stage),
-    )
-  }
+  // const updateActiveState = () => {
+  //   CaseService.getCaseById(keycloak, aCase.businessKey).then((data) =>
+  //     setActiveStage(data.stage),
+  //   )
+  // }
 
   const handleOpenProcessesDialog = () => {
     setOpenProcessesDialog(true)
@@ -567,9 +604,10 @@ const createLabelMapFromStructure = (structure) => {
 
 // Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
 const formatDataGrid = (dataGrid, getLabel) => {
+
   if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>';
 
-  const fieldsToSkip = ['textField1', 'RecommendationSubmit', 'recommendationAssignedTo1']; // Add any keys you want to skip here
+  const fieldsToSkip = ['textField1', 'RecommendationSubmit', 'recommendationAssignedTo1', 'deleteRowButton4', 'RecommendationSubmit3' ]; // Add any keys you want to skip here
 
   return dataGrid.map(item => {
     return `
@@ -592,6 +630,7 @@ const formatDataGrid = (dataGrid, getLabel) => {
 const generatePrintContent = (aCase, structure) => {
   const containerData = JSON.parse(aCase.attributes.find(attr => attr.name === "container").value);
   const labelMap = createLabelMapFromStructure(structure);
+  console.log('labelMap', labelMap)
   const getLabel = (key) => labelMap[key] || key;
 
   let content = `
@@ -722,7 +761,7 @@ const printCaseDetails = () => {
               </IconButton>
               <Typography sx={{ ml: 2, flex: 1 }} component='div'>
                 <div>
-                  {caseDef.name}: {aCase?.businessKey}
+                  {caseDef.name}: {aCase?.caseNo}
                 </div>
                 {/* <div style={{ fontSize: '13px' }}>
                   {aCase?.statusDescription}
@@ -913,14 +952,28 @@ const printCaseDetails = () => {
                         onSave(submission)
                       }}
                       onCustomEvent={(event) => {
+                        console.log('Form event:', event); 
                         if (event.component.key === 'saveAsDraft') {
                           onSubmitForm(); 
-                        } else if (event.component.key === 'RecommendationSubmit') {
+                        } else if (event.component.key === 'RecommendationSubmit3') {
                           onSubmitRecommendation(event); 
                         }
         
                       }}
                     />}
+                    <Dialog
+                      open={isConfirmationOpen}
+                      onClose={handleCancelSubmit}
+                    >
+                      <DialogTitle>Confirm Submission</DialogTitle>
+                      <DialogContent>
+                        <DialogContentText>Are you sure you want to submit this recommendation?</DialogContentText>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button onClick={handleCancelSubmit} color="primary">Cancel</Button>
+                        <Button onClick={handleConfirmSubmit} color="primary" autoFocus>Submit</Button>
+                      </DialogActions>
+                    </Dialog>
                     <Snackbar
                       open={snackbarOpen}
                       autoHideDuration={6000}
