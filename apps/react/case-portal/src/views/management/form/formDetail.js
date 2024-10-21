@@ -41,13 +41,13 @@ export const FormDetail = ({
       })
   }
 
-  const deleteForm = () => {
-    FormService.remove(keycloak, form.key)
-      .then(() => handleClose())
-      .catch((err) => {
-        console.log(err.message)
-      })
-  }
+  // const deleteForm = () => {
+  //   FormService.remove(keycloak, form.key)
+  //     .then(() => handleClose())
+  //     .catch((err) => {
+  //       console.log(err.message)
+  //     })
+  // }
 
   return (
     form && (

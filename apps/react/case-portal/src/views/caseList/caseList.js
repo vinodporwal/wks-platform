@@ -23,9 +23,9 @@ import React, {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CaseService } from '../../services'
-import { Grid, GridColumn } from '@progress/kendo-react-grid';
+// import { Grid, GridColumn } from '@progress/kendo-react-grid';
 import '@progress/kendo-theme-material/dist/all.css';
-import { useLocation } from 'react-router-dom';
+// import { useLocation } from 'react-router-dom';
 
 const DataGrid = lazy(() =>
   import('@mui/x-data-grid').then((module) => ({ default: module.DataGrid })),
@@ -40,11 +40,11 @@ const CaseForm = lazy(() =>
     default: module.CaseForm,
   })),
 )
-const NewCaseForm = lazy(() =>
-  import('../caseForm/newCaseForm').then((module) => ({
-    default: module.NewCaseForm,
-  })),
-)
+// const NewCaseForm = lazy(() =>
+//   import('../caseForm/newCaseForm').then((module) => ({
+//     default: module.NewCaseForm,
+//   })),
+// )
 const CaseNewFormPage = lazy(() =>
   import('../caseForm/NewCaseFormPage').then((module) => ({
     default: module.NewCaseFormPage,
@@ -75,7 +75,7 @@ export const CaseList = ({ status, caseDefId }) => {
     hasPrevious: false,
     hasNext: false,
   })
-  const location = useLocation();
+  // const location = useLocation();
 
   useEffect(() => {
     if (Config.WebsocketsEnabled) {
@@ -204,18 +204,18 @@ export const CaseList = ({ status, caseDefId }) => {
     ]
   }
 
-  const handleOpenCaseForm = (selectedCase) => {
-    setACase(selectedCase);  // Set the selected case to be displayed in the form
-    setOpenCaseForm(true);   // Open the case form modal
-  };
+  // const handleOpenCaseForm = (selectedCase) => {
+  //   setACase(selectedCase);  // Set the selected case to be displayed in the form
+  //   setOpenCaseForm(true);   // Open the case form modal
+  // };
 
-  const handlePageChange = (event) => {
-    const newPage = {
-      limit: event.page.take,
-      skip: event.page.skip,
-    };
-    fetchCases(setFetching, keycloak, caseDefId, setStages, status, newPage, setCases, setFilter);
-  };
+  // const handlePageChange = (event) => {
+  //   const newPage = {
+  //     limit: event.page.take,
+  //     skip: event.page.skip,
+  //   };
+  //   fetchCases(setFetching, keycloak, caseDefId, setStages, status, newPage, setCases, setFilter);
+  // };
 
   const handleCloseCaseForm = () => {
     setOpenCaseForm(false)

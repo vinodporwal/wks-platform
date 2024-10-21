@@ -35,6 +35,7 @@ export const NewCaseFormPage = ({
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessages, setSnackbarMessages] = useState([]);
   const [currentParams, setCurrentParams ] = useState([]);
+  const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
 
 
   useEffect(() => {
@@ -137,20 +138,19 @@ export const NewCaseFormPage = ({
 
 
   const onSubmitRecommendation = (event) => {
-    console.log('event onSubmitRecommendation', event);
   
-    const { recommendationReviewer, recommendationAssignedTo1, recommendationHeadline, recommendationTargetCompletionDate1, RecommendationConfirm } = event.data;
+    const { recommendationReviewer, recommendationAssignedTo2, recommendationHeadline, recommendationTargetCompletionDate1 } = event.data;
   
     const missingFields = [];
     if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
-    if (!recommendationAssignedTo1) missingFields.push('Recommendation Assigned To');
+    if (!recommendationAssignedTo2) missingFields.push('Recommendation Assigned To');
     if (!recommendationHeadline) missingFields.push('Recommendation Headline');
     if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
     
     // New validation for RecommendationConfirm
-    if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
-      missingFields.push('Recommendation Confirm');
-    }
+    // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
+    //   missingFields.push('Recommendation Confirm');
+    // }
   
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields);
@@ -304,16 +304,28 @@ export const NewCaseFormPage = ({
 
                 onSave(submission)
               }}
+              onError={(error) => {
+                console.log('Validation failed:', error); 
+                setValidationSnackbarOpen(true);
+              }}
+              onChange={(submission) => {
+                console.log('submission submission:', submission); 
+                }}
               onCustomEvent={(event) => {
+                console.log('event event:', event);
                 if (event.component.key === 'saveAsDraft') {
                   onSubmitForm(); 
-                } else if (event.component.key === 'RecommendationSubmit') {
+                } else if (event.component.key === 'RecommendationSubmit3') {
                   onSubmitRecommendation(event); 
                 }
 
               }}
             />
-      <Snackbar
+
+          </Grid>
+        </Grid>
+
+        <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={() => setSnackbarOpen(false)}
@@ -339,8 +351,28 @@ export const NewCaseFormPage = ({
           }
         />
       </Snackbar>
-          </Grid>
-        </Grid>
+
+        <Snackbar
+           open={validationSnackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setValidationSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <SnackbarContent
+            message={
+              <div>
+                <Typography variant="body2" color="error" component="div">
+                  {'Please fill the required fields'}
+                </Typography>
+              </div>
+            }
+            action={
+              <Button color="secondary" size="small" onClick={() => setValidationSnackbarOpen(false)}>
+                Close
+              </Button>
+            }
+          />
+        </Snackbar>
 
         <Snackbar
           open={snackOpen}

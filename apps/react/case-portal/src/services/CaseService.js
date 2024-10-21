@@ -112,7 +112,6 @@ async function getCaseDefinitionsById(keycloak, caseDefId) {
 }
 
 async function getCaseById(keycloak, id) {
-  console.log('id', id)
   let url = `${Config.CaseEngineUrl}/case/${id}`
 
   const headers = {
@@ -128,6 +127,7 @@ async function getCaseById(keycloak, id) {
   }
 }
 async function getCasesById(keycloak, caseDefId = '', assetName = '', hierarchyName = '') {
+  console.log('caseDefId', caseDefId)
   // Use '/cases' in the URL directly, not appending the caseDefId
   let url = `${Config.CaseEngineUrl}/case-definition/cases`;
 

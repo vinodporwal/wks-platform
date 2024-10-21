@@ -42,7 +42,8 @@ legend {
 
 .formio-component-datagrid .datagrid-table, .formio-component-datagrid .datagrid-table td, .formio-component-datagrid .datagrid-table th {
   font-weight: 400;
-  border: 1px solid #ddd !important;
+  border: 2px solid #ddd !important;
+  border-bottom: 4px double #ddd !important;
   /* padding: 10px; */
 }
 
@@ -140,12 +141,12 @@ input[disabled][id*="TextFaultEndTimeDate"].form-control {
   background-color: #ffffff !important; 
 }
 
-@media (min-width: 768px) {
+/* @media (min-width: 768px) {
   .col-md-1 {
       flex: 0 0 auto;
       width: 60px;
   }
-}
+} */
 
 .choices__list--dropdown .choices__item--choice {
   text-overflow: unset; 
@@ -166,4 +167,26 @@ input[disabled][id*="TextFaultEndTimeDate"].form-control {
   margin-top: 5px;
   display: none;
   margin-bottom: 10px;
+}
+
+/* .formio-component-datagrid .formio-button-remove-row {
+  display: none !important;
+}  */
+/* .formio-component-datagrid .datagrid-table tbody tr:first-child .formio-button-remove-row {
+  display: none !important;
+} */
+
+.formio-component-datagrid {
+  overflow-x: hidden;
+}
+
+.formio-error-wrapper, .formio-warning-wrapper {
+  padding: 0;
+}
+
+.alert-danger {
+  /* --bs-alert-color: #842029;
+  --bs-alert-bg: #f8d7da;
+  --bs-alert-border-color: #f5c2c7; */
+  display: none;
 }

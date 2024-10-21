@@ -3,7 +3,7 @@ import { QuestionCircleOutlined } from '@ant-design/icons'
 import CloseIcon from '@mui/icons-material/Close'
 import { Box, Tooltip } from '@mui/material'
 import AppBar from '@mui/material/AppBar'
-import Button from '@mui/material/Button'
+// import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
@@ -25,7 +25,7 @@ export const NewCaseForm = ({
   handleClose,
   caseDefId,
   setLastCreatedCase,
-  cases,
+  // cases,
 }) => {
   
   const [caseDef, setCaseDef] = useState([])

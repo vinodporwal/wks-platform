@@ -18,6 +18,8 @@ const App = () => {
   const [menu, setMenu] = useState({ items: [] })
 
   useEffect(() => {
+
+    localStorage.setItem('baseUrl', 'http://localhost:8081');
     const { keycloak } = sessionStore.bootstrap()
 
     const storedToken = localStorage.getItem('keycloakToken')

@@ -2,7 +2,6 @@ import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined'
 import { Form } from '@formio/react'
 import CloseIcon from '@mui/icons-material/Close'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive'
 import { Grid } from '@mui/material'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
@@ -32,13 +31,13 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProcessDefService } from 'services/ProcessDefService'
 import { Comments } from 'views/caseComment/Comments'
-import { CaseEmailsList } from 'views/caseEmail/caseEmailList'
 import { CaseService, FormService } from '../../services'
 import { tryParseJSONObject } from '../../utils/jsonStringCheck'
-import { TaskList } from '../taskList/taskList'
 import Documents from './Documents'
 import { Snackbar, SnackbarContent } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import logo from 'assets/images/logo.svg';
+import { DialogActions, DialogContent, DialogContentText } from '@mui/material';
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -47,7 +46,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [comments, setComments] = useState(null)
   const [documents, setDocuments] = useState(null)
   const [mainTabIndex, setMainTabIndex] = useState(0)
-  const [rightTabIndex, setRightTabIndex] = useState(0)
+  // const [rightTabIndex, setRightTabIndex] = useState(0)
   const [activeStage, setActiveStage] = React.useState(0)
   const [stages, setStages] = useState([])
   const { t } = useTranslation()
@@ -58,7 +57,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [openProcessesDialog, setOpenProcessesDialog] = useState(false)
   const [manualInitProcessDefs, setManualInitProcessDefs] = useState([])
 
-  const [isFollowing, setIsFollowing] = useState(false)
+  // const [isFollowing, setIsFollowing] = useState(false)
   const [isFormData, setIsFormData] = useState(false)
 
   const navigate = useNavigate();
@@ -68,10 +67,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [lastCreatedCase, setLastCreatedCase] = useState(null);
   const [snackOpen, setSnackOpen] = useState(false);
   const [formStructure, setFormStructure] = useState(null);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   
-  const handleFollowClick = () => {
-    setIsFollowing(!isFollowing)
-  }
+  // const handleFollowClick = () => {
+  //   setIsFollowing(!isFollowing)
+  // }
+  
 
   useEffect(() => {
     getCaseInfo(aCase)
@@ -99,6 +100,17 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const handleCloseSnack = () => {
     setSnackOpen(false);
+  };
+
+  const handleConfirmSubmit = () => {
+    // Proceed with the submit action if confirmed
+    console.log('Submit confirmed');
+    setIsConfirmationOpen(false); // Close the dialog
+    // Add your submission logic here
+  };
+
+  const handleCancelSubmit = () => {
+    setIsConfirmationOpen(false); // Close the dialog if canceled
   };
   
 
@@ -357,19 +369,45 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onSubmitRecommendation = (event) => {
     console.log('event onSubmitRecommendation', event);
+    let updatedFormData = JSON.parse(JSON.stringify(formData));
+
+    // Log the current formData to check its structure
+    console.log("Current formData:", updatedFormData);
   
-    const { recommendationReviewer, recommendationAssignedTo1, recommendationHeadline, recommendationTargetCompletionDate1, RecommendationConfirm } = event.data;
+    // Check if dataGrid1 exists inside the container
+    if (updatedFormData.data && updatedFormData.data.container && updatedFormData.data.container.dataGrid1) {
+      // Iterate through dataGrid1 and update the recommendationNo1 field for each row
+      updatedFormData.data.container.dataGrid1 = updatedFormData.data.container.dataGrid1.map((row, index) => {
+        console.log(`Updating row ${index}`, row);
+        // Set the recommendationNo1 field to '123'
+        return {
+          ...row,
+          recommendationNo1: '123'
+        };
+      });
+    } else {
+      console.error("dataGrid1 not found in the form data.");
+    }
+  
+    // Update the formData state with the modified values
+    setFormData(updatedFormData);
+  
+    // Log the updated formData to verify changes
+    console.log("Updated formData:", updatedFormData);
+  // Update the formData state with the new values
+  setFormData(updatedFormData);
+    const { recommendationReviewer, recommendationAssignedTo2, recommendationHeadline, recommendationTargetCompletionDate1 } = event.data;
   
     const missingFields = [];
     if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
-    if (!recommendationAssignedTo1) missingFields.push('Recommendation Assigned To');
+    if (!recommendationAssignedTo2) missingFields.push('Recommendation Assigned To');
     if (!recommendationHeadline) missingFields.push('Recommendation Headline');
     if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
     
     // New validation for RecommendationConfirm
-    if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
-      missingFields.push('Recommendation Confirm');
-    }
+    // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
+    //   missingFields.push('Recommendation Confirm');
+    // }
   
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields);
@@ -382,6 +420,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   
     setSnackbarMessages([]);
     // event.component.disabled = true;
+    setIsConfirmationOpen(true);
   };
 
 
@@ -455,13 +494,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   
   
   const handleMainTabChanged = (event, newValue) => {
-    console.log(event, newValue)
     setMainTabIndex(newValue)
   }
 
-  const handleRightTabChanged = (event, newValue) => {
-    setRightTabIndex(newValue)
-  }
+  // const handleRightTabChanged = (event, newValue) => {
+  //   setRightTabIndex(newValue)
+  // }
 
   const handleUpdateCaseStatus = (newStatus) => {
     CaseService.patch(
@@ -479,11 +517,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       })
   }
 
-  const updateActiveState = () => {
-    CaseService.getCaseById(keycloak, aCase.businessKey).then((data) =>
-      setActiveStage(data.stage),
-    )
-  }
+  // const updateActiveState = () => {
+  //   CaseService.getCaseById(keycloak, aCase.businessKey).then((data) =>
+  //     setActiveStage(data.stage),
+  //   )
+  // }
 
   const handleOpenProcessesDialog = () => {
     setOpenProcessesDialog(true)
@@ -501,34 +539,202 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     handleCloseProcessesDialog()
   }
 
- 
-  const printCaseDetails = () => {
-    // Add CSS rules to hide buttons, icons, and borders for print
-    const printStyles = `
-      <style>
-        @media print {
-          button, input[type="button"], .print-hidden, .fa, [ref="icon"] {
-            display: none !important;
+ // Function to get label for a given fault category value from localStorage
+const getFaultCategoryLabel = (value) => {
+  // Retrieve options from localStorage
+  const options = JSON.parse(localStorage.getItem('faultCategoryOptions')) || [];
+
+  // Find the option with the matching value and return its label
+  const matchingOption = options.find(option => option.value === value);
+  return matchingOption ? matchingOption.label : value; // Fallback to value if no match is found
+};
+
+ // Function to get label for a given fault category value from localStorage
+ const getcaseStatusLabel = (value) => {
+  // Retrieve options from localStorage
+  const options = JSON.parse(localStorage.getItem('caseStatusOptions')) || [];
+
+  // Find the option with the matching value and return its label
+  const matchingOption = options.find(option => option.value === value);
+  return matchingOption ? matchingOption.label : value; // Fallback to value if no match is found
+};
+
+const getEquipmentFunctionLocationLabel = (id) => {
+  const locations = JSON.parse(localStorage.getItem('functionalLocationOptions')) || [];
+  const location = locations.find(location => location.value === id);
+  return location ? location.label : id; // Return label if found, otherwise fallback to ID
+};
+
+// Function to dynamically create labelMap from the form structure
+const createLabelMapFromStructure = (structure) => {
+  const labelMap = {};
+
+  const extractLabels = (components) => {
+    if (!components || !Array.isArray(components)) return;
+
+    components.forEach((component) => {
+      if (component.key && component.label) {
+        labelMap[component.key] = component.label;
+      }
+
+      // Recursively check nested components
+      if (component.components) {
+        extractLabels(component.components);
+      }
+
+      // Handle columns in case they contain components
+      if (component.columns) {
+        component.columns.forEach((col) => {
+          if (col.components) {
+            extractLabels(col.components);
           }
-          * {
-            border: none !important;
-          }
-        }
-      </style>
-    `;
-  
-    // Insert print styles into the document head
-    document.head.insertAdjacentHTML('beforeend', printStyles);
-  
-    // Print the current page
-    window.print();
-  
-    // Optionally, remove the print styles after printing to avoid affecting the current page view
-    const styleElement = document.head.querySelector('style');
-    if (styleElement) {
-      document.head.removeChild(styleElement);
-    }
+        });
+      }
+    });
   };
+
+  // Check for nested structure and extract components from it
+  const mainComponents = structure.components || (structure.structure && structure.structure.components);
+  if (mainComponents) {
+    extractLabels(mainComponents);
+  }
+
+  return labelMap;
+};
+
+// Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
+const formatDataGrid = (dataGrid, getLabel) => {
+
+  if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>';
+
+  const fieldsToSkip = ['textField1', 'RecommendationSubmit', 'recommendationAssignedTo1', 'deleteRowButton4', 'RecommendationSubmit3' ]; // Add any keys you want to skip here
+
+  return dataGrid.map(item => {
+    return `
+      <div style="display: flex; flex-wrap: wrap; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
+        ${Object.entries(item).map(([key, value]) => 
+          fieldsToSkip.includes(key) ? '' : `
+            <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
+              <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
+              <p style="margin: 0;">
+                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || ""}
+              </p>
+            </div>
+        `).join('')}
+      </div>
+    `;
+  }).join('');
+};
+
+
+const generatePrintContent = (aCase, structure) => {
+  const containerData = JSON.parse(aCase.attributes.find(attr => attr.name === "container").value);
+  const labelMap = createLabelMapFromStructure(structure);
+  console.log('labelMap', labelMap)
+  const getLabel = (key) => labelMap[key] || key;
+
+  let content = `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <img src="${logo}" alt="Honeywell Logo" style="height: 50px; margin-right: 10px;">
+        <h2 style="text-align: center; margin: 0;">EED Case Management System</h2>
+      </div>
+
+      <!-- Case Information Panel -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("caseNo")}</strong>: ${aCase.caseNo}</p>
+          <p><strong>${getLabel("caseTitle")}</strong>: ${containerData.caseTitle}</p>
+          <p><strong>${getLabel("caseAssignedTo")}</strong>: ${containerData.caseAssignedTo}</p>
+          <p><strong>${getLabel("faultCategory")}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
+          <p><strong>${getLabel("caseDescription")}</strong>: ${containerData.caseDescription}</p>
+        </div>
+      </div>
+
+      <!-- Case Details -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("createdOn")}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
+          <p><strong>${getLabel("dueDate")}</strong>: ${containerData.dueDate || "N/A"}</p>
+          <p><strong>${getLabel("endDate")}</strong>: ${containerData.endDate || "N/A"}</p>
+          <p><strong>${getLabel("caseStatus")}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
+          <p><strong>${getLabel("analysisTeam")}</strong>: ${containerData.analysisTeam.join(", ")}</p>
+        </div>
+      </div>
+
+      <!-- Associated Faults -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
+        <p style="padding: 10px; margin: 0;"><strong>${getLabel("textField1")}</strong>: ${containerData.textField1}</p>
+        ${formatDataGrid(containerData.dataGrid2, getLabel)}
+      </div>
+  `;
+
+  // Conditional display based on RecommendationsRadio value
+  if (containerData.RecommendationsRadio === "no") {
+    content += `
+      <!-- Analysis -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("caseCauseCategory")}</strong>: ${containerData.caseCauseCategory}</p>
+          <p><strong>${getLabel("caseCauseDescription")}</strong>: ${containerData.caseCauseDescription?.label}</p>
+          <p><strong>${getLabel("analysisDesc")}</strong>: ${containerData.analysisDesc}</p>
+        </div>
+      </div>
+    `;
+  } else {
+    content += `
+      <!-- Data Grid 1 -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel("dataGrid1")}</h3>
+        ${formatDataGrid(containerData.dataGrid1, getLabel)}
+      </div>
+    `;
+  }
+
+  // Value Realization section
+  content += `
+      <!-- Value Realization -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel("valueRealizationCategory")}</strong>: ${containerData.valueRealizationCategory}</p>
+          <p><strong>${getLabel("productionLoss")}</strong>: ${containerData.productionLoss}</p>
+          <p><strong>${getLabel("manHoursCost")}</strong>: ${containerData.manHoursCost}</p>
+          <p><strong>${getLabel("spareCost")}</strong>: ${containerData.spareCost}</p>
+          <p><strong>${getLabel("totalValueCaptured")}</strong>: ${containerData.totalValueCaptured}</p>
+          <p><strong>${getLabel("valueRealizationConclusion")}</strong>: ${containerData.valueRealizationConclusion}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return content;
+};
+
+
+// Print function
+const printCaseDetails = () => {
+  const printContent = generatePrintContent(aCase, formStructure);
+  
+  // Open a new window and print the generated content
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Print Case Details</title>
+      </head>
+      <body>
+        ${printContent}
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.print();
+};
   
 
   return (
@@ -555,7 +761,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               </IconButton>
               <Typography sx={{ ml: 2, flex: 1 }} component='div'>
                 <div>
-                  {caseDef.name}: {aCase?.businessKey}
+                  {caseDef.name}: {aCase?.caseNo}
                 </div>
                 {/* <div style={{ fontSize: '13px' }}>
                   {aCase?.statusDescription}
@@ -746,14 +952,28 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         onSave(submission)
                       }}
                       onCustomEvent={(event) => {
+                        console.log('Form event:', event); 
                         if (event.component.key === 'saveAsDraft') {
                           onSubmitForm(); 
-                        } else if (event.component.key === 'RecommendationSubmit') {
+                        } else if (event.component.key === 'RecommendationSubmit3') {
                           onSubmitRecommendation(event); 
                         }
         
                       }}
                     />}
+                    <Dialog
+                      open={isConfirmationOpen}
+                      onClose={handleCancelSubmit}
+                    >
+                      <DialogTitle>Confirm Submission</DialogTitle>
+                      <DialogContent>
+                        <DialogContentText>Are you sure you want to submit this recommendation?</DialogContentText>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button onClick={handleCancelSubmit} color="primary">Cancel</Button>
+                        <Button onClick={handleConfirmSubmit} color="primary" autoFocus>Submit</Button>
+                      </DialogActions>
+                    </Dialog>
                     <Snackbar
                       open={snackbarOpen}
                       autoHideDuration={6000}
