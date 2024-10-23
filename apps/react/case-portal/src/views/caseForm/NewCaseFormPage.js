@@ -37,7 +37,11 @@ export const NewCaseFormPage = ({
   const [currentParams, setCurrentParams ] = useState([]);
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
 
-
+  useEffect(() => {
+    const params = window.location.search;
+    setCurrentParams(params);
+  }, []);
+  
   useEffect(() => {
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
@@ -63,8 +67,11 @@ export const NewCaseFormPage = ({
   };
 
   const handleClose = () => {
-    navigate('/home');
+    const params = currentParams.length > 0 ? currentParams : window.location.search;
+    console.log('currentParams', params);
+    navigate(`/case-list/create${params}`);
   };
+  
 
 
   const onSave = () => {

@@ -75,11 +75,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   
 
   useEffect(() => {
+    console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
+    console.log('{keycloak}', keycloak)
     getCaseInfo(aCase)
   }, [open, aCase])
 
   useEffect(() => {
-    console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
     if (activeStage) {
       const stage = caseDef.stages.find((o) => o.name === activeStage)
       const stageProcesses = stage ? stage.processesDefinitions : []
