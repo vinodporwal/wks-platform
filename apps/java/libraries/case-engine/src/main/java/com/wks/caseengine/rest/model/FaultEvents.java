@@ -1,31 +1,26 @@
 package com.wks.caseengine.rest.model;
 
-import com.wks.caseengine.rest.entity.EventCategory;
-import com.wks.caseengine.rest.entity.EventEnrichment;
-import com.wks.caseengine.rest.entity.Events;
-
 public class FaultEvents {
-	private EventEnrichment eventEnrichment;
-	private Events event;
-	private EventCategory eventCategory;
+	private EventEnrichmentModel eventEnrichment;
+	private EventsModel events;
+	private EventCategoryModel eventCategory;
 	private String AssetName;
-	
-	public EventEnrichment getEventEnrichment() {
+	public EventEnrichmentModel getEventEnrichment() {
 		return eventEnrichment;
 	}
-	public void setEventEnrichment(EventEnrichment eventEnrichment) {
+	public void setEventEnrichment(EventEnrichmentModel eventEnrichment) {
 		this.eventEnrichment = eventEnrichment;
 	}
-	public Events getEvent() {
-		return event;
+	public EventsModel getEvents() {
+		return events;
 	}
-	public void setEvent(Events event) {
-		this.event = event;
+	public void setEvents(EventsModel events) {
+		this.events = events;
 	}
-	public EventCategory getEventCategory() {
+	public EventCategoryModel getEventCategory() {
 		return eventCategory;
 	}
-	public void setEventCategory(EventCategory eventCategory) {
+	public void setEventCategory(EventCategoryModel eventCategory) {
 		this.eventCategory = eventCategory;
 	}
 	public String getAssetName() {

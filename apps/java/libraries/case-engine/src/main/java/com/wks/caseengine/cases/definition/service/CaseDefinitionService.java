@@ -15,14 +15,12 @@ import java.util.List;
 import java.util.Optional;
 
 import com.wks.caseengine.cases.definition.CaseDefinition;
-import com.wks.caseengine.rest.entity.Case;
-import com.wks.caseengine.rest.entity.CaseCauseCategory;
-import com.wks.caseengine.rest.entity.CaseCauseDescription;
-import com.wks.caseengine.rest.entity.CaseDetails;
-import com.wks.caseengine.rest.entity.CaseStatus;
-import com.wks.caseengine.rest.entity.FaultCategory;
-import com.wks.caseengine.rest.entity.FunctionalLocation;
-import com.wks.caseengine.rest.model.CasePayload;
+import com.wks.caseengine.rest.db2.entity.Case;
+import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
+import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
+import com.wks.caseengine.rest.db2.entity.CaseStatus;
+import com.wks.caseengine.rest.db2.entity.FaultCategory;
+import com.wks.caseengine.rest.db2.entity.FunctionalLocation;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
@@ -47,20 +45,22 @@ public interface CaseDefinitionService {
 	
 	List<CaseCauseDescription> getDescriptionsByCategory(Long categoryId);
 
-	CaseDetails saveCaseDetails(CasePayload  casePayload);
-
+//	CaseDetails saveCaseDetails(CasePayload  casePayload);
+//
 	List<FaultEvents> getAllEvents(List<Long> eventIds);
 
 	Case saveCase(Case caseData);
 
 	String CaseNoGenerator();
-
+//
 	List<Case> getCaseDetails(String assetName, String hierarchyName);
-
+//
 	List<Users> getUserList();
 
 	List<FunctionalLocation> getFunctionalLocations(List<Long> eventIds);
 
 	Case addRecommendation(Recommendations recommendations);
+
+	void sendEmail(String emailId, String subject, String body);
 
 }

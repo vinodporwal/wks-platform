@@ -11,18 +11,16 @@
  */
 package com.wks.caseengine.cases.definition.service;
 
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,50 +35,36 @@ import com.wks.caseengine.cases.definition.command.FindCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.GetCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.UpdateCaseDefinitionCmd;
 import com.wks.caseengine.command.CommandExecutor;
-import com.wks.caseengine.rest.entity.Case;
-import com.wks.caseengine.rest.entity.CaseAndRecommendationsMapping;
-//import com.wks.caseengine.rest.entity.Case;
-//import com.wks.caseengine.rest.entity.CaseAndOwnerMapping;
-import com.wks.caseengine.rest.entity.CaseCauseCategory;
-import com.wks.caseengine.rest.entity.CaseCauseDescription;
-import com.wks.caseengine.rest.entity.CaseDetails;
-import com.wks.caseengine.rest.entity.CaseIdSequences;
-import com.wks.caseengine.rest.entity.CaseStatus;
-import com.wks.caseengine.rest.entity.CasesAndEventsMapping;
-import com.wks.caseengine.rest.entity.EventCategory;
-import com.wks.caseengine.rest.entity.EventEnrichment;
-import com.wks.caseengine.rest.entity.Events;
-import com.wks.caseengine.rest.entity.FaultCategory;
-import com.wks.caseengine.rest.entity.FaultHistory;
-import com.wks.caseengine.rest.entity.FunctionalLocation;
-import com.wks.caseengine.rest.entity.OwnerDetails;
+import com.wks.caseengine.rest.db1.repository.EventEnrichmentRepository;
+import com.wks.caseengine.rest.db2.entity.Case;
+import com.wks.caseengine.rest.db2.entity.CaseAndRecommendationsMapping;
+import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
+import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
+import com.wks.caseengine.rest.db2.entity.CaseIdSequences;
+import com.wks.caseengine.rest.db2.entity.CaseStatus;
+import com.wks.caseengine.rest.db2.entity.CasesAndEventsMapping;
+import com.wks.caseengine.rest.db2.entity.FaultCategory;
+import com.wks.caseengine.rest.db2.entity.FunctionalLocation;
+import com.wks.caseengine.rest.db2.entity.OwnerDetails;
+import com.wks.caseengine.rest.db2.repository.CaseCauseCategoryRepository;
+import com.wks.caseengine.rest.db2.repository.CaseCauseDescriptionRepository;
+import com.wks.caseengine.rest.db2.repository.CaseIdSequenceRepository;
+import com.wks.caseengine.rest.db2.repository.CaseRecommendationMappingRepository;
+import com.wks.caseengine.rest.db2.repository.CaseRepository;
+import com.wks.caseengine.rest.db2.repository.CaseStatusRepository;
+import com.wks.caseengine.rest.db2.repository.CasesAndEventsMappingRepository;
+import com.wks.caseengine.rest.db2.repository.FaultCategoryRepository;
+import com.wks.caseengine.rest.db2.repository.FunctionalLocationRepository;
 import com.wks.caseengine.rest.model.Attribute;
-import com.wks.caseengine.rest.model.CaseContainer;
-import com.wks.caseengine.rest.model.CasePayload;
-import com.wks.caseengine.rest.model.FaultDetail;
+import com.wks.caseengine.rest.model.EquipmentModel;
+import com.wks.caseengine.rest.model.EventCategoryModel;
+import com.wks.caseengine.rest.model.EventEnrichmentModel;
+import com.wks.caseengine.rest.model.EventsModel;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.FaultHistoryModel;
+import com.wks.caseengine.rest.model.HierarchyNodesModel;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
-//import com.wks.caseengine.rest.repository.CaseAndOwnerMappingRepository;
-import com.wks.caseengine.rest.repository.CaseCauseCategoryRepository;
-import com.wks.caseengine.rest.repository.CaseCauseDescriptionRepository;
-import com.wks.caseengine.rest.repository.CaseDetailsRepository;
-import com.wks.caseengine.rest.repository.CaseIdSequenceRepository;
-import com.wks.caseengine.rest.repository.CaseRecommendationMappingRepository;
-import com.wks.caseengine.rest.repository.CaseRepository;
-//import com.wks.caseengine.rest.repository.CaseRepository;
-import com.wks.caseengine.rest.repository.CaseStatusRepository;
-import com.wks.caseengine.rest.repository.CasesAndEventsMappingRepository;
-import com.wks.caseengine.rest.repository.EquipmentsRepository;
-import com.wks.caseengine.rest.repository.EventCategoryRepository;
-import com.wks.caseengine.rest.repository.EventEnrichmentRepository;
-import com.wks.caseengine.rest.repository.EventsRepository;
-import com.wks.caseengine.rest.repository.FaultCategoryRepository;
-import com.wks.caseengine.rest.repository.FaultHistoryRepository;
-import com.wks.caseengine.rest.repository.FunctionalLocationRepository;
-
-import io.netty.util.internal.ThreadLocalRandom;
-//import com.wks.caseengine.rest.repository.OwnerDetailsRepository;
 
 @Component
 public class CaseDefinitionServiceImpl implements CaseDefinitionService {
@@ -90,7 +74,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	
 	@Autowired
 	private FaultCategoryRepository faultCategoryRepository; 
-	
+//	
 	@Autowired
 	private CaseStatusRepository caseStatusRepository; 
 	
@@ -99,25 +83,28 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
     @Autowired
     private CaseCauseDescriptionRepository descriptionRepository;
-    
-    @Autowired
-    private CaseDetailsRepository caseDetailsRepository;
-    
-    @Autowired
-    private FaultHistoryRepository faultHistoryRepository; 
+//    
+//    @Autowired
+//    private CaseDetailsRepository caseDetailsRepository;
+//    
+//    @Autowired
+//    private FaultHistoryRepository faultHistoryRepository; 
     
     @Autowired
     private CaseRepository caseRepository;
-    
+//    
     @Autowired
     private EventEnrichmentRepository eventEnrichmentRepository;
     
     @Autowired
-    private EventsRepository eventsRepository;
-    
-    @Autowired
-    private EventCategoryRepository eventCategoryRepository;
-    
+    private FetchRecordsServiceImpl fetchRecords;
+//    
+//    @Autowired
+//    private EventsRepository eventsRepository;
+//    
+//    @Autowired
+//    private EventCategoryRepository eventCategoryRepository;
+//    
     @Autowired
     private CaseIdSequenceRepository caseIdSequenceRepository;
     
@@ -127,11 +114,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     @Autowired
     private CaseRecommendationMappingRepository caseRecommendationMappingRepository;
 //    
-    @Autowired
-    private EquipmentsRepository equipmentsRepository;
+//    @Autowired
+//    private EquipmentsRepository equipmentsRepository;
     
     @Autowired
     private FunctionalLocationRepository functionalLocationRepository;
+    
+    @Autowired
+    private JavaMailSender mailSender;
 
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
@@ -179,110 +169,124 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<CaseCauseCategory> getAllCategories() {
 		System.out.println("Calling... all categories");
         List<CaseCauseCategory> caseCauseCategory = categoryRepository.findAll();
-        for(CaseCauseCategory casueCategory: caseCauseCategory) {
-        	List<CaseCauseDescription> caseCauseDescptionList = new ArrayList<CaseCauseDescription>();
-        	caseCauseDescptionList = descriptionRepository.findAllDescriptionByCategoryId(casueCategory.getId());
-        	casueCategory.setDescriptions(caseCauseDescptionList);
-        }
         return caseCauseCategory;
     }
 
     public List<CaseCauseDescription> getDescriptionsByCategory(Long categoryId) {
-        Optional<CaseCauseCategory> category = categoryRepository.findById(categoryId);
-        return category.map(descriptionRepository::findByCategory).orElse(Collections.emptyList());
+        List<CaseCauseDescription> caseCauseDescriptions = descriptionRepository.findAllDescriptionByCategoryId(categoryId);
+        return caseCauseDescriptions;
     }
 
-	@Override
-	public CaseDetails saveCaseDetails(CasePayload casePayload) {
-        CaseDetails caseDetails = new CaseDetails();
-        
-        // Map owner details if needed
-        // Example: caseDetails.setCreatedBy(casePayload.getOwner().getName());
-
-        // Parse attributes
-        for (Attribute attribute : casePayload.getAttributes()) {
-            if ("container".equals(attribute.getName()) && "Json".equals(attribute.getType())) {
-                String jsonValue = attribute.getValue();
-                try {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    CaseContainer tempCaseDetails = objectMapper.readValue(jsonValue, CaseContainer.class);
-                    
-                    // Set fields to caseDetails from tempCaseDetails
-                    caseDetails.setCaseNbr(tempCaseDetails.getCaseNo());
-                    caseDetails.setTitle(tempCaseDetails.getCaseTitle());
-                    caseDetails.setDescription(tempCaseDetails.getCaseDescription());
-                    caseDetails.setCreatedAt(Date.from(tempCaseDetails.getCreatedOn().atZone(ZoneId.systemDefault()).toInstant()));
-                    caseDetails.setDueAt(Date.from(tempCaseDetails.getDueDate().atZone(ZoneId.systemDefault()).toInstant()));
-                    caseDetails.setClosedAt(Date.from(tempCaseDetails.getEndDate().atZone(ZoneId.systemDefault()).toInstant()));
-                    caseDetails.setStatus("New"); // Example default status
-                    caseDetails.setCaseCategory(tempCaseDetails.getValueRealizationCategory());
-                    caseDetails.setJustification(tempCaseDetails.getValueRealizationConclusion());
-                    caseDetails.setImpactExpectedSavings(tempCaseDetails.getTotalValueCaptured());
-                    caseDetails.setImpactImplementationCost(tempCaseDetails.getProductionLoss());
-                    caseDetails.setImpactProduction(tempCaseDetails.getManHoursCost());
-                    caseDetails.setImpactEfforts(tempCaseDetails.getSpareCost());
-//                    caseDetails.setTrackingSystem(tempCaseDetails.getTrackingSystem()); // If exists in your JSON
-                    caseDetails.setAssignedTo(tempCaseDetails.getCaseAssignTo()); // If exists in your JSON
-                    
-                    // Add fault details if needed
-                    if (tempCaseDetails.getDataGrid() != null) {
-                        List<FaultDetail> faultDetailsList = new ArrayList<>();
-                        for (FaultDetail fault : tempCaseDetails.getDataGrid()) {
-                            faultDetailsList.add(fault);
-                        }
-                        // Save or process fault details as necessary
-                    }
-                } catch (Exception e) {
-                    // Handle JSON parsing exception
-                    e.printStackTrace();
-                }
-            }
-        }
-        System.out.println(caseDetails);
-        System.out.println("Saving case details");
-        System.out.println("Saving case details");
-        System.out.println("Saving case details");
-        System.out.println("Saving case details");
-        
-        return null;
-    }
-
+//	@Override
+//	public CaseDetails saveCaseDetails(CasePayload casePayload) {
+//        CaseDetails caseDetails = new CaseDetails();
+//        
+//        // Map owner details if needed
+//        // Example: caseDetails.setCreatedBy(casePayload.getOwner().getName());
+//
+//        // Parse attributes
+//        for (Attribute attribute : casePayload.getAttributes()) {
+//            if ("container".equals(attribute.getName()) && "Json".equals(attribute.getType())) {
+//                String jsonValue = attribute.getValue();
+//                try {
+//                    ObjectMapper objectMapper = new ObjectMapper();
+//                    CaseContainer tempCaseDetails = objectMapper.readValue(jsonValue, CaseContainer.class);
+//                    
+//                    // Set fields to caseDetails from tempCaseDetails
+//                    caseDetails.setCaseNbr(tempCaseDetails.getCaseNo());
+//                    caseDetails.setTitle(tempCaseDetails.getCaseTitle());
+//                    caseDetails.setDescription(tempCaseDetails.getCaseDescription());
+//                    caseDetails.setCreatedAt(Date.from(tempCaseDetails.getCreatedOn().atZone(ZoneId.systemDefault()).toInstant()));
+//                    caseDetails.setDueAt(Date.from(tempCaseDetails.getDueDate().atZone(ZoneId.systemDefault()).toInstant()));
+//                    caseDetails.setClosedAt(Date.from(tempCaseDetails.getEndDate().atZone(ZoneId.systemDefault()).toInstant()));
+//                    caseDetails.setStatus("New"); // Example default status
+//                    caseDetails.setCaseCategory(tempCaseDetails.getValueRealizationCategory());
+//                    caseDetails.setJustification(tempCaseDetails.getValueRealizationConclusion());
+//                    caseDetails.setImpactExpectedSavings(tempCaseDetails.getTotalValueCaptured());
+//                    caseDetails.setImpactImplementationCost(tempCaseDetails.getProductionLoss());
+//                    caseDetails.setImpactProduction(tempCaseDetails.getManHoursCost());
+//                    caseDetails.setImpactEfforts(tempCaseDetails.getSpareCost());
+////                    caseDetails.setTrackingSystem(tempCaseDetails.getTrackingSystem()); // If exists in your JSON
+//                    caseDetails.setAssignedTo(tempCaseDetails.getCaseAssignTo()); // If exists in your JSON
+//                    
+//                    // Add fault details if needed
+//                    if (tempCaseDetails.getDataGrid() != null) {
+//                        List<FaultDetail> faultDetailsList = new ArrayList<>();
+//                        for (FaultDetail fault : tempCaseDetails.getDataGrid()) {
+//                            faultDetailsList.add(fault);
+//                        }
+//                        // Save or process fault details as necessary
+//                    }
+//                } catch (Exception e) {
+//                    // Handle JSON parsing exception
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        System.out.println(caseDetails);
+//        System.out.println("Saving case details");
+//        System.out.println("Saving case details");
+//        System.out.println("Saving case details");
+//        System.out.println("Saving case details");
+//        
+//        return null;
+//    }
+//
 	@Override
 	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
-		List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
-		List<FaultHistory> faultHistorys = faultHistoryRepository.getAllFaultHistoryFromEventIds(eventIds);
+		System.out.println(eventIds);
+		System.out.println(eventIds.get(0));
+		List<EventEnrichmentModel> eventEnrichments = fetchRecords.getEventEnrichments(eventIds);
+		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
+		
+//		for(FaultHistoryModel eventEnrichment: faultHistorys) {
+//			System.out.println(eventEnrichment.getFaultDisplayName());
+//		}
+		
+		
 		String equipmentName = "";
-		for(FaultHistory faultHistory: faultHistorys) {
-			equipmentName = equipmentsRepository.findEquipmentName(faultHistory.getEquipmentPkId().toString());
+		for(FaultHistoryModel faultHistory: faultHistorys) {
+			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
+			equipmentName = equipemnets.get(0).getDisplayName();
 			break;
 		}
 		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
 		
-		for(EventEnrichment eventEnrichment: eventEnrichmentList) {
-			UUID eventId = eventEnrichment.getEventPkId();
-			UUID eventCategoryId = eventEnrichment.getEventCategoryPkId();
+		for(EventEnrichmentModel eventEnrichment: eventEnrichments) {
+			String eventId = eventEnrichment.getEventPkId();
+			String eventCategoryId = eventEnrichment.getEventCategoryPkId();
 			
-			Events event = eventsRepository.findByEventId(eventId);
-			EventCategory eventCategory = eventCategoryRepository.getCategoryById(eventCategoryId);
+			List<EventsModel> events = fetchRecords.findEventsByEventId(eventId);
+			EventsModel event = new EventsModel();
+			if(events.size()>=1) {
+				event = events.get(0);
+			}
+			List<EventCategoryModel> eventCategorys = fetchRecords.getCategoryByCategoryId(eventCategoryId);
+			EventCategoryModel eventCategory = new EventCategoryModel();
+			if(eventCategorys.size()>=1) {
+				eventCategory = eventCategorys.get(0);
+			}
 			FaultEvents faultEvent = new FaultEvents();
-			faultEvent.setEvent(event);
+			faultEvent.setEvents(event);
 			faultEvent.setEventEnrichment(eventEnrichment);
 			faultEvent.setEventCategory(eventCategory);
 			faultEvent.setAssetName(equipmentName);
 			faultEvents.add(faultEvent);
 		}
-		
-		
-		
 		return faultEvents;
 	}
+	
+	
 
 	@Override
 	public Case saveCase(Case caseData) {
 		OwnerDetails owner = caseData.getOwner();
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
-		hierarchyNodePKID = caseRepository.gethierarchyNodePKID(assetName);
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		if(hierarychyNodes.size()>=1) {
+			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
+		}
 		if(assetName!=null) {
 			
 			
@@ -301,11 +305,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			for(String eventId: caseData.getEventIds()) {
 				eventIds.add(Long.parseLong(eventId));
 			}
-			List<EventEnrichment> eventEnrichmentList = eventEnrichmentRepository.getAllEventEnrichmentsByIds(eventIds);
-			HashMap<Long, String> map = new HashMap<Long, String>();
-			for(EventEnrichment eventEnrichment: eventEnrichmentList) {
-				map.put(eventEnrichment.getEventEnrichmentPkId().longValue(), eventEnrichment.getEventPkId().toString());
-			}
+			System.out.println(eventIds);
+			HashMap<String, String> map = new HashMap<String, String>();
 			for(String eventId: caseData.getEventIds()) {
 				CasesAndEventsMapping mapping = new CasesAndEventsMapping();
 				mapping.setCaseNo(caseDetails.getCaseNo());
@@ -316,23 +317,24 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			System.out.println("Saving Exsting Case Details....");
 			caseDetails  = caseRepository.save(caseData);
 		}
-		
-		int i = 0;
-		List<Attribute> attributes = caseDetails.getAttributes();
-		for (Attribute attribute : attributes) {
-		    String attributeName = attribute.getName();
-		    String attributeValue = attribute.getValue();
-		    
-		    System.out.println("Attribute Name: " + attributeName);
-		    System.out.println("Attribute Value: " + attributeValue);
-		    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
-		    attribute.setValue(updatedAttribute);
+		if(!caseData.getIsDraft()) {
+			int i = 0;
+			List<Attribute> attributes = caseDetails.getAttributes();
+			for (Attribute attribute : attributes) {
+			    String attributeName = attribute.getName();
+			    String attributeValue = attribute.getValue();
+			    
+			    System.out.println("Attribute Name: " + attributeName);
+			    System.out.println("Attribute Value: " + attributeValue);
+			    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
+			    attribute.setValue(updatedAttribute);
+			}
+			System.out.println("After Updating Attributes...");
+			System.out.println(attributes.get(0).getValue());
+			caseData.setAttributes(attributes);
+			caseDetails = caseRepository.save(caseData);
+			return caseDetails;
 		}
-		System.out.println("After Updating Attributes...");
-		System.out.println(attributes.get(0).getValue());
-		caseData.setAttributes(attributes);
-		caseDetails = caseRepository.save(caseData);
-		return caseDetails;
 	}
 	
 	private String saveRecommendations(String attributeValue, String caseNo) {
@@ -469,10 +471,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Override
 	public List<Case> getCaseDetails(String displayName, String hierarchyName) {
-		List<String> assetsPKIds = caseDetailsRepository.findNodesByHierarchyNameAndDisplayName(displayName, hierarchyName);
-//		for(String assetPKID: assetsPKIds) {
-//			System.out.println(assetPKID);
-//		}
+		List<String> assetsPKIds = fetchRecords.findNodesByHierarchyNameAndDisplayName(displayName, hierarchyName);
 		List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
 		return cases;
 	}
@@ -486,17 +485,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		usersMap.put("Balasubramanian.R.Iyer@ril.com", 'A');
 		usersMap.put("Bhaumik.Darji@ril.com", 'A');
 		usersMap.put("Bhautik.Kansara", 'A');
-		 for (Map.Entry<String, Character> entry : usersMap.entrySet()) {
-	            String email = entry.getKey();
-	            char status = entry.getValue();
-	            
-	            // Create User object
-	            Users user = new Users(email, status);
-	            
-	            // Print or use the user object as needed
-	            System.out.println(user);
-	            users.add(user);
-	        }
+		for (Map.Entry<String, Character> entry : usersMap.entrySet()) {
+            String email = entry.getKey();
+            char status = entry.getValue();
+            
+            // Create User object
+            Users user = new Users(email, status);
+            
+            // Print or use the user object as needed
+            System.out.println(user);
+            users.add(user);
+	   }
 		return users; 
 	}
 	
@@ -504,10 +503,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<FunctionalLocation> getFunctionalLocations(List<Long> eventIds) {
 		List<FunctionalLocation> locations = new ArrayList<FunctionalLocation>();
 		System.out.println(eventIds);
-		List<FaultHistory> faultHistorys = faultHistoryRepository.getAllFaultHistoryFromEventIds(eventIds);
+		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
 		String equipmentName = "";
-		for(FaultHistory faultHistory: faultHistorys) {
-			equipmentName = equipmentsRepository.findEquipmentName(faultHistory.getEquipmentPkId().toString());
+		for(FaultHistoryModel faultHistory: faultHistorys) {
+			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
+			equipmentName = equipemnets.get(0).getDisplayName();
 			break;
 		}
 		locations = functionalLocationRepository.findByUasDisplayName(equipmentName);
@@ -576,13 +576,25 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    }
 	    return null;
 	}
-	
-	@Scheduled(cron = "0 0/1 * * * ?")// You can adjust this cron expression to run at a specific time (e.g., every day at noon)
-    public void scheduleTask() {
-        System.out.println("Scheduler triggered");
-        List<Case> cases = caseRepository.findAll();
-        System.out.println("Cases fetahed: "+ cases.size());
-//        System.out.println("")
-    }
 
+	@Override
+	public void sendEmail(String emailId, String subject, String body) {
+		SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(emailId);
+        message.setSubject(subject);
+        message.setText(body);
+        message.setFrom("your-email@gmail.com");
+
+        mailSender.send(message);
+	}
+	
+//	@Scheduled(cron = "0 0/1 * * * ?")// You can adjust this cron expression to run at a specific time (e.g., every day at noon)
+//    public void scheduleTask() {
+//        System.out.println("Scheduler triggered");
+//        List<Case> cases = caseRepository.findAll();
+//        System.out.println("Cases fetahed: "+ cases.size());
+//        System.out.println("")
+//    }
+	
+	
 }
