@@ -261,6 +261,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			if(events.size()>=1) {
 				event = events.get(0);
 			}
+			System.out.println("Events List");
+			System.out.println(eventIds.get(0));
+			System.out.println(eventId);
+			for(EventsModel event1: events) {
+				System.out.println(event1.getEventName());
+			}
 			List<EventCategoryModel> eventCategorys = fetchRecords.getCategoryByCategoryId(eventCategoryId);
 			EventCategoryModel eventCategory = new EventCategoryModel();
 			if(eventCategorys.size()>=1) {

@@ -45,7 +45,7 @@ public class FetchRecordsServiceImpl {
 
             java.sql.Date modifiedDate = rs.getDate("ModifiedDate");
             eventEnrichment.setModifiedDate(modifiedDate != null ? modifiedDate.toString() : null);
-            
+            eventEnrichment.setEventPkId(rs.getString("Event_PK_ID"));
             eventEnrichment.setEnrichmentKey(rs.getString("EnrichmentKey"));
             eventEnrichment.setDisplayNameTemplate(rs.getString("DisplayNameTemplate"));
             eventEnrichment.setDescriptionTemplate(rs.getString("DescriptionTemplate"));
