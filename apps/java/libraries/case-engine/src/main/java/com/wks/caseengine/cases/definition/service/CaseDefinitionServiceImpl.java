@@ -335,6 +335,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			caseDetails = caseRepository.save(caseData);
 			return caseDetails;
 		}
+		return caseDetails;
 	}
 	
 	private String saveRecommendations(String attributeValue, String caseNo) {
