@@ -11,7 +11,6 @@
  */
 package com.wks.caseengine.rest.server;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -31,17 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
-import com.wks.caseengine.rest.entity.Case;
-import com.wks.caseengine.rest.entity.CaseCauseCategory;
-import com.wks.caseengine.rest.entity.CaseCauseDescription;
-import com.wks.caseengine.rest.entity.CaseDetails;
-import com.wks.caseengine.rest.entity.CaseStatus;
-import com.wks.caseengine.rest.entity.FaultCategory;
-import com.wks.caseengine.rest.entity.FaultHistory;
-import com.wks.caseengine.rest.entity.FunctionalLocation;
+import com.wks.caseengine.rest.db2.entity.Case;
+import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
+import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
+import com.wks.caseengine.rest.db2.entity.CaseStatus;
+import com.wks.caseengine.rest.db2.entity.FaultCategory;
+import com.wks.caseengine.rest.db2.entity.FunctionalLocation;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
-import com.wks.caseengine.rest.model.CasePayload;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
@@ -82,11 +78,11 @@ public class CaseDefinitionController {
         return ResponseEntity.ok(caseDefinitionService.getDescriptionsByCategory(categoryId));
     }
     
-    @PostMapping("/case-details")
-    public void createCaseDetails(@RequestBody CasePayload casePayload) {
-        CaseDetails savedCaseDetails = caseDefinitionService.saveCaseDetails(casePayload);
-//        return caseDefinitionService.saveCaseDetails(caseDetails);
-    }
+//    @PostMapping("/case-details")
+//    public void createCaseDetails(@RequestBody CasePayload casePayload) {
+//        CaseDetails savedCaseDetails = caseDefinitionService.saveCaseDetails(casePayload);
+////        return caseDefinitionService.saveCaseDetails(caseDetails);
+//    }
 
 	@GetMapping(value = "/{caseDefId}")
 	public ResponseEntity<CaseDefinition> get(@PathVariable final String caseDefId) {
@@ -99,12 +95,15 @@ public class CaseDefinitionController {
 	
 	@GetMapping(value = "/fault-history/eventIds")
 	public ResponseEntity<List<FaultEvents>> getFaultHistoryByEventIds(@RequestParam List<Long> eventIds) {
-        List<FaultHistory> faultHistories = new ArrayList<FaultHistory>();
-        String eventIdsString = eventIds.stream()
+       try {
+		String eventIdsString = eventIds.stream()
                 .map(String::valueOf) // Convert Long to String
                 .collect(Collectors.joining(","));
         System.out.println("eventIds: "+eventIdsString);
         return ResponseEntity.ok(caseDefinitionService.getAllEvents(eventIds));
+       } catch(Exception e) {
+    	   throw new RestResourceNotFoundException(e.getMessage());
+       }
     }
 	
 	@GetMapping(value = "/case-no")
@@ -179,4 +178,16 @@ public class CaseDefinitionController {
 		}
 		return ResponseEntity.noContent().build();
 	}
+	
+	@PostMapping("/send")
+    public ResponseEntity<String> sendEmail(@RequestParam String emailId) {
+        try {
+            String subject = "Test Email";
+            String body = "This is a test email from Spring Boot.";
+            caseDefinitionService.sendEmail(emailId, subject, body);
+            return ResponseEntity.ok("Email sent successfully to " + emailId);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error while sending email: " + e.getMessage());
+        }
+    }
 }
