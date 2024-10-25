@@ -19,7 +19,7 @@ const App = () => {
 
   useEffect(() => {
 
-    localStorage.setItem('baseUrl', 'http://localhost:8081');
+    localStorage.setItem('baseUrl', 'https://wkspwr.dev.connectedplant.honeywell.com:8902');
     const { keycloak } = sessionStore.bootstrap()
 
     const storedToken = localStorage.getItem('keycloakToken')
@@ -81,49 +81,110 @@ const App = () => {
     }
   }
 
+  // async function buildMenuItems(keycloak) {
+  //   const menu = {
+  //     items: [...menuItemsDefs.items],
+  //   }
+  //   console.log('menuItemsDefs', menuItemsDefs)
+
+  //   await RecordService.getAllRecordTypes(keycloak).then((data) => {
+  //     setRecordsTypes(data)
+
+  //     data.forEach((element) => {
+  //       menu.items[1].children
+  //         .filter((menu) => menu.id === 'record-list')[0]
+  //         .children.push({
+  //           id: element.id,
+  //           title: element.id,
+  //           type: 'item',
+  //           url: '/record-list/' + element.id,
+  //           breadcrumbs: true,
+  //         })
+  //     })
+  //   })
+
+  //   await CaseService.getCaseDefinitions(keycloak).then((data) => {
+  //     setCasesDefinitions(data)
+
+  //     data.forEach((element) => {
+  //       menu.items[1].children
+  //         .filter((menu) => menu.id === 'case-list')[0]
+  //         .children.push({
+  //           id: element.id,
+  //           title: element.name,
+  //           type: 'item',
+  //           url: '/case-list/' + element.id,
+  //           breadcrumbs: true,
+  //         })
+  //     })
+  //   })
+
+  //   if (!accountStore.isManagerUser(keycloak)) {
+  //     delete menu.items[2]
+  //   }
+
+  //   return setMenu(menu)
+  // }
+
   async function buildMenuItems(keycloak) {
     const menu = {
       items: [...menuItemsDefs.items],
+    };
+  
+    console.log('menuItemsDefs:', menuItemsDefs);
+  
+
+    if (keycloak.hasRealmRole('admin')) {
+      menu.items = menu.items.filter((item) => item.id === 'management');
+    } 
+    // else if (keycloak.hasRealmRole('user')) {
+    //   menu.items = menu.items.filter((item) => item.id === 'utilities');
+    // }
+    // else if (keycloak.hasRealmRole('manager')) {
+    //   menu.items = menu.items.filter((item) => item.id === 'dashboard');
+    // } 
+    else {
+      await RecordService.getAllRecordTypes(keycloak).then((data) => {
+        setRecordsTypes(data);
+  
+        data.forEach((element) => {
+          menu.items[1].children
+            .filter((menu) => menu.id === 'record-list')[0]
+            .children.push({
+              id: element.id,
+              title: element.id,
+              type: 'item',
+              url: '/record-list/' + element.id,
+              breadcrumbs: true,
+            });
+        });
+      });
+  
+      await CaseService.getCaseDefinitions(keycloak).then((data) => {
+        setCasesDefinitions(data);
+  
+        data.forEach((element) => {
+          menu.items[1].children
+            .filter((menu) => menu.id === 'case-list')[0]
+            .children.push({
+              id: element.id,
+              title: element.name,
+              type: 'item',
+              url: '/case-list/' + element.id,
+              breadcrumbs: true,
+            });
+        });
+      });
+  
+      if (!accountStore.isManagerUser(keycloak)) {
+        delete menu.items[2];
+      }
     }
-
-    await RecordService.getAllRecordTypes(keycloak).then((data) => {
-      setRecordsTypes(data)
-
-      data.forEach((element) => {
-        menu.items[1].children
-          .filter((menu) => menu.id === 'record-list')[0]
-          .children.push({
-            id: element.id,
-            title: element.id,
-            type: 'item',
-            url: '/record-list/' + element.id,
-            breadcrumbs: true,
-          })
-      })
-    })
-
-    await CaseService.getCaseDefinitions(keycloak).then((data) => {
-      setCasesDefinitions(data)
-
-      data.forEach((element) => {
-        menu.items[1].children
-          .filter((menu) => menu.id === 'case-list')[0]
-          .children.push({
-            id: element.id,
-            title: element.name,
-            type: 'item',
-            url: '/case-list/' + element.id,
-            breadcrumbs: true,
-          })
-      })
-    })
-
-    if (!accountStore.isManagerUser(keycloak)) {
-      delete menu.items[2]
-    }
-
-    return setMenu(menu)
+  
+    return setMenu(menu);
   }
+  
+  
 
   return (
     keycloak &&

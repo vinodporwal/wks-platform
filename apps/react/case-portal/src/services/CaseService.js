@@ -239,6 +239,32 @@ async function saveCase(keycloak, body) {
   }
 }
 
+
+export const saveRecommendation = async (keycloak, body) => {
+  const url = `${Config.CaseEngineUrl}/case-definition/save-recommendation`;
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+      throw new Error(`API call failed with status: ${resp.status}`);
+    }
+
+    return await resp.json();
+  } catch (err) {
+    console.error('Error in saveRecommendation API:', err);
+    throw err;
+  }
+};
+
 async function addDocuments(keycloak, businessKey, document) {
   const url = `${Config.CaseEngineUrl}/case/${businessKey}/document`
 
