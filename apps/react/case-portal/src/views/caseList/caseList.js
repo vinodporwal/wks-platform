@@ -162,11 +162,11 @@ export const CaseList = ({ status, caseDefId }) => {
       //   headerName: t('pages.caselist.datagrid.columns.createdat'),
       //   width: 220,
       // },
-      // {
-      //   field: 'assetName',
-      //   headerName: 'Asset Name',
-      //   width: 150,
-      // },
+      {
+        field: 'assetName',
+        headerName: 'Asset Name',
+        width: 150,
+      },
       {
         field: 'hierarchyName',
         headerName: 'Hierarchy Name',

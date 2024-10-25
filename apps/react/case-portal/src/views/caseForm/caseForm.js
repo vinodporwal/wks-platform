@@ -368,61 +368,103 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
 
 
-  const onSubmitRecommendation = (event) => {
-    console.log('event onSubmitRecommendation', event);
-    let updatedFormData = JSON.parse(JSON.stringify(formData));
+  const onSubmitRecommendation = async (event) => {
+    console.log('event onSubmitRecommendation', event)
+    let updatedFormData = JSON.parse(JSON.stringify(formData))
 
     // Log the current formData to check its structure
-    console.log("Current formData:", updatedFormData);
-  
+    console.log('Current formData:', updatedFormData)
+
     // Check if dataGrid1 exists inside the container
-    if (updatedFormData.data && updatedFormData.data.container && updatedFormData.data.container.dataGrid1) {
+    if (
+      updatedFormData.data &&
+      updatedFormData.data.container &&
+      updatedFormData.data.container.dataGrid1
+    ) {
       // Iterate through dataGrid1 and update the recommendationNo1 field for each row
-      updatedFormData.data.container.dataGrid1 = updatedFormData.data.container.dataGrid1.map((row, index) => {
-        console.log(`Updating row ${index}`, row);
-        // Set the recommendationNo1 field to '123'
-        return {
-          ...row,
-          recommendationNo1: '123'
-        };
-      });
+      updatedFormData.data.container.dataGrid1 =
+        updatedFormData.data.container.dataGrid1.map((row, index) => {
+          console.log(`Updating row ${index}`, row)
+          // Set the recommendationNo1 field to '123'
+          return {
+            ...row,
+            recommendationNo1: '123',
+          }
+        })
     } else {
-      console.error("dataGrid1 not found in the form data.");
+      console.error('dataGrid1 not found in the form data.')
     }
-  
+
     // Update the formData state with the modified values
-    setFormData(updatedFormData);
-  
+    setFormData(updatedFormData)
+
     // Log the updated formData to verify changes
-    console.log("Updated formData:", updatedFormData);
-  // Update the formData state with the new values
-  setFormData(updatedFormData);
-    const { recommendationReviewer, recommendationAssignedTo2, recommendationHeadline, recommendationTargetCompletionDate1 } = event.data;
-  
-    const missingFields = [];
-    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
-    if (!recommendationAssignedTo2) missingFields.push('Recommendation Assigned To');
-    if (!recommendationHeadline) missingFields.push('Recommendation Headline');
-    if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
-    
+    console.log('Updated formData:', updatedFormData)
+    // Update the formData state with the new values
+    setFormData(updatedFormData)
+    const {
+      recommendationReviewer,
+      recommendationAssignedTo2,
+      recommendationHeadline,
+      recommendationTargetCompletionDate1,
+      recommendationDescription1,
+      equipmentFunctionLocation,
+      RecommendationConfirmSAP3
+    } = event.data
+
+    const missingFields = []
+    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer')
+    if (!recommendationAssignedTo2)
+      missingFields.push('Recommendation Assigned To')
+    if (!recommendationHeadline) missingFields.push('Recommendation Headline')
+    if (!recommendationTargetCompletionDate1)
+      missingFields.push('Target Completion Date')
+
     // New validation for RecommendationConfirm
     // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
     //   missingFields.push('Recommendation Confirm');
     // }
-  
+
     if (missingFields.length > 0) {
-      setSnackbarMessages(missingFields);
-      setSnackbarOpen(true);
+      setSnackbarMessages(missingFields)
+      setSnackbarOpen(true)
       setTimeout(() => {
-        setSnackbarOpen(false);
-      }, 6000);
-      return;
+        setSnackbarOpen(false)
+      }, 6000)
+      return
     }
-  
-    setSnackbarMessages([]);
+
+    setSnackbarMessages([])
     // event.component.disabled = true;
-    setIsConfirmationOpen(true);
-  };
+
+    const apiBody = {
+      recommendationHeadline,
+      recommendationDescription1,
+      recommendationAssignedTo2,
+      equipmentFunctionLocation,
+      recommendationTargetCompletionDate1,
+      recommendationReviewer,
+      RecommendationConfirmSAP3,
+      deleteRowButton4: false,
+      RecommendationSubmit3: false,
+      caseNo: aCase?.caseNo,
+    }
+
+    try {
+      console.log('apiBody', apiBody, event.data);
+      // const response = await CaseService.saveRecommendation(keycloak, apiBody)
+
+      // console.log('Recommendation submitted successfully:', response)
+      // setSnackbarMessages(['Recommendation submitted successfully'])
+      // setSnackbarOpen(true)
+    } catch (error) {
+      console.error('Error submitting recommendation:', error)
+      setSnackbarMessages(['Error submitting recommendation'])
+      setSnackbarOpen(true)
+    }
+
+    setIsConfirmationOpen(true)
+  }
 
 
   const onSubmitForm = () => {
@@ -561,10 +603,26 @@ const getFaultCategoryLabel = (value) => {
 };
 
 const getEquipmentFunctionLocationLabel = (id) => {
-  const locations = JSON.parse(localStorage.getItem('functionalLocationOptions')) || [];
+  const storedLocations = localStorage.getItem('functionalLocationOptions');
+
+  if (!storedLocations) {
+    console.error('No functionalLocationOptions found in localStorage');
+    return id;
+  }
+
+  let locations = [];
+
+  try {
+    locations = JSON.parse(storedLocations);
+  } catch (error) {
+    console.error('Error parsing functionalLocationOptions from localStorage:', error);
+    return id;
+  }
+
   const location = locations.find(location => location.value === id);
-  return location ? location.label : id; // Return label if found, otherwise fallback to ID
+  return location ? location.label : id;
 };
+
 
 // Function to dynamically create labelMap from the form structure
 const createLabelMapFromStructure = (structure) => {
