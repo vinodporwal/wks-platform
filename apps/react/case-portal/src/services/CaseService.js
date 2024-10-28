@@ -18,6 +18,7 @@ export const CaseService = {
   getCaseStatus,
   saveCase,
   getCasesById,
+  saveRecommendation,
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -240,7 +241,7 @@ async function saveCase(keycloak, body) {
 }
 
 
-export const saveRecommendation = async (keycloak, body) => {
+async function saveRecommendation(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-recommendation`;
 
   try {
@@ -253,17 +254,12 @@ export const saveRecommendation = async (keycloak, body) => {
       },
       body: JSON.stringify(body),
     });
-
-    if (!resp.ok) {
-      throw new Error(`API call failed with status: ${resp.status}`);
-    }
-
-    return await resp.json();
+    return json(keycloak, resp)
   } catch (err) {
     console.error('Error in saveRecommendation API:', err);
     throw err;
   }
-};
+}
 
 async function addDocuments(keycloak, businessKey, document) {
   const url = `${Config.CaseEngineUrl}/case/${businessKey}/document`

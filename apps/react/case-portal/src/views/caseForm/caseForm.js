@@ -68,6 +68,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [snackOpen, setSnackOpen] = useState(false);
   const [formStructure, setFormStructure] = useState(null);
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [apiBody, setApiBody] = useState(null);
   
   // const handleFollowClick = () => {
   //   setIsFollowing(!isFollowing)
@@ -77,6 +78,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   useEffect(() => {
     console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
     console.log('{keycloak}', keycloak)
+    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email));
     getCaseInfo(aCase)
   }, [open, aCase])
 
@@ -103,16 +105,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     setSnackOpen(false);
   };
 
-  const handleConfirmSubmit = () => {
-    // Proceed with the submit action if confirmed
-    console.log('Submit confirmed');
-    setIsConfirmationOpen(false); // Close the dialog
-    // Add your submission logic here
-  };
+  // const handleConfirmSubmit = () => {
+  //   // Proceed with the submit action if confirmed
+  //   console.log('Submit confirmed');
+  //   setIsConfirmationOpen(false); // Close the dialog
+  //   // Add your submission logic here
+  // };
 
-  const handleCancelSubmit = () => {
-    setIsConfirmationOpen(false); // Close the dialog if canceled
-  };
+  // const handleCancelSubmit = () => {
+  //   setIsConfirmationOpen(false); // Close the dialog if canceled
+  // };
   
 
 
@@ -268,10 +270,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         }
         setIsFormData(true)
 
-        return CaseService.getCaseById(keycloak, aCase.businessKey);
+        // return CaseService.getCaseById(keycloak, aCase.businessKey);
 
+        const caseData = await CaseService.getCaseById(keycloak, aCase.businessKey);
+
+        aCase.documents = caseData?.documents || [];
+        aCase.stage = caseData?.stage || "Stage 0";
+        return aCase;
       })
       .then((caseData) => {
+        console.log('caseData', caseData);
         setComments(
           caseData?.comments?.sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -323,6 +331,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
+        isDraft: false,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -368,40 +377,109 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
 
 
-  const onSubmitRecommendation = async (event) => {
+  // const onSubmitRecommendation = async (event) => {
+  //   console.log('event onSubmitRecommendation', event)
+  //   let updatedFormData = JSON.parse(JSON.stringify(formData))
+
+  //   // Log the current formData to check its structure
+  //   console.log('Current formData:', updatedFormData)
+
+  //   // // Check if dataGrid1 exists inside the container
+  //   // if (
+  //   //   updatedFormData.data &&
+  //   //   updatedFormData.data.container &&
+  //   //   updatedFormData.data.container.dataGrid1
+  //   // ) {
+  //   //   // Iterate through dataGrid1 and update the recommendationNo1 field for each row
+  //   //   updatedFormData.data.container.dataGrid1 =
+  //   //     updatedFormData.data.container.dataGrid1.map((row, index) => {
+  //   //       console.log(`Updating row ${index}`, row)
+  //   //       // Set the recommendationNo1 field to '123'
+  //   //       return {
+  //   //         ...row,
+  //   //         recommendationNo1: '123',
+  //   //       }
+  //   //     })
+  //   // } else {
+  //   //   console.error('dataGrid1 not found in the form data.')
+  //   // }
+
+  //   // Update the formData state with the modified values
+  //   setFormData(updatedFormData)
+
+  //   // Log the updated formData to verify changes
+  //   console.log('Updated formData:', updatedFormData)
+  //   // Update the formData state with the new values
+  //   setFormData(updatedFormData)
+  //   const {
+  //     recommendationReviewer,
+  //     recommendationAssignedTo2,
+  //     recommendationHeadline,
+  //     recommendationTargetCompletionDate1,
+  //     recommendationDescription1,
+  //     equipmentFunctionLocation,
+  //     RecommendationConfirmSAP3
+  //   } = event.data
+
+  //   const missingFields = []
+  //   if (!recommendationReviewer) missingFields.push('Recommendation Reviewer')
+  //   if (!recommendationAssignedTo2)
+  //     missingFields.push('Recommendation Assigned To')
+  //   if (!recommendationHeadline) missingFields.push('Recommendation Headline')
+  //   if (!recommendationTargetCompletionDate1)
+  //     missingFields.push('Target Completion Date')
+
+  //   // New validation for RecommendationConfirm
+  //   // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
+  //   //   missingFields.push('Recommendation Confirm');
+  //   // }
+
+  //   if (missingFields.length > 0) {
+  //     setSnackbarMessages(missingFields)
+  //     setSnackbarOpen(true)
+  //     setTimeout(() => {
+  //       setSnackbarOpen(false)
+  //     }, 6000)
+  //     return
+  //   }
+
+  //   setSnackbarMessages([])
+  //   // event.component.disabled = true;
+
+  //   const apiBody = {
+  //     recommendationHeadline,
+  //     recommendationDescription1,
+  //     recommendationAssignedTo2,
+  //     equipmentFunctionLocation,
+  //     recommendationTargetCompletionDate1,
+  //     recommendationReviewer,
+  //     RecommendationConfirmSAP3,
+  //     deleteRowButton4: false,
+  //     RecommendationSubmit3: false,
+  //     caseNo: aCase?.caseNo,
+  //   }
+
+  //   try {
+  //     console.log('apiBody', apiBody, event.data);
+  //     const response = await CaseService.saveRecommendation(keycloak, apiBody)
+
+  //     console.log('Recommendation submitted successfully:', response)
+  //     setSnackbarMessages(['Recommendation submitted successfully'])
+  //     setSnackbarOpen(true)
+  //   } catch (error) {
+  //     console.error('Error submitting recommendation:', error)
+  //     setSnackbarMessages(['Error submitting recommendation'])
+  //     setSnackbarOpen(true)
+  //   }
+
+  //   setIsConfirmationOpen(true)
+  // }
+
+  const onSubmitRecommendation = (event) => {
     console.log('event onSubmitRecommendation', event)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
-
-    // Log the current formData to check its structure
-    console.log('Current formData:', updatedFormData)
-
-    // Check if dataGrid1 exists inside the container
-    if (
-      updatedFormData.data &&
-      updatedFormData.data.container &&
-      updatedFormData.data.container.dataGrid1
-    ) {
-      // Iterate through dataGrid1 and update the recommendationNo1 field for each row
-      updatedFormData.data.container.dataGrid1 =
-        updatedFormData.data.container.dataGrid1.map((row, index) => {
-          console.log(`Updating row ${index}`, row)
-          // Set the recommendationNo1 field to '123'
-          return {
-            ...row,
-            recommendationNo1: '123',
-          }
-        })
-    } else {
-      console.error('dataGrid1 not found in the form data.')
-    }
-
-    // Update the formData state with the modified values
     setFormData(updatedFormData)
 
-    // Log the updated formData to verify changes
-    console.log('Updated formData:', updatedFormData)
-    // Update the formData state with the new values
-    setFormData(updatedFormData)
     const {
       recommendationReviewer,
       recommendationAssignedTo2,
@@ -414,16 +492,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
     const missingFields = []
     if (!recommendationReviewer) missingFields.push('Recommendation Reviewer')
-    if (!recommendationAssignedTo2)
-      missingFields.push('Recommendation Assigned To')
+    if (!recommendationAssignedTo2) missingFields.push('Recommendation Assigned To')
     if (!recommendationHeadline) missingFields.push('Recommendation Headline')
-    if (!recommendationTargetCompletionDate1)
-      missingFields.push('Target Completion Date')
-
-    // New validation for RecommendationConfirm
-    // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
-    //   missingFields.push('Recommendation Confirm');
-    // }
+    if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date')
 
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields)
@@ -435,9 +506,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     }
 
     setSnackbarMessages([])
-    // event.component.disabled = true;
 
-    const apiBody = {
+    const apiBodyData = {
       recommendationHeadline,
       recommendationDescription1,
       recommendationAssignedTo2,
@@ -449,21 +519,22 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       RecommendationSubmit3: false,
       caseNo: aCase?.caseNo,
     }
+    setApiBody(apiBodyData)
+    setIsConfirmationOpen(true)
+  }
 
+  const submitRecommendation = async () => {
     try {
-      console.log('apiBody', apiBody, event.data);
-      // const response = await CaseService.saveRecommendation(keycloak, apiBody)
-
-      // console.log('Recommendation submitted successfully:', response)
-      // setSnackbarMessages(['Recommendation submitted successfully'])
-      // setSnackbarOpen(true)
+      const response = await CaseService.saveRecommendation(keycloak, apiBody)
+      console.log('Recommendation submitted successfully:', response)
+      setSnackbarMessages(['Recommendation submitted successfully'])
+      setSnackbarOpen(true)
+      setIsConfirmationOpen(false)
     } catch (error) {
       console.error('Error submitting recommendation:', error)
       setSnackbarMessages(['Error submitting recommendation'])
       setSnackbarOpen(true)
     }
-
-    setIsConfirmationOpen(true)
   }
 
 
@@ -490,6 +561,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
+        isDraft: true,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -884,17 +956,11 @@ const printCaseDetails = () => {
               >
                 {isFollowing ? 'Unfollow' : 'Follow'}
               </Button> */}
-              <Button
-                color="inherit"
-                onClick={printCaseDetails}
-              >
+              <Button color='inherit' onClick={printCaseDetails}>
                 {'Print'}
               </Button>
 
-              <Button
-                color='inherit'
-                onClick={onSave}
-              >
+              <Button color='inherit' onClick={onSave}>
                 {'Save'}
               </Button>
               {/* Case Actions Menu */}
@@ -997,40 +1063,56 @@ const printCaseDetails = () => {
                         <QuestionCircleOutlined />
                       </Tooltip>
                     </Box>
-                    {isFormData && <Form
-                      form={form.structure}
-                      submission={formData}
-                      options={{
-                        // readOnly: true,
-                        fileService: new StorageService(),
-                      }}
-                      onSubmit={(submission) => {
-                        console.log('Validation passed:', true); 
-                        console.log('Form data:', submission); 
-        
-                        onSave(submission)
-                      }}
-                      onCustomEvent={(event) => {
-                        console.log('Form event:', event); 
-                        if (event.component.key === 'saveAsDraft') {
-                          onSubmitForm(); 
-                        } else if (event.component.key === 'RecommendationSubmit3') {
-                          onSubmitRecommendation(event); 
-                        }
-        
-                      }}
-                    />}
+                    {isFormData && (
+                      <Form
+                        form={form.structure}
+                        submission={formData}
+                        options={{
+                          // readOnly: true,
+                          fileService: new StorageService(),
+                        }}
+                        onSubmit={(submission) => {
+                          console.log('Validation passed:', true)
+                          console.log('Form data:', submission)
+
+                          onSave(submission)
+                        }}
+                        onCustomEvent={(event) => {
+                          console.log('Form event:', event)
+                          if (event.component.key === 'saveAsDraft') {
+                            onSubmitForm()
+                          } else if (
+                            event.component.key === 'RecommendationSubmit3'
+                          ) {
+                            onSubmitRecommendation(event)
+                          }
+                        }}
+                      />
+                    )}
                     <Dialog
                       open={isConfirmationOpen}
-                      onClose={handleCancelSubmit}
+                      onClose={() => setIsConfirmationOpen(false)}
                     >
                       <DialogTitle>Confirm Submission</DialogTitle>
                       <DialogContent>
-                        <DialogContentText>Are you sure you want to submit this recommendation?</DialogContentText>
+                        <DialogContentText>
+                          Are you sure you want to submit this recommendation?
+                        </DialogContentText>
                       </DialogContent>
                       <DialogActions>
-                        <Button onClick={handleCancelSubmit} color="primary">Cancel</Button>
-                        <Button onClick={handleConfirmSubmit} color="primary" autoFocus>Submit</Button>
+                        <Button
+                          onClick={() => setIsConfirmationOpen(false)}
+                          color='primary'
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={submitRecommendation}
+                          color='primary'
+                          autoFocus
+                        >
+                          Submit
+                        </Button>
                       </DialogActions>
                     </Dialog>
                     <Snackbar
@@ -1042,18 +1124,33 @@ const printCaseDetails = () => {
                       <SnackbarContent
                         message={
                           <div>
-                            <Typography variant="body2" color="error" component="div">
-                              The following fields are required:
+                            <Typography
+                              variant='body2'
+                              color='error'
+                              component='div'
+                            >
+                              {snackbarMessages.length > 1
+                                ? 'The following fields are required:'
+                                : snackbarMessages[0]}
                             </Typography>
-                            {snackbarMessages.map((message, index) => (
-                              <Typography key={index} variant="body2" component="div">
-                                - {message}
-                              </Typography>
-                            ))}
+                            {snackbarMessages.length > 1 &&
+                              snackbarMessages.map((message, index) => (
+                                <Typography
+                                  key={index}
+                                  variant='body2'
+                                  component='div'
+                                >
+                                  - {message}
+                                </Typography>
+                              ))}
                           </div>
                         }
                         action={
-                          <Button color="secondary" size="small" onClick={() => setSnackbarOpen(false)}>
+                          <Button
+                            color='secondary'
+                            size='small'
+                            onClick={() => setSnackbarOpen(false)}
+                          >
                             Close
                           </Button>
                         }
@@ -1062,7 +1159,7 @@ const printCaseDetails = () => {
                     <Snackbar
                       open={snackOpen}
                       autoHideDuration={6000}
-                      message="Case saved as draft"
+                      message='Case saved'
                       onClose={handleCloseSnack}
                       action={snackAction}
                     />
@@ -1089,8 +1186,6 @@ const printCaseDetails = () => {
                 </TabPanel>
               </Box>
             </Grid>
-
-
           </Grid>
         </Dialog>
 
@@ -1122,7 +1217,6 @@ const printCaseDetails = () => {
                 </React.Fragment>
               ))}
             </List>
-        
           </Dialog>
         )}
       </div>

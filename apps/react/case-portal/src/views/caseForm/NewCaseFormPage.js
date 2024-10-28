@@ -41,7 +41,7 @@ export const NewCaseFormPage = ({
     const params = window.location.search;
     setCurrentParams(params);
   }, []);
-  
+
   useEffect(() => {
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
@@ -97,6 +97,7 @@ export const NewCaseFormPage = ({
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        isDraft: false,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -196,6 +197,7 @@ export const NewCaseFormPage = ({
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        isDraft: true,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -315,9 +317,6 @@ export const NewCaseFormPage = ({
                 console.log('Validation failed:', error); 
                 setValidationSnackbarOpen(true);
               }}
-              onChange={(submission) => {
-                console.log('submission submission:', submission); 
-                }}
               onCustomEvent={(event) => {
                 console.log('event event:', event);
                 if (event.component.key === 'saveAsDraft') {
@@ -384,7 +383,7 @@ export const NewCaseFormPage = ({
         <Snackbar
           open={snackOpen}
           autoHideDuration={6000}
-          message="Case saved as draft"
+          message="Case Saved"
           onClose={handleCloseSnack}
           action={snackAction}
         />

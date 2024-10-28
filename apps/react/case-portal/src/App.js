@@ -2,11 +2,12 @@ import { useEffect, useState, lazy, Suspense } from 'react'
 import { ThemeRoutes } from './routes'
 import ThemeCustomization from './themes'
 import { SessionStoreProvider } from './SessionStoreContext'
-import { CaseService, RecordService } from 'services'
+import { CaseService, RecordService, FormService  } from 'services'
 import menuItemsDefs from './menu'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
+import formPayload from './createFormJSON.json';
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
@@ -16,10 +17,12 @@ const App = () => {
   const [recordsTypes, setRecordsTypes] = useState([])
   const [casesDefinitions, setCasesDefinitions] = useState([])
   const [menu, setMenu] = useState({ items: [] })
+  const [formChecked, setFormChecked] = useState(false)
 
   useEffect(() => {
 
     localStorage.setItem('baseUrl', 'https://wkspwr.dev.connectedplant.honeywell.com:8902');
+
     const { keycloak } = sessionStore.bootstrap()
 
     const storedToken = localStorage.getItem('keycloakToken')
@@ -33,12 +36,19 @@ const App = () => {
 
       if (authenticated) {
         localStorage.setItem('keycloakToken', keycloak.token)
+        localStorage.setItem('keycloak', JSON.stringify(keycloak));
       }
 
       buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
       RegisteOptions(keycloak)
       forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
+
+
+      if (!formChecked) {
+        checkAndPostForm(keycloak)
+        setFormChecked(true) // Ensure it runs only once per session
+      }
     })
 
     keycloak.onAuthRefreshError = () => {
@@ -183,6 +193,47 @@ const App = () => {
   
     return setMenu(menu);
   }
+
+  async function checkAndPostForm(keycloak) {
+    if (localStorage.getItem('formCreated')) {
+      console.log('Form "EED Case Management System" already exists.')
+      return
+    }
+    try {
+      // Use FormService to get all forms
+      const data = await FormService.getAll(keycloak);
+
+      // Check if "EED Case Management System" exists in the list
+      const formExists = data.some(
+        (form) => form.title === 'EED Case Management System'
+      );
+
+      if (formExists) {
+        console.log('Form "EED Case Management System" already exists.');
+      } else {
+        console.log('Form "EED Case Management System" does not exist. Creating form...');
+        await createForm(keycloak);
+      }
+    } catch (error) {
+      console.error('Error checking form existence:', error);
+    }
+  }
+
+  async function createForm(keycloak) {
+    try {
+      // Use FormService to create a new form with the JSON payload
+      const response = await FormService.create(keycloak, formPayload);
+
+      if (!response.ok) {
+        throw new Error('Failed to create form');
+      }
+      console.log('Form created successfully');
+      localStorage.setItem('formCreated', 'true')
+    } catch (error) {
+      console.error('Error creating form:', error);
+    }
+  }
+
   
   
 

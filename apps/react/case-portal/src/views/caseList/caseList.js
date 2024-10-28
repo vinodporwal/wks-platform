@@ -162,11 +162,37 @@ export const CaseList = ({ status, caseDefId }) => {
       //   headerName: t('pages.caselist.datagrid.columns.createdat'),
       //   width: 220,
       // },
+      // {
+      //   field: 'assetName',
+      //   headerName: 'Asset Name',
+      //   width: 150,
+      // },
       {
-        field: 'assetName',
-        headerName: 'Asset Name',
-        width: 150,
-      },
+        field: 'mainAsset',
+        headerName: 'Main Asset', 
+        width: 230,
+        valueGetter: (value, row) => {
+          try {
+            
+            const attributes = typeof row.attributes === 'string' 
+              ? JSON.parse(row.attributes) 
+              : row.attributes;
+      
+           
+            const containerValue = attributes?.find(
+              (attr) => attr.name === 'container'
+            )?.value;
+      
+            const parsedContainer = containerValue ? JSON.parse(containerValue) : {};
+           
+            return parsedContainer.textField1 || '';
+          } catch (error) {
+            console.error("Error parsing mainAsset:", error);
+            return '';
+          }
+        },
+      }
+      ,
       {
         field: 'hierarchyName',
         headerName: 'Hierarchy Name',
@@ -178,11 +204,7 @@ export const CaseList = ({ status, caseDefId }) => {
         width: 150,
         valueGetter: (value, row) => row?.owner?.name,
       },
-      // {
-      //   field: 'queueId',
-      //   headerName: t('pages.caselist.datagrid.columns.queue'),
-      //   width: 200,
-      // },
+
       {
         field: 'action',
         headerName: 'Action',
