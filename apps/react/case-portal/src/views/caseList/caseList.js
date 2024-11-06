@@ -24,7 +24,7 @@ import React, {
 import { useTranslation } from 'react-i18next'
 import { CaseService } from '../../services'
 // import { Grid, GridColumn } from '@progress/kendo-react-grid';
-import '@progress/kendo-theme-material/dist/all.css';
+import '@progress/kendo-theme-material/dist/all.css'
 // import { useLocation } from 'react-router-dom';
 
 const DataGrid = lazy(() =>
@@ -99,7 +99,6 @@ export const CaseList = ({ status, caseDefId }) => {
       }
     }
   }, [])
-  
 
   useEffect(() => {
     fetchCases(
@@ -169,35 +168,79 @@ export const CaseList = ({ status, caseDefId }) => {
       // },
       {
         field: 'mainAsset',
-        headerName: 'Main Asset', 
+        headerName: 'Main Asset',
         width: 230,
         valueGetter: (value, row) => {
           try {
-            
-            const attributes = typeof row.attributes === 'string' 
-              ? JSON.parse(row.attributes) 
-              : row.attributes;
-      
-           
+            const attributes =
+              typeof row.attributes === 'string'
+                ? JSON.parse(row.attributes)
+                : row.attributes
+
             const containerValue = attributes?.find(
-              (attr) => attr.name === 'container'
-            )?.value;
-      
-            const parsedContainer = containerValue ? JSON.parse(containerValue) : {};
-           
-            return parsedContainer.textField1 || '';
+              (attr) => attr.name === 'container',
+            )?.value
+
+            const parsedContainer = containerValue
+              ? JSON.parse(containerValue)
+              : {}
+
+            return parsedContainer.textField1 || ''
           } catch (error) {
-            console.error("Error parsing mainAsset:", error);
-            return '';
+            console.error('Error parsing mainAsset:', error)
+            return ''
           }
         },
-      }
-      ,
-      {
-        field: 'hierarchyName',
-        headerName: 'Hierarchy Name',
-        width: 150,
       },
+      {
+        field: 'caseStatus',
+        headerName: 'Case Status',
+        width: 150,
+        valueGetter: (value, row) => {
+          try {
+            if (!row) {
+              return ''
+            }
+
+            // Retrieve caseStatusOptions from localStorage
+            const caseStatusOptions =
+              JSON.parse(localStorage.getItem('caseStatusOptions')) || []
+
+            // Parse the container value to get the caseStatus value
+            const attributes =
+              typeof row.attributes === 'string'
+                ? JSON.parse(row.attributes)
+                : row.attributes
+
+            if (!attributes) {
+              return ''
+            }
+
+            const containerValue = attributes.find(
+              (attr) => attr.name === 'container',
+            )?.value
+            const parsedContainer = containerValue
+              ? JSON.parse(containerValue)
+              : {}
+
+            const caseStatusValue = parsedContainer.caseStatus || ''
+
+            // Find the label corresponding to the value
+            const matchingOption = caseStatusOptions.find(
+              (option) => option.value === caseStatusValue,
+            )
+            return matchingOption ? matchingOption.label : caseStatusValue
+          } catch (error) {
+            console.error('Error parsing caseStatus:', error)
+            return ''
+          }
+        },
+      },
+      // {
+      //   field: 'hierarchyName',
+      //   headerName: 'Hierarchy Name',
+      //   width: 150,
+      // },
       {
         field: 'ownerName',
         headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
@@ -567,7 +610,7 @@ export const CaseList = ({ status, caseDefId }) => {
           keycloak={keycloak}
         />
       )}
-{/* 
+      {/* 
       {openNewCaseForm && (
         <NewCaseForm
           handleClose={handleCloseNewCaseForm}
@@ -659,7 +702,6 @@ export const CaseList = ({ status, caseDefId }) => {
 //     })
 // }
 
-
 function fetchCases(
   setFetching,
   keycloak,
@@ -668,56 +710,55 @@ function fetchCases(
   status,
   filter,
   setCases,
-  setFilter
+  setFilter,
 ) {
-  setFetching(true);
-  const searchParams = new URLSearchParams(window.location.search);
-  const assetName = searchParams.get('assetName') || 'defaultAssetName';
-  const hierarchyName = searchParams.get('hierarchyName') || 'defaultHierarchyName';
+  setFetching(true)
+  const searchParams = new URLSearchParams(window.location.search)
+  const assetName = searchParams.get('assetName') || 'defaultAssetName'
+  const hierarchyName =
+    searchParams.get('hierarchyName') || 'defaultHierarchyName'
 
   CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
     .then((resp) => {
-
-      const caseList = Array.isArray(resp) ? resp : [];
+      const caseList = Array.isArray(resp) ? resp : []
 
       const updatedCases = caseList.map((singleCase) => {
-        let caseTitle = "";
-        let caseNumber = singleCase.caseNo;
+        let caseTitle = ''
+        let caseNumber = singleCase.caseNo
 
         try {
           const containerValue = singleCase.attributes.find(
-            (attr) => attr.name === "container"
-          )?.value;
+            (attr) => attr.name === 'container',
+          )?.value
 
           if (containerValue) {
-            const parsedValue = JSON.parse(containerValue);
-            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
-            caseNumber = caseNumber || parsedValue.caseNo;
+            const parsedValue = JSON.parse(containerValue)
+            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle
+            caseNumber = caseNumber || parsedValue.caseNo
           }
         } catch (error) {
-          console.error("Error parsing container value:", error);
+          console.error('Error parsing container value:', error)
         }
 
         return {
           ...singleCase,
           caseTitle,
           caseNumber,
-        };
-      });
+        }
+      })
 
-      setCases(updatedCases); 
+      setCases(updatedCases)
       setFilter({
         ...filter,
         cursors: {}, // Reset cursors here
         hasPrevious: false,
         hasNext: false,
-      });
+      })
     })
     .catch((error) => {
-      console.error("Error fetching cases:", error);
+      console.error('Error fetching cases:', error)
     })
     .finally(() => {
-      setFetching(false);
-    });
+      setFetching(false)
+    })
 }
-

@@ -34,10 +34,10 @@ import { Comments } from 'views/caseComment/Comments'
 import { CaseService, FormService } from '../../services'
 import { tryParseJSONObject } from '../../utils/jsonStringCheck'
 import Documents from './Documents'
-import { Snackbar, SnackbarContent } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import logo from 'assets/images/logo.svg';
-import { DialogActions, DialogContent, DialogContentText } from '@mui/material';
+import { Snackbar, SnackbarContent } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import logo from 'assets/images/logo.svg'
+import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -60,25 +60,24 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // const [isFollowing, setIsFollowing] = useState(false)
   const [isFormData, setIsFormData] = useState(false)
 
-  const navigate = useNavigate();
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessages, setSnackbarMessages] = useState([]);
-  const [currentParams, setCurrentParams ] = useState([]);
-  const [lastCreatedCase, setLastCreatedCase] = useState(null);
-  const [snackOpen, setSnackOpen] = useState(false);
-  const [formStructure, setFormStructure] = useState(null);
-  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
-  const [apiBody, setApiBody] = useState(null);
-  
+  const navigate = useNavigate()
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessages, setSnackbarMessages] = useState([])
+  const [currentParams, setCurrentParams] = useState([])
+  const [lastCreatedCase, setLastCreatedCase] = useState(null)
+  const [snackOpen, setSnackOpen] = useState(false)
+  const [formStructure, setFormStructure] = useState(null)
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
+  const [apiBody, setApiBody] = useState(null)
+
   // const handleFollowClick = () => {
   //   setIsFollowing(!isFollowing)
   // }
-  
 
   useEffect(() => {
     console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
     console.log('{keycloak}', keycloak)
-    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email));
+    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
     getCaseInfo(aCase)
   }, [open, aCase])
 
@@ -102,8 +101,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const handleCloseSnack = () => {
-    setSnackOpen(false);
-  };
+    setSnackOpen(false)
+  }
 
   // const handleConfirmSubmit = () => {
   //   // Proceed with the submit action if confirmed
@@ -115,29 +114,29 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // const handleCancelSubmit = () => {
   //   setIsConfirmationOpen(false); // Close the dialog if canceled
   // };
-  
-
 
   const snackAction = lastCreatedCase && (
     <React.Fragment>
       <Button
-        color="primary"
-        size="small"
+        color='primary'
+        size='small'
         onClick={() => {
-          navigate(`/case-list/create${currentParams}`);
-          handleCloseSnack();
+          navigate(`/case-list/create${currentParams}`)
+          handleCloseSnack()
         }}
       >
         {lastCreatedCase.caseNo}
       </Button>
-      <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnack}>
-        <CloseIcon fontSize="small" />
+      <IconButton
+        size='small'
+        aria-label='close'
+        color='inherit'
+        onClick={handleCloseSnack}
+      >
+        <CloseIcon fontSize='small' />
       </IconButton>
     </React.Fragment>
-  );
-
-
-
+  )
 
   // const getCaseInfo = (aCase) => {
   //   CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
@@ -180,56 +179,67 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   //       console.log(err.message)
   //     })
   // }
-  
-  
-  const getCaseInfo = (aCase) => {
 
+  const getCaseInfo = (aCase) => {
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {
-        setCaseDef(data);
+        setCaseDef(data)
         setStages(
-          data.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
-        );
+          data.stages.sort((a, b) => a.index - b.index).map((o) => o.name),
+        )
 
-        const formData = await FormService.getByKey(keycloak, data.formKey);
+        const formData = await FormService.getByKey(keycloak, data.formKey)
         setFormStructure(formData)
         if (formData && formData.structure && formData.structure.components) {
-          const updatedFormStructure = { ...formData };
-          console.log('formData', formData);
-  
+          const updatedFormStructure = { ...formData }
+          console.log('formData', formData)
+
           // Disable fields (with proper null checks)
-          const level1 = updatedFormStructure.structure.components[0];
+          const level1 = updatedFormStructure.structure.components[0]
           if (level1 && level1.components) {
-            const level2 = level1.components[0];
-            const level7 = level1.components.length > 8 ? level1.components[8] : null;
-            const level6 = level1.components.length > 6 ? level1.components[6] : null;
+            const level2 = level1.components[0]
+            const level7 =
+              level1.components.length > 8 ? level1.components[8] : null
+            const level6 =
+              level1.components.length > 6 ? level1.components[6] : null
             console.log('level6', level6)
             if (level2 && level2.components) {
-              const caseDescriptionField = level2.components.length > 1 ? level2.components[1] : null;
+              const caseDescriptionField =
+                level2.components.length > 1 ? level2.components[1] : null
               if (caseDescriptionField) {
-                caseDescriptionField.disabled = false;
+                caseDescriptionField.disabled = false
               }
-  
-              const recommendation = level1.components.length > 5 ? level1.components[5] : null;
+
+              const recommendation =
+                level1.components.length > 5 ? level1.components[5] : null
               if (recommendation) {
-                recommendation.disabled = true;
+                recommendation.disabled = true
               }
-  
+
               if (level2.components[0] && level2.components[0].columns) {
-                const caseNo = level2.components[0].columns.length > 1 ? level2.components[0].columns[0].components[0] : null;
-               
+                const caseNo =
+                  level2.components[0].columns.length > 1
+                    ? level2.components[0].columns[0].components[0]
+                    : null
+
                 if (caseNo) {
-                  caseNo.calculateValue = `value = ${aCase.caseNo}`;
+                  caseNo.calculateValue = `value = ${aCase.caseNo}`
                 }
 
-                const caseTitleField = level2.components[0].columns.length > 1 ? level2.components[0].columns[1].components[0] : null;
+                const caseTitleField =
+                  level2.components[0].columns.length > 1
+                    ? level2.components[0].columns[1].components[0]
+                    : null
                 if (caseTitleField) {
-                  caseTitleField.disabled = true;
+                  caseTitleField.disabled = true
                 }
-  
-                const caseAssign = level2.components[0].columns.length > 2 ? level2.components[0].columns[2].components[0] : null;
+
+                const caseAssign =
+                  level2.components[0].columns.length > 2
+                    ? level2.components[0].columns[2].components[0]
+                    : null
                 if (caseAssign) {
-                  caseAssign.disabled = true;
+                  caseAssign.disabled = true
                 }
                 console.log('aCase', aCase)
 
@@ -238,54 +248,65 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 // if (caseAssign1) {
                 //   caseAssign1.defaultValue = `1_true`;
                 // }
-                
               }
-  
+
               if (level7 && level7.columns) {
-                const saveAsDraft = level7.columns.length > 2 ? level7.columns[2].components[0] : null;
+                const saveAsDraft =
+                  level7.columns.length > 2
+                    ? level7.columns[2].components[0]
+                    : null
                 if (saveAsDraft) {
-                  saveAsDraft.hidden = false;
+                  saveAsDraft.hidden = false
                 }
-  
-                const saveButton = level7.columns.length > 3 ? level7.columns[3].components[0] : null;
+
+                const saveButton =
+                  level7.columns.length > 3
+                    ? level7.columns[3].components[0]
+                    : null
                 if (saveButton) {
-                  saveButton.hidden = false;
+                  saveButton.hidden = false
                 }
               }
 
-              if (level6) {
-                const recommendationDescription = level6.components[0].components[0].columns[0].components[1];
-                if (recommendationDescription) {
-                  recommendationDescription.disabled = !(aCase.owner?.email === keycloak.idTokenParsed?.email);
-                }
-                // console.log('saveAsDraft', recommendationDescription)
-              }
+              // if (level6) {
+              //   const recommendationDescription =
+              //     level6.components[0].components[0].columns[0].components[1]
+              //   if (recommendationDescription) {
+              //     recommendationDescription.disabled = !(
+              //       aCase.owner?.email === keycloak.idTokenParsed?.email
+              //     )
+              //   }
+              //   // console.log('saveAsDraft', recommendationDescription)
+              // }
             }
           }
-  
-  
-          setForm(updatedFormStructure);
+
+          setForm(updatedFormStructure)
         } else {
-          console.error("Form structure or components are undefined.");
+          console.error('Form structure or components are undefined.')
         }
         setIsFormData(true)
 
         // return CaseService.getCaseById(keycloak, aCase.businessKey);
 
-        const caseData = await CaseService.getCaseById(keycloak, aCase.businessKey);
+        const caseData = await CaseService.getCaseById(
+          keycloak,
+          aCase.businessKey,
+        )
 
-        aCase.documents = caseData?.documents || [];
-        aCase.stage = caseData?.stage || "Stage 0";
-        return aCase;
+        aCase.documents = caseData?.documents || []
+        // aCase.stage = caseData?.stage || "Stage 0";
+        return aCase
       })
       .then((caseData) => {
-        console.log('caseData', caseData);
+        console.log('caseData', caseData)
         setComments(
           caseData?.comments?.sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-        );
-        setDocuments(caseData?.documents);
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        )
+        setDocuments(caseData?.documents)
         setFormData({
           data: caseData.attributes.reduce(
             (obj, item) =>
@@ -294,38 +315,36 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   ? JSON.parse(item.value)
                   : item.value,
               }),
-            {}
+            {},
           ),
           metadata: {},
           isValid: true,
-        });
-        setActiveStage(caseData.stage);
+        })
+        setActiveStage(caseData.stage)
       })
       .catch((err) => {
-        console.log(err.message);
-      });
-  };
-
-
+        console.log(err.message)
+      })
+  }
 
   const onSave = () => {
-    const currentParams = window.location.search;
-    setCurrentParams(currentParams);
-    const urlParams = new URLSearchParams(window.location.search);
-  
-    const assetName = urlParams.get('assetName') || 'default';
-    const hierarchyName = urlParams.get('hierarchyName') || 'default';
-    const eventIdsParam = urlParams.get('eventIds');
-    const sourceSystem = urlParams.get('sourceSystem') || 'default';
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
-      value: typeof formData.data[key] !== 'object'
-        ? formData.data[key]
-        : JSON.stringify(formData.data[key]),
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
       type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    }));
-  
+    }))
 
     CaseService.createCase(
       keycloak,
@@ -339,10 +358,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-      })
+      }),
     )
       .then((data) => {
-        const businessKey = data.businessKey; 
+        const businessKey = data.businessKey
 
         return CaseService.saveCase(
           keycloak,
@@ -360,22 +379,20 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-          })
-        );
+          }),
+        )
       })
       .then((data) => {
-        setLastCreatedCase(data);
-        setSnackOpen(true); 
+        setLastCreatedCase(data)
+        setSnackOpen(true)
         setTimeout(() => {
-          handleClose();
-        }, 6000);
+          handleClose()
+        }, 6000)
       })
       .catch((err) => {
-        console.error(err.message);
-      });
-  };
-
-
+        console.error(err.message)
+      })
+  }
 
   // const onSubmitRecommendation = async (event) => {
   //   console.log('event onSubmitRecommendation', event)
@@ -487,14 +504,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       recommendationTargetCompletionDate1,
       recommendationDescription1,
       equipmentFunctionLocation,
-      RecommendationConfirmSAP3
+      RecommendationConfirmSAP3,
     } = event.data
 
     const missingFields = []
     if (!recommendationReviewer) missingFields.push('Recommendation Reviewer')
-    if (!recommendationAssignedTo2) missingFields.push('Recommendation Assigned To')
+    if (!recommendationAssignedTo2)
+      missingFields.push('Recommendation Assigned To')
     if (!recommendationHeadline) missingFields.push('Recommendation Headline')
-    if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date')
+    if (!recommendationTargetCompletionDate1)
+      missingFields.push('Target Completion Date')
 
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields)
@@ -530,6 +549,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       setSnackbarMessages(['Recommendation submitted successfully'])
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
+      setTimeout(() => {
+        window.location.reload()
+      }, 4000)
     } catch (error) {
       console.error('Error submitting recommendation:', error)
       setSnackbarMessages(['Error submitting recommendation'])
@@ -537,25 +559,25 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     }
   }
 
-
   const onSubmitForm = () => {
-    const currentParams = window.location.search;
-    setCurrentParams(currentParams);
-    const urlParams = new URLSearchParams(window.location.search);
-  
-    const assetName = urlParams.get('assetName') || 'default';
-    const hierarchyName = urlParams.get('hierarchyName') || 'default';
-    const eventIdsParam = urlParams.get('eventIds');
-    const sourceSystem = urlParams.get('sourceSystem') || 'default';
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
-      value: typeof formData.data[key] !== 'object'
-        ? formData.data[key]
-        : JSON.stringify(formData.data[key]),
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
       type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    }));
-  
+    }))
+
     // First API call to createCase to get the businessKey
     CaseService.createCase(
       keycloak,
@@ -569,12 +591,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-      })
+      }),
     )
       .then((data) => {
-        const businessKey = data.businessKey; // Extract businessKey from the response
+        const businessKey = data.businessKey // Extract businessKey from the response
         // setLastCreatedCase(data);
-  
+
         // Second API call to saveCase with the businessKey
         return CaseService.saveCase(
           keycloak,
@@ -592,22 +614,21 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-          })
-        );
+          }),
+        )
       })
       .then((data) => {
-        setLastCreatedCase(data);
-        setSnackOpen(true); // Show success notification
+        setLastCreatedCase(data)
+        setSnackOpen(true) // Show success notification
         setTimeout(() => {
-          handleClose();
-        }, 6000);
+          handleClose()
+        }, 6000)
       })
       .catch((err) => {
-        console.error(err.message);
-      });
-  };
-  
-  
+        console.error(err.message)
+      })
+  }
+
   const handleMainTabChanged = (event, newValue) => {
     setMainTabIndex(newValue)
   }
@@ -654,117 +675,157 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     handleCloseProcessesDialog()
   }
 
- // Function to get label for a given fault category value from localStorage
-const getFaultCategoryLabel = (value) => {
-  // Retrieve options from localStorage
-  const options = JSON.parse(localStorage.getItem('faultCategoryOptions')) || [];
+  // Function to get label for a given category value from localStorage
+  const getCategoryLabel = (value) => {
+    // Retrieve options from localStorage
+    const options = JSON.parse(localStorage.getItem('categoryOptions')) || []
 
-  // Find the option with the matching value and return its label
-  const matchingOption = options.find(option => option.value === value);
-  return matchingOption ? matchingOption.label : value; // Fallback to value if no match is found
-};
-
- // Function to get label for a given fault category value from localStorage
- const getcaseStatusLabel = (value) => {
-  // Retrieve options from localStorage
-  const options = JSON.parse(localStorage.getItem('caseStatusOptions')) || [];
-
-  // Find the option with the matching value and return its label
-  const matchingOption = options.find(option => option.value === value);
-  return matchingOption ? matchingOption.label : value; // Fallback to value if no match is found
-};
-
-const getEquipmentFunctionLocationLabel = (id) => {
-  const storedLocations = localStorage.getItem('functionalLocationOptions');
-
-  if (!storedLocations) {
-    console.error('No functionalLocationOptions found in localStorage');
-    return id;
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.value === value)
+    return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
   }
 
-  let locations = [];
+  const getCaseCauseDescriptionLabel = (value, categoryId) => {
+    // Retrieve options for the specific category from localStorage
+    const options =
+      JSON.parse(
+        localStorage.getItem(`caseCauseDescriptionOptions_${categoryId}`),
+      ) || []
 
-  try {
-    locations = JSON.parse(storedLocations);
-  } catch (error) {
-    console.error('Error parsing functionalLocationOptions from localStorage:', error);
-    return id;
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.value === value)
+    return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
   }
 
-  const location = locations.find(location => location.value === id);
-  return location ? location.label : id;
-};
+  // Function to get label for a given fault category value from localStorage
+  const getFaultCategoryLabel = (value) => {
+    // Retrieve options from localStorage
+    const options =
+      JSON.parse(localStorage.getItem('faultCategoryOptions')) || []
 
-
-// Function to dynamically create labelMap from the form structure
-const createLabelMapFromStructure = (structure) => {
-  const labelMap = {};
-
-  const extractLabels = (components) => {
-    if (!components || !Array.isArray(components)) return;
-
-    components.forEach((component) => {
-      if (component.key && component.label) {
-        labelMap[component.key] = component.label;
-      }
-
-      // Recursively check nested components
-      if (component.components) {
-        extractLabels(component.components);
-      }
-
-      // Handle columns in case they contain components
-      if (component.columns) {
-        component.columns.forEach((col) => {
-          if (col.components) {
-            extractLabels(col.components);
-          }
-        });
-      }
-    });
-  };
-
-  // Check for nested structure and extract components from it
-  const mainComponents = structure.components || (structure.structure && structure.structure.components);
-  if (mainComponents) {
-    extractLabels(mainComponents);
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.value === value)
+    return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
   }
 
-  return labelMap;
-};
+  // Function to get label for a given fault category value from localStorage
+  const getcaseStatusLabel = (value) => {
+    // Retrieve options from localStorage
+    const options = JSON.parse(localStorage.getItem('caseStatusOptions')) || []
 
-// Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
-const formatDataGrid = (dataGrid, getLabel) => {
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.value === value)
+    return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
+  }
 
-  if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>';
+  const getEquipmentFunctionLocationLabel = (id) => {
+    const storedLocations = localStorage.getItem('functionalLocationOptions')
 
-  const fieldsToSkip = ['textField1', 'RecommendationSubmit', 'recommendationAssignedTo1', 'deleteRowButton4', 'RecommendationSubmit3' ]; // Add any keys you want to skip here
+    if (!storedLocations) {
+      console.error('No functionalLocationOptions found in localStorage')
+      return id
+    }
 
-  return dataGrid.map(item => {
-    return `
+    let locations = []
+
+    try {
+      locations = JSON.parse(storedLocations)
+    } catch (error) {
+      console.error(
+        'Error parsing functionalLocationOptions from localStorage:',
+        error,
+      )
+      return id
+    }
+
+    const location = locations.find((location) => location.value === id)
+    return location ? location.label : id
+  }
+
+  // Function to dynamically create labelMap from the form structure
+  const createLabelMapFromStructure = (structure) => {
+    const labelMap = {}
+
+    const extractLabels = (components) => {
+      if (!components || !Array.isArray(components)) return
+
+      components.forEach((component) => {
+        if (component.key && component.label) {
+          labelMap[component.key] = component.label
+        }
+
+        // Recursively check nested components
+        if (component.components) {
+          extractLabels(component.components)
+        }
+
+        // Handle columns in case they contain components
+        if (component.columns) {
+          component.columns.forEach((col) => {
+            if (col.components) {
+              extractLabels(col.components)
+            }
+          })
+        }
+      })
+    }
+
+    // Check for nested structure and extract components from it
+    const mainComponents =
+      structure.components ||
+      (structure.structure && structure.structure.components)
+    if (mainComponents) {
+      extractLabels(mainComponents)
+    }
+
+    return labelMap
+  }
+
+  // Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
+  const formatDataGrid = (dataGrid, getLabel) => {
+    if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>'
+
+    const fieldsToSkip = [
+      'textField1',
+      'RecommendationSubmit',
+      'recommendationAssignedTo1',
+      'deleteRowButton4',
+      'RecommendationSubmit3',
+    ] // Add any keys you want to skip here
+
+    return dataGrid
+      .map((item) => {
+        return `
       <div style="display: flex; flex-wrap: wrap; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
-        ${Object.entries(item).map(([key, value]) => 
-          fieldsToSkip.includes(key) ? '' : `
+        ${Object.entries(item)
+          .map(([key, value]) =>
+            fieldsToSkip.includes(key)
+              ? ''
+              : `
             <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
               <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
               <p style="margin: 0;">
-                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || ""}
+                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || ''}
               </p>
             </div>
-        `).join('')}
+        `,
+          )
+          .join('')}
       </div>
-    `;
-  }).join('');
-};
+    `
+      })
+      .join('')
+  }
 
+  const generatePrintContent = (aCase, structure) => {
+    const containerData = JSON.parse(
+      aCase.attributes.find((attr) => attr.name === 'container').value,
+    )
+    const labelMap = createLabelMapFromStructure(structure)
+    console.log('labelMap', labelMap)
+    const getLabel = (key) => labelMap[key] || key
 
-const generatePrintContent = (aCase, structure) => {
-  const containerData = JSON.parse(aCase.attributes.find(attr => attr.name === "container").value);
-  const labelMap = createLabelMapFromStructure(structure);
-  console.log('labelMap', labelMap)
-  const getLabel = (key) => labelMap[key] || key;
-
-  let content = `
+    let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
         <img src="${logo}" alt="Honeywell Logo" style="height: 50px; margin-right: 10px;">
@@ -775,11 +836,11 @@ const generatePrintContent = (aCase, structure) => {
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("caseNo")}</strong>: ${aCase.caseNo}</p>
-          <p><strong>${getLabel("caseTitle")}</strong>: ${containerData.caseTitle}</p>
-          <p><strong>${getLabel("caseAssignedTo")}</strong>: ${containerData.caseAssignedTo}</p>
-          <p><strong>${getLabel("faultCategory")}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
-          <p><strong>${getLabel("caseDescription")}</strong>: ${containerData.caseDescription}</p>
+          <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
+          <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
+          <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
+          <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
+          <p><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
         </div>
       </div>
 
@@ -787,73 +848,79 @@ const generatePrintContent = (aCase, structure) => {
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("createdOn")}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
-          <p><strong>${getLabel("dueDate")}</strong>: ${containerData.dueDate || "N/A"}</p>
-          <p><strong>${getLabel("endDate")}</strong>: ${containerData.endDate || "N/A"}</p>
-          <p><strong>${getLabel("caseStatus")}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
-          <p><strong>${getLabel("analysisTeam")}</strong>: ${containerData.analysisTeam.join(", ")}</p>
+          <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
+          <p><strong>${getLabel('dueDate')}</strong>: ${containerData.dueDate || 'N/A'}</p>
+          <p><strong>${getLabel('endDate')}</strong>: ${containerData.endDate || 'N/A'}</p>
+          <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
+          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
         </div>
       </div>
 
       <!-- Associated Faults -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
-        <p style="padding: 10px; margin: 0;"><strong>${getLabel("textField1")}</strong>: ${containerData.textField1}</p>
+        <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
         ${formatDataGrid(containerData.dataGrid2, getLabel)}
       </div>
-  `;
+  `
 
-  // Conditional display based on RecommendationsRadio value
-  if (containerData.RecommendationsRadio === "no") {
-    content += `
+    // Conditional display based on RecommendationsRadio value
+    if (containerData.RecommendationsRadio === 'no') {
+      const caseCauseCategoryLabel = getCategoryLabel(
+        containerData.caseCauseCategory,
+      )
+      const caseCauseDescriptionLabel = getCaseCauseDescriptionLabel(
+        containerData.caseCauseDescription,
+        containerData.caseCauseCategory,
+      )
+      content += `
       <!-- Analysis -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("caseCauseCategory")}</strong>: ${containerData.caseCauseCategory}</p>
-          <p><strong>${getLabel("caseCauseDescription")}</strong>: ${containerData.caseCauseDescription?.label}</p>
-          <p><strong>${getLabel("analysisDesc")}</strong>: ${containerData.analysisDesc}</p>
+          <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
+          <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
+          <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
         </div>
       </div>
-    `;
-  } else {
-    content += `
+    `
+    } else {
+      content += `
       <!-- Data Grid 1 -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel("dataGrid1")}</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
         ${formatDataGrid(containerData.dataGrid1, getLabel)}
       </div>
-    `;
-  }
+    `
+    }
 
-  // Value Realization section
-  content += `
+    // Value Realization section
+    content += `
       <!-- Value Realization -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("valueRealizationCategory")}</strong>: ${containerData.valueRealizationCategory}</p>
-          <p><strong>${getLabel("productionLoss")}</strong>: ${containerData.productionLoss}</p>
-          <p><strong>${getLabel("manHoursCost")}</strong>: ${containerData.manHoursCost}</p>
-          <p><strong>${getLabel("spareCost")}</strong>: ${containerData.spareCost}</p>
-          <p><strong>${getLabel("totalValueCaptured")}</strong>: ${containerData.totalValueCaptured}</p>
-          <p><strong>${getLabel("valueRealizationConclusion")}</strong>: ${containerData.valueRealizationConclusion}</p>
+          <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
+          <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss}</p>
+          <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost}</p>
+          <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost}</p>
+          <p><strong>${getLabel('totalValueCaptured')}</strong>: ${containerData.totalValueCaptured}</p>
+          <p><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
         </div>
       </div>
     </div>
-  `;
+  `
 
-  return content;
-};
+    return content
+  }
 
+  // Print function
+  const printCaseDetails = () => {
+    const printContent = generatePrintContent(aCase, formStructure)
 
-// Print function
-const printCaseDetails = () => {
-  const printContent = generatePrintContent(aCase, formStructure);
-  
-  // Open a new window and print the generated content
-  const printWindow = window.open('', '_blank');
-  printWindow.document.write(`
+    // Open a new window and print the generated content
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(`
     <html>
       <head>
         <title>Print Case Details</title>
@@ -862,11 +929,10 @@ const printCaseDetails = () => {
         ${printContent}
       </body>
     </html>
-  `);
-  printWindow.document.close();
-  printWindow.print();
-};
-  
+  `)
+    printWindow.document.close()
+    printWindow.print()
+  }
 
   return (
     aCase &&

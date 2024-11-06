@@ -2,12 +2,12 @@ import { useEffect, useState, lazy, Suspense } from 'react'
 import { ThemeRoutes } from './routes'
 import ThemeCustomization from './themes'
 import { SessionStoreProvider } from './SessionStoreContext'
-import { CaseService, RecordService, FormService  } from 'services'
+import { CaseService, RecordService, FormService } from 'services'
 import menuItemsDefs from './menu'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
-import formPayload from './createFormJSON.json';
+import formPayload from './createFormJSON.json'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
@@ -20,8 +20,10 @@ const App = () => {
   const [formChecked, setFormChecked] = useState(false)
 
   useEffect(() => {
-
-    localStorage.setItem('baseUrl', 'https://wkspwr.dev.connectedplant.honeywell.com:8902');
+    localStorage.setItem(
+      'baseUrl',
+      'https://wkspwr.dev.connectedplant.honeywell.com:8902',
+    )
 
     const { keycloak } = sessionStore.bootstrap()
 
@@ -36,14 +38,13 @@ const App = () => {
 
       if (authenticated) {
         localStorage.setItem('keycloakToken', keycloak.token)
-        localStorage.setItem('keycloak', JSON.stringify(keycloak));
+        localStorage.setItem('keycloak', JSON.stringify(keycloak))
       }
 
       buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
       RegisteOptions(keycloak)
       forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
-
 
       if (!formChecked) {
         checkAndPostForm(keycloak)
@@ -91,108 +92,107 @@ const App = () => {
     }
   }
 
+  async function buildMenuItems(keycloak) {
+    const menu = {
+      items: [...menuItemsDefs.items],
+    }
+    console.log('menuItemsDefs', menuItemsDefs)
+
+    await RecordService.getAllRecordTypes(keycloak).then((data) => {
+      setRecordsTypes(data)
+
+      data.forEach((element) => {
+        menu.items[1].children
+          .filter((menu) => menu.id === 'record-list')[0]
+          .children.push({
+            id: element.id,
+            title: element.id,
+            type: 'item',
+            url: '/record-list/' + element.id,
+            breadcrumbs: true,
+          })
+      })
+    })
+
+    await CaseService.getCaseDefinitions(keycloak).then((data) => {
+      setCasesDefinitions(data)
+
+      data.forEach((element) => {
+        menu.items[1].children
+          .filter((menu) => menu.id === 'case-list')[0]
+          .children.push({
+            id: element.id,
+            title: element.name,
+            type: 'item',
+            url: '/case-list/' + element.id,
+            breadcrumbs: true,
+          })
+      })
+    })
+
+    if (!accountStore.isManagerUser(keycloak)) {
+      delete menu.items[2]
+    }
+
+    return setMenu(menu)
+  }
+
   // async function buildMenuItems(keycloak) {
   //   const menu = {
   //     items: [...menuItemsDefs.items],
   //   }
-  //   console.log('menuItemsDefs', menuItemsDefs)
 
-  //   await RecordService.getAllRecordTypes(keycloak).then((data) => {
-  //     setRecordsTypes(data)
+  //   console.log('menuItemsDefs:', menuItemsDefs)
 
-  //     data.forEach((element) => {
-  //       menu.items[1].children
-  //         .filter((menu) => menu.id === 'record-list')[0]
-  //         .children.push({
-  //           id: element.id,
-  //           title: element.id,
-  //           type: 'item',
-  //           url: '/record-list/' + element.id,
-  //           breadcrumbs: true,
-  //         })
+  //   if (keycloak.hasRealmRole('admin')) {
+  //     menu.items = menu.items.filter((item) => item.id === 'management')
+  //   }
+  //   // else if (keycloak.hasRealmRole('user')) {
+  //   //   menu.items = menu.items.filter((item) => item.id === 'utilities');
+  //   // }
+  //   // else if (keycloak.hasRealmRole('manager')) {
+  //   //   menu.items = menu.items.filter((item) => item.id === 'dashboard');
+  //   // }
+  //   else {
+  //     await RecordService.getAllRecordTypes(keycloak).then((data) => {
+  //       setRecordsTypes(data)
+
+  //       data.forEach((element) => {
+  //         menu.items[1].children
+  //           .filter((menu) => menu.id === 'record-list')[0]
+  //           .children.push({
+  //             id: element.id,
+  //             title: element.id,
+  //             type: 'item',
+  //             url: '/record-list/' + element.id,
+  //             breadcrumbs: true,
+  //           })
+  //       })
   //     })
-  //   })
 
-  //   await CaseService.getCaseDefinitions(keycloak).then((data) => {
-  //     setCasesDefinitions(data)
+  //     await CaseService.getCaseDefinitions(keycloak).then((data) => {
+  //       setCasesDefinitions(data)
 
-  //     data.forEach((element) => {
-  //       menu.items[1].children
-  //         .filter((menu) => menu.id === 'case-list')[0]
-  //         .children.push({
-  //           id: element.id,
-  //           title: element.name,
-  //           type: 'item',
-  //           url: '/case-list/' + element.id,
-  //           breadcrumbs: true,
-  //         })
+  //       data.forEach((element) => {
+  //         menu.items[1].children
+  //           .filter((menu) => menu.id === 'case-list')[0]
+  //           .children.push({
+  //             id: element.id,
+  //             title: element.name,
+  //             type: 'item',
+  //             url: '/case-list/' + element.id,
+  //             breadcrumbs: true,
+  //           })
+  //       })
   //     })
-  //   })
 
-  //   if (!accountStore.isManagerUser(keycloak)) {
-  //     delete menu.items[2]
+  //     if (!accountStore.isManagerUser(keycloak)) {
+  //       delete menu.items[2]
+  //     }
   //   }
 
   //   return setMenu(menu)
   // }
-
-  async function buildMenuItems(keycloak) {
-    const menu = {
-      items: [...menuItemsDefs.items],
-    };
-  
-    console.log('menuItemsDefs:', menuItemsDefs);
-  
-
-    if (keycloak.hasRealmRole('admin')) {
-      menu.items = menu.items.filter((item) => item.id === 'management');
-    } 
-    // else if (keycloak.hasRealmRole('user')) {
-    //   menu.items = menu.items.filter((item) => item.id === 'utilities');
-    // }
-    // else if (keycloak.hasRealmRole('manager')) {
-    //   menu.items = menu.items.filter((item) => item.id === 'dashboard');
-    // } 
-    else {
-      await RecordService.getAllRecordTypes(keycloak).then((data) => {
-        setRecordsTypes(data);
-  
-        data.forEach((element) => {
-          menu.items[1].children
-            .filter((menu) => menu.id === 'record-list')[0]
-            .children.push({
-              id: element.id,
-              title: element.id,
-              type: 'item',
-              url: '/record-list/' + element.id,
-              breadcrumbs: true,
-            });
-        });
-      });
-  
-      await CaseService.getCaseDefinitions(keycloak).then((data) => {
-        setCasesDefinitions(data);
-  
-        data.forEach((element) => {
-          menu.items[1].children
-            .filter((menu) => menu.id === 'case-list')[0]
-            .children.push({
-              id: element.id,
-              title: element.name,
-              type: 'item',
-              url: '/case-list/' + element.id,
-              breadcrumbs: true,
-            });
-        });
-      });
-  
-      if (!accountStore.isManagerUser(keycloak)) {
-        delete menu.items[2];
-      }
-    }
-  
-    return setMenu(menu);
-  }
 
   async function checkAndPostForm(keycloak) {
     if (localStorage.getItem('formCreated')) {
@@ -201,41 +201,40 @@ const App = () => {
     }
     try {
       // Use FormService to get all forms
-      const data = await FormService.getAll(keycloak);
+      const data = await FormService.getAll(keycloak)
 
       // Check if "EED Case Management System" exists in the list
       const formExists = data.some(
-        (form) => form.title === 'EED Case Management System'
-      );
+        (form) => form.title === 'EED Case Management System',
+      )
 
       if (formExists) {
-        console.log('Form "EED Case Management System" already exists.');
+        console.log('Form "EED Case Management System" already exists.')
       } else {
-        console.log('Form "EED Case Management System" does not exist. Creating form...');
-        await createForm(keycloak);
+        console.log(
+          'Form "EED Case Management System" does not exist. Creating form...',
+        )
+        await createForm(keycloak)
       }
     } catch (error) {
-      console.error('Error checking form existence:', error);
+      console.error('Error checking form existence:', error)
     }
   }
 
   async function createForm(keycloak) {
     try {
       // Use FormService to create a new form with the JSON payload
-      const response = await FormService.create(keycloak, formPayload);
+      const response = await FormService.create(keycloak, formPayload)
 
       if (!response.ok) {
-        throw new Error('Failed to create form');
+        throw new Error('Failed to create form')
       }
-      console.log('Form created successfully');
+      console.log('Form created successfully')
       localStorage.setItem('formCreated', 'true')
     } catch (error) {
-      console.error('Error creating form:', error);
+      console.error('Error creating form:', error)
     }
   }
-
-  
-  
 
   return (
     keycloak &&
