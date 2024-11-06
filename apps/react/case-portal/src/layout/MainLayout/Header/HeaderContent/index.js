@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { Box, useMediaQuery } from '@mui/material'
 import {
   NotificationBell,

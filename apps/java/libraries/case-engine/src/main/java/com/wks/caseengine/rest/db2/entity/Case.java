@@ -1,6 +1,10 @@
 package com.wks.caseengine.rest.db2.entity;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wks.caseengine.rest.model.Attribute;
@@ -53,6 +57,14 @@ public class Case {
     
     @Column(name ="isDraft")
     private Boolean isDraft;
+    
+    @Column(name = "created_date", updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdDate;
+
+    @Column(name = "updated_date")
+    @UpdateTimestamp
+    private LocalDateTime updatedDate;
 
 	public String getCaseNo() {
 		return caseNo;
@@ -141,4 +153,31 @@ public class Case {
 	public void setIsDraft(Boolean isDraft) {
 		this.isDraft = isDraft;
 	}
+
+	public LocalDateTime getCreatedDate() {
+		return createdDate;
+	}
+
+	public void setCreatedDate(LocalDateTime createdDate) {
+		this.createdDate = createdDate;
+	}
+
+	public LocalDateTime getUpdatedDate() {
+		return updatedDate;
+	}
+
+	public void setUpdatedDate(LocalDateTime updatedDate) {
+		this.updatedDate = updatedDate;
+	}
+
+	@Override
+	public String toString() {
+		return "Case [caseNo=" + caseNo + ", caseDefinitionId=" + caseDefinitionId + ", owner=" + owner
+				+ ", attributes=" + attributes + ", eventIds=" + eventIds + ", assetName=" + assetName
+				+ ", hierarchyName=" + hierarchyName + ", sourceSystem=" + sourceSystem + ", hierarchyNodePKID="
+				+ hierarchyNodePKID + ", businessKey=" + businessKey + ", isDraft=" + isDraft + ", createdDate="
+				+ createdDate + ", updatedDate=" + updatedDate + "]";
+	}
+	
+	
 }

@@ -240,12 +240,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		System.out.println(eventIds.get(0));
 		List<EventEnrichmentModel> eventEnrichments = fetchRecords.getEventEnrichments(eventIds);
 		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
-		
-//		for(FaultHistoryModel eventEnrichment: faultHistorys) {
-//			System.out.println(eventEnrichment.getFaultDisplayName());
-//		}
-		
-		
 		String equipmentName = "";
 		for(FaultHistoryModel faultHistory: faultHistorys) {
 			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
@@ -302,7 +296,25 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		}
 		caseData.setHierarchyNodePKID(hierarchyNodePKID);
 		Case caseDetails = new Case();
-		String caseNo = caseData.getCaseNo();
+		String caseNo = "";
+		List<Attribute> attributes = caseData.getAttributes();
+		Attribute attribute = attributes.get(0);
+		String attributeValue = attribute.getValue();
+		try {
+		    ObjectMapper objectMapper = new ObjectMapper();
+		    JsonNode rootNode = objectMapper.readTree(attributeValue);
+		    caseNo = rootNode.path("caseNo").asText();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("Case Number"+ caseNo);
+		System.out.println("Case Number"+ caseNo);
+		System.out.println("Case Number"+ caseNo);
+		System.out.println("Case Number"+ caseNo);
+		System.out.println("Case Number"+ caseNo);
+		System.out.println("Case Information...."+ caseData.toString());
+		System.out.println("Case Number condition "+ caseNo==null);
+		System.out.println("Printing Payload...");
 		if(caseNo==null || caseNo.length()==0) {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
@@ -324,60 +336,55 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			
 		} else {
 			System.out.println("Saving Exsting Case Details....");
+			caseData.setCaseNo(caseNo);
 			caseDetails  = caseRepository.save(caseData);
 		}
 		
 		//sending Emails part
-		List<Attribute> attributes = caseDetails.getAttributes();
-		for (Attribute attribute : attributes) {
-			String attributeValue = attribute.getValue();
-			attributeValue = attributeValue.replace("\\\"", "\"");
-			System.out.println("Attribute Value: " + attributeValue);
+		
+		attributeValue = attributeValue.replace("\\\"", "\"");
+		System.out.println("Attribute Value: " + attributeValue);
 
-			try {
-			    ObjectMapper objectMapper = new ObjectMapper();
-			    JsonNode rootNode = objectMapper.readTree(attributeValue);
-			    String assignedTo = rootNode.path("caseAssignedTo").asText();
-			    String caseNumber = caseData.getCaseNo();
-			    String caseTitle = rootNode.path("caseTitle").asText();
-			    System.out.println(rootNode.path("caseAssignedTo").asText());
-			    Long caseStatusNo = rootNode.path("caseStatus").asLong();
-			    Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
-			    	    .filter(status -> status.getId().equals(caseStatusNo))
-			    	    .findFirst();
-			    String caseStatusValue = caseStatus.get().getName();
-			    System.out.println("Case Status Value: "+caseStatusValue);
-			    System.out.println("Case Status : "+caseStatus.get());
-			    System.out.println("case status condition"+ !caseStatusValue.equals("Under Analysis"));
-			    JsonNode analysisTeam = rootNode.path("analysisTeam");
-			    String[] reviewers = new String[analysisTeam.size()];
-			    if (analysisTeam.isArray()) {
-			    	int counter = 0;
-			        for (JsonNode dataGridEntry : analysisTeam) {
-			        	reviewers[counter] = dataGridEntry.asText();
-			        	counter++;
-			        }
-			        
-				}
-			    if(!caseStatusValue.equals("Under Analysis")) {
-			    	System.out.println("Calling mail send method...");
-			    	sendMailToAssignedPerson(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
-			    }
-			} catch(Exception e) {
-				e.printStackTrace();
+		try {
+		    ObjectMapper objectMapper = new ObjectMapper();
+		    JsonNode rootNode = objectMapper.readTree(attributeValue);
+		    String assignedTo = rootNode.path("caseAssignedTo").asText();
+		    String caseNumber = caseData.getCaseNo();
+		    String caseTitle = rootNode.path("caseTitle").asText();
+		    System.out.println(rootNode.path("caseAssignedTo").asText());
+		    Long caseStatusNo = rootNode.path("caseStatus").asLong();
+		    Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
+		    	    .filter(status -> status.getId().equals(caseStatusNo))
+		    	    .findFirst();
+		    String caseStatusValue = caseStatus.get().getName();
+		    System.out.println("Case Status Value: "+caseStatusValue);
+		    System.out.println("Case Status : "+caseStatus.get());
+		    System.out.println("case status condition"+ !caseStatusValue.equals("Under Analysis"));
+		    JsonNode analysisTeam = rootNode.path("analysisTeam");
+		    String[] reviewers = new String[analysisTeam.size()];
+		    if (analysisTeam.isArray()) {
+		    	int counter = 0;
+		        for (JsonNode dataGridEntry : analysisTeam) {
+		        	reviewers[counter] = dataGridEntry.asText();
+		        	counter++;
+		        }
+		        
 			}
+		    if(!caseStatusValue.equals("Under Analysis")) {
+		    	System.out.println("Calling mail send method...");
+		    	sendMailToAssignedPerson(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
+		    }
+		} catch(Exception e) {
+			e.printStackTrace();
 		}
 		if(!caseData.getIsDraft()) {
 			int i = 0;
-			for (Attribute attribute : attributes) {
-			    String attributeName = attribute.getName();
-			    String attributeValue = attribute.getValue();
-			    
-			    System.out.println("Attribute Name: " + attributeName);
-			    System.out.println("Attribute Value: " + attributeValue);
-			    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
-			    attribute.setValue(updatedAttribute);
-			}
+		    String attributeName = attribute.getName();
+		    
+		    System.out.println("Attribute Name: " + attributeName);
+		    System.out.println("Attribute Value: " + attributeValue);
+		    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
+		    attribute.setValue(updatedAttribute);
 			System.out.println("After Updating Attributes...");
 			System.out.println(attributes.get(0).getValue());
 			caseData.setAttributes(attributes);
@@ -513,33 +520,33 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	public void sendMailToAssignedPerson(String assignedUserId) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo("shrikantp2143@gmail.com");
-        message.setSubject("New Case has been assinged to you");
-        message.setText("This is to inform you, the new case has been assined to you.");
-        message.setFrom("shrikant.mnt@gmail.com");
-
-        try {
-            mailSender.send(message);
-            System.out.println("Email sent successfully!");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        SimpleMailMessage message = new SimpleMailMessage();
+//        message.setTo("shrikantp2143@gmail.com");
+//        message.setSubject("New Case has been assinged to you");
+//        message.setText("This is to inform you, the new case has been assined to you.");
+//        message.setFrom("shrikant.mnt@gmail.com");
+//
+//        try {
+//            mailSender.send(message);
+//            System.out.println("Email sent successfully!");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 	}
 	
 	public void sendMailToReviewerPerson(String reviewerUserId) {
-		SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo("shrikantp2143@gmail.com");
-        message.setSubject("New Case has been assinged to you for review");
-        message.setText("This is to inform you, the new case has been assined to you for review");
-        message.setFrom("shrikant.mnt@gmail.com");
-
-        try {
-            mailSender.send(message);
-            System.out.println("Email sent successfully!");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//		SimpleMailMessage message = new SimpleMailMessage();
+//        message.setTo("shrikantp2143@gmail.com");
+//        message.setSubject("New Case has been assinged to you for review");
+//        message.setText("This is to inform you, the new case has been assined to you for review");
+//        message.setFrom("shrikant.mnt@gmail.com");
+//
+//        try {
+//            mailSender.send(message);
+//            System.out.println("Email sent successfully!");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 	}
 	
 	private void sendMailToAssignedPerson(String assignedTo, String caseNo, String caseTitle, String status, String[] reviewers) {
@@ -577,11 +584,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<Users> getUserList() {
 		List<Users> users = new ArrayList<Users>();
 		HashMap<String, Character> usersMap = new HashMap<String,Character>();
-		usersMap.put("Balasaheb.Chadile@ril.com", 'A');
-		usersMap.put("Balasubramanian,Krishnamoorthy@ril.com", 'A');
-		usersMap.put("Balasubramanian.R.Iyer@ril.com", 'A');
-		usersMap.put("Bhaumik.Darji@ril.com", 'A');
-		usersMap.put("Bhautik.Kansara", 'A');
+//		usersMap.put("Balasaheb.Chadile@ril.com", 'A');
+//		usersMap.put("Balasubramanian,Krishnamoorthy@ril.com", 'A');
+//		usersMap.put("Balasubramanian.R.Iyer@ril.com", 'A');
+//		usersMap.put("Bhaumik.Darji@ril.com", 'A');
+//		usersMap.put("Bhautik.Kansara", 'A');
 		usersMap.put("Shrikantp2143@gmail.com", 'A');
 		usersMap.put("Amol.Borse@honeywell.com", 'A');
 		for (Map.Entry<String, Character> entry : usersMap.entrySet()) {
@@ -624,12 +631,45 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		for(Attribute attribute: caseDetails.getAttributes()) {
 			String attributeValue = attribute.getValue();
 			String updatedAttributeValue = saveRecommendations(attributeValue, caseNo, recommendation);
+			updatedAttributeValue = removeUnwantedRecommendations(updatedAttributeValue);
 			attribute.setValue(updatedAttributeValue);
 		}
 		System.out.println("After processing everything...");
 		System.out.println("..."+ caseDetails.getAttributes().get(0).getValue());
 		caseDetails = caseRepository.save(caseDetails);
 		return caseDetails;
+	}
+	
+	private String removeUnwantedRecommendations(String attribute) {
+		attribute = attribute.replace("\\\"", "\"");
+
+	    System.out.println("Attribute Value: " + attribute);
+	    try {
+	    	ObjectMapper objectMapper = new ObjectMapper();
+		    JsonNode rootNode = objectMapper.readTree(attribute);
+
+		    // Navigate to the "dataGrid1" array
+		    JsonNode recommendationNode = rootNode.path("dataGrid1");
+		    if (recommendationNode.isArray()) {
+		    	ArrayNode arrayNode = (ArrayNode) recommendationNode;
+		    	
+		    	for (int i = arrayNode.size() - 1; i >= 0; i--) {
+                    JsonNode dataGridEntry = arrayNode.get(i);
+                    String recNumber = dataGridEntry.path("recommendationNo1").asText();
+                    
+                    // Remove the entry if recommendationNo1 is empty or null
+                    if (recNumber == null || recNumber.isEmpty()) {
+                        arrayNode.remove(i);
+                    }
+                }
+		    	String updatedAttributeValue = objectMapper.writeValueAsString(rootNode);
+		    	System.out.println("After Saving Recommendation"+ updatedAttributeValue);
+		    	return updatedAttributeValue;
+		    }
+	    } catch(Exception e) {
+	    	e.printStackTrace();
+	    }
+	    return null;
 	}
 	
 	private String saveRecommendations(String attributeValue, String caseNo, Recommendations newRecommendation) {

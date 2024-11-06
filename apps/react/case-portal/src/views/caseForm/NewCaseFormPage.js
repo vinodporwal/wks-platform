@@ -1,101 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import { QuestionCircleOutlined } from '@ant-design/icons';
-import CloseIcon from '@mui/icons-material/Close';
-import { Box, Tooltip } from '@mui/material';
-import AppBar from '@mui/material/AppBar';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import Grid from '@mui/material/Grid';
-import IconButton from '@mui/material/IconButton';
-import Slide from '@mui/material/Slide';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import { Form } from '@formio/react';
-import { useSession } from 'SessionStoreContext';
-import { CaseService, FormService } from '../../services';
-import { StorageService } from 'plugins/storage';
-import { Snackbar, SnackbarContent } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react'
+import { QuestionCircleOutlined } from '@ant-design/icons'
+import CloseIcon from '@mui/icons-material/Close'
+import { Box, Tooltip } from '@mui/material'
+import AppBar from '@mui/material/AppBar'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import Grid from '@mui/material/Grid'
+import IconButton from '@mui/material/IconButton'
+import Slide from '@mui/material/Slide'
+import Toolbar from '@mui/material/Toolbar'
+import Typography from '@mui/material/Typography'
+import { Form } from '@formio/react'
+import { useSession } from 'SessionStoreContext'
+import { CaseService, FormService } from '../../services'
+import { StorageService } from 'plugins/storage'
+import { Snackbar, SnackbarContent } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+  return <Slide direction='up' ref={ref} {...props} />
+})
 
-export const NewCaseFormPage = ({
-  open = true,
-  caseDefId = 'create',
-}) => {
-  const [caseDef, setCaseDef] = useState([]);
-  const [form, setForm] = useState([]);
-  const [formData, setFormData] = useState(null);
-  const [lastCreatedCase, setLastCreatedCase] = useState(null);
-  const [snackOpen, setSnackOpen] = useState(false);
-  const keycloak = useSession();
-  const navigate = useNavigate();
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessages, setSnackbarMessages] = useState([]);
-  const [currentParams, setCurrentParams ] = useState([]);
+export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
+  const [caseDef, setCaseDef] = useState([])
+  const [form, setForm] = useState([])
+  const [formData, setFormData] = useState(null)
+  const [lastCreatedCase, setLastCreatedCase] = useState(null)
+  const [snackOpen, setSnackOpen] = useState(false)
+  const keycloak = useSession()
+  const navigate = useNavigate()
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarMessages, setSnackbarMessages] = useState([])
+  const [currentParams, setCurrentParams] = useState([])
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
 
   useEffect(() => {
-    const params = window.location.search;
-    setCurrentParams(params);
-  }, []);
-  
+    const params = window.location.search
+    setCurrentParams(params)
+  }, [])
+
   useEffect(() => {
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
-        setCaseDef(data);
-        return FormService.getByKey(keycloak, data.formKey);
+        setCaseDef(data)
+        return FormService.getByKey(keycloak, data.formKey)
       })
       .then((data) => {
-        console.log("new page form data", data);
-        setForm(data);
+        console.log('new page form data', data)
+        setForm(data)
         setFormData({
           data: {},
           metadata: {},
           isValid: true,
-        });
+        })
       })
       .catch((err) => {
-        console.error(err.message);
-      });
-  }, [caseDefId, keycloak]);
+        console.error(err.message)
+      })
+  }, [caseDefId, keycloak])
 
   const handleCloseSnack = () => {
-    setSnackOpen(false);
-  };
+    setSnackOpen(false)
+  }
 
   const handleClose = () => {
-    const params = currentParams.length > 0 ? currentParams : window.location.search;
-    console.log('currentParams', params);
-    navigate(`/case-list/create${params}`);
-  };
-
+    const params =
+      currentParams.length > 0 ? currentParams : window.location.search
+    console.log('currentParams', params)
+    navigate(`/case-list/create${params}`)
+  }
 
   const onSave = () => {
-    const currentParams = window.location.search;
-    setCurrentParams(currentParams);
-    const urlParams = new URLSearchParams(window.location.search);
-  
-    const assetName = urlParams.get('assetName') || 'default';
-    const hierarchyName = urlParams.get('hierarchyName') || 'default';
-    const eventIdsParam = urlParams.get('eventIds');
-    const sourceSystem = urlParams.get('sourceSystem') || 'default';
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
-      value: typeof formData.data[key] !== 'object'
-        ? formData.data[key]
-        : JSON.stringify(formData.data[key]),
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
       type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    }));
-  
+    }))
+
     // First API call to createCase to get the businessKey
     CaseService.createCase(
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        isDraft: false,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -103,13 +102,12 @@ export const NewCaseFormPage = ({
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-      })
+      }),
     )
       .then((data) => {
-        const businessKey = data.businessKey; 
+        const businessKey = data.businessKey
         // setLastCreatedCase(data);
-  
-       
+
         return CaseService.saveCase(
           keycloak,
           JSON.stringify({
@@ -126,75 +124,56 @@ export const NewCaseFormPage = ({
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-          })
-        );
+          }),
+        )
       })
       .then((data) => {
-        setLastCreatedCase(data);
-        setSnackOpen(true);
+        setLastCreatedCase(data)
+        setSnackOpen(true)
         setTimeout(() => {
-          handleClose();
-        }, 6000);
+          handleClose()
+        }, 6000)
       })
       .catch((err) => {
-        console.error(err.message);
-      });
-  };
+        console.error(err.message)
+      })
+  }
 
+  const onSubmitRecommendation = () => {
+    setSnackbarMessages(['Cannot submit recommendation without a case number.'])
+    setSnackbarOpen(true)
 
+    setTimeout(() => {
+      setSnackbarOpen(false)
+    }, 6000)
 
-  const onSubmitRecommendation = (event) => {
-  
-    const { recommendationReviewer, recommendationAssignedTo2, recommendationHeadline, recommendationTargetCompletionDate1 } = event.data;
-  
-    const missingFields = [];
-    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer');
-    if (!recommendationAssignedTo2) missingFields.push('Recommendation Assigned To');
-    if (!recommendationHeadline) missingFields.push('Recommendation Headline');
-    if (!recommendationTargetCompletionDate1) missingFields.push('Target Completion Date');
-    
-    // New validation for RecommendationConfirm
-    // if (!RecommendationConfirm || !['Yes', 'No'].includes(RecommendationConfirm)) {
-    //   missingFields.push('Recommendation Confirm');
-    // }
-  
-    if (missingFields.length > 0) {
-      setSnackbarMessages(missingFields);
-      setSnackbarOpen(true);
-      setTimeout(() => {
-        setSnackbarOpen(false);
-      }, 6000);
-      return;
-    }
-  
-    setSnackbarMessages([]);
-    // event.component.disabled = true;
-  };
-  
-
+    return
+  }
 
   const onSubmitForm = () => {
-    const currentParams = window.location.search;
-    setCurrentParams(currentParams);
-    const urlParams = new URLSearchParams(window.location.search);
-  
-    const assetName = urlParams.get('assetName') || 'default';
-    const hierarchyName = urlParams.get('hierarchyName') || 'default';
-    const eventIdsParam = urlParams.get('eventIds');
-    const sourceSystem = urlParams.get('sourceSystem') || 'default';
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
-      value: typeof formData.data[key] !== 'object'
-        ? formData.data[key]
-        : JSON.stringify(formData.data[key]),
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
       type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    }));
-  
+    }))
+
     CaseService.createCase(
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        isDraft: true,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -202,12 +181,11 @@ export const NewCaseFormPage = ({
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-      })
+      }),
     )
       .then((data) => {
-        const businessKey = data.businessKey;
+        const businessKey = data.businessKey
         // setLastCreatedCase(data);
-  
 
         return CaseService.saveCase(
           keycloak,
@@ -225,38 +203,43 @@ export const NewCaseFormPage = ({
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-          })
-        );
+          }),
+        )
       })
       .then((data) => {
-        setLastCreatedCase(data);
-        setSnackOpen(true);
+        setLastCreatedCase(data)
+        setSnackOpen(true)
         setTimeout(() => {
-          handleClose();
-        }, 6000);
+          handleClose()
+        }, 6000)
       })
       .catch((err) => {
-        console.error(err.message);
-      });
-  };
-  
+        console.error(err.message)
+      })
+  }
+
   const snackAction = lastCreatedCase && (
     <React.Fragment>
       <Button
-        color="primary"
-        size="small"
+        color='primary'
+        size='small'
         onClick={() => {
-          navigate(`/case-list/create${currentParams}`);
-          handleCloseSnack();
+          navigate(`/case-list/create${currentParams}`)
+          handleCloseSnack()
         }}
       >
         {lastCreatedCase.caseNo}
       </Button>
-      <IconButton size="small" aria-label="close" color="inherit" onClick={handleCloseSnack}>
-        <CloseIcon fontSize="small" />
+      <IconButton
+        size='small'
+        aria-label='close'
+        color='inherit'
+        onClick={handleCloseSnack}
+      >
+        <CloseIcon fontSize='small' />
       </IconButton>
     </React.Fragment>
-  );
+  )
 
   return (
     <div>
@@ -269,14 +252,14 @@ export const NewCaseFormPage = ({
         <AppBar sx={{ position: 'relative' }}>
           <Toolbar>
             <IconButton
-              edge="start"
-              color="inherit"
+              edge='start'
+              color='inherit'
               onClick={handleClose}
-              aria-label="close"
+              aria-label='close'
             >
               <CloseIcon />
             </IconButton>
-            <Typography sx={{ ml: 2, flex: 1 }} component="div">
+            <Typography sx={{ ml: 2, flex: 1 }} component='div'>
               {caseDef.name}
             </Typography>
           </Toolbar>
@@ -294,7 +277,9 @@ export const NewCaseFormPage = ({
                   <QuestionCircleOutlined />
                 </Tooltip>
               )}
-              <Typography variant="h5" sx={{ ml: 1 }}>{form.title}</Typography>
+              <Typography variant='h5' sx={{ ml: 1 }}>
+                {form.title}
+              </Typography>
             </Box>
 
             {/* Form Component */}
@@ -305,61 +290,62 @@ export const NewCaseFormPage = ({
                 fileService: new StorageService(),
               }}
               onSubmit={(submission) => {
-                console.log('Validation passed:', true); 
-                console.log('Form data:', submission); 
+                console.log('Validation passed:', true)
+                console.log('Form data:', submission)
 
                 onSave(submission)
               }}
               onError={(error) => {
-                console.log('Validation failed:', error); 
-                setValidationSnackbarOpen(true);
+                console.log('Validation failed:', error)
+                setValidationSnackbarOpen(true)
               }}
-              onChange={(submission) => {
-                console.log('submission submission:', submission); 
-                }}
               onCustomEvent={(event) => {
-                console.log('event event:', event);
+                console.log('event event:', event)
                 if (event.component.key === 'saveAsDraft') {
-                  onSubmitForm(); 
+                  onSubmitForm()
                 } else if (event.component.key === 'RecommendationSubmit3') {
-                  onSubmitRecommendation(event); 
+                  onSubmitRecommendation()
                 }
-
               }}
             />
-
           </Grid>
         </Grid>
 
         <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-      >
-        <SnackbarContent
-          message={
-            <div>
-              <Typography variant="body2" color="error" component="div">
-                The following fields are required:
-              </Typography>
-              {snackbarMessages.map((message, index) => (
-                <Typography key={index} variant="body2" component="div">
-                  - {message}
-                </Typography>
-              ))}
-            </div>
-          }
-          action={
-            <Button color="secondary" size="small" onClick={() => setSnackbarOpen(false)}>
-              Close
-            </Button>
-          }
-        />
-      </Snackbar>
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <SnackbarContent
+            message={
+              <div>
+                {snackbarMessages.map((message, index) => (
+                  <Typography
+                    key={index}
+                    variant='body2'
+                    color='error'
+                    component='div'
+                  >
+                    {message}
+                  </Typography>
+                ))}
+              </div>
+            }
+            action={
+              <Button
+                color='secondary'
+                size='small'
+                onClick={() => setSnackbarOpen(false)}
+              >
+                Close
+              </Button>
+            }
+          />
+        </Snackbar>
 
         <Snackbar
-           open={validationSnackbarOpen}
+          open={validationSnackbarOpen}
           autoHideDuration={6000}
           onClose={() => setValidationSnackbarOpen(false)}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
@@ -367,13 +353,17 @@ export const NewCaseFormPage = ({
           <SnackbarContent
             message={
               <div>
-                <Typography variant="body2" color="error" component="div">
+                <Typography variant='body2' color='error' component='div'>
                   {'Please fill the required fields'}
                 </Typography>
               </div>
             }
             action={
-              <Button color="secondary" size="small" onClick={() => setValidationSnackbarOpen(false)}>
+              <Button
+                color='secondary'
+                size='small'
+                onClick={() => setValidationSnackbarOpen(false)}
+              >
                 Close
               </Button>
             }
@@ -383,11 +373,11 @@ export const NewCaseFormPage = ({
         <Snackbar
           open={snackOpen}
           autoHideDuration={6000}
-          message="Case saved as draft"
+          message='Case Saved'
           onClose={handleCloseSnack}
           action={snackAction}
         />
       </Dialog>
     </div>
-  );
-};
+  )
+}

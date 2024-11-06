@@ -51,6 +51,7 @@ function a11yProps(index) {
 }
 
 const Profile = ({ keycloak }) => {
+  console.log('keycloak', keycloak)
   const theme = useTheme()
   const iconBackColorOpen = 'grey.300'
   const anchorRef = useRef(null)
