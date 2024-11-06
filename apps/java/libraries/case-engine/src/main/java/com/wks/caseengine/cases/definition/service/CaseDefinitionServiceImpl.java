@@ -68,6 +68,13 @@ import com.wks.caseengine.rest.model.Users;
 
 @Component
 public class CaseDefinitionServiceImpl implements CaseDefinitionService {
+	
+	private final JavaMailSender mailSender;
+
+    @Autowired
+    public CaseDefinitionServiceImpl(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
 	@Autowired
 	private CommandExecutor commandExecutor;
@@ -113,15 +120,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     
     @Autowired
     private CaseRecommendationMappingRepository caseRecommendationMappingRepository;
-//    
-//    @Autowired
-//    private EquipmentsRepository equipmentsRepository;
+    
     
     @Autowired
     private FunctionalLocationRepository functionalLocationRepository;
-    
-    @Autowired
-    private JavaMailSender mailSender;
 
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
@@ -319,13 +321,54 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				casesAndEventsMappingRepository.save(mapping);
 				System.out.println("EventId of is: "+ eventId +" for case No: "+ caseDetails.getCaseNo());
 			}
+			
 		} else {
 			System.out.println("Saving Exsting Case Details....");
 			caseDetails  = caseRepository.save(caseData);
 		}
+		
+		//sending Emails part
+		List<Attribute> attributes = caseDetails.getAttributes();
+		for (Attribute attribute : attributes) {
+			String attributeValue = attribute.getValue();
+			attributeValue = attributeValue.replace("\\\"", "\"");
+			System.out.println("Attribute Value: " + attributeValue);
+
+			try {
+			    ObjectMapper objectMapper = new ObjectMapper();
+			    JsonNode rootNode = objectMapper.readTree(attributeValue);
+			    String assignedTo = rootNode.path("caseAssignedTo").asText();
+			    String caseNumber = caseData.getCaseNo();
+			    String caseTitle = rootNode.path("caseTitle").asText();
+			    System.out.println(rootNode.path("caseAssignedTo").asText());
+			    Long caseStatusNo = rootNode.path("caseStatus").asLong();
+			    Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
+			    	    .filter(status -> status.getId().equals(caseStatusNo))
+			    	    .findFirst();
+			    String caseStatusValue = caseStatus.get().getName();
+			    System.out.println("Case Status Value: "+caseStatusValue);
+			    System.out.println("Case Status : "+caseStatus.get());
+			    System.out.println("case status condition"+ !caseStatusValue.equals("Under Analysis"));
+			    JsonNode analysisTeam = rootNode.path("analysisTeam");
+			    String[] reviewers = new String[analysisTeam.size()];
+			    if (analysisTeam.isArray()) {
+			    	int counter = 0;
+			        for (JsonNode dataGridEntry : analysisTeam) {
+			        	reviewers[counter] = dataGridEntry.asText();
+			        	counter++;
+			        }
+			        
+				}
+			    if(!caseStatusValue.equals("Under Analysis")) {
+			    	System.out.println("Calling mail send method...");
+			    	sendMailToAssignedPerson(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
+			    }
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
 		if(!caseData.getIsDraft()) {
 			int i = 0;
-			List<Attribute> attributes = caseDetails.getAttributes();
 			for (Attribute attribute : attributes) {
 			    String attributeName = attribute.getName();
 			    String attributeValue = attribute.getValue();
@@ -382,7 +425,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		            recommendation.setRecommendationSubmit(dataGridEntry.path("RecommendationSubmit").asText());
 		            recommendation.setRecommendationTargetCompletionDate1(dataGridEntry.path("recommendationTargetCompletionDate1").asText());
 		            
-		            String GEAPMrecommendationId = saveRecommendationMapping(dataGridEntry, caseNo);
+		            String GEAPMrecommendationId = saveRecommendationMapping(dataGridEntry, caseNo, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationReviewer());
 		            System.out.println("GEPM Recommendation ID: "+GEAPMrecommendationId);
 		            ((ObjectNode) dataGridEntry).put("recommendationNo1", GEAPMrecommendationId);
 		            
@@ -398,8 +441,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return null;
 	}
 	
-	private String saveRecommendationMapping(JsonNode dataGridEntry, String caseNo) {
-		String recId = saveRecommendationGEAPMApi(dataGridEntry, caseNo);
+	private String saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
+		String recId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId);
 		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
 		caseRecommendationMapping.setCaseNo(caseNo);
 		caseRecommendationMapping.setRecId(recId);
@@ -409,7 +452,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return recId;
 	}
 	
-	private String saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo) {
+	private String saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
 //		System.out.println("Calling Recommendation GEAPM API...");
 //		System.out.println("Calling Recommendation GEAPM API...");
 //		System.out.println(dataGridEntry.toPrettyString().toString());
@@ -456,6 +499,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //			e.printStackTrace();
 //		}
 		 String prefix = "REC-";
+		 sendMailToAssignedPerson(assignedUserId);
+		 sendMailToReviewerPerson(reviewerUserId);
 	        
         // Generate a random number between 1 and 999999
         int randomNumber = ThreadLocalRandom.current().nextInt(1, 1000000);
@@ -465,6 +510,51 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         
         // Return the generated ID with the prefix
         return prefix + formattedId;
+	}
+	
+	public void sendMailToAssignedPerson(String assignedUserId) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo("shrikantp2143@gmail.com");
+        message.setSubject("New Case has been assinged to you");
+        message.setText("This is to inform you, the new case has been assined to you.");
+        message.setFrom("shrikant.mnt@gmail.com");
+
+        try {
+            mailSender.send(message);
+            System.out.println("Email sent successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+	}
+	
+	public void sendMailToReviewerPerson(String reviewerUserId) {
+		SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo("shrikantp2143@gmail.com");
+        message.setSubject("New Case has been assinged to you for review");
+        message.setText("This is to inform you, the new case has been assined to you for review");
+        message.setFrom("shrikant.mnt@gmail.com");
+
+        try {
+            mailSender.send(message);
+            System.out.println("Email sent successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+	}
+	
+	private void sendMailToAssignedPerson(String assignedTo, String caseNo, String caseTitle, String status, String[] reviewers) {
+		try {
+			System.out.println("In mail send method...");
+			SimpleMailMessage message = new SimpleMailMessage();
+	        message.setTo(assignedTo);
+	        message.setCc(reviewers);
+	        message.setSubject("New Case: "+ caseTitle);
+	        message.setText("This is to inform you, the new case Case Number: " +caseNo + ", \n Case Title: "+caseTitle+", has been assined to you\n Case Status: "+status);
+	        message.setFrom("shrikant.mnt@gmail.com");
+	        mailSender.send(message);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
@@ -492,6 +582,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		usersMap.put("Balasubramanian.R.Iyer@ril.com", 'A');
 		usersMap.put("Bhaumik.Darji@ril.com", 'A');
 		usersMap.put("Bhautik.Kansara", 'A');
+		usersMap.put("Shrikantp2143@gmail.com", 'A');
+		usersMap.put("Amol.Borse@honeywell.com", 'A');
 		for (Map.Entry<String, Character> entry : usersMap.entrySet()) {
             String email = entry.getKey();
             char status = entry.getValue();
@@ -569,7 +661,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	            // Append the new recommendation node to the dataGrid1 array
 	            
-	            String GEAPMrecommendationId = saveRecommendationMapping(newRecommendationNode, caseNo);
+	            String GEAPMrecommendationId = saveRecommendationMapping(newRecommendationNode, caseNo, newRecommendation.getRecommendationAssignedTo2(), newRecommendation.getRecommendationReviewer());
 	            
 	            newRecommendationNode.put("recommendationNo1", GEAPMrecommendationId);
 	            dataGridArray.add(newRecommendationNode);
