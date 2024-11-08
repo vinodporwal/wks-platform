@@ -1,15 +1,16 @@
-import { useEffect, useState, lazy, Suspense } from 'react'
-import { ThemeRoutes } from './routes'
-import ThemeCustomization from './themes'
-import { SessionStoreProvider } from './SessionStoreContext'
-import { CaseService, RecordService, FormService } from 'services'
-import menuItemsDefs from './menu'
-import { RegisterInjectUserSession, RegisteOptions } from './plugins'
-import { accountStore, sessionStore } from './store'
-import './App.css'
-import formPayload from './createFormJSON.json'
+import { useEffect, useState, lazy, Suspense } from "react"
+import { ThemeRoutes } from "./routes"
+import ThemeCustomization from "./themes"
+import { SessionStoreProvider } from "./SessionStoreContext"
+import { CaseService, RecordService, FormService } from "services"
+import menuItemsDefs from "./menu"
+import { RegisterInjectUserSession, RegisteOptions } from "./plugins"
+import { accountStore, sessionStore } from "./store"
+import "./App.css"
+import formPayload from "./createFormJSON.json"
+import Config from "./consts"
 
-const ScrollTop = lazy(() => import('./components/ScrollTop'))
+const ScrollTop = lazy(() => import("./components/ScrollTop"))
 
 const App = () => {
   const [keycloak, setKeycloak] = useState({})
@@ -20,25 +21,22 @@ const App = () => {
   const [formChecked, setFormChecked] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(
-      'baseUrl',
-      'https://wkspwr.dev.connectedplant.honeywell.com:8902',
-    )
+    localStorage.setItem("baseUrl", `${Config.CaseEngineUrl}`)
 
     const { keycloak } = sessionStore.bootstrap()
 
-    const storedToken = localStorage.getItem('keycloakToken')
+    const storedToken = localStorage.getItem("keycloakToken")
     if (storedToken) {
       keycloak.token = storedToken
     }
 
-    keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
+    keycloak.init({ onLoad: "login-required" }).then((authenticated) => {
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
 
       if (authenticated) {
-        localStorage.setItem('keycloakToken', keycloak.token)
-        localStorage.setItem('keycloak', JSON.stringify(keycloak))
+        localStorage.setItem("keycloakToken", keycloak.token)
+        localStorage.setItem("keycloak", JSON.stringify(keycloak))
       }
 
       buildMenuItems(keycloak)
@@ -61,33 +59,33 @@ const App = () => {
         .updateToken(70)
         .then((refreshed) => {
           if (refreshed) {
-            console.info('Token refreshed: ' + refreshed)
+            console.info("Token refreshed: " + refreshed)
             RegisterInjectUserSession(keycloak)
             RegisteOptions(keycloak)
 
-            localStorage.setItem('keycloakToken', keycloak.token)
+            localStorage.setItem("keycloakToken", keycloak.token)
           } else {
             console.info(
-              'Token not refreshed, valid for ' +
+              "Token not refreshed, valid for " +
                 Math.round(
                   keycloak.tokenParsed.exp +
                     keycloak.timeSkew -
                     new Date().getTime() / 1000,
                 ) +
-                ' seconds',
+                " seconds",
             )
           }
         })
         .catch(() => {
-          console.error('Failed to refresh token')
-          localStorage.removeItem('keycloakToken')
+          console.error("Failed to refresh token")
+          localStorage.removeItem("keycloakToken")
         })
     }
   }, [])
 
   async function forceLogoutIfUserNoMinimalRoleForSystem(keycloak) {
     if (!accountStore.hasAnyRole(keycloak)) {
-      localStorage.removeItem('keycloakToken')
+      localStorage.removeItem("keycloakToken")
       return keycloak.logout({ redirectUri: window.location.origin })
     }
   }
@@ -96,19 +94,19 @@ const App = () => {
     const menu = {
       items: [...menuItemsDefs.items],
     }
-    console.log('menuItemsDefs', menuItemsDefs)
+    console.log("menuItemsDefs", menuItemsDefs)
 
     await RecordService.getAllRecordTypes(keycloak).then((data) => {
       setRecordsTypes(data)
 
       data.forEach((element) => {
         menu.items[1].children
-          .filter((menu) => menu.id === 'record-list')[0]
+          .filter((menu) => menu.id === "record-list")[0]
           .children.push({
             id: element.id,
             title: element.id,
-            type: 'item',
-            url: '/record-list/' + element.id,
+            type: "item",
+            url: "/record-list/" + element.id,
             breadcrumbs: true,
           })
       })
@@ -119,12 +117,12 @@ const App = () => {
 
       data.forEach((element) => {
         menu.items[1].children
-          .filter((menu) => menu.id === 'case-list')[0]
+          .filter((menu) => menu.id === "case-list")[0]
           .children.push({
             id: element.id,
             title: element.name,
-            type: 'item',
-            url: '/case-list/' + element.id,
+            type: "item",
+            url: "/case-list/" + element.id,
             breadcrumbs: true,
           })
       })
@@ -195,7 +193,7 @@ const App = () => {
   // }
 
   async function checkAndPostForm(keycloak) {
-    if (localStorage.getItem('formCreated')) {
+    if (localStorage.getItem("formCreated")) {
       console.log('Form "EED Case Management System" already exists.')
       return
     }
@@ -205,7 +203,7 @@ const App = () => {
 
       // Check if "EED Case Management System" exists in the list
       const formExists = data.some(
-        (form) => form.title === 'EED Case Management System',
+        (form) => form.title === "EED Case Management System",
       )
 
       if (formExists) {
@@ -217,7 +215,7 @@ const App = () => {
         await createForm(keycloak)
       }
     } catch (error) {
-      console.error('Error checking form existence:', error)
+      console.error("Error checking form existence:", error)
     }
   }
 
@@ -227,12 +225,12 @@ const App = () => {
       const response = await FormService.create(keycloak, formPayload)
 
       if (!response.ok) {
-        throw new Error('Failed to create form')
+        throw new Error("Failed to create form")
       }
-      console.log('Form created successfully')
-      localStorage.setItem('formCreated', 'true')
+      console.log("Form created successfully")
+      localStorage.setItem("formCreated", "true")
     } catch (error) {
-      console.error('Error creating form:', error)
+      console.error("Error creating form:", error)
     }
   }
 
