@@ -341,52 +341,50 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		}
 		
 		//sending Emails part
-		
-		attributeValue = attributeValue.replace("\\\"", "\"");
-		System.out.println("Attribute Value: " + attributeValue);
-
-		try {
-		    ObjectMapper objectMapper = new ObjectMapper();
-		    JsonNode rootNode = objectMapper.readTree(attributeValue);
-		    String assignedTo = rootNode.path("caseAssignedTo").asText();
-		    String caseNumber = caseData.getCaseNo();
-		    String caseTitle = rootNode.path("caseTitle").asText();
-		    System.out.println(rootNode.path("caseAssignedTo").asText());
-		    Long caseStatusNo = rootNode.path("caseStatus").asLong();
-		    Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
-		    	    .filter(status -> status.getId().equals(caseStatusNo))
-		    	    .findFirst();
-		    String caseStatusValue = caseStatus.get().getName();
-		    JsonNode analysisTeam = rootNode.path("analysisTeam");
-		    String[] reviewers = new String[analysisTeam.size()];
-		    if (analysisTeam.isArray()) {
-		    	int counter = 0;
-		        for (JsonNode dataGridEntry : analysisTeam) {
-		        	reviewers[counter] = dataGridEntry.asText();
-		        	counter++;
-		        }
-		        
+		if(!caseData.getIsDraft().equals("y")) {
+			attributeValue = attributeValue.replace("\\\"", "\"");
+			System.out.println("Attribute Value: " + attributeValue);
+	
+			try {
+			    ObjectMapper objectMapper = new ObjectMapper();
+			    JsonNode rootNode = objectMapper.readTree(attributeValue);
+			    String assignedTo = rootNode.path("caseAssignedTo").asText();
+			    String caseNumber = caseData.getCaseNo();
+			    String caseTitle = rootNode.path("caseTitle").asText();
+			    System.out.println(rootNode.path("caseAssignedTo").asText());
+			    Long caseStatusNo = rootNode.path("caseStatus").asLong();
+			    Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
+			    	    .filter(status -> status.getId().equals(caseStatusNo))
+			    	    .findFirst();
+			    String caseStatusValue = caseStatus.get().getName();
+			    JsonNode analysisTeam = rootNode.path("analysisTeam");
+			    String[] reviewers = new String[analysisTeam.size()];
+			    if (analysisTeam.isArray()) {
+			    	int counter = 0;
+			        for (JsonNode dataGridEntry : analysisTeam) {
+			        	reviewers[counter] = dataGridEntry.asText();
+			        	counter++;
+			        }
+			        
+				}
+			    if(!caseStatusValue.equals("Under Analysis")) {
+			    	System.out.println("Calling mail send method...");
+			    	sendMailToAssignedPerson(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
+			    }
+			    
+			    int i = 0;
+			    String attributeName = attribute.getName();
+			    
+			    System.out.println("Attribute Name: " + attributeName);
+			    System.out.println("Attribute Value: " + attributeValue);
+				System.out.println("After Updating Attributes...");
+				System.out.println(attributes.get(0).getValue());
+				caseData.setAttributes(attributes);
+				caseDetails = caseRepository.save(caseData);
+				return caseDetails;
+			} catch(Exception e) {
+				e.printStackTrace();
 			}
-		    if(!caseStatusValue.equals("Under Analysis")) {
-		    	System.out.println("Calling mail send method...");
-		    	sendMailToAssignedPerson(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
-		    }
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		if(!caseData.getIsDraft().equals("n")) {
-			int i = 0;
-		    String attributeName = attribute.getName();
-		    
-		    System.out.println("Attribute Name: " + attributeName);
-		    System.out.println("Attribute Value: " + attributeValue);
-//		    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
-//		    attribute.setValue(updatedAttribute);
-			System.out.println("After Updating Attributes...");
-			System.out.println(attributes.get(0).getValue());
-			caseData.setAttributes(attributes);
-			caseDetails = caseRepository.save(caseData);
-			return caseDetails;
 		}
 		return caseDetails;
 	}
