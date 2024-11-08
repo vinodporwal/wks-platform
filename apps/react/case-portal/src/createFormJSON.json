@@ -108,7 +108,7 @@
                                                 "key": "caseNo",
                                                 "type": "textfield",
                                                 "input": true,
-                                                "id": "ejk0wmb",
+                                                "id": "e9oueuy",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -193,7 +193,7 @@
                                                 "key": "caseTitle",
                                                 "type": "textfield",
                                                 "input": true,
-                                                "id": "eslpqmt",
+                                                "id": "eyor91f",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -273,106 +273,116 @@
                                         "components": [
                                             {
                                                 "label": "Case Assigned To",
+                                                "labelPosition": "top",
                                                 "widget": "choicesjs",
+                                                "placeholder": "",
+                                                "description": "",
+                                                "tooltip": "",
                                                 "customClass": "custom-select-height",
+                                                "tabindex": "",
+                                                "hidden": false,
+                                                "hideLabel": false,
+                                                "uniqueOptions": false,
+                                                "autofocus": false,
+                                                "disabled": false,
                                                 "tableView": true,
+                                                "modalEdit": false,
+                                                "multiple": false,
+                                                "dataSrc": "values",
                                                 "data": {
                                                     "values": [
                                                         {
                                                             "label": "Vikas Lodha",
-                                                            "value": "vikasLodha"
+                                                            "value": "shrikantp2143@gmail.com"
                                                         }
                                                     ],
-                                                    "json": "",
-                                                    "url": "",
                                                     "resource": "",
+                                                    "url": "",
+                                                    "json": "",
                                                     "custom": ""
                                                 },
-                                                "validate": {
-                                                    "required": true,
-                                                    "custom": "",
-                                                    "customPrivate": false,
-                                                    "strictDateValidation": false,
-                                                    "multiple": false,
-                                                    "unique": false,
-                                                    "onlyAvailableItems": false
-                                                },
-                                                "key": "caseAssignedTo",
-                                                "type": "select",
-                                                "input": true,
-                                                "defaultValue": "vikasLodha",
-                                                "id": "etp018k",
-                                                "placeholder": "",
-                                                "prefix": "",
-                                                "suffix": "",
-                                                "multiple": false,
-                                                "protected": false,
-                                                "unique": false,
-                                                "persistent": true,
-                                                "hidden": false,
-                                                "clearOnHide": true,
+                                                "dataType": "",
+                                                "idPath": "id",
+                                                "valueProperty": "",
+                                                "template": "<span>{{ item.label }}</span>",
                                                 "refreshOn": "",
-                                                "redrawOn": "",
-                                                "modalEdit": false,
-                                                "dataGridLabel": false,
-                                                "labelPosition": "top",
-                                                "description": "",
-                                                "errorLabel": "",
-                                                "tooltip": "",
-                                                "hideLabel": false,
-                                                "tabindex": "",
-                                                "disabled": false,
-                                                "autofocus": false,
+                                                "refreshOnBlur": "",
+                                                "clearOnRefresh": false,
+                                                "searchEnabled": true,
+                                                "selectThreshold": 0.3,
+                                                "readOnlyValue": false,
+                                                "customOptions": {},
+                                                "useExactSearch": false,
+                                                "persistent": true,
+                                                "protected": false,
                                                 "dbIndex": false,
+                                                "encrypted": false,
+                                                "clearOnHide": true,
                                                 "customDefaultValue": "",
                                                 "calculateValue": "",
                                                 "calculateServer": false,
-                                                "attributes": {},
+                                                "allowCalculateOverride": false,
                                                 "validateOn": "change",
-                                                "conditional": {
-                                                    "eq": ""
+                                                "validate": {
+                                                    "required": true,
+                                                    "onlyAvailableItems": false,
+                                                    "customMessage": "",
+                                                    "custom": "",
+                                                    "customPrivate": false,
+                                                    "json": "",
+                                                    "strictDateValidation": false,
+                                                    "multiple": false,
+                                                    "unique": false
                                                 },
+                                                "unique": false,
+                                                "errorLabel": "",
+                                                "errors": "",
+                                                "key": "caseAssignedTo",
+                                                "tags": [],
+                                                "properties": {},
+                                                "conditional": {
+                                                    "eq": "",
+                                                    "json": ""
+                                                },
+                                                "customConditional": "",
+                                                "logic": [],
+                                                "attributes": {},
                                                 "overlay": {
                                                     "style": "",
+                                                    "page": "",
                                                     "left": "",
                                                     "top": "",
                                                     "width": "",
                                                     "height": ""
                                                 },
-                                                "allowCalculateOverride": false,
-                                                "encrypted": false,
-                                                "showCharCount": false,
-                                                "showWordCount": false,
-                                                "properties": {},
-                                                "allowMultipleMasks": false,
-                                                "addons": [],
-                                                "dataSrc": "values",
+                                                "type": "select",
+                                                "indexeddb": {
+                                                    "filter": {}
+                                                },
+                                                "dataGridLabel": false,
+                                                "lazyLoad": true,
+                                                "selectFields": "",
+                                                "searchField": "",
+                                                "searchDebounce": 0.3,
+                                                "minSearch": 0,
+                                                "filter": "",
+                                                "limit": 100,
                                                 "authenticate": false,
                                                 "ignoreCache": false,
-                                                "template": "<span>{{ item.label }}</span>",
-                                                "idPath": "id",
-                                                "clearOnRefresh": false,
-                                                "limit": 100,
-                                                "valueProperty": "",
-                                                "lazyLoad": true,
-                                                "filter": "",
-                                                "searchEnabled": true,
-                                                "searchDebounce": 0.3,
-                                                "searchField": "",
-                                                "minSearch": 0,
-                                                "readOnlyValue": false,
-                                                "selectFields": "",
-                                                "selectThreshold": 0.3,
-                                                "uniqueOptions": false,
+                                                "redrawOn": "",
+                                                "input": true,
+                                                "prefix": "",
+                                                "suffix": "",
+                                                "showCharCount": false,
+                                                "showWordCount": false,
+                                                "allowMultipleMasks": false,
+                                                "addons": [],
                                                 "fuseOptions": {
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "indexeddb": {
-                                                    "filter": {}
-                                                },
-                                                "customOptions": {},
-                                                "useExactSearch": false
+                                                "id": "el3fqvb",
+                                                "defaultValue": "shrikantp2143@gmail.com"
                                             }
                                         ],
                                         "size": "md",
@@ -491,7 +501,7 @@
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "id": "epvkjlk",
+                                                "id": "ebpo3rg",
                                                 "defaultValue": ""
                                             }
                                         ],
@@ -504,7 +514,7 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "ezcd92h",
+                                "id": "e21pxsp",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -583,7 +593,7 @@
                                 "key": "caseDescription",
                                 "type": "textarea",
                                 "input": true,
-                                "id": "e2nymf2",
+                                "id": "ejksa5ch",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -680,7 +690,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "ex46489"
+                        "id": "elfjp2l"
                     },
                     {
                         "title": "Associated Faults",
@@ -807,7 +817,7 @@
                                                 "refreshOn": "",
                                                 "addons": [],
                                                 "inputType": "text",
-                                                "id": "evio2sx",
+                                                "id": "elrjeis",
                                                 "defaultValue": ""
                                             }
                                         ],
@@ -832,7 +842,7 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "ehacv2r",
+                                "id": "er662jg",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -981,7 +991,7 @@
                                         "key": "textField2",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "ekj8ff",
+                                        "id": "ebfyqhk",
                                         "placeholder": "",
                                         "prefix": "",
                                         "suffix": "",
@@ -1054,7 +1064,7 @@
                                         "key": "textField3",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "e2m2jau",
+                                        "id": "e3w244g",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
@@ -1129,7 +1139,7 @@
                                         "key": "textField4",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "eyzfjf3",
+                                        "id": "e5p6yil",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
@@ -1204,7 +1214,7 @@
                                         "key": "TextFaultStartTimeDate",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "etu306",
+                                        "id": "e620rf",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
@@ -1279,7 +1289,7 @@
                                         "key": "TextFaultEndTimeDate",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "ebevrff",
+                                        "id": "eghja94",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
@@ -1360,7 +1370,7 @@
                                 "addons": [],
                                 "tree": true,
                                 "lazyLoad": false,
-                                "id": "e1a0lv7"
+                                "id": "e8yxa6"
                             }
                         ],
                         "placeholder": "",
@@ -1398,7 +1408,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "eessstu"
+                        "id": "ecyvzzi"
                     },
                     {
                         "title": "Panel",
@@ -1471,7 +1481,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "eflfdid"
+                        "id": "e32n08h"
                     },
                     {
                         "title": "Case Details",
@@ -1608,7 +1618,7 @@
                                                 "allowMultipleMasks": false,
                                                 "addons": [],
                                                 "datepickerMode": "day",
-                                                "id": "e6gnenj"
+                                                "id": "e562nj9"
                                             }
                                         ],
                                         "width": 4,
@@ -1740,7 +1750,7 @@
                                                 "allowMultipleMasks": false,
                                                 "addons": [],
                                                 "datepickerMode": "day",
-                                                "id": "eqg9v0b"
+                                                "id": "e12h28a"
                                             }
                                         ],
                                         "width": 4,
@@ -1812,7 +1822,7 @@
                                                 "validate": {
                                                     "required": false,
                                                     "customMessage": "",
-                                                    "custom": "",
+                                                    "custom": "valid = true;\r\n\r\n// Access the container object and check if it exists\r\nconst gridData = data['container'] || {};\r\n\r\n// Parse the start date only if `dueDate` exists in `gridData`\r\nconst startDate = gridData.dueDate ? moment(gridData.dueDate).toDate() : null;\r\n\r\n// Parse the end date only if `endDate` exists in `gridData` and is not blank\r\nconst endDate = gridData.endDate ? moment(gridData.endDate).toDate() : null;\r\n\r\n// Check if the start date is valid if it’s provided\r\nif (startDate && isNaN(startDate.getTime())) {\r\n    valid = 'Invalid start date format.';\r\n} else if (endDate) {\r\n    // Only proceed with endDate validation if endDate is provided\r\n    if (isNaN(endDate.getTime())) {\r\n        valid = 'Invalid end date format.';\r\n    } else if (startDate && endDate <= startDate) {\r\n        // Compare start and end dates only if startDate is provided\r\n        valid = 'End date and time must be greater than the start date and time.';\r\n    }\r\n}\r\n",
                                                     "customPrivate": false,
                                                     "json": "",
                                                     "strictDateValidation": false,
@@ -1872,7 +1882,7 @@
                                                 "allowMultipleMasks": false,
                                                 "addons": [],
                                                 "datepickerMode": "day",
-                                                "id": "eg8r8u8"
+                                                "id": "ewgo5kb"
                                             }
                                         ],
                                         "size": "md",
@@ -1884,7 +1894,7 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "eo8su1k",
+                                "id": "eiiuvis",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -1972,16 +1982,12 @@
                                                 "data": {
                                                     "values": [
                                                         {
-                                                            "label": "Amit Kumar",
-                                                            "value": "amitKumar"
+                                                            "label": "Amit",
+                                                            "value": "amitdeveloper96@gmail.com"
                                                         },
                                                         {
-                                                            "label": "Raja Verma",
-                                                            "value": "rajaVerma"
-                                                        },
-                                                        {
-                                                            "label": "Rahul",
-                                                            "value": "rahul"
+                                                            "label": "Shrikant",
+                                                            "value": "shrikantp2143@gmail.com"
                                                         }
                                                     ],
                                                     "resource": "",
@@ -2069,7 +2075,7 @@
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "id": "eaw2jkl",
+                                                "id": "erq4ppq",
                                                 "defaultValue": []
                                             }
                                         ],
@@ -2100,6 +2106,7 @@
                                                 "modalEdit": false,
                                                 "multiple": false,
                                                 "dataSrc": "values",
+                                                "defaultValue": 1,
                                                 "data": {
                                                     "values": [
                                                         {
@@ -2116,7 +2123,7 @@
                                                 "idPath": "id",
                                                 "valueProperty": "",
                                                 "template": "<span>{{ item.label }}</span>",
-                                                "refreshOn": "",
+                                                "refreshOn": "data",
                                                 "refreshOnBlur": "",
                                                 "clearOnRefresh": false,
                                                 "searchEnabled": true,
@@ -2182,6 +2189,7 @@
                                                 "ignoreCache": false,
                                                 "redrawOn": "",
                                                 "input": true,
+                                                "keyModified": true,
                                                 "prefix": "",
                                                 "suffix": "",
                                                 "showCharCount": false,
@@ -2192,8 +2200,7 @@
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "id": "esz626j",
-                                                "defaultValue": ""
+                                                "id": "etwl3jg"
                                             }
                                         ],
                                         "width": 6,
@@ -2204,7 +2211,7 @@
                                         "currentWidth": 6
                                     }
                                 ],
-                                "id": "ed0k9we",
+                                "id": "er75ffm",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -2263,7 +2270,7 @@
                                 "autoAdjust": false
                             }
                         ],
-                        "id": "ekwxota",
+                        "id": "eu33ic4",
                         "placeholder": "",
                         "prefix": "",
                         "customClass": "",
@@ -2418,7 +2425,7 @@
                         "addons": [],
                         "inputType": "radio",
                         "fieldSet": false,
-                        "id": "edonpdo"
+                        "id": "ekzobvi"
                     },
                     {
                         "title": "Analysis",
@@ -2574,7 +2581,7 @@
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "id": "eckmlyl",
+                                                "id": "eg1q71m",
                                                 "defaultValue": ""
                                             }
                                         ],
@@ -2635,7 +2642,7 @@
                                                 "encrypted": false,
                                                 "clearOnHide": false,
                                                 "customDefaultValue": "",
-                                                "calculateValue": "const fetchOptionsForCategory = async (categoryId) => {\r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return [];\r\n  }\r\n\r\n  try {\r\n    const response = await fetch(`http://localhost:8081/case-definition/descriptions?categoryId=${categoryId}`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n\r\n    const data = await response.json();\r\n\r\n    // Assuming API returns the array like the one you provided\r\n    const options = data.map(item => ({\r\n      label: item.description,  // Use 'description' field for the label\r\n      value: item.description            // Use 'id' field for the value\r\n    }));\r\n\r\n    return options;\r\n\r\n  } catch (error) {\r\n    console.error('Error fetching options for category:', error);\r\n    return [];\r\n  }\r\n};\r\n\r\n// Get selected category ID from the first dropdown\r\nvar selectedCategoryId = data['container'].caseCauseCategory;  // Ensure this points to the correct key in your form data\r\n\r\nif (!selectedCategoryId) {\r\n  return [];  // Return empty array if no category is selected\r\n}\r\n\r\n// Fetch options dynamically from the API and populate the dropdown\r\nfetchOptionsForCategory(selectedCategoryId).then(options => {\r\n  if (options.length > 0) {\r\n    component.data.values = options;  // Set fetched options in Form.io dropdown\r\n  \r\n  } else {\r\n    component.data.values = [];  // Fallback to empty options if no data\r\n    \r\n  }\r\n}).catch(error => {\r\n  console.error('Failed to fetch options for category:', error);\r\n  component.data.values = [];  // Set empty options on error\r\n  \r\n});\r\n",
+                                                "calculateValue": "const fetchOptionsForCategory = async (categoryId) => {\r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return [];\r\n  }\r\n\r\n  try {\r\n    const response = await fetch(`http://localhost:8081/case-definition/descriptions?categoryId=${categoryId}`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n\r\n    const data = await response.json();\r\n\r\n    // Assuming API returns the array like the one you provided\r\n    const options = data.map(item => ({\r\n      label: item.description,  // Use 'description' field for the label\r\n      value: item.description            // Use 'id' field for the value\r\n    }));\r\n    localStorage.setItem(`caseCauseDescriptionOptions_${categoryId}`, JSON.stringify(options));\r\n\r\n    return options;\r\n\r\n  } catch (error) {\r\n    console.error('Error fetching options for category:', error);\r\n    return [];\r\n  }\r\n};\r\n\r\n// Get selected category ID from the first dropdown\r\nvar selectedCategoryId = data['container'].caseCauseCategory;  // Ensure this points to the correct key in your form data\r\n\r\nif (!selectedCategoryId) {\r\n  return [];  // Return empty array if no category is selected\r\n}\r\n\r\n// Fetch options dynamically from the API and populate the dropdown\r\nfetchOptionsForCategory(selectedCategoryId).then(options => {\r\n  if (options.length > 0) {\r\n    component.data.values = options;  // Set fetched options in Form.io dropdown\r\n  \r\n  } else {\r\n    component.data.values = [];  // Fallback to empty options if no data\r\n    \r\n  }\r\n}).catch(error => {\r\n  console.error('Failed to fetch options for category:', error);\r\n  component.data.values = [];  // Set empty options on error\r\n  \r\n});\r\n",
                                                 "calculateServer": false,
                                                 "allowCalculateOverride": false,
                                                 "validateOn": "change",
@@ -2697,7 +2704,7 @@
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "id": "ewhly1",
+                                                "id": "ew1jbm8",
                                                 "defaultValue": ""
                                             }
                                         ],
@@ -2731,7 +2738,7 @@
                                                 "key": "analysisDesc",
                                                 "type": "textarea",
                                                 "input": true,
-                                                "id": "e2cmf6",
+                                                "id": "e6aqn4c",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -2802,7 +2809,7 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "ez3orud",
+                                "id": "e8kif1a",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -2896,7 +2903,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "e6ipd7l"
+                        "id": "enmn98d"
                     },
                     {
                         "title": "GE APM Recommendation",
@@ -2979,9 +2986,9 @@
                                 "dbIndex": false,
                                 "encrypted": false,
                                 "redrawOn": "",
-                                "clearOnHide": false,
+                                "clearOnHide": true,
                                 "customDefaultValue": "",
-                                "calculateValue": "\n",
+                                "calculateValue": "",
                                 "calculateServer": false,
                                 "allowCalculateOverride": false,
                                 "validateOn": "change",
@@ -3028,71 +3035,11 @@
                                                 "components": [
                                                     {
                                                         "label": "Recommendation Headline",
-                                                        "labelPosition": "top",
-                                                        "placeholder": "",
-                                                        "description": "",
-                                                        "tooltip": "",
-                                                        "prefix": "",
-                                                        "suffix": "",
-                                                        "widget": {
-                                                            "type": "input"
-                                                        },
-                                                        "inputMask": "",
-                                                        "displayMask": "",
                                                         "applyMaskOn": "change",
-                                                        "allowMultipleMasks": false,
-                                                        "customClass": "",
-                                                        "tabindex": "",
-                                                        "autocomplete": "",
-                                                        "hidden": false,
-                                                        "hideLabel": false,
-                                                        "showWordCount": false,
-                                                        "showCharCount": false,
-                                                        "mask": false,
-                                                        "autofocus": false,
-                                                        "spellcheck": true,
-                                                        "disabled": false,
                                                         "tableView": true,
-                                                        "modalEdit": false,
-                                                        "multiple": false,
-                                                        "persistent": true,
-                                                        "inputFormat": "plain",
-                                                        "protected": false,
-                                                        "dbIndex": false,
-                                                        "case": "",
-                                                        "truncateMultipleSpaces": false,
-                                                        "encrypted": false,
                                                         "redrawOn": "container.dataGrid1.recommendationNo1",
                                                         "clearOnHide": false,
-                                                        "customDefaultValue": "",
-                                                        "calculateValue": "",
-                                                        "calculateServer": false,
-                                                        "allowCalculateOverride": false,
-                                                        "validateOn": "change",
-                                                        "validate": {
-                                                            "required": true,
-                                                            "pattern": "",
-                                                            "customMessage": "",
-                                                            "custom": "",
-                                                            "customPrivate": false,
-                                                            "json": "",
-                                                            "minLength": "",
-                                                            "maxLength": "",
-                                                            "strictDateValidation": false,
-                                                            "multiple": false,
-                                                            "unique": false
-                                                        },
-                                                        "unique": false,
-                                                        "errorLabel": "",
-                                                        "errors": "",
                                                         "key": "recommendationHeadline",
-                                                        "tags": [],
-                                                        "properties": {},
-                                                        "conditional": {
-                                                            "eq": "",
-                                                            "json": ""
-                                                        },
-                                                        "customConditional": "",
                                                         "logic": [
                                                             {
                                                                 "name": "Disable Text Field if recommendationNo1 is filled",
@@ -3115,116 +3062,174 @@
                                                                 ]
                                                             }
                                                         ],
-                                                        "attributes": {},
-                                                        "overlay": {
-                                                            "style": "",
-                                                            "page": "",
-                                                            "left": "",
-                                                            "top": "",
-                                                            "width": "",
-                                                            "height": ""
-                                                        },
                                                         "type": "textfield",
-                                                        "dataGridLabel": false,
                                                         "input": true,
-                                                        "refreshOn": "",
-                                                        "addons": [],
-                                                        "inputType": "text",
-                                                        "id": "e4xvnoi",
-                                                        "defaultValue": ""
-                                                    },
-                                                    {
-                                                        "label": "Recommendation Description",
-                                                        "labelPosition": "top",
+                                                        "id": "ekskqis",
                                                         "placeholder": "",
-                                                        "description": "",
-                                                        "tooltip": "",
                                                         "prefix": "",
-                                                        "suffix": "",
-                                                        "widget": {
-                                                            "type": "input"
-                                                        },
-                                                        "displayMask": "",
-                                                        "applyMaskOn": "change",
-                                                        "editor": "",
-                                                        "autoExpand": false,
                                                         "customClass": "",
-                                                        "tabindex": "",
-                                                        "autocomplete": "",
-                                                        "hidden": false,
-                                                        "hideLabel": false,
-                                                        "showWordCount": false,
-                                                        "showCharCount": false,
-                                                        "autofocus": false,
-                                                        "spellcheck": true,
-                                                        "disabled": false,
-                                                        "tableView": true,
-                                                        "modalEdit": false,
+                                                        "suffix": "",
                                                         "multiple": false,
-                                                        "persistent": true,
-                                                        "inputFormat": "html",
                                                         "protected": false,
+                                                        "unique": false,
+                                                        "persistent": true,
+                                                        "hidden": false,
+                                                        "refreshOn": "",
+                                                        "modalEdit": false,
+                                                        "dataGridLabel": false,
+                                                        "labelPosition": "top",
+                                                        "description": "",
+                                                        "errorLabel": "",
+                                                        "tooltip": "",
+                                                        "hideLabel": false,
+                                                        "tabindex": "",
+                                                        "disabled": false,
+                                                        "autofocus": false,
                                                         "dbIndex": false,
-                                                        "case": "",
-                                                        "truncateMultipleSpaces": false,
-                                                        "encrypted": false,
-                                                        "redrawOn": "",
-                                                        "clearOnHide": false,
                                                         "customDefaultValue": "",
                                                         "calculateValue": "",
                                                         "calculateServer": false,
-                                                        "allowCalculateOverride": false,
+                                                        "widget": {
+                                                            "type": "input"
+                                                        },
+                                                        "attributes": {},
                                                         "validateOn": "change",
                                                         "validate": {
                                                             "required": false,
-                                                            "pattern": "",
-                                                            "customMessage": "",
                                                             "custom": "",
                                                             "customPrivate": false,
-                                                            "json": "",
-                                                            "minLength": "",
-                                                            "maxLength": "",
-                                                            "minWords": "",
-                                                            "maxWords": "",
                                                             "strictDateValidation": false,
                                                             "multiple": false,
-                                                            "unique": false
+                                                            "unique": false,
+                                                            "minLength": "",
+                                                            "maxLength": "",
+                                                            "pattern": ""
                                                         },
-                                                        "unique": false,
-                                                        "errorLabel": "",
-                                                        "errors": "",
-                                                        "key": "recommendationDescription1",
-                                                        "tags": [],
-                                                        "properties": {},
                                                         "conditional": {
-                                                            "eq": "",
-                                                            "json": ""
+                                                            "eq": ""
                                                         },
-                                                        "customConditional": "",
-                                                        "logic": [],
-                                                        "attributes": {},
                                                         "overlay": {
                                                             "style": "",
-                                                            "page": "",
                                                             "left": "",
                                                             "top": "",
                                                             "width": "",
                                                             "height": ""
                                                         },
-                                                        "type": "textarea",
-                                                        "rows": 2,
-                                                        "wysiwyg": false,
-                                                        "dataGridLabel": false,
-                                                        "input": true,
-                                                        "refreshOn": "",
+                                                        "allowCalculateOverride": false,
+                                                        "encrypted": false,
+                                                        "showCharCount": false,
+                                                        "showWordCount": false,
+                                                        "properties": {},
                                                         "allowMultipleMasks": false,
                                                         "addons": [],
                                                         "mask": false,
                                                         "inputType": "text",
+                                                        "inputFormat": "plain",
                                                         "inputMask": "",
-                                                        "fixedSize": true,
-                                                        "id": "esoylti",
-                                                        "defaultValue": ""
+                                                        "displayMask": "",
+                                                        "spellcheck": true,
+                                                        "truncateMultipleSpaces": false
+                                                    },
+                                                    {
+                                                        "label": "Recommendation Description",
+                                                        "widget": "",
+                                                        "applyMaskOn": "change",
+                                                        "autoExpand": false,
+                                                        "tableView": true,
+                                                        "clearOnHide": false,
+                                                        "key": "recommendationDescription1",
+                                                        "logic": [
+                                                            {
+                                                                "name": "Disable Text Field if recommendationNo1 is filled",
+                                                                "trigger": {
+                                                                    "type": "javascript",
+                                                                    "javascript": "result = !!(row.recommendationNo1 && row.recommendationNo1.trim() !== \"\");"
+                                                                },
+                                                                "actions": [
+                                                                    {
+                                                                        "name": "Disable Component",
+                                                                        "type": "property",
+                                                                        "property": {
+                                                                            "label": "Disabled",
+                                                                            "value": "disabled",
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "state": true
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ],
+                                                        "type": "textarea",
+                                                        "rows": 2,
+                                                        "input": true,
+                                                        "id": "e3qqs65",
+                                                        "placeholder": "",
+                                                        "prefix": "",
+                                                        "customClass": "",
+                                                        "suffix": "",
+                                                        "multiple": false,
+                                                        "protected": false,
+                                                        "unique": false,
+                                                        "persistent": true,
+                                                        "hidden": false,
+                                                        "refreshOn": "",
+                                                        "redrawOn": "",
+                                                        "modalEdit": false,
+                                                        "dataGridLabel": false,
+                                                        "labelPosition": "top",
+                                                        "description": "",
+                                                        "errorLabel": "",
+                                                        "tooltip": "",
+                                                        "hideLabel": false,
+                                                        "tabindex": "",
+                                                        "disabled": false,
+                                                        "autofocus": false,
+                                                        "dbIndex": false,
+                                                        "customDefaultValue": "",
+                                                        "calculateValue": "",
+                                                        "calculateServer": false,
+                                                        "attributes": {},
+                                                        "validateOn": "change",
+                                                        "validate": {
+                                                            "required": false,
+                                                            "custom": "",
+                                                            "customPrivate": false,
+                                                            "strictDateValidation": false,
+                                                            "multiple": false,
+                                                            "unique": false,
+                                                            "minLength": "",
+                                                            "maxLength": "",
+                                                            "pattern": "",
+                                                            "minWords": "",
+                                                            "maxWords": ""
+                                                        },
+                                                        "conditional": {
+                                                            "eq": ""
+                                                        },
+                                                        "overlay": {
+                                                            "style": "",
+                                                            "left": "",
+                                                            "top": "",
+                                                            "width": "",
+                                                            "height": ""
+                                                        },
+                                                        "allowCalculateOverride": false,
+                                                        "encrypted": false,
+                                                        "showCharCount": false,
+                                                        "showWordCount": false,
+                                                        "properties": {},
+                                                        "allowMultipleMasks": false,
+                                                        "addons": [],
+                                                        "mask": false,
+                                                        "inputType": "text",
+                                                        "inputFormat": "html",
+                                                        "inputMask": "",
+                                                        "displayMask": "",
+                                                        "spellcheck": true,
+                                                        "truncateMultipleSpaces": false,
+                                                        "wysiwyg": false,
+                                                        "editor": "",
+                                                        "fixedSize": true
                                                     },
                                                     {
                                                         "label": "Assigned To",
@@ -3279,7 +3284,7 @@
                                                         "allowCalculateOverride": false,
                                                         "validateOn": "change",
                                                         "validate": {
-                                                            "required": true,
+                                                            "required": false,
                                                             "onlyAvailableItems": false,
                                                             "customMessage": "",
                                                             "custom": "",
@@ -3356,94 +3361,83 @@
                                                             "include": "score",
                                                             "threshold": 0.3
                                                         },
-                                                        "id": "e9q58k",
+                                                        "id": "e2k2lpa",
                                                         "defaultValue": ""
                                                     },
                                                     {
                                                         "label": "Status",
-                                                        "labelPosition": "top",
-                                                        "placeholder": "",
-                                                        "description": "",
-                                                        "tooltip": "",
-                                                        "prefix": "",
-                                                        "suffix": "",
-                                                        "widget": {
-                                                            "type": "input"
-                                                        },
-                                                        "inputMask": "",
-                                                        "displayMask": "",
                                                         "applyMaskOn": "change",
-                                                        "allowMultipleMasks": false,
-                                                        "customClass": "",
-                                                        "tabindex": "",
-                                                        "autocomplete": "",
-                                                        "hidden": false,
-                                                        "hideLabel": false,
-                                                        "showWordCount": false,
-                                                        "showCharCount": false,
-                                                        "mask": false,
-                                                        "autofocus": false,
-                                                        "spellcheck": true,
                                                         "disabled": true,
                                                         "tableView": true,
-                                                        "modalEdit": false,
-                                                        "multiple": false,
-                                                        "persistent": true,
-                                                        "inputFormat": "plain",
-                                                        "protected": false,
-                                                        "dbIndex": false,
-                                                        "case": "",
-                                                        "truncateMultipleSpaces": false,
-                                                        "encrypted": false,
-                                                        "redrawOn": "",
                                                         "clearOnHide": false,
+                                                        "key": "recommendationStatus",
+                                                        "type": "textfield",
+                                                        "input": true,
+                                                        "id": "epq6d9n",
+                                                        "placeholder": "",
+                                                        "prefix": "",
+                                                        "customClass": "",
+                                                        "suffix": "",
+                                                        "multiple": false,
+                                                        "protected": false,
+                                                        "unique": false,
+                                                        "persistent": true,
+                                                        "hidden": false,
+                                                        "refreshOn": "",
+                                                        "redrawOn": "",
+                                                        "modalEdit": false,
+                                                        "dataGridLabel": false,
+                                                        "labelPosition": "top",
+                                                        "description": "",
+                                                        "errorLabel": "",
+                                                        "tooltip": "",
+                                                        "hideLabel": false,
+                                                        "tabindex": "",
+                                                        "autofocus": false,
+                                                        "dbIndex": false,
                                                         "customDefaultValue": "",
                                                         "calculateValue": "",
                                                         "calculateServer": false,
-                                                        "allowCalculateOverride": false,
+                                                        "widget": {
+                                                            "type": "input"
+                                                        },
+                                                        "attributes": {},
                                                         "validateOn": "change",
                                                         "validate": {
                                                             "required": false,
-                                                            "pattern": "",
-                                                            "customMessage": "",
                                                             "custom": "",
                                                             "customPrivate": false,
-                                                            "json": "",
-                                                            "minLength": "",
-                                                            "maxLength": "",
                                                             "strictDateValidation": false,
                                                             "multiple": false,
-                                                            "unique": false
+                                                            "unique": false,
+                                                            "minLength": "",
+                                                            "maxLength": "",
+                                                            "pattern": ""
                                                         },
-                                                        "unique": false,
-                                                        "errorLabel": "",
-                                                        "errors": "",
-                                                        "key": "recommendationStatus",
-                                                        "tags": [],
-                                                        "properties": {},
                                                         "conditional": {
-                                                            "eq": "",
-                                                            "json": ""
+                                                            "eq": ""
                                                         },
-                                                        "customConditional": "",
-                                                        "logic": [],
-                                                        "attributes": {},
                                                         "overlay": {
                                                             "style": "",
-                                                            "page": "",
                                                             "left": "",
                                                             "top": "",
                                                             "width": "",
                                                             "height": ""
                                                         },
-                                                        "type": "textfield",
-                                                        "dataGridLabel": false,
-                                                        "input": true,
-                                                        "refreshOn": "",
+                                                        "allowCalculateOverride": false,
+                                                        "encrypted": false,
+                                                        "showCharCount": false,
+                                                        "showWordCount": false,
+                                                        "properties": {},
+                                                        "allowMultipleMasks": false,
                                                         "addons": [],
+                                                        "mask": false,
                                                         "inputType": "text",
-                                                        "id": "eszgh5m",
-                                                        "defaultValue": ""
+                                                        "inputFormat": "plain",
+                                                        "inputMask": "",
+                                                        "displayMask": "",
+                                                        "spellcheck": true,
+                                                        "truncateMultipleSpaces": false
                                                     }
                                                 ],
                                                 "width": 6,
@@ -3462,7 +3456,7 @@
                                                         "placeholder": "",
                                                         "description": "",
                                                         "tooltip": "",
-                                                        "customClass": "",
+                                                        "customClass": "custom-select-height",
                                                         "tabindex": "",
                                                         "hidden": false,
                                                         "hideLabel": false,
@@ -3529,27 +3523,7 @@
                                                             "json": ""
                                                         },
                                                         "customConditional": "",
-                                                        "logic": [
-                                                            {
-                                                                "name": "Disable Text Field if recommendationNo1 is filled",
-                                                                "trigger": {
-                                                                    "type": "javascript",
-                                                                    "javascript": "result = !!(row.recommendationNo1 && row.recommendationNo1.trim() !== \"\");"
-                                                                },
-                                                                "actions": [
-                                                                    {
-                                                                        "name": "Disable Component",
-                                                                        "type": "property",
-                                                                        "property": {
-                                                                            "label": "Disabled",
-                                                                            "value": "disabled",
-                                                                            "type": "boolean"
-                                                                        },
-                                                                        "state": true
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ],
+                                                        "logic": [],
                                                         "attributes": {},
                                                         "overlay": {
                                                             "style": "",
@@ -3585,32 +3559,14 @@
                                                             "include": "score",
                                                             "threshold": 0.3
                                                         },
-                                                        "id": "ezxqw9",
+                                                        "id": "ermgrnk",
                                                         "defaultValue": ""
                                                     },
                                                     {
                                                         "label": "Target Completion Date",
-                                                        "labelPosition": "top",
-                                                        "displayInTimezone": "viewer",
-                                                        "useLocaleSettings": false,
-                                                        "allowInput": true,
                                                         "format": "dd-MM-yyyy",
-                                                        "placeholder": "",
-                                                        "description": "",
-                                                        "tooltip": "",
-                                                        "customClass": "",
-                                                        "tabindex": "",
-                                                        "hidden": false,
-                                                        "hideLabel": false,
-                                                        "autofocus": false,
-                                                        "disabled": false,
                                                         "tableView": false,
-                                                        "modalEdit": false,
-                                                        "shortcutButtons": [],
-                                                        "enableDate": true,
                                                         "datePicker": {
-                                                            "disable": "",
-                                                            "disableFunction": "",
                                                             "disableWeekends": false,
                                                             "disableWeekdays": false,
                                                             "showWeeks": true,
@@ -3630,44 +3586,10 @@
                                                             "mousewheel": true,
                                                             "arrowkeys": true
                                                         },
-                                                        "multiple": false,
-                                                        "defaultValue": "",
-                                                        "defaultDate": "",
-                                                        "customOptions": {},
-                                                        "persistent": true,
-                                                        "protected": false,
-                                                        "dbIndex": false,
-                                                        "encrypted": false,
-                                                        "redrawOn": "",
                                                         "clearOnHide": false,
-                                                        "customDefaultValue": "",
-                                                        "calculateValue": "",
-                                                        "calculateServer": false,
-                                                        "allowCalculateOverride": false,
-                                                        "validateOn": "change",
-                                                        "validate": {
-                                                            "required": true,
-                                                            "customMessage": "",
-                                                            "custom": "",
-                                                            "customPrivate": false,
-                                                            "json": "",
-                                                            "strictDateValidation": false,
-                                                            "multiple": false,
-                                                            "unique": false
-                                                        },
                                                         "enableMinDateInput": false,
                                                         "enableMaxDateInput": false,
-                                                        "unique": false,
-                                                        "errorLabel": "",
-                                                        "errors": "",
                                                         "key": "recommendationTargetCompletionDate1",
-                                                        "tags": [],
-                                                        "properties": {},
-                                                        "conditional": {
-                                                            "eq": "",
-                                                            "json": ""
-                                                        },
-                                                        "customConditional": "",
                                                         "logic": [
                                                             {
                                                                 "name": "Disable Text Field if recommendationNo1 is filled",
@@ -3689,18 +3611,7 @@
                                                                 ]
                                                             }
                                                         ],
-                                                        "attributes": {},
-                                                        "overlay": {
-                                                            "style": "",
-                                                            "page": "",
-                                                            "left": "",
-                                                            "top": "",
-                                                            "width": "",
-                                                            "height": ""
-                                                        },
                                                         "type": "datetime",
-                                                        "timezone": "",
-                                                        "dataGridLabel": false,
                                                         "input": true,
                                                         "widget": {
                                                             "type": "calendar",
@@ -3715,20 +3626,71 @@
                                                             "hourIncrement": 1,
                                                             "minuteIncrement": 1,
                                                             "time_24hr": true,
-                                                            "disabledDates": "",
                                                             "disableWeekends": false,
-                                                            "disableWeekdays": false,
-                                                            "disableFunction": ""
+                                                            "disableWeekdays": false
                                                         },
+                                                        "id": "e64gbui",
+                                                        "placeholder": "",
                                                         "prefix": "",
+                                                        "customClass": "",
                                                         "suffix": "",
+                                                        "multiple": false,
+                                                        "defaultValue": "",
+                                                        "protected": false,
+                                                        "unique": false,
+                                                        "persistent": true,
+                                                        "hidden": false,
                                                         "refreshOn": "",
+                                                        "redrawOn": "",
+                                                        "modalEdit": false,
+                                                        "dataGridLabel": false,
+                                                        "labelPosition": "top",
+                                                        "description": "",
+                                                        "errorLabel": "",
+                                                        "tooltip": "",
+                                                        "hideLabel": false,
+                                                        "tabindex": "",
+                                                        "disabled": false,
+                                                        "autofocus": false,
+                                                        "dbIndex": false,
+                                                        "customDefaultValue": "",
+                                                        "calculateValue": "",
+                                                        "calculateServer": false,
+                                                        "attributes": {},
+                                                        "validateOn": "change",
+                                                        "validate": {
+                                                            "required": false,
+                                                            "custom": "",
+                                                            "customPrivate": false,
+                                                            "strictDateValidation": false,
+                                                            "multiple": false,
+                                                            "unique": false
+                                                        },
+                                                        "conditional": {
+                                                            "eq": ""
+                                                        },
+                                                        "overlay": {
+                                                            "style": "",
+                                                            "left": "",
+                                                            "top": "",
+                                                            "width": "",
+                                                            "height": ""
+                                                        },
+                                                        "allowCalculateOverride": false,
+                                                        "encrypted": false,
                                                         "showCharCount": false,
                                                         "showWordCount": false,
+                                                        "properties": {},
                                                         "allowMultipleMasks": false,
                                                         "addons": [],
+                                                        "useLocaleSettings": false,
+                                                        "allowInput": true,
+                                                        "enableDate": true,
+                                                        "defaultDate": "",
+                                                        "displayInTimezone": "viewer",
+                                                        "timezone": "",
                                                         "datepickerMode": "day",
-                                                        "id": "emt6dlq"
+                                                        "customOptions": {}
                                                     },
                                                     {
                                                         "label": "Recommendation Reviewer",
@@ -3783,7 +3745,7 @@
                                                         "allowCalculateOverride": false,
                                                         "validateOn": "change",
                                                         "validate": {
-                                                            "required": true,
+                                                            "required": false,
                                                             "onlyAvailableItems": false,
                                                             "customMessage": "",
                                                             "custom": "",
@@ -3860,94 +3822,83 @@
                                                             "include": "score",
                                                             "threshold": 0.3
                                                         },
-                                                        "id": "e5srwcq7",
+                                                        "id": "ekqeius",
                                                         "defaultValue": ""
                                                     },
                                                     {
                                                         "label": "Recommendation No.",
-                                                        "labelPosition": "top",
-                                                        "placeholder": "",
-                                                        "description": "",
-                                                        "tooltip": "",
-                                                        "prefix": "",
-                                                        "suffix": "",
-                                                        "widget": {
-                                                            "type": "input"
-                                                        },
-                                                        "inputMask": "",
-                                                        "displayMask": "",
                                                         "applyMaskOn": "change",
-                                                        "allowMultipleMasks": false,
-                                                        "customClass": "",
-                                                        "tabindex": "",
-                                                        "autocomplete": "",
-                                                        "hidden": false,
-                                                        "hideLabel": false,
-                                                        "showWordCount": false,
-                                                        "showCharCount": false,
-                                                        "mask": false,
-                                                        "autofocus": false,
-                                                        "spellcheck": true,
                                                         "disabled": true,
                                                         "tableView": true,
-                                                        "modalEdit": false,
-                                                        "multiple": false,
-                                                        "persistent": true,
-                                                        "inputFormat": "plain",
-                                                        "protected": false,
-                                                        "dbIndex": false,
-                                                        "case": "",
-                                                        "truncateMultipleSpaces": false,
-                                                        "encrypted": false,
-                                                        "redrawOn": "",
                                                         "clearOnHide": false,
+                                                        "key": "recommendationNo1",
+                                                        "type": "textfield",
+                                                        "input": true,
+                                                        "id": "e21tu6x",
+                                                        "placeholder": "",
+                                                        "prefix": "",
+                                                        "customClass": "",
+                                                        "suffix": "",
+                                                        "multiple": false,
+                                                        "protected": false,
+                                                        "unique": false,
+                                                        "persistent": true,
+                                                        "hidden": false,
+                                                        "refreshOn": "",
+                                                        "redrawOn": "",
+                                                        "modalEdit": false,
+                                                        "dataGridLabel": false,
+                                                        "labelPosition": "top",
+                                                        "description": "",
+                                                        "errorLabel": "",
+                                                        "tooltip": "",
+                                                        "hideLabel": false,
+                                                        "tabindex": "",
+                                                        "autofocus": false,
+                                                        "dbIndex": false,
                                                         "customDefaultValue": "",
                                                         "calculateValue": "",
                                                         "calculateServer": false,
-                                                        "allowCalculateOverride": false,
+                                                        "widget": {
+                                                            "type": "input"
+                                                        },
+                                                        "attributes": {},
                                                         "validateOn": "change",
                                                         "validate": {
                                                             "required": false,
-                                                            "pattern": "",
-                                                            "customMessage": "",
                                                             "custom": "",
                                                             "customPrivate": false,
-                                                            "json": "",
-                                                            "minLength": "",
-                                                            "maxLength": "",
                                                             "strictDateValidation": false,
                                                             "multiple": false,
-                                                            "unique": false
+                                                            "unique": false,
+                                                            "minLength": "",
+                                                            "maxLength": "",
+                                                            "pattern": ""
                                                         },
-                                                        "unique": false,
-                                                        "errorLabel": "",
-                                                        "errors": "",
-                                                        "key": "recommendationNo1",
-                                                        "tags": [],
-                                                        "properties": {},
                                                         "conditional": {
-                                                            "eq": "",
-                                                            "json": ""
+                                                            "eq": ""
                                                         },
-                                                        "customConditional": "",
-                                                        "logic": [],
-                                                        "attributes": {},
                                                         "overlay": {
                                                             "style": "",
-                                                            "page": "",
                                                             "left": "",
                                                             "top": "",
                                                             "width": "",
                                                             "height": ""
                                                         },
-                                                        "type": "textfield",
-                                                        "dataGridLabel": false,
-                                                        "input": true,
-                                                        "refreshOn": "",
+                                                        "allowCalculateOverride": false,
+                                                        "encrypted": false,
+                                                        "showCharCount": false,
+                                                        "showWordCount": false,
+                                                        "properties": {},
+                                                        "allowMultipleMasks": false,
                                                         "addons": [],
+                                                        "mask": false,
                                                         "inputType": "text",
-                                                        "id": "euecpm9",
-                                                        "defaultValue": ""
+                                                        "inputFormat": "plain",
+                                                        "inputMask": "",
+                                                        "displayMask": "",
+                                                        "spellcheck": true,
+                                                        "truncateMultipleSpaces": false
                                                     }
                                                 ],
                                                 "width": 6,
@@ -3969,18 +3920,8 @@
                                                         "label": "Create SAP Request",
                                                         "labelPosition": "left-left",
                                                         "optionsLabelPosition": "right",
-                                                        "description": "",
-                                                        "tooltip": "",
-                                                        "customClass": "",
-                                                        "tabindex": "",
                                                         "inline": true,
-                                                        "hidden": false,
-                                                        "hideLabel": false,
-                                                        "autofocus": false,
-                                                        "disabled": false,
                                                         "tableView": false,
-                                                        "modalEdit": false,
-                                                        "dataSrc": "values",
                                                         "defaultValue": "n",
                                                         "values": [
                                                             {
@@ -3994,38 +3935,8 @@
                                                                 "shortcut": ""
                                                             }
                                                         ],
-                                                        "dataType": "",
-                                                        "valueProperty": "",
-                                                        "persistent": true,
-                                                        "protected": false,
-                                                        "dbIndex": false,
-                                                        "encrypted": false,
                                                         "clearOnHide": false,
-                                                        "customDefaultValue": "",
-                                                        "calculateValue": "",
-                                                        "calculateServer": false,
-                                                        "allowCalculateOverride": false,
-                                                        "validate": {
-                                                            "required": false,
-                                                            "onlyAvailableItems": false,
-                                                            "customMessage": "",
-                                                            "custom": "",
-                                                            "customPrivate": false,
-                                                            "json": "",
-                                                            "strictDateValidation": false,
-                                                            "multiple": false,
-                                                            "unique": false
-                                                        },
-                                                        "errorLabel": "",
-                                                        "errors": "",
                                                         "key": "RecommendationConfirmSAP3",
-                                                        "tags": [],
-                                                        "properties": {},
-                                                        "conditional": {
-                                                            "eq": "",
-                                                            "json": ""
-                                                        },
-                                                        "customConditional": "",
                                                         "logic": [
                                                             {
                                                                 "name": "Disable Text Field if recommendationNo1 is filled",
@@ -4047,41 +3958,72 @@
                                                                 ]
                                                             }
                                                         ],
+                                                        "type": "radio",
+                                                        "labelWidth": 21,
+                                                        "labelMargin": 2,
+                                                        "input": true,
+                                                        "id": "e8164bi",
+                                                        "placeholder": "",
+                                                        "prefix": "",
+                                                        "customClass": "",
+                                                        "suffix": "",
+                                                        "multiple": false,
+                                                        "protected": false,
+                                                        "unique": false,
+                                                        "persistent": true,
+                                                        "hidden": false,
+                                                        "refreshOn": "",
+                                                        "redrawOn": "",
+                                                        "modalEdit": false,
+                                                        "dataGridLabel": false,
+                                                        "description": "",
+                                                        "errorLabel": "",
+                                                        "tooltip": "",
+                                                        "hideLabel": false,
+                                                        "tabindex": "",
+                                                        "disabled": false,
+                                                        "autofocus": false,
+                                                        "dbIndex": false,
+                                                        "customDefaultValue": "",
+                                                        "calculateValue": "",
+                                                        "calculateServer": false,
                                                         "attributes": {},
+                                                        "validateOn": "change",
+                                                        "validate": {
+                                                            "required": false,
+                                                            "custom": "",
+                                                            "customPrivate": false,
+                                                            "strictDateValidation": false,
+                                                            "multiple": false,
+                                                            "unique": false,
+                                                            "onlyAvailableItems": false
+                                                        },
+                                                        "conditional": {
+                                                            "eq": ""
+                                                        },
                                                         "overlay": {
                                                             "style": "",
-                                                            "page": "",
                                                             "left": "",
                                                             "top": "",
                                                             "width": "",
                                                             "height": ""
                                                         },
-                                                        "type": "radio",
-                                                        "labelWidth": 21,
-                                                        "labelMargin": 2,
-                                                        "dataGridLabel": false,
+                                                        "allowCalculateOverride": false,
+                                                        "encrypted": false,
+                                                        "showCharCount": false,
+                                                        "showWordCount": false,
+                                                        "properties": {},
+                                                        "allowMultipleMasks": false,
+                                                        "addons": [],
+                                                        "dataSrc": "values",
+                                                        "authenticate": false,
+                                                        "ignoreCache": false,
+                                                        "template": "<span>{{ item.label }}</span>",
+                                                        "inputType": "radio",
                                                         "data": {
                                                             "url": ""
                                                         },
-                                                        "template": "<span>{{ item.label }}</span>",
-                                                        "authenticate": false,
-                                                        "ignoreCache": false,
-                                                        "redrawOn": "",
-                                                        "input": true,
-                                                        "placeholder": "",
-                                                        "prefix": "",
-                                                        "suffix": "",
-                                                        "multiple": false,
-                                                        "unique": false,
-                                                        "refreshOn": "",
-                                                        "validateOn": "change",
-                                                        "showCharCount": false,
-                                                        "showWordCount": false,
-                                                        "allowMultipleMasks": false,
-                                                        "addons": [],
-                                                        "inputType": "radio",
-                                                        "fieldSet": false,
-                                                        "id": "edobs7i"
+                                                        "fieldSet": false
                                                     }
                                                 ],
                                                 "size": "md",
@@ -4110,7 +4052,7 @@
                                                                         "customConditional": "\n",
                                                                         "type": "button",
                                                                         "input": true,
-                                                                        "id": "eatb32",
+                                                                        "id": "em78xw",
                                                                         "placeholder": "",
                                                                         "prefix": "",
                                                                         "suffix": "",
@@ -4195,7 +4137,7 @@
                                                                         "type": "button",
                                                                         "custom": "// const dataGridComponent = form.getComponent('dataGrid1');\r\n\r\n// if (dataGridComponent) {\r\n \r\n//   dataGridComponent.removeRow(rowIndex);\r\n// } else {\r\n//   console.error(\"DataGrid component not found\");\r\n// }\r\n\r\nconst dataGridComponent = form.getComponent('dataGrid1');\r\n\r\nif (dataGridComponent) {\r\n  // Display confirmation dialog\r\n  const isConfirmed = window.confirm(\"Are you sure you want to delete this row?\");\r\n  \r\n  if (isConfirmed) {\r\n    // If confirmed, delete the row\r\n    dataGridComponent.removeRow(rowIndex);\r\n  } else {\r\n    console.log(\"Row deletion canceled by the user\");\r\n  }\r\n} else {\r\n  console.error(\"DataGrid component not found\");\r\n}\r\n\r\n",
                                                                         "input": true,
-                                                                        "id": "emytcio",
+                                                                        "id": "e86khrp",
                                                                         "placeholder": "",
                                                                         "prefix": "",
                                                                         "suffix": "",
@@ -4264,49 +4206,35 @@
                                                                 "currentWidth": 2
                                                             }
                                                         ],
-                                                        "autoAdjust": false,
-                                                        "customClass": "",
-                                                        "hidden": false,
-                                                        "hideLabel": false,
-                                                        "modalEdit": false,
                                                         "key": "columns2",
-                                                        "tags": [],
-                                                        "properties": {},
                                                         "conditional": {
                                                             "show": true,
                                                             "when": "container.dataGrid1.recommendationNo1",
-                                                            "eq": "",
-                                                            "json": ""
-                                                        },
-                                                        "customConditional": "",
-                                                        "logic": [],
-                                                        "attributes": {},
-                                                        "overlay": {
-                                                            "style": "",
-                                                            "page": "",
-                                                            "left": "",
-                                                            "top": "",
-                                                            "width": "",
-                                                            "height": ""
+                                                            "eq": ""
                                                         },
                                                         "type": "columns",
-                                                        "dataGridLabel": false,
                                                         "input": false,
                                                         "tableView": false,
+                                                        "id": "euct22m",
                                                         "placeholder": "",
                                                         "prefix": "",
+                                                        "customClass": "",
                                                         "suffix": "",
                                                         "multiple": false,
                                                         "protected": false,
                                                         "unique": false,
                                                         "persistent": false,
+                                                        "hidden": false,
                                                         "clearOnHide": false,
                                                         "refreshOn": "",
                                                         "redrawOn": "",
+                                                        "modalEdit": false,
+                                                        "dataGridLabel": false,
                                                         "labelPosition": "top",
                                                         "description": "",
                                                         "errorLabel": "",
                                                         "tooltip": "",
+                                                        "hideLabel": false,
                                                         "tabindex": "",
                                                         "disabled": false,
                                                         "autofocus": false,
@@ -4314,6 +4242,7 @@
                                                         "customDefaultValue": "",
                                                         "calculateValue": "",
                                                         "calculateServer": false,
+                                                        "attributes": {},
                                                         "validateOn": "change",
                                                         "validate": {
                                                             "required": false,
@@ -4323,15 +4252,23 @@
                                                             "multiple": false,
                                                             "unique": false
                                                         },
+                                                        "overlay": {
+                                                            "style": "",
+                                                            "left": "",
+                                                            "top": "",
+                                                            "width": "",
+                                                            "height": ""
+                                                        },
                                                         "allowCalculateOverride": false,
                                                         "encrypted": false,
                                                         "showCharCount": false,
                                                         "showWordCount": false,
+                                                        "properties": {},
                                                         "allowMultipleMasks": false,
                                                         "addons": [],
                                                         "tree": false,
                                                         "lazyLoad": false,
-                                                        "id": "e03og39"
+                                                        "autoAdjust": false
                                                     }
                                                 ],
                                                 "size": "md",
@@ -4344,7 +4281,7 @@
                                         "type": "columns",
                                         "input": false,
                                         "tableView": false,
-                                        "id": "eb481jw",
+                                        "id": "e0b3nme",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
@@ -4415,7 +4352,7 @@
                                 "addons": [],
                                 "tree": true,
                                 "lazyLoad": false,
-                                "id": "enwcs9b"
+                                "id": "ehoubf"
                             },
                             {
                                 "label": "+ Add More",
@@ -4494,7 +4431,7 @@
                                 "showWordCount": false,
                                 "allowMultipleMasks": false,
                                 "addons": [],
-                                "id": "e0wqmi"
+                                "id": "eneb4b"
                             }
                         ],
                         "placeholder": "",
@@ -4532,7 +4469,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "e7pqj9k"
+                        "id": "eeiux7r"
                     },
                     {
                         "title": "Value Realization",
@@ -4674,7 +4611,7 @@
                                     "include": "score",
                                     "threshold": 0.3
                                 },
-                                "id": "eukqo2",
+                                "id": "e5lhnfr",
                                 "defaultValue": ""
                             },
                             {
@@ -4764,7 +4701,7 @@
                                                 "showWordCount": false,
                                                 "allowMultipleMasks": false,
                                                 "addons": [],
-                                                "id": "egy13ao"
+                                                "id": "ewzwcol"
                                             }
                                         ],
                                         "width": 3,
@@ -4858,7 +4795,7 @@
                                                 "showWordCount": false,
                                                 "allowMultipleMasks": false,
                                                 "addons": [],
-                                                "id": "e72qyu"
+                                                "id": "esxnbdh"
                                             }
                                         ],
                                         "width": 3,
@@ -4952,7 +4889,7 @@
                                                 "showWordCount": false,
                                                 "allowMultipleMasks": false,
                                                 "addons": [],
-                                                "id": "e48d1aq"
+                                                "id": "e2tj98"
                                             }
                                         ],
                                         "size": "md",
@@ -5043,7 +4980,7 @@
                                                 "showWordCount": false,
                                                 "allowMultipleMasks": false,
                                                 "addons": [],
-                                                "id": "eutu1pq"
+                                                "id": "e8ki3ck"
                                             }
                                         ],
                                         "size": "md",
@@ -5055,7 +4992,7 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "evqyf5j",
+                                "id": "e7yurx9",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -5203,11 +5140,11 @@
                                 "inputType": "text",
                                 "inputMask": "",
                                 "fixedSize": true,
-                                "id": "eodhv8d",
+                                "id": "e67p0l",
                                 "defaultValue": ""
                             }
                         ],
-                        "id": "eoh8l5m",
+                        "id": "e25cout",
                         "placeholder": "",
                         "prefix": "",
                         "customClass": "",
@@ -5365,7 +5302,7 @@
                                         "showWordCount": false,
                                         "allowMultipleMasks": false,
                                         "addons": [],
-                                        "id": "ek8ekfj",
+                                        "id": "ez5bgm9",
                                         "event": ""
                                     }
                                 ],
@@ -5377,7 +5314,8 @@
                                 "components": [
                                     {
                                         "label": "Submit",
-                                        "action": "submit",
+                                        "action": "event",
+                                        "showValidations": true,
                                         "theme": "primary",
                                         "size": "md",
                                         "block": false,
@@ -5450,8 +5388,8 @@
                                         "showWordCount": false,
                                         "allowMultipleMasks": false,
                                         "addons": [],
-                                        "id": "e3wwv6r",
-                                        "saveOnEnter": false
+                                        "id": "e94p5w",
+                                        "event": ""
                                     }
                                 ],
                                 "size": "md",
@@ -5463,7 +5401,7 @@
                         "type": "columns",
                         "input": false,
                         "tableView": false,
-                        "id": "e3qecqa",
+                        "id": "euwpw4v",
                         "placeholder": "",
                         "prefix": "",
                         "customClass": "",
@@ -5537,7 +5475,7 @@
                 "addons": [],
                 "tree": true,
                 "lazyLoad": false,
-                "id": "e51r8j5"
+                "id": "ediymv"
             }
         ],
         "display": "form"
