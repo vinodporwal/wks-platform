@@ -11,6 +11,8 @@
  */
 package com.wks.caseengine.cases.definition.service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -282,6 +284,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Override
 	public Case saveCase(Case caseData) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+		LocalDateTime now = LocalDateTime.now();
+		String currentDate = now.format(formatter);
 		OwnerDetails owner = caseData.getOwner();
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
@@ -307,18 +312,13 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("Case Number"+ caseNo);
-		System.out.println("Case Number"+ caseNo);
-		System.out.println("Case Number"+ caseNo);
-		System.out.println("Case Number"+ caseNo);
-		System.out.println("Case Number"+ caseNo);
-		System.out.println("Case Information...."+ caseData.toString());
-		System.out.println("Case Number condition "+ caseNo==null);
+		
 		System.out.println("Printing Payload...");
 		if(caseNo==null || caseNo.length()==0) {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
 			System.out.println("Saving New Case Details....");
+			caseData.setCreationDate(currentDate);
 			caseDetails  = caseRepository.save(caseData);
 			
 			List<Long> eventIds = new ArrayList<Long>();
@@ -357,9 +357,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		    	    .filter(status -> status.getId().equals(caseStatusNo))
 		    	    .findFirst();
 		    String caseStatusValue = caseStatus.get().getName();
-		    System.out.println("Case Status Value: "+caseStatusValue);
-		    System.out.println("Case Status : "+caseStatus.get());
-		    System.out.println("case status condition"+ !caseStatusValue.equals("Under Analysis"));
 		    JsonNode analysisTeam = rootNode.path("analysisTeam");
 		    String[] reviewers = new String[analysisTeam.size()];
 		    if (analysisTeam.isArray()) {
@@ -377,14 +374,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		if(!caseData.getIsDraft()) {
+		if(!caseData.getIsDraft().equals("n")) {
 			int i = 0;
 		    String attributeName = attribute.getName();
 		    
 		    System.out.println("Attribute Name: " + attributeName);
 		    System.out.println("Attribute Value: " + attributeValue);
-		    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
-		    attribute.setValue(updatedAttribute);
+//		    String updatedAttribute = saveRecommendations(attributeValue, caseNo);
+//		    attribute.setValue(updatedAttribute);
 			System.out.println("After Updating Attributes...");
 			System.out.println(attributes.get(0).getValue());
 			caseData.setAttributes(attributes);

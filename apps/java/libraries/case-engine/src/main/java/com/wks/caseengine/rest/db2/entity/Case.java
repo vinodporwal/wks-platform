@@ -1,6 +1,10 @@
 package com.wks.caseengine.rest.db2.entity;
 
+import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wks.caseengine.rest.model.Attribute;
@@ -52,7 +56,10 @@ public class Case {
     private String businessKey;
     
     @Column(name ="isDraft")
-    private Boolean isDraft;
+    private String isDraft;
+    
+    @Column(name = "creation_date")
+    private String creationDate;
 
 	public String getCaseNo() {
 		return caseNo;
@@ -134,12 +141,20 @@ public class Case {
 		this.businessKey = businessKey;
 	}
 
-	public Boolean getIsDraft() {
+	public String getIsDraft() {
 		return isDraft;
 	}
 
-	public void setIsDraft(Boolean isDraft) {
+	public void setIsDraft(String isDraft) {
 		this.isDraft = isDraft;
+	}
+	
+	public String getCreationDate() {
+		return creationDate;
+	}
+
+	public void setCreationDate(String creationDate) {
+		this.creationDate = creationDate;
 	}
 
 	@Override
