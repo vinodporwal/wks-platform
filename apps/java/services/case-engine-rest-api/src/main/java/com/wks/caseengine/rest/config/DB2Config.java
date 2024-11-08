@@ -17,6 +17,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -38,8 +39,18 @@ import jakarta.persistence.EntityManagerFactory;
     transactionManagerRef = "db2TransactionManager"
 )
 public class DB2Config {
+	
+	
+	  @Value("${spring.datasource.db2.url}")
+	   private String url;
 
-	@Bean
+	  @Value("${spring.datasource.db2.username}")
+	   private String userName;
+
+	  @Value("${spring.datasource.db2.password}")
+	   private String password;
+
+	  @Bean
     @ConfigurationProperties("spring.datasource.db2")
     public DataSourceProperties db2DataSourceProperties() {
         return new DataSourceProperties();
@@ -49,9 +60,12 @@ public class DB2Config {
     @ConfigurationProperties("spring.datasource.db2")
     public DataSource db2DataSource() {
         return db2DataSourceProperties().initializeDataSourceBuilder()
-        		.url("jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true")
-        		.username("sa")
-        		.password("#Qwer123")
+//        		.url("jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true")
+//        		.username("sa")
+//        		.password("#Qwer123")
+        		.url(url)
+        		.username(userName)
+        		.password(password)
         		.driverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver")
         		.build();
     }

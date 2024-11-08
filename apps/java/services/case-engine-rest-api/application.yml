@@ -52,9 +52,12 @@ spring:
   datasource:
     # Configuration for Database 1
     db1:
-      url: jdbc:sqlserver://216.48.180.83;databaseName=case_management;trustServerCertificate=true
-      username: sa
-      password: "#Qwer123"
+    # url: jdbc:sqlserver://216.48.180.83;databaseName=case_management;trustServerCertificate=true
+    # username: sa
+    # password: "#Qwer123"
+      url: ${SQL_SERVER_1_URL}
+      username: ${SQL_SERVER_1_USERNAME}
+      password: ${SQL_SERVER_1_PASSWORD}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
         maximum-pool-size: 10
@@ -62,7 +65,10 @@ spring:
 
     # Configuration for Database 2
     db2:
-      url: jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true
+      # url: jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true
+      url: ${SQL_SERVER_2_URL}
+      username: ${SQL_SERVER_2_USERNAME}
+      password: ${SQL_SERVER_2_PASSWORD}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
         maximum-pool-size: 10

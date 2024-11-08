@@ -16,13 +16,16 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -40,6 +43,23 @@ import jakarta.persistence.EntityManagerFactory;
     transactionManagerRef = "db1TransactionManager"
 )
 public class DB1Config {
+	
+	
+
+    @Value("${spring.datasource.db1.url}")
+    private String url;
+
+    @Value("${spring.datasource.db1.username}")
+    private String userName;
+
+    @Value("${spring.datasource.db1.password}")
+    private String password;
+
+    @Autowired
+    private Environment env;
+  
+    @Value("${SQL_SERVER_1_USERNAME}")
+    private String envvv;
 
     @Primary
     @Bean
@@ -52,10 +72,13 @@ public class DB1Config {
     @Bean
     @ConfigurationProperties("spring.datasource.db1")
     public DataSource db1DataSource() {
+
+
+    	
         return db1DataSourceProperties().initializeDataSourceBuilder()
-        		.url("jdbc:sqlserver://216.48.180.83;databaseName=case_management;trustServerCertificate=true")
-        		.username("sa")
-        		.password("#Qwer123")
+        		.url(url)
+        		.username(userName)
+        		.password(password)
         		.driverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver")
         		.build();
     }
