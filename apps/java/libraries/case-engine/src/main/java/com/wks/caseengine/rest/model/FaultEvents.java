@@ -4,7 +4,8 @@ public class FaultEvents {
 	private EventEnrichmentModel eventEnrichment;
 	private EventsModel events;
 	private EventCategoryModel eventCategory;
-	private String AssetName;
+	private String AssetDisplayName;
+	private String assetName;
 	public EventEnrichmentModel getEventEnrichment() {
 		return eventEnrichment;
 	}
@@ -23,10 +24,16 @@ public class FaultEvents {
 	public void setEventCategory(EventCategoryModel eventCategory) {
 		this.eventCategory = eventCategory;
 	}
+	public String getAssetDisplayName() {
+		return AssetDisplayName;
+	}
+	public void setAssetDisplayName(String assetDisplayName) {
+		AssetDisplayName = assetDisplayName;
+	}
 	public String getAssetName() {
-		return AssetName;
+		return assetName;
 	}
 	public void setAssetName(String assetName) {
-		AssetName = assetName;
+		this.assetName = assetName;
 	}
 }

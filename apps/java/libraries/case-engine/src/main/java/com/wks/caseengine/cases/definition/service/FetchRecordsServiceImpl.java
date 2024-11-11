@@ -142,6 +142,7 @@ public class FetchRecordsServiceImpl {
 			    return jdbcTemplate.query(sql, new Object[]{equipmentPkId}, (rs, rowNum) -> {
 			    	 EquipmentModel equipment = new EquipmentModel();
 			         equipment.setDisplayName(rs.getString("DisplayName"));
+			         equipment.setName(rs.getString("Name"));
 			         return equipment;
 			    });
 		} catch(Exception e) {

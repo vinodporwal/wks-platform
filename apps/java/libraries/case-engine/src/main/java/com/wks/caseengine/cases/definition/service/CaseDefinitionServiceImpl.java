@@ -241,10 +241,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		System.out.println(eventIds.get(0));
 		List<EventEnrichmentModel> eventEnrichments = fetchRecords.getEventEnrichments(eventIds);
 		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
+		String equipmentDisplayName = "";
 		String equipmentName = "";
 		for(FaultHistoryModel faultHistory: faultHistorys) {
 			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
-			equipmentName = equipemnets.get(0).getDisplayName();
+			equipmentDisplayName = equipemnets.get(0).getDisplayName();
+			equipmentName = equipemnets.get(0).getName();
 			break;
 		}
 		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
@@ -273,7 +275,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			faultEvent.setEvents(event);
 			faultEvent.setEventEnrichment(eventEnrichment);
 			faultEvent.setEventCategory(eventCategory);
-			faultEvent.setAssetName(equipmentName);
+			faultEvent.setAssetName(equipmentDisplayName);
+			faultEvent.setAssetDisplayName(equipmentName);
 			faultEvents.add(faultEvent);
 		}
 		return faultEvents;
