@@ -45,7 +45,8 @@ public class CaseEmailController {
 	@GetMapping
 	public ResponseEntity<List<CaseEmail>> find(@RequestParam(required = false) String caseInstanceBusinessKey,
 			@RequestParam(required = false) String caseDefinitionId) {
-
+		log.debug("Body: " + caseInstanceBusinessKey);
+		log.debug("Definition Id: " + caseDefinitionId);
 		return ResponseEntity.ok(caseEmailService.find(Optional.ofNullable(caseInstanceBusinessKey)));
 	}
 
@@ -57,6 +58,13 @@ public class CaseEmailController {
 		log.debug("Subject: " + caseEmail.getSubject());
 		log.debug("Body: " + caseEmail.getBody());
 		log.debug("Definition Id: " + caseEmail.getCaseDefinitionId());
+		
+		System.out.println("### Email processing started ###");
+		System.out.println("To: " + caseEmail.getTo());
+		System.out.println("From: " + caseEmail.getFrom());
+		System.out.println("Subject: " + caseEmail.getSubject());
+		System.out.println("Body: " + caseEmail.getBody());
+		System.out.println("Definition Id: " + caseEmail.getCaseDefinitionId());
 
 		caseEmailService.start(caseEmail);
 

@@ -46,7 +46,6 @@ import com.wks.caseengine.rest.db2.entity.CaseIdSequences;
 import com.wks.caseengine.rest.db2.entity.CaseStatus;
 import com.wks.caseengine.rest.db2.entity.CasesAndEventsMapping;
 import com.wks.caseengine.rest.db2.entity.FaultCategory;
-import com.wks.caseengine.rest.db2.entity.FunctionalLocation;
 import com.wks.caseengine.rest.db2.entity.OwnerDetails;
 import com.wks.caseengine.rest.db2.repository.CaseCauseCategoryRepository;
 import com.wks.caseengine.rest.db2.repository.CaseCauseDescriptionRepository;
@@ -56,7 +55,6 @@ import com.wks.caseengine.rest.db2.repository.CaseRepository;
 import com.wks.caseengine.rest.db2.repository.CaseStatusRepository;
 import com.wks.caseengine.rest.db2.repository.CasesAndEventsMappingRepository;
 import com.wks.caseengine.rest.db2.repository.FaultCategoryRepository;
-import com.wks.caseengine.rest.db2.repository.FunctionalLocationRepository;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.EquipmentModel;
 import com.wks.caseengine.rest.model.EventCategoryModel;
@@ -64,6 +62,7 @@ import com.wks.caseengine.rest.model.EventEnrichmentModel;
 import com.wks.caseengine.rest.model.EventsModel;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FaultHistoryModel;
+import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.HierarchyNodesModel;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
@@ -124,8 +123,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     private CaseRecommendationMappingRepository caseRecommendationMappingRepository;
     
     
-    @Autowired
-    private FunctionalLocationRepository functionalLocationRepository;
+//    @Autowired
+//    private FunctionalLocationRepository functionalLocationRepository;
 
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
@@ -314,6 +313,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		}
 		
 		System.out.println("Printing Payload...");
+		System.out.println("Getting data..");
+		System.out.println("Is Draft :"+caseData.getIsDraft());
 		if(caseNo==null || caseNo.length()==0) {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
@@ -601,21 +602,16 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	public List<FunctionalLocation> getFunctionalLocations(List<Long> eventIds) {
+	public List<FunctionalLocation> getFunctionalLocations(String assetName) {
 		List<FunctionalLocation> locations = new ArrayList<FunctionalLocation>();
-		System.out.println(eventIds);
-		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
-		String equipmentName = "";
-		for(FaultHistoryModel faultHistory: faultHistorys) {
-			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
-			equipmentName = equipemnets.get(0).getDisplayName();
-			break;
+		System.out.println("IN Functiona location record fetching block");
+		if(assetName!=null && assetName.length()!=0) {
+			List<FunctionalLocation> flList = fetchRecords.getParentFunctionalLocation(assetName); 
+			if(flList.size()>0 && flList.get(0).getParentFLName()!=null && flList.get(0).getParentFLName().length()!=0) {
+				return fetchRecords.getFunctionaLocationsByFLName(flList.get(0).getParentFLName()); 
+			}
 		}
-		locations = functionalLocationRepository.findByUasDisplayName(equipmentName);
-		if(locations.size()==0) {
-			locations = functionalLocationRepository.findAll();
-		}
-		return locations;
+		return fetchRecords.getAllFunctionalLocations(); 
 	}
 	
 	

@@ -35,10 +35,10 @@ import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.db2.entity.CaseStatus;
 import com.wks.caseengine.rest.db2.entity.FaultCategory;
-import com.wks.caseengine.rest.db2.entity.FunctionalLocation;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
 
@@ -160,10 +160,10 @@ public class CaseDefinitionController {
 	}
 
 	@GetMapping(value = "/funcational-locations")
-	public ResponseEntity<List<FunctionalLocation>> getRecommondationUsers(@RequestParam List<Long> eventIds) {
+	public ResponseEntity<List<FunctionalLocation>> getRecommondationUsers(@RequestParam String assetName) {
 		try {
-			System.out.println("EventId ...: "+eventIds);
-			return ResponseEntity.ok(caseDefinitionService.getFunctionalLocations(eventIds));
+			System.out.println("EventId ...: "+assetName);
+			return ResponseEntity.ok(caseDefinitionService.getFunctionalLocations(assetName));
 		} catch (CaseDefinitionNotFoundException e) {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}

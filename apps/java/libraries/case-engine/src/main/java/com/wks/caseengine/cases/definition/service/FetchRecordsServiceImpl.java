@@ -15,6 +15,7 @@ import com.wks.caseengine.rest.model.EventCategoryModel;
 import com.wks.caseengine.rest.model.EventEnrichmentModel;
 import com.wks.caseengine.rest.model.EventsModel;
 import com.wks.caseengine.rest.model.FaultHistoryModel;
+import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.HierarchyNodesModel;
 
 @Service
@@ -147,6 +148,69 @@ public class FetchRecordsServiceImpl {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	public List<FunctionalLocation> getParentFunctionalLocation(String assetName) {
+		try {
+			 String sql = "SELECT * FROM functional_location WHERE uas_asset_name = ?";
+			    
+			    Map<String, Object> params = new HashMap<>();
+			    params.put("FUNCTIONAL LOCATION ASSET NAME: ", assetName);
+
+			    return jdbcTemplate.query(sql, new Object[]{assetName}, (rs, rowNum) -> {
+			    	FunctionalLocation fl = new FunctionalLocation();
+			         fl.setParentFLName(rs.getString("parent_fl_name"));
+			         return fl;
+			    });
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public List<FunctionalLocation> getFunctionaLocationsByFLName(String parentFLName) {
+		try {
+			 String sql = "SELECT * FROM functional_location WHERE parent_fl_name = ?";
+			    
+			    Map<String, Object> params = new HashMap<>();
+			    params.put("FUNCTIONAL LOCATION PARENT FUNCATIONAL LOCATION NAME: ", parentFLName);
+
+			    return jdbcTemplate.query(sql, new Object[]{parentFLName}, (rs, rowNum) -> {
+			    	FunctionalLocation fl = new FunctionalLocation();
+			         fl.setParentFLName(rs.getString("parent_fl_name"));
+			         fl.setId(rs.getString("id"));
+			         fl.setUasAssetName(rs.getString("uas_asset_name"));
+			         fl.setUsaDisplayName(rs.getString("uas_display_name"));
+			         fl.setAssetSortFeild(rs.getString("asset_sort_feild"));
+			         fl.setAssetNo(rs.getString("asset_no"));
+			         fl.setAssetFL(rs.getString("asset_fl"));
+			         return fl;
+			    });
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public List<FunctionalLocation> getAllFunctionalLocations() {
+	    try {
+	        String sql = "SELECT * FROM functional_location";
+	        
+	        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+	            FunctionalLocation fl = new FunctionalLocation();
+	            fl.setParentFLName(rs.getString("parent_fl_name"));
+	            fl.setId(rs.getString("id"));
+	            fl.setUasAssetName(rs.getString("uas_asset_name"));
+	            fl.setUsaDisplayName(rs.getString("uas_display_name"));
+	            fl.setAssetSortFeild(rs.getString("asset_sort_feild"));
+	            fl.setAssetNo(rs.getString("asset_no"));
+	            fl.setAssetFL(rs.getString("asset_fl"));
+	            return fl;
+	        });
+	    } catch(Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
 	}
 	
 	public List<EventsModel> findEventsByEventId(String eventId) {

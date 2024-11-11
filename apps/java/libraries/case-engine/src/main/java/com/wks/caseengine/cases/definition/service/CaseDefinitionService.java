@@ -20,8 +20,8 @@ import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.db2.entity.CaseStatus;
 import com.wks.caseengine.rest.db2.entity.FaultCategory;
-import com.wks.caseengine.rest.db2.entity.FunctionalLocation;
 import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
 
@@ -57,7 +57,7 @@ public interface CaseDefinitionService {
 //
 	List<Users> getUserList();
 
-	List<FunctionalLocation> getFunctionalLocations(List<Long> eventIds);
+	List<FunctionalLocation> getFunctionalLocations(String AssetName);
 
 	Case addRecommendation(Recommendations recommendations);
 
