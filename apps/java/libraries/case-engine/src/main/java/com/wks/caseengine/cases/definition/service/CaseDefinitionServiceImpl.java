@@ -275,8 +275,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			faultEvent.setEvents(event);
 			faultEvent.setEventEnrichment(eventEnrichment);
 			faultEvent.setEventCategory(eventCategory);
-			faultEvent.setAssetName(equipmentDisplayName);
-			faultEvent.setAssetDisplayName(equipmentName);
+			faultEvent.setAssetName(equipmentName);
+			faultEvent.setAssetDisplayName(equipmentDisplayName);
 			faultEvents.add(faultEvent);
 		}
 		return faultEvents;
