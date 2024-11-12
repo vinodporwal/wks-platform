@@ -6,6 +6,7 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.AttributesConverter;
@@ -16,6 +17,8 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -60,6 +63,11 @@ public class Case {
     
     @Column(name = "creation_date")
     private String creationDate;
+    
+    @ManyToOne
+    @JoinColumn(name = "status_id", nullable = true)
+    private CaseStatus status;
+
 
 	public String getCaseNo() {
 		return caseNo;
@@ -155,6 +163,14 @@ public class Case {
 
 	public void setCreationDate(String creationDate) {
 		this.creationDate = creationDate;
+	}
+
+	public CaseStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(CaseStatus status) {
+		this.status = status;
 	}
 
 	@Override

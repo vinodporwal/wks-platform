@@ -11,6 +11,7 @@
  */
 package com.wks.caseengine.cases.definition.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -67,6 +68,10 @@ import com.wks.caseengine.rest.model.HierarchyNodesModel;
 import com.wks.caseengine.rest.model.Recommendations;
 import com.wks.caseengine.rest.model.Users;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+
 @Component
 public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	
@@ -121,11 +126,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     
     @Autowired
     private CaseRecommendationMappingRepository caseRecommendationMappingRepository;
-    
+
     
 //    @Autowired
 //    private FunctionalLocationRepository functionalLocationRepository;
 
+    
+
+    @PersistenceContext(unitName = "db2")
+    private EntityManager entityManager;
+
+    
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
 		return commandExecutor.execute(
@@ -304,6 +315,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		caseData.setHierarchyNodePKID(hierarchyNodePKID);
 		Case caseDetails = new Case();
 		String caseNo = "";
+		Long statusId = null;
 		List<Attribute> attributes = caseData.getAttributes();
 		Attribute attribute = attributes.get(0);
 		String attributeValue = attribute.getValue();
@@ -311,8 +323,20 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		    ObjectMapper objectMapper = new ObjectMapper();
 		    JsonNode rootNode = objectMapper.readTree(attributeValue);
 		    caseNo = rootNode.path("caseNo").asText();
+		    if (rootNode.has("caseStatus")) {
+			    statusId = rootNode.path("caseStatus").asLong();
+		    }
+		    
 		} catch(Exception e) {
 			e.printStackTrace();
+		}
+		
+		if(statusId!=null) {
+			Optional<CaseStatus> caseStatus =  caseStatusRepository.findById(statusId);
+			if(caseStatus.isPresent()) {
+				caseData.setStatus(caseStatus.get());
+			}
+			
 		}
 		
 		System.out.println("Printing Payload...");
@@ -579,6 +603,38 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return cases;
 	}
 	
+	@Override
+	public List<Case> getCaseDetails(LocalDate from, LocalDate to, String status) {
+//		String searchQueryStr = "select * FROM Cases";
+		String searchQueryStr = "SELECT c.* FROM cases c LEFT JOIN case_status cs ON c.status_id = cs.id";
+		ArrayList<String> conditions = new ArrayList<>();
+		if(from != null) {
+			conditions.add("CAST(c.creation_date AS DATE) >= '"+from+"'");
+		}
+		
+		if(to != null) {
+			conditions.add("CAST(c.creation_date AS DATE) <= '"+to+"'");
+		}
+		
+		if(status!=null && !status.isBlank()) {
+			if(status.equalsIgnoreCase("open")) {
+				conditions.add("c.status_id in (1,2)");
+			}else if(status.equalsIgnoreCase("close")) {
+				conditions.add("c.status_id in (3)");
+			}
+		}
+		
+		if(conditions.size()>0) {
+			searchQueryStr = searchQueryStr+ " where "+ String.join(" AND ", conditions);
+		}
+
+		System.out.println(searchQueryStr);
+		
+		Query searchQuery = entityManager.createNativeQuery(searchQueryStr, Case.class);
+		List<Case> searchResults  = searchQuery.getResultList();
+		return searchResults;
+	}
+
 	@Override
 	public List<Users> getUserList() {
 		List<Users> users = new ArrayList<Users>();

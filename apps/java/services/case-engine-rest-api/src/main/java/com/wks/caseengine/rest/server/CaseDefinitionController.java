@@ -11,6 +11,7 @@
  */
 package com.wks.caseengine.rest.server;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -137,6 +138,12 @@ public class CaseDefinitionController {
 		System.out.println("AssetName: "+assetName);
 		System.out.println("HierarchyName: "+hierarchyName);
 		List<Case> cases = caseDefinitionService.getCaseDetails(assetName, hierarchyName);
+		return ResponseEntity.ok(cases);
+	}
+
+	@GetMapping("/cases/filter")
+	public ResponseEntity<List<Case>> getCasesByFilter(@RequestParam(required = false) LocalDate from,@RequestParam(required = false) LocalDate to,@RequestParam(required = false) String status) {
+		List<Case> cases = caseDefinitionService.getCaseDetails(from, to, status);
 		return ResponseEntity.ok(cases);
 	}
 

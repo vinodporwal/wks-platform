@@ -11,6 +11,7 @@
  */
 package com.wks.caseengine.cases.definition.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,6 +56,8 @@ public interface CaseDefinitionService {
 //
 	List<Case> getCaseDetails(String assetName, String hierarchyName);
 //
+	List<Case> getCaseDetails(LocalDate from, LocalDate to, String status);
+
 	List<Users> getUserList();
 
 	List<FunctionalLocation> getFunctionalLocations(String AssetName);
