@@ -21,7 +21,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
 })
 
-export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
+export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
   const [caseDef, setCaseDef] = useState([])
   const [form, setForm] = useState([])
   const [formData, setFormData] = useState(null)
@@ -74,27 +74,27 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const onSave = () => {
     setLoading(true)
 
-    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
+    // const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
 
-    const faultCategoryValue = formData.data.container.faultCategory
-    if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
-      requiredFields.push(
-        'caseCauseCategory',
-        'caseCauseDescription',
-        'analysisDesc',
-      )
-    }
+    // const faultCategoryValue = formData.data.container.faultCategory
+    // if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
+    //   requiredFields.push(
+    //     'caseCauseCategory',
+    //     'caseCauseDescription',
+    //     'analysisDesc',
+    //   )
+    // }
 
-    const missingFields = requiredFields.filter(
-      (field) => !formData.data.container[field],
-    )
+    // const missingFields = requiredFields.filter(
+    //   (field) => !formData.data.container[field],
+    // )
 
-    if (missingFields.length > 0) {
-      setSnackbarMessages(['Please fill in all required fields.'])
-      setSnackbarOpen(true)
-      setLoading(false)
-      return
-    }
+    // if (missingFields.length > 0) {
+    //   setSnackbarMessages(['Please fill in all required fields.'])
+    //   setSnackbarOpen(true)
+    //   setLoading(false)
+    //   return
+    // }
 
     const currentParams = window.location.search
     setCurrentParams(currentParams)
@@ -121,7 +121,6 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       JSON.stringify({
         caseDefinitionId: caseDefId,
         owner: {
-          // id: keycloak.subject || '',
           id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
@@ -145,11 +144,10 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             eventIds: eventIds,
             businessKey: businessKey,
             owner: {
-              // id: keycloak.subject || '123123',
               id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '1234543211',
+              phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
           }),
@@ -158,10 +156,9 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-        setTimeout(() => {
-          // window.location.reload()
-          // handleClose()
-        }, 2000)
+        // setTimeout(() => {
+        //   handleClose()
+        // }, 2000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -207,7 +204,6 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       JSON.stringify({
         caseDefinitionId: caseDefId,
         owner: {
-          // id: keycloak.subject || '',
           id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
@@ -231,7 +227,6 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             eventIds: eventIds,
             businessKey: businessKey,
             owner: {
-              // id: keycloak.subject || '',
               id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
@@ -245,7 +240,6 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          window.location.reload()
           handleClose()
         }, 2000)
       })

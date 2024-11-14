@@ -1,44 +1,44 @@
 /* eslint-disable no-unused-vars */
-import QuestionCircleOutlined from "@ant-design/icons/QuestionCircleOutlined"
-import { Form } from "@formio/react"
-import CloseIcon from "@mui/icons-material/Close"
-import MoreVertIcon from "@mui/icons-material/MoreVert"
-import { Grid } from "@mui/material"
-import AppBar from "@mui/material/AppBar"
-import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
-import Dialog from "@mui/material/Dialog"
-import DialogTitle from "@mui/material/DialogTitle"
-import Divider from "@mui/material/Divider"
-import IconButton from "@mui/material/IconButton"
-import List from "@mui/material/List"
-import ListItem from "@mui/material/ListItem"
-import ListItemText from "@mui/material/ListItemText"
-import Menu from "@mui/material/Menu"
-import MenuItem from "@mui/material/MenuItem"
-import Slide from "@mui/material/Slide"
-import Step from "@mui/material/Step"
-import StepLabel from "@mui/material/StepLabel"
-import Stepper from "@mui/material/Stepper"
-import Tab from "@mui/material/Tab"
-import Tabs from "@mui/material/Tabs"
-import Toolbar from "@mui/material/Toolbar"
-import Tooltip from "@mui/material/Tooltip"
-import Typography from "@mui/material/Typography"
-import { CaseStatus } from "common/caseStatus"
-import { StorageService } from "plugins/storage"
-import PropTypes from "prop-types"
-import React, { useEffect, useState } from "react"
-import { useTranslation } from "react-i18next"
-import { ProcessDefService } from "services/ProcessDefService"
-import { Comments } from "views/caseComment/Comments"
-import { CaseService, FormService } from "../../services"
-import { tryParseJSONObject } from "../../utils/jsonStringCheck"
-import Documents from "./Documents"
-import { Snackbar, SnackbarContent, CircularProgress } from "@mui/material"
-import { useNavigate } from "react-router-dom"
-import logo from "assets/images/logo.svg"
-import { DialogActions, DialogContent, DialogContentText } from "@mui/material"
+import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined'
+import { Form } from '@formio/react'
+import CloseIcon from '@mui/icons-material/Close'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import { Grid } from '@mui/material'
+import AppBar from '@mui/material/AppBar'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import Divider from '@mui/material/Divider'
+import IconButton from '@mui/material/IconButton'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import ListItemText from '@mui/material/ListItemText'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import Slide from '@mui/material/Slide'
+import Step from '@mui/material/Step'
+import StepLabel from '@mui/material/StepLabel'
+import Stepper from '@mui/material/Stepper'
+import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
+import Toolbar from '@mui/material/Toolbar'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import { CaseStatus } from 'common/caseStatus'
+import { StorageService } from 'plugins/storage'
+import PropTypes from 'prop-types'
+import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { ProcessDefService } from 'services/ProcessDefService'
+import { Comments } from 'views/caseComment/Comments'
+import { CaseService, FormService } from '../../services'
+import { tryParseJSONObject } from '../../utils/jsonStringCheck'
+import Documents from './Documents'
+import { Snackbar, SnackbarContent, CircularProgress } from '@mui/material'
+import { useNavigate } from 'react-router-dom'
+import logo from 'assets/images/logo.svg'
+import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -77,9 +77,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // }
 
   useEffect(() => {
-    console.log("{keycloak.idTokenParsed.given_name}", keycloak.idTokenParsed)
-    console.log("{keycloak}", keycloak)
-    localStorage.setItem("aCaseOwnerEmail", JSON.stringify(aCase.owner?.email))
+    console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
+    console.log('{keycloak}', keycloak)
+    localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
     getCaseInfo(aCase)
   }, [open, aCase])
 
@@ -194,7 +194,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setFormStructure(formData)
         if (formData && formData.structure && formData.structure.components) {
           const updatedFormStructure = { ...formData }
-          console.log("formData", formData)
+          console.log('formData', formData)
 
           // Disable fields (with proper null checks)
           const level1 = updatedFormStructure.structure.components[0]
@@ -204,7 +204,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               level1.components.length > 8 ? level1.components[8] : null
             const level6 =
               level1.components.length > 6 ? level1.components[6] : null
-            console.log("level6", level6)
+            console.log('level6', level6)
             if (level2 && level2.components) {
               const caseDescriptionField =
                 level2.components.length > 1 ? level2.components[1] : null
@@ -251,7 +251,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 if (faultCategorySelect) {
                   faultCategorySelect.disabled = true
                 }
-                console.log("aCase", aCase)
+                console.log('aCase', aCase)
 
                 // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
                 // console.log('caseAssign1', caseAssign1, aCase)
@@ -293,7 +293,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
           setForm(updatedFormStructure)
         } else {
-          console.error("Form structure or components are undefined.")
+          console.error('Form structure or components are undefined.')
         }
         setIsFormData(true)
 
@@ -309,7 +309,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         return aCase
       })
       .then((caseData) => {
-        console.log("caseData", caseData)
+        console.log('caseData', caseData)
         setComments(
           caseData?.comments?.sort(
             (a, b) =>
@@ -339,14 +339,22 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onSave = () => {
     setLoading(true)
-    const requiredFields = ["caseDescription", "dueDate", "faultCategory"]
+    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
 
+    const faultCategoryValue = formData.data.container.faultCategory
+    if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
+      requiredFields.push(
+        'caseCauseCategory',
+        'caseCauseDescription',
+        'analysisDesc',
+      )
+    }
     const missingFields = requiredFields.filter(
       (field) => !formData.data.container[field],
     )
 
     if (missingFields.length > 0) {
-      setSnackbarMessages(["Please fill in all required fields."])
+      setSnackbarMessages(['Please fill in all required fields.'])
       setSnackbarOpen(true)
       setLoading(false)
       return
@@ -355,31 +363,31 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
 
-    const assetName = urlParams.get("assetName") || "default"
-    const hierarchyName = urlParams.get("hierarchyName") || "default"
-    const eventIdsParam = urlParams.get("eventIds")
-    const sourceSystem = urlParams.get("sourceSystem") || "default"
-    const eventIds = eventIdsParam ? eventIdsParam.split(",") : []
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
       value:
-        typeof formData.data[key] !== "object"
+        typeof formData.data[key] !== 'object'
           ? formData.data[key]
           : JSON.stringify(formData.data[key]),
-      type: typeof formData.data[key] !== "object" ? "String" : "Json",
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
     }))
 
     CaseService.createCase(
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
-        isDraft: "n",
         caseNo: aCase.caseNo,
         owner: {
-          id: keycloak.subject || "",
-          name: keycloak.idTokenParsed.name || "",
-          email: keycloak.idTokenParsed.email || "",
-          phone: keycloak.idTokenParsed.phone || "",
+          // id: keycloak.subject || '123456',
+          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
       }),
@@ -392,15 +400,17 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
+            isDraft: 'n',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
             owner: {
-              id: keycloak.subject || "",
-              name: keycloak.idTokenParsed.name || "",
-              email: keycloak.idTokenParsed.email || "",
-              phone: keycloak.idTokenParsed.phone || "",
+              // id: keycloak.subject || '',
+              id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
           }),
@@ -410,6 +420,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
+          window.location.reload()
           handleClose()
         }, 2000)
       })
@@ -520,7 +531,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // }
 
   const onSubmitRecommendation = (event) => {
-    console.log("event onSubmitRecommendation", event)
+    console.log('event onSubmitRecommendation', event)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
     setFormData(updatedFormData)
 
@@ -535,12 +546,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     } = event.data
 
     const missingFields = []
-    if (!recommendationReviewer) missingFields.push("Recommendation Reviewer")
+    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer')
     if (!recommendationAssignedTo2)
-      missingFields.push("Recommendation Assigned To")
-    if (!recommendationHeadline) missingFields.push("Recommendation Headline")
+      missingFields.push('Recommendation Assigned To')
+    if (!recommendationHeadline) missingFields.push('Recommendation Headline')
     if (!recommendationTargetCompletionDate1)
-      missingFields.push("Target Completion Date")
+      missingFields.push('Target Completion Date')
 
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields)
@@ -572,16 +583,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const submitRecommendation = async () => {
     try {
       const response = await CaseService.saveRecommendation(keycloak, apiBody)
-      console.log("Recommendation submitted successfully:", response)
-      setSnackbarMessages(["Recommendation submitted successfully"])
+      console.log('Recommendation submitted successfully:', response)
+      setSnackbarMessages(['Recommendation submitted successfully'])
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
       setTimeout(() => {
         window.location.reload()
       }, 2000)
     } catch (error) {
-      console.error("Error submitting recommendation:", error)
-      setSnackbarMessages(["Error submitting recommendation"])
+      console.error('Error submitting recommendation:', error)
+      setSnackbarMessages(['Error submitting recommendation'])
       setSnackbarOpen(true)
     }
   }
@@ -591,18 +602,18 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
 
-    const assetName = urlParams.get("assetName") || "default"
-    const hierarchyName = urlParams.get("hierarchyName") || "default"
-    const eventIdsParam = urlParams.get("eventIds")
-    const sourceSystem = urlParams.get("sourceSystem") || "default"
-    const eventIds = eventIdsParam ? eventIdsParam.split(",") : []
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
       value:
-        typeof formData.data[key] !== "object"
+        typeof formData.data[key] !== 'object'
           ? formData.data[key]
           : JSON.stringify(formData.data[key]),
-      type: typeof formData.data[key] !== "object" ? "String" : "Json",
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
     }))
 
     // First API call to createCase to get the businessKey
@@ -610,13 +621,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
-        isDraft: "y",
         caseNo: aCase.caseNo,
         owner: {
-          id: keycloak.subject || "",
-          name: keycloak.idTokenParsed.name || "",
-          email: keycloak.idTokenParsed.email || "",
-          phone: keycloak.idTokenParsed.phone || "",
+          // id: keycloak.subject || '',
+          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
       }),
@@ -631,15 +642,17 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
+            isDraft: 'y',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey, // Include businessKey in the payload
             owner: {
-              id: keycloak.subject || "",
-              name: keycloak.idTokenParsed.name || "",
-              email: keycloak.idTokenParsed.email || "",
-              phone: keycloak.idTokenParsed.phone || "",
+              // id: keycloak.subject || '',
+              id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
           }),
@@ -649,6 +662,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
+          window.location.reload()
           handleClose()
         }, 2000)
       })
@@ -706,7 +720,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // Function to get label for a given category value from localStorage
   const getCategoryLabel = (value) => {
     // Retrieve options from localStorage
-    const options = JSON.parse(localStorage.getItem("categoryOptions")) || []
+    const options = JSON.parse(localStorage.getItem('categoryOptions')) || []
 
     // Find the option with the matching value and return its label
     const matchingOption = options.find((option) => option.value === value)
@@ -729,7 +743,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const getFaultCategoryLabel = (value) => {
     // Retrieve options from localStorage
     const options =
-      JSON.parse(localStorage.getItem("faultCategoryOptions")) || []
+      JSON.parse(localStorage.getItem('faultCategoryOptions')) || []
 
     // Find the option with the matching value and return its label
     const matchingOption = options.find((option) => option.value === value)
@@ -739,7 +753,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // Function to get label for a given fault category value from localStorage
   const getcaseStatusLabel = (value) => {
     // Retrieve options from localStorage
-    const options = JSON.parse(localStorage.getItem("caseStatusOptions")) || []
+    const options = JSON.parse(localStorage.getItem('caseStatusOptions')) || []
 
     // Find the option with the matching value and return its label
     const matchingOption = options.find((option) => option.value === value)
@@ -747,10 +761,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const getEquipmentFunctionLocationLabel = (id) => {
-    const storedLocations = localStorage.getItem("functionalLocationOptions")
+    const storedLocations = localStorage.getItem('functionalLocationOptions')
 
     if (!storedLocations) {
-      console.error("No functionalLocationOptions found in localStorage")
+      console.error('No functionalLocationOptions found in localStorage')
       return id
     }
 
@@ -760,7 +774,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       locations = JSON.parse(storedLocations)
     } catch (error) {
       console.error(
-        "Error parsing functionalLocationOptions from localStorage:",
+        'Error parsing functionalLocationOptions from localStorage:',
         error,
       )
       return id
@@ -811,15 +825,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   // Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
   const formatDataGrid = (dataGrid, getLabel) => {
-    if (!dataGrid || dataGrid.length === 0) return "<p>No data available</p>"
+    if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>'
 
     const fieldsToSkip = [
-      "textField1",
-      "RecommendationSubmit",
-      "recommendationAssignedTo1",
-      "deleteRowButton4",
-      "RecommendationSubmit3",
-      "deleteRowButton5",
+      'textField1',
+      'RecommendationSubmit',
+      'recommendationAssignedTo1',
+      'deleteRowButton4',
+      'RecommendationSubmit3',
+      'deleteRowButton5',
     ] // Add any keys you want to skip here
 
     return dataGrid
@@ -829,30 +843,30 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         ${Object.entries(item)
           .map(([key, value]) =>
             fieldsToSkip.includes(key)
-              ? ""
+              ? ''
               : `
             <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
               <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
               <p style="margin: 0;">
-                ${key === "equipmentFunctionLocation" ? getEquipmentFunctionLocationLabel(value) : value || ""}
+                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || ''}
               </p>
             </div>
         `,
           )
-          .join("")}
+          .join('')}
       </div>
     `
       })
-      .join("")
+      .join('')
   }
 
   const generatePrintContent = (aCase, structure) => {
     const containerData = JSON.parse(
-      aCase.attributes.find((attr) => attr.name === "container").value,
+      aCase.attributes.find((attr) => attr.name === 'container').value,
     )
     const labelMap = createLabelMapFromStructure(structure)
-    console.log("labelMap", labelMap)
-    const getLabel = (key) => labelMap[key] || key || ""
+    console.log('labelMap', labelMap)
+    const getLabel = (key) => labelMap[key] || key || ''
 
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -865,11 +879,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("caseNo")}</strong>: ${aCase.caseNo}</p>
-          <p><strong>${getLabel("caseTitle")}</strong>: ${containerData.caseTitle}</p>
-          <p><strong>${getLabel("caseAssignedTo")}</strong>: ${containerData.caseAssignedTo}</p>
-          <p><strong>${getLabel("faultCategory")}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
-          <p><strong>${getLabel("caseDescription")}</strong>: ${containerData.caseDescription}</p>
+          <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
+          <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
+          <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
+          <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
+          <p><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
         </div>
       </div>
 
@@ -877,24 +891,24 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("createdOn")}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
-          <p><strong>${getLabel("dueDate")}</strong>: ${containerData?.dueDate || "N/A"}</p>
-          <p><strong>${getLabel("endDate")}</strong>: ${containerData?.endDate || "N/A"}</p>
-          <p><strong>${getLabel("caseStatus")}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
-          <p><strong>${getLabel("analysisTeam")}</strong>: ${containerData.analysisTeam.join(", ")}</p>
+          <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
+          <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
+          <p><strong>${getLabel('endDate')}</strong>: ${containerData?.endDate || 'N/A'}</p>
+          <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
+          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
         </div>
       </div>
 
       <!-- Associated Faults -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
-        <p style="padding: 10px; margin: 0;"><strong>${getLabel("textField1")}</strong>: ${containerData.textField1}</p>
+        <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
         ${formatDataGrid(containerData.dataGrid2, getLabel)}
       </div>
   `
 
     // Conditional display based on RecommendationsRadio value
-    if (containerData.RecommendationsRadio === "no") {
+    if (containerData.RecommendationsRadio === 'no') {
       const caseCauseCategoryLabel = getCategoryLabel(
         containerData.caseCauseCategory,
       )
@@ -907,9 +921,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("caseCauseCategory")}</strong>: ${caseCauseCategoryLabel}</p>
-          <p><strong>${getLabel("caseCauseDescription")}</strong>: ${caseCauseDescriptionLabel}</p>
-          <p><strong>${getLabel("analysisDesc")}</strong>: ${containerData.analysisDesc}</p>
+          <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
+          <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
+          <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
         </div>
       </div>
     `
@@ -917,7 +931,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       content += `
       <!-- Data Grid 1 -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel("dataGrid1")}</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
         ${formatDataGrid(containerData.dataGrid1, getLabel)}
       </div>
     `
@@ -929,12 +943,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel("valueRealizationCategory")}</strong>: ${containerData.valueRealizationCategory}</p>
-          <p><strong>${getLabel("productionLoss")}</strong>: ${containerData.productionLoss || ""}</p>
-          <p><strong>${getLabel("manHoursCost")}</strong>: ${containerData.manHoursCost || ""}</p>
-          <p><strong>${getLabel("spareCost")}</strong>: ${containerData.spareCost || ""}</p>
-          <p><strong>${getLabel("totalValueCaptured")}</strong>: ${containerData.totalValueCaptured}</p>
-          <p><strong>${getLabel("valueRealizationConclusion")}</strong>: ${containerData.valueRealizationConclusion}</p>
+          <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
+          <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss || ''}</p>
+          <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost || ''}</p>
+          <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost || ''}</p>
+          <p><strong>${getLabel('totalValueCaptured')}</strong>: ${containerData.totalValueCaptured}</p>
+          <p><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
         </div>
       </div>
     </div>
@@ -948,7 +962,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     const printContent = generatePrintContent(aCase, formStructure)
 
     // Open a new window and print the generated content
-    const printWindow = window.open("", "_blank")
+    const printWindow = window.open('', '_blank')
     printWindow.document.write(`
     <html>
       <head>
@@ -975,7 +989,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           onClose={handleClose}
           TransitionComponent={Transition}
         >
-          <AppBar sx={{ position: "relative" }}>
+          <AppBar sx={{ position: 'relative' }}>
             <Toolbar>
               <IconButton
                 edge='start'
@@ -1002,9 +1016,20 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     )
                   }
                 >
-                  {t("pages.caseform.actions.close")}
+                  {t('pages.caseform.actions.close')}
                 </Button>
               )}
+              {/* <Button
+                color='primary'
+                onClick={() =>
+                  window.open(
+                    'http://localhost:9000/localhost/cases/demo_test2.png',
+                    '_blank',
+                  )
+                }
+              >
+                Open Image
+              </Button> */}
               {aCase.status === CaseStatus.ClosedCaseStatus.description && (
                 <React.Fragment>
                   <Button
@@ -1015,7 +1040,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                       )
                     }
                   >
-                    {t("pages.caseform.actions.reopen")}
+                    {t('pages.caseform.actions.reopen')}
                   </Button>
 
                   <Button
@@ -1026,7 +1051,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                       )
                     }
                   >
-                    {t("pages.caseform.actions.archive")}
+                    {t('pages.caseform.actions.archive')}
                   </Button>
                 </React.Fragment>
               )}
@@ -1040,7 +1065,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                       )
                     }
                   >
-                    {t("pages.caseform.actions.reopen")}
+                    {t('pages.caseform.actions.reopen')}
                   </Button>
                 </React.Fragment>
               )}
@@ -1052,11 +1077,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 {isFollowing ? 'Unfollow' : 'Follow'}
               </Button> */}
               <Button color='inherit' onClick={printCaseDetails}>
-                {"Print"}
+                {'Print'}
               </Button>
 
               <Button color='inherit' onClick={onSave}>
-                {"Save"}
+                {'Save'}
               </Button>
               {/* Case Actions Menu */}
               <IconButton
@@ -1069,16 +1094,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               </IconButton>
               <Menu
                 anchorEl={anchorEl}
-                anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 id='manual-actions-menu'
                 keepMounted
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 open={isMenuOpen}
                 onClose={handleMenuClose}
               >
                 {
                   <MenuItem onClick={handleOpenProcessesDialog}>
-                    {t("pages.caseform.actions.startProcess")}
+                    {t('pages.caseform.actions.startProcess')}
                   </MenuItem>
                 }
               </Menu>
@@ -1092,7 +1117,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               pt: 2,
               pb: 2,
               borderBottom: 1,
-              borderColor: "divider",
+              borderColor: 'divider',
             }}
           >
             <Stepper
@@ -1117,11 +1142,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               <Box>
                 <Tabs value={mainTabIndex} onChange={handleMainTabChanged}>
                   <Tab
-                    label={t("pages.caseform.tabs.details")}
+                    label={t('pages.caseform.tabs.details')}
                     {...a11yProps(0)}
                   />
                   <Tab
-                    label={t("pages.caseform.tabs.attachments")}
+                    label={t('pages.caseform.tabs.attachments')}
                     {...a11yProps(1)}
                   />
                   {/* <Tab
@@ -1131,20 +1156,20 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 </Tabs>
               </Box>
               <Box
-                sx={{ border: 1, borderColor: "divider", borderRadius: "5px" }}
+                sx={{ border: 1, borderColor: 'divider', borderRadius: '5px' }}
               >
                 <TabPanel value={mainTabIndex} index={0}>
                   {/* Case Details  */}
                   <Grid
                     container
                     spacing={2}
-                    sx={{ display: "flex", flexDirection: "column" }}
+                    sx={{ display: 'flex', flexDirection: 'column' }}
                   >
                     <Box
                       sx={{
                         pb: 1,
-                        display: "flex",
-                        flexDirection: "row",
+                        display: 'flex',
+                        flexDirection: 'row',
                       }}
                     >
                       <Typography
@@ -1173,14 +1198,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         //   onSave(submission)
                         // }}
                         onCustomEvent={(event) => {
-                          console.log("Form event:", event)
-                          if (event.component.key === "saveAsDraft") {
+                          console.log('Form event:', event)
+                          if (event.component.key === 'saveAsDraft') {
                             onSubmitForm()
                           } else if (
-                            event.component.key === "RecommendationSubmit3"
+                            event.component.key === 'RecommendationSubmit3'
                           ) {
                             onSubmitRecommendation(event)
-                          } else if (event.component.key === "onSave") {
+                          } else if (event.component.key === 'onSave') {
                             // onSubmitRecommendation()
                             onSave()
                           }
@@ -1217,7 +1242,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                       open={snackbarOpen}
                       autoHideDuration={2000}
                       onClose={() => setSnackbarOpen(false)}
-                      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                     >
                       <SnackbarContent
                         message={
@@ -1228,7 +1253,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                               component='div'
                             >
                               {snackbarMessages.length > 1
-                                ? "The following fields are required:"
+                                ? 'The following fields are required:'
                                 : snackbarMessages[0]}
                             </Typography>
                             {snackbarMessages.length > 1 &&
@@ -1271,7 +1296,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   <Grid
                     container
                     spacing={2}
-                    sx={{ display: "flex", flexDirection: "column" }}
+                    sx={{ display: 'flex', flexDirection: 'column' }}
                   >
                     <Grid item xs={12}>
                       <Comments
@@ -1288,15 +1313,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           {loading && (
             <Box
               sx={{
-                position: "fixed",
+                position: 'fixed',
                 top: 0,
                 left: 0,
-                width: "100vw",
-                height: "100vh",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
                 zIndex: 1300,
               }}
             >
@@ -1311,7 +1336,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             open={openProcessesDialog}
           >
             <DialogTitle sx={{ paddingBottom: 2 }}>
-              {t("pages.caseform.manualProcesses.title")}
+              {t('pages.caseform.manualProcesses.title')}
             </DialogTitle>
             <List>
               {manualInitProcessDefs.map((process, index) => (
@@ -1320,8 +1345,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     button
                     onClick={() => startProcess(process.definitionKey)}
                     sx={{
-                      "&:hover": {
-                        backgroundColor: "action.hover",
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
                       },
                     }}
                   >
@@ -1347,7 +1372,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 function a11yProps(index) {
   return {
     id: `simple-tab-${index}`,
-    "aria-controls": `simple-tabpanel-${index}`,
+    'aria-controls': `simple-tabpanel-${index}`,
   }
 }
 
@@ -1364,7 +1389,7 @@ function TabPanel(props) {
     >
       {value === index && (
         <Box sx={{ p: 3 }}>
-          <Typography component={"span"}>{children}</Typography>
+          <Typography component={'span'}>{children}</Typography>
         </Box>
       )}
     </div>

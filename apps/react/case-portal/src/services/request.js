@@ -1,6 +1,7 @@
+/* eslint-disable no-unused-vars */
 export function json(keycloak, resp) {
   if (resp.status === 401) {
-    forceLogoutWhenTokenExpired(keycloak, resp)
+    handleTokenRefresh(keycloak, resp)
     return Promise.reject(resp)
   }
 
@@ -13,16 +14,32 @@ export function json(keycloak, resp) {
 
 export function nop(keycloak, resp) {
   if (resp.status === 401) {
-    forceLogoutWhenTokenExpired(keycloak, resp)
+    handleTokenRefresh(keycloak, resp)
     return Promise.reject(resp)
   }
 
   return resp
 }
 
-function forceLogoutWhenTokenExpired(keycloak, resp) {
+function handleTokenRefresh(keycloak, resp) {
   if (keycloak.isTokenExpired()) {
-    console.error(resp)
-    keycloak.logout({ redirectUri: window.location.origin })
+    console.warn('Token expired. Attempting to refresh...')
+
+    // Attempt to refresh the token
+    keycloak
+      .updateToken(70)
+      .then((refreshed) => {
+        if (refreshed) {
+          console.info('Token refreshed successfully.')
+          // Optionally re-attempt the failed API call here if needed
+        } else {
+          console.warn('Token still valid, no refresh needed.')
+        }
+      })
+      .catch(() => {
+        console.error('Failed to refresh token')
+        // Optionally log out the user if the refresh failed
+        // keycloak.logout({ redirectUri: window.location.origin });
+      })
   }
 }

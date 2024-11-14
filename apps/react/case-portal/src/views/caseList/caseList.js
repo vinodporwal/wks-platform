@@ -1,18 +1,19 @@
-import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material"
-import CloseIcon from "@mui/icons-material/Close"
-import ViewKanbanIcon from "@mui/icons-material/ViewKanban"
-import ViewListIcon from "@mui/icons-material/ViewList"
-import { useTheme } from "@mui/material"
-import Box from "@mui/material/Box"
-import Button from "@mui/material/Button"
-import IconButton from "@mui/material/IconButton"
-import Snackbar from "@mui/material/Snackbar"
-import TablePagination from "@mui/material/TablePagination"
-import ToggleButton from "@mui/material/ToggleButton"
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
-import { useSession } from "SessionStoreContext"
-import MainCard from "components/MainCard"
-import Config from "consts/index"
+/* eslint-disable no-unused-vars */
+import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material'
+import CloseIcon from '@mui/icons-material/Close'
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
+import ViewListIcon from '@mui/icons-material/ViewList'
+import { useTheme } from '@mui/material'
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
+import IconButton from '@mui/material/IconButton'
+import Snackbar from '@mui/material/Snackbar'
+import TablePagination from '@mui/material/TablePagination'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import { useSession } from 'SessionStoreContext'
+import MainCard from 'components/MainCard'
+import Config from 'consts/index'
 import React, {
   Suspense,
   createContext,
@@ -20,23 +21,23 @@ import React, {
   useContext,
   useEffect,
   useState,
-} from "react"
-import { useTranslation } from "react-i18next"
-import { CaseService } from "../../services"
+} from 'react'
+import { useTranslation } from 'react-i18next'
+import { CaseService } from '../../services'
 // import { Grid, GridColumn } from '@progress/kendo-react-grid';
-import "@progress/kendo-theme-material/dist/all.css"
+import '@progress/kendo-theme-material/dist/all.css'
 // import { useLocation } from 'react-router-dom';
 
 const DataGrid = lazy(() =>
-  import("@mui/x-data-grid").then((module) => ({ default: module.DataGrid })),
+  import('@mui/x-data-grid').then((module) => ({ default: module.DataGrid })),
 )
 const Kanban = lazy(() =>
-  import("components/Kanban/kanban").then((module) => ({
+  import('components/Kanban/kanban').then((module) => ({
     default: module.Kanban,
   })),
 )
 const CaseForm = lazy(() =>
-  import("../caseForm/caseForm").then((module) => ({
+  import('../caseForm/caseForm').then((module) => ({
     default: module.CaseForm,
   })),
 )
@@ -46,7 +47,7 @@ const CaseForm = lazy(() =>
 //   })),
 // )
 const CaseNewFormPage = lazy(() =>
-  import("../caseForm/NewCaseFormPage").then((module) => ({
+  import('../caseForm/NewCaseFormPage').then((module) => ({
     default: module.NewCaseFormPage,
   })),
 )
@@ -61,16 +62,16 @@ export const CaseList = ({ status, caseDefId }) => {
   const [lastCreatedCase, setLastCreatedCase] = useState(null)
   const [openCaseForm, setOpenCaseForm] = useState(false)
   const [openNewCaseForm, setOpenNewCaseForm] = useState(false)
-  const [view, setView] = React.useState("list")
+  const [view, setView] = React.useState('list')
   const [snackOpen, setSnackOpen] = useState(false)
   const keycloak = useSession()
   const [caseDefs, setCaseDefs] = useState([])
   const [fetching, setFetching] = useState(false)
   const [filter, setFilter] = useState({
-    sort: "",
+    sort: '',
     limit: 10,
-    after: "",
-    before: "",
+    after: '',
+    before: '',
     cursors: {},
     hasPrevious: false,
     hasNext: false,
@@ -119,111 +120,92 @@ export const CaseList = ({ status, caseDefId }) => {
     })
   }, [])
 
-  // useEffect(() => {
-  //   const searchParams = new URLSearchParams(location.search);
-  //   const eventIds = searchParams.get('eventIds');
-
-  //   if (eventIds) {
-  //     setNewCaseDefId(caseDefId);
-  //     setOpenNewCaseForm(true);
-  //   }
-  // }, [location, caseDefId]);
-
   const makeColumns = () => {
     return [
       {
-        field: "caseNumber",
-        headerName: t("pages.caselist.datagrid.columns.caseNumber"),
+        field: 'caseNumber',
+        headerName: t('pages.caselist.datagrid.columns.caseNumber'),
         width: 80,
       },
       {
-        field: "caseTitle",
-        headerName: t("pages.caselist.datagrid.columns.caseTitle"),
+        field: 'caseTitle',
+        headerName: t('pages.caselist.datagrid.columns.caseTitle'),
         width: 250,
       },
-      // {
-      //   field: 'businessKey',
-      //   headerName: t('pages.caselist.datagrid.columns.businesskey'),
-      //   width: 150,
-      // },
-      // {
-      //   field: 'statusDescription',
-      //   headerName: t('pages.caselist.datagrid.columns.statusdescription'),
-      //   width: 150,
-      // },
-      // {
-      //   field: 'stage',
-      //   headerName: t('pages.caselist.datagrid.columns.stage'),
-      //   width: 220,
-      // },
-      // {
-      //   field: 'createdAt',
-      //   headerName: t('pages.caselist.datagrid.columns.createdat'),
-      //   width: 220,
-      // },
-      // {
-      //   field: 'assetName',
-      //   headerName: 'Asset Name',
-      //   width: 150,
-      // },
       {
-        field: "mainAsset",
-        headerName: "Main Asset",
+        field: 'mainAsset',
+        headerName: 'Main Asset',
         width: 230,
         valueGetter: (value, row) => {
           try {
             const attributes =
-              typeof row.attributes === "string"
+              typeof row.attributes === 'string'
                 ? JSON.parse(row.attributes)
                 : row.attributes
 
             const containerValue = attributes?.find(
-              (attr) => attr.name === "container",
+              (attr) => attr.name === 'container',
             )?.value
 
             const parsedContainer = containerValue
               ? JSON.parse(containerValue)
               : {}
 
-            return parsedContainer.textField1 || ""
+            return parsedContainer.textField1 || ''
           } catch (error) {
-            console.error("Error parsing mainAsset:", error)
-            return ""
+            console.error('Error parsing mainAsset:', error)
+            return ''
           }
         },
       },
       {
-        field: "caseStatus",
-        headerName: "Case Status",
+        field: 'caseStatus',
+        headerName: 'Case Status',
         width: 150,
         valueGetter: (value, row) => {
           try {
             if (!row) {
-              return ""
+              return ''
             }
-
-            // Retrieve caseStatusOptions from localStorage
-            const caseStatusOptions =
-              JSON.parse(localStorage.getItem("caseStatusOptions")) || []
+            const caseStatusOptions = JSON.parse(
+              localStorage.getItem('caseStatusOptions'),
+            ) || [
+              {
+                label: 'Assigned',
+                value: 1,
+              },
+              {
+                label: 'Under Analysis',
+                value: 2,
+              },
+              {
+                label: 'Closed',
+                value: 3,
+              },
+              {
+                label: 'Rejected',
+                value: 10002,
+              },
+            ]
 
             // Parse the container value to get the caseStatus value
             const attributes =
-              typeof row.attributes === "string"
+              typeof row.attributes === 'string'
                 ? JSON.parse(row.attributes)
                 : row.attributes
 
             if (!attributes) {
-              return ""
+              return ''
             }
 
             const containerValue = attributes.find(
-              (attr) => attr.name === "container",
+              (attr) => attr.name === 'container',
             )?.value
             const parsedContainer = containerValue
               ? JSON.parse(containerValue)
               : {}
 
-            const caseStatusValue = parsedContainer.caseStatus || ""
+            const caseStatusValue = parsedContainer.caseStatus || ''
 
             // Find the label corresponding to the value
             const matchingOption = caseStatusOptions.find(
@@ -231,15 +213,16 @@ export const CaseList = ({ status, caseDefId }) => {
             )
             return matchingOption ? matchingOption.label : caseStatusValue
           } catch (error) {
-            console.error("Error parsing caseStatus:", error)
-            return ""
+            console.error('Error parsing caseStatus:', error)
+            return ''
           }
         },
       },
       {
-        field: "saveStatus",
-        headerName: "Status",
+        field: 'isDraft',
+        headerName: 'Status',
         width: 100,
+        valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
       },
       // {
       //   field: "createdOn",
@@ -247,32 +230,35 @@ export const CaseList = ({ status, caseDefId }) => {
       //   width: 100,
       // },
       {
-        field: "creationDate",
-        headerName: "Created On",
-        width: 100,
+        field: 'creationDate',
+        headerName: 'Created On',
+        width: 150,
         valueGetter: (value, row) => {
           const date = row?.creationDate
           if (date) {
             const dateObj = new Date(date)
-            const day = String(dateObj.getDate()).padStart(2, "0")
-            const month = String(dateObj.getMonth() + 1).padStart(2, "0")
+            const day = String(dateObj.getDate()).padStart(2, '0')
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
             const year = String(dateObj.getFullYear())
-            return `${day}-${month}-${year}`
+            const hours = String(dateObj.getHours()).padStart(2, '0')
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+
+            return `${day}-${month}-${year} ${hours}:${minutes}`
           }
-          return ""
+          return ''
         },
       },
 
       {
-        field: "ownerName",
-        headerName: t("pages.caselist.datagrid.columns.caseOwnerName"),
+        field: 'ownerName',
+        headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
         width: 150,
         valueGetter: (value, row) => row?.owner?.name,
       },
 
       {
-        field: "action",
-        headerName: "Action",
+        field: 'action',
+        headerName: 'Action',
         sortable: false,
         renderCell: (data) => {
           const onClick = (e) => {
@@ -283,7 +269,7 @@ export const CaseList = ({ status, caseDefId }) => {
 
           return (
             <Button onClick={onClick}>
-              {t("pages.caselist.datagrid.action.details")}
+              {t('pages.caselist.datagrid.action.details')}
             </Button>
           )
         },
@@ -340,7 +326,7 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   const handleCloseSnack = (event, reason) => {
-    if (reason === "clickaway") {
+    if (reason === 'clickaway') {
       return
     }
 
@@ -432,11 +418,11 @@ export const CaseList = ({ status, caseDefId }) => {
     const { onPageChange } = props
 
     const handleBackButtonClick = (event) => {
-      onPageChange(event, "back")
+      onPageChange(event, 'back')
     }
 
     const handleNextButtonClick = (event) => {
-      onPageChange(event, "next")
+      onPageChange(event, 'next')
     }
 
     const { hasPrevious, hasNext } = filter
@@ -448,7 +434,7 @@ export const CaseList = ({ status, caseDefId }) => {
           disabled={!hasPrevious}
           aria-label='previous page'
         >
-          {theme.direction === "rtl" ? (
+          {theme.direction === 'rtl' ? (
             <KeyboardArrowRight />
           ) : (
             <KeyboardArrowLeft />
@@ -459,7 +445,7 @@ export const CaseList = ({ status, caseDefId }) => {
           disabled={!hasNext}
           aria-label='next page'
         >
-          {theme.direction === "rtl" ? (
+          {theme.direction === 'rtl' ? (
             <KeyboardArrowLeft />
           ) : (
             <KeyboardArrowRight />
@@ -481,8 +467,8 @@ export const CaseList = ({ status, caseDefId }) => {
           }
           rowsPerPage={filter.limit}
           rowsPerPageOptions={[5, 10, 25, 50]}
-          getItemAriaLabel={() => ""}
-          labelDisplayedRows={() => ""}
+          getItemAriaLabel={() => ''}
+          labelDisplayedRows={() => ''}
           onPageChange={(e, type) => {
             const action = {
               next: handlerNextPage,
@@ -514,7 +500,7 @@ export const CaseList = ({ status, caseDefId }) => {
           }}
           SelectProps={{
             inputProps: {
-              "aria-label": "rows per page",
+              'aria-label': 'rows per page',
             },
             native: true,
           }}
@@ -525,18 +511,18 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   return (
-    <div style={{ height: 650, width: "100%" }}>
-      {caseDefId && (
+    <div style={{ height: 650, width: '100%' }}>
+      {/* {caseDefId && (
         <div>
           <Button
             id='basic-button'
             onClick={handleNewCaseAction}
             variant='contained'
           >
-            {t("pages.caselist.action.newcase")}
+            {t('pages.caselist.action.newcase')}
           </Button>
         </div>
-      )}
+      )} */}
 
       {caseDefId && (
         <ToggleButtonGroup
@@ -556,15 +542,21 @@ export const CaseList = ({ status, caseDefId }) => {
 
       <MainCard sx={{ mt: 2 }} content={false}>
         <Box>
-          {view === "list" && (
+          {view === 'list' && (
             <div>
               <Suspense fallback={<div>Loading...</div>}>
                 <DataGrid
                   sx={{
                     height: 500,
-                    width: "100%",
-                    backgroundColor: "#ffffff",
+                    width: '100%',
+                    backgroundColor: '#ffffff',
                     mt: 1,
+                    '& .MuiDataGrid-cell': {
+                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in cells
+                    },
+                    '& .MuiDataGrid-columnHeader': {
+                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in header
+                    },
                   }}
                   rows={cases}
                   columns={makeColumns()}
@@ -607,7 +599,7 @@ export const CaseList = ({ status, caseDefId }) => {
               </Grid>
             </div>
           )} */}
-          {view === "kanban" && (
+          {view === 'kanban' && (
             <Suspense fallback={<div>Loading...</div>}>
               <Kanban
                 stages={stages}
@@ -736,21 +728,21 @@ function fetchCases(
 ) {
   setFetching(true)
   const searchParams = new URLSearchParams(window.location.search)
-  const assetName = searchParams.get("assetName") || "defaultAssetName"
+  const assetName = searchParams.get('assetName') || 'defaultAssetName'
   const hierarchyName =
-    searchParams.get("hierarchyName") || "defaultHierarchyName"
+    searchParams.get('hierarchyName') || 'defaultHierarchyName'
 
   CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
     .then((resp) => {
       const caseList = Array.isArray(resp) ? resp : []
 
       const updatedCases = caseList.map((singleCase) => {
-        let caseTitle = ""
+        let caseTitle = ''
         let caseNumber = singleCase.caseNo
 
         try {
           const containerValue = singleCase.attributes.find(
-            (attr) => attr.name === "container",
+            (attr) => attr.name === 'container',
           )?.value
 
           if (containerValue) {
@@ -759,7 +751,7 @@ function fetchCases(
             caseNumber = caseNumber || parsedValue.caseNo
           }
         } catch (error) {
-          console.error("Error parsing container value:", error)
+          console.error('Error parsing container value:', error)
         }
 
         return {
@@ -778,7 +770,7 @@ function fetchCases(
       })
     })
     .catch((error) => {
-      console.error("Error fetching cases:", error)
+      console.error('Error fetching cases:', error)
     })
     .finally(() => {
       setFetching(false)

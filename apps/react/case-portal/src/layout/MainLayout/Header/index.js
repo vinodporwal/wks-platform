@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import PropTypes from 'prop-types'
 import { AppBar, IconButton, Toolbar, useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
@@ -28,7 +29,7 @@ const Header = ({ open, handleDrawerToggle, keycloak }) => {
       >
         {!open ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
       </IconButton>
-      <HeaderContent keycloak={keycloak} />
+      {/* <HeaderContent keycloak={keycloak} /> */}
     </Toolbar>
   )
 
