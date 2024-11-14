@@ -13,7 +13,10 @@ package com.wks.caseengine.cases.instance.email;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import org.springframework.web.multipart.MultipartFile;
 
 public interface CaseEmailService {
 
@@ -27,5 +30,6 @@ public interface CaseEmailService {
 
 	void patch(final String id, final CaseEmail mergePatch);
 
+	void send(String from, List<String> to, String subject, List<String> cc, List<String> bcc, List<MultipartFile> attachments, String templateName, Map<String, Object> placeholders);
 
 }

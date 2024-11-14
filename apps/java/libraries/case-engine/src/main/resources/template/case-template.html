@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Case Update Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #2F8B8B;
+            color: white;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .case-alert {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .case-details {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .detail-row {
+            display: grid;
+            grid-template-columns: 120px auto;
+            margin-bottom: 8px;
+        }
+        .label {
+            font-weight: bold;
+        }
+        .next-steps {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .environment {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>A Case is updated with new Events</h2>
+    </div>
+
+    <div class="case-alert">
+        <p th:text="'Case &quot;' + ${caseTitle} + '&quot; assigned to you is updated with new Events.'"></p>
+    </div>
+
+    <div class="case-details">
+        <h3>Case Details:</h3>
+        <div class="detail-row">
+            <span class="label">Number:</span>
+            <span th:text="${caseNumber}"></span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Status:</span>
+            <span th:text="${status}"></span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Title:</span>
+            <span th:text="${caseName}"></span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Description:</span>
+            <span th:text="${description}"></span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Category:</span>
+            <span th:text="${caseCategory}"></span>
+        </div>
+        <div class="detail-row">
+            <span class="label">URL:</span>
+            <a th:href="${caseUrl}" th:text="${caseUrl}"></a>
+        </div>
+    </div>
+
+    <div class="next-steps">
+        <h3>Next Steps:</h3>
+        <p>See the updated case <a th:href="${caseUrl}">here</a></p>
+    </div>
+
+    <div class="environment">
+        <p>Environment: <span th:text="${environment}"></span></p>
+    </div>
+</body>
+</html>
