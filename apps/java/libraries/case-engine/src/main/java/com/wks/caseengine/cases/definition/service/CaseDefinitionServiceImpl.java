@@ -56,6 +56,7 @@ import com.wks.caseengine.rest.db2.repository.CaseRepository;
 import com.wks.caseengine.rest.db2.repository.CaseStatusRepository;
 import com.wks.caseengine.rest.db2.repository.CasesAndEventsMappingRepository;
 import com.wks.caseengine.rest.db2.repository.FaultCategoryRepository;
+import com.wks.caseengine.rest.db2.repository.UsersRepository;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.EquipmentModel;
 import com.wks.caseengine.rest.model.EventCategoryModel;
@@ -132,6 +133,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //    private FunctionalLocationRepository functionalLocationRepository;
 
     
+    @Autowired
+    private UsersRepository usersRepository;
 
     @PersistenceContext(unitName = "db2")
     private EntityManager entityManager;
@@ -658,6 +661,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             users.add(user);
 	   }
 		return users; 
+	}
+	
+	@Override
+	public List<com.wks.caseengine.rest.db2.entity.Users> getUsersList() {
+		return usersRepository.findAll(); 
 	}
 	
 	@Override

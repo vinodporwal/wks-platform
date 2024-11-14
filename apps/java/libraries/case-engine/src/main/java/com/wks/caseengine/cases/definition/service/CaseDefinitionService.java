@@ -60,6 +60,8 @@ public interface CaseDefinitionService {
 
 	List<Users> getUserList();
 
+	List<com.wks.caseengine.rest.db2.entity.Users> getUsersList();
+
 	List<FunctionalLocation> getFunctionalLocations(String AssetName);
 
 	Case addRecommendation(Recommendations recommendations);
