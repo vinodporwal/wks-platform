@@ -156,9 +156,9 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-        // setTimeout(() => {
-        //   handleClose()
-        // }, 2000)
+        setTimeout(() => {
+          handleClose()
+        }, 2000)
       })
       .catch((err) => {
         console.error(err.message)
