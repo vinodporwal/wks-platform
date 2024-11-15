@@ -8,6 +8,7 @@ import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
 import formPayload from './createFormJSON.json'
+import Config from './consts'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
@@ -20,10 +21,7 @@ const App = () => {
   const [formChecked, setFormChecked] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(
-      'baseUrl',
-      'https://wkspwr.dev.connectedplant.honeywell.com:8902',
-    )
+    localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
 
     const { keycloak } = sessionStore.bootstrap()
 
@@ -137,63 +135,6 @@ const App = () => {
     return setMenu(menu)
   }
 
-  // async function buildMenuItems(keycloak) {
-  //   const menu = {
-  //     items: [...menuItemsDefs.items],
-  //   }
-
-  //   console.log('menuItemsDefs:', menuItemsDefs)
-
-  //   if (keycloak.hasRealmRole('admin')) {
-  //     menu.items = menu.items.filter((item) => item.id === 'management')
-  //   }
-  //   // else if (keycloak.hasRealmRole('user')) {
-  //   //   menu.items = menu.items.filter((item) => item.id === 'utilities');
-  //   // }
-  //   // else if (keycloak.hasRealmRole('manager')) {
-  //   //   menu.items = menu.items.filter((item) => item.id === 'dashboard');
-  //   // }
-  //   else {
-  //     await RecordService.getAllRecordTypes(keycloak).then((data) => {
-  //       setRecordsTypes(data)
-
-  //       data.forEach((element) => {
-  //         menu.items[1].children
-  //           .filter((menu) => menu.id === 'record-list')[0]
-  //           .children.push({
-  //             id: element.id,
-  //             title: element.id,
-  //             type: 'item',
-  //             url: '/record-list/' + element.id,
-  //             breadcrumbs: true,
-  //           })
-  //       })
-  //     })
-
-  //     await CaseService.getCaseDefinitions(keycloak).then((data) => {
-  //       setCasesDefinitions(data)
-
-  //       data.forEach((element) => {
-  //         menu.items[1].children
-  //           .filter((menu) => menu.id === 'case-list')[0]
-  //           .children.push({
-  //             id: element.id,
-  //             title: element.name,
-  //             type: 'item',
-  //             url: '/case-list/' + element.id,
-  //             breadcrumbs: true,
-  //           })
-  //       })
-  //     })
-
-  //     if (!accountStore.isManagerUser(keycloak)) {
-  //       delete menu.items[2]
-  //     }
-  //   }
-
-  //   return setMenu(menu)
-  // }
-
   async function checkAndPostForm(keycloak) {
     if (localStorage.getItem('formCreated')) {
       console.log('Form "EED Case Management System" already exists.')
@@ -256,5 +197,6 @@ const App = () => {
     )
   )
 }
+
 
 export default App

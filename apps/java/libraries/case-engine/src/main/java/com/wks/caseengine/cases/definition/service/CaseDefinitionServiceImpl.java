@@ -37,6 +37,7 @@ import com.wks.caseengine.cases.definition.command.DeleteCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.FindCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.GetCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.UpdateCaseDefinitionCmd;
+import com.wks.caseengine.cases.instance.email.CaseEmailServiceImpl;
 import com.wks.caseengine.command.CommandExecutor;
 import com.wks.caseengine.rest.db1.repository.EventEnrichmentRepository;
 import com.wks.caseengine.rest.db2.entity.Case;
@@ -127,6 +128,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     
     @Autowired
     private CaseRecommendationMappingRepository caseRecommendationMappingRepository;
+    
+    @Autowired
+    private CaseEmailServiceImpl caseEmailService;
 
     
 //    @Autowired
@@ -400,7 +404,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				}
 			    if(!caseStatusValue.equals("Under Analysis")) {
 			    	System.out.println("Calling mail send method...");
-			    	sendMailToAssignedPerson(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
+			    	String from = "shrikant.mnt@gmail.com";
+			    	caseTitle = "CASE MANAGEMENT :"+ caseTitle;
+			    	Map<String, Object> data = new HashMap<>();
+			    	data.put("caseTitle", caseTitle);
+					data.put("caseNumber", caseNumber);
+					data.put("status", caseStatusValue);
+					data.put("caseName", caseTitle);
+					data.put("caseUrl", "");
+					data.put("environment", "production environment");
+			    	caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
+			    	//(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
 			    }
 			    
 			    int i = 0;
@@ -458,9 +472,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		            recommendation.setRecommendationSubmit(dataGridEntry.path("RecommendationSubmit").asText());
 		            recommendation.setRecommendationTargetCompletionDate1(dataGridEntry.path("recommendationTargetCompletionDate1").asText());
 		            
-		            String GEAPMrecommendationId = saveRecommendationMapping(dataGridEntry, caseNo, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationReviewer());
-		            System.out.println("GEPM Recommendation ID: "+GEAPMrecommendationId);
-		            ((ObjectNode) dataGridEntry).put("recommendationNo1", GEAPMrecommendationId);
+		            String[] recommendationStatusAndId = saveRecommendationMapping(dataGridEntry, caseNo, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationReviewer());
+		            System.out.println("GEPM Recommendation ID: "+recommendationStatusAndId[0]);
+		            System.out.println("GEPM Recommendation Status: "+recommendationStatusAndId[1]);
+		            ((ObjectNode) dataGridEntry).put("recommendationNo1", recommendationStatusAndId[0]);
+		            ((ObjectNode) dataGridEntry).put("recommendationStatus", recommendationStatusAndId[1]);
 		            
 		            System.out.println("Updated recommendationAssignedTo2: " + dataGridEntry.path("recommendationAssignedTo2").asText());
 		        }
@@ -474,18 +490,18 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return null;
 	}
 	
-	private String saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
-		String recId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId);
+	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
+		String[] recommendationStatusAndId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId);
 		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
 		caseRecommendationMapping.setCaseNo(caseNo);
-		caseRecommendationMapping.setRecId(recId);
+		caseRecommendationMapping.setRecId(recommendationStatusAndId[0]);
 		caseRecommendationMapping.setRecommendationJson(dataGridEntry.toPrettyString().toString());
 		caseRecommendationMappingRepository.save(caseRecommendationMapping);
 		
-		return recId;
+		return recommendationStatusAndId;
 	}
 	
-	private String saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
+	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
 //		System.out.println("Calling Recommendation GEAPM API...");
 //		System.out.println("Calling Recommendation GEAPM API...");
 //		System.out.println(dataGridEntry.toPrettyString().toString());
@@ -542,7 +558,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         String formattedId = String.format("%06d", randomNumber);
         
         // Return the generated ID with the prefix
-        return prefix + formattedId;
+        String id = prefix + formattedId;
+        String status = "Assigned";
+        String[] recommendationStatusAndId = new String[2];
+        recommendationStatusAndId[0] = id;
+        recommendationStatusAndId[1] = status;
+        return recommendationStatusAndId;
 	}
 	
 	public void sendMailToAssignedPerson(String assignedUserId) {
@@ -664,11 +685,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	public List<com.wks.caseengine.rest.db2.entity.Users> getUsersList() {
-		return usersRepository.findAll(); 
-	}
-	
-	@Override
 	public List<FunctionalLocation> getFunctionalLocations(String assetName) {
 		List<FunctionalLocation> locations = new ArrayList<FunctionalLocation>();
 		System.out.println("IN Functiona location record fetching block");
@@ -759,9 +775,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	            // Append the new recommendation node to the dataGrid1 array
 	            
-	            String GEAPMrecommendationId = saveRecommendationMapping(newRecommendationNode, caseNo, newRecommendation.getRecommendationAssignedTo2(), newRecommendation.getRecommendationReviewer());
+	            String[] recommendationStatusAndId = saveRecommendationMapping(newRecommendationNode, caseNo, newRecommendation.getRecommendationAssignedTo2(), newRecommendation.getRecommendationReviewer());
 	            
-	            newRecommendationNode.put("recommendationNo1", GEAPMrecommendationId);
+	            newRecommendationNode.put("recommendationNo1", recommendationStatusAndId[0]);
+	            newRecommendationNode.put("recommendationStatus", recommendationStatusAndId[1]);
 	            dataGridArray.add(newRecommendationNode);
 	            // Convert the updated root node back to a string
 	            String updatedAttributeValue = objectMapper.writeValueAsString(rootNode);

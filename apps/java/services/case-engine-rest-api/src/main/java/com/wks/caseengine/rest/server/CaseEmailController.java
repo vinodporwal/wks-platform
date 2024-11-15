@@ -57,34 +57,34 @@ public class CaseEmailController {
 	}
 
 
-// only for testing
-	@PostMapping(value = "/abcd")
-	public ResponseEntity<List<CaseEmail>> find(@RequestParam(required = false) String caseInstanceBusinessKey,
-			@RequestParam(required = false) String caseDefinitionId, @RequestPart List<MultipartFile> files) {
-		log.debug("Body: " + caseInstanceBusinessKey);
-		log.debug("Definition Id: " + caseDefinitionId);
-
-		Map<String, Object> data = new HashMap<>();
-		data.put("caseTitle", "this is case title");
-		data.put("caseNumber", "345fsdfdsf");
-		data.put("status", "successs");
-		data.put("caseName", "my personal case");
-		data.put("description", "this is case description");
-		data.put("caseCategory", "this is case category");
-		data.put("caseUrl", "https://www.youtube.com/");
-		data.put("environment", "production environment");
-		caseEmailService.send(
-				"shrikant.mnt@gmail.com", 
-				new ArrayList<>(Arrays.asList("ratnadeep99999@gmail.com", "iitratnesh@gmail.com")), 
-				"this is case email", 
-				new ArrayList<>(Arrays.asList("abcd@gmail.com", "pqrs@gmail.com")), 
-				new ArrayList<>(Arrays.asList("mnos@gmail.com", "wxyz@gmail.com")), 
-				files, 
-				"email-template", 
-				data);
-		String abcd ="sdfsd".split("d")[435];
-		return ResponseEntity.ok(caseEmailService.find(Optional.ofNullable(caseInstanceBusinessKey)));
-	}
+//// only for testing
+//	@PostMapping(value = "/abcd")
+//	public ResponseEntity<List<CaseEmail>> find(@RequestParam(required = false) String caseInstanceBusinessKey,
+//			@RequestParam(required = false) String caseDefinitionId, @RequestPart List<MultipartFile> files) {
+//		log.debug("Body: " + caseInstanceBusinessKey);
+//		log.debug("Definition Id: " + caseDefinitionId);
+//
+//		Map<String, Object> data = new HashMap<>();
+//		data.put("caseTitle", "this is case title");
+//		data.put("caseNumber", "345fsdfdsf");
+//		data.put("status", "successs");
+//		data.put("caseName", "my personal case");
+//		data.put("description", "this is case description");
+//		data.put("caseCategory", "this is case category");
+//		data.put("caseUrl", "https://www.youtube.com/");
+//		data.put("environment", "production environment");
+//		caseEmailService.send(
+//				"shrikant.mnt@gmail.com", 
+//				new ArrayList<>(Arrays.asList("ratnadeep99999@gmail.com", "iitratnesh@gmail.com")), 
+//				"this is case email", 
+//				new ArrayList<>(Arrays.asList("abcd@gmail.com", "pqrs@gmail.com")), 
+//				new ArrayList<>(Arrays.asList("mnos@gmail.com", "wxyz@gmail.com")), 
+//				files, 
+//				"email-template", 
+//				data);
+//		String abcd ="sdfsd".split("d")[435];
+//		return ResponseEntity.ok(caseEmailService.find(Optional.ofNullable(caseInstanceBusinessKey)));
+//	}
 
 	@PostMapping
 	public ResponseEntity<Void> start(@RequestBody final CaseEmail caseEmail) {

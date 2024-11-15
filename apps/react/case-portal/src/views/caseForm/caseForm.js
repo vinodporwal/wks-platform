@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined'
 import { Form } from '@formio/react'
 import CloseIcon from '@mui/icons-material/Close'
@@ -34,7 +35,7 @@ import { Comments } from 'views/caseComment/Comments'
 import { CaseService, FormService } from '../../services'
 import { tryParseJSONObject } from '../../utils/jsonStringCheck'
 import Documents from './Documents'
-import { Snackbar, SnackbarContent } from '@mui/material'
+import { Snackbar, SnackbarContent, CircularProgress } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import logo from 'assets/images/logo.svg'
 import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
@@ -69,6 +70,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [formStructure, setFormStructure] = useState(null)
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
   const [apiBody, setApiBody] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   // const handleFollowClick = () => {
   //   setIsFollowing(!isFollowing)
@@ -241,6 +243,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 if (caseAssign) {
                   caseAssign.disabled = true
                 }
+
+                const faultCategorySelect =
+                  level2.components[0].columns.length > 2
+                    ? level2.components[0].columns[3].components[0]
+                    : null
+                if (faultCategorySelect) {
+                  faultCategorySelect.disabled = true
+                }
                 console.log('aCase', aCase)
 
                 // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
@@ -256,7 +266,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     ? level7.columns[2].components[0]
                     : null
                 if (saveAsDraft) {
-                  saveAsDraft.hidden = false
+                  saveAsDraft.hidden = true
                 }
 
                 const saveButton =
@@ -328,6 +338,28 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const onSave = () => {
+    setLoading(true)
+    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
+    const currentURL = window.location.href;
+    console.log(currentURL);
+    const faultCategoryValue = formData.data.container.faultCategory
+    if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
+      requiredFields.push(
+        'caseCauseCategory',
+        'caseCauseDescription',
+        'analysisDesc',
+      )
+    }
+    const missingFields = requiredFields.filter(
+      (field) => !formData.data.container[field],
+    )
+
+    if (missingFields.length > 0) {
+      setSnackbarMessages(['Please fill in all required fields.'])
+      setSnackbarOpen(true)
+      setLoading(false)
+      return
+    }
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
@@ -350,13 +382,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
-        isDraft: false,
         caseNo: aCase.caseNo,
         owner: {
-          id: keycloak.subject || '',
+          // id: keycloak.subject || '123456',
+          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
       }),
@@ -369,12 +401,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
+            isDraft: 'n',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
+            currentUrl: currentURL,
             owner: {
-              id: keycloak.subject || '',
+              // id: keycloak.subject || '',
+              id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
               phone: keycloak.idTokenParsed.phone || '',
@@ -387,11 +422,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
+          window.location.reload()
           handleClose()
-        }, 6000)
+        }, 2000)
       })
       .catch((err) => {
         console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
       })
   }
 
@@ -521,7 +560,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       setSnackbarOpen(true)
       setTimeout(() => {
         setSnackbarOpen(false)
-      }, 6000)
+      }, 2000)
       return
     }
 
@@ -552,7 +591,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       setIsConfirmationOpen(false)
       setTimeout(() => {
         window.location.reload()
-      }, 4000)
+      }, 2000)
     } catch (error) {
       console.error('Error submitting recommendation:', error)
       setSnackbarMessages(['Error submitting recommendation'])
@@ -584,9 +623,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
-        isDraft: true,
+        caseNo: aCase.caseNo,
         owner: {
-          id: keycloak.subject || '',
+          // id: keycloak.subject || '',
+          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
           phone: keycloak.idTokenParsed.phone || '',
@@ -604,12 +644,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
+            isDraft: 'y',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey, // Include businessKey in the payload
             owner: {
-              id: keycloak.subject || '',
+              // id: keycloak.subject || '',
+              id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
               phone: keycloak.idTokenParsed.phone || '',
@@ -622,8 +664,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
+          window.location.reload()
           handleClose()
-        }, 6000)
+        }, 2000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -792,6 +835,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       'recommendationAssignedTo1',
       'deleteRowButton4',
       'RecommendationSubmit3',
+      'deleteRowButton5',
     ] // Add any keys you want to skip here
 
     return dataGrid
@@ -824,7 +868,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     )
     const labelMap = createLabelMapFromStructure(structure)
     console.log('labelMap', labelMap)
-    const getLabel = (key) => labelMap[key] || key
+    const getLabel = (key) => labelMap[key] || key || ''
 
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -850,8 +894,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
-          <p><strong>${getLabel('dueDate')}</strong>: ${containerData.dueDate || 'N/A'}</p>
-          <p><strong>${getLabel('endDate')}</strong>: ${containerData.endDate || 'N/A'}</p>
+          <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
+          <p><strong>${getLabel('endDate')}</strong>: ${containerData?.endDate || 'N/A'}</p>
           <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
           <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
         </div>
@@ -902,9 +946,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
-          <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss}</p>
-          <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost}</p>
-          <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost}</p>
+          <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss || ''}</p>
+          <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost || ''}</p>
+          <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost || ''}</p>
           <p><strong>${getLabel('totalValueCaptured')}</strong>: ${containerData.totalValueCaptured}</p>
           <p><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
         </div>
@@ -977,6 +1021,17 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   {t('pages.caseform.actions.close')}
                 </Button>
               )}
+              {/* <Button
+                color='primary'
+                onClick={() =>
+                  window.open(
+                    'http://localhost:9000/localhost/cases/demo_test2.png',
+                    '_blank',
+                  )
+                }
+              >
+                Open Image
+              </Button> */}
               {aCase.status === CaseStatus.ClosedCaseStatus.description && (
                 <React.Fragment>
                   <Button
@@ -1126,9 +1181,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                       >
                         {form.title}
                       </Typography>
-                      <Tooltip title={form.toolTip}>
+                      {/* <Tooltip title={form.toolTip}>
                         <QuestionCircleOutlined />
-                      </Tooltip>
+                      </Tooltip> */}
                     </Box>
                     {isFormData && (
                       <Form
@@ -1138,12 +1193,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                           // readOnly: true,
                           fileService: new StorageService(),
                         }}
-                        onSubmit={(submission) => {
-                          console.log('Validation passed:', true)
-                          console.log('Form data:', submission)
+                        // onSubmit={(submission) => {
+                        //   console.log('Validation passed:', true)
+                        //   console.log('Form data:', submission)
 
-                          onSave(submission)
-                        }}
+                        //   onSave(submission)
+                        // }}
                         onCustomEvent={(event) => {
                           console.log('Form event:', event)
                           if (event.component.key === 'saveAsDraft') {
@@ -1152,6 +1207,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                             event.component.key === 'RecommendationSubmit3'
                           ) {
                             onSubmitRecommendation(event)
+                          } else if (event.component.key === 'onSave') {
+                            // onSubmitRecommendation()
+                            onSave()
                           }
                         }}
                       />
@@ -1184,7 +1242,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     </Dialog>
                     <Snackbar
                       open={snackbarOpen}
-                      autoHideDuration={6000}
+                      autoHideDuration={2000}
                       onClose={() => setSnackbarOpen(false)}
                       anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
                     >
@@ -1193,7 +1251,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                           <div>
                             <Typography
                               variant='body2'
-                              color='error'
+                              // color='white'
                               component='div'
                             >
                               {snackbarMessages.length > 1
@@ -1225,8 +1283,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     </Snackbar>
                     <Snackbar
                       open={snackOpen}
-                      autoHideDuration={6000}
-                      message='Case saved'
+                      autoHideDuration={2000}
+                      message='Case Saved'
                       onClose={handleCloseSnack}
                       action={snackAction}
                     />
@@ -1254,6 +1312,24 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               </Box>
             </Grid>
           </Grid>
+          {loading && (
+            <Box
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                zIndex: 1300,
+              }}
+            >
+              <CircularProgress color='inherit' />
+            </Box>
+          )}
         </Dialog>
 
         {manualInitProcessDefs && (

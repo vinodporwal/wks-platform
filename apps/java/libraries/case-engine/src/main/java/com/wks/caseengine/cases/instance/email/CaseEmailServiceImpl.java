@@ -81,24 +81,23 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 	}
 
     @Async
-	@Override
-	public void send(String from1, List<String> to, String subject, List<String> cc, List<String> bcc,
+//	@Override
+	public void send(String from1, String to, String subject, String[] cc, String bcc,
 			List<MultipartFile> attachments, String templateName, Map<String, Object> placeholders) {
 		 try {
-//			 SpringTemplateEngine templateEngine = new SpringTemplateEngine();
 	            MimeMessage message = mailSender.createMimeMessage();
 	            MimeMessageHelper helper = new MimeMessageHelper(message, true);
 	            helper.setFrom(from);
 
-	            helper.setTo(to.toArray(new String[0]));
+	            helper.setTo(to);
 	            helper.setSubject(subject);
 
-	            if (cc != null && !cc.isEmpty()) {
-	                helper.setCc(cc.toArray(new String[0]));
+	            if (cc != null ) {
+	                helper.setCc(cc);
 	            }
 
 	            if (bcc != null && !bcc.isEmpty()) {
-	                helper.setBcc(bcc.toArray(new String[0]));
+	                helper.setBcc(bcc);
 	            }
 
 	            // Process the template

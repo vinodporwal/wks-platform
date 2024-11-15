@@ -30,6 +30,4 @@ public interface CaseEmailService {
 
 	void patch(final String id, final CaseEmail mergePatch);
 
-	void send(String from, List<String> to, String subject, List<String> cc, List<String> bcc, List<MultipartFile> attachments, String templateName, Map<String, Object> placeholders);
-
 }

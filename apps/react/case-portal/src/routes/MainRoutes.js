@@ -11,6 +11,7 @@ import { FormList } from 'views/management/form/formList'
 import { RecordTypeList } from 'views/management/recordType/recordTypeList'
 import { QueueList } from 'views/management/queue/queueList'
 import { NewCaseFormPage } from 'views/caseForm/NewCaseFormPage'
+import { PiCaseFormPage } from 'views/caseForm/piCaseFormPage'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -37,6 +38,10 @@ export const MainRoutes = (
       {
         path: 'create',
         element: <NewCaseFormPage />,
+      },
+      {
+        path: 'picreate',
+        element: <PiCaseFormPage />,
       },
       {
         path: 'case-list',

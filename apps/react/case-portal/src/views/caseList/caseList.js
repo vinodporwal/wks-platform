@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material'
 import CloseIcon from '@mui/icons-material/Close'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
@@ -119,53 +120,18 @@ export const CaseList = ({ status, caseDefId }) => {
     })
   }, [])
 
-  // useEffect(() => {
-  //   const searchParams = new URLSearchParams(location.search);
-  //   const eventIds = searchParams.get('eventIds');
-
-  //   if (eventIds) {
-  //     setNewCaseDefId(caseDefId);
-  //     setOpenNewCaseForm(true);
-  //   }
-  // }, [location, caseDefId]);
-
   const makeColumns = () => {
     return [
       {
         field: 'caseNumber',
         headerName: t('pages.caselist.datagrid.columns.caseNumber'),
-        width: 150,
+        width: 80,
       },
       {
         field: 'caseTitle',
         headerName: t('pages.caselist.datagrid.columns.caseTitle'),
         width: 250,
       },
-      // {
-      //   field: 'businessKey',
-      //   headerName: t('pages.caselist.datagrid.columns.businesskey'),
-      //   width: 150,
-      // },
-      // {
-      //   field: 'statusDescription',
-      //   headerName: t('pages.caselist.datagrid.columns.statusdescription'),
-      //   width: 150,
-      // },
-      // {
-      //   field: 'stage',
-      //   headerName: t('pages.caselist.datagrid.columns.stage'),
-      //   width: 220,
-      // },
-      // {
-      //   field: 'createdAt',
-      //   headerName: t('pages.caselist.datagrid.columns.createdat'),
-      //   width: 220,
-      // },
-      // {
-      //   field: 'assetName',
-      //   headerName: 'Asset Name',
-      //   width: 150,
-      // },
       {
         field: 'mainAsset',
         headerName: 'Main Asset',
@@ -201,10 +167,26 @@ export const CaseList = ({ status, caseDefId }) => {
             if (!row) {
               return ''
             }
-
-            // Retrieve caseStatusOptions from localStorage
-            const caseStatusOptions =
-              JSON.parse(localStorage.getItem('caseStatusOptions')) || []
+            const caseStatusOptions = JSON.parse(
+              localStorage.getItem('caseStatusOptions'),
+            ) || [
+              {
+                label: 'Assigned',
+                value: 1,
+              },
+              {
+                label: 'Under Analysis',
+                value: 2,
+              },
+              {
+                label: 'Closed',
+                value: 3,
+              },
+              {
+                label: 'Rejected',
+                value: 10002,
+              },
+            ]
 
             // Parse the container value to get the caseStatus value
             const attributes =
@@ -236,11 +218,37 @@ export const CaseList = ({ status, caseDefId }) => {
           }
         },
       },
+      {
+        field: 'isDraft',
+        headerName: 'Status',
+        width: 100,
+        valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
+      },
       // {
-      //   field: 'hierarchyName',
-      //   headerName: 'Hierarchy Name',
-      //   width: 150,
+      //   field: "createdOn",
+      //   headerName: "Created On",
+      //   width: 100,
       // },
+      {
+        field: 'creationDate',
+        headerName: 'Created On',
+        width: 150,
+        valueGetter: (value, row) => {
+          const date = row?.creationDate
+          if (date) {
+            const dateObj = new Date(date)
+            const day = String(dateObj.getDate()).padStart(2, '0')
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+            const year = String(dateObj.getFullYear())
+            const hours = String(dateObj.getHours()).padStart(2, '0')
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+
+            return `${day}-${month}-${year} ${hours}:${minutes}`
+          }
+          return ''
+        },
+      },
+
       {
         field: 'ownerName',
         headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
@@ -504,7 +512,7 @@ export const CaseList = ({ status, caseDefId }) => {
 
   return (
     <div style={{ height: 650, width: '100%' }}>
-      {caseDefId && (
+      {/* {caseDefId && (
         <div>
           <Button
             id='basic-button'
@@ -514,7 +522,7 @@ export const CaseList = ({ status, caseDefId }) => {
             {t('pages.caselist.action.newcase')}
           </Button>
         </div>
-      )}
+      )} */}
 
       {caseDefId && (
         <ToggleButtonGroup
@@ -543,6 +551,12 @@ export const CaseList = ({ status, caseDefId }) => {
                     width: '100%',
                     backgroundColor: '#ffffff',
                     mt: 1,
+                    '& .MuiDataGrid-cell': {
+                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in cells
+                    },
+                    '& .MuiDataGrid-columnHeader': {
+                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in header
+                    },
                   }}
                   rows={cases}
                   columns={makeColumns()}
