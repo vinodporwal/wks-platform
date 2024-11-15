@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react'
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import CloseIcon from '@mui/icons-material/Close'
@@ -129,36 +130,36 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
         attributes: caseAttributes,
       }),
     )
-      .then((data) => {
-        const businessKey = data.businessKey
-        // setLastCreatedCase(data);
+      // .then((data) => {
+      //   const businessKey = data.businessKey
+      //   // setLastCreatedCase(data);
 
-        return CaseService.saveCase(
-          keycloak,
-          JSON.stringify({
-            caseDefinitionId: caseDefId,
-            assetName: assetName,
-            isDraft: 'n',
-            hierarchyName: hierarchyName,
-            sourceSystem: sourceSystem,
-            eventIds: eventIds,
-            businessKey: businessKey,
-            owner: {
-              id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
-            attributes: caseAttributes,
-          }),
-        )
-      })
+      //   return CaseService.saveCase(
+      //     keycloak,
+      //     JSON.stringify({
+      //       caseDefinitionId: caseDefId,
+      //       assetName: assetName,
+      //       isDraft: 'n',
+      //       hierarchyName: hierarchyName,
+      //       sourceSystem: sourceSystem,
+      //       eventIds: eventIds,
+      //       businessKey: businessKey,
+      //       owner: {
+      //         id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+      //         name: keycloak.idTokenParsed.name || '',
+      //         email: keycloak.idTokenParsed.email || '',
+      //         phone: keycloak.idTokenParsed.phone || '',
+      //       },
+      //       attributes: caseAttributes,
+      //     }),
+      //   )
+      // })
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
-        setTimeout(() => {
-          handleClose()
-        }, 2000)
+        // setTimeout(() => {
+        //   handleClose()
+        // }, 2000)
       })
       .catch((err) => {
         console.error(err.message)
