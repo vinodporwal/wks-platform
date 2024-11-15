@@ -868,6 +868,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     console.log('labelMap', labelMap)
     const getLabel = (key) => labelMap[key] || key || ''
 
+    const uploadedFiles = aCase.documents || []
+
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
@@ -918,7 +920,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       )
       content += `
       <!-- Analysis -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
@@ -930,7 +932,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     } else {
       content += `
       <!-- Data Grid 1 -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
         ${formatDataGrid(containerData.dataGrid1, getLabel)}
       </div>
@@ -940,7 +942,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     // Value Realization section
     content += `
       <!-- Value Realization -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
@@ -954,6 +956,31 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     </div>
   `
 
+    // Append uploaded files section at the bottom
+    content += `
+      <!-- Uploaded Files -->
+      <div style="border: 1px solid #333; border-radius: 5px;  padding: 20px; margin-bottom: 20px; margin-left: auto; margin-right: auto;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Uploaded Files</h3>
+        <div style="padding: 10px;">
+          ${
+            uploadedFiles.length > 0
+              ? `<ul style="list-style-type: none; padding: 0; margin: 0;">
+                  ${uploadedFiles
+                    .map(
+                      (file) => `
+                    <li style="margin-bottom: 8px;">
+                      <a href="${file.url}" target="_blank" style="text-decoration: none; color: #007bff;">${file.name}</a>
+                    </li>
+                  `,
+                    )
+                    .join('')}
+                </ul>`
+              : '<p>No files uploaded.</p>'
+          }
+        </div>
+      </div>
+    </div>
+    `
     return content
   }
 
