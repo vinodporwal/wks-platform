@@ -25,6 +25,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.wks.storage.config.StorageConfig;
 import com.wks.storage.driver.MinioClientDelegate;
 import com.wks.storage.model.DownloadFileUrl;
 import com.wks.storage.service.BucketService;
@@ -45,6 +46,9 @@ public class MinioDownloadService implements DownloadService {
 	@Autowired
 	@Qualifier("MinioBucketService")
 	private BucketService bucketService;
+
+	@Autowired
+	private StorageConfig config;
 
 	@Override
 	public DownloadFileUrl createPresignedObjectUrl(String fileName, String contentType) {
@@ -73,11 +77,16 @@ public class MinioDownloadService implements DownloadService {
 		String url = client.getPresignedObjectUrl(signed);
 		String downloadUrl = String.format("http://localhost:9000/%s/%s", bucketName, objectName);
 
-		return new DownloadFileUrl(downloadUrl);
+		String port = config.getUploadsPort() > 0 ? ":" + config.getUploadsPort() : "";
+
+		String downloadUrl1 = String.format("%s://%s%s/%s/%s", config.getUploadsProtocol(), config.getUploadsBackendUrl(),
+				port, bucketName,objectName);
+
+		return new DownloadFileUrl(downloadUrl1);
 	}
 	
 	public ResponseEntity<InputStreamResource> downloadObj(String dir, String fileName, String contentType){
-		String bucketName = "localhost";
+		String bucketName = bucketService.createAssignedTenant();
 		String objectName = fileName;
 		if (dir != null && !dir.isBlank()) {
 			objectName = bucketService.createObjectWithPath(dir, fileName);
@@ -96,7 +105,6 @@ public class MinioDownloadService implements DownloadService {
 	    headers.add(HttpHeaders.CONTENT_TYPE, fileContentType); // Use content type from MinIO response
 //	    headers.add(HttpHeaders.CONTENT_LENGTH, String.valueOf(response.headers().byteCount())); // Set the file length
 	    
-	    System.out.println("ratnesh download 98 line "+fileContentType+" "+ response.headers().byteCount());
 	    return ResponseEntity.ok()
 	            .headers(headers)
 	            .body(new InputStreamResource(fileInputStream));
