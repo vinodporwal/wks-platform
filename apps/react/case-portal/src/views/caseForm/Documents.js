@@ -47,6 +47,7 @@ function Documents({ aCase, initialValue }) {
         const timer = setTimeout(() => {
           setPercent(0)
           setFetching(false)
+          window.location.reload()
           clearTimeout(timer)
         }, 800)
       })

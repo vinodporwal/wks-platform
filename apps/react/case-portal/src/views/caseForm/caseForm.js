@@ -39,6 +39,7 @@ import { Snackbar, SnackbarContent, CircularProgress } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import logo from 'assets/images/logo.svg'
 import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
+import Config from '../../consts'
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -81,6 +82,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     console.log('{keycloak}', keycloak)
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
     getCaseInfo(aCase)
+    //   FileService.downloadForPrintPreview(aCase.documents[0], keycloak),
+    // )
   }, [open, aCase])
 
   useEffect(() => {
@@ -420,7 +423,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          window.location.reload()
           handleClose()
         }, 2000)
       })
@@ -662,7 +664,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
-          window.location.reload()
           handleClose()
         }, 2000)
       })
@@ -957,30 +958,67 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   `
 
     // Append uploaded files section at the bottom
-    content += `
-      <!-- Uploaded Files -->
-      <div style="border: 1px solid #333; border-radius: 5px;  padding: 20px; margin-bottom: 20px; margin-left: auto; margin-right: auto;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Uploaded Files</h3>
-        <div style="padding: 10px;">
-          ${
-            uploadedFiles.length > 0
-              ? `<ul style="list-style-type: none; padding: 0; margin: 0;">
-                  ${uploadedFiles
-                    .map(
-                      (file) => `
-                    <li style="margin-bottom: 8px;">
-                      <a href="${file.url}" target="_blank" style="text-decoration: none; color: #007bff;">${file.name}</a>
-                    </li>
-                  `,
-                    )
-                    .join('')}
-                </ul>`
-              : '<p>No files uploaded.</p>'
-          }
-        </div>
-      </div>
+    if (uploadedFiles.length > 0) {
+      content += `
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+      <h3 style="margin-bottom: 10px;">Uploaded Files</h3>
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        ${uploadedFiles
+          .map(
+            (file, index) => `
+              <li 
+                style="margin-bottom: 8px; cursor: pointer; color: #007bff; text-decoration: underline;"
+                onclick="window.handleFileDownload(${index})"
+              >
+                ${file.name}
+              </li>
+            `,
+          )
+          .join('')}
+      </ul>
     </div>
-    `
+    <script>
+      // Add this function dynamically to handle file download
+      window.handleFileDownload = (fileIndex) => {
+        const files = ${JSON.stringify(uploadedFiles)};
+        const file = files[fileIndex];
+
+        // Call the download function from FileService
+        const keycloak = {
+          token: '${keycloak.token}' // Pass your keycloak token dynamically
+        };
+
+        const getObjectForUrl = \`${Config.StorageUrl}/storage/files/cases/downloads/\${file.name}?content-type=\${file.type}\`;
+        fetch(getObjectForUrl, {
+          headers: {
+            Authorization: \`Bearer \${keycloak.token}\`,
+          },
+        })
+          .then((resp) => resp.json())
+          .then(async (data) => {
+            const resp = await fetch(data.url);
+            const blob = await resp.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+
+            const anchor = document.createElement('a');
+            document.body.appendChild(anchor);
+            anchor.href = downloadUrl;
+            anchor.download = file.name || 'downloaded-file';
+            anchor.click();
+
+            setTimeout(() => {
+              window.URL.revokeObjectURL(downloadUrl);
+              document.body.removeChild(anchor);
+            }, 0);
+          })
+          .catch((err) => console.error('Error downloading file:', err));
+      };
+    </script>
+  `
+    } else {
+      content += `<p>No files uploaded.</p>`
+    }
+
     return content
   }
 

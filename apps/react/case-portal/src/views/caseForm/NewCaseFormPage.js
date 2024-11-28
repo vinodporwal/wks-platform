@@ -159,7 +159,6 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          window.location.reload()
           handleClose()
         }, 2000)
       })
@@ -245,7 +244,6 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          window.location.reload()
           handleClose()
         }, 2000)
       })

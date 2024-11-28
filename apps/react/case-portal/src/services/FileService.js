@@ -80,9 +80,9 @@ function upload({ dir, file, progress, keycloak }) {
 }
 
 function download(file, keycloak) {
-  let getObjectForUrl = `${Config.StorageUrl}/storage/files/${file.dir}/downloads/${file.name}?content-type=${file.type}`
+  let getObjectForUrl = `${Config.StorageUrl}/storage/files/cases/${file.dir}/downloads/${file.name}?content-type=${file.type}`
   if (!file.dir) {
-    getObjectForUrl = `${Config.StorageUrl}/storage/files/downloads/${file.name}?content-type=${file.type}`
+    getObjectForUrl = `${Config.StorageUrl}/storage/files/cases/downloads/${file.name}?content-type=${file.type}`
   }
 
   return fetch(getObjectForUrl, createHeaders(keycloak))
