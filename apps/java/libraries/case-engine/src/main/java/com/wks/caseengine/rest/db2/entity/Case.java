@@ -68,6 +68,8 @@ public class Case {
     @JoinColumn(name = "status_id", nullable = true)
     private CaseStatus status;
 
+    @Column(name = "case_url")
+    private String caseUrl;
 
 	public String getCaseNo() {
 		return caseNo;
@@ -171,6 +173,14 @@ public class Case {
 
 	public void setStatus(CaseStatus status) {
 		this.status = status;
+	}
+
+	public String getCaseUrl() {
+		return caseUrl;
+	}
+
+	public void setCaseUrl(String caseUrl) {
+		this.caseUrl = caseUrl;
 	}
 
 	@Override

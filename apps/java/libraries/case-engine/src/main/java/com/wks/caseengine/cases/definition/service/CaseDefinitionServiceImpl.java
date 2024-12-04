@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -352,6 +353,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		if(caseNo==null || caseNo.length()==0) {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
+			caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
 			System.out.println("Saving New Case Details....");
 			caseData.setCreationDate(currentDate);
 			caseDetails  = caseRepository.save(caseData);
@@ -372,6 +374,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		} else {
 			System.out.println("Saving Exsting Case Details....");
 			caseData.setCaseNo(caseNo);
+			caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
 			caseDetails  = caseRepository.save(caseData);
 		}
 		
@@ -406,12 +409,13 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			    	System.out.println("Calling mail send method...");
 			    	String from = "shrikant.mnt@gmail.com";
 			    	caseTitle = "CASE MANAGEMENT :"+ caseTitle;
+			    	String caseUrl =  caseDetails.getCaseNo();
 			    	Map<String, Object> data = new HashMap<>();
 			    	data.put("caseTitle", caseTitle);
 					data.put("caseNumber", caseNumber);
 					data.put("status", caseStatusValue);
 					data.put("caseName", caseTitle);
-					data.put("caseUrl", "");
+					data.put("caseUrl", caseUrl);
 					data.put("environment", "production environment");
 			    	caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
 			    	//(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
@@ -800,6 +804,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         message.setFrom("your-email@gmail.com");
 
         mailSender.send(message);
+	}
+
+	@Override
+	public List<com.wks.caseengine.rest.db2.entity.Users> getUsersList() {
+		return usersRepository.findAll(); 
+
 	}
 	
 //	@Scheduled(cron = "0 0/1 * * * ?")// You can adjust this cron expression to run at a specific time (e.g., every day at noon)

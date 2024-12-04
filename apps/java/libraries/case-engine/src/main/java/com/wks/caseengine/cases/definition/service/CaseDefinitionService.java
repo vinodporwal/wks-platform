@@ -60,7 +60,7 @@ public interface CaseDefinitionService {
 
 	List<Users> getUserList();
 
-//	List<Users> getUsersList();
+	List<com.wks.caseengine.rest.db2.entity.Users> getUsersList();
 
 	List<FunctionalLocation> getFunctionalLocations(String AssetName);
 

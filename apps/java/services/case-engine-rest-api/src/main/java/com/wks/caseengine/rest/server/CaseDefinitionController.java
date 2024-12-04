@@ -158,9 +158,9 @@ public class CaseDefinitionController {
 	}
 	
 	@GetMapping(value = "/users")
-	public ResponseEntity<List<Users>> getRecommondationUsers() {
+	public ResponseEntity<List<?>> getRecommondationUsers() {
 		try {
-			return ResponseEntity.ok(caseDefinitionService.getUserList());
+			return ResponseEntity.ok(caseDefinitionService.getUsersList());
 		} catch (CaseDefinitionNotFoundException e) {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
