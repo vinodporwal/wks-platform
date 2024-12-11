@@ -11,8 +11,10 @@
  */
 package com.wks.caseengine.rest.server;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,8 +31,17 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
+import com.wks.caseengine.rest.db2.entity.Case;
+import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
+import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
+import com.wks.caseengine.rest.db2.entity.CaseStatus;
+import com.wks.caseengine.rest.db2.entity.FaultCategory;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
+import com.wks.caseengine.rest.model.FaultEvents;
+import com.wks.caseengine.rest.model.FunctionalLocation;
+import com.wks.caseengine.rest.model.Recommendations;
+import com.wks.caseengine.rest.model.Users;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -44,8 +55,35 @@ public class CaseDefinitionController {
 
 	@GetMapping
 	public ResponseEntity<List<CaseDefinition>> find(@RequestParam(required = false) Boolean deployed) {
+		System.out.println("Called.. Cakkcvdshgcvshkdgcvkshcvkhsagvckhgvdks");
 		return ResponseEntity.ok(caseDefinitionService.find(Optional.ofNullable(deployed)));
 	}
+	
+	@GetMapping(value = "/fault-category")
+	public ResponseEntity<List<FaultCategory>> getFaultCategory() {
+		return ResponseEntity.ok(caseDefinitionService.findCaseCatagories());
+	}
+	
+	@GetMapping(value = "/case-status")
+	public ResponseEntity<List<CaseStatus>> getCaseStatus() {
+		return ResponseEntity.ok(caseDefinitionService.getAllCaseStatus());
+	}
+	
+	@GetMapping("/categories")
+    public List<CaseCauseCategory> getCategories() {
+        return caseDefinitionService.getAllCategories();
+    }
+
+    @GetMapping("/descriptions")
+    public ResponseEntity<List<CaseCauseDescription>> getDescriptions(@RequestParam Long categoryId) {
+        return ResponseEntity.ok(caseDefinitionService.getDescriptionsByCategory(categoryId));
+    }
+    
+//    @PostMapping("/case-details")
+//    public void createCaseDetails(@RequestBody CasePayload casePayload) {
+//        CaseDetails savedCaseDetails = caseDefinitionService.saveCaseDetails(casePayload);
+////        return caseDefinitionService.saveCaseDetails(caseDetails);
+//    }
 
 	@GetMapping(value = "/{caseDefId}")
 	public ResponseEntity<CaseDefinition> get(@PathVariable final String caseDefId) {
@@ -55,6 +93,24 @@ public class CaseDefinitionController {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
 	}
+	
+	@GetMapping(value = "/fault-history/eventIds")
+	public ResponseEntity<List<FaultEvents>> getFaultHistoryByEventIds(@RequestParam List<Long> eventIds) {
+       try {
+		String eventIdsString = eventIds.stream()
+                .map(String::valueOf) // Convert Long to String
+                .collect(Collectors.joining(","));
+        System.out.println("eventIds: "+eventIdsString);
+        return ResponseEntity.ok(caseDefinitionService.getAllEvents(eventIds));
+       } catch(Exception e) {
+    	   throw new RestResourceNotFoundException(e.getMessage());
+       }
+    }
+	
+	@GetMapping(value = "/case-no")
+	public ResponseEntity<String> getCaseNumber() {
+        return ResponseEntity.ok(caseDefinitionService.CaseNoGenerator());
+    }
 
 	@PostMapping
 	public ResponseEntity<CaseDefinition> save(@RequestBody final CaseDefinition caseDefinition) {
@@ -63,6 +119,32 @@ public class CaseDefinitionController {
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("caseDefinitionId", e);
 		}
+	}
+	
+	@PostMapping("/save-case")
+    public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
+        Case savedCase = caseDefinitionService.saveCase(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	@PostMapping("/save-recommendation")
+    public ResponseEntity<Case> addRecommendation(@RequestBody Recommendations recommendations) {
+        Case savedCase = caseDefinitionService.addRecommendation(recommendations);
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	@GetMapping("/cases")
+	public ResponseEntity<List<Case>> getCases(@RequestParam String assetName, @RequestParam String hierarchyName) {
+		System.out.println("AssetName: "+assetName);
+		System.out.println("HierarchyName: "+hierarchyName);
+		List<Case> cases = caseDefinitionService.getCaseDetails(assetName, hierarchyName);
+		return ResponseEntity.ok(cases);
+	}
+
+	@GetMapping("/cases/filter")
+	public ResponseEntity<List<Case>> getCasesByFilter(@RequestParam(required = false) LocalDate from,@RequestParam(required = false) LocalDate to,@RequestParam(required = false) String status) {
+		List<Case> cases = caseDefinitionService.getCaseDetails(from, to, status);
+		return ResponseEntity.ok(cases);
 	}
 
 	@PutMapping(value = "/{caseDefId}")
@@ -74,7 +156,26 @@ public class CaseDefinitionController {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
 	}
+	
+	@GetMapping(value = "/users")
+	public ResponseEntity<List<?>> getRecommondationUsers() {
+		try {
+			return ResponseEntity.ok(caseDefinitionService.getUsersList());
+		} catch (CaseDefinitionNotFoundException e) {
+			throw new RestResourceNotFoundException(e.getMessage());
+		}
+	}
 
+	@GetMapping(value = "/funcational-locations")
+	public ResponseEntity<List<FunctionalLocation>> getRecommondationUsers(@RequestParam String assetName) {
+		try {
+			System.out.println("EventId ...: "+assetName);
+			return ResponseEntity.ok(caseDefinitionService.getFunctionalLocations(assetName));
+		} catch (CaseDefinitionNotFoundException e) {
+			throw new RestResourceNotFoundException(e.getMessage());
+		}
+	}
+	
 	@DeleteMapping(value = "/{caseDefId}")
 	public ResponseEntity<Void> delete(@PathVariable final String caseDefId) {
 		try {
@@ -84,4 +185,16 @@ public class CaseDefinitionController {
 		}
 		return ResponseEntity.noContent().build();
 	}
+	
+	@PostMapping("/send")
+    public ResponseEntity<String> sendEmail(@RequestParam String emailId) {
+        try {
+            String subject = "Test Email";
+            String body = "This is a test email from Spring Boot.";
+            caseDefinitionService.sendEmail(emailId, subject, body);
+            return ResponseEntity.ok("Email sent successfully to " + emailId);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error while sending email: " + e.getMessage());
+        }
+    }
 }

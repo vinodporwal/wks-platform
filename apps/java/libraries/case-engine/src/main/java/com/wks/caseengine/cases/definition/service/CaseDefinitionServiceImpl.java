@@ -374,7 +374,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		} else {
 			System.out.println("Saving Exsting Case Details....");
 			caseData.setCaseNo(caseNo);
-			caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			if(caseData.getCaseUrl()!=null && !caseData.getCaseUrl().contains("&caseNo")) {
+				caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			}
 			Case savedCase =caseRepository.getByCaseNo(caseNo);
 			caseData.setCreationDate(savedCase.getCreationDate());
 			caseDetails  = caseRepository.save(caseData);

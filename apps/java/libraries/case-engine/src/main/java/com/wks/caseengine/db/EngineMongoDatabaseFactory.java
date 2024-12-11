@@ -19,6 +19,7 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.Conventions;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 
 import com.mongodb.MongoClientSettings;
@@ -33,6 +34,10 @@ public class EngineMongoDatabaseFactory extends SimpleMongoClientDatabaseFactory
 
 	@Autowired
 	private SecurityContextTenantHolder holder;
+	
+	@Value("${spring.data.mongodb.database.tenant}")
+	private String dbTenant;
+
 
 	public EngineMongoDatabaseFactory(MongoClient mongoClient, String globalDB) {
 		super(mongoClient, globalDB);
@@ -56,7 +61,8 @@ public class EngineMongoDatabaseFactory extends SimpleMongoClientDatabaseFactory
 
 		if (!tenantId.isEmpty()) {
 			log.debug("using tenate database {}", tenantId.get());
-			return tenantId.get();
+//			return tenantId.get();
+			return dbTenant;
 		}
 
 		throw new IllegalArgumentException("Could't locate tenant database in session context holder");

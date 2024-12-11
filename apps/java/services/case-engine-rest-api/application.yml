@@ -37,6 +37,7 @@ camunda.tasklist.client.password: ${CAMUNDA8_TASKLIST_PASSWORD:demo}
 
 spring.data.mongodb.uri: ${MONGO_CONN:mongodb://localhost}
 spring.data.mongodb.database: ${MONGO_DATABASE:shared}
+spring.data.mongodb.database.tenant: ${MONGO_DATABASE_TENANT:localhost}
 spring.data.mongodb.database.min-pool-size: 0
 spring.data.mongodb.database.max-pool-size: 5
 spring.data.mongodb.database.max-connection-idle-time: 3000
