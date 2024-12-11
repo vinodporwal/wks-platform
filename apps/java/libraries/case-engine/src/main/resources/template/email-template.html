@@ -25,12 +25,12 @@
 </head>
 <body>
     <div class="header">
-        <h2>A Case is updated with new Events</h2>
+        <h2>New case has been assigned to you</h2>
     </div>
 
     <div class="content">
         <div>
-            <p th:text="'Case ' + ${caseTitle} + ' assigned to you is updated with new Events.'">Case Title placeholder</p>
+            <p th:text="'' + ${caseTitle} + ''">Case Title placeholder</p>
         </div>
 
         <div class="case-details">
@@ -38,19 +38,19 @@
             <p><span class="label">Number:</span> <span th:text="${caseNumber}">Case-001</span></p>
             <p><span class="label">Status:</span> <span th:text="${status}">Status</span></p>
             <p><span class="label">Title:</span> <span th:text="${caseName}">Case Name</span></p>
-            <p><span class="label">Description:</span> <span th:text="${description}">Description</span></p>
-            <p><span class="label">Category:</span> <span th:text="${caseCategory}">Category</span></p>
+<!--            <p><span class="label">Description:</span> <span th:text="${description}">Description</span></p>
+            <p><span class="label">Category:</span> <span th:text="${caseCategory}">Category</span></p>  -->
             <p><span class="label">URL:</span> <span th:text="${caseUrl}">URL</span></p>
         </div>
 
-        <div>
+<!--        <div>
             <h3>Next Steps:</h3>
             <p>See the updated case <a th:href="${caseUrl}" th:text="${caseUrl}">here</a></p>
         </div>
 
         <div>
             <p><span class="label">Environment:</span> <span th:text="${environment}">Environment</span></p>
-        </div>
+        </div>  -->
     </div>
 </body>
 </html>

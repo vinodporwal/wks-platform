@@ -374,7 +374,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		} else {
 			System.out.println("Saving Exsting Case Details....");
 			caseData.setCaseNo(caseNo);
-			caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			if(caseData.getCaseUrl()!=null && !caseData.getCaseUrl().contains("&caseNo")) {
+				caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			}
+			Case savedCase =caseRepository.getByCaseNo(caseNo);
+			caseData.setCreationDate(savedCase.getCreationDate());
 			caseDetails  = caseRepository.save(caseData);
 		}
 		
@@ -408,15 +412,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			    if(!caseStatusValue.equals("Under Analysis")) {
 			    	System.out.println("Calling mail send method...");
 			    	String from = "shrikant.mnt@gmail.com";
-			    	caseTitle = "CASE MANAGEMENT :"+ caseTitle;
-			    	String caseUrl =  caseDetails.getCaseNo();
 			    	Map<String, Object> data = new HashMap<>();
-			    	data.put("caseTitle", caseTitle);
+			    	data.put("caseTitle", "This is to inform you, the new case has been assined to you");
 					data.put("caseNumber", caseNumber);
 					data.put("status", caseStatusValue);
 					data.put("caseName", caseTitle);
-					data.put("caseUrl", caseUrl);
-					data.put("environment", "production environment");
+					data.put("caseUrl", caseDetails.getCaseUrl());
+					data.put("environment", "");
+			    	caseTitle = "CASE MANAGEMENT :"+ caseTitle;
 			    	caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
 			    	//(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
 			    }
