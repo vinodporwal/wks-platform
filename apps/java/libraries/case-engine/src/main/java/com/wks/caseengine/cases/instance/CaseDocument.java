@@ -33,4 +33,11 @@ public class CaseDocument {
 	private String size;
 
 	private String base64;
+	
+	private String dir;
+	
+	private String storage;
+
+	private String url;
+
 }
