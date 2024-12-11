@@ -15,6 +15,7 @@ import { Form } from '@formio/react'
 import { useSession } from 'SessionStoreContext'
 import { CaseService, FormService } from '../../services'
 import { StorageService } from 'plugins/storage'
+import { buildCreateUrl } from 'utils/util'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
@@ -27,7 +28,6 @@ export const NewCaseForm = ({
   setLastCreatedCase,
   // cases,
 }) => {
-  
   const [caseDef, setCaseDef] = useState([])
   const [form, setForm] = useState([])
   const [formData, setFormData] = useState(null)
@@ -39,7 +39,7 @@ export const NewCaseForm = ({
         return FormService.getByKey(keycloak, data.formKey)
       })
       .then((data) => {
-        console.log("new form data", data);
+        console.log('new form data', data)
         setForm(data)
         setFormData({
           data: {},
@@ -50,18 +50,16 @@ export const NewCaseForm = ({
       .catch((err) => {
         console.log(err.message)
       })
-
-
   }, [open, caseDefId])
 
   const onSave = () => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search)
 
-    const assetName = urlParams.get('assetName') || 'default';
-    const hierarchyName = urlParams.get('hierarchyName') || 'default';
-    const eventIdsParam = urlParams.get('eventIds');
-    const sourceSystem = urlParams.get('sourceSystem') || 'default';
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
 
     const caseAttributes = []
     Object.keys(formData.data).forEach((key) => {
@@ -90,6 +88,7 @@ export const NewCaseForm = ({
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       .then((data) => {
@@ -102,13 +101,13 @@ export const NewCaseForm = ({
   }
 
   const onSubmitForm = () => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search)
 
-    const assetName = urlParams.get('assetName') || 'default';
-    const hierarchyName = urlParams.get('hierarchyName') || 'default';
-    const eventIdsParam = urlParams.get('eventIds');
-    const sourceSystem = urlParams.get('sourceSystem') || 'default';
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : [];
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
 
     const caseAttributes = []
     Object.keys(formData.data).forEach((key) => {
@@ -137,6 +136,7 @@ export const NewCaseForm = ({
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       .then((data) => {
@@ -146,9 +146,7 @@ export const NewCaseForm = ({
       .catch((err) => {
         console.log(err.message)
       })
-  };
-  
-  
+  }
 
   return (
     <div>
@@ -201,14 +199,12 @@ export const NewCaseForm = ({
               }}
               onCustomEvent={(event) => {
                 if (event.component.key === 'saveAsDraft') {
-                  onSave(event.data); 
-                } 
-                else if (event.component.key === 'onSave') {
-                  onSubmitForm(event.data); 
+                  onSave(event.data)
+                } else if (event.component.key === 'onSave') {
+                  onSubmitForm(event.data)
                 }
               }}
             />
-
           </Grid>
         </Grid>
       </Dialog>

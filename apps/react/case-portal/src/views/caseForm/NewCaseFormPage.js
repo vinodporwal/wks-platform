@@ -16,6 +16,7 @@ import { CaseService, FormService } from '../../services'
 import { StorageService } from 'plugins/storage'
 import { Snackbar, SnackbarContent } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
+import { buildCreateUrl } from 'utils/util'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
@@ -116,6 +117,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
 
     // First API call to createCase to get the businessKey
 
+    console.log('Cleaned URL', buildCreateUrl(window.location.href))
+
     CaseService.createCase(
       keycloak,
       JSON.stringify({
@@ -128,12 +131,14 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       .then((data) => {
         const businessKey = data.businessKey
         // setLastCreatedCase(data);
 
+        console.log('Cleaned URL', buildCreateUrl(window.location.href))
         return CaseService.saveCase(
           keycloak,
           JSON.stringify({
@@ -152,6 +157,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               phone: keycloak.idTokenParsed.phone || '1234543211',
             },
             attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
           }),
         )
       })
@@ -201,6 +207,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
     }))
 
+    console.log('Cleaned URL', buildCreateUrl(window.location.href))
     CaseService.createCase(
       keycloak,
       JSON.stringify({
@@ -213,12 +220,14 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       .then((data) => {
         const businessKey = data.businessKey
         // setLastCreatedCase(data);
 
+        console.log('Cleaned URL', buildCreateUrl(window.location.href))
         return CaseService.saveCase(
           keycloak,
           JSON.stringify({
@@ -237,6 +246,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
           }),
         )
       })
