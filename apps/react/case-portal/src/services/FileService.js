@@ -79,40 +79,59 @@ function upload({ dir, file, progress, keycloak }) {
     })
 }
 
-function download(file, keycloak) {
-  let getObjectForUrl = `${Config.StorageUrl}/storage/files/cases/${file.dir}/downloads/${file.name}?content-type=${file.type}`
+async function download(file, keycloak) {
+  let getObjectForUrl = `${Config.StorageUrl}/storage/files1/${file.dir}/downloads/${file.name}?content-type=${file.type}`
   if (!file.dir) {
-    getObjectForUrl = `${Config.StorageUrl}/storage/files/cases/downloads/${file.name}?content-type=${file.type}`
+    getObjectForUrl = `${Config.StorageUrl}/storage/files1/cases/downloads/${file.name}?content-type=${file.type}`
   }
 
-  return fetch(getObjectForUrl, createHeaders(keycloak))
-    .then((resp) => resp.json())
-    .then(async (data) => {
-      const resp = await fetch(data.url)
-      const blob = await resp.blob()
-      const downloadUrl = window.URL.createObjectURL(blob)
+  try {
+    const response = await fetch(getObjectForUrl, createHeaders(keycloak));
+    if (!response.ok) {
+      throw new Error(`Error downloading file: ${response.statusText}`);
+    }
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    document.body.appendChild(anchor);
+    anchor.href = downloadUrl;
+    anchor.download = file.name;
+    anchor.click();
+    setTimeout(() => {
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(anchor);
+    }, 0);
+  } catch (error) {
+    console.error('Error during download:', error);
+  }
+  // return fetch(getObjectForUrl, createHeaders(keycloak))
+  //   .then((resp) => resp.json())
+  //   .then(async (data) => {
+  //     const resp = await fetch(data.url)
+  //     const blob = await resp.blob()
+  //     const downloadUrl = window.URL.createObjectURL(blob)
 
-      const anchor = document.createElement('a')
-      document.body.appendChild(anchor)
-      anchor.href = downloadUrl
+  //     const anchor = document.createElement('a')
+  //     document.body.appendChild(anchor)
+  //     anchor.href = downloadUrl
 
-      const url = new URL(data.url)
-      if (url.pathname) {
-        anchor.download = url.pathname
-          .slice(url.pathname.lastIndexOf('/') + 1)
-          .replaceAll("'")
-      } else {
-        anchor.download = downloadUrl
-      }
+  //     const url = new URL(data.url)
+  //     if (url.pathname) {
+  //       anchor.download = url.pathname
+  //         .slice(url.pathname.lastIndexOf('/') + 1)
+  //         .replaceAll("'")
+  //     } else {
+  //       anchor.download = downloadUrl
+  //     }
 
-      anchor.click()
+  //     anchor.click()
 
-      setTimeout(() => {
-        window.URL.revokeObjectURL(downloadUrl)
-        document.body.removeChild(anchor)
-      }, 0)
-      return
-    })
+  //     setTimeout(() => {
+  //       window.URL.revokeObjectURL(downloadUrl)
+  //       document.body.removeChild(anchor)
+  //     }, 0)
+  //     return
+  //   })
 }
 
 function createHeaders(keycloak) {
