@@ -79,8 +79,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // }
 
   useEffect(() => {
-    console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
-    console.log('{keycloak}', keycloak)
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
     getCaseInfo(aCase)
     //   FileService.downloadForPrintPreview(aCase.documents[0], keycloak),
@@ -188,6 +186,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const getCaseInfo = (aCase) => {
     console.log('Fetching case data of ', aCase)
+    // setLoading(true)
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {
         setCaseDef(data)
@@ -343,6 +342,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .catch((err) => {
         console.log(err.message)
       })
+      // .finally(() => {
+      //   setLoading(false)
+      // })
   }
 
   const onSave = () => {
@@ -596,10 +598,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       setSnackbarMessages(['Recommendation submitted successfully'])
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
-      // setTimeout(() => {
-      //   window.location.reload()
-      // }, 2000)
-      getCaseInfo(aCase)
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+      // getCaseInfo(aCase)
     } catch (error) {
       console.error('Error submitting recommendation:', error)
       setSnackbarMessages(['Error submitting recommendation'])
