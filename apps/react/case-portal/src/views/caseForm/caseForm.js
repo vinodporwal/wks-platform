@@ -288,7 +288,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   : null
               if (saveAsDraft) {
                 // saveAsDraft.hidden = isDraft ? false : true
-                saveAsDraft.hidden = false
+                saveAsDraft.hidden = isDraft ? false : true;
               }
 
               const saveButton =
@@ -297,7 +297,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   : null
               if (saveButton) {
                 // saveButton.hidden = isDraft ? false : true
-                saveButton.hidden = false
+                  saveButton.hidden =  isDraft ? false : true;
               }
             }
 
@@ -434,8 +434,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          handleClose()
-        }, 2000)
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -601,8 +602,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
       setTimeout(() => {
-        window.location.reload()
-      }, 2000)
+        window.location.href = response.caseUrl;
+        // window.location.reload()
+      }, 1000)
       // getCaseInfo(aCase)
     } catch (error) {
       console.error('Error submitting recommendation:', error)
@@ -678,8 +680,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
-          handleClose()
-        }, 2000)
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
       })
       .catch((err) => {
         console.error(err.message)

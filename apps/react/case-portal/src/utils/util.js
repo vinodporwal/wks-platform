@@ -1,9 +1,14 @@
 export const buildCreateUrl = (url) => {
-  const cleanedUrl = cleanUrl(url)
-  const newUrl = cleanedUrl.replace(
+  const cleanedUrl = cleanUrl(url);
+  let newUrl;
+  if (cleanedUrl.includes('case-list')) {
+    newUrl = cleanedUrl;
+  } else {
+    newUrl = cleanedUrl.replace(
     'create?assetName',
     'case-list/create?assetName',
-  )
+    );
+  }
 
   return newUrl
 }
