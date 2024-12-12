@@ -287,7 +287,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   ? level7.columns[2].components[0]
                   : null
               if (saveAsDraft) {
-                saveAsDraft.hidden = isDraft ? false : true
+                // saveAsDraft.hidden = isDraft ? false : true
+                saveAsDraft.hidden = false
               }
 
               const saveButton =
@@ -295,7 +296,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   ? level7.columns[3].components[0]
                   : null
               if (saveButton) {
-                saveButton.hidden = isDraft ? false : true
+                // saveButton.hidden = isDraft ? false : true
+                saveButton.hidden = false
               }
             }
 
@@ -342,9 +344,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .catch((err) => {
         console.log(err.message)
       })
-      // .finally(() => {
-      //   setLoading(false)
-      // })
+    // .finally(() => {
+    //   setLoading(false)
+    // })
   }
 
   const onSave = () => {
