@@ -843,7 +843,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>'
 
     const fieldsToSkip = [
-      'textField1',
+      // 'textField1',
       'RecommendationSubmit',
       'recommendationAssignedTo1',
       'deleteRowButton4',
