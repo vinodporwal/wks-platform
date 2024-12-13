@@ -40,6 +40,7 @@ import { useNavigate } from 'react-router-dom'
 import logo from 'assets/images/logo.svg'
 import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 import Config from '../../consts'
+import { buildCreateUrl } from 'utils/util'
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -78,8 +79,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // }
 
   useEffect(() => {
-    console.log('{keycloak.idTokenParsed.given_name}', keycloak.idTokenParsed)
-    console.log('{keycloak}', keycloak)
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
     getCaseInfo(aCase)
     //   FileService.downloadForPrintPreview(aCase.documents[0], keycloak),
@@ -186,6 +185,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // }
 
   const getCaseInfo = (aCase) => {
+    console.log('Fetching case data of ', aCase)
+    // setLoading(true)
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {
         setCaseDef(data)
@@ -195,106 +196,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
         const formData = await FormService.getByKey(keycloak, data.formKey)
         setFormStructure(formData)
+        let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
-          const updatedFormStructure = { ...formData }
-          console.log('formData', formData)
-
-          // Disable fields (with proper null checks)
-          const level1 = updatedFormStructure.structure.components[0]
-          if (level1 && level1.components) {
-            const level2 = level1.components[0]
-            const level7 =
-              level1.components.length > 8 ? level1.components[8] : null
-            const level6 =
-              level1.components.length > 6 ? level1.components[6] : null
-            console.log('level6', level6)
-            if (level2 && level2.components) {
-              const caseDescriptionField =
-                level2.components.length > 1 ? level2.components[1] : null
-              if (caseDescriptionField) {
-                caseDescriptionField.disabled = false
-              }
-
-              const recommendation =
-                level1.components.length > 5 ? level1.components[5] : null
-              if (recommendation) {
-                recommendation.disabled = true
-              }
-
-              if (level2.components[0] && level2.components[0].columns) {
-                const caseNo =
-                  level2.components[0].columns.length > 1
-                    ? level2.components[0].columns[0].components[0]
-                    : null
-
-                if (caseNo) {
-                  caseNo.calculateValue = `value = ${aCase.caseNo}`
-                }
-
-                const caseTitleField =
-                  level2.components[0].columns.length > 1
-                    ? level2.components[0].columns[1].components[0]
-                    : null
-                if (caseTitleField) {
-                  caseTitleField.disabled = true
-                }
-
-                const caseAssign =
-                  level2.components[0].columns.length > 2
-                    ? level2.components[0].columns[2].components[0]
-                    : null
-                if (caseAssign) {
-                  caseAssign.disabled = true
-                }
-
-                const faultCategorySelect =
-                  level2.components[0].columns.length > 2
-                    ? level2.components[0].columns[3].components[0]
-                    : null
-                if (faultCategorySelect) {
-                  faultCategorySelect.disabled = true
-                }
-                console.log('aCase', aCase)
-
-                // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
-                // console.log('caseAssign1', caseAssign1, aCase)
-                // if (caseAssign1) {
-                //   caseAssign1.defaultValue = `1_true`;
-                // }
-              }
-
-              if (level7 && level7.columns) {
-                const saveAsDraft =
-                  level7.columns.length > 2
-                    ? level7.columns[2].components[0]
-                    : null
-                if (saveAsDraft) {
-                  saveAsDraft.hidden = true
-                }
-
-                const saveButton =
-                  level7.columns.length > 3
-                    ? level7.columns[3].components[0]
-                    : null
-                if (saveButton) {
-                  saveButton.hidden = false
-                }
-              }
-
-              // if (level6) {
-              //   const recommendationDescription =
-              //     level6.components[0].components[0].columns[0].components[1]
-              //   if (recommendationDescription) {
-              //     recommendationDescription.disabled = !(
-              //       aCase.owner?.email === keycloak.idTokenParsed?.email
-              //     )
-              //   }
-              //   // console.log('saveAsDraft', recommendationDescription)
-              // }
-            }
-          }
-
-          setForm(updatedFormStructure)
+          console.log('Form data -> ', formData)
+          updatedFormStructure = { ...formData }
         } else {
           console.error('Form structure or components are undefined.')
         }
@@ -309,10 +214,111 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
         aCase.documents = caseData?.documents || []
         // aCase.stage = caseData?.stage || "Stage 0";
-        return aCase
+        return { caseData: aCase, updatedFormStructure }
       })
-      .then((caseData) => {
-        console.log('caseData', caseData)
+      .then(({ caseData, updatedFormStructure }) => {
+        const isDraft = caseData?.isDraft === 'y'
+
+        // Disable fields (with proper null checks)
+        const level1 = updatedFormStructure.structure.components[0]
+        if (level1 && level1.components) {
+          const level2 = level1.components[0]
+          const level7 =
+            level1.components.length > 8 ? level1.components[8] : null
+          const level6 =
+            level1.components.length > 6 ? level1.components[6] : null
+          if (level2 && level2.components) {
+            const caseDescriptionField =
+              level2.components.length > 1 ? level2.components[1] : null
+            if (caseDescriptionField) {
+              caseDescriptionField.disabled = false
+            }
+
+            const recommendation =
+              level1.components.length > 5 ? level1.components[5] : null
+            if (recommendation) {
+              recommendation.disabled = true
+            }
+
+            if (level2.components[0] && level2.components[0].columns) {
+              const caseNo =
+                level2.components[0].columns.length > 1
+                  ? level2.components[0].columns[0].components[0]
+                  : null
+
+              if (caseNo) {
+                caseNo.calculateValue = `value = ${aCase.caseNo}`
+              }
+
+              const caseTitleField =
+                level2.components[0].columns.length > 1
+                  ? level2.components[0].columns[1].components[0]
+                  : null
+              if (caseTitleField) {
+                caseTitleField.disabled = true
+              }
+
+              const caseAssign =
+                level2.components[0].columns.length > 2
+                  ? level2.components[0].columns[2].components[0]
+                  : null
+              if (caseAssign) {
+                caseAssign.disabled = true
+              }
+
+              const faultCategorySelect =
+                level2.components[0].columns.length > 2
+                  ? level2.components[0].columns[3].components[0]
+                  : null
+              if (faultCategorySelect && caseData.isDraft == 'n') {
+                faultCategorySelect.disabled = true
+              }
+
+              // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
+              // console.log('caseAssign1', caseAssign1, aCase)
+              // if (caseAssign1) {
+              //   caseAssign1.defaultValue = `1_true`;
+              // }
+            }
+
+            if (level7 && level7.columns) {
+              const saveAsDraft =
+                level7.columns.length > 2
+                  ? level7.columns[2].components[0]
+                  : null
+              if (saveAsDraft) {
+                // saveAsDraft.hidden = isDraft ? false : true
+                saveAsDraft.hidden = isDraft ? false : true;
+              }
+
+              const saveButton =
+                level7.columns.length > 3
+                  ? level7.columns[3].components[0]
+                  : null
+              if (saveButton) {
+                // saveButton.hidden = isDraft ? false : true
+                  saveButton.hidden =  isDraft ? false : true;
+              }
+            }
+
+            // if (level6) {
+            //   const recommendationDescription =
+            //     level6.components[0].components[0].columns[0].components[1]
+            //   if (recommendationDescription) {
+            //     recommendationDescription.disabled = !(
+            //       aCase.owner?.email === keycloak.idTokenParsed?.email
+            //     )
+            //   }
+            //   // console.log('saveAsDraft', recommendationDescription)
+            // }
+          }
+        }
+
+        setForm({
+          ...updatedFormStructure,
+        })
+
+        // setIsDraft(caseData?.isDraft === 'y')
         setComments(
           caseData?.comments?.sort(
             (a, b) =>
@@ -338,6 +344,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .catch((err) => {
         console.log(err.message)
       })
+    // .finally(() => {
+    //   setLoading(false)
+    // })
   }
 
   const onSave = () => {
@@ -393,6 +402,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       .then((data) => {
@@ -416,6 +426,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
           }),
         )
       })
@@ -423,8 +434,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
         setTimeout(() => {
-          handleClose()
-        }, 2000)
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -590,8 +602,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
       setTimeout(() => {
-        window.location.reload()
-      }, 2000)
+        window.location.href = response.caseUrl;
+        // window.location.reload()
+      }, 1000)
+      // getCaseInfo(aCase)
     } catch (error) {
       console.error('Error submitting recommendation:', error)
       setSnackbarMessages(['Error submitting recommendation'])
@@ -632,6 +646,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       .then((data) => {
@@ -657,6 +672,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
           }),
         )
       })
@@ -664,8 +680,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
-          handleClose()
-        }, 2000)
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
       })
       .catch((err) => {
         console.error(err.message)
@@ -829,7 +846,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>'
 
     const fieldsToSkip = [
-      'textField1',
+      // 'textField1',
       'RecommendationSubmit',
       'recommendationAssignedTo1',
       'deleteRowButton4',
@@ -872,9 +889,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     const uploadedFiles = aCase.documents || []
 
     let content = `
-    <div style="font-family: Arial, sans-serif; padding: 20px;">
+    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <img src="${logo}" alt="Honeywell Logo" style="height: 50px; margin-right: 10px;">
         <h2 style="text-align: center; margin: 0;">EED Case Management System</h2>
       </div>
 
@@ -1286,6 +1302,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         <DialogContentText>
                           Are you sure you want to submit this recommendation?
                         </DialogContentText>
+                        {apiBody &&
+                          apiBody?.RecommendationConfirmSAP3 == 'n' && (
+                            <DialogContentText sx={{ color: 'red' }}>
+                              Note: Create SAP Request is not selected
+                            </DialogContentText>
+                          )}
                       </DialogContent>
                       <DialogActions>
                         <Button

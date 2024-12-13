@@ -41,13 +41,13 @@ export const FormDetail = ({
       })
   }
 
-  // const deleteForm = () => {
-  //   FormService.remove(keycloak, form.key)
-  //     .then(() => handleClose())
-  //     .catch((err) => {
-  //       console.log(err.message)
-  //     })
-  // }
+  const deleteForm = () => {
+    FormService.remove(keycloak, form.key)
+      .then(() => handleClose())
+      .catch((err) => {
+        console.log(err.message)
+      })
+  }
 
   return (
     form && (
@@ -74,9 +74,9 @@ export const FormDetail = ({
             <Button color='inherit' onClick={saveForm}>
               Save
             </Button>
-            {/* <Button color='inherit' onClick={deleteForm}>
+            <Button color='inherit' onClick={deleteForm}>
               Delete
-            </Button> */}
+            </Button>
           </Toolbar>
         </AppBar>
 

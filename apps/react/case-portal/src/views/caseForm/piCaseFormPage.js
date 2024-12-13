@@ -17,6 +17,7 @@ import { CaseService, FormService } from '../../services'
 import { StorageService } from 'plugins/storage'
 import { Snackbar, SnackbarContent } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
+import { buildCreateUrl } from 'utils/util'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
@@ -128,6 +129,7 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       // .then((data) => {
@@ -211,6 +213,7 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
       }),
     )
       .then((data) => {
@@ -234,6 +237,7 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
           }),
         )
       })

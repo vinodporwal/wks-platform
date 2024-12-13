@@ -61,8 +61,8 @@ public class EngineMongoDatabaseFactory extends SimpleMongoClientDatabaseFactory
 
 		if (!tenantId.isEmpty()) {
 			log.debug("using tenate database {}", tenantId.get());
-//			return tenantId.get();
-			return dbTenant;
+			return tenantId.get();
+//			return dbTenant;
 		}
 
 		throw new IllegalArgumentException("Could't locate tenant database in session context holder");

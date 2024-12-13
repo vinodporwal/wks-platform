@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next'
 import { CaseService } from '../../services'
 // import { Grid, GridColumn } from '@progress/kendo-react-grid';
 import '@progress/kendo-theme-material/dist/all.css'
+import { getQueryParamValue } from 'utils/util'
 // import { useLocation } from 'react-router-dom';
 
 const DataGrid = lazy(() =>
@@ -93,6 +94,8 @@ export const CaseList = ({ status, caseDefId }) => {
           filter,
           setCases,
           setFilter,
+          setACase,
+          setOpenCaseForm,
         )
       }
       return () => {
@@ -111,6 +114,8 @@ export const CaseList = ({ status, caseDefId }) => {
       filter,
       setCases,
       setFilter,
+      setACase,
+      setOpenCaseForm,
     )
   }, [caseDefId, status, openNewCaseForm])
 
@@ -229,32 +234,32 @@ export const CaseList = ({ status, caseDefId }) => {
       //   headerName: "Created On",
       //   width: 100,
       // },
-      {
-        field: 'creationDate',
-        headerName: 'Created On',
-        width: 150,
-        valueGetter: (value, row) => {
-          const date = row?.creationDate
-          if (date) {
-            const dateObj = new Date(date)
-            const day = String(dateObj.getDate()).padStart(2, '0')
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
-            const year = String(dateObj.getFullYear())
-            const hours = String(dateObj.getHours()).padStart(2, '0')
-            const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+      // {
+      //   field: 'creationDate',
+      //   headerName: 'Created On',
+      //   width: 150,
+      //   valueGetter: (value, row) => {
+      //     const date = row?.creationDate
+      //     if (date) {
+      //       const dateObj = new Date(date)
+      //       const day = String(dateObj.getDate()).padStart(2, '0')
+      //       const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+      //       const year = String(dateObj.getFullYear())
+      //       const hours = String(dateObj.getHours()).padStart(2, '0')
+      //       const minutes = String(dateObj.getMinutes()).padStart(2, '0')
 
-            return `${day}-${month}-${year} ${hours}:${minutes}`
-          }
-          return ''
-        },
-      },
+      //       return `${day}-${month}-${year} ${hours}:${minutes}`
+      //     }
+      //     return ''
+      //   },
+      // },
 
-      {
-        field: 'ownerName',
-        headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
-        width: 150,
-        valueGetter: (value, row) => row?.owner?.name,
-      },
+      // {
+      //   field: 'ownerName',
+      //   headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
+      //   width: 150,
+      //   valueGetter: (value, row) => row?.owner?.name,
+      // },
 
       {
         field: 'action',
@@ -262,6 +267,7 @@ export const CaseList = ({ status, caseDefId }) => {
         sortable: false,
         renderCell: (data) => {
           const onClick = (e) => {
+            console.log('data.row', data.row)
             setACase(data.row)
             e.stopPropagation()
             setOpenCaseForm(true)
@@ -301,6 +307,8 @@ export const CaseList = ({ status, caseDefId }) => {
       filter,
       setCases,
       setFilter,
+      setACase,
+      setOpenCaseForm,
     )
   }
 
@@ -373,6 +381,7 @@ export const CaseList = ({ status, caseDefId }) => {
       .then((resp) => {
         const { data, paging } = resp
 
+        console.log('Setting case 111')
         setCases(data)
         setFilter({
           ...filter,
@@ -399,6 +408,7 @@ export const CaseList = ({ status, caseDefId }) => {
       .then((resp) => {
         const { data, paging } = resp
 
+        console.log('Setting case 222')
         setCases(data)
         setFilter({
           ...filter,
@@ -485,6 +495,7 @@ export const CaseList = ({ status, caseDefId }) => {
               .then((resp) => {
                 const { data, paging } = resp
 
+                console.log('Setting case 333')
                 setCases(data)
                 setFilter({
                   ...filter,
@@ -523,7 +534,7 @@ export const CaseList = ({ status, caseDefId }) => {
           </Button>
         </div>
       )} */}
-
+      {/* 
       {caseDefId && (
         <ToggleButtonGroup
           orientation='horizontal'
@@ -538,7 +549,7 @@ export const CaseList = ({ status, caseDefId }) => {
             <ViewKanbanIcon />
           </ToggleButton>
         </ToggleButtonGroup>
-      )}
+      )} */}
 
       <MainCard sx={{ mt: 2 }} content={false}>
         <Box>
@@ -725,6 +736,8 @@ function fetchCases(
   filter,
   setCases,
   setFilter,
+  setACase,
+  setOpenCaseForm,
 ) {
   setFetching(true)
   const searchParams = new URLSearchParams(window.location.search)
@@ -768,6 +781,21 @@ function fetchCases(
         hasPrevious: false,
         hasNext: false,
       })
+
+      const caseNo = getQueryParamValue(window.location.href, 'caseNo')
+
+      if (caseNo) {
+        const selectedCase = updatedCases.find((c) => c.caseNo == caseNo)
+        if (selectedCase && setACase) {
+          setACase(selectedCase)
+          setOpenCaseForm(true)
+
+          // Remove 'caseNo' from the URL without reloading
+          searchParams.delete('caseNo')
+          const newUrl = `${window.location.pathname}?${searchParams.toString()}`
+          window.history.replaceState(null, '', newUrl)
+        }
+      }
     })
     .catch((error) => {
       console.error('Error fetching cases:', error)
