@@ -1,18 +1,20 @@
+version: '3.7'
 
 name: wks-platform
 services:
     minio:
         image: quay.io/minio/minio
-        command: server /data --console-address ":9090"
+        command: server /data --console-address ":9094"
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            test: ["CMD", "curl", "-f", http://localhost:9000/minio/health/live]
             interval: 30s
             timeout: 20s
             retries: 3
         ports:
             - 9000:9000
-            - 9090:9090
+            - 9094:9094
         environment:
+            - H0neywe!!@54322
             - MINIO_ROOT_USER=${MINIO_ROOT_USER}
             - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
         volumes:
@@ -34,7 +36,7 @@ services:
     opa:
         image: openpolicyagent/opa:edge-static
         ports:
-            - 8181:8181        
+            - 8181:8181
         command:
             - run
             - --server
@@ -49,6 +51,8 @@ services:
             KC_HEALTH_ENABLED: "true"
             KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
             KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+            KC_PROXY: "passthrough" # Enables proxy address forwarding
+            KC_FRONTEND_URL: https://wkspwr.dev.connectedplant.honeywell.com:8901 # Set the frontend URL
         healthcheck:
             test: curl --fail http://localhost:8080/health/ready || exit 1
             interval: 10s
@@ -84,4 +88,4 @@ volumes:
     minio:
         driver: local
     keycloak:
-        driver: local                
+        driver: local
