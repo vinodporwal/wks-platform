@@ -47,7 +47,7 @@ public final class BearerTokenHandlerInputResolver implements HandlerInputResolv
 			Jwt jwt = (Jwt) authentication.getCredentials();
 			input.put("org", jwt.getClaim("org"));
 			input.put("sub", jwt.getClaim("sub"));
-			input.put("allowed_origin", getAllowedOrigin(jwt));
+			input.put("allowed_origin", "localhost");
 			input.put("realm_access", jwt.getClaimAsMap("realm_access"));
 		}
 

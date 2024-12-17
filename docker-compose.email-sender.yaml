@@ -1,11 +1,9 @@
-
-
 services:
 
   email-sender:
     build:
       context: apps/node/email-sender
-    links:      
+    links:
         - case-engine-rest-api
     environment:
         - LOG_LEVEL=${EMAIL_SENDER_LOG_LEVEL}
@@ -18,4 +16,4 @@ services:
         - JWT_TOKEN_GRANT_TYPE=${MAIL_TO_CASE_JWT_TOKEN_GRANT_TYPE}
     depends_on:
       - kafka
-      - zookeeper                    
+      - zookeeper

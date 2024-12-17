@@ -1,4 +1,3 @@
-
 name: wks-platform
 services:
 
@@ -7,6 +6,7 @@ services:
         command: ./camunda.sh --rest --webapps
         ports:
             - 8080:8080
+            - 8089:8089
         healthcheck:
             test: curl --fail http://localhost:8080/engine-rest/version || exit 1
             interval: 10s
@@ -16,7 +16,7 @@ services:
         depends_on:
             mongodb:
                 condition: service_healthy
-                
+
     case-engine-rest-api:
         build:
             context: apps/java/services/case-engine-rest-api
@@ -31,7 +31,6 @@ services:
             - CAMUNDA_VERSION=camunda7
             - CAMUNDA_BASE_URL=${CAMUNDA_BASE_URL}
             - MONGO_DATABASE=${MONGO_WKS_DATABASE}
-            - MONGO_DATABASE_TENANT=${MONGO_DEMO_DATA_LOADER_DATABASE}
             - MONGO_CONN=${MONGO_CONNECTION_URL}
             - KEYCLOAK_URL=${KEYCLOAK_URL}
             - OPA_URL=${OPA_URL}

@@ -53,12 +53,12 @@ spring:
   datasource:
     # Configuration for Database 1
     db1:
-      url: jdbc:sqlserver://216.48.180.83;databaseName=case_management;trustServerCertificate=true
-      username: sa
-      password: "#Qwer123"
-    # url: ${SQL_SERVER_1_URL:jdbc:sqlserver://216.48.180.83;databaseName=case_management;trustServerCertificate=true;portNumber=1433}
-    # username: ${SQL_SERVER_1_USERNAME:sa}
-    # password: ${SQL_SERVER_1_PASSWORD:"#Qwer123"}
+      #url: jdbc:sqlserver://216.48.180.83;databaseName=case_management;trustServerCertificate=true
+      #username: sa
+      #password: "#Qwer123"
+      url: ${SQL_SERVER_1_URL:jdbc:sqlserver://216.48.180.83;databaseName=case_management;trustServerCertificate=true;portNumber=1433}
+      username: ${SQL_SERVER_1_USERNAME:sa}
+      password: ${SQL_SERVER_1_PASSWORD:"#Qwer123"}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
         maximum-pool-size: 10
@@ -66,12 +66,12 @@ spring:
 
     # Configuration for Database 2
     db2:
-      url: jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true
-      username: sa
-      password: "#Qwer123"
-      # url: ${SQL_SERVER_2_URL:jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true;portNumber=1433}
-      # username: ${SQL_SERVER_2_USERNAME:sa}
-      # password: ${SQL_SERVER_2_PASSWORD:"#Qwer123"}
+      #url: jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true
+      #username: sa
+      #password: "#Qwer123"
+      url: ${SQL_SERVER_2_URL:jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true;portNumber=1433}
+      username: ${SQL_SERVER_2_USERNAME:sa}
+      password: ${SQL_SERVER_2_PASSWORD:"#Qwer123"}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
         maximum-pool-size: 10

@@ -1,11 +1,9 @@
-
-
 services:
     case-portal:
         build:
             context: apps/react/case-portal
             args:
-                GENERATE_SOURCEMAP: false
+                GENERATE_SOURCEMAP: "false"
                 REACT_APP_KEYCLOAK_URL: ${REACT_APP_KEYCLOAK_URL}
                 REACT_APP_API_URL: ${REACT_APP_API_URL}
                 REACT_APP_STORAGE_URL: ${REACT_APP_STORAGE_URL}
@@ -13,7 +11,7 @@ services:
                 REACT_APP_WEBSOCKETS_URL: ${WEBSOCKET_URL}
                 REACT_APP_WEBSOCKETS_CASE_CREATED: ${KAFKA_TOPIC_CASE_CREATE}
                 REACT_APP_WEBSOCKETS_HUMAN_TASK_CREATED: ${KAFKA_TOPIC_CREATE_HUMAN_TASK}
-                REACT_APP_NOVU_ENABLED: ${NOVU_ENABLED}     
-                REACT_APP_NOVU_PUBLISHER_API_URL: ${NOVU_PUBLISHER_API_URL}   
+                REACT_APP_NOVU_ENABLED: ${NOVU_ENABLED}
+                REACT_APP_NOVU_PUBLISHER_API_URL: ${NOVU_PUBLISHER_API_URL}
         ports:
             - 3001:80
