@@ -27,6 +27,7 @@ function Documents({ aCase, initialValue }) {
   const [messageError, setMessageError] = useState(null)
   const [filesUploaded, setFilesUploaded] = useState(initialValue)
 
+  const isDraft = aCase?.isDraft === 'y'
   const handleChange = (files) => {
     setFetching(true)
 
@@ -126,9 +127,10 @@ function Documents({ aCase, initialValue }) {
             onChange={handleChange}
             onError={handleError}
             multiple
-            clickable
+            clickable={isDraft} // Prevents clicking when disabled
+            disabled={!isDraft} // Disable the component if aCase.isDraft is true
           >
-            <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5 }}>
+            <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: isDraft ? 1 : 0.5 }}>
               Drop files here or click to upload
             </Typography>
           </Files>

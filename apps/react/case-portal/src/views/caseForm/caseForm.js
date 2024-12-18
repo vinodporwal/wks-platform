@@ -221,6 +221,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
+          if(!isDraft){
+            level1.disabled = true;
+          }
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
