@@ -74,10 +74,10 @@
                         "tags": [],
                         "properties": {},
                         "conditional": {
-                            "eq": "",
-                            "json": "",
                             "show": null,
-                            "when": null
+                            "when": null,
+                            "eq": "",
+                            "json": ""
                         },
                         "customConditional": "",
                         "logic": [],
@@ -112,12 +112,13 @@
                                                 "key": "caseNo",
                                                 "type": "textfield",
                                                 "input": true,
-                                                "id": "ezspsqf",
+                                                "id": "eufwewx",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -155,9 +156,9 @@
                                                     "pattern": ""
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -179,8 +180,7 @@
                                                 "inputMask": "",
                                                 "displayMask": "",
                                                 "spellcheck": true,
-                                                "truncateMultipleSpaces": false,
-                                                "defaultValue": null
+                                                "truncateMultipleSpaces": false
                                             }
                                         ],
                                         "offset": 0,
@@ -200,7 +200,7 @@
                                                 "key": "caseTitle",
                                                 "type": "textfield",
                                                 "input": true,
-                                                "id": "eyeflz7",
+                                                "id": "evubban",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -244,9 +244,9 @@
                                                     "pattern": ""
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -298,11 +298,12 @@
                                                 "key": "caseAssignedTo",
                                                 "type": "select",
                                                 "input": true,
-                                                "id": "eguou78",
+                                                "id": "ew2mcso",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -326,9 +327,9 @@
                                                 "attributes": {},
                                                 "validateOn": "change",
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -382,8 +383,7 @@
                                                     "filter": {}
                                                 },
                                                 "customOptions": {},
-                                                "useExactSearch": false,
-                                                "defaultValue": null
+                                                "useExactSearch": false
                                             }
                                         ],
                                         "size": "md",
@@ -410,11 +410,12 @@
                                                 "key": "faultCategory",
                                                 "type": "select",
                                                 "input": true,
-                                                "id": "ewx7ko",
+                                                "id": "eblsma",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -438,9 +439,9 @@
                                                 "attributes": {},
                                                 "validateOn": "change",
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -494,8 +495,7 @@
                                                     "filter": {}
                                                 },
                                                 "customOptions": {},
-                                                "useExactSearch": false,
-                                                "defaultValue": null
+                                                "useExactSearch": false
                                             }
                                         ],
                                         "size": "md",
@@ -507,12 +507,13 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "ezjxht",
+                                "id": "e1nfa9",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": false,
@@ -534,6 +535,7 @@
                                 "customDefaultValue": "",
                                 "calculateValue": "",
                                 "calculateServer": false,
+                                "widget": null,
                                 "attributes": {},
                                 "validateOn": "change",
                                 "validate": {
@@ -545,9 +547,9 @@
                                     "unique": false
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -565,9 +567,7 @@
                                 "addons": [],
                                 "tree": false,
                                 "lazyLoad": false,
-                                "autoAdjust": false,
-                                "defaultValue": null,
-                                "widget": null
+                                "autoAdjust": false
                             },
                             {
                                 "label": "Case Description",
@@ -590,12 +590,13 @@
                                 "key": "caseDescription",
                                 "type": "textarea",
                                 "input": true,
-                                "id": "eygzo3",
+                                "id": "eli29j",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": true,
@@ -623,9 +624,9 @@
                                 "attributes": {},
                                 "validateOn": "change",
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -651,14 +652,14 @@
                                 "rows": 3,
                                 "wysiwyg": false,
                                 "editor": "",
-                                "fixedSize": true,
-                                "defaultValue": null
+                                "fixedSize": true
                             }
                         ],
                         "placeholder": "",
                         "prefix": "",
                         "suffix": "",
                         "multiple": false,
+                        "defaultValue": null,
                         "protected": false,
                         "unique": false,
                         "persistent": false,
@@ -673,6 +674,7 @@
                         "customDefaultValue": "",
                         "calculateValue": "",
                         "calculateServer": false,
+                        "widget": null,
                         "validateOn": "change",
                         "validate": {
                             "required": false,
@@ -690,9 +692,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "emgfpas",
-                        "defaultValue": null,
-                        "widget": null
+                        "id": "erl158c"
                     },
                     {
                         "title": "Associated Faults",
@@ -708,10 +708,10 @@
                         "tags": [],
                         "properties": {},
                         "conditional": {
-                            "eq": "",
-                            "json": "",
                             "show": null,
-                            "when": null
+                            "when": null,
+                            "eq": "",
+                            "json": ""
                         },
                         "customConditional": "",
                         "logic": [],
@@ -749,11 +749,12 @@
                                                 "key": "textField1",
                                                 "type": "textfield",
                                                 "input": true,
-                                                "id": "e2ux4v",
+                                                "id": "ec4bdiza",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -789,9 +790,9 @@
                                                     "pattern": ""
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -813,8 +814,7 @@
                                                 "inputMask": "",
                                                 "displayMask": "",
                                                 "spellcheck": true,
-                                                "truncateMultipleSpaces": false,
-                                                "defaultValue": null
+                                                "truncateMultipleSpaces": false
                                             }
                                         ],
                                         "width": 5,
@@ -838,12 +838,13 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "ejdjvzp",
+                                "id": "ee7kvr",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": false,
@@ -865,6 +866,7 @@
                                 "customDefaultValue": "",
                                 "calculateValue": "",
                                 "calculateServer": false,
+                                "widget": null,
                                 "attributes": {},
                                 "validateOn": "change",
                                 "validate": {
@@ -876,9 +878,9 @@
                                     "unique": false
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -896,9 +898,7 @@
                                 "addons": [],
                                 "tree": false,
                                 "lazyLoad": false,
-                                "autoAdjust": false,
-                                "defaultValue": null,
-                                "widget": null
+                                "autoAdjust": false
                             },
                             {
                                 "label": "Data Grid",
@@ -940,11 +940,12 @@
                                         "key": "textField2",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "el5ggl",
+                                        "id": "e5dhggj",
                                         "placeholder": "",
                                         "prefix": "",
                                         "suffix": "",
                                         "multiple": false,
+                                        "defaultValue": null,
                                         "protected": false,
                                         "unique": false,
                                         "persistent": true,
@@ -981,9 +982,9 @@
                                             "pattern": ""
                                         },
                                         "conditional": {
-                                            "eq": "",
                                             "show": null,
-                                            "when": null
+                                            "when": null,
+                                            "eq": ""
                                         },
                                         "overlay": {
                                             "style": "",
@@ -1005,8 +1006,7 @@
                                         "inputMask": "",
                                         "displayMask": "",
                                         "spellcheck": true,
-                                        "truncateMultipleSpaces": false,
-                                        "defaultValue": null
+                                        "truncateMultipleSpaces": false
                                     },
                                     {
                                         "label": "Events",
@@ -1016,12 +1016,13 @@
                                         "key": "textField3",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "eunxx9m",
+                                        "id": "epx7g37",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
                                         "suffix": "",
                                         "multiple": false,
+                                        "defaultValue": null,
                                         "protected": false,
                                         "unique": false,
                                         "persistent": true,
@@ -1059,9 +1060,9 @@
                                             "pattern": ""
                                         },
                                         "conditional": {
-                                            "eq": "",
                                             "show": null,
-                                            "when": null
+                                            "when": null,
+                                            "eq": ""
                                         },
                                         "overlay": {
                                             "style": "",
@@ -1083,8 +1084,7 @@
                                         "inputMask": "",
                                         "displayMask": "",
                                         "spellcheck": true,
-                                        "truncateMultipleSpaces": false,
-                                        "defaultValue": null
+                                        "truncateMultipleSpaces": false
                                     },
                                     {
                                         "label": "Event Category",
@@ -1094,12 +1094,13 @@
                                         "key": "textField4",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "e5wzkks",
+                                        "id": "e9s26ck",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
                                         "suffix": "",
                                         "multiple": false,
+                                        "defaultValue": null,
                                         "protected": false,
                                         "unique": false,
                                         "persistent": true,
@@ -1137,9 +1138,9 @@
                                             "pattern": ""
                                         },
                                         "conditional": {
-                                            "eq": "",
                                             "show": null,
-                                            "when": null
+                                            "when": null,
+                                            "eq": ""
                                         },
                                         "overlay": {
                                             "style": "",
@@ -1161,8 +1162,7 @@
                                         "inputMask": "",
                                         "displayMask": "",
                                         "spellcheck": true,
-                                        "truncateMultipleSpaces": false,
-                                        "defaultValue": null
+                                        "truncateMultipleSpaces": false
                                     },
                                     {
                                         "label": "Fault Start Time Date",
@@ -1172,12 +1172,13 @@
                                         "key": "TextFaultStartTimeDate",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "e84in3s",
+                                        "id": "eoft40m",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
                                         "suffix": "",
                                         "multiple": false,
+                                        "defaultValue": null,
                                         "protected": false,
                                         "unique": false,
                                         "persistent": true,
@@ -1215,9 +1216,9 @@
                                             "pattern": ""
                                         },
                                         "conditional": {
-                                            "eq": "",
                                             "show": null,
-                                            "when": null
+                                            "when": null,
+                                            "eq": ""
                                         },
                                         "overlay": {
                                             "style": "",
@@ -1239,8 +1240,7 @@
                                         "inputMask": "",
                                         "displayMask": "",
                                         "spellcheck": true,
-                                        "truncateMultipleSpaces": false,
-                                        "defaultValue": null
+                                        "truncateMultipleSpaces": false
                                     },
                                     {
                                         "label": "Fault EndTime Date",
@@ -1250,12 +1250,13 @@
                                         "key": "TextFaultEndTimeDate",
                                         "type": "textfield",
                                         "input": true,
-                                        "id": "etdfq0f",
+                                        "id": "e9q828i",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
                                         "suffix": "",
                                         "multiple": false,
+                                        "defaultValue": null,
                                         "protected": false,
                                         "unique": false,
                                         "persistent": true,
@@ -1293,9 +1294,9 @@
                                             "pattern": ""
                                         },
                                         "conditional": {
-                                            "eq": "",
                                             "show": null,
-                                            "when": null
+                                            "when": null,
+                                            "eq": ""
                                         },
                                         "overlay": {
                                             "style": "",
@@ -1317,12 +1318,11 @@
                                         "inputMask": "",
                                         "displayMask": "",
                                         "spellcheck": true,
-                                        "truncateMultipleSpaces": false,
-                                        "defaultValue": null
+                                        "truncateMultipleSpaces": false
                                     }
                                 ],
                                 "keyModified": true,
-                                "id": "eewuo7i",
+                                "id": "e051gv9",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -1345,6 +1345,7 @@
                                 "dbIndex": false,
                                 "customDefaultValue": "",
                                 "calculateServer": false,
+                                "widget": null,
                                 "attributes": {},
                                 "validateOn": "change",
                                 "validate": {
@@ -1356,9 +1357,9 @@
                                     "unique": false
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -1375,14 +1376,14 @@
                                 "allowMultipleMasks": false,
                                 "addons": [],
                                 "tree": true,
-                                "lazyLoad": false,
-                                "widget": null
+                                "lazyLoad": false
                             }
                         ],
                         "placeholder": "",
                         "prefix": "",
                         "suffix": "",
                         "multiple": false,
+                        "defaultValue": null,
                         "protected": false,
                         "unique": false,
                         "persistent": false,
@@ -1397,6 +1398,7 @@
                         "customDefaultValue": "",
                         "calculateValue": "",
                         "calculateServer": false,
+                        "widget": null,
                         "validateOn": "change",
                         "validate": {
                             "required": false,
@@ -1414,9 +1416,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "ejfts0t",
-                        "defaultValue": null,
-                        "widget": null
+                        "id": "eu43pt"
                     },
                     {
                         "title": "Panel",
@@ -1491,7 +1491,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "eel7rf9",
+                        "id": "epqu48b",
                         "defaultValue": null,
                         "widget": null
                     },
@@ -1509,10 +1509,10 @@
                         "tags": [],
                         "properties": {},
                         "conditional": {
-                            "eq": "",
-                            "json": "",
                             "show": null,
-                            "when": null
+                            "when": null,
+                            "eq": "",
+                            "json": ""
                         },
                         "customConditional": "",
                         "logic": [],
@@ -1590,7 +1590,7 @@
                                                     "disableWeekdays": false,
                                                     "maxDate": null
                                                 },
-                                                "id": "e4iyg",
+                                                "id": "ex6lc5",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -1628,9 +1628,9 @@
                                                     "unique": false
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -1721,7 +1721,7 @@
                                                     "disableWeekdays": false,
                                                     "maxDate": null
                                                 },
-                                                "id": "ee7ryk",
+                                                "id": "ejv3lyc",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -1752,9 +1752,9 @@
                                                 "attributes": {},
                                                 "validateOn": "change",
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -1846,7 +1846,7 @@
                                                     "disableWeekdays": false,
                                                     "maxDate": null
                                                 },
-                                                "id": "efqpkog",
+                                                "id": "edzlu",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -1877,9 +1877,9 @@
                                                 "attributes": {},
                                                 "validateOn": "change",
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -1914,12 +1914,13 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "e6paxdc",
+                                "id": "ezn6dp",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": false,
@@ -1941,6 +1942,7 @@
                                 "customDefaultValue": "",
                                 "calculateValue": "",
                                 "calculateServer": false,
+                                "widget": null,
                                 "attributes": {},
                                 "validateOn": "change",
                                 "validate": {
@@ -1952,9 +1954,9 @@
                                     "unique": false
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -1972,9 +1974,7 @@
                                 "addons": [],
                                 "tree": false,
                                 "lazyLoad": false,
-                                "autoAdjust": false,
-                                "defaultValue": null,
-                                "widget": null
+                                "autoAdjust": false
                             },
                             {
                                 "input": false,
@@ -2004,10 +2004,11 @@
                                                 "key": "analysisTeam",
                                                 "type": "select",
                                                 "input": true,
-                                                "id": "edwxot6",
+                                                "id": "epdffs",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "suffix": "",
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -2031,9 +2032,9 @@
                                                 "attributes": {},
                                                 "validateOn": "change",
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -2087,8 +2088,7 @@
                                                     "filter": {}
                                                 },
                                                 "customOptions": {},
-                                                "useExactSearch": false,
-                                                "defaultValue": null
+                                                "useExactSearch": false
                                             }
                                         ],
                                         "width": 6,
@@ -2120,11 +2120,12 @@
                                                 "type": "select",
                                                 "input": true,
                                                 "keyModified": true,
-                                                "id": "ejpr3e8",
+                                                "id": "e6mo577",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -2147,9 +2148,9 @@
                                                 "attributes": {},
                                                 "validateOn": "change",
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -2203,8 +2204,7 @@
                                                     "filter": {}
                                                 },
                                                 "customOptions": {},
-                                                "useExactSearch": false,
-                                                "defaultValue": null
+                                                "useExactSearch": false
                                             }
                                         ],
                                         "width": 6,
@@ -2215,12 +2215,13 @@
                                         "currentWidth": 6
                                     }
                                 ],
-                                "id": "ear9ppj",
+                                "id": "e9rzsk",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": false,
@@ -2242,6 +2243,7 @@
                                 "customDefaultValue": "",
                                 "calculateValue": "",
                                 "calculateServer": false,
+                                "widget": null,
                                 "attributes": {},
                                 "validateOn": "change",
                                 "validate": {
@@ -2253,9 +2255,9 @@
                                     "unique": false
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -2273,15 +2275,14 @@
                                 "addons": [],
                                 "tree": false,
                                 "lazyLoad": false,
-                                "autoAdjust": false,
-                                "defaultValue": null,
-                                "widget": null
+                                "autoAdjust": false
                             }
                         ],
                         "placeholder": "",
                         "prefix": "",
                         "suffix": "",
                         "multiple": false,
+                        "defaultValue": null,
                         "protected": false,
                         "unique": false,
                         "persistent": false,
@@ -2296,6 +2297,7 @@
                         "customDefaultValue": "",
                         "calculateValue": "",
                         "calculateServer": false,
+                        "widget": null,
                         "validateOn": "change",
                         "validate": {
                             "required": false,
@@ -2313,9 +2315,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "evv361",
-                        "defaultValue": null,
-                        "widget": null
+                        "id": "eo87wk3"
                     },
                     {
                         "label": "Recommendations",
@@ -2415,7 +2415,7 @@
                         "addons": [],
                         "inputType": "radio",
                         "fieldSet": false,
-                        "id": "e7znf9g",
+                        "id": "e4sx7l",
                         "widget": null
                     },
                     {
@@ -2574,7 +2574,7 @@
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "id": "eetwhff",
+                                                "id": "ewp9pd",
                                                 "defaultValue": ""
                                             }
                                         ],
@@ -2699,7 +2699,7 @@
                                                     "include": "score",
                                                     "threshold": 0.3
                                                 },
-                                                "id": "e06ei1",
+                                                "id": "elgomgn",
                                                 "defaultValue": ""
                                             }
                                         ],
@@ -2733,7 +2733,7 @@
                                                 "key": "analysisDesc",
                                                 "type": "textarea",
                                                 "input": true,
-                                                "id": "ewysbii",
+                                                "id": "e10qu7o",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
@@ -2807,7 +2807,7 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "ebaztjb",
+                                "id": "e7t608",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
@@ -2905,7 +2905,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "ecuci",
+                        "id": "elorktp",
                         "defaultValue": null,
                         "widget": null
                     },
@@ -3070,7 +3070,7 @@
                                                         ],
                                                         "type": "textfield",
                                                         "input": true,
-                                                        "id": "ewunbk",
+                                                        "id": "ev31fp",
                                                         "placeholder": "",
                                                         "prefix": "",
                                                         "customClass": "",
@@ -3171,7 +3171,7 @@
                                                         "type": "textarea",
                                                         "rows": 2,
                                                         "input": true,
-                                                        "id": "e1mwgn",
+                                                        "id": "ev5j97b",
                                                         "placeholder": "",
                                                         "prefix": "",
                                                         "customClass": "",
@@ -3355,7 +3355,7 @@
                                                             "include": "score",
                                                             "threshold": 0.3
                                                         },
-                                                        "id": "epinmsf",
+                                                        "id": "emd3a5c",
                                                         "defaultValue": ""
                                                     },
                                                     {
@@ -3367,7 +3367,7 @@
                                                         "key": "recommendationStatus",
                                                         "type": "textfield",
                                                         "input": true,
-                                                        "id": "epjhv8f",
+                                                        "id": "e1jkhwq",
                                                         "placeholder": "",
                                                         "prefix": "",
                                                         "customClass": "",
@@ -3558,7 +3558,7 @@
                                                             "include": "score",
                                                             "threshold": 0.3
                                                         },
-                                                        "id": "ekptgg",
+                                                        "id": "er6x37m",
                                                         "defaultValue": ""
                                                     },
                                                     {
@@ -3632,7 +3632,7 @@
                                                             "disableWeekdays": false,
                                                             "maxDate": null
                                                         },
-                                                        "id": "e9orkqd",
+                                                        "id": "ez5dbj5",
                                                         "placeholder": "",
                                                         "prefix": "",
                                                         "customClass": "",
@@ -3809,7 +3809,7 @@
                                                             "include": "score",
                                                             "threshold": 0.3
                                                         },
-                                                        "id": "eu1ng6c",
+                                                        "id": "ee7ai8",
                                                         "defaultValue": ""
                                                     },
                                                     {
@@ -3821,7 +3821,7 @@
                                                         "key": "recommendationNo1",
                                                         "type": "textfield",
                                                         "input": true,
-                                                        "id": "enpg9u",
+                                                        "id": "ewg2hlk",
                                                         "placeholder": "",
                                                         "prefix": "",
                                                         "customClass": "",
@@ -3952,7 +3952,7 @@
                                                         "labelWidth": 21,
                                                         "labelMargin": 2,
                                                         "input": true,
-                                                        "id": "e30ua3b",
+                                                        "id": "e4kqc2s",
                                                         "placeholder": "",
                                                         "prefix": "",
                                                         "customClass": "",
@@ -4045,7 +4045,7 @@
                                                                         "customConditional": "\n",
                                                                         "type": "button",
                                                                         "input": true,
-                                                                        "id": "e1qva9",
+                                                                        "id": "eoqpx6i",
                                                                         "placeholder": "",
                                                                         "prefix": "",
                                                                         "suffix": "",
@@ -4131,7 +4131,7 @@
                                                                         "type": "button",
                                                                         "custom": "// const dataGridComponent = form.getComponent('dataGrid1');\r\n\r\n// if (dataGridComponent) {\r\n \r\n//   dataGridComponent.removeRow(rowIndex);\r\n// } else {\r\n//   console.error(\"DataGrid component not found\");\r\n// }\r\n\r\nconst dataGridComponent = form.getComponent('dataGrid1');\r\n\r\nif (dataGridComponent) {\r\n  // Display confirmation dialog\r\n  const isConfirmed = window.confirm(\"Are you sure you want to delete this row?\");\r\n  \r\n  if (isConfirmed) {\r\n    // If confirmed, delete the row\r\n    dataGridComponent.removeRow(rowIndex);\r\n  } else {\r\n    console.log(\"Row deletion canceled by the user\");\r\n  }\r\n} else {\r\n  console.error(\"DataGrid component not found\");\r\n}\r\n\r\n",
                                                                         "input": true,
-                                                                        "id": "e1bx4d4",
+                                                                        "id": "erzh1p5",
                                                                         "placeholder": "",
                                                                         "prefix": "",
                                                                         "suffix": "",
@@ -4210,7 +4210,7 @@
                                                         "type": "columns",
                                                         "input": false,
                                                         "tableView": false,
-                                                        "id": "eiryqyq",
+                                                        "id": "e3qoql",
                                                         "placeholder": "",
                                                         "prefix": "",
                                                         "customClass": "",
@@ -4278,7 +4278,7 @@
                                         "type": "columns",
                                         "input": false,
                                         "tableView": false,
-                                        "id": "e4otjdl",
+                                        "id": "e9btwwa",
                                         "placeholder": "",
                                         "prefix": "",
                                         "customClass": "",
@@ -4353,7 +4353,7 @@
                                 "addons": [],
                                 "tree": true,
                                 "lazyLoad": false,
-                                "id": "erwe36d",
+                                "id": "erbjqid",
                                 "widget": null
                             },
                             {
@@ -4435,7 +4435,7 @@
                                 "showWordCount": false,
                                 "allowMultipleMasks": false,
                                 "addons": [],
-                                "id": "eksj5b",
+                                "id": "e84qbht",
                                 "defaultValue": null
                             }
                         ],
@@ -4474,7 +4474,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "edc597",
+                        "id": "ezunfx",
                         "defaultValue": null,
                         "widget": null
                     },
@@ -4492,10 +4492,10 @@
                         "tags": [],
                         "properties": {},
                         "conditional": {
-                            "eq": "",
-                            "json": "",
                             "show": null,
-                            "when": null
+                            "when": null,
+                            "eq": "",
+                            "json": ""
                         },
                         "customConditional": "",
                         "logic": [],
@@ -4556,12 +4556,13 @@
                                 "key": "valueRealizationCategory",
                                 "type": "select",
                                 "input": true,
-                                "id": "exgmnku",
+                                "id": "e46j53",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": true,
@@ -4595,9 +4596,9 @@
                                     "onlyAvailableItems": false
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -4639,8 +4640,7 @@
                                     "filter": {}
                                 },
                                 "customOptions": {},
-                                "useExactSearch": false,
-                                "defaultValue": null
+                                "useExactSearch": false
                             },
                             {
                                 "label": "Columns",
@@ -4659,12 +4659,13 @@
                                                 "key": "productionLoss",
                                                 "type": "number",
                                                 "input": true,
-                                                "id": "eb5s8o",
+                                                "id": "ebr4pqa",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -4704,9 +4705,9 @@
                                                     "integer": ""
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -4721,8 +4722,7 @@
                                                 "showWordCount": false,
                                                 "properties": {},
                                                 "allowMultipleMasks": false,
-                                                "addons": [],
-                                                "defaultValue": null
+                                                "addons": []
                                             }
                                         ],
                                         "width": 3,
@@ -4746,12 +4746,13 @@
                                                 "key": "manHoursCost",
                                                 "type": "number",
                                                 "input": true,
-                                                "id": "eloizt",
+                                                "id": "e3k56x",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -4791,9 +4792,9 @@
                                                     "integer": ""
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -4808,8 +4809,7 @@
                                                 "showWordCount": false,
                                                 "properties": {},
                                                 "allowMultipleMasks": false,
-                                                "addons": [],
-                                                "defaultValue": null
+                                                "addons": []
                                             }
                                         ],
                                         "width": 3,
@@ -4833,12 +4833,13 @@
                                                 "key": "spareCost",
                                                 "type": "number",
                                                 "input": true,
-                                                "id": "ecw7f0q",
+                                                "id": "emdxn4d",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -4878,9 +4879,9 @@
                                                     "integer": ""
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -4895,8 +4896,7 @@
                                                 "showWordCount": false,
                                                 "properties": {},
                                                 "allowMultipleMasks": false,
-                                                "addons": [],
-                                                "defaultValue": null
+                                                "addons": []
                                             }
                                         ],
                                         "size": "md",
@@ -4918,12 +4918,13 @@
                                                 "key": "totalValueCaptured",
                                                 "type": "number",
                                                 "input": true,
-                                                "id": "edkh1x",
+                                                "id": "eeaged8",
                                                 "placeholder": "",
                                                 "prefix": "",
                                                 "customClass": "",
                                                 "suffix": "",
                                                 "multiple": false,
+                                                "defaultValue": null,
                                                 "protected": false,
                                                 "unique": false,
                                                 "persistent": true,
@@ -4962,9 +4963,9 @@
                                                     "integer": ""
                                                 },
                                                 "conditional": {
-                                                    "eq": "",
                                                     "show": null,
-                                                    "when": null
+                                                    "when": null,
+                                                    "eq": ""
                                                 },
                                                 "overlay": {
                                                     "style": "",
@@ -4979,8 +4980,7 @@
                                                 "showWordCount": false,
                                                 "properties": {},
                                                 "allowMultipleMasks": false,
-                                                "addons": [],
-                                                "defaultValue": null
+                                                "addons": []
                                             }
                                         ],
                                         "size": "md",
@@ -4992,12 +4992,13 @@
                                 "type": "columns",
                                 "input": false,
                                 "tableView": false,
-                                "id": "e07m2ne",
+                                "id": "e5zn028",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": false,
@@ -5019,6 +5020,7 @@
                                 "customDefaultValue": "",
                                 "calculateValue": "",
                                 "calculateServer": false,
+                                "widget": null,
                                 "attributes": {},
                                 "validateOn": "change",
                                 "validate": {
@@ -5030,9 +5032,9 @@
                                     "unique": false
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -5050,9 +5052,7 @@
                                 "addons": [],
                                 "tree": false,
                                 "lazyLoad": false,
-                                "autoAdjust": false,
-                                "defaultValue": null,
-                                "widget": null
+                                "autoAdjust": false
                             },
                             {
                                 "label": "Conclusion",
@@ -5062,12 +5062,13 @@
                                 "key": "valueRealizationConclusion",
                                 "type": "textarea",
                                 "input": true,
-                                "id": "eehqliu",
+                                "id": "ewyptdd",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "",
                                 "suffix": "",
                                 "multiple": false,
+                                "defaultValue": null,
                                 "protected": false,
                                 "unique": false,
                                 "persistent": true,
@@ -5108,9 +5109,9 @@
                                     "maxWords": ""
                                 },
                                 "conditional": {
-                                    "eq": "",
                                     "show": null,
-                                    "when": null
+                                    "when": null,
+                                    "eq": ""
                                 },
                                 "overlay": {
                                     "style": "",
@@ -5136,14 +5137,14 @@
                                 "rows": 3,
                                 "wysiwyg": false,
                                 "editor": "",
-                                "fixedSize": true,
-                                "defaultValue": null
+                                "fixedSize": true
                             }
                         ],
                         "placeholder": "",
                         "prefix": "",
                         "suffix": "",
                         "multiple": false,
+                        "defaultValue": null,
                         "protected": false,
                         "unique": false,
                         "persistent": false,
@@ -5158,6 +5159,7 @@
                         "customDefaultValue": "",
                         "calculateValue": "",
                         "calculateServer": false,
+                        "widget": null,
                         "validateOn": "change",
                         "validate": {
                             "required": false,
@@ -5175,9 +5177,7 @@
                         "addons": [],
                         "tree": false,
                         "lazyLoad": false,
-                        "id": "em4stiq",
-                        "defaultValue": null,
-                        "widget": null
+                        "id": "ezbdcw9"
                     },
                     {
                         "label": "Columns",
@@ -5280,89 +5280,7 @@
                                         "showWordCount": false,
                                         "allowMultipleMasks": false,
                                         "addons": [],
-                                        "id": "eslwo3",
-                                        "event": "",
-                                        "defaultValue": null
-                                    },
-                                    {
-                                        "label": "Create",
-                                        "action": "event",
-                                        "showValidations": false,
-                                        "theme": "primary",
-                                        "size": "md",
-                                        "block": false,
-                                        "leftIcon": "",
-                                        "rightIcon": "",
-                                        "shortcut": "",
-                                        "description": "",
-                                        "tooltip": "",
-                                        "customClass": "",
-                                        "tabindex": "",
-                                        "disableOnInvalid": false,
-                                        "hidden": false,
-                                        "autofocus": false,
-                                        "disabled": false,
-                                        "tableView": false,
-                                        "modalEdit": false,
-                                        "key": "saveAsDraft1",
-                                        "tags": [],
-                                        "properties": {},
-                                        "conditional": {
-                                            "eq": "",
-                                            "json": "",
-                                            "show": null,
-                                            "when": null
-                                        },
-                                        "customConditional": "",
-                                        "logic": [],
-                                        "attributes": {},
-                                        "overlay": {
-                                            "style": "",
-                                            "page": "",
-                                            "left": "",
-                                            "top": "",
-                                            "width": "",
-                                            "height": ""
-                                        },
-                                        "type": "button",
-                                        "hideLabel": false,
-                                        "input": true,
-                                        "placeholder": "",
-                                        "prefix": "",
-                                        "suffix": "",
-                                        "multiple": false,
-                                        "protected": false,
-                                        "unique": false,
-                                        "persistent": false,
-                                        "clearOnHide": true,
-                                        "refreshOn": "",
-                                        "redrawOn": "",
-                                        "dataGridLabel": true,
-                                        "labelPosition": "top",
-                                        "errorLabel": "",
-                                        "dbIndex": false,
-                                        "customDefaultValue": "",
-                                        "calculateValue": "",
-                                        "calculateServer": false,
-                                        "widget": {
-                                            "type": "input"
-                                        },
-                                        "validateOn": "change",
-                                        "validate": {
-                                            "required": false,
-                                            "custom": "",
-                                            "customPrivate": false,
-                                            "strictDateValidation": false,
-                                            "multiple": false,
-                                            "unique": false
-                                        },
-                                        "allowCalculateOverride": false,
-                                        "encrypted": false,
-                                        "showCharCount": false,
-                                        "showWordCount": false,
-                                        "allowMultipleMasks": false,
-                                        "addons": [],
-                                        "id": "e8vu8c8",
+                                        "id": "e6luyrg",
                                         "event": "",
                                         "defaultValue": null
                                     }
@@ -5451,7 +5369,7 @@
                                         "showWordCount": false,
                                         "allowMultipleMasks": false,
                                         "addons": [],
-                                        "id": "e6qnlza",
+                                        "id": "ehjhbaa",
                                         "event": "",
                                         "defaultValue": null
                                     }
@@ -5465,7 +5383,7 @@
                         "type": "columns",
                         "input": false,
                         "tableView": false,
-                        "id": "ejzx3to",
+                        "id": "e642grj",
                         "placeholder": "",
                         "prefix": "",
                         "customClass": "",
@@ -5543,7 +5461,7 @@
                 "addons": [],
                 "tree": true,
                 "lazyLoad": false,
-                "id": "eerurj",
+                "id": "e1xscgw",
                 "defaultValue": null,
                 "widget": null
             }

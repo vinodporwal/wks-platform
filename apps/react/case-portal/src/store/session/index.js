@@ -12,6 +12,7 @@ function bootstrap() {
     realm = hostname
   }
 
+  realm = 'localhost'
   const kc = new Keycloak({
     url: Config.LoginUrl,
     realm: realm,
