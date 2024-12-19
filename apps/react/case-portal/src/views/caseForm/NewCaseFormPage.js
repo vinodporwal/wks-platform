@@ -51,39 +51,39 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         console.log('new page form data', data)
         setForm(data)
 
-        // const level1 = data.structure.components[0]
-        // if (level1 && level1.components) {
-        //   const level2 = level1.components[0]
-        //   const level7 =
-        //     level1.components.length > 8 ? level1.components[8] : null
-        //   if (level2 && level2.components) {
-        //     if (level7 && level7.columns) {
-        //       const saveAsDraft =
-        //         level7.columns.length > 2
-        //           ? level7.columns[2].components[0]
-        //           : null
-        //       if (saveAsDraft) {
-        //         saveAsDraft.hidden = true
-        //       }
+        const level1 = data.structure.components[0]
+        if (level1 && level1.components) {
+          const level2 = level1.components[0]
+          const level7 =
+            level1.components.length > 8 ? level1.components[8] : null
+          if (level2 && level2.components) {
+            if (level7 && level7.columns) {
+              const saveAsDraft =
+                level7.columns.length > 2
+                  ? level7.columns[2].components[0]
+                  : null
+              if (saveAsDraft) {
+                saveAsDraft.hidden = true
+              }
 
-        //       const createButton =
-        //         level7.columns.length > 2
-        //           ? level7.columns[2].components[1]
-        //           : null
-        //       if (createButton) {
-        //         createButton.hidden = false
-        //       }
+              const createButton =
+                level7.columns.length > 2
+                  ? level7.columns[2].components[1]
+                  : null
+              if (createButton) {
+                createButton.hidden = false
+              }
 
-        //       const saveButton =
-        //         level7.columns.length > 3
-        //           ? level7.columns[3].components[0]
-        //           : null
-        //       if (saveButton) {
-        //         saveButton.hidden = true
-        //       }
-        //     }
-        //   }
-        // }
+              const saveButton =
+                level7.columns.length > 3
+                  ? level7.columns[3].components[0]
+                  : null
+              if (saveButton) {
+                saveButton.hidden = true
+              }
+            }
+          }
+        }
 
         setFormData({
           data: {},
@@ -385,7 +385,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               }}
               onCustomEvent={(event) => {
                 console.log('event event:', event)
-                if (event.component.key === 'saveAsDraft') {
+                if (event.component.key === 'saveAsDraft' || event.component.key === 'saveAsDraft1') {
                   onSubmitForm()
                 } else if (event.component.key === 'RecommendationSubmit3') {
                   onSubmitRecommendation()
