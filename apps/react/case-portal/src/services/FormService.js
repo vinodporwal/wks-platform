@@ -8,6 +8,8 @@ export const FormService = {
   update,
   remove,
   create,
+  getFaultCategoriesOptions,
+  getCaseStatusOptions,
 }
 
 async function create(keycloak, body) {
@@ -112,6 +114,32 @@ async function getVariableById(keycloak, processInstanceId) {
 
   try {
     const resp = await fetch(url, { headers, body })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+async function getFaultCategoriesOptions(keycloak) {
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  var url = `${Config.CaseEngineUrl}/case-definition/fault-category`
+  try {
+    const resp = await fetch(url, { headers })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+async function getCaseStatusOptions(keycloak) {
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  var url = `${Config.CaseEngineUrl}/case-definition/case-status`
+  try {
+    const resp = await fetch(url, { headers })
     return json(keycloak, resp)
   } catch (err) {
     console.log(err)

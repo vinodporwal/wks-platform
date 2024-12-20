@@ -184,7 +184,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   //     })
   // }
 
-  const getCaseInfo = (aCase) => {
+  const getCaseInfo = async (aCase) => {
+    await loadOptions(keycloak);
     console.log('Fetching case data of ', aCase)
     // setLoading(true)
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
@@ -1461,6 +1462,37 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   )
 }
 
+const fetchAndCacheOptions = async (serviceMethod, cacheKey, mapCallback) => {
+  const cachedOptions = JSON.parse(localStorage.getItem(cacheKey)) || [];
+  if (cachedOptions.length > 0) {
+    console.log(`Using cached options for ${cacheKey}`);
+    return cachedOptions;
+  }
+  try {
+    const data = await serviceMethod();
+    const options = data.map(mapCallback);
+    localStorage.setItem(cacheKey, JSON.stringify(options));
+    console.log(`Fetched and cached options for ${cacheKey}`);
+    return options;
+  } catch (error) {
+    console.error(`Error fetching options for ${cacheKey}:`, error);
+    return [];
+  }
+};
+const loadOptions = async (keycloak) => {
+  const faultCategoryOptions = await fetchAndCacheOptions(
+    () => FormService.getFaultCategoriesOptions(keycloak),
+    'faultCategoryOptions',
+    (item) => ({ label: item.name, value: `${item.id}_${item.recommendationFlag}` })
+  );
+  const caseStatusOptions = await fetchAndCacheOptions(
+    () => FormService.getCaseStatusOptions(keycloak),
+    'caseStatusOptions',
+    (item) => ({ label: item.name, value: item.id })
+  );
+  console.log('Fault Category Options:', faultCategoryOptions);
+  console.log('Case Status Options:', caseStatusOptions);
+};
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
 })
