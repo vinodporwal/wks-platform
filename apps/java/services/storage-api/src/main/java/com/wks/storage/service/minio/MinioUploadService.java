@@ -67,8 +67,10 @@ public class MinioUploadService implements UploadService {
 
 		String port = config.getUploadsPort() > 0 ? ":" + config.getUploadsPort() : "";
 
-		String callBackUrl = String.format("%s://%s%s/%s", config.getUploadsProtocol(), config.getUploadsBackendUrl(),
-				port, bucketName);
+//		String callBackUrl = String.format("%s://%s%s/%s", config.getUploadsProtocol(), config.getUploadsBackendUrl(),
+//				port, bucketName);
+
+		String callBackUrl = String.format("%s/%s", config.getUploadsBackendUrl(),bucketName);
 
 		return new UploadFileUrl(callBackUrl, formData);
 	}
