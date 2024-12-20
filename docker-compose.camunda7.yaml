@@ -25,12 +25,14 @@ services:
         links:
             - mongodb
             - camunda
+            - openldap
         env_file:
             - case-engine-rest-api.env
         environment:
             - CAMUNDA_VERSION=camunda7
             - CAMUNDA_BASE_URL=${CAMUNDA_BASE_URL}
             - MONGO_DATABASE=${MONGO_WKS_DATABASE}
+            - MONGO_DATABASE_TENANT=${MONGO_DEMO_DATA_LOADER_DATABASE}
             - MONGO_CONN=${MONGO_CONNECTION_URL}
             - KEYCLOAK_URL=${KEYCLOAK_URL}
             - OPA_URL=${OPA_URL}
@@ -39,7 +41,12 @@ services:
                 condition: service_healthy
             camunda:
                 condition: service_healthy
-
+#            openldap:
+#                condition: service_healthy  # Ensure OpenLDAP is healthy before connecting
+#        networks:
+#            - ldap_network  # Add this to match OpenLDAP's network
+      
+      
     c7-external-tasks:
         build:
             context: apps/java/services/c7-external-tasks
@@ -57,3 +64,21 @@ services:
         depends_on:
             camunda:
                 condition: service_healthy
+
+    openldap:
+        image: osixia/openldap:latest
+        container_name: my-openldap-container
+        ports:
+            - "389:389"  # Exposing LDAP port
+            - "636:636"  # Exposing LDAPS port (if needed)
+        environment:
+            - LDAP_ORGANISATION=Example Corp
+            - LDAP_DOMAIN=example.com
+            - LDAP_ADMIN_PASSWORD=admin
+#        restart: unless-stopped  # Restart the container unless stopped manually
+#        networks:
+#            - ldap_network  # Custom network for better isolation if needed
+
+#networks:
+#  ldap_network:
+#    driver: bridge  # Custom bridge network for your containers

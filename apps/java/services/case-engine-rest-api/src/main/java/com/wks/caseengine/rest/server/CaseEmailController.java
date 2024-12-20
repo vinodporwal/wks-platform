@@ -23,6 +23,10 @@ import javax.naming.directory.Attributes;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ldap.core.AttributesMapper;
+import org.springframework.ldap.core.LdapTemplate;
+import org.springframework.ldap.query.LdapQuery;
+import org.springframework.ldap.query.LdapQueryBuilder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +41,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.wks.caseengine.cases.instance.CaseInstanceNotFoundException;
 import com.wks.caseengine.cases.instance.email.CaseEmail;
 import com.wks.caseengine.cases.instance.email.CaseEmailService;
+import com.wks.caseengine.rest.config.LdapConfig;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,7 +56,13 @@ public class CaseEmailController {
 	@Autowired
 	private CaseEmailService caseEmailService;
 	
-	@GetMapping
+
+    @Autowired
+    private LdapTemplate ldapTemplate;
+
+    @Autowired
+    private LdapConfig ldapConfig;
+    @GetMapping
 	public ResponseEntity<List<CaseEmail>> find(@RequestParam(required = false) String caseInstanceBusinessKey,
 			@RequestParam(required = false) String caseDefinitionId) {
 		log.debug("Body: " + caseInstanceBusinessKey);
@@ -149,4 +160,34 @@ public class CaseEmailController {
 		return ResponseEntity.noContent().build();
 	}
 
+    @GetMapping("/ldap/users")
+    public List<Map<String, Object>> getAllActiveDirectoryUsers() {
+    	System.out.println("ratnesh controller 203");
+    	LdapQuery query = LdapQueryBuilder.query()
+//    	        .base("dc=example,dc.com") // Adjust base DN if needed
+    	        .where("objectClass").is("inetOrgPerson");
+    	
+    	List<Map<String, Object>> userNames = ldapTemplate.search(query, new AttributesMapper<Map<String, Object>>() {
+    	    @Override
+    	    public Map<String, Object> mapFromAttributes(Attributes attributes) throws NamingException {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("firstName", getAttributeValue(attributes, "cn"));
+                userMap.put("lastName", getAttributeValue(attributes, "sn"));
+                userMap.put("email", getAttributeValue(attributes, "mail"));
+    	        return userMap;
+    	    }
+    	});
+    	return userNames;
+    }
+
+    private String getAttributeValue(Attributes attrs, String attributeName) {
+        try {
+        	System.out.println("ratnesh controller 194");
+            return attrs.get(attributeName) != null ? attrs.get(attributeName).get().toString() : null;
+        } catch (NamingException e) {
+            return null;
+        }
+    }
+
+    
 }
