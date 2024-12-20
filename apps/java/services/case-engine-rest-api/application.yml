@@ -93,14 +93,15 @@ spring:
     # password: "ldaortwzpbjadvez"
     host: smtp.honeywell.com
     port: 25
+    # username: test@emailclient.com
     username: test@emailclient.com
-    # password: "ldaortwzpbjadvez"
+    # password: "test@123"
     properties:
       mail:
         smtp:
-          auth: true
+          auth: false
           starttls:
-            enable: true
+            enable: false
 
 
   ldap:
