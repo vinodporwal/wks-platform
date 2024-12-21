@@ -94,7 +94,6 @@ spring:
     host: smtp.honeywell.com
     port: 25
     # username: test@emailclient.com
-    username: test@emailclient.com
     # password: "test@123"
     properties:
       mail:

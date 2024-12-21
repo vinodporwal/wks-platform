@@ -262,13 +262,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 caseTitleField.disabled = true
               }
 
-              const caseAssign =
-                level2.components[0].columns.length > 2
-                  ? level2.components[0].columns[2].components[0]
-                  : null
-              if (caseAssign) {
-                caseAssign.disabled = true
-              }
+              // Commented as per client requirement
+              // const caseAssign =
+              //   level2.components[0].columns.length > 2
+              //     ? level2.components[0].columns[2].components[0]
+              //     : null
+              // if (caseAssign) {
+              //   caseAssign.disabled = true
+              // }
 
               const faultCategorySelect =
                 level2.components[0].columns.length > 2
