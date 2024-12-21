@@ -411,7 +411,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				}
 			    if(!caseStatusValue.equals("Under Analysis")) {
 			    	System.out.println("Calling mail send method...");
-			    	String from = "shrikant.mnt@gmail.com";
+			    	String from = "amol.borse@honeywell.com";
 			    	Map<String, Object> data = new HashMap<>();
 			    	data.put("caseTitle", "This is to inform you, the new case has been assined to you");
 					data.put("caseNumber", caseNumber);
@@ -611,7 +611,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        message.setCc(reviewers);
 	        message.setSubject("New Case: "+ caseTitle);
 	        message.setText("This is to inform you, the new case Case Number: " +caseNo + ", \n Case Title: "+caseTitle+", has been assined to you\n Case Status: "+status);
-	        message.setFrom("shrikant.mnt@gmail.com");
+	        message.setFrom("amol.borse@honeywell.com");
 	        mailSender.send(message);
 		} catch (Exception e) {
 			e.printStackTrace();
