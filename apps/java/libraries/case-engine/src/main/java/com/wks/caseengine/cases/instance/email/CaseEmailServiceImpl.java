@@ -88,7 +88,7 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 	            MimeMessage message = mailSender.createMimeMessage();
 	            MimeMessageHelper helper = new MimeMessageHelper(message, true);
 	            // helper.setFrom(from);
-	            helper.setFrom("test@emailclient.com");
+	            helper.setFrom("amol.borse@honeywell.com");
 
 	            helper.setTo(to);
 	            helper.setSubject(subject);
