@@ -47,8 +47,8 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 	    @Autowired
 	    private SpringTemplateEngine  templateEngine;
 	    
-	    @Value("${spring.mail.username}")
-	    private String from;
+	    // @Value("${spring.mail.username}")
+	    // private String from;
 
 	    
 	@Override
@@ -87,7 +87,8 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 		 try {
 	            MimeMessage message = mailSender.createMimeMessage();
 	            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-	            helper.setFrom(from);
+	            // helper.setFrom(from);
+	            helper.setFrom('test@emailclient.com');
 
 	            helper.setTo(to);
 	            helper.setSubject(subject);
