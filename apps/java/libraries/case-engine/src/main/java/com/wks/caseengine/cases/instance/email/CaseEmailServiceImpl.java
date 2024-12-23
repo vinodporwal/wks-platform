@@ -114,6 +114,8 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 
 	                }
 	            }
+	            System.out.println("From Email "+ from);
+	            System.out.println("To Email "+ to);
 
 	            mailSender.send(message);
 	            System.out.println("ratnesh email send");

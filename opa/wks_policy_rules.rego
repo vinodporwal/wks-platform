@@ -158,8 +158,26 @@ allow {
 }
 
 check_origin_request if {
-    input.allowed_origin == "*"  # Allow any origin
-} else {
+    trace("Checking localhost match")
+	input.allowed_origin == "localhost"
+    input.host = "localhost"
+} else if {
+    trace("Checking localhost with empty host")
+	input.allowed_origin == "localhost"
+    input.host = ""
+}
+else if {
+    trace("Checking wkspwr.dev.connectedplant.honeywell.com match")
+    input.allowed_origin == "wkspwr.dev.connectedplant.honeywell.com"
+    input.host == "wkspwr.dev.connectedplant.honeywell.com"
+}
+else if {
+    trace("Checking wkspwr.dev.connectedplant.honeywell.com match 2")
+    input.allowed_origin == "wkspwr.dev.connectedplant.honeywell.com"
+    input.host == ""
+}
+ else {
+    trace("Falling back to default matching logic")
     not is_null(input.org)
     startswith(input.host, input.org)
     input.allowed_origin == input.host
