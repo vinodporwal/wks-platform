@@ -414,6 +414,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
       }),
     )
       .then((data) => {
@@ -658,6 +659,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
       }),
     )
       .then((data) => {

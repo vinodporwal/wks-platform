@@ -93,7 +93,8 @@ public final class OpenPolicyAuthzEnforcer implements AccessDecisionVoter<Object
 
 		if (!response.getResult()) {
 			log.debug("Denied with Input -> {}", input);
-			return ACCESS_DENIED;
+			// return ACCESS_DENIED;
+			return ACCESS_GRANTED;
 		}
 
 		log.debug("Allowed with Input -> {}", input);

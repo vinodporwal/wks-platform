@@ -93,15 +93,14 @@ spring:
     # password: "ldaortwzpbjadvez"
     host: smtp.honeywell.com
     port: 25
-    # username: test@emailclient.com
-    # password: "test@123"
+    fromEmail:  amol.borse@honeywell.com
     properties:
       mail:
         smtp:
           auth: false
           starttls:
             enable: false
-
+      debug: true
 
   ldap:
     # url: ldap://your-ad-server:389

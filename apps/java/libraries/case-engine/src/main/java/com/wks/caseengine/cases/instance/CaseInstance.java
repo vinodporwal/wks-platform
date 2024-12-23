@@ -13,6 +13,8 @@ package com.wks.caseengine.cases.instance;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -101,4 +103,11 @@ public class CaseInstance {
 		return CaseStatus.fromValue(status).orElse(null);
 	}
 
+    public Map<String, CaseAttribute> getAttributesMap() {
+    	return this.attributes.stream()
+                .collect(Collectors.toMap(
+                        CaseAttribute::getName,          // Key mapper: extracts the attribute name
+                        attribute -> attribute           // Value mapper: keeps the whole CaseAttribute object
+                ));
+    }
 }

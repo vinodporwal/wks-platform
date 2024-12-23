@@ -141,6 +141,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     @Autowired
     private UsersRepository usersRepository;
 
+	@Value("${spring.mail.fromEmail}")
+	private String from;
     @PersistenceContext(unitName = "db2")
     private EntityManager entityManager;
 
@@ -411,7 +413,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				}
 			    if(!caseStatusValue.equals("Under Analysis")) {
 			    	System.out.println("Calling mail send method...");
-			    	String from = "amol.borse@honeywell.com";
+//			    	String from = "amol.borse@honeywell.com";
 			    	Map<String, Object> data = new HashMap<>();
 			    	data.put("caseTitle", "This is to inform you, the new case has been assined to you");
 					data.put("caseNumber", caseNumber);
@@ -611,7 +613,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        message.setCc(reviewers);
 	        message.setSubject("New Case: "+ caseTitle);
 	        message.setText("This is to inform you, the new case Case Number: " +caseNo + ", \n Case Title: "+caseTitle+", has been assined to you\n Case Status: "+status);
-	        message.setFrom("amol.borse@honeywell.com");
+	        message.setFrom(from);
 	        mailSender.send(message);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -675,8 +677,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //		usersMap.put("Balasubramanian.R.Iyer@ril.com", 'A');
 //		usersMap.put("Bhaumik.Darji@ril.com", 'A');
 //		usersMap.put("Bhautik.Kansara", 'A');
-		usersMap.put("Shrikantp2143@gmail.com", 'A');
-		usersMap.put("Amol.Borse@honeywell.com", 'A');
+//		usersMap.put("Shrikantp2143@gmail.com", 'A');
+//		usersMap.put("Amol.Borse@honeywell.com", 'A');
 		for (Map.Entry<String, Character> entry : usersMap.entrySet()) {
             String email = entry.getKey();
             char status = entry.getValue();

@@ -13,7 +13,9 @@ package com.wks.caseengine.cases.instance.command;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.gson.Gson;
@@ -44,7 +46,14 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 
 	@Override
 	public CaseInstance execute(CommandContext commandContext) {
+		try {
+		    CaseInstance existingCaseInstance = commandContext.getCaseInstanceRepository()
+		            .get(caseInstanceParam.getBusinessKey());
 
+		    mergeAttributes(existingCaseInstance, caseInstanceParam);
+		    existingCaseInstance.setOwner(caseInstanceParam.getOwner());
+		    return existingCaseInstance; // Return updated instance
+		} catch (DatabaseRecordNotFoundException e) {
 		CaseDefinition caseDefinition = retrieveCaseDefinition(commandContext);
 
 		caseInstanceParam.addAttribute(
@@ -72,6 +81,7 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 				Optional.of(businessKey), Optional.of(caseInstanceProcessVariable));
 
 		return preparedCaseInstance;
+		}
 	}
 
 	private ProcessVariable generateCaseInstanceProcessVariable(CommandContext commandContext,
@@ -103,6 +113,13 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 			throw new CaseDefinitionNotFoundException(e.getMessage(), e);
 		}
 		return caseDefinition;
+	}
+	private void mergeAttributes(CaseInstance existingCaseInstance, CaseInstance newCaseInstance) {
+	    Map<String, CaseAttribute> existingAttributes = existingCaseInstance.getAttributesMap();
+	    for (CaseAttribute newAttr : newCaseInstance.getAttributes()) {
+	        existingAttributes.put(newAttr.getName(), newAttr); // Overwrite or add new attributes
+	    }
+	    existingCaseInstance.setAttributes(new ArrayList<>(existingAttributes.values()));
 	}
 
 }
