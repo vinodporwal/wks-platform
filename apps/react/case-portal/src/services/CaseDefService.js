@@ -6,6 +6,7 @@ export const CaseDefService = {
   update,
   remove,
   getAll,
+  getCaseDefinitionUsers
 }
 
 async function create(keycloak, body) {
@@ -78,6 +79,22 @@ async function getAll(keycloak) {
 
   var url = `${Config.CaseEngineUrl}/case-definition`
 
+  try {
+    const resp = await fetch(url, { headers })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+async function getCaseDefinitionUsers(keycloak) {
+  if (keycloak.isTokenExpired()) {
+    keycloak.logout({ redirectUri: window.location.origin })
+  }
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  var url = `${Config.CaseEngineUrl}/case-definition/users`
   try {
     const resp = await fetch(url, { headers })
     return json(keycloak, resp)

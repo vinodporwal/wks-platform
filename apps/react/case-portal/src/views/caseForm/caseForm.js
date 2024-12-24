@@ -32,7 +32,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProcessDefService } from 'services/ProcessDefService'
 import { Comments } from 'views/caseComment/Comments'
-import { CaseService, FormService } from '../../services'
+import { CaseService, FormService, CaseDefService } from '../../services'
 import { tryParseJSONObject } from '../../utils/jsonStringCheck'
 import Documents from './Documents'
 import { Snackbar, SnackbarContent, CircularProgress } from '@mui/material'
@@ -1493,8 +1493,12 @@ const loadOptions = async (keycloak) => {
     'caseStatusOptions',
     (item) => ({ label: item.name, value: item.id })
   );
-  console.log('Fault Category Options:', faultCategoryOptions);
-  console.log('Case Status Options:', caseStatusOptions);
+
+  const caseDefinitionUsers = await fetchAndCacheOptions(
+    () => CaseDefService.getCaseDefinitionUsers(keycloak),
+    'caseAssignedOptions',
+    (item) => ({ label: item.userId, value: item.emailId })
+  );
 };
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
