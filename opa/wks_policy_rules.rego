@@ -161,6 +161,7 @@ check_origin_request if {
 
     input.allowed_origin == "*"  # Allow any origin
     input.host == "*"            # Allow any host
+    input.org == "*"  # Allow any origin
 } else {
     not is_null(input.org)  # Ensure 'org' is not null
     startswith(input.host, input.org) # Host starts with org
