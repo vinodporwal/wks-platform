@@ -158,15 +158,19 @@ allow {
 }
 
 check_origin_request if {
-    trace("Checking origin:",  input.org)
-    trace("Checking host:",  input.host)
-    trace("Checking allowed_origin:", input.allowed_origin)
 
     input.allowed_origin == "*"  # Allow any origin
+    input.host == "*"            # Allow any host
 } else {
-    not is_null(input.org)
-    startswith(input.host, input.org)
-    input.allowed_origin == input.host
+    not is_null(input.org)  # Ensure 'org' is not null
+    startswith(input.host, input.org) # Host starts with org
+    input.allowed_origin == input.org  # Match allowed_origin with org
+} else {
+    is_null(input.host)    # Allow null host
+    input.allowed_origin == input.org  # Match allowed_origin with org
+} else {
+    input.host == ""     # Allow empty host
+    input.allowed_origin == input.org  # Match allowed_origin with org
 }
 
 is_user_profile {
