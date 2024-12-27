@@ -39,10 +39,13 @@ services:
         command:
             - run
             - --server
+            - --log-level
+            - debug
             - /etc/rules/wks_policy_rules.rego
         volumes:
             - ./opa:/etc/rules:ro
-
+        environment:
+            - OPA_LOG_LEVEL=debug
     keycloak:
         image: quay.io/keycloak/keycloak:20.0.3
         command: start-dev

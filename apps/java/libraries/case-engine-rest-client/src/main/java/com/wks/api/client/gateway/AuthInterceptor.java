@@ -76,6 +76,7 @@ public class AuthInterceptor implements ClientHttpRequestInterceptor {
 			String responseBody = responseEntity.getBody();
 			String accessToken = JsonParser.parseString(responseBody).getAsJsonObject().get("access_token")
 					.getAsString();
+			System.out.println("Access Token " + accessToken);
 			return accessToken;
 		} else {
 			throw new RuntimeException("Failed to retrieve token");
