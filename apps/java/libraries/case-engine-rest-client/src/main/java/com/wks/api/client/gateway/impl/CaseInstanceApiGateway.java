@@ -49,6 +49,9 @@ public class CaseInstanceApiGateway extends ApiGateway {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 
+		System.out.println("BaseUrl " + baseUrl);
+		System.out.println("caseInstanceUrl " + caseInstanceUrl);
+		System.out.println("caseInstance " + caseInstance);
 		HttpEntity<String> entity = new HttpEntity<>(caseInstance, headers);
 		restTemplate.postForEntity(baseUrl + caseInstanceUrl + "/save", entity, String.class);
 	}
