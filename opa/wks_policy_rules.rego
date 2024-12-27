@@ -171,6 +171,9 @@ check_origin_request if {
 } else {
     input.host == ""     # Allow empty host
     input.allowed_origin == input.org  # Match allowed_origin with org
+} else {
+    input.host == ""             # Allow empty host
+    not is_null(input.org)       # Ensure 'org' is not null
 }
 
 is_user_profile {
