@@ -702,7 +702,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       })
   }
 
-  const handleMainTabChanged = (event, newValue) => {
+  const handleMainTabChanged = async (event, newValue) => {
+    if(newValue == 1){
+      const caseData = await CaseService.getCaseById(
+        keycloak,
+        aCase.businessKey,
+      )
+      const documents = caseData?.documents || []
+      setDocuments(documents)
+    }
     setMainTabIndex(newValue)
   }
 
@@ -909,7 +917,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
       <!-- Case Information Panel -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Information</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
           <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
@@ -921,7 +929,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
       <!-- Case Details -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Details</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
           <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
@@ -933,7 +941,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
       <!-- Associated Faults -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Associated Faults</h3>
         <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
         ${formatDataGrid(containerData.dataGrid2, getLabel)}
       </div>
@@ -983,13 +991,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           <p><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
         </div>
       </div>
-    </div>
   `
 
     // Append uploaded files section at the bottom
     if (uploadedFiles.length > 0) {
       content += `
-    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
+      <div style="border: 1px solid #333; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
       <h3 style="margin-bottom: 10px;">Uploaded Files</h3>
       <ul style="list-style: none; padding: 0; margin: 0;">
         ${uploadedFiles
@@ -1005,6 +1012,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           )
           .join('')}
       </ul>
+      </div>
     </div>
     <script>
       // Add this function dynamically to handle file download

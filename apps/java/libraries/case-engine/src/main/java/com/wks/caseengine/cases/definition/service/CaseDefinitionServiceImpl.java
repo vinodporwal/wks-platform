@@ -781,6 +781,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	            newRecommendationNode.put("recommendationReviewer", newRecommendation.getRecommendationReviewer());
 	            newRecommendationNode.put("recommendationNo1", newRecommendation.getRecommendationNo1());
 	            newRecommendationNode.put("RecommendationSubmit", newRecommendation.getRecommendationSubmit());
+	            newRecommendationNode.put("RecommendationConfirmSAP3", newRecommendation.getRecommendationConfirmSAP3());
 
 	            // Append the new recommendation node to the dataGrid1 array
 	            
