@@ -223,8 +223,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
           if(!isDraft){
-            level1.disabled = true;
+          const recommendation =
+            level1.components.length > 6 ? level1.components[6] : null;
+          level1.components.forEach((component) => {
+            if (component.id !== recommendation.id) {
+              component.disabled = true;
           }
+          });
+        }
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
@@ -238,11 +244,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               caseDescriptionField.disabled = false
             }
 
-            const recommendation =
-              level1.components.length > 5 ? level1.components[5] : null
-            if (recommendation) {
-              recommendation.disabled = true
-            }
+            // const recommendation =
+            //   level1.components.length > 5 ? level1.components[5] : null
+            // if (recommendation) {
+            //   recommendation.disabled = true
+            // }
 
             if (level2.components[0] && level2.components[0].columns) {
               const caseNo =
@@ -1506,6 +1512,11 @@ const loadOptions = async (keycloak) => {
     () => CaseDefService.getCaseDefinitionUsers(keycloak),
     'caseAssignedOptions',
     (item) => ({ label: item.userId, value: item.emailId })
+  );
+  const caseDefinitionCategories = await fetchAndCacheOptions(
+    () => CaseDefService.getCaseDefinitionCategories(keycloak),
+    'categoryOptions',
+    (item) => ({ label: item.name, value: item.id })
   );
 };
 const Transition = React.forwardRef(function Transition(props, ref) {

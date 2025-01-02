@@ -262,6 +262,30 @@ export const CaseList = ({ status, caseDefId }) => {
       // },
 
       {
+        field: 'creationDate',
+        headerName: 'Created On',
+        width: 150,
+        valueGetter: (value, row) => {
+          const date = row?.creationDate
+          if (date) {
+            const dateObj = new Date(date)
+            const day = String(dateObj.getDate()).padStart(2, '0')
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+            const year = String(dateObj.getFullYear())
+            const hours = String(dateObj.getHours()).padStart(2, '0')
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+            return `${day}-${month}-${year} ${hours}:${minutes}`
+          }
+          return ''
+        },
+      },
+      {
+        field: 'ownerName',
+        headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
+        width: 150,
+        valueGetter: (value, row) => row?.owner?.name,
+      },
+      {
         field: 'action',
         headerName: 'Action',
         sortable: false,
