@@ -3339,7 +3339,16 @@
                                                             "when": null
                                                         },
                                                         "customConditional": "",
-                                                        "logic": [],
+                                                        "logic": [
+                                                            {
+                                                                "name": "disableAssign",
+                                                                "trigger": {
+                                                                    "type": "javascript",
+                                                                    "javascript": "if (row.recommendationNo1) {\r\n  instance.disabled \u003d true;\r\n} else {\r\n  instance.disabled \u003d false;\r\n}\r\n"
+                                                                },
+                                                                "actions": []
+                                                            }
+                                                        ],
                                                         "attributes": {},
                                                         "overlay": {
                                                             "style": "",
@@ -3542,7 +3551,16 @@
                                                             "when": null
                                                         },
                                                         "customConditional": "",
-                                                        "logic": [],
+                                                        "logic": [
+                                                            {
+                                                                "name": "disableEquipment",
+                                                                "trigger": {
+                                                                    "type": "javascript",
+                                                                    "javascript": "if (row.recommendationNo1) {\r\n  instance.disabled \u003d true;\r\n} else {\r\n  instance.disabled \u003d false;\r\n}\r\n"
+                                                                },
+                                                                "actions": []
+                                                            }
+                                                        ],
                                                         "attributes": {},
                                                         "overlay": {
                                                             "style": "",
@@ -3793,7 +3811,16 @@
                                                             "when": null
                                                         },
                                                         "customConditional": "",
-                                                        "logic": [],
+                                                        "logic": [
+                                                            {
+                                                                "name": "disableReviewer",
+                                                                "trigger": {
+                                                                    "type": "javascript",
+                                                                    "javascript": "if (row.recommendationNo1) {\r\n  instance.disabled \u003d true;\r\n} else {\r\n  instance.disabled \u003d false;\r\n}\r\n"
+                                                                },
+                                                                "actions": []
+                                                            }
+                                                        ],
                                                         "attributes": {},
                                                         "overlay": {
                                                             "style": "",
