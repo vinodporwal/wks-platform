@@ -47,7 +47,10 @@ services:
         environment:
             - OPA_LOG_LEVEL=debug
     keycloak:
-        image: quay.io/keycloak/keycloak:20.0.3
+        # image: quay.io/keycloak/keycloak:20.0.3
+        build:
+            context: .
+            dockerfile: Dockerfile
         command: start-dev
         environment:
             KC_HEALTH_ENABLED: "true"
@@ -65,6 +68,9 @@ services:
             - 8082:8080
         volumes:
             - keycloak:/opt/keycloak/data/
+            # Ensure krb5.conf and keytab files are passed into the container
+            - ./krb5.conf:/etc/krb5.conf:ro
+            - ./keycloak.keytab:/opt/keycloak/data/keycloak.keytab:ro
 
     storage-api:
         build:
