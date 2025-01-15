@@ -20,6 +20,70 @@ const App = () => {
   const [menu, setMenu] = useState({ items: [] })
   const [formChecked, setFormChecked] = useState(false)
 
+  // useEffect(() => {
+  //   localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
+
+  //   const { keycloak } = sessionStore.bootstrap()
+
+  //   const storedToken = localStorage.getItem('keycloakToken')
+  //   if (storedToken) {
+  //     keycloak.token = storedToken
+  //   }
+       
+  //   keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
+
+  //   // keycloak.init({ onLoad: 'check-sso' }).then((authenticated) => {
+  //     setKeycloak(keycloak)
+  //     setAuthenticated(authenticated)
+
+  //     if (authenticated) {
+  //       localStorage.setItem('keycloakToken', keycloak.token)
+  //       localStorage.setItem('keycloak', JSON.stringify(keycloak))
+  //     }
+
+  //     buildMenuItems(keycloak)
+  //     RegisterInjectUserSession(keycloak)
+  //     RegisteOptions(keycloak)
+  //     forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
+
+  //     if (!formChecked) {
+  //       checkAndPostForm(keycloak)
+  //       setFormChecked(true) // Ensure it runs only once per session
+  //     }
+  //   })
+
+  //   keycloak.onAuthRefreshError = () => {
+  //     window.location.reload()
+  //   }
+
+  //   keycloak.onTokenExpired = () => {
+  //     keycloak
+  //       .updateToken(70)
+  //       .then((refreshed) => {
+  //         if (refreshed) {
+  //           console.info('Token refreshed: ' + refreshed)
+  //           RegisterInjectUserSession(keycloak)
+  //           RegisteOptions(keycloak)
+
+  //           localStorage.setItem('keycloakToken', keycloak.token)
+  //         } else {
+  //           console.info(
+  //             'Token not refreshed, valid for ' +
+  //               Math.round(
+  //                 keycloak.tokenParsed.exp +
+  //                   keycloak.timeSkew -
+  //                   new Date().getTime() / 1000,
+  //               ) +
+  //               ' seconds',
+  //           )
+  //         }
+  //       })
+  //       .catch(() => {
+  //         console.error('Failed to refresh token')
+  //         localStorage.removeItem('keycloakToken')
+  //       })
+  //   }
+  // }, []) 
   useEffect(() => {
     localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
 
@@ -30,14 +94,17 @@ const App = () => {
       keycloak.token = storedToken
     }
 
-    keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
-      setKeycloak(keycloak)
-      setAuthenticated(authenticated)
+    keycloak.init({ 
+      onLoad: 'check-sso',
+      silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
+    }).then((authenticated) => {
 
       if (authenticated) {
         localStorage.setItem('keycloakToken', keycloak.token)
         localStorage.setItem('keycloak', JSON.stringify(keycloak))
-      }
+
+        setKeycloak(keycloak)
+        setAuthenticated(authenticated)
 
       buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
@@ -47,6 +114,9 @@ const App = () => {
       if (!formChecked) {
         checkAndPostForm(keycloak)
         setFormChecked(true) // Ensure it runs only once per session
+        }
+      } else {
+        keycloak.login();
       }
     })
 
