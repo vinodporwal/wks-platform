@@ -268,12 +268,14 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
 			equipmentDisplayName = equipemnets.get(0).getDisplayName();
 			equipmentName = equipemnets.get(0).getName();
+			break;
+		}
+		for(FaultHistoryModel faultHistory: faultHistorys) {
 			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
 			if(!eventEnrichmentPkIdStr.isEmpty()) {
 				long eventEnrichmentPkId = Long.parseLong(eventEnrichmentPkIdStr);
 				eventEnrichmentsPKIds.add(eventEnrichmentPkId);
 			}
-			break;
 		}
 		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
 		
