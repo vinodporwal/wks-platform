@@ -79,9 +79,13 @@ public class FetchRecordsServiceImpl {
 	
 	 public List<FaultHistoryModel> getFaultHistories(List<Long> eventIds) {
 	     try {   
+//		 String sql = "SELECT *" +
+//	                     "FROM FaultHistory" +
+//	                     " WHERE EventEnrichment_PK_ID IN (:eventIds)";
+	    	 
 		 String sql = "SELECT *" +
-	                     "FROM case_management.dbo.FaultHistory" +
-	                     " WHERE EventEnrichment_PK_ID IN (:eventIds)";
+                     "FROM FaultHistory" +
+                     " WHERE FaultHistoryClusteredId IN (:eventIds)";
 	        
 	     // Convert List<Long> to a comma-separated String for SQL IN clause
 		    String ids = eventIds.stream()
@@ -272,8 +276,8 @@ public class FetchRecordsServiceImpl {
 	
 	public List<String> findNodesByHierarchyNameAndDisplayName(String displayName, String hierarchyName) {
 	    String sql = "SELECT hn.HierarchyNode_PK_ID " +
-	                 "FROM case_management.dbo.HierarchyNodes hn " +
-	                 "JOIN case_management.dbo.HierarchyTrees ht ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+	                 "FROM HierarchyNodes hn " +
+	                 "JOIN HierarchyTrees ht ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
 	                 "WHERE hn.IsDeleted = 0 " +
 	                 "AND hn.DisplayNamePath LIKE CONCAT('%', ?, '%') " +
 	                 "AND ht.HierarchyType = ?";

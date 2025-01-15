@@ -260,18 +260,24 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
 		System.out.println(eventIds);
 		System.out.println(eventIds.get(0));
-		List<EventEnrichmentModel> eventEnrichments = fetchRecords.getEventEnrichments(eventIds);
 		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
 		String equipmentDisplayName = "";
 		String equipmentName = "";
+		List<Long> eventEnrichmentsPKIds = new ArrayList<>();
 		for(FaultHistoryModel faultHistory: faultHistorys) {
 			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
 			equipmentDisplayName = equipemnets.get(0).getDisplayName();
 			equipmentName = equipemnets.get(0).getName();
+			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
+			if(!eventEnrichmentPkIdStr.isEmpty()) {
+				long eventEnrichmentPkId = Long.parseLong(eventEnrichmentPkIdStr);
+				eventEnrichmentsPKIds.add(eventEnrichmentPkId);
+			}
 			break;
 		}
 		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
 		
+		List<EventEnrichmentModel> eventEnrichments = fetchRecords.getEventEnrichments(eventEnrichmentsPKIds);
 		for(EventEnrichmentModel eventEnrichment: eventEnrichments) {
 			String eventId = eventEnrichment.getEventPkId();
 			String eventCategoryId = eventEnrichment.getEventCategoryPkId();
