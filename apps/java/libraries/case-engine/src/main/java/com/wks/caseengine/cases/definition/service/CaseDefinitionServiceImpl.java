@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -640,7 +641,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	@Override
 	public List<Case> getCaseDetails(String displayName, String hierarchyName) {
 		List<String> assetsPKIds = fetchRecords.findNodesByHierarchyNameAndDisplayName(displayName, hierarchyName);
-		List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
+		String result = assetsPKIds.stream()
+			    .map(id -> "\'" + id + "\'") // Add quotes to each item
+			    .collect(Collectors.joining(", ")); // Join with a comma and space
+			System.out.println("AssetPkIds: " + result);		List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
 		return cases;
 	}
 	
