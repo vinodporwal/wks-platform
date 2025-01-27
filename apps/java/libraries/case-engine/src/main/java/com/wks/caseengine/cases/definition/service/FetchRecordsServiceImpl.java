@@ -289,6 +289,9 @@ public class FetchRecordsServiceImpl {
                 "AND hn.Path LIKE CONCAT('%', ?, '%') " +
                 "AND ht.HierarchyType = ?";
 
+		System.out.println("SQL query " + sql);
+		System.out.println("AssetName " + displayName);
+		System.out.println("Hierarchy " + hierarchyName);
 	    return jdbcTemplate.query(
 	        sql, 
 	        new Object[]{displayName, hierarchyName}, 
