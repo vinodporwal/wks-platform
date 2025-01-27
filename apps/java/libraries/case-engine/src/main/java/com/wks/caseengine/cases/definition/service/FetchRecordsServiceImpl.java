@@ -275,12 +275,19 @@ public class FetchRecordsServiceImpl {
 	}
 	
 	public List<String> findNodesByHierarchyNameAndDisplayName(String displayName, String hierarchyName) {
-	    String sql = "SELECT hn.HierarchyNode_PK_ID " +
-	                 "FROM HierarchyNodes hn " +
-	                 "JOIN HierarchyTrees ht ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
-	                 "WHERE hn.IsDeleted = 0 " +
-	                 "AND hn.DisplayNamePath LIKE CONCAT('%', ?, '%') " +
-	                 "AND ht.HierarchyType = ?";
+//	    String sql = "SELECT hn.HierarchyNode_PK_ID " +
+//	                 "FROM HierarchyNodes hn " +
+//	                 "JOIN HierarchyTrees ht ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+//	                 "WHERE hn.IsDeleted = 0 " +
+//	                 "AND hn.DisplayNamePath LIKE CONCAT('%', ?, '%') " +
+//	                 "AND ht.HierarchyType = ?";
+		
+		String sql = "SELECT hn.HierarchyNode_PK_ID " +
+                "FROM HierarchyNodes hn " +
+                "JOIN HierarchyTrees ht ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                "WHERE hn.IsDeleted = 0 " +
+                "AND hn.Path LIKE CONCAT('%', ?, '%') " +
+                "AND ht.HierarchyType = ?";
 
 	    return jdbcTemplate.query(
 	        sql, 
