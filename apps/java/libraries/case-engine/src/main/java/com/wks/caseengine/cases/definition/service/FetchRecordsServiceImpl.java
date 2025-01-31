@@ -157,7 +157,7 @@ public class FetchRecordsServiceImpl {
 	
 	public List<FunctionalLocation> getParentFunctionalLocation(String assetName) {
 		try {
-			 String sql = "SELECT * FROM functional_location WHERE uas_asset_name = ?";
+			 String sql = "SELECT * FROM dbo.functional_location WHERE uas_asset_name = ?";
 			    
 			    Map<String, Object> params = new HashMap<>();
 			    params.put("FUNCTIONAL LOCATION ASSET NAME: ", assetName);
@@ -175,7 +175,7 @@ public class FetchRecordsServiceImpl {
 	
 	public List<FunctionalLocation> getFunctionaLocationsByFLName(String parentFLName) {
 		try {
-			 String sql = "SELECT * FROM functional_location WHERE parent_fl_name = ?";
+			 String sql = "SELECT * FROM dbo.functional_location WHERE parent_fl_name = ?";
 			    
 			    Map<String, Object> params = new HashMap<>();
 			    params.put("FUNCTIONAL LOCATION PARENT FUNCATIONAL LOCATION NAME: ", parentFLName);
