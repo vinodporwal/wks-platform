@@ -261,7 +261,8 @@ public class FetchRecordsServiceImpl {
 
 	public List<HierarchyNodesModel> gethierarchyNodePKID(String assetName) {
 		try {
-			String sql = "SELECT * FROM HierarchyNodes WHERE DisplayNamePath LIKE ? AND IsDeleted = 0";
+//			String sql = "SELECT * FROM HierarchyNodes WHERE DisplayNamePath LIKE ? AND IsDeleted = 0";
+			String sql = "SELECT * FROM HierarchyNodes WHERE Path LIKE ? AND IsDeleted = 0";
 
 	        return jdbcTemplate.query(sql, new Object[]{assetName}, (rs, rowNum) -> {
 	        	HierarchyNodesModel hierarchyNode = new HierarchyNodesModel();
