@@ -19,5 +19,5 @@ COPY keycloak.keytab /opt/keycloak/data/keycloak.keytab
 ENV KRB5_CONFIG=/etc/krb5.conf
 ENV KRB5_KTNAME=/opt/keycloak/data/keycloak.keytab
 
-# Start Keycloak using the default entry point
+## Start Keycloak using the default entry point
 #ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev"]
