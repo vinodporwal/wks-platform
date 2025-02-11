@@ -27,10 +27,11 @@ const App = () => {
 
     const storedToken = localStorage.getItem('keycloakToken')
     if (storedToken) {
-      keycloak.token = storedToken
+      keycloak.token = storedToken;
     }
 
-    keycloak.init({ onLoad: 'check-sso', checkLoginIframe: true }).then((authenticated) => {
+    keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
+    // keycloak.init({ onLoad: 'check-sso', checkLoginIframe: true }).then((authenticated) => {
       if(!authenticated){
         keycloak.login();
       }
@@ -88,6 +89,7 @@ const App = () => {
 
   async function forceLogoutIfUserNoMinimalRoleForSystem(keycloak) {
     if (!accountStore.hasAnyRole(keycloak)) {
+      console.log('User dont have required roles.');
       localStorage.removeItem('keycloakToken')
       return keycloak.logout({ redirectUri: window.location.origin })
     }
