@@ -7,7 +7,7 @@ RUN mkdir -p /var/cache/yum && \
     chmod -R 777 /var/cache/yum
 
 # Install Kerberos libraries using microdnf
-RUN  microdnf update -y && microdnf install -y krb5-workstation krb5-libs && microdnf clean all && rm -rf /var/cache/yum/*
+RUN  microdnf update -y && microdnf install -y krb5-workstation krb5-libs nano vim && microdnf clean all && rm -rf /var/cache/yum/*
 
 # Copy Kerberos configuration
 COPY krb5.conf /etc/krb5.conf
