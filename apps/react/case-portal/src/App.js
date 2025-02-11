@@ -30,7 +30,7 @@ const App = () => {
       keycloak.token = storedToken
     }
 
-    keycloak.init({ onLoad: 'login-required', checkLoginIframe: false }).then((authenticated) => {
+    keycloak.init({ onLoad: 'login-required', checkLoginIframe: true }).then((authenticated) => {
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
 
