@@ -15,6 +15,7 @@ COPY krb5.conf /etc/krb5.conf
 # Copy the keytab file
 COPY keycloak.keytab /opt/keycloak/data/keycloak.keytab
 
+RUN chmod 600 /opt/keycloak/data/keycloak.keytab
 # Set environment variables for Kerberos
 ENV KRB5_CONFIG=/etc/krb5.conf
 ENV KRB5_KTNAME=/opt/keycloak/data/keycloak.keytab
