@@ -279,12 +279,13 @@ export const CaseList = ({ status, caseDefId }) => {
           return ''
         },
       },
-      {
-        field: 'ownerName',
-        headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
-        width: 150,
-        valueGetter: (value, row) => row?.owner?.name,
-      },
+
+      // {
+      //   field: 'ownerName',
+      //   headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
+      //   width: 150,
+      //   valueGetter: (value, row) => row?.owner?.name,
+      // },
       {
         field: 'action',
         headerName: 'Action',

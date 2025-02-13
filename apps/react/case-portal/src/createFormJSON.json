@@ -3341,12 +3341,23 @@
                                                         "customConditional": "",
                                                         "logic": [
                                                             {
-                                                                "name": "disableAssign",
+                                                                    "name": "Disable assigned to when recommendationNo is filled",
                                                                 "trigger": {
                                                                     "type": "javascript",
-                                                                    "javascript": "if (row.recommendationNo1) {\r\n  instance.disabled \u003d true;\r\n} else {\r\n  instance.disabled \u003d false;\r\n}\r\n"
+                                                                        "javascript": "result \u003d !!(row.recommendationNo1 \u0026\u0026 row.recommendationNo1.trim() !\u003d\u003d \"\");\r\n"
                                                                 },
-                                                                "actions": []
+                                                                    "actions": [
+                                                                        {
+                                                                            "name": "Disable Assigned To",
+                                                                            "type": "property",
+                                                                            "property": {
+                                                                                "label": "Disabled",
+                                                                                "value": "disabled",
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "state": true
+                                                                        }
+                                                                    ]
                                                             }
                                                         ],
                                                         "attributes": {},
@@ -3553,12 +3564,23 @@
                                                         "customConditional": "",
                                                         "logic": [
                                                             {
-                                                                "name": "disableEquipment",
+                                                                    "name": "Disable equipment when recommendationNo1 is filled.",
                                                                 "trigger": {
                                                                     "type": "javascript",
-                                                                    "javascript": "if (row.recommendationNo1) {\r\n  instance.disabled \u003d true;\r\n} else {\r\n  instance.disabled \u003d false;\r\n}\r\n"
+                                                                        "javascript": "result \u003d !!(row.recommendationNo1 \u0026\u0026 row.recommendationNo1.trim() !\u003d\u003d \"\");\r\n"
                                                                 },
-                                                                "actions": []
+                                                                    "actions": [
+                                                                        {
+                                                                            "name": "Disable Component",
+                                                                            "type": "property",
+                                                                            "property": {
+                                                                                "label": "Disabled",
+                                                                                "value": "disabled",
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "state": true
+                                                                        }
+                                                                    ]
                                                             }
                                                         ],
                                                         "attributes": {},
@@ -3813,12 +3835,23 @@
                                                         "customConditional": "",
                                                         "logic": [
                                                             {
-                                                                "name": "disableReviewer",
+                                                                    "name": "Disable Recommendation Reviewer if recommendationNo1 is filled",
                                                                 "trigger": {
                                                                     "type": "javascript",
-                                                                    "javascript": "if (row.recommendationNo1) {\r\n  instance.disabled \u003d true;\r\n} else {\r\n  instance.disabled \u003d false;\r\n}\r\n"
+                                                                        "javascript": "result \u003d !!(row.recommendationNo1 \u0026\u0026 row.recommendationNo1.trim() !\u003d\u003d \"\");\r\n\r\n"
                                                                 },
-                                                                "actions": []
+                                                                    "actions": [
+                                                                        {
+                                                                            "name": "Disable Component",
+                                                                            "type": "property",
+                                                                            "property": {
+                                                                                "label": "Disabled",
+                                                                                "value": "disabled",
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "state": true
+                                                                        }
+                                                                    ]
                                                             }
                                                         ],
                                                         "attributes": {},

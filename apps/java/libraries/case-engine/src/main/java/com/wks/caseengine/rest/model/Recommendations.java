@@ -29,6 +29,7 @@ public class Recommendations {
     
     private String caseNo;
 
+    private String createdBy;
 	public String getRecommendationHeadline() {
 		return recommendationHeadline;
 	}
@@ -139,5 +140,11 @@ public class Recommendations {
 
 	public void setCaseNo(String caseNo) {
 		this.caseNo = caseNo;
+	}
+	public String getCreatedBy() {
+		return createdBy;
+	}
+	public void setCreatedBy(String createdBy) {
+		this.createdBy = createdBy;
 	}
 }

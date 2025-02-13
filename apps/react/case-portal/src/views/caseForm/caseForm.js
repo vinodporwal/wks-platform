@@ -607,6 +607,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       deleteRowButton4: false,
       RecommendationSubmit3: false,
       caseNo: aCase?.caseNo,
+      createdBy: keycloak.idTokenParsed.sub,
     }
     setApiBody(apiBodyData)
     setIsConfirmationOpen(true)

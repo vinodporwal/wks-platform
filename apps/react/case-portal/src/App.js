@@ -41,6 +41,7 @@ const App = () => {
       if (authenticated) {
         localStorage.setItem('keycloakToken', keycloak.token)
         localStorage.setItem('keycloak', JSON.stringify(keycloak))
+        localStorage.setItem('userId', keycloak.idTokenParsed.sub)
       }
 
       buildMenuItems(keycloak)
