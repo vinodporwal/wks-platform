@@ -49,9 +49,9 @@ FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy offline css, js, and libs (directly from the source code, not from the build output)
-# COPY /app/public/css /usr/share/nginx/html/css
-# COPY /app/public/js /usr/share/nginx/html/js
-# COPY /app/public/libs /usr/share/nginx/html/libs
+COPY ./public/css /usr/share/nginx/html/css
+COPY ./public/js /usr/share/nginx/html/js
+COPY ./public/libs /usr/share/nginx/html/libs
 # Copy NGINX configuration file
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
