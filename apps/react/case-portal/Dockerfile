@@ -48,6 +48,10 @@ FROM nginx:alpine
 # Copy built files from the previous stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Copy offline css, js, and libs
+COPY ./public/css /usr/share/nginx/html/css
+COPY ./public/js /usr/share/nginx/html/js
+COPY ./public/libs /usr/share/nginx/html/libs
 # Copy NGINX configuration file
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

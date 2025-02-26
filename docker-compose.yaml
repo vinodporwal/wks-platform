@@ -1,5 +1,5 @@
 version: '3.7'
-name: wks-platform
+name: digitalaop-wks
 services:
     minio:
         image: quay.io/minio/minio
@@ -10,8 +10,8 @@ services:
             timeout: 20s
             retries: 3
         ports:
-            - 9000:9000
-            - 9090:9090
+            - 9001:9000
+            - 9091:9090
         environment:
             - MINIO_ROOT_USER=${MINIO_ROOT_USER}
             - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
@@ -21,7 +21,7 @@ services:
     mongodb:
         image: mongo:6.0.14
         ports:
-            - 27017:27017
+            - 27018:27017
         healthcheck:
             test: mongosh --eval 'db.stats().ok' --quiet
             interval: 10s
@@ -32,15 +32,31 @@ services:
             - mongo:/data/db:rw
 
     opa:
-        image: openpolicyagent/opa:edge-static
+        #image: openpolicyagent/opa:edge-static
+        image: openpolicyagent/opa:0.70.0-static
         ports:
-            - 8181:8181        
+            - 8281:8181        
         command:
             - run
             - --server
             - /etc/rules/wks_policy_rules.rego
         volumes:
             - ./opa:/etc/rules:ro
+    postgres:
+        image: postgres:14
+        environment:
+            - POSTGRES_DB=keycloak
+            - POSTGRES_USER=keycloak
+            - POSTGRES_PASSWORD=keycloak
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER}']
+            interval: 5s
+            timeout: 5s
+            retries: 10
+        ports:
+        - "5432:5432"
+        volumes:
+            - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
     keycloak:
         image: quay.io/keycloak/keycloak:20.0.3
@@ -49,6 +65,11 @@ services:
             KC_HEALTH_ENABLED: "true"
             KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
             KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+            KC_DB: postgres
+            KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+            KC_DB_USERNAME: keycloak
+            KC_DB_PASSWORD: keycloak
+            KC_TRANSACTION_XA_ENABLED: false
         healthcheck:
             test: curl --fail http://localhost:8080/health/ready || exit 1
             interval: 10s
@@ -56,15 +77,18 @@ services:
             start_period: 5s
             timeout: 20s
         ports:
-            - 8082:8080
+            - 8092:8080
         volumes:
             - keycloak:/opt/keycloak/data/
+        depends_on:
+            postgres:
+                condition: service_healthy
 
     storage-api:
         build:
             context: apps/java/services/storage-api
         ports:
-            - 8085:8085
+            - 8086:8085
         links:
             - minio
         environment:

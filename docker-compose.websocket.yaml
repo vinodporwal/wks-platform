@@ -5,7 +5,7 @@ services:
     build:
       context: apps/node/websocket-publisher
     ports:
-      - "8484:8484"
+      - "8485:8484"
     environment:
         - LOG_LEVEL=${WEBSOCKET_LOG_LEVEL}
         - WEBSOCKET_PORT=8484

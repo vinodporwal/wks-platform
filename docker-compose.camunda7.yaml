@@ -1,12 +1,12 @@
 version: '3.7'
-name: wks-platform
+name: digitalaop-wks
 services:
 
     camunda:
         image: ${CAMUNDA_DOCKER_IMAGE}:${CAMUNDA7_VERSION}
         command: ./camunda.sh --rest --webapps
         ports:
-            - 8080:8080
+            - 8090:8080
         healthcheck:
             test: curl --fail http://localhost:8080/engine-rest/version || exit 1
             interval: 10s
@@ -21,10 +21,12 @@ services:
         build:
             context: apps/java/services/case-engine-rest-api
         ports:
-            - 8081:8081
+            - 8091:8081
         links:
             - mongodb
             - camunda
+        env_file:
+            - case-engine-rest-api.env
         environment:
             - CAMUNDA_VERSION=camunda7
             - CAMUNDA_BASE_URL=${CAMUNDA_BASE_URL}

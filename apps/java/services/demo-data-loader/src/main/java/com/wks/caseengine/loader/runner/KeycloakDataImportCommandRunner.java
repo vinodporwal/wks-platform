@@ -96,6 +96,8 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 	@Value("${keycloak.data.import.password}")
 	private String userPassword;
 
+	@Value("${keycloak.data.import.realm.display.name}")
+	private String realmDisplayName;
 	@Autowired
 	private GsonBuilder gsonBuilder;
 
@@ -154,8 +156,17 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 		emailToCaseClient.setOptionalClientScopes(createOptionalClientScopes());
 		clients.add(emailToCaseClient);
 
+		try {
+		    RealmRepresentation existingRealm = null;
+		    try {
+		        existingRealm = keycloak.realms().realm(realmName).toRepresentation();
+		    } catch (Exception e) {
+		        log.info("Realm does not exist, creating a new realm.");
+		    }
+		    if (existingRealm == null) {
 		RealmRepresentation realm = new RealmRepresentation();
 		realm.setRealm(realmName);
+		        realm.setDisplayName(realmDisplayName);
 		realm.setUsers(createUsers());
 		realm.setClients(clients);
 		realm.setClientScopes(createScopes());
@@ -166,15 +177,25 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 		realm.setRoles(roleRepresentation);
 		realm.setGroups(createGroups());
 
-		try {
 
 			keycloak.realms().create(realm);
+		        log.info("Realm created: " + realmName);
+		    } else {
+		        log.info("Realm exists, updating the realm.");
 
+		        existingRealm.setDisplayName(realmDisplayName);
+		        existingRealm.setUsers(createUsers());
+		        existingRealm.setClients(clients);
+		        existingRealm.setClientScopes(createScopes());
+		        existingRealm.setGroups(createGroups());
+		        keycloak.realms().realm(realmName).update(existingRealm);
+		        log.info("Realm updated: " + realmName);
+		    }
 			addUserToGroups(keycloak, externalTasksClientId, Arrays.asList("user", "manager", "email-to-case"));
 			addUserToGroups(keycloak, emailToCaseClientId, Arrays.asList("email-to-case"));
 
 		} catch (Exception e) {
-			log.error("error to create keycloack", e);
+		    log.error("Error creating or updating Keycloak realm", e);
 		}
 
 		log.info("End of data importing");
@@ -185,7 +206,7 @@ public class KeycloakDataImportCommandRunner implements CommandLineRunner {
 	}
 
 	private List<String> createDefaultClientScopes() {
-		return Arrays.asList("web-origins", "acr", "org", "roles", "profile", "email");
+		return Arrays.asList("web-origins", "acr", "org", "roles", "profile", "email", "plants");
 	}
 
 	private List<UserRepresentation> createUsers() {

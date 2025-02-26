@@ -14,7 +14,7 @@ logging:
 spring.mvc.converters.preferred-json-mapper: gson    
 
 camunda.bpm.client:
-  base-url: ${CAMUNDA_BASE_URL:http://localhost:8080/engine-rest}
+  base-url: ${CAMUNDA_BASE_URL:http://localhost:8090/engine-rest}
   disable-backoff-strategy: ${DISABLE_BACKOFF_STRATEGY:true}
   max-tasks: 1
   async-response-timeout: 120000
@@ -23,8 +23,8 @@ camunda.bpm.client:
     username: ${CAMUNDA_USERNAME:demo}
     password: ${CAMUNDA_PASSWORD:demo}
 
-wks-case-api.base.url: ${WKS_CASE_API_URL:http://localhost:8081}
-wks-case-api.auth.url: ${KEYCLOAK_URL:http://localhost:8082/realms/localhost/protocol/openid-connect/token}
+wks-case-api.base.url: ${WKS_CASE_API_URL:http://localhost:8091}
+wks-case-api.auth.url: ${KEYCLOAK_URL:http://localhost:8092/realms/localhost/protocol/openid-connect/token}
 wks-case-api.auth.client_id: ${WKS_CLIENT_ID:wks-external-tasks}
 wks-case-api.auth.client_secret: ${WKS_CLIENT_SECRET:replaceme}
 wks-case-api.auth.grant_type: client_credentials
@@ -43,4 +43,4 @@ management.endpoint.health.show-details: never
 wks.kafka.enabled: ${KAFKA_ENABLED:false}
 wks.kafka.topic.case-create: ${KAFKA_TOPIC_CASE_CREATE:case-create}
 wks.kafka.topic.case-email-outbound: ${KAFKA_TOPIC_CASE_EMAIL_OUTBOUND:case-email-outbound}
-spring.kafka.bootstrap-servers: ${KAFKA_URL:localhost:9092}
+spring.kafka.bootstrap-servers: ${KAFKA_URL:localhost:9094}

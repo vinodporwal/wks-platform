@@ -16,4 +16,4 @@ services:
                 REACT_APP_NOVU_ENABLED: ${NOVU_ENABLED}     
                 REACT_APP_NOVU_PUBLISHER_API_URL: ${NOVU_PUBLISHER_API_URL}   
         ports:
-            - 3001:80
+            - 3003:80

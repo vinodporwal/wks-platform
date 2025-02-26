@@ -18,16 +18,16 @@ spring.mvc.converters.preferred-json-mapper: gson
 
 wks.bpm.engine.camunda.version: ${CAMUNDA_VERSION:camunda7}
 
-camunda.bpm.client.base-url: ${CAMUNDA_BASE_URL:http://localhost:8080/engine-rest}
+camunda.bpm.client.base-url: ${CAMUNDA_BASE_URL:http://localhost:8090/engine-rest}
 
-zeebe.client.broker.gateway-address: ${CAMUNDA8_ZEEBE_GATEWAY_ADDRESS:127.0.0.1:26500}
+zeebe.client.broker.gateway-address: ${CAMUNDA8_ZEEBE_GATEWAY_ADDRESS:127.0.0.1:26501}
 zeebe.client.security.plaintext: true
 camunda.operate.client.enabled: true
-camunda.operate.client.url: ${CAMUNDA8_OPERATE_URL:http://localhost:8281}
+camunda.operate.client.url: ${CAMUNDA8_OPERATE_URL:http://localhost:8381}
 camunda.operate.client.username: ${CAMUNDA8_OPERATE_USERNAME:demo}
 camunda.operate.client.password: ${CAMUNDA8_OPERATE_PASSWORD:demo}
 
-camunda.tasklist.client.url: ${CAMUNDA8_TASKLIST_URL:http://localhost:8182}
+camunda.tasklist.client.url: ${CAMUNDA8_TASKLIST_URL:http://localhost:8282}
 camunda.tasklist.client.username: ${CAMUNDA8_TASKLIST_USERNAME:demo}
 camunda.tasklist.client.password: ${CAMUNDA8_TASKLIST_PASSWORD:demo}
 
@@ -38,12 +38,44 @@ spring.data.mongodb.database.max-pool-size: 5
 spring.data.mongodb.database.max-connection-idle-time: 3000
 spring.data.mongodb.database.max-connection-life-time: 3000
 
-opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
-keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
+opa.url: ${OPA_URL:http://localhost:8281/v1/data/wks/authz/allow}
+keycloak.url: ${KEYCLOAK_URL:http://localhost:8092}
 
 management.health.mongo.enabled: false
 management.health.reds.enabled: false
-management.endpoints.web.exposure.include: health,info
+spring:
+  datasource:
+    # Configuration for Database 1
+    db1:
+      #url: jdbc:sqlserver://216.48.180.83;databaseName=AOP;trustServerCertificate=true
+      #username: sa
+      #password: "#Qwer123"
+      url: ${SQL_SERVER_1_URL}
+      username: ${SQL_SERVER_1_USERNAME}
+      password: ${SQL_SERVER_1_PASSWORD}
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 5
+    # Configuration for Database 2
+    db2:
+      # url: jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true
+      url: ${SQL_SERVER_2_URL}
+      username: ${SQL_SERVER_2_USERNAME}
+      password: ${SQL_SERVER_2_PASSWORD}
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
+        format_sql: true
+management.endpoints.web.exposure.include: health,info, metrics,db
 management.endpoint.health.show-details: never
 
 case.engine.case-creation-process: case-instance-create
