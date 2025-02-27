@@ -1,8 +1,8 @@
 version: '3.7'
-name: digitalaop-wks
+name: wks-platform
 services:
 
-    camunda:
+    camunda-aop:
         image: ${CAMUNDA_DOCKER_IMAGE}:${CAMUNDA7_VERSION}
         command: ./camunda.sh --rest --webapps
         ports:
@@ -14,17 +14,17 @@ services:
             start_period: 5s
             timeout: 10s
         depends_on:
-            mongodb:
+            mongodb-aop:
                 condition: service_healthy
                 
-    case-engine-rest-api:
+    case-engine-rest-api-aop:
         build:
             context: apps/java/services/case-engine-rest-api
         ports:
             - 8091:8081
         links:
-            - mongodb
-            - camunda
+            - mongodb-aop
+            - camunda-aop
         env_file:
             - case-engine-rest-api.env
         environment:
@@ -35,17 +35,17 @@ services:
             - KEYCLOAK_URL=${KEYCLOAK_URL}
             - OPA_URL=${OPA_URL}
         depends_on:
-            mongodb:
+            mongodb-aop:
                 condition: service_healthy
-            camunda:
+            camunda-aop:
                 condition: service_healthy
 
-    c7-external-tasks:
+    c7-external-tasks-aop:
         build:
             context: apps/java/services/c7-external-tasks
         links:
-            - camunda
-            - case-engine-rest-api
+            - camunda-aop
+            - case-engine-rest-api-aop
         environment:
             - CAMUNDA_BASE_URL=${CAMUNDA_BASE_URL}
             - CAMUNDA_USERNAME=${CAMUNDA_USERNAME}
@@ -55,5 +55,5 @@ services:
             - WEBSOCKET_ENABLED=${WEBSOCKET_ENABLED}
             - DISABLE_BACKOFF_STRATEGY=${DISABLE_BACKOFF_STRATEGY}
         depends_on:
-            camunda:
+            camunda-aop:
                 condition: service_healthy

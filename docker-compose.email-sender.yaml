@@ -2,11 +2,11 @@ version: '3.7'
 
 services:
 
-  email-sender:
+  email-sender-aop:
     build:
       context: apps/node/email-sender
     links:      
-        - case-engine-rest-api
+        - case-engine-rest-api-aop
     environment:
         - LOG_LEVEL=${EMAIL_SENDER_LOG_LEVEL}
         - KAFKA_URL=${KAFKA_URL}
@@ -17,5 +17,5 @@ services:
         - JWT_TOKEN_CLIENT_SECRET=${MAIL_TO_CASE_JWT_TOKEN_CLIENT_SECRET}
         - JWT_TOKEN_GRANT_TYPE=${MAIL_TO_CASE_JWT_TOKEN_GRANT_TYPE}
     depends_on:
-      - kafka
-      - zookeeper                    
+      - kafka-aop
+      - zookeeper-aop                    

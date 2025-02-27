@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-    case-portal:
+    case-portal-aop:
         build:
             context: apps/react/case-portal
             args:
