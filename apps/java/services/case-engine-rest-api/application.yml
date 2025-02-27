@@ -6,7 +6,7 @@ logging:
       root: INFO
       com.wks: INFO
       com.wks.api.security: DEBUG
-      com.wks.caseengine: INFO
+      com.wks.caseengine: DUBUG
       com.wks.caseengine.command: INFO
       com.wks.caseengine.pagination: INFO
       org.springframework.web.client.RestTemplate: INFO

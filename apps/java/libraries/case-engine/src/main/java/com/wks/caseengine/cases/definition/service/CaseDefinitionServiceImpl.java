@@ -361,6 +361,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		System.out.println("Printing Payload...");
 		System.out.println("Getting data..");
 		System.out.println("Is Draft :"+caseData.getIsDraft());
+		System.out.println("**************************************IN SAVE CASE*************************************************");
 		if(caseNo==null || caseNo.length()==0) {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
@@ -394,6 +395,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		}
 		
 		//sending Emails part
+		System.out.println("**************************************sending Emails part*************************************************");
+		System.out.println("************************************ Is Draft"+ caseData.getIsDraft());
 		if(!caseData.getIsDraft().equals("y")) {
 			attributeValue = attributeValue.replace("\\\"", "\"");
 			System.out.println("Attribute Value: " + attributeValue);
