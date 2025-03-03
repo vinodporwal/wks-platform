@@ -1,98 +1,53 @@
 import { DataService } from 'services/DataService'
-import { Autocomplete, TextField } from '@mui/material'
 import ASDataGrid from './ASDataGrid'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSession } from 'SessionStoreContext'
+import { useSelector } from 'react-redux'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { useGridApiRef } from '@mui/x-data-grid'
+const headerMap = generateHeaderNames()
 
 const BusinessDemand = () => {
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
   const [bdData, setBDData] = useState([])
+  const [open1, setOpen1] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const menu = useSelector((state) => state.menu)
+  const { sitePlantChange } = menu
+  const apiRef = useGridApiRef()
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  const unsavedChangesRef = React.useRef({
+    unsavedRows: {},
+    rowsBeforeChange: {},
+  })
+
+  const fetchData = async () => {
+    try {
+      const data = await DataService.getBDData(keycloak)
+
+      const formattedData = data.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+      }))
+      setBDData(formattedData)
+    } catch (error) {
+      console.error('Error fetching Turnaround data:', error)
+    }
+  }
 
   useEffect(() => {
-    function transformData(inputData) {
-      const months = [
-        'apr24',
-        'may24',
-        'jun24',
-        'jul24',
-        'aug24',
-        'sep24',
-        'oct24',
-        'nov24',
-        'dec24',
-        'jan25',
-        'feb25',
-        'mar25',
-      ]
-
-      const transformed = {}
-
-      inputData.forEach((item) => {
-        const productKey = item.NormParametersId
-
-        if (!transformed[productKey]) {
-          transformed[productKey] = {
-            product: productKey,
-            apr24: item.apr24,
-            may24: item.may24,
-            jun24: item.jun24,
-            jul24: item.jul24,
-            aug24: item.aug24,
-            sep24: item.aug24,
-            oct24: item.oct24,
-            nov24: item.nov24,
-            dec24: item.dec24,
-            jan25: item.jan25,
-            feb25: item.feb25,
-            mar25: item.mar25,
-            averageTPH: item.TPH,
-            remark: item.Remark,
-          }
-        }
-
-        const monthKey = Object.keys(item).find((key) =>
-          key.match(/^[A-Za-z]{3}-\d{2}$/),
-        )
-
-        if (monthKey) {
-          const formattedMonth = monthKey
-            .toLowerCase()
-            .replace('-25', '25')
-            .replace('-24', '24')
-          transformed[productKey][formattedMonth] = item[monthKey]
-        }
-
-        transformed[productKey].averageTPH =
-          item.Average || transformed[productKey].averageTPH
-        transformed[productKey].remark =
-          item.Remark || transformed[productKey].remark
-      })
-
-      return Object.values(transformed)
-    }
-
-    const fetchData = async () => {
-      try {
-        const data = await DataService.getBDData(keycloak)
-        const transformedData = transformData(data)
-
-        const formattedData = transformedData.map((item, index) => ({
-          ...item,
-          id: index,
-        }))
-
-        setBDData(formattedData)
-      } catch (error) {
-        console.error('Error fetching Turnaround data:', error)
-      }
-    }
-
     const getAllProducts = async () => {
       try {
         const data = await DataService.getAllProducts(keycloak)
         const productList = data.map((product) => ({
-          id: product.id,
+          id: product.id.toLowerCase(), // Convert id to lowercase
           displayName: product.displayName,
         }))
         setAllProducts(productList)
@@ -102,104 +57,334 @@ const BusinessDemand = () => {
         // handleMenuClose();
       }
     }
-    getAllProducts()
+
+    // Initial data fetch on mount or when selectedPlant changes
     fetchData()
-  }, [])
+    getAllProducts()
+    console.log('sitePlant--->', sitePlantChange)
+    console.log(sitePlantChange, 'changed plant or site')
+  }, [sitePlantChange, keycloak])
 
   const colDefs = [
     {
-      field: 'product',
+      field: 'normParameterId',
       headerName: 'Product',
       editable: true,
       minWidth: 225,
       valueGetter: (params) => {
+        return params || ''
+      },
+      valueFormatter: (params) => {
         const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : params
+        return product ? product.displayName : ''
       },
       renderEditCell: (params) => {
-        const { id } = params
-
+        const { value } = params
         return (
-          <Autocomplete
-            options={allProducts}
-            getOptionLabel={(option) => option.displayName}
-            value={
-              allProducts.find((product) => product.id === params.value) || null
-            }
-            disableClearable
-            onChange={(event, newValue) => {
+          <select
+            value={value || ''}
+            onChange={(event) => {
+              // console.log('event',event);
+
               params.api.setEditCellValue({
                 id: params.id,
-                field: 'product',
-                value: newValue ? newValue.id : '',
+                field: 'normParameterId',
+                value: event.target.value,
               })
             }}
-            onInputChange={(event, newInputValue) => {
-              if (event && event.type === 'keydown' && event.key === 'Enter') {
-                const selectedProduct = allProducts.find(
-                  (product) =>
-                    product.displayName.toLowerCase() ===
-                    newInputValue.toLowerCase(),
-                )
-                params.api.setEditCellValue({
-                  id: params.id,
-                  field: 'product',
-                  value: selectedProduct ? selectedProduct.id : '',
-                })
-              }
+            style={{
+              width: '100%',
+              padding: '5px',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
             }}
-            renderInput={(params) => (
-              <TextField {...params} variant='outlined' size='small' />
-            )}
-            fullWidth
-          />
+          >
+            {allProducts.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.displayName}
+              </option>
+            ))}
+          </select>
         )
       },
     },
-    { field: 'apr24', headerName: 'Apr-24', editable: true },
-    { field: 'may24', headerName: 'May-24', editable: true },
-    { field: 'jun24', headerName: 'Jun-24', editable: true },
-    { field: 'jul24', headerName: 'Jul-24', editable: true },
-    { field: 'aug24', headerName: 'Aug-24', editable: true },
-    { field: 'sep24', headerName: 'Sep-24', editable: true },
-    { field: 'oct24', headerName: 'Oct-24', editable: true },
-    { field: 'nov24', headerName: 'Nov-24', editable: true },
-    { field: 'dec24', headerName: 'Dec-24', editable: true },
-    { field: 'jan25', headerName: 'Jan-25', editable: true },
-    { field: 'feb25', headerName: 'Feb-25', editable: true },
-    { field: 'mar25', headerName: 'Mar-25', editable: true },
+
     {
-      field: 'averageTPH',
-      headerName: 'Average TPH',
-      width: 150,
-      editable: false,
-      renderHeader: () => (
-        <div style={{ textAlign: 'center', fontWeight: 'normal' }}>
-          <div>Average</div>
-          <div>TPH</div>
-        </div>
-      ),
+      field: 'april',
+      headerName: headerMap['apr'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
     },
+    {
+      field: 'may',
+      headerName: headerMap['may'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'june',
+      headerName: headerMap['jun'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'july',
+      headerName: headerMap['jul'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'aug',
+      headerName: headerMap['aug'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'sep',
+      headerName: headerMap['sep'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'oct',
+      headerName: headerMap['oct'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'nov',
+      headerName: headerMap['nov'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'dec',
+      headerName: headerMap['dec'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'jan',
+      headerName: headerMap['jan'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'feb',
+      headerName: headerMap['feb'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'march',
+      headerName: headerMap['mar'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+
+    // { field: 'avgTph', headerName: 'AVG TPH', minWidth: 150, editable: true },
     { field: 'remark', headerName: 'Remark', minWidth: 150, editable: true },
+    {
+      field: 'idFromApi',
+      headerName: 'idFromApi',
+    },
   ]
+  const processRowUpdate = React.useCallback((newRow, oldRow) => {
+    const rowId = newRow.id
+    console.log(newRow)
+
+    // Extract numeric values from month fields
+    const months = [
+      'jan',
+      'feb',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'aug',
+      'sep',
+      'oct',
+      'nov',
+      'dec',
+    ]
+    const values = months
+      .map((month) => Number(newRow[month])) // Convert to number
+      .filter((value) => !isNaN(value)) // Filter out NaN values
+
+    console.log(values)
+    // Calculate new average TPH
+    const newAvgTph =
+      values.length > 0
+        ? values.reduce((sum, val) => sum + val, 0) / values.length
+        : 0
+    console.log(newAvgTph)
+    // Update the avgTph value
+    newRow.avgTph = newAvgTph
+    setBDData((prevData) =>
+      prevData.map((row) => (row.id === rowId ? newRow : row)),
+    )
+
+    // Store edited row data
+    unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
+    // onRowUpdate.updatedRow(unsavedChangesRef.current.unsavedRows)
+    console.log(unsavedChangesRef.current.unsavedRows)
+
+    // Keep track of original values before editing
+    if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
+      unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
+    }
+
+    return newRow
+  }, [])
+
+  const saveChanges = React.useCallback(async () => {
+    console.log(
+      'Edited Data: ',
+      Object.values(unsavedChangesRef.current.unsavedRows),
+    )
+    try {
+      // if (title === 'Business Demand') {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      saveBusinessDemandData(data)
+      // }
+
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
+    } catch (error) {
+      // setIsSaving(false);
+    }
+  }, [apiRef])
+  const saveBusinessDemandData = async (newRows) => {
+    try {
+      console.log('saveBusiness API Called')
+      let plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      const businessData = newRows.map((row) => ({
+        april: row.april,
+        may: row.may,
+        june: row.june,
+        july: row.july,
+        aug: row.aug,
+        sep: row.sep,
+        oct: row.oct,
+        nov: row.nov,
+        dec: row.dec,
+        jan: row.jan,
+        feb: row.feb,
+        march: row.march,
+        remark: row.remark,
+        avgTph: row.avgTph,
+        year: '2024-25',
+        plantId: plantId,
+        normParameterId: row.normParameterId,
+        id: row.idFromApi,
+      }))
+
+      const response = await DataService.saveBusinessDemandData(
+        plantId,
+        businessData, // Now sending an array of rows
+        keycloak,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Business Demand data saved successfully!',
+        severity: 'success',
+      })
+      // fetchData()
+      return response
+    } catch (error) {
+      console.error('Error saving Business Demand data:', error)
+    } finally {
+      fetchData()
+    }
+  }
+  const handleDeleteClick = async (id, params) => {
+    try {
+      const maintenanceId =
+        id?.maintenanceId ||
+        params?.row?.idFromApi ||
+        params?.row?.maintenanceId ||
+        params?.NormParameterMonthlyTransactionId
+
+      console.log(maintenanceId, params, id)
+
+      // Ensure UI state updates before the deletion process
+      setOpen1(true)
+      setDeleteId(maintenanceId)
+
+      // Perform the delete operation
+      // return await DataService.deleteBusinessDemandData(maintenanceId, keycloak)
+    } catch (error) {
+      console.error(`Error deleting Business data:`, error)
+    } finally {
+      // fetchData()
+    }
+  }
 
   return (
     <div>
       <ASDataGrid
         columns={colDefs}
         rows={bdData}
-        title='Business Demand Data'
+        title='Business Demand'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
         paginationOptions={[100, 200, 300]}
+        processRowUpdate={processRowUpdate}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        apiRef={apiRef}
+        deleteId={deleteId}
+        setDeleteId={setDeleteId}
+        setOpen1={setOpen1}
+        open1={open1}
+        handleDeleteClick={handleDeleteClick}
+        fetchData={fetchData}
         permissions={{
           showAction: true,
           addButton: true,
           deleteButton: true,
           editButton: true,
-          showUnit: true,
+          showUnit: false,
           saveWithRemark: true,
+          saveBtn: true,
         }}
       />
     </div>

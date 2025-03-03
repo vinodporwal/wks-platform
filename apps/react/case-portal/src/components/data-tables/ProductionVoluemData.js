@@ -1,132 +1,230 @@
+import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
-import { Autocomplete, TextField } from '@mui/material'
-import ASDataGrid from './ASDataGrid'
-import { useEffect, useState } from 'react'
 import { useSession } from 'SessionStoreContext'
+import ASDataGrid from './ASDataGrid'
+import { useGridApiRef } from '@mui/x-data-grid'
+import { useSelector } from 'react-redux'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+const headerMap = generateHeaderNames()
 
 const ProductionvolumeData = () => {
   const keycloak = useSession()
-  const [productOptions, setProductOptions] = useState([])
-  const [productionData, setProductionData] = useState([])
+  const [productNormData, setProductNormData] = useState([])
+  const [allProducts, setAllProducts] = useState([])
+  const apiRef = useGridApiRef()
+  const menu = useSelector((state) => state.menu)
+  const { sitePlantChange } = menu
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  useEffect(() => {
-    getAllProducts()
-  }, [])
-
-  const getAllProducts = async () => {
+  const unsavedChangesRef = React.useRef({
+    unsavedRows: {},
+    rowsBeforeChange: {},
+  })
+  const saveBusinessDemandData = async (newRows) => {
     try {
-      const data = await DataService.getAllProducts(keycloak)
-      console.log('API Response:', data)
-      // Assuming each product object has a "name" property
-      const products = data.map((item) => item.displayName || item.name || item)
-      setProductOptions(products)
+      console.log('saveBusiness API Called')
+      let plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      const businessData = newRows.map((row) => ({
+        april: row.april,
+        may: row.may,
+        june: row.june,
+        july: row.july,
+        aug: row.aug,
+        sep: row.sep,
+        oct: row.oct,
+        nov: row.nov,
+        dec: row.dec,
+        jan: row.jan,
+        feb: row.feb,
+        march: row.march,
+        remark: row.remark,
+        avgTph: row.avgTph,
+        year: '2024-25',
+        plantId: plantId,
+        normParameterId: row.normParameterId,
+        id: row.idFromApi,
+      }))
+
+      const response = await DataService.saveBusinessDemandData(
+        plantId,
+        businessData, // Now sending an array of rows
+        keycloak,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Business Demand data saved successfully!',
+        severity: 'success',
+      })
+      // fetchData()
+      return response
     } catch (error) {
-      console.error('Error fetching product:', error)
+      console.error('Error saving Business Demand data:', error)
+    } finally {
+      fetchData()
     }
   }
+  const processRowUpdate = React.useCallback((newRow, oldRow) => {
+    const rowId = newRow.id
+    console.log(newRow)
 
-  // Create row data based on the productOptions list
-  useEffect(() => {
-    if (productOptions.length > 0) {
-      const rows = productOptions.map((option, index) => ({
-        id: index + 1,
-        product: option,
-        apr24: Math.floor(Math.random() * 100),
-        may24: Math.floor(Math.random() * 100),
-        jun24: Math.floor(Math.random() * 100),
-        jul24: Math.floor(Math.random() * 100),
-        aug24: Math.floor(Math.random() * 100),
-        sep24: Math.floor(Math.random() * 100),
-        oct24: Math.floor(Math.random() * 100),
-        nov24: Math.floor(Math.random() * 100),
-        dec24: Math.floor(Math.random() * 100),
-        jan25: Math.floor(Math.random() * 100),
-        feb25: Math.floor(Math.random() * 100),
-        mar25: Math.floor(Math.random() * 100),
-        averageTPH: Math.floor(Math.random() * 100),
-        remark: 'Good',
-      }))
-      setProductionData(rows)
+    // Extract numeric values from month fields
+    const months = [
+      'jan',
+      'feb',
+      'march',
+      'april',
+      'may',
+      'june',
+      'july',
+      'aug',
+      'sep',
+      'oct',
+      'nov',
+      'dec',
+    ]
+    const values = months
+      .map((month) => Number(newRow[month])) // Convert to number
+      .filter((value) => !isNaN(value)) // Filter out NaN values
+
+    console.log(values)
+    // Calculate new average TPH
+    const newAvgTph =
+      values.length > 0
+        ? values.reduce((sum, val) => sum + val, 0) / values.length
+        : 0
+    console.log(newAvgTph)
+    // Update the avgTph value
+    newRow.avgTph = newAvgTph
+    setProductNormData((prevData) =>
+      prevData.map((row) => (row.id === rowId ? newRow : row)),
+    )
+
+    // Store edited row data
+    unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
+    // onRowUpdate.updatedRow(unsavedChangesRef.current.unsavedRows)
+    console.log(unsavedChangesRef.current.unsavedRows)
+
+    // Keep track of original values before editing
+    if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
+      unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
-  }, [productOptions])
+
+    return newRow
+  }, [])
+
+  const saveChanges = React.useCallback(async () => {
+    console.log(
+      'Edited Data: ',
+      Object.values(unsavedChangesRef.current.unsavedRows),
+    )
+    try {
+      // if (title === 'Business Demand') {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      saveBusinessDemandData(data)
+      // }
+
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
+    } catch (error) {
+      // setIsSaving(false);
+    }
+  }, [apiRef])
+  const fetchData = async () => {
+    try {
+      const data = await DataService.getAOPData(keycloak)
+      const formattedData = data.map((item) => ({
+        ...item,
+        id: item.id,
+      }))
+      setProductNormData(formattedData)
+    } catch (error) {
+      console.error('Error fetching SlowDown data:', error)
+    }
+  }
+  useEffect(() => {
+    const getAllProducts = async () => {
+      try {
+        const data = await DataService.getAllProducts(keycloak)
+        const productList = data.map((product) => ({
+          id: product.id,
+          displayName: product.displayName,
+        }))
+        setAllProducts(productList)
+      } catch (error) {
+        console.error('Error fetching product:', error)
+      }
+    }
+
+    getAllProducts()
+    fetchData()
+  }, [sitePlantChange, keycloak])
 
   const productionColumns = [
+    { field: 'id', headerName: 'ID' },
     {
-      field: 'product',
-      headerName: 'Product',
-      editable: true,
-      filterable: true,
-      minWidth: 125,
-
-      renderEditCell: (params) => {
-        const isEditable = params.id > productOptions.length
-        return (
-          <Autocomplete
-            options={productOptions}
-            value={params.value || ''}
-            disableClearable
-            disabled={!isEditable}
-            onChange={(event, newValue) => {
-              params.api.setEditCellValue({
-                id: params.id,
-                field: 'product',
-                value: newValue,
-              })
-            }}
-            onInputChange={(event, newInputValue) => {
-              if (event && event.type === 'keydown' && event.key === 'Enter') {
-                params.api.setEditCellValue({
-                  id: params.id,
-                  field: 'product',
-                  value: newInputValue,
-                })
-              }
-            }}
-            renderInput={(params) => (
-              <TextField {...params} variant='outlined' size='small' />
-            )}
-            fullWidth
-          />
-        )
-      },
-    },
-    { field: 'apr24', headerName: 'Apr-24', editable: true },
-    { field: 'may24', headerName: 'May-24', editable: true },
-    { field: 'jun24', headerName: 'Jun-24', editable: true },
-    { field: 'jul24', headerName: 'Jul-24', editable: true },
-    { field: 'aug24', headerName: 'Aug-24', editable: true },
-    { field: 'sep24', headerName: 'Sep-24', editable: true },
-    { field: 'oct24', headerName: 'Oct-24', editable: true },
-    { field: 'nov24', headerName: 'Nov-24', editable: true },
-    { field: 'dec24', headerName: 'Dec-24', editable: true },
-    { field: 'jan25', headerName: 'Jan-25', editable: true },
-    { field: 'feb25', headerName: 'Feb-25', editable: true },
-    { field: 'mar25', headerName: 'Mar-25', editable: true },
-    {
-      field: 'averageTPH',
-      headerName: 'Average TPH',
-      width: 150,
+      field: 'aopCaseId',
+      headerName: 'Case ID',
+      minWidth: 120,
       editable: false,
-      renderHeader: () => (
-        <div style={{ textAlign: 'center', fontWeight: 'normal' }}>
-          <div>Average</div>
-          <div>TPH</div>
-        </div>
-      ),
     },
-    { field: 'remark', headerName: 'Remark', minWidth: 150, editable: true },
+    { field: 'aopType', headerName: 'Type', minWidth: 80 },
+    { field: 'aopYear', headerName: 'Year', minWidth: 80 },
+    { field: 'plantFkId', headerName: 'Plant ID', minWidth: 80 },
+    { field: 'normItem', headerName: 'Product', minWidth: 80, editable: false },
+
+    { field: 'april', headerName: headerMap['apr'], editable: true },
+    { field: 'may', headerName: headerMap['may'], editable: true },
+    { field: 'june', headerName: headerMap['jun'], editable: true },
+    { field: 'july', headerName: headerMap['jul'], editable: true },
+
+    { field: 'aug', headerName: headerMap['aug'], editable: true },
+    { field: 'sep', headerName: headerMap['sep'], editable: true },
+    { field: 'oct', headerName: headerMap['oct'], editable: true },
+
+    { field: 'nov', headerName: headerMap['nov'], editable: true },
+    { field: 'dec', headerName: headerMap['dec'], editable: true },
+    { field: 'jan', headerName: headerMap['jan'], editable: true },
+    { field: 'feb', headerName: headerMap['feb'], editable: true },
+    { field: 'march', headerName: headerMap['mar'], editable: true },
+    { field: 'avgTph', headerName: 'AVG TPH', minWidth: 150, editable: false },
+    { field: 'aopStatus', headerName: 'Remark', minWidth: 75, editable: false },
   ]
 
   return (
     <div>
       <ASDataGrid
         columns={productionColumns}
-        rows={productionData}
-        title='Product Volume Data'
+        rows={productNormData}
+        title='Production Volume Data'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
         paginationOptions={[100, 200, 300]}
+        processRowUpdate={processRowUpdate}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        apiRef={apiRef}
+        // deleteId={deleteId}
+        // setDeleteId={setDeleteId}
+        // setOpen1={setOpen1}
+        // open1={open1}
+        // handleDeleteClick={handleDeleteClick}
+        fetchData={fetchData}
         permissions={{
           showAction: true,
           addButton: false,
@@ -134,6 +232,8 @@ const ProductionvolumeData = () => {
           editButton: true,
           showUnit: false,
           saveWithRemark: true,
+          showRefreshBtn: true,
+          saveBtn: true,
         }}
       />
     </div>

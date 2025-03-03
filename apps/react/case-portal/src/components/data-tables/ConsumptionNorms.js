@@ -1,33 +1,103 @@
 import { DataService } from 'services/DataService'
 import DataGridTable from './ASDataGrid'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSession } from 'SessionStoreContext'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { useSelector } from 'react-redux'
+import { useGridApiRef } from '@mui/x-data-grid'
 
 const NormalOpNormsScreen = () => {
   const keycloak = useSession()
   const [csData, setCsData] = useState([])
+  const [csDataTransformed, setCsDataTransformed] = useState([])
   const [allProducts, setAllProducts] = useState([])
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await DataService.getConsumptionNormsData(keycloak)
-        // const transformedData = transformData(data)
+  const headerMap = generateHeaderNames()
+  const menu = useSelector((state) => state.menu)
+  const { sitePlantChange } = menu
+  const [open1, setOpen1] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const apiRef = useGridApiRef()
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const unsavedChangesRef = React.useRef({
+    unsavedRows: {},
+    rowsBeforeChange: {},
+  })
+  const processRowUpdate = React.useCallback((newRow, oldRow) => {
+    const rowId = newRow.id
+    console.log(newRow)
+    const start = new Date(newRow.maintStartDateTime)
+    const end = new Date(newRow.maintEndDateTime)
+    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
+    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
 
-        console.log(data)
+    console.log(`Duration in minutes: ${durationInMins}`)
 
-        // if (data) {
-        //   const formattedData = data?.map((item, index) => ({
-        //     ...item,
-        //     id: index,
-        //   }))
-        // }
+    // Update the duration in newRow
+    newRow.durationInMins = durationInMins.toFixed(2)
+    // newRow.durationInMins = durationInMins
+    // setShutdownData((prevData) =>
+    //   prevData.map((row) => (row.id === rowId ? newRow : row)),
+    // )
 
-        setCsData(productionData)
-      } catch (error) {
-        console.error('Error fetching Turnaround data:', error)
-      }
+    // Store edited row data
+    unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
+
+    // Keep track of original values before editing
+    if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
+      unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
 
+    // setHasUnsavedRows(true)
+    return newRow
+  }, [])
+  const saveChanges = React.useCallback(async () => {
+    console.log(
+      'Edited Data: ',
+      Object.values(unsavedChangesRef.current.unsavedRows),
+    )
+    try {
+      // var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      // saveShutdownData(data)
+
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
+    } catch (error) {
+      // setIsSaving(false);
+    }
+  }, [apiRef])
+  const fetchData = async () => {
+    try {
+      const data = await DataService.getConsumptionNormsData(keycloak)
+      setCsData(data)
+
+      let rowIndex = 1
+      const groupedRows = []
+
+      Object.entries(data).forEach(([Particulars, rows], index) => {
+        groupedRows.push({
+          id: `group-${index}`,
+          Particulars: Particulars,
+        })
+        rows.forEach((row) => {
+          groupedRows.push({
+            ...row,
+            id: row.NormParameterMonthlyTransactionId || `row-${rowIndex++}`,
+          })
+        })
+      })
+
+      setCsDataTransformed(groupedRows)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
+  useEffect(() => {
     const getAllProducts = async () => {
       try {
         const data = await DataService.getAllProducts(keycloak)
@@ -37,455 +107,111 @@ const NormalOpNormsScreen = () => {
         }))
         setAllProducts(productList)
       } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        // handleMenuClose();
+        console.error('Error fetching products:', error)
       }
     }
+
     getAllProducts()
     fetchData()
-  }, [])
-  const productionData = [
-    // Rows 1 - 10: Month values are filled; norms is empty
-    {
-      id: 1,
-      srNo: 1,
-      particulars: 'Material A',
-      unit: 'Kg',
-      norms: '',
-      apr24: 50,
-      may24: 60,
-      jun24: 55,
-      jul24: 70,
-      aug24: 65,
-      sep24: 75,
-      oct24: 80,
-      nov24: 85,
-      dec24: 90,
-      jan25: 95,
-      feb25: 85,
-      mar25: 100,
-      remark: 'Stock Updated',
-    },
-    {
-      id: 2,
-      srNo: 2,
-      particulars: 'Material B',
-      unit: 'Litre',
-      norms: '',
-      apr24: 30,
-      may24: 40,
-      jun24: 35,
-      jul24: 45,
-      aug24: 50,
-      sep24: 55,
-      oct24: 60,
-      nov24: 65,
-      dec24: 70,
-      jan25: 75,
-      feb25: 65,
-      mar25: 80,
-      remark: 'Reorder Needed',
-    },
-    {
-      id: 3,
-      srNo: 3,
-      particulars: 'Material C',
-      unit: 'Pcs',
-      norms: '',
-      apr24: 100,
-      may24: 120,
-      jun24: 110,
-      jul24: 130,
-      aug24: 125,
-      sep24: 135,
-      oct24: 140,
-      nov24: 145,
-      dec24: 150,
-      jan25: 155,
-      feb25: 145,
-      mar25: 160,
-      remark: 'Sufficient Stock',
-    },
-    {
-      id: 4,
-      srNo: 4,
-      particulars: 'Material D',
-      unit: 'Kg',
-      norms: '',
-      apr24: 20,
-      may24: 25,
-      jun24: 30,
-      jul24: 35,
-      aug24: 30,
-      sep24: 40,
-      oct24: 45,
-      nov24: 50,
-      dec24: 55,
-      jan25: 60,
-      feb25: 50,
-      mar25: 65,
-      remark: 'Check Expiry',
-    },
-    {
-      id: 5,
-      srNo: 5,
-      particulars: 'Material E',
-      unit: 'Box',
-      norms: '',
-      apr24: 5,
-      may24: 10,
-      jun24: 15,
-      jul24: 20,
-      aug24: 25,
-      sep24: 30,
-      oct24: 35,
-      nov24: 40,
-      dec24: 45,
-      jan25: 50,
-      feb25: 40,
-      mar25: 55,
-      remark: 'New Shipment Arrived',
-    },
-    {
-      id: 6,
-      srNo: 6,
-      particulars: 'Material F',
-      unit: 'Tonne',
-      norms: '',
-      apr24: 15,
-      may24: 20,
-      jun24: 18,
-      jul24: 25,
-      aug24: 22,
-      sep24: 28,
-      oct24: 30,
-      nov24: 32,
-      dec24: 35,
-      jan25: 38,
-      feb25: 34,
-      mar25: 40,
-      remark: 'Monitor Usage',
-    },
-    {
-      id: 7,
-      srNo: 7,
-      particulars: 'Material G',
-      unit: 'Meter',
-      norms: '',
-      apr24: 200,
-      may24: 220,
-      jun24: 210,
-      jul24: 250,
-      aug24: 230,
-      sep24: 270,
-      oct24: 280,
-      nov24: 290,
-      dec24: 300,
-      jan25: 310,
-      feb25: 290,
-      mar25: 320,
-      remark: 'Stable Supply',
-    },
+  }, [sitePlantChange, keycloak])
 
-    {
-      id: 11,
-      srNo: 8,
-      particulars: 'Equipment A',
-      unit: 'Hours',
-      norms: 10, // sample value
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 12,
-      srNo: 9,
-      particulars: 'Equipment B',
-      unit: 'Days',
-      norms: 2,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 13,
-      srNo: 10,
-      particulars: 'Material C',
-      unit: 'Kg',
-      norms: 50,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 14,
-      srNo: 11,
-      particulars: 'Tool D',
-      unit: 'Pcs',
-      norms: 5,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 15,
-      srNo: 12,
-      particulars: 'Machine E',
-      unit: 'Hours',
-      norms: 20,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 16,
-      srNo: 13,
-      particulars: 'Component F',
-      unit: 'Litres',
-      norms: 15,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 17,
-      srNo: 14,
-      particulars: 'System G',
-      unit: 'Units',
-      norms: 3,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 18,
-      srNo: 15,
-      particulars: 'Gear H',
-      unit: 'Sets',
-      norms: 8,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 19,
-      srNo: 9,
-      particulars: 'Pump I',
-      unit: 'Hours',
-      norms: 12,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-    {
-      id: 20,
-      srNo: 10,
-      particulars: 'Sensor J',
-      unit: 'Pcs',
-      norms: 6,
-      apr24: '',
-      may24: '',
-      jun24: '',
-      jul24: '',
-      aug24: '',
-      sep24: '',
-      oct24: '',
-      nov24: '',
-      dec24: '',
-      jan25: '',
-      feb25: '',
-      mar25: '',
-      remark: '',
-    },
-  ]
-  // Define columns as usual
   const productionColumns = [
     {
-      field: 'srNo',
-      headerName: 'Sr. No',
-      minWidth: 210,
-      maxWidth: 200,
-      editable: false,
-      flex: 2,
-    },
-    {
-      field: 'particulars',
+      field: 'Particulars',
       headerName: 'Particulars',
       minWidth: 150,
-      maxWidth: 160,
-      editable: true,
-    },
-    { field: 'unit', headerName: 'Unit', width: 100, editable: true },
-    {
-      field: 'norms',
-      headerName: 'Norms',
-      minWidth: 50,
-      maxWidth: 70,
-      editable: true,
-    },
-    { field: 'apr24', headerName: 'Apr-24', width: 100, editable: true },
-    { field: 'may24', headerName: 'May-24', width: 100, editable: true },
-    { field: 'jun24', headerName: 'Jun-24', width: 100, editable: true },
-    { field: 'jul24', headerName: 'Jul-24', width: 100, editable: true },
-    { field: 'aug24', headerName: 'Aug-24', width: 100, editable: true },
-    { field: 'sep24', headerName: 'Sep-24', width: 100, editable: true },
-    { field: 'oct24', headerName: 'Oct-24', width: 100, editable: true },
-    { field: 'nov24', headerName: 'Nov-24', width: 100, editable: true },
-    { field: 'dec24', headerName: 'Dec-24', width: 100, editable: true },
-    { field: 'jan25', headerName: 'Jan-25', width: 100, editable: true },
-    { field: 'feb25', headerName: 'Feb-25', width: 100, editable: true },
-    { field: 'mar25', headerName: 'Mar-25', width: 100, editable: true },
-    {
-      field: 'remark',
-      headerName: 'Remark',
-      minWidth: 180,
-      maxWidth: 200,
-      editable: true,
-    },
-  ]
-
-  const rawMaterialsData = csData.slice(0, 2) // 2 rows for Raw Materials
-  const byProductsData = csData.slice(2, 5) // 3 rows for By Products
-  const calChemData = csData.slice(5, 15) // 1 row for Cal-chem
-
-  const groupedRows = [
-    { id: 'group-raw', groupHeader: 'Raw Materials' },
-    ...rawMaterialsData,
-    { id: 'group-by', groupHeader: 'By Products' },
-    ...byProductsData,
-    { id: 'group-cal', groupHeader: 'Cat-chem' },
-    ...calChemData,
-  ]
-
-  // Custom render function for cells
-  const groupRenderCell = (params) => {
-    if (params.row.groupHeader) {
-      // In the first column show the group title
-      if (params.field === 'srNo') {
+      editable: false,
+      renderCell: (params) => {
+        const isGroupRow = params.row.id.startsWith('group-')
         return (
-          <span
-            style={{
-              fontWeight: 'bold',
-              padding: '4px 8px',
-            }}
-          >
-            {params.row.groupHeader}
+          <span style={{ fontWeight: isGroupRow ? 'bold' : 'normal' }}>
+            {params.value}
           </span>
         )
-      }
-      // For other columns, render empty
-      return ''
-    }
-    return params.value
-  }
+      },
+    },
 
-  // Enhance columns to use the custom render function
-  const enhancedColumns = productionColumns.map((col) => ({
-    ...col,
-    renderCell: groupRenderCell,
-  }))
+    { field: 'TPH', headerName: 'Unit', width: 100, editable: false },
+
+    {
+      field: 'NormParametersId',
+      headerName: 'Product Norm',
+      editable: true,
+      minWidth: 225,
+      valueGetter: (params) => {
+        return params || ''
+      },
+      valueFormatter: (params) => {
+        const product = allProducts.find((p) => p.id === params)
+        return product ? product.displayName : ''
+      },
+      renderEditCell: (params) => {
+        const { value } = params
+        return (
+          <select
+            value={value}
+            onChange={(event) => {
+              params.api.setEditCellValue({
+                id: params.id,
+                field: 'NormParametersId',
+                value: event.target.value,
+              })
+            }}
+            style={{
+              width: '100%',
+              padding: '5px',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+            }}
+          >
+            {allProducts.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.displayName}
+              </option>
+            ))}
+          </select>
+        )
+      },
+    },
+
+    { field: 'apr24', headerName: headerMap['apr'], editable: true },
+    { field: 'may24', headerName: headerMap['may'], editable: true },
+    { field: 'jun24', headerName: headerMap['jun'], editable: true },
+    { field: 'jul24', headerName: headerMap['jul'], editable: true },
+    { field: 'aug24', headerName: headerMap['aug'], editable: true },
+    { field: 'sep24', headerName: headerMap['sep'], editable: true },
+    { field: 'oct24', headerName: headerMap['oct'], editable: true },
+    { field: 'nov24', headerName: headerMap['nov'], editable: true },
+    { field: 'dec24', headerName: headerMap['dec'], editable: true },
+    { field: 'jan25', headerName: headerMap['jan'], editable: true },
+    { field: 'feb25', headerName: headerMap['feb'], editable: true },
+    { field: 'mar25', headerName: headerMap['mar'], editable: true },
+
+    { field: 'remark', headerName: 'Remark', editable: true },
+  ]
 
   return (
     <div>
       <DataGridTable
-        columns={enhancedColumns}
-        rows={groupedRows}
-        title='Consumption Norms'
-        onAddRow={(newRow) => console.log('New Row Added:', newRow)}
-        onDeleteRow={(id) => console.log('Row Deleted:', id)}
-        onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+        columns={productionColumns}
+        rows={csDataTransformed}
+        getRowId={(row) => row.id}
+        title='Consumption AOP'
         paginationOptions={[100, 200, 300]}
+        processRowUpdate={processRowUpdate}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        apiRef={apiRef}
+        // deleteId={deleteId}
+        open1={open1}
+        // setDeleteId={setDeleteId}
+        setOpen1={setOpen1}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        // handleDeleteClick={handleDeleteClick}
+        fetchData={fetchData}
         permissions={{
           showAction: true,
           addButton: false,
@@ -493,18 +219,6 @@ const NormalOpNormsScreen = () => {
           editButton: true,
           showUnit: true,
           saveWithRemark: true,
-        }}
-        getRowClassName={(params) =>
-          params.row.groupHeader ? 'group-header-row' : ''
-        }
-        sx={{
-          '& .group-header-row .MuiDataGrid-cell': {
-            borderRight: 'none !important',
-          },
-          '& .MuiDataGrid-row.MuiDataGrid-row--firstVisible:nth-child(even) .MuiDataGrid-cell':
-            {
-              borderRight: 'none !important',
-            },
         }}
       />
     </div>

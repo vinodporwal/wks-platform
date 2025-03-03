@@ -20,16 +20,21 @@ import { useState, useEffect } from 'react'
 import sitesData from '../../../../assets/SitesData.json' // Adjust the import path
 import { DataService } from 'services/DataService'
 import { Typography } from '../../../../../node_modules/@mui/material/index'
+import { setSitePlantChange } from 'store/reducers/menu' // Import the action
+import { useDispatch } from 'react-redux'
 
 const HeaderContent = ({ keycloak }) => {
   const matchesXs = useMediaQuery((theme) => theme.breakpoints.down('md'))
   const [selectedOption, setSelectedOption] = useState('')
   const [selectedSite, setSelectedSite] = useState('')
+  const [selectedVertical, setSelectedVertical] = useState('Vertical A')
   const [sites, setSites] = useState([])
   const [plants, setPlants] = useState([])
   const [userSiteToPlants, setUserSiteToPlants] = useState([])
+  const dispatch = useDispatch() // Initialize Redux dispatch
 
   useEffect(() => {
+    localStorage.setItem('year', '2024-2025');
     getPlantAndSite()
   }, [])
 
@@ -75,42 +80,42 @@ const HeaderContent = ({ keycloak }) => {
     try {
       const sitesData = await DataService.getAllSites(keycloak)
 
-      
-      
       // setSites(data)
       // setSelectedSite(data[0]?.name)
 
-      if(keycloak.idTokenParsed.plants){
-        const siteToPlants = {};
-  
-        const data = JSON.parse(keycloak.idTokenParsed.plants);
+      if (keycloak.idTokenParsed.plants) {
+        const siteToPlants = {}
+
+        const data = JSON.parse(keycloak.idTokenParsed.plants)
         // const data = keycloak.idTokenParsed.plants;
-  
-        data.forEach(obj => {
+
+        data.forEach((obj) => {
           Object.entries(obj).forEach(([site, plant]) => {
-              if (!siteToPlants[site]) {
-                  siteToPlants[site] = [];
-              }
-              // Ensure plant is stored as an array
-              if (!siteToPlants[site].includes(plant)) {
-                  siteToPlants[site].push(plant);
-              }
-          });
-        });
-  
-        if(siteToPlants){
-          setUserSiteToPlants(siteToPlants);
-          const sitesIds = Object.keys(siteToPlants);
-          const userSitesIds = sitesIds.map(id => id.toLowerCase())
+            if (!siteToPlants[site]) {
+              siteToPlants[site] = []
+            }
+            // Ensure plant is stored as an array
+            if (!siteToPlants[site].includes(plant)) {
+              siteToPlants[site].push(plant)
+            }
+          })
+        })
 
-          const userSites = sitesData.filter((site)=> userSitesIds.includes(site.id?.toLowerCase()));
+        if (siteToPlants) {
+          setUserSiteToPlants(siteToPlants)
+          const sitesIds = Object.keys(siteToPlants)
+          const userSitesIds = sitesIds.map((id) => id.toLowerCase())
 
-          if(userSites){
+          const userSites = sitesData.filter((site) =>
+            userSitesIds.includes(site.id?.toLowerCase()),
+          )
+
+          if (userSites) {
             setSites(userSites)
             setSelectedSite(userSites[0]?.name) // Default to first site
           }
         }
-      }else{
+      } else {
         setSites(sitesData) // Setting the entire site data
         setSelectedSite(sitesData[0]?.name) // Default to first site
       }
@@ -122,6 +127,9 @@ const HeaderContent = ({ keycloak }) => {
   }
 
   const handleSiteChange = (event) => {
+    dispatch(setSitePlantChange(true))
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+
     const selectedSiteName = event.target.value
     setSelectedSite(selectedSiteName)
 
@@ -143,8 +151,14 @@ const HeaderContent = ({ keycloak }) => {
       )
     }
   }
+  const handleVerticalChange = (event) => {
+    setSelectedVertical(event.target.value)
+  }
 
   const handleOptionChange = (event) => {
+    dispatch(setSitePlantChange(true))
+    dispatch(setSitePlantChange({ sitePlantChange: true }))
+
     const selectedPlantName = event.target.value
     setSelectedOption(selectedPlantName)
 
@@ -167,11 +181,28 @@ const HeaderContent = ({ keycloak }) => {
 
   return (
     <>
-      {!matchesXs && <Search />}
-      {matchesXs && <Box sx={{ width: '100%', ml: 1 }} />}
+      {matchesXs && <Search />}
+      {!matchesXs && <Box sx={{ width: '100%', ml: 1 }} />}
 
       {/* Horizontal layout for Plant & Site */}
       <Stack direction='row' spacing={2} alignItems='center'>
+        {/* Vertical box */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant='body1' color='white'>
+            Vertical:
+          </Typography>
+          <FormControl sx={{ minWidth: 150 }}>
+            <Select
+              value={selectedVertical}
+              onChange={handleVerticalChange}
+              sx={{ color: 'white' }}
+            >
+              <MenuItem value='Vertical A'>Vertical A</MenuItem>
+              <MenuItem value='Vertical B'>Vertical B</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
         {/* Site Dropdown */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography variant='body1' color='white'>
@@ -215,7 +246,7 @@ const HeaderContent = ({ keycloak }) => {
         </Box>
       </Stack>
 
-      {Config.NovuEnabled ? (
+      {/* {Config.NovuEnabled ? (
         <NovuProvider
           subscriberId={keycloak.idTokenParsed.email}
           applicationIdentifier={Config.NovuAppId}
@@ -228,7 +259,7 @@ const HeaderContent = ({ keycloak }) => {
         </NovuProvider>
       ) : (
         <Notification />
-      )}
+      )} */}
 
       {!matchesXs && <Profile keycloak={keycloak} />}
       {matchesXs && <MobileSection />}

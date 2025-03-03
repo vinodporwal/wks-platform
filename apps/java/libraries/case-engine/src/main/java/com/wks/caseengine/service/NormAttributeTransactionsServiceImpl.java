@@ -2,12 +2,22 @@ package com.wks.caseengine.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wks.caseengine.dto.CatalystAttributesDTO;
+import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
+import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -18,20 +28,23 @@ public class NormAttributeTransactionsServiceImpl implements NormAttributeTransa
 	@PersistenceContext
     private EntityManager entityManager;
 	
+	@Autowired
+	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+	
 	@Override
-	public List<Map<String, Object>> getCatalystSelectivityData(int year) {
+	public String getCatalystSelectivityData(String year) {
 	    // Generate dynamic pivot columns
 	    String monthQuery = "WITH Months AS (" +
 	            "    SELECT DISTINCT FORMAT(AOPMonth, 'MMM') + RIGHT(CAST(YEAR(AOPMonth) AS VARCHAR), 2) AS MonthYear " +
 	            "    FROM [RIL.AOP2].[dbo].[NormAttributeTransactions] " +
-	            "    WHERE YEAR(AOPMonth) = :year OR YEAR(AOPMonth) = :nextYear " +
+	            "    WHERE YEAR(AOPMonth) = :year " +
 	            ") " +
 	            "SELECT STRING_AGG('MAX(CASE WHEN MonthYear = ''' + MonthYear + ''' THEN AttributeValue END) AS [' + LOWER(MonthYear) + ']', ', ') " +
 	            "FROM Months";
 
 	    String pivotColumns = (String) entityManager.createNativeQuery(monthQuery)
 	            .setParameter("year", year)
-	            .setParameter("nextYear", year + 1)
+	            //.setParameter("nextYear", year + 1)
 	            .getSingleResult();
 
 	    // Construct final dynamic query
@@ -41,20 +54,23 @@ public class NormAttributeTransactionsServiceImpl implements NormAttributeTransa
 	            "        ca.CatalystName AS catalyst, " +
 	            "        FORMAT(nat.AOPMonth, 'MMM') + RIGHT(CAST(YEAR(nat.AOPMonth) AS VARCHAR), 2) AS MonthYear, " +
 	            "        CAST(nat.AttributeValue AS INT) AS AttributeValue, " +
-	            "        nat.Remarks " +
+	            "        nat.Remarks, " +
+				"        nat.CatalystAttribute_FK_Id as catalystId, " +
+				  
+										" nat.AttributeName as AttributeName, " + 
+										" nat.NormParameter_FK_Id as NormParameterFKId "+
 	            "    FROM [RIL.AOP2].[dbo].[NormAttributeTransactions] AS nat " +
 	            "    JOIN [RIL.AOP2].[dbo].[CatalystAttributes] AS ca " +
 	            "        ON nat.CatalystAttribute_FK_Id = ca.Id " +
-	            "    WHERE YEAR(nat.AOPMonth) = :year OR YEAR(nat.AOPMonth) = :nextYear " +
+	            "    WHERE YEAR(nat.AOPMonth) = :year" +
 	            ") " +
-	            "SELECT d.Id, d.catalyst, " + pivotColumns + ", d.Remarks AS remark " +
+	            "SELECT d.Id, d.catalyst, " + pivotColumns + ", d.Remarks AS remark, d.catalystId,d.AttributeName,d.NormParameterFKId " +
 	            "FROM Data_CTE d " +
-	            "GROUP BY d.Id, d.catalyst, d.Remarks " +
+	            "GROUP BY d.Id, d.catalyst, d.Remarks, d.catalystId, d.AttributeName,d.NormParameterFKId " +
 	            "ORDER BY d.Id";
 
 	    List<Object[]> results = entityManager.createNativeQuery(finalQuery)
 	            .setParameter("year", year)
-	            .setParameter("nextYear", year + 1)
 	            .getResultList();
 
 	    // Convert result list into structured JSON-like response
@@ -65,17 +81,65 @@ public class NormAttributeTransactionsServiceImpl implements NormAttributeTransa
 	        Map<String, Object> map = new LinkedHashMap<>();
 	        map.put("id", row[0]);
 	        map.put("catalyst", row[1]);
-
-	        for (int i = 2; i < row.length - 1; i++) {
-	            map.put(columnNames.get(i - 2), row[i] != null ? row[i] : 0); // Default to 0 if null
+			map.put("catalystId", row[row.length - 3]);
+			map.put("AttributeName", row[row.length - 2]);
+			if(row[row.length - 1]!=null){
+				map.put("NormParameterFKId", row[row.length - 1].toString().toUpperCase());
+			}
+			
+	        for (int i = 2; i < row.length - 4; i++) {
+	            map.put(columnNames.get(i - 2), row[i]);
 	        }
 
-	        map.put("remark", row[row.length - 1]);
+	        map.put("remark", row[row.length - 4]);
 
 	        responseList.add(map);
 	    }
 
-	    return responseList;
+   Map<String, Map<String, Object>> groupedByProduct = new HashMap<>();
+   List<Map<String, Object>> output = new ArrayList<>();
+        for (Map<String, Object> data : responseList) {
+            String product = (String) data.get("catalyst");
+            Map<String, Object> productData = groupedByProduct.getOrDefault(product, new HashMap<>());
+
+            // Iterate through the columns and add non-null values
+            for (String column : data.keySet()) {
+				//if (column.equals("catalystId")) continue;  // Skip the "Product" column
+                Object value = data.get(column);
+				//System.out.println("value1 "+value);
+                if (value != null) {
+					//System.out.println("value2"+column+" "+value);
+                    productData.put(column, value);
+                }
+            }
+            // Store the non-null grouped data by product
+            groupedByProduct.put(product, productData);
+        }
+
+
+        // Printing the result
+        for (Map.Entry<String, Map<String, Object>> entry : groupedByProduct.entrySet()) {
+            System.out.println("Product: " + entry.getKey());
+            Map<String, Object> productData = entry.getValue();
+            output.add(productData);
+            for (Map.Entry<String, Object> columnEntry : productData.entrySet()) {
+                System.out.println(columnEntry.getKey() + ": " + columnEntry.getValue());
+            }
+            System.out.println("-------------------------");
+        }
+
+try{
+    ObjectMapper objectMapper = new ObjectMapper();
+    String jsonOutput = objectMapper.writeValueAsString(output);
+
+   return jsonOutput;
+}catch(Exception e){
+    e.printStackTrace();
+}
+         
+return "";
+
+
 	}
 
 	/**
@@ -86,5 +150,123 @@ public class NormAttributeTransactionsServiceImpl implements NormAttributeTransa
 	            .map(col -> col.substring(col.indexOf("[") + 1, col.indexOf("]"))) // Extract text between brackets []
 	            .collect(Collectors.toList());
 	}
+
+
+
+	@Override
+	public NormAttributeTransactionsDTO updateNormAttributeTransactions(NormAttributeTransactionsDTO normAttributeTransactionsDTO) {
+		String attributeValue=normAttributeTransactionsDTO.getAttributeValue();
+		Integer month = normAttributeTransactionsDTO.getMonth();
+		UUID normParameterFKId=normAttributeTransactionsDTO.getNormParameterFKId();
+		String auditYear= normAttributeTransactionsDTO.getAuditYear();
+		
+		normAttributeTransactionsRepository.updateNormAttributeTransactions(attributeValue,month,normParameterFKId,auditYear);
+			
+		// TODO Auto-generated method stub
+		return normAttributeTransactionsDTO;
+	}
+	
+	@Override
+	public Boolean updateCatalystData(CatalystAttributesDTO catalystAttributesDTO) {
+		
+		for(int i=0;i<12;i++) {
+			Float attributeValue=getAttributeValue(catalystAttributesDTO,(i+1));
+			Integer month =i+1;		
+			String auditYear=catalystAttributesDTO.getYear();
+			// if(i<3) {
+			// 	auditYear=auditYear+1;
+			// }	
+			UUID normParameterFKId=null;
+			UUID catalystAttributeFKId =null;
+			if(catalystAttributesDTO.getNormParameterFKId()!=null){
+				normParameterFKId=UUID.fromString(catalystAttributesDTO.getNormParameterFKId());
+			}
+			if(catalystAttributesDTO.getCatalystAttributeFKId()!=null){
+				 catalystAttributeFKId=UUID.fromString( catalystAttributesDTO.getCatalystAttributeFKId());
+			}
+			
+			
+			normAttributeTransactionsRepository.updateCatalystData(attributeValue.toString(),catalystAttributesDTO.getRemarks(),month,auditYear,normParameterFKId,catalystAttributeFKId);
+		}
+		
+		// TODO Auto-generated method stub
+		return true;
+	}
+	
+	
+	@Override
+	public Boolean saveCatalystData(CatalystAttributesDTO catalystAttributesDTO) {
+		for(int i=0;i<12;i++) {
+			NormAttributeTransactions normAttributeTransactions= new NormAttributeTransactions();
+			normAttributeTransactions.setAttributeValue(getAttributeValue(catalystAttributesDTO,(i+1)).toString());
+			normAttributeTransactions.setMonth((i+1));
+			normAttributeTransactions.setAuditYear(catalystAttributesDTO.getYear());
+			normAttributeTransactions.setAttributeName(catalystAttributesDTO.getAttributeName());
+			if(i<3) {
+				normAttributeTransactions.setAuditYear((catalystAttributesDTO.getYear()+1));
+			}
+			normAttributeTransactions.setCatalystAttributeFKId(catalystAttributesDTO.getCatalystAttributeFKId()!=null? UUID.fromString(catalystAttributesDTO.getCatalystAttributeFKId()) : null);
+			normAttributeTransactions.setCreatedOn(new Date());
+			normAttributeTransactions.setAttributeValueVersion("V1");
+			normAttributeTransactions.setRemarks(catalystAttributesDTO.getRemarks());
+			normAttributeTransactions.setUserName("System");
+			normAttributeTransactionsRepository.save(normAttributeTransactions);
+			
+		}
+		
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public Boolean deleteCatalystData(CatalystAttributesDTO catalystAttributesDTO) {
+		
+		for(int i=0;i<12;i++) {
+			Float attributeValue=getAttributeValue(catalystAttributesDTO,(i+1));
+			Integer month =i+1;		
+			String auditYear=catalystAttributesDTO.getYear();
+			// if(i<3) {
+			// 	auditYear=auditYear+1;
+			// }	
+			UUID normParameterFKId= catalystAttributesDTO.getNormParameterFKId() !=null ? UUID.fromString(catalystAttributesDTO.getNormParameterFKId()) : null;
+			UUID catalystAttributeFKId=catalystAttributesDTO.getCatalystAttributeFKId() !=null ? UUID.fromString(catalystAttributesDTO.getCatalystAttributeFKId()) : null;; 
+			normAttributeTransactionsRepository.deleteCatalystData(attributeValue.toString(),month,auditYear,normParameterFKId,catalystAttributeFKId);
+		}
+		
+		// TODO Auto-generated method stub
+		return true;
+	}
+	
+	public Float getAttributeValue(CatalystAttributesDTO catalystAttributesDTO,Integer i) {
+		switch(i) {
+			case 1:
+				return catalystAttributesDTO.getJan();
+			case 2:
+				return catalystAttributesDTO.getFeb();
+			case 3:
+				return catalystAttributesDTO.getMarch();
+			case 4:
+				return catalystAttributesDTO.getApril();
+			case 5:
+				return catalystAttributesDTO.getMay();
+			case 6:
+				return catalystAttributesDTO.getJune();
+			case 7:
+				return catalystAttributesDTO.getJuly();
+			case 8:
+				return catalystAttributesDTO.getAug();
+			case 9:
+				return catalystAttributesDTO.getSep();
+			case 10:
+				return catalystAttributesDTO.getOct();
+			case 11:
+				return catalystAttributesDTO.getNov();
+			case 12:
+				return catalystAttributesDTO.getDec();
+		
+		}
+		return catalystAttributesDTO.getJan();
+	}
+
 
 }

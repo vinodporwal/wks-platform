@@ -26,7 +26,7 @@ public class ShutDownPlanDTO {
     private Integer durationInMins; 
     
 	//FOR ID : pmt.Id
-	private UUID maintenanceId; 
+	private String id; 
 	
 
 	private Double rate;
@@ -37,5 +37,5 @@ public class ShutDownPlanDTO {
 	private Double durationInDays;
 	private String product;
 	private UUID plantId;
-	private Integer audityear;
+	private String audityear;
 }

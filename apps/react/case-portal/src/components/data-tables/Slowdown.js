@@ -1,34 +1,162 @@
 import { DataService } from 'services/DataService'
-import {
-  Autocomplete,
-  TextField,
-} from '../../../node_modules/@mui/material/index'
 import ASDataGrid from './ASDataGrid'
 import dayjs from 'dayjs'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSession } from 'SessionStoreContext'
+import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
+import { useSelector } from 'react-redux'
 
 const SlowDown = () => {
+  const menu = useSelector((state) => state.menu)
+  const { sitePlantChange } = menu
   const [slowDownData, setSlowDownData] = useState([])
   const [allProducts, setAllProducts] = useState([])
-
+  const apiRef = useGridApiRef()
+  const [open1, setOpen1] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const keycloak = useSession()
+  const unsavedChangesRef = React.useRef({
+    unsavedRows: {},
+    rowsBeforeChange: {},
+  })
+  const processRowUpdate = React.useCallback((newRow, oldRow) => {
+    const rowId = newRow.id
+    console.log(newRow)
+    const start = new Date(newRow.maintStartDateTime)
+    const end = new Date(newRow.maintEndDateTime)
+    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
+    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await DataService.getSlowDownPlantData(keycloak)
-        const formattedData = data.map((item, index) => ({
-          ...item,
-          // id: item?.maintenanceId,
-          id: index,
-        }))
-        setSlowDownData(formattedData)
-      } catch (error) {
-        console.error('Error fetching SlowDown data:', error)
-      }
+    console.log(`Duration in minutes: ${durationInMins}`)
+
+    // Update the duration in newRow
+    newRow.durationInMins = durationInMins.toFixed(2)
+    // newRow.durationInMins = durationInMins
+
+    setSlowDownData((prevData) =>
+      prevData.map((row) => (row.id === rowId ? newRow : row)),
+    )
+    // Store edited row data
+    unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
+
+    // Keep track of original values before editing
+    if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
+      unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
 
+    // setHasUnsavedRows(true)
+    return newRow
+  }, [])
+
+  const saveSlowDownData = async (newRow) => {
+    try {
+      var plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+      const slowDownDetails = {
+        productId: newRow.product,
+        discription: newRow.discription,
+        durationInMins: newRow.durationInMins,
+        maintEndDateTime: newRow.maintEndDateTime,
+        maintStartDateTime: newRow.maintStartDateTime,
+        remark: newRow.remarks,
+        rate: newRow.rate,
+      }
+      const response = await DataService.saveSlowdownData(
+        plantId,
+        slowDownDetails,
+        keycloak,
+      )
+      //console.log('Slowdown data saved successfully:', response)
+      setSnackbarOpen(true)
+      // setSnackbarMessage("Slowdown data saved successfully !");
+      setSnackbarData({
+        message: 'Slowdown data saved successfully!',
+        severity: 'success',
+      })
+      // setSnackbarOpen(true);
+      // setSnackbarData({ message: "Slowdown data saved successfully!", severity: "success" });
+      return response
+    } catch (error) {
+      console.error('Error saving Slowdown data:', error)
+    } finally {
+      fetchData()
+    }
+  }
+  const saveChanges = React.useCallback(async () => {
+    console.log(
+      'Edited Data: ',
+      Object.values(unsavedChangesRef.current.unsavedRows),
+    )
+    try {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      saveSlowDownData(data)
+
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
+    } catch (error) {
+      // setIsSaving(false);
+    }
+  }, [apiRef])
+  const updateSlowdownData = async (newRow) => {
+    try {
+      var maintenanceId = newRow?.maintenanceId
+
+      const slowDownDetails = {
+        productId: newRow.product,
+        discription: newRow.discription,
+        durationInMins: newRow.durationInMins,
+        maintEndDateTime: newRow.maintEndDateTime,
+        maintStartDateTime: newRow.maintStartDateTime,
+        remark: newRow.remarks,
+        rate: newRow.rate,
+      }
+
+      const response = await DataService.updateSlowdownData(
+        maintenanceId,
+        slowDownDetails,
+        keycloak,
+      )
+      //console.log('Slowdown data Updated successfully:', response)
+      setSnackbarOpen(true)
+      // setSnackbarMessage("Slowdown data Updated successfully !");
+      setSnackbarData({
+        message: 'Slowdown data Updated successfully!',
+        severity: 'success',
+      })
+      // setSnackbarOpen(true);
+      // setSnackbarData({ message: "Slowdown data Updated successfully!", severity: "success" });
+      return response
+    } catch (error) {
+      console.error('Error saving Slowdown data:', error)
+    } finally {
+      fetchData()
+    }
+  }
+  const fetchData = async () => {
+    try {
+      const data = await DataService.getSlowDownPlantData(keycloak)
+      const formattedData = data.map((item, index) => ({
+        ...item,
+        // id: item?.maintenanceId,
+        id: index,
+      }))
+      setSlowDownData(formattedData)
+    } catch (error) {
+      console.error('Error fetching SlowDown data:', error)
+    }
+  }
+  useEffect(() => {
     const getAllProducts = async () => {
       try {
         const data = await DataService.getAllProducts(keycloak)
@@ -48,41 +176,63 @@ const SlowDown = () => {
       }
     }
 
-    const saveShutdownData = async () => {
-      try {
-        var plantId = 'B989E3EE-00C8-493C-9CA4-709D340FA5A1'
-        // var plantId = '7b7e0d7c-2666-43bb-847c-d78e144673de'
-        // var plantId = '7b7e0d7c-2666-43bb-847c-d78e144673de'
-        // discription
-        // maintStartDateTime
-        // maintEndDateTime
-        // durationInMins
-        // product
+    // const saveShutdownData = async () => {
+    //   try {
+    //     // var plantId = 'A4212E62-2BAC-4A38-9DAB-2C9066A9DA7D';
+    //     var plantId = ''
 
-        const shutdownDetails = {
-          product: 'Oxygen',
-          discription: '1 Shutdown maintenance',
-          durationInMins: 120,
-          maintEndDateTime: '2025-02-20T18:00:00Z',
-          maintStartDateTime: '2025-02-20T16:00:00Z',
-        }
+    //     const storedPlant = localStorage.getItem('selectedPlant')
+    //     if (storedPlant) {
+    //       const parsedPlant = JSON.parse(storedPlant)
+    //       plantId = parsedPlant.id
+    //     }
 
-        const response = await DataService.saveShutdownData(
-          plantId,
-          shutdownDetails,
-          keycloak,
-        )
-        console.log('Shutdown data saved successfully:', response)
-        return response
-      } catch (error) {
-        console.error('Error saving shutdown data:', error)
-      }
-    }
+    //     const shutdownDetails = {
+    //       product: 'Oxygen',
+    //       discription: '1 Shutdown maintenance',
+    //       durationInMins: 120,
+    //       maintEndDateTime: '2025-02-20T18:00:00Z',
+    //       maintStartDateTime: '2025-02-20T16:00:00Z',
+    //     }
+
+    //     const response = await DataService.saveShutdownData(
+    //       plantId,
+    //       shutdownDetails,
+    //       keycloak,
+    //     )
+    //     console.log('Shutdown data saved successfully:', response)
+    //     return response
+    //   } catch (error) {
+    //     console.error('Error saving shutdown data:', error)
+    //   }
+    // }
 
     fetchData()
     // saveShutdownData()
     getAllProducts()
-  }, [])
+  }, [sitePlantChange, keycloak])
+  const handleDeleteClick = async (id, params) => {
+    try {
+      const maintenanceId =
+        id?.maintenanceId ||
+        params?.row?.idFromApi ||
+        params?.row?.maintenanceId ||
+        params?.NormParameterMonthlyTransactionId
+
+      console.log(maintenanceId, params, id)
+
+      // Ensure UI state updates before the deletion process
+      setOpen1(true)
+      setDeleteId(id)
+
+      // Perform the delete operation
+      return await DataService.deleteSlowdownData(maintenanceId, keycloak)
+    } catch (error) {
+      console.error(`Error deleting Slowdown data:`, error)
+    } finally {
+      fetchData()
+    }
+  }
 
   const colDefs = [
     {
@@ -110,9 +260,7 @@ const SlowDown = () => {
       headerName: 'Product',
       editable: true,
       minWidth: 225,
-      valueGetter: (params, params2) => {
-        // console.log('p1', params);
-        // console.log('p2', params2);
+      valueGetter: (params) => {
         return params || ''
       },
       valueFormatter: (params) => {
@@ -120,10 +268,8 @@ const SlowDown = () => {
         const product = allProducts.find((p) => p.id === params)
         return product ? product.displayName : ''
       },
-      renderEditCell: (params, params2) => {
-        const { id, value } = params
-        // console.log('q1', params);
-        // console.log('q2', params2);
+      renderEditCell: (params) => {
+        const { value } = params
         return (
           <select
             value={value || allProducts[0]?.id}
@@ -137,9 +283,9 @@ const SlowDown = () => {
             style={{
               width: '100%',
               padding: '5px',
-              border: 'none', // Removes border
-              outline: 'none', // Removes focus outline
-              background: 'transparent', // Keeps background clean
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
             }}
           >
             {allProducts.map((product) => (
@@ -151,6 +297,7 @@ const SlowDown = () => {
         )
       },
     },
+
     {
       field: 'maintStartDateTime',
       headerName: 'SD- From',
@@ -165,50 +312,29 @@ const SlowDown = () => {
         return parsedDate
       },
     },
+
     {
       field: 'maintEndDateTime',
       headerName: 'SD- To',
       type: 'dateTime',
       minWidth: 200,
       editable: true,
-      // Validate the edited value before committing
-      preProcessEditCellProps: (params) => {
-        const startDate = dayjs(params.row.maintStartDateTime)
-        const newEndDate = dayjs(params.props.value)
-        const hasError = newEndDate.isBefore(startDate)
-        return { ...params.props, error: hasError }
-      },
       valueGetter: (params) => {
-        const value = params.value
-        return value ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate() : null
+        const value = params
+        const parsedDate = value
+          ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate()
+          : null
+        return parsedDate
       },
     },
-
-    // {
-    //   field: "maintEndDateTime",
-    //   headerName: "SD- To",
-    //   type: "dateTime",
-    //   minWidth: 200,
-    //   editable:true,
-    //   valueGetter: (params) => {
-    //     const value = params;
-    //     const parsedDate = value
-    //       ? dayjs(value, "MMM D, YYYY, h:mm:ss A").toDate()
-    //       : null;
-    //     return parsedDate;
-    //   },
-    // },
 
     {
       field: 'durationInMins',
       headerName: 'Duration (hrs)',
-      editable: true,
+      editable: false,
       // type: "number",
       minWidth: 100,
       maxWidth: 150,
-      renderCell: (params) => {
-        return `${params.value}`
-      },
     },
 
     {
@@ -234,18 +360,33 @@ const SlowDown = () => {
       <ASDataGrid
         columns={colDefs}
         rows={slowDownData}
-        title='Slowdown Records'
+        title='Slowdown Plan'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
         paginationOptions={[100, 200, 300]}
+        updateSlowdownData={updateSlowdownData}
+        processRowUpdate={processRowUpdate}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        apiRef={apiRef}
+        deleteId={deleteId}
+        setDeleteId={setDeleteId}
+        setOpen1={setOpen1}
+        open1={open1}
+        handleDeleteClick={handleDeleteClick}
+        fetchData={fetchData}
         permissions={{
           showAction: true,
           addButton: true,
           deleteButton: true,
           editButton: true,
-          showUnit: true,
+          showUnit: false,
           saveWithRemark: true,
+          saveBtn: true,
         }}
       />
     </div>

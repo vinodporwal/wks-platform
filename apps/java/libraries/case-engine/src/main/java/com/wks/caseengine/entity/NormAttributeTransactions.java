@@ -3,7 +3,11 @@ package com.wks.caseengine.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.Date;
 import java.util.UUID;
+
+import org.hibernate.annotations.GenericGenerator;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -22,7 +26,9 @@ import java.time.LocalDateTime;
 public class NormAttributeTransactions {
 
     @Id
-    @Column(name = "Id", nullable = false)
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "Id", nullable = false, updatable = false)
     private UUID id;
 
     @Column(name = "AttributeName", length = 250)
@@ -41,23 +47,24 @@ public class NormAttributeTransactions {
     private LocalDate aopMonth;
 
     @Column(name = "AuditYear")
-    private Integer auditYear;
+    private String auditYear;
 
     @Column(name = "Remarks", length = 500)
     private String remarks;
 
     @Column(name = "CreatedOn")
-    private LocalDateTime createdOn;
+    private Date createdOn;
 
     @Column(name = "ModifiedOn")
-    private LocalDateTime modifiedOn;
+    private Date modifiedOn;
 
     @Column(name = "AttributeValueVersion", length = 10)
     private String attributeValueVersion;
 
     // If you want to avoid using the reserved keyword 'User' directly in Java,
     // you can rename the field and map it to the column "User".
-    @Column(name = "User", length = 255)
+
+    @Column(name = "`User`", length = 255)  // Use backticks to escape reserved keyword
     private String userName;
 
     @Column(name = "NormParameter_FK_Id")
@@ -65,5 +72,8 @@ public class NormAttributeTransactions {
 
     @Column(name = "CatalystAttribute_FK_Id")
     private UUID catalystAttributeFKId;
+    
+    @Column(name="Month")
+    private Integer month;
 
 }
