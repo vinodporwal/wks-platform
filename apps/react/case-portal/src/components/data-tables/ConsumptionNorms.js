@@ -28,22 +28,6 @@ const NormalOpNormsScreen = () => {
   })
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-    const start = new Date(newRow.maintStartDateTime)
-    const end = new Date(newRow.maintEndDateTime)
-    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
-
-    console.log(`Duration in minutes: ${durationInMins}`)
-
-    // Update the duration in newRow
-    newRow.durationInMins = durationInMins.toFixed(2)
-    // newRow.durationInMins = durationInMins
-    // setShutdownData((prevData) =>
-    //   prevData.map((row) => (row.id === rowId ? newRow : row)),
-    // )
-
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
     // Keep track of original values before editing
@@ -149,7 +133,7 @@ const NormalOpNormsScreen = () => {
         const { value } = params
         return (
           <select
-            value={value}
+            value={value || ''}
             onChange={(event) => {
               params.api.setEditCellValue({
                 id: params.id,
@@ -175,18 +159,102 @@ const NormalOpNormsScreen = () => {
       },
     },
 
-    { field: 'apr24', headerName: headerMap['apr'], editable: true },
-    { field: 'may24', headerName: headerMap['may'], editable: true },
-    { field: 'jun24', headerName: headerMap['jun'], editable: true },
-    { field: 'jul24', headerName: headerMap['jul'], editable: true },
-    { field: 'aug24', headerName: headerMap['aug'], editable: true },
-    { field: 'sep24', headerName: headerMap['sep'], editable: true },
-    { field: 'oct24', headerName: headerMap['oct'], editable: true },
-    { field: 'nov24', headerName: headerMap['nov'], editable: true },
-    { field: 'dec24', headerName: headerMap['dec'], editable: true },
-    { field: 'jan25', headerName: headerMap['jan'], editable: true },
-    { field: 'feb25', headerName: headerMap['feb'], editable: true },
-    { field: 'mar25', headerName: headerMap['mar'], editable: true },
+    {
+      field: 'apr24',
+      headerName: headerMap['apr'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'may24',
+      headerName: headerMap['may'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'jun24',
+      headerName: headerMap['jun'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'jul24',
+      headerName: headerMap['jul'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'aug24',
+      headerName: headerMap['aug'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'sep24',
+      headerName: headerMap['sep'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'oct24',
+      headerName: headerMap['oct'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'nov24',
+      headerName: headerMap['nov'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'dec24',
+      headerName: headerMap['dec'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'jan25',
+      headerName: headerMap['jan'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'feb25',
+      headerName: headerMap['feb'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'mar25',
+      headerName: headerMap['mar'],
+      editable: true,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+    },
 
     { field: 'remark', headerName: 'Remark', editable: true },
   ]

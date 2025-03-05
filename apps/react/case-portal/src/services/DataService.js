@@ -24,6 +24,7 @@ export const DataService = {
   saveCatalystData,
 
   saveBusinessDemandData,
+  editAOPMCCalculatedData,
 
   updateSlowdownData,
   updateShutdownData,
@@ -362,6 +363,7 @@ async function getConsumptionNormsData(keycloak) {
     return await Promise.reject(e)
   }
 }
+
 async function saveShutdownData(plantId, shutdownDetails, keycloak) {
   const url = `${process.env.REACT_APP_API_URL}/task/saveShutdownData/${plantId}`
 
@@ -591,6 +593,28 @@ async function saveBusinessDemandData(plantId, turnAroundDetails, keycloak) {
   }
 }
 
+async function editAOPMCCalculatedData(plantId, turnAroundDetails, keycloak) {
+  const url = `${process.env.REACT_APP_API_URL}/task/editAOPMCCalculatedData`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(turnAroundDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 export default saveShutdownData
 
 async function getYearlyData(keycloak, year) {
@@ -632,7 +656,8 @@ async function getYearWiseProduct(keycloak, id) {
 }
 
 async function getAllSites(keycloak) {
-  const url = `${process.env.REACT_APP_API_URL}/task/getPlantAndSite`
+  const url = `${process.env.REACT_APP_API_URL}/task/getPlantsAndSidesAndVerticals`
+  // const url = `${process.env.REACT_APP_API_URL}/task/getPlantAndSite`
 
   const headers = {
     Accept: 'application/json',
@@ -687,6 +712,7 @@ async function getAllCatalyst(keycloak) {
 
 async function getShutDownPlantData(keycloak) {
   var maintenanceTypeName = 'Shutdown'
+  var year = '2024-25'
   var plantId = ''
 
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -698,7 +724,7 @@ async function getShutDownPlantData(keycloak) {
   // plantId = 'A4212E62-2BAC-4A38-9DAB-2C9066A9DA7D'
   plantId = plantId
 
-  const url = `${process.env.REACT_APP_API_URL}/task/getShutDownPlanData?plantId=${plantId}&maintenanceTypeName=${maintenanceTypeName}`
+  const url = `${process.env.REACT_APP_API_URL}/task/getShutDownPlanData?plantId=${plantId}&maintenanceTypeName=${maintenanceTypeName}&year=${year}`
 
   const headers = {
     Accept: 'application/json',
@@ -724,6 +750,7 @@ async function getSlowDownPlantData(keycloak) {
   }
 
   const maintenanceTypeName = 'Slowdown' // Assuming the maintenance type is 'Slowdown'
+  var year = '2024-25'
 
   // const storedPlant = localStorage.getItem('selectedPlant')
   // if (storedPlant) {
@@ -731,7 +758,7 @@ async function getSlowDownPlantData(keycloak) {
   //   plantId= (parsedPlant.id)
   // }
 
-  const url = `${process.env.REACT_APP_API_URL}/task/getSlowDownPlanData?plantId=${plantId}&maintenanceTypeName=${maintenanceTypeName}`
+  const url = `${process.env.REACT_APP_API_URL}/task/getSlowDownPlanData?plantId=${plantId}&maintenanceTypeName=${maintenanceTypeName}&year=${year}`
 
   const headers = {
     Accept: 'application/json',
@@ -809,6 +836,7 @@ async function getTAPlantData(keycloak) {
 
   // const plantId = '3E3FDF54-391D-4BAB-A78F-50EBCA9FBEA6'
   const maintenanceTypeName = 'TA_Plan' // Assuming the maintenance type is 'Shutdown'
+  var year = '2024-25'
 
   // const storedPlant = localStorage.getItem('selectedPlant')
   // if (storedPlant) {
@@ -816,7 +844,7 @@ async function getTAPlantData(keycloak) {
   //   plantId= (parsedPlant.id)
   // }
 
-  const url = `${process.env.REACT_APP_API_URL}/task/getTurnaroundPlanData?plantId=${plantId}&maintenanceTypeName=${maintenanceTypeName}`
+  const url = `${process.env.REACT_APP_API_URL}/task/getTurnaroundPlanData?plantId=${plantId}&maintenanceTypeName=${maintenanceTypeName}&year=${year}`
 
   const headers = {
     Accept: 'application/json',

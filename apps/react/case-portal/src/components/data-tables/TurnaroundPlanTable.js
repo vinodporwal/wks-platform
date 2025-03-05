@@ -1,10 +1,10 @@
-import { DataService } from 'services/DataService'
-import ASDataGrid from './ASDataGrid'
 import dayjs from 'dayjs'
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
-import { useSelector } from 'react-redux'
+import ASDataGrid from './ASDataGrid'
 
 const TurnaroundPlanTable = () => {
   const menu = useSelector((state) => state.menu)
@@ -27,25 +27,6 @@ const TurnaroundPlanTable = () => {
 
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-    const start = new Date(newRow.maintStartDateTime)
-    const end = new Date(newRow.maintEndDateTime)
-    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
-
-    console.log(`Duration in minutes: ${durationInMins}`)
-
-    // Update the duration in newRow
-    newRow.durationInMins = durationInMins.toFixed(2)
-    // newRow.durationInMins = durationInMins
-
-    setTaData((prevData) =>
-      prevData.map((row) => (row.id === rowId ? newRow : row)),
-    )
-
-    // Extract numeric values from month fields
-
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
     // Keep track of original values before editing
@@ -59,45 +40,54 @@ const TurnaroundPlanTable = () => {
 
   const saveTurnAroundData = async (newRow) => {
     try {
-      // var plantId = 'A4212E62-2BAC-4A38-9DAB-2C9066A9DA7D'
       var plantId = ''
-
       const storedPlant = localStorage.getItem('selectedPlant')
       if (storedPlant) {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
 
-      const turnAroundDetails = {
-        productId: newRow.product,
-        discription: newRow.discription,
-        durationInMins: newRow.durationInMins,
-        maintEndDateTime: newRow.maintEndDateTime,
-        maintStartDateTime: newRow.maintStartDateTime,
-        remark: newRow.remark,
-        // rate: newRow.rate,
-      }
+      const turnAroundDetails = newRow.map((row) => ({
+        productId: row.product,
+        discription: row.discription,
+        // durationInMins: findDuration('1', row),
+        durationInMins: parseFloat(findDuration('1', row)),
+        maintEndDateTime: row.maintEndDateTime,
+        maintStartDateTime: row.maintStartDateTime,
+        remark: row.remark,
+        audityear: '2024-25',
+        id: row.idFromApi || null,
+      }))
       const response = await DataService.saveTurnAroundData(
         plantId,
         turnAroundDetails,
         keycloak,
       )
-      //console.log('Turnaround Plan data saved successfully:', response)
+
+      if (!response.ok) {
+        const errorData = await response.json() // Get the actual error message
+        throw new Error(errorData.errorMessage || 'Failed to save data')
+      }
+
       setSnackbarOpen(true)
-      // setSnackbarMessage("Turnaround Plan data saved successfully !");
       setSnackbarData({
-        message: 'Turnaround Plan data saved successfully!',
+        message: 'Turnaround Plan data Saved Successfully!',
         severity: 'success',
       })
-      // setSnackbarOpen(true);
-      // setSnackbarData({ message: "Turnaround Plan data saved successfully!", severity: "success" });
       return response
     } catch (error) {
       console.error('Error saving Turnaround Plan data:', error)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message, // Show exact error message from API
+        severity: 'error',
+      })
     } finally {
       fetchData()
     }
   }
+
   const saveChanges = React.useCallback(async () => {
     console.log(
       'Edited Data: ',
@@ -115,35 +105,11 @@ const TurnaroundPlanTable = () => {
       // setIsSaving(false);
     }
   }, [apiRef])
-  const handleDeleteClick = async (id, params) => {
-    try {
-      const maintenanceId =
-        id?.maintenanceId ||
-        params?.row?.idFromApi ||
-        params?.row?.maintenanceId ||
-        params?.NormParameterMonthlyTransactionId
 
-      console.log(maintenanceId, params, id)
-
-      // Ensure UI state updates before the deletion process
-      setOpen1(true)
-      setDeleteId(id)
-
-      // Perform the delete operation
-      return await DataService.deleteTurnAroundData(maintenanceId, keycloak)
-    } catch (error) {
-      console.error(`Error deleting Business data:`, error)
-    } finally {
-      fetchData()
-    }
-  }
   const fetchData = async () => {
     try {
       const data = await DataService.getTAPlantData(keycloak)
       const formattedData = data.map((item, index) => ({
-        // ...item,
-        // id: index,
-
         ...item,
         idFromApi: item.id,
         id: index,
@@ -158,9 +124,7 @@ const TurnaroundPlanTable = () => {
     const getAllProducts = async () => {
       try {
         const data = await DataService.getAllProducts(keycloak)
-        console.log('API Response:', data)
 
-        // Extract only displayName and id
         const productList = data.map((product) => ({
           id: product.id,
           displayName: product.displayName,
@@ -176,6 +140,31 @@ const TurnaroundPlanTable = () => {
     fetchData()
     getAllProducts()
   }, [sitePlantChange, keycloak])
+
+  const findDuration = (value, row) => {
+    if (row && row.maintStartDateTime && row.maintEndDateTime) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
+
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        // Check if dates are valid
+        const durationInMs = end - start
+
+        // Calculate duration in hours and minutes
+        const durationInHours = Math.floor(durationInMs / (1000 * 60 * 60))
+        const remainingMs = durationInMs % (1000 * 60 * 60)
+        const durationInMinutes = Math.floor(remainingMs / (1000 * 60))
+
+        // Format the duration as "HH:MM"
+        const formattedDuration = `${String(durationInHours).padStart(2, '0')}:${String(durationInMinutes).padStart(2, '0')}`
+        return formattedDuration
+      } else {
+        return '' // Or handle invalid dates as needed
+      }
+    } else {
+      return '' // Or handle missing dates as needed
+    }
+  }
 
   const colDefs = [
     {
@@ -198,22 +187,18 @@ const TurnaroundPlanTable = () => {
       editable: true,
       minWidth: 225,
       valueGetter: (params) => {
-        // console.log('p1', params);
-        // console.log('p2', params2);
         return params || ''
       },
       valueFormatter: (params) => {
-        console.log('params valueFormatter ', params)
         const product = allProducts.find((p) => p.id === params)
         return product ? product.displayName : ''
       },
       renderEditCell: (params) => {
         const { value } = params
-        // console.log('q1', params);
-        // console.log('q2', params2);
+
         return (
           <select
-            value={value || allProducts[0]?.id}
+            value={value || ''}
             onChange={(event) => {
               params.api.setEditCellValue({
                 id: params.id,
@@ -229,6 +214,10 @@ const TurnaroundPlanTable = () => {
               background: 'transparent', // Keeps background clean
             }}
           >
+            {/* Disabled first option */}
+            <option value='' disabled>
+              Select
+            </option>
             {allProducts.map((product) => (
               <option key={product.id} value={product.id}>
                 {product.displayName}
@@ -273,12 +262,11 @@ const TurnaroundPlanTable = () => {
       field: 'durationInMins',
       headerName: 'Duration (hrs)',
       editable: false,
-      // type: 'number',
+      type: 'number',
       minWidth: 100,
-      // renderCell: (params) => {
-      //   // const durationInHours = params.value ? (params.value / 60).toFixed(2) : "0.00";
-      //   return `${params.value}`
-      // },
+      align: 'left',
+      headerAlign: 'left',
+      valueGetter: findDuration,
     },
     {
       field: 'period',
@@ -313,15 +301,11 @@ const TurnaroundPlanTable = () => {
         turnAroundDetails,
         keycloak,
       )
-      //console.log('TurnAround data Updated successfully:', response)
       setSnackbarOpen(true)
-      // setSnackbarMessage("TurnAround data Updated successfully !");
       setSnackbarData({
         message: 'TurnAround data Updated successfully!',
         severity: 'success',
       })
-      // setSnackbarOpen(true);
-      // setSnackbarData({ message: "TurnAround data Updated successfully!", severity: "success" });
       return response
     } catch (error) {
       console.error('Error Updating TurnAround data:', error)
@@ -329,6 +313,18 @@ const TurnaroundPlanTable = () => {
       fetchData()
     }
   }
+
+  const handleRowEditStop = (params, event) => {
+    setRowModesModel({
+      ...rowModesModel,
+      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+    })
+  }
+
+  const onProcessRowUpdateError = React.useCallback((error) => {
+    console.log(error)
+  }, [])
+
   return (
     <div>
       <ASDataGrid
@@ -352,7 +348,20 @@ const TurnaroundPlanTable = () => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        handleDeleteClick={handleDeleteClick}
+        // handleDeleteClick={handleDeleteClick}
+        onRowEditStop={handleRowEditStop}
+        onProcessRowUpdateError={onProcessRowUpdateError}
+        experimentalFeatures={{ newEditingApi: true }}
+        onCellEditStop={(params, event) => {
+          event.defaultMuiPrevented = true
+          if (
+            params.reason === 'cellFocusOut' ||
+            params.reason === 'escapeKeyDown'
+          ) {
+            const updatedRow = { ...params.row, [params.field]: params.value }
+            processRowUpdate(updatedRow, params.row)
+          }
+        }}
         permissions={{
           showAction: true,
           addButton: true,

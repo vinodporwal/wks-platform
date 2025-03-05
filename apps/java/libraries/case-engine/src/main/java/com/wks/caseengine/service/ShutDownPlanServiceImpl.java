@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import com.wks.caseengine.dto.MonthWiseDataDTO;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 import com.wks.caseengine.repository.PlantMaintenanceTransactionRepository;
@@ -30,9 +31,9 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 	private PlantMaintenanceTransactionRepository plantMaintenanceTransactionRepository;
 
 	@Override
-	public List<ShutDownPlanDTO> findMaintenanceDetailsByPlantIdAndType(UUID plantId,String maintenanceTypeName) {
+	public List<ShutDownPlanDTO> findMaintenanceDetailsByPlantIdAndType(UUID plantId,String maintenanceTypeName, String year) {
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
-		List<Object[]> listOfSite=	shutDownPlanRepository.findMaintenanceDetailsByPlantIdAndType(maintenanceTypeName);
+		List<Object[]> listOfSite=	shutDownPlanRepository.findMaintenanceDetailsByPlantIdAndType(maintenanceTypeName, plantId.toString(), year);
 		for (Object[] result : listOfSite) {
             ShutDownPlanDTO dto = new ShutDownPlanDTO();
             dto.setDiscription((String) result[0]);
@@ -42,6 +43,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
             dto.setProduct((String) result[6]);
             //FOR ID : pmt.Id
             dto.setId(result[5] != null ? result[5].toString() : null); 
+			if((String) result[7]!=null){
+				dto.setRemark((String) result[7]);
+			}else{
+				dto.setRemark(null);
+			}
             dtoList.add(dto);
         }
 		return dtoList;
@@ -94,6 +100,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				plantMaintenanceTransaction.setVersion("V1");
 				plantMaintenanceTransaction.setCreatedOn(new Date());
 				plantMaintenanceTransaction.setPlantMaintenanceFkId(plantMaintenanceId);
+
+				plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 	
 				if (shutDownPlanDTO.getProductId() != null) {
 					plantMaintenanceTransaction.setNormParametersFKId(shutDownPlanDTO.getProductId());
@@ -111,15 +119,19 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				// 	slowdownPlanService.saveShutdownData(plantId, shutDownPlanDTOList);
 				// }
 
+				String description = shutDownPlanDTO.getDiscription();
 
 				List<ShutDownPlanDTO> list = new ArrayList<>();
-				shutDownPlanDTO.setDiscription(shutDownPlanDTO.getDiscription()+" Ramp Up");
+				shutDownPlanDTO.setDiscription(description+" Ramp Up");
 				list.add(shutDownPlanDTO);
 			slowdownPlanService.saveShutdownData(plantId, list);
 
 				List<ShutDownPlanDTO> list2 = new ArrayList<>();
-				shutDownPlanDTO.setDiscription(shutDownPlanDTO.getDiscription()+" Ramp Down");
+				//String description = shutDownPlanDTO.getDiscription()+" Ramp Up";
+				shutDownPlanDTO.setDiscription(description+" Ramp Down");
 				list2.add(shutDownPlanDTO);
+
+
 			slowdownPlanService.saveShutdownData(plantId,list2);
 	
 			} else {
@@ -130,6 +142,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 	
 					if (plantMaintenance.isPresent()) {
 						PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
+						plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 						plantMaintenanceTransaction.setDiscription(shutDownPlanDTO.getDiscription());
 						plantMaintenanceTransaction.setDurationInMins(shutDownPlanDTO.getDurationInMins());
 						plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
@@ -169,6 +182,20 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 	public PlantMaintenanceTransaction editShutDownPlanData(UUID plantMaintenanceTransactionId) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public List<MonthWiseDataDTO> getMonthlyShutdownHours(String auditYear, UUID plantId) {
+		List<MonthWiseDataDTO> monthWiseDataDTOList=new ArrayList<>();
+		List<Object[]> results= shutDownPlanRepository.getMonthlyShutdownHours(auditYear,plantId);
+		for (Object[] obj : results) {
+			MonthWiseDataDTO monthWiseDataDTO=new MonthWiseDataDTO();
+			monthWiseDataDTO.setMonthYear(obj[0].toString());
+			monthWiseDataDTO.setProduct(obj[1].toString());
+			monthWiseDataDTO.setTotalHours(Double.parseDouble(obj[2].toString()));
+			monthWiseDataDTOList.add(monthWiseDataDTO);
+		}
+		return monthWiseDataDTOList;
 	}
 
 }

@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import com.wks.caseengine.dto.MonthWiseDataDTO;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
 import com.wks.caseengine.service.ShutDownPlanService;
 
@@ -26,13 +28,13 @@ public class ShutDownPlanController {
 	private ShutDownPlanService shutDownPlanService;
 	
 	@GetMapping(value = "/getShutDownPlanData")
-    public ResponseEntity<List<ShutDownPlanDTO>> findMaintenanceDetailsByPlantIdAndType( @RequestParam String plantId, @RequestParam String maintenanceTypeName){
+    public ResponseEntity<List<ShutDownPlanDTO>> findMaintenanceDetailsByPlantIdAndType( @RequestParam String plantId, @RequestParam String maintenanceTypeName, @RequestParam String year){
             
 		List<ShutDownPlanDTO> shutDownPlanDTOList=null;
          try {
             // Convert String to UUID
             UUID plantUuid = UUID.fromString(plantId); 
-            shutDownPlanDTOList = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(plantUuid, maintenanceTypeName);
+            shutDownPlanDTOList = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(plantUuid, maintenanceTypeName,year);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(null); 
         } catch (Exception e) {
@@ -60,4 +62,9 @@ public class ShutDownPlanController {
 			  	shutDownPlanService.deletePlanData(plantMaintenanceTransactionId);
 		        return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
 		    }
+		  
+		  @GetMapping("/getMonthlyShutdownHours")
+		  public List<MonthWiseDataDTO> getMonthlyShutdownHours(@RequestParam String auditYear,@RequestParam String plantId){
+			  return shutDownPlanService.getMonthlyShutdownHours(auditYear,UUID.fromString(plantId));
+		  }
 }

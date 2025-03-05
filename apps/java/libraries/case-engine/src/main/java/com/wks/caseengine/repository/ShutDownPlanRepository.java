@@ -18,15 +18,17 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
             "pm.DurationInMins, " +
             "pmt.MaintenanceText, " +
             "pm.Id, " +
-            "np.Id " +
+            "np.Id, pm.remarks " +
             "FROM PlantMaintenanceTransaction pm " +
             "JOIN PlantMaintenance pmt ON pm.PlantMaintenance_FK_Id = pmt.Id " +
             "JOIN MaintenanceTypes mt ON pmt.MaintenanceType_FK_Id = mt.Id " +
             "LEFT JOIN NormParameters np ON pm.NormParameter_FK_Id = np.Id " +
-            "WHERE mt.Name = :maintenanceTypeName", 
+            "WHERE mt.Name = :maintenanceTypeName "  +
+            "and pmt.Plant_FK_Id = :plantId " +
+			"and AuditYear = :year ",
             nativeQuery = true)
 	List<Object[]> findMaintenanceDetailsByPlantIdAndType( 
-        @Param("maintenanceTypeName") String maintenanceTypeName);
+        @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 
     
     @Query(value = "SELECT " +
@@ -43,4 +45,22 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
     nativeQuery = true)
 	UUID findIdByPlantIdAndMaintenanceTypeName(@Param("plantFkId") UUID plantFkId, 
 	                                                   @Param("maintenanceTypeName") String maintenanceTypeName);
+    
+    @Query(value = """
+    	    SELECT 
+    	        FORMAT(t.MaintStartDateTime, 'MMM-yyyy') AS monthYear, 
+    	        p.MaintenanceText AS product, 
+    	        SUM(t.DurationInMins) / 60.0 AS totalHours 
+    	    FROM PlantMaintenanceTransaction t
+    	    JOIN PlantMaintenance p ON t.PlantMaintenance_FK_Id = p.Id
+    	    JOIN MaintenanceTypes m ON p.MaintenanceType_FK_Id = m.Id
+    	    WHERE 
+    	        m.Name = 'Shutdown' 
+    	        AND t.AuditYear = :auditYear 
+    	        AND p.Plant_FK_Id = :plantId 
+    	    GROUP BY FORMAT(t.MaintStartDateTime, 'MMM-yyyy'), p.MaintenanceText
+    	    ORDER BY monthYear, product
+    	""", nativeQuery = true)
+    	List<Object[]> getMonthlyShutdownHours(@Param("auditYear") String auditYear, @Param("plantId") UUID plantId);
+
 }

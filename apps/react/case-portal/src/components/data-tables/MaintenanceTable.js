@@ -12,18 +12,102 @@ const productionColumns = [
     minWidth: 250,
     maxWidth: 300,
   },
-  { field: 'apr24', headerName: 'Apr-24', editable: true },
-  { field: 'may24', headerName: 'May-24', editable: true },
-  { field: 'jun24', headerName: 'Jun-24', editable: true },
-  { field: 'jul24', headerName: 'Jul-24', editable: true },
-  { field: 'aug24', headerName: 'Aug-24', editable: true },
-  { field: 'sep24', headerName: 'Sep-24', editable: true },
-  { field: 'oct24', headerName: 'Oct-24', editable: true },
-  { field: 'nov24', headerName: 'Nov-24', editable: true },
-  { field: 'dec24', headerName: 'Dec-24', editable: true },
-  { field: 'jan25', headerName: 'Jan-25', editable: true },
-  { field: 'feb25', headerName: 'Feb-25', editable: true },
-  { field: 'mar25', headerName: 'Mar-25', editable: true },
+  {
+    field: 'apr24',
+    headerName: 'Apr-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'may24',
+    headerName: 'May-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'jun24',
+    headerName: 'Jun-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'jul24',
+    headerName: 'Jul-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'aug24',
+    headerName: 'Aug-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'sep24',
+    headerName: 'Sep-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'oct24',
+    headerName: 'Oct-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'nov24',
+    headerName: 'Nov-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'dec24',
+    headerName: 'Dec-24',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'jan25',
+    headerName: 'Jan-25',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'feb25',
+    headerName: 'Feb-25',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
+  {
+    field: 'mar25',
+    headerName: 'Mar-25',
+    editable: true,
+    type: 'number',
+    align: 'left',
+    headerAlign: 'left',
+  },
 
   // { field: 'remark', headerName: 'Remark', minWidth : 150, editable: true },
 ]
@@ -209,22 +293,6 @@ const MaintenanceTable = () => {
   const keycloak = useSession()
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-    const start = new Date(newRow.maintStartDateTime)
-    const end = new Date(newRow.maintEndDateTime)
-    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
-
-    console.log(`Duration in minutes: ${durationInMins}`)
-
-    // Update the duration in newRow
-    newRow.durationInMins = durationInMins.toFixed(2)
-    // newRow.durationInMins = durationInMins
-    // setShutdownData((prevData) =>
-    //   prevData.map((row) => (row.id === rowId ? newRow : row)),
-    // )
-
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
     // Keep track of original values before editing

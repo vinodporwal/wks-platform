@@ -57,12 +57,8 @@ const BusinessDemand = () => {
         // handleMenuClose();
       }
     }
-
-    // Initial data fetch on mount or when selectedPlant changes
     fetchData()
     getAllProducts()
-    console.log('sitePlant--->', sitePlantChange)
-    console.log(sitePlantChange, 'changed plant or site')
   }, [sitePlantChange, keycloak])
 
   const colDefs = [
@@ -100,6 +96,10 @@ const BusinessDemand = () => {
               background: 'transparent',
             }}
           >
+            {/* Disabled first option */}
+            <option value='' disabled>
+              Select
+            </option>
             {allProducts.map((product) => (
               <option key={product.id} value={product.id}>
                 {product.displayName}
@@ -216,40 +216,6 @@ const BusinessDemand = () => {
   ]
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-
-    // Extract numeric values from month fields
-    const months = [
-      'jan',
-      'feb',
-      'march',
-      'april',
-      'may',
-      'june',
-      'july',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-    ]
-    const values = months
-      .map((month) => Number(newRow[month])) // Convert to number
-      .filter((value) => !isNaN(value)) // Filter out NaN values
-
-    console.log(values)
-    // Calculate new average TPH
-    const newAvgTph =
-      values.length > 0
-        ? values.reduce((sum, val) => sum + val, 0) / values.length
-        : 0
-    console.log(newAvgTph)
-    // Update the avgTph value
-    newRow.avgTph = newAvgTph
-    setBDData((prevData) =>
-      prevData.map((row) => (row.id === rowId ? newRow : row)),
-    )
-
     // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
     // onRowUpdate.updatedRow(unsavedChangesRef.current.unsavedRows)
@@ -284,7 +250,6 @@ const BusinessDemand = () => {
   }, [apiRef])
   const saveBusinessDemandData = async (newRows) => {
     try {
-      console.log('saveBusiness API Called')
       let plantId = ''
       const storedPlant = localStorage.getItem('selectedPlant')
       if (storedPlant) {
@@ -293,24 +258,24 @@ const BusinessDemand = () => {
       }
 
       const businessData = newRows.map((row) => ({
-        april: row.april,
-        may: row.may,
-        june: row.june,
-        july: row.july,
-        aug: row.aug,
-        sep: row.sep,
-        oct: row.oct,
-        nov: row.nov,
-        dec: row.dec,
-        jan: row.jan,
-        feb: row.feb,
-        march: row.march,
+        april: row.april || null,
+        may: row.may || null,
+        june: row.june || null,
+        july: row.july || null,
+        aug: row.aug || null,
+        sep: row.sep || null,
+        oct: row.oct || null,
+        nov: row.nov || null,
+        dec: row.dec || null,
+        jan: row.jan || null,
+        feb: row.feb || null,
+        march: row.march || null,
         remark: row.remark,
-        avgTph: row.avgTph,
+        avgTph: row.avgTph || null,
         year: '2024-25',
         plantId: plantId,
         normParameterId: row.normParameterId,
-        id: row.idFromApi,
+        id: row.idFromApi || null,
       }))
 
       const response = await DataService.saveBusinessDemandData(
@@ -320,7 +285,7 @@ const BusinessDemand = () => {
       )
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Business Demand data saved successfully!',
+        message: 'Business Demand data Saved Successfully!',
         severity: 'success',
       })
       // fetchData()
@@ -331,28 +296,17 @@ const BusinessDemand = () => {
       fetchData()
     }
   }
-  const handleDeleteClick = async (id, params) => {
-    try {
-      const maintenanceId =
-        id?.maintenanceId ||
-        params?.row?.idFromApi ||
-        params?.row?.maintenanceId ||
-        params?.NormParameterMonthlyTransactionId
 
-      console.log(maintenanceId, params, id)
-
-      // Ensure UI state updates before the deletion process
-      setOpen1(true)
-      setDeleteId(maintenanceId)
-
-      // Perform the delete operation
-      // return await DataService.deleteBusinessDemandData(maintenanceId, keycloak)
-    } catch (error) {
-      console.error(`Error deleting Business data:`, error)
-    } finally {
-      // fetchData()
-    }
+  const handleRowEditStop = (params, event) => {
+    setRowModesModel({
+      ...rowModesModel,
+      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+    })
   }
+
+  const onProcessRowUpdateError = React.useCallback((error) => {
+    console.log(error)
+  }, [])
 
   return (
     <div>
@@ -370,13 +324,15 @@ const BusinessDemand = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        onRowEditStop={handleRowEditStop}
         apiRef={apiRef}
         deleteId={deleteId}
         setDeleteId={setDeleteId}
         setOpen1={setOpen1}
         open1={open1}
-        handleDeleteClick={handleDeleteClick}
+        // handleDeleteClick={handleDeleteClick}
         fetchData={fetchData}
+        onProcessRowUpdateError={onProcessRowUpdateError}
         permissions={{
           showAction: true,
           addButton: true,

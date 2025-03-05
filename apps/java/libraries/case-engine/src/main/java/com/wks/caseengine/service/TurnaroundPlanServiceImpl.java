@@ -25,10 +25,10 @@ public class TurnaroundPlanServiceImpl implements TurnaroundPlanService{
 	
 
 	@Override
-	public List<ShutDownPlanDTO> findTurnaroundPlanDataByPlantIdAndType(UUID plantId, String maintenanceTypeName) {
+	public List<ShutDownPlanDTO> findTurnaroundPlanDataByPlantIdAndType(UUID plantId, String maintenanceTypeName,String year) {
 		List<Object[]> listOfSite=null;
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
-		 listOfSite=turnaroundPlanRepository.findTurnaroundPlanDetailsByPlantIdAndType(maintenanceTypeName);
+		 listOfSite=turnaroundPlanRepository.findTurnaroundPlanDetailsByPlantIdAndType(maintenanceTypeName,plantId.toString(), year);
 		  for (Object[] result : listOfSite) { 
 			  ShutDownPlanDTO dto = new  ShutDownPlanDTO();
 			  dto.setDiscription((String) result[0]); 

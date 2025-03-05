@@ -24,11 +24,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService{
 	private ShutDownPlanService shutDownPlanService;
 
 	@Override
-	public List<SlowDownPlanDTO> findSlowdownDetailsByPlantIdAndType(UUID plantId, String maintenanceTypeName) {
+	public List<SlowDownPlanDTO> findSlowdownDetailsByPlantIdAndType(UUID plantId, String maintenanceTypeName,String year) {
 		
 		List<Object[]> listOfSite=null;
 		try {
-			listOfSite =slowdownPlanRepository.findSlowdownPlanDetailsByPlantIdAndType(maintenanceTypeName);
+			listOfSite =slowdownPlanRepository.findSlowdownPlanDetailsByPlantIdAndType(maintenanceTypeName,plantId.toString(),year);
 		}catch(Exception e) {
 			e.printStackTrace();
 		}

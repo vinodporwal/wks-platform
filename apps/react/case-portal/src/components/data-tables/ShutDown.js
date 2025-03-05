@@ -26,21 +26,6 @@ const ShutDown = () => {
   const keycloak = useSession()
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-    const start = new Date(newRow.maintStartDateTime)
-    const end = new Date(newRow.maintEndDateTime)
-    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
-
-    console.log(`Duration in minutes: ${durationInMins}`)
-
-    // Update the duration in newRow
-    newRow.durationInMins = durationInMins.toFixed(2)
-    // newRow.durationInMins = durationInMins
-    setShutdownData((prevData) =>
-      prevData.map((row) => (row.id === rowId ? newRow : row)),
-    )
-
     // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
@@ -71,9 +56,10 @@ const ShutDown = () => {
       // setIsSaving(false);
     }
   }, [apiRef])
+
   const saveShutdownData = async (newRow) => {
     try {
-      // var plantId = 'A4212E62-2BAC-4A38-9DAB-2C9066A9DA7D'
+      let plantId = ''
 
       const storedPlant = localStorage.getItem('selectedPlant')
       if (storedPlant) {
@@ -81,33 +67,33 @@ const ShutDown = () => {
         plantId = parsedPlant.id
       }
 
-      var plantId = plantId
       // plantId = plantId;
-      console.log(newRow)
-      const shutdownDetails = {
-        id: newRow.id,
-        productId: newRow.product,
-        discription: newRow.discription,
-        durationInMins: newRow.durationInMins,
-        maintEndDateTime: newRow.maintEndDateTime,
-        maintStartDateTime: newRow.maintStartDateTime,
-        remark: newRow.remark, // Added missing 'remark' field
-      }
+
+      const shutdownDetails = newRow.map((row) => ({
+        productId: row.product,
+        discription: row.discription,
+        durationInMins: parseFloat(findDuration('1', row)),
+        maintEndDateTime: row.maintEndDateTime,
+        maintStartDateTime: row.maintStartDateTime,
+        audityear: '2024-25',
+        id: row.idFromApi || null,
+        remark: row.remark || 'null',
+      }))
 
       const response = await DataService.saveShutdownData(
         plantId,
         shutdownDetails,
         keycloak,
       )
-      //console.log('Shutdown data saved successfully:', response)
+
       setSnackbarOpen(true)
-      // setSnackbarMessage("Shutdown data saved successfully !");
+      // setSnackbarMessage("Shutdown data Saved Successfully !");
       setSnackbarData({
-        message: 'Shutdown data saved successfully!',
+        message: 'Shutdown data Saved Successfully!',
         severity: 'success',
       })
       // setSnackbarOpen(true);
-      // setSnackbarData({ message: "Shutdown data saved successfully!", severity: "success" });
+      // setSnackbarData({ message: "Shutdown data Saved Successfully!", severity: "success" });
       return response
     } catch (error) {
       console.error('Error saving shutdown data:', error)
@@ -157,7 +143,7 @@ const ShutDown = () => {
         params?.row?.maintenanceId ||
         params?.NormParameterMonthlyTransactionId
 
-      console.log(maintenanceId, params, id)
+      // console.log(maintenanceId, params, id)
 
       // Ensure UI state updates before the deletion process
       setOpen1(true)
@@ -176,7 +162,7 @@ const ShutDown = () => {
       const data = await DataService.getShutDownPlantData(keycloak)
       const formattedData = data.map((item, index) => ({
         ...item,
-        // id: item?.maintenanceId,
+        idFromApi: item?.id,
         id: index,
       }))
       setShutdownData(formattedData)
@@ -188,7 +174,7 @@ const ShutDown = () => {
     const getAllProducts = async () => {
       try {
         const data = await DataService.getAllProducts(keycloak)
-        console.log('API Response:', data)
+        // console.log('API Response:', data)
 
         // Extract only displayName and id
         const productList = data.map((product) => ({
@@ -208,6 +194,31 @@ const ShutDown = () => {
     // saveShutdownData()
     getAllProducts()
   }, [sitePlantChange, keycloak])
+
+  const findDuration = (value, row) => {
+    if (row && row.maintStartDateTime && row.maintEndDateTime) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
+
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        // Check if dates are valid
+        const durationInMs = end - start
+
+        // Calculate duration in hours and minutes
+        const durationInHours = Math.floor(durationInMs / (1000 * 60 * 60))
+        const remainingMs = durationInMs % (1000 * 60 * 60)
+        const durationInMinutes = Math.floor(remainingMs / (1000 * 60))
+
+        // Format the duration as "HH:MM"
+        const formattedDuration = `${String(durationInHours).padStart(2, '0')}:${String(durationInMinutes).padStart(2, '0')}`
+        return formattedDuration
+      } else {
+        return '' // Or handle invalid dates as needed
+      }
+    } else {
+      return '' // Or handle missing dates as needed
+    }
+  }
 
   const colDefs = [
     {
@@ -240,7 +251,7 @@ const ShutDown = () => {
         return params || ''
       },
       valueFormatter: (params) => {
-        console.log('params valueFormatter ', params)
+        // console.log('params valueFormatter ', params)
         const product = allProducts.find((p) => p.id === params)
         return product ? product.displayName : ''
       },
@@ -250,7 +261,7 @@ const ShutDown = () => {
         // console.log('q2', params2);
         return (
           <select
-            value={value || allProducts[0]?.id}
+            value={value || ''}
             onChange={(event) => {
               params.api.setEditCellValue({
                 id: params.id,
@@ -266,6 +277,10 @@ const ShutDown = () => {
               background: 'transparent', // Keeps background clean
             }}
           >
+            {/* Disabled first option */}
+            <option value='' disabled>
+              Select
+            </option>
             {allProducts.map((product) => (
               <option key={product.id} value={product.id}>
                 {product.displayName}
@@ -310,9 +325,24 @@ const ShutDown = () => {
       headerName: 'Duration (hrs)',
       editable: false,
       minWidth: 100,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+      valueGetter: findDuration,
     },
     { field: 'remark', headerName: 'Remark', minWidth: 150, editable: true },
   ]
+
+  const handleRowEditStop = (params, event) => {
+    setRowModesModel({
+      ...rowModesModel,
+      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+    })
+  }
+
+  const onProcessRowUpdateError = React.useCallback((error) => {
+    console.log(error)
+  }, [])
 
   return (
     <div>
@@ -336,8 +366,21 @@ const ShutDown = () => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        handleDeleteClick={handleDeleteClick}
+        // handleDeleteClick={handleDeleteClick}
         fetchData={fetchData}
+        onRowEditStop={handleRowEditStop}
+        onProcessRowUpdateError={onProcessRowUpdateError}
+        experimentalFeatures={{ newEditingApi: true }}
+        onCellEditStop={(params, event) => {
+          event.defaultMuiPrevented = true
+          if (
+            params.reason === 'cellFocusOut' ||
+            params.reason === 'escapeKeyDown'
+          ) {
+            const updatedRow = { ...params.row, [params.field]: params.value }
+            processRowUpdate(updatedRow, params.row)
+          }
+        }}
         permissions={{
           showAction: true,
           addButton: true,

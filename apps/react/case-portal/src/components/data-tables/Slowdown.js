@@ -26,21 +26,21 @@ const SlowDown = () => {
   })
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-    const start = new Date(newRow.maintStartDateTime)
-    const end = new Date(newRow.maintEndDateTime)
-    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
+    // console.log(newRow)
+    // const start = new Date(newRow.maintStartDateTime)
+    // const end = new Date(newRow.maintEndDateTime)
+    // const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
+    // // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
 
-    console.log(`Duration in minutes: ${durationInMins}`)
+    // console.log(`Duration in minutes: ${durationInMins}`)
 
-    // Update the duration in newRow
-    newRow.durationInMins = durationInMins.toFixed(2)
-    // newRow.durationInMins = durationInMins
+    // // Update the duration in newRow
+    // newRow.durationInMins = durationInMins.toFixed(2)
+    // // newRow.durationInMins = durationInMins
 
-    setSlowDownData((prevData) =>
-      prevData.map((row) => (row.id === rowId ? newRow : row)),
-    )
+    // setSlowDownData((prevData) =>
+    //   prevData.map((row) => (row.id === rowId ? newRow : row)),
+    // )
     // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
@@ -61,29 +61,31 @@ const SlowDown = () => {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
-      const slowDownDetails = {
-        productId: newRow.product,
-        discription: newRow.discription,
-        durationInMins: newRow.durationInMins,
-        maintEndDateTime: newRow.maintEndDateTime,
-        maintStartDateTime: newRow.maintStartDateTime,
-        remark: newRow.remarks,
-        rate: newRow.rate,
-      }
+      const slowDownDetails = newRow.map((row) => ({
+        productId: row.product,
+        discription: row.discription,
+        durationInMins: parseFloat(findDuration('1', row)),
+        maintEndDateTime: row.maintEndDateTime,
+        maintStartDateTime: row.maintStartDateTime,
+        remark: row.remarks,
+        rate: row.rate,
+        audityear: '2024-25',
+        id: row.idFromApi || null,
+      }))
       const response = await DataService.saveSlowdownData(
         plantId,
         slowDownDetails,
         keycloak,
       )
-      //console.log('Slowdown data saved successfully:', response)
+      //console.log('Slowdown data Saved Successfully:', response)
       setSnackbarOpen(true)
-      // setSnackbarMessage("Slowdown data saved successfully !");
+      // setSnackbarMessage("Slowdown data Saved Successfully !");
       setSnackbarData({
-        message: 'Slowdown data saved successfully!',
+        message: 'Slowdown data Saved Successfully!',
         severity: 'success',
       })
       // setSnackbarOpen(true);
-      // setSnackbarData({ message: "Slowdown data saved successfully!", severity: "success" });
+      // setSnackbarData({ message: "Slowdown data Saved Successfully!", severity: "success" });
       return response
     } catch (error) {
       console.error('Error saving Slowdown data:', error)
@@ -148,7 +150,7 @@ const SlowDown = () => {
       const data = await DataService.getSlowDownPlantData(keycloak)
       const formattedData = data.map((item, index) => ({
         ...item,
-        // id: item?.maintenanceId,
+        idFromApi: item?.maintenanceId,
         id: index,
       }))
       setSlowDownData(formattedData)
@@ -200,7 +202,7 @@ const SlowDown = () => {
     //       shutdownDetails,
     //       keycloak,
     //     )
-    //     console.log('Shutdown data saved successfully:', response)
+    //     console.log('Shutdown data Saved Successfully:', response)
     //     return response
     //   } catch (error) {
     //     console.error('Error saving shutdown data:', error)
@@ -211,6 +213,32 @@ const SlowDown = () => {
     // saveShutdownData()
     getAllProducts()
   }, [sitePlantChange, keycloak])
+
+  const findDuration = (value, row) => {
+    if (row && row.maintStartDateTime && row.maintEndDateTime) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
+
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        // Check if dates are valid
+        const durationInMs = end - start
+
+        // Calculate duration in hours and minutes
+        const durationInHours = Math.floor(durationInMs / (1000 * 60 * 60))
+        const remainingMs = durationInMs % (1000 * 60 * 60)
+        const durationInMinutes = Math.floor(remainingMs / (1000 * 60))
+
+        // Format the duration as "HH:MM"
+        const formattedDuration = `${String(durationInHours).padStart(2, '0')}:${String(durationInMinutes).padStart(2, '0')}`
+        return formattedDuration
+      } else {
+        return '' // Or handle invalid dates as needed
+      }
+    } else {
+      return '' // Or handle missing dates as needed
+    }
+  }
+
   const handleDeleteClick = async (id, params) => {
     try {
       const maintenanceId =
@@ -219,7 +247,7 @@ const SlowDown = () => {
         params?.row?.maintenanceId ||
         params?.NormParameterMonthlyTransactionId
 
-      console.log(maintenanceId, params, id)
+      // console.log(maintenanceId, params, id)
 
       // Ensure UI state updates before the deletion process
       setOpen1(true)
@@ -238,7 +266,7 @@ const SlowDown = () => {
     {
       field: 'discription',
       headerName: 'Slowdown Desc',
-      minWidth: 200,
+      minWidth: 250,
       editable: true,
       renderHeader: () => (
         <div style={{ textAlign: 'center', fontWeight: 'normal' }}>
@@ -264,7 +292,7 @@ const SlowDown = () => {
         return params || ''
       },
       valueFormatter: (params) => {
-        console.log('params valueFormatter ', params)
+        // console.log('params valueFormatter ', params)
         const product = allProducts.find((p) => p.id === params)
         return product ? product.displayName : ''
       },
@@ -272,7 +300,7 @@ const SlowDown = () => {
         const { value } = params
         return (
           <select
-            value={value || allProducts[0]?.id}
+            value={value || ''}
             onChange={(event) => {
               params.api.setEditCellValue({
                 id: params.id,
@@ -288,6 +316,10 @@ const SlowDown = () => {
               background: 'transparent',
             }}
           >
+            {/* Disabled first option */}
+            <option value='' disabled>
+              Select
+            </option>
             {allProducts.map((product) => (
               <option key={product.id} value={product.id}>
                 {product.displayName}
@@ -332,18 +364,21 @@ const SlowDown = () => {
       field: 'durationInMins',
       headerName: 'Duration (hrs)',
       editable: false,
-      // type: "number",
       minWidth: 100,
-      maxWidth: 150,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+      valueGetter: findDuration,
     },
 
     {
       field: 'rate',
       headerName: 'Rate',
       editable: true,
-      type: 'number',
       minWidth: 100,
-      maxWidth: 150,
+      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
     },
 
     {
@@ -351,9 +386,19 @@ const SlowDown = () => {
       headerName: 'Remarks',
       editable: true,
       minWidth: 200,
-      maxWidth: 400,
     },
   ]
+
+  const handleRowEditStop = (params, event) => {
+    setRowModesModel({
+      ...rowModesModel,
+      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+    })
+  }
+
+  const onProcessRowUpdateError = React.useCallback((error) => {
+    console.log(error)
+  }, [])
 
   return (
     <div>
@@ -377,8 +422,21 @@ const SlowDown = () => {
         setDeleteId={setDeleteId}
         setOpen1={setOpen1}
         open1={open1}
-        handleDeleteClick={handleDeleteClick}
+        // handleDeleteClick={handleDeleteClick}
         fetchData={fetchData}
+        onRowEditStop={handleRowEditStop}
+        onProcessRowUpdateError={onProcessRowUpdateError}
+        experimentalFeatures={{ newEditingApi: true }}
+        onCellEditStop={(params, event) => {
+          event.defaultMuiPrevented = true
+          if (
+            params.reason === 'cellFocusOut' ||
+            params.reason === 'escapeKeyDown'
+          ) {
+            const updatedRow = { ...params.row, [params.field]: params.value }
+            processRowUpdate(updatedRow, params.row)
+          }
+        }}
         permissions={{
           showAction: true,
           addButton: true,
