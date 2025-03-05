@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  REPOSITORY_OWNER: aop-deployment
+  REPOSITORY_OWNER: vinodporwal
   KEYCLOAK_URL: http://localhost:8082
   WKS_API_URL: http://localhost:8081
   WKS_STORAGE_API_URL: http://localhost:8085
