@@ -1,2 +1,2 @@
-public/libs/**/**/*.js
+public/**/**/**/*.js
 *.min.js
