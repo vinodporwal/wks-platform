@@ -86,7 +86,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/storage-api/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/storage-api:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/storage-api:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for opa
         uses: docker/build-push-action@v2
@@ -95,7 +95,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: opa/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/opa:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/opa:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for c7-external-tasks
         uses: docker/build-push-action@v2
@@ -104,7 +104,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/c7-external-tasks/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c7-external-tasks:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c7-external-tasks:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for c8-external-tasks
         uses: docker/build-push-action@v2
@@ -113,7 +113,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/c8-external-tasks/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c8-external-tasks:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c8-external-tasks:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for case-engine-rest-api
         uses: docker/build-push-action@v2
@@ -122,7 +122,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/case-engine-rest-api/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-engine-rest-api:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-engine-rest-api:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for demo-data-loader
         uses: docker/build-push-action@v2
@@ -131,7 +131,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/demo-data-loader/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/demo-data-loader:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/demo-data-loader:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for case-portal
         uses: docker/build-push-action@v2
@@ -140,7 +140,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/react/case-portal/deployments/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-portal:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-portal:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for websocket-publisher
         uses: docker/build-push-action@v2
@@ -149,7 +149,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/node/websocket-publisher/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/websocket-publisher:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/websocket-publisher:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for novu-publisher
         uses: docker/build-push-action@v2
@@ -158,7 +158,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/node/novu-publisher/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/novu-publisher:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/novu-publisher:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
 
       - name: Build and push Docker image for email-sender
         uses: docker/build-push-action@v2
@@ -167,4 +167,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/node/email-sender/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/email-sender:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/email-sender:${{ steps.extract_tag.outputs.tag | replace('refs/heads/', '')}}"
