@@ -1,2 +1,2 @@
-public/libs/ace/1.4.12/ace.js
+public/libs/**/**/*.js
 *.min.js
