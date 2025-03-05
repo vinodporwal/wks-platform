@@ -148,6 +148,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     private EntityManager entityManager;
 
     
+ 	@Value("${spring.datasource.db1.name}")
+    private String db1Name;
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
 		return commandExecutor.execute(
@@ -643,12 +645,26 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Override
 	public List<Case> getCaseDetails(String displayName, String hierarchyName) {
-		List<String> assetsPKIds = fetchRecords.findNodesByHierarchyNameAndDisplayName(displayName, hierarchyName);
-		String result = assetsPKIds.stream()
-			    .map(id -> "\'" + id + "\'") // Add quotes to each item
-			    .collect(Collectors.joining(", ")); // Join with a comma and space
-			System.out.println("AssetPkIds: " + result);		List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
-		return cases;
+		// List<String> assetsPKIds = fetchRecords.findNodesByHierarchyNameAndDisplayName(displayName, hierarchyName);
+		// String result = assetsPKIds.stream()
+		// 	    .map(id -> "\'" + id + "\'") // Add quotes to each item
+		// 	    .collect(Collectors.joining(", ")); // Join with a comma and space
+		// List<Case> cases = caseRepository.findAllByAssetsPKID(assetsPKIds);
+       String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
+                       "WHERE TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
+                       "SELECT hn.HierarchyNode_PK_ID " +
+                       "FROM " + db1Name + ".[dbo].[HierarchyNodes] hn " +
+                       "JOIN " + db1Name + ".[dbo].[HierarchyTrees] ht " +
+                       "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
+                       "WHERE hn.IsDeleted = 0 " +
+                       "AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
+                       "AND ht.HierarchyType = :hierarchyName" +
+                       ") ORDER BY c.case_no DESC";
+        Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
+        nativeQuery.setParameter("assetName", displayName);
+        nativeQuery.setParameter("hierarchyName", hierarchyName);
+        return nativeQuery.getResultList();
+		// return cases;
 	}
 	
 	@Override

@@ -60,6 +60,7 @@ spring:
       username: ${SQL_SERVER_1_USERNAME:sa}
       password: ${SQL_SERVER_1_PASSWORD:"#Qwer123"}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      name: ${SQL_SERVER_1}
       hikari:
         maximum-pool-size: 10
         minimum-idle: 5
