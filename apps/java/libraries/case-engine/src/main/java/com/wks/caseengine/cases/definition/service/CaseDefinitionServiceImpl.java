@@ -653,8 +653,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
        String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c " +
                        "WHERE TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" +
                        "SELECT hn.HierarchyNode_PK_ID " +
-                       "FROM " + db1Name + ".[dbo].[HierarchyNodes] hn " +
-                       "JOIN " + db1Name + ".[dbo].[HierarchyTrees] ht " +
+                       "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " +
+                       "JOIN [" + db1Name + "].[dbo].[HierarchyTrees] ht " +
                        "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID " +
                        "WHERE hn.IsDeleted = 0 " +
                        "AND hn.Path LIKE CONCAT('%', :assetName, '%') " +
