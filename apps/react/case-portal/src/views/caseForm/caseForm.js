@@ -578,12 +578,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     } = event.data
 
     const missingFields = []
-    if (!recommendationReviewer) missingFields.push('Recommendation Reviewer')
+    if (!recommendationReviewer) 
+      missingFields.push('Recommendation Reviewer')
     if (!recommendationAssignedTo2)
       missingFields.push('Recommendation Assigned To')
-    if (!recommendationHeadline) missingFields.push('Recommendation Headline')
+    if (!recommendationHeadline) 
+      missingFields.push('Recommendation Headline')
     if (!recommendationTargetCompletionDate1)
       missingFields.push('Target Completion Date')
+    if (!equipmentFunctionLocation)
+      missingFields.push('Equipment Function Location')
 
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields)
@@ -1035,7 +1039,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         const getObjectForUrl = \`${Config.StorageUrl}/storage/files/cases/downloads/\${file.name}?content-type=\${file.type}\`;
         fetch(getObjectForUrl, {
           headers: {
-            Authorization: \`Bearer \${keycloak.token}\`,
+            Authorization: \`Bearer ${keycloak.token}\`,
           },
         })
           .then((resp) => resp.json())

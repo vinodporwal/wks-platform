@@ -130,17 +130,17 @@ export const CaseList = ({ status, caseDefId }) => {
       {
         field: 'caseNumber',
         headerName: t('pages.caselist.datagrid.columns.caseNumber'),
-        width: 80,
+        width: 150,
       },
       {
         field: 'caseTitle',
         headerName: t('pages.caselist.datagrid.columns.caseTitle'),
-        width: 250,
+        flex: 1
       },
       {
         field: 'mainAsset',
         headerName: 'Main Asset',
-        width: 230,
+        flex: 1,
         valueGetter: (value, row) => {
           try {
             const attributes =
@@ -166,7 +166,7 @@ export const CaseList = ({ status, caseDefId }) => {
       {
         field: 'caseStatus',
         headerName: 'Case Status',
-        width: 150,
+        flex: 1,
         valueGetter: (value, row) => {
           try {
             if (!row) {
@@ -226,7 +226,7 @@ export const CaseList = ({ status, caseDefId }) => {
       {
         field: 'isDraft',
         headerName: 'Status',
-        width: 100,
+        width: 150,
         valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
       },
       // {
