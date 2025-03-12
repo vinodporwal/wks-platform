@@ -908,7 +908,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    Map<String, Object> requestBody = new HashMap<>();
 		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API");
 	    requestBody.put("Page", 0);
-	    requestBody.put("PageSize", 1000);
+	    requestBody.put("PageSize", 10000);
 	    requestBody.put("InputsingleParams", inputsingleParams);
 	    try {
 	        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
