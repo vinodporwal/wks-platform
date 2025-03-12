@@ -926,8 +926,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	                        if ("A".equals(userMap.get("Status"))) { // Corrected String comparison
 	                    com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
 
-		                    user.setUserId(userMap.get("User Id") != null ? userMap.get("User Id").toString() : null);
-		                    user.setEmailId(userMap.get("User Id") != null ? userMap.get("User Id").toString() : null);
+	                            user.setUserId(userMap.get("User ID") != null ? userMap.get("User ID").toString() : null);
+	                            user.setEmailId(userMap.get("User ID") != null ? userMap.get("User ID").toString() : null);
 		                    geUsers.add(user);
 	                        }
 	                    } 
