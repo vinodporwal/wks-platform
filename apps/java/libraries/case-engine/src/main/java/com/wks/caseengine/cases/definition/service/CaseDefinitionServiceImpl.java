@@ -587,11 +587,29 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //		} catch(Exception  e) {
 //			e.printStackTrace();
 //		}
+		 String geAPMAcsessToken = geLogin();
+		 System.out.println("GE APM Acsess Token: " + geAPMAcsessToken);
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
-		 String geAPMAcsessToken = geLogin();
-		 System.out.println("GE APM Acsess Token: " + geAPMAcsessToken);
+		 headers.add("Meridium Token", geAPMAcsessToken);
+         Map<String, Object> requestBody = new HashMap<>();
+         requestBody.put("Auther_Domain_Id", dataGridEntry.get("recommendationAssignedTo2"));
+         requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
+         requestBody.put("Approved_Domain_Id", dataGridEntry.get("recommendationReviewer"));
+         requestBody.put("RECOMMENDATION_Des", dataGridEntry.get("recommendationDescription1"));
+         requestBody.put("MI_REC_BASIS", dataGridEntry.get("recommendationHeadline"));
+         requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.get("equipmentFunctionLocation"));
+         requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.get("recommendationDescription1"));
+         requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", dataGridEntry.get("recommendationTargetCompletionDate1")) ;
+         requestBody.put("MI_REC_PRIORITY_C", "2");
+         requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.get("RecommendationConfirmSAP3"));
+         requestBody.put("CaseID", caseNo);
+		 System.out.println("GE APM Create Case body: " + requestBody.toString());
+         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+		 ResponseEntity<Map> response = restTemplate.postForEntity(geCreateCaseAPI, requestEntity, Map.class);
+		 System.out.println("Response Code: " + response.getStatusCode());
+		 System.out.println("Response Body: " + response.getBody());
 		 String prefix = "REC-";
 		 sendMailToAssignedPerson(assignedUserId);
 		 sendMailToReviewerPerson(reviewerUserId);

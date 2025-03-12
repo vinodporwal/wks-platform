@@ -99,9 +99,9 @@ spring:
     # port: 587
     # username: shrikant.mnt@gmail.com
     # password: "ldaortwzpbjadvez"
-    host: smtp.honeywell.com
+    host: emailsmtp.ril.com
     port: 25
-    fromEmail:  amol.borse@honeywell.com
+    fromEmail:  swapnil.jadhav@ril.com
     properties:
       mail:
         smtp:
