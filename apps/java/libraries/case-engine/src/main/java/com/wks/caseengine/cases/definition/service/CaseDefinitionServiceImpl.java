@@ -919,12 +919,13 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        if (responseBody != null && responseBody.get("output") instanceof Map) {
 	            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.get("output");
 	            if (responseOutput.get("data") instanceof List) {
-	                List<Map<String, Object>> usersList = (List<Map<String, Object>>) responseOutput.get("data");
+	                Map<String, Object> usersRows = (Map<String, Object>) responseOutput.get("data");
+	                List<Map<String, Object>> usersList = (List<Map<String, Object>>) usersRows.get("rows");
 	                for (Map<String, Object> userMap : usersList) {
 	                    com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
-	                    if(userMap.get("status") != null && userMap.get("status").toString() == "A") {
-		                    user.setUserId(userMap.get("userId") != null ? userMap.get("userId").toString() : null);
-		                    user.setEmailId(userMap.get("userId") != null ? userMap.get("userId").toString() : null);
+	                    if(userMap.get("Status") != null && userMap.get("Status").toString() == "A") {
+		                    user.setUserId(userMap.get("User Id") != null ? userMap.get("User Id").toString() : null);
+		                    user.setEmailId(userMap.get("User Id") != null ? userMap.get("User Id").toString() : null);
 		                    geUsers.add(user);
 	                    } 
 	                }
