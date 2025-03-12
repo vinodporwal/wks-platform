@@ -225,6 +225,16 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
 
   const onSubmitForm = () => {
     setLoading(true)
+    const requiredFields = ['caseTitle']
+    const missingFields = requiredFields.filter(
+      (field) => !formData.data.container[field],
+    )
+    if (missingFields.length > 0) {
+      setSnackbarMessages(['Please fill required case title field.'])
+      setSnackbarOpen(true)
+      setLoading(false)
+      return
+    }
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)

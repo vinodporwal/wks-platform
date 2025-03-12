@@ -590,6 +590,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
+		 String geAPMAcsessToken = geLogin();
+		 System.out.println("GE APM Acsess Token: " + geAPMAcsessToken);
 		 String prefix = "REC-";
 		 sendMailToAssignedPerson(assignedUserId);
 		 sendMailToReviewerPerson(reviewerUserId);
