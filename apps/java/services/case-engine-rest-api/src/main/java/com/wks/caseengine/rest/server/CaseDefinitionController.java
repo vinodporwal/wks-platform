@@ -197,4 +197,12 @@ public class CaseDefinitionController {
             return ResponseEntity.status(500).body("Error while sending email: " + e.getMessage());
         }
     }
+	@GetMapping(value = "/users/ge-apm")
+	public ResponseEntity<List<?>> getUsersFromAD() {
+		try {
+			return ResponseEntity.ok(caseDefinitionService.getGEUsers());
+		} catch (CaseDefinitionNotFoundException e) {
+			throw new RestResourceNotFoundException(e.getMessage());
+		}
+	}
 }

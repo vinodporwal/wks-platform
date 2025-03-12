@@ -68,4 +68,6 @@ public interface CaseDefinitionService {
 
 	void sendEmail(String emailId, String subject, String body);
 
+//	List<com.wks.caseengine.rest.db2.entity.Users> getAllUsersFromAD();
+	List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers();
 }

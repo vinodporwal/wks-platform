@@ -45,6 +45,13 @@ spring.data.mongodb.database.max-connection-life-time: 3000
 
 opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
 keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
+ge.authentication.datasource: ${GE_AUTHENTICATION_DATASOURCE}
+ge.authentication.id: ${GE_AUTHENTICATION_ID}
+ge.authentication.password: ${GE_AUTHENTICATION_PASSWORD}
+ge.authentication.api: ${GE_AUTHENTICATION_API}
+ge.users.api: ${GE_USERS_API}
+ge.create_case.api: ${GE_CREATE_CASE_API}
+ge.case_statue.api: ${GE_CASE_STATUS_API}
 
 management.health.mongo.enabled: false
 management.health.reds.enabled: false

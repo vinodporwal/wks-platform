@@ -24,9 +24,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -150,6 +155,18 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     
  	@Value("${spring.datasource.db1.name}")
     private String db1Name;
+ 	@Value("${ge.authentication.datasource}")
+    private String geAuthenticationDatasource;
+ 	@Value("${ge.authentication.id}")
+    private String geAuthenticationId;
+ 	@Value("${ge.authentication.password}")
+    private String geAuthenticationPassword;
+ 	@Value("${ge.authentication.api}")
+    private String geAuthenticationAPI;
+ 	@Value("${ge.users.api}")
+    private String geUsersAPI;
+ 	@Value("${ge.create_case.api}")
+    private String geCreateCaseAPI;
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
 		return commandExecutor.execute(
@@ -525,9 +542,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
-//		System.out.println("Calling Recommendation GEAPM API...");
-//		System.out.println("Calling Recommendation GEAPM API...");
-//		System.out.println(dataGridEntry.toPrettyString().toString());
+		System.out.println("Calling Recommendation GEAPM API...");
+		System.out.println("Calling Recommendation GEAPM API...");
+		System.out.println(dataGridEntry.toPrettyString().toString());
 //		
 //		try {
 //			URL url = new URL("https://your-api-url.com/endpoint");
@@ -570,6 +587,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //		} catch(Exception  e) {
 //			e.printStackTrace();
 //		}
+		 RestTemplate restTemplate = new RestTemplate();
+		 HttpHeaders headers = new HttpHeaders();
+		 headers.setContentType(MediaType.APPLICATION_JSON);
 		 String prefix = "REC-";
 		 sendMailToAssignedPerson(assignedUserId);
 		 sendMailToReviewerPerson(reviewerUserId);
@@ -855,6 +875,73 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	}
 	
+	@Override
+	public List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() {
+	    List<com.wks.caseengine.rest.db2.entity.Users> geUsers = new ArrayList<>();
+	    String geAPMAcsessToken = geLogin();
+	    RestTemplate restTemplate = new RestTemplate();
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    headers.add("MeridiumToken", geAPMAcsessToken);
+	    Map<String, Object> inputsingleParams = new HashMap<>();
+	    inputsingleParams.put("userValidation", "");
+	    Map<String, Object> requestBody = new HashMap<>();
+		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API");
+	    requestBody.put("Page", 0);
+	    requestBody.put("PageSize", 1000);
+	    requestBody.put("InputsingleParams", inputsingleParams);
+	    try {
+	        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
+	        System.out.println("Response Code: " + response.getStatusCode());
+	        System.out.println("Response Body: " + response.getBody());
+	        Map<String, Object> responseBody = response.getBody();
+	        if (responseBody != null && responseBody.get("output") instanceof Map) {
+	            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.get("output");
+	            if (responseOutput.get("data") instanceof List) {
+	                List<Map<String, Object>> usersList = (List<Map<String, Object>>) responseOutput.get("data");
+	                for (Map<String, Object> userMap : usersList) {
+	                    com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
+	                    if(userMap.get("status") != null && userMap.get("status").toString() == "A") {
+		                    user.setUserId(userMap.get("userId") != null ? userMap.get("userId").toString() : null);
+		                    user.setEmailId(userMap.get("userId") != null ? userMap.get("userId").toString() : null);
+		                    geUsers.add(user);
+	                    } 
+	                }
+	            }
+	        }
+	    } catch (Exception e) {
+	        System.out.println("GE APM Authentication API failed: " + e.getLocalizedMessage());
+	        e.printStackTrace();
+	    }
+	    return geUsers;
+	}
+	private String geLogin() {
+		 String geAPMAcsessToken="";
+		 RestTemplate restTemplate = new RestTemplate();
+		 HttpHeaders headers = new HttpHeaders();
+		 headers.setContentType(MediaType.APPLICATION_JSON);
+         Map<String, Object> requestBody = new HashMap<>();
+         requestBody.put("DatasourceId", geAuthenticationDatasource);
+         requestBody.put("Id", geAuthenticationId);
+         requestBody.put("Password", geAuthenticationPassword);
+         try {
+        	 HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+    		 ResponseEntity<Map> response = restTemplate.postForEntity(geAuthenticationAPI, requestEntity, Map.class);
+    		 
+    		 System.out.println("Response Code: " + response.getStatusCode());
+    		 System.out.println("Response Body: " + response.getBody());
+    		 Map<String, Object> responseBody = response.getBody();
+    		 if (responseBody != null) {
+    			 geAPMAcsessToken = responseBody.get("sessionId") != null ? (String) responseBody.get("sessionId") : "";
+    		     System.out.println("GE APM Access Token: " + geAPMAcsessToken);
+    		 }
+         }catch(Exception e) {
+        	 System.out.println("GE APM Authentication API failed " + e.getLocalizedMessage());
+        	 e.printStackTrace();
+         }
+		 return geAPMAcsessToken;
+	}
 //	@Scheduled(cron = "0 0/1 * * * ?")// You can adjust this cron expression to run at a specific time (e.g., every day at noon)
 //    public void scheduleTask() {
 //        System.out.println("Scheduler triggered");
