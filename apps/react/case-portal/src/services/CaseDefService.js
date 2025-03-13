@@ -7,7 +7,8 @@ export const CaseDefService = {
   remove,
   getAll,
   getCaseDefinitionUsers,
-  getCaseDefinitionCategories
+  getCaseDefinitionCategories,
+  getCaseDefinitionGEAPMUsers
 }
 
 async function create(keycloak, body) {
