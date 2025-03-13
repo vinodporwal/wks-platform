@@ -11,10 +11,13 @@
  */
 package com.wks.caseengine.cases.definition.service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -530,7 +533,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return null;
 	}
 	
-	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
+	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) throws ParseException {
 		String[] recommendationStatusAndId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId);
 		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
 		caseRecommendationMapping.setCaseNo(caseNo);
@@ -541,7 +544,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return recommendationStatusAndId;
 	}
 	
-	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) {
+	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId,
+			String reviewerUserId) throws ParseException {
 		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println(dataGridEntry.toPrettyString().toString());
@@ -593,17 +597,22 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
 		 headers.add("Meridium Token", geAPMAcsessToken);
+		String targetDateString = dataGridEntry.path("recommendationTargetCompletionDate1").asText();
+		SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+		Date date = inputFormat.parse(targetDateString);
+		SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String targetDate = outputFormat.format(date);
          Map<String, Object> requestBody = new HashMap<>();
-         requestBody.put("Auther_Domain_Id", dataGridEntry.get("recommendationAssignedTo2"));
+		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
          requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
-         requestBody.put("Approved_Domain_Id", dataGridEntry.get("recommendationReviewer"));
-         requestBody.put("RECOMMENDATION_Des", dataGridEntry.get("recommendationDescription1"));
-         requestBody.put("MI_REC_BASIS", dataGridEntry.get("recommendationHeadline"));
-         requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.get("equipmentFunctionLocation"));
-         requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.get("recommendationDescription1"));
-         requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", dataGridEntry.get("recommendationTargetCompletionDate1")) ;
+		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
+		requestBody.put("RECOMMENDATION_Des", dataGridEntry.path("recommendationDescription1").asText());
+		requestBody.put("MI_REC_BASIS", dataGridEntry.path("recommendationHeadline").asText());
+		requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
+		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
+		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
-         requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.get("RecommendationConfirmSAP3"));
+		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText());
          requestBody.put("CaseID", caseNo);
 		 System.out.println("GE APM Create Case body: " + requestBody.toString());
          HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
@@ -703,8 +712,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
         nativeQuery.setParameter("assetName", displayName);
         nativeQuery.setParameter("hierarchyName", hierarchyName);
-        return nativeQuery.getResultList();
-		// return cases;
+        List<Case> cases = nativeQuery.getResultList();
+		return cases;
 	}
 	
 	@Override
