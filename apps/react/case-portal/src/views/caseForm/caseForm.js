@@ -1523,6 +1523,11 @@ const loadOptions = async (keycloak) => {
     'categoryOptions',
     (item) => ({ label: item.name, value: item.id })
   );
+  const caseDefinitionGEAPMUsers = await fetchAndCacheOptions(
+    () => CaseDefService.getCaseDefinitionGEAPMUsers(keycloak),
+    'geAPMUsers',
+    (item) => ({ label: item.userId, value: item.emailId })
+  );
 };
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
