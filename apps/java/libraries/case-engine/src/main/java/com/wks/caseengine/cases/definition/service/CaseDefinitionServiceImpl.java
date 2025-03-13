@@ -596,7 +596,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
-		 headers.add("Meridium Token", geAPMAcsessToken);
+	    headers.add("MeridiumToken", geAPMAcsessToken);
 		String targetDateString = dataGridEntry.path("recommendationTargetCompletionDate1").asText();
 		SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
 		Date date = inputFormat.parse(targetDateString);
