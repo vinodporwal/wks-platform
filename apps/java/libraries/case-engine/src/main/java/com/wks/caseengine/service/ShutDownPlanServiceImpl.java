@@ -39,7 +39,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
             dto.setDiscription((String) result[0]);
             dto.setMaintStartDateTime((Date) result[1]);
             dto.setMaintEndDateTime((Date) result[2]);
-            dto.setDurationInMins(result[3] != null ? ((Integer) result[3]) : 0); 
+            dto.setDurationInMins(result[3] != null ? ((Integer) result[3]) : null); 
+			if(result[3]!=null){
+				double durationInHrs = ((Integer) result[3]) / 60.0;
+				dto.setDurationInHrs(durationInHrs);
+			}
             dto.setProduct((String) result[6]);
             //FOR ID : pmt.Id
             dto.setId(result[5] != null ? result[5].toString() : null); 
@@ -48,6 +52,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 			}else{
 				dto.setRemark(null);
 			}
+			dto.setDisplayOrder(result[8] != null ? ((Integer) result[8]) : null); 
             dtoList.add(dto);
         }
 		return dtoList;
@@ -90,11 +95,19 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				plantMaintenanceTransaction.setDiscription(
 					shutDownPlanDTO.getDiscription() != null ? shutDownPlanDTO.getDiscription() : "Default Description"
 				);
-				plantMaintenanceTransaction.setDurationInMins(
-					shutDownPlanDTO.getDurationInMins() != null ? shutDownPlanDTO.getDurationInMins().intValue() : 0
-				);
+
+				if (shutDownPlanDTO.getDurationInHrs() != null) {
+				    plantMaintenanceTransaction.setDurationInMins((int) (shutDownPlanDTO.getDurationInHrs() * 60));
+				} else {
+				    plantMaintenanceTransaction.setDurationInMins(0);
+				}
+
+				//plantMaintenanceTransaction.setDurationInMins(
+				//	shutDownPlanDTO.getDurationInMins() != null ? shutDownPlanDTO.getDurationInMins().intValue() : 0
+				//);
 				plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 				plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
+				plantMaintenanceTransaction.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth()+1);
 				plantMaintenanceTransaction.setUser("system");
 				plantMaintenanceTransaction.setName("Default Name");
 				plantMaintenanceTransaction.setVersion("V1");
@@ -122,20 +135,32 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				String description = shutDownPlanDTO.getDiscription();
 
 				List<ShutDownPlanDTO> list = new ArrayList<>();
+				shutDownPlanDTO.setDurationInMins(0);
 				shutDownPlanDTO.setDiscription(description+" Ramp Up");
 				list.add(shutDownPlanDTO);
-			slowdownPlanService.saveShutdownData(plantId, list);
+			    slowdownPlanService.saveShutdownData(plantId, list);
 
 				List<ShutDownPlanDTO> list2 = new ArrayList<>();
-				//String description = shutDownPlanDTO.getDiscription()+" Ramp Up";
 				shutDownPlanDTO.setDiscription(description+" Ramp Down");
+				shutDownPlanDTO.setDurationInMins(0);
 				list2.add(shutDownPlanDTO);
-
-
-			slowdownPlanService.saveShutdownData(plantId,list2);
+			    slowdownPlanService.saveShutdownData(plantId,list2);
+			    
+			    List<ShutDownPlanDTO> list3 = new ArrayList<>();
+				shutDownPlanDTO.setDiscription(description+" Ramp Down");
+				shutDownPlanDTO.setDurationInMins(0);
+				list3.add(shutDownPlanDTO);
+			    slowdownPlanService.saveShutdownData(plantId,list3);
+			    
+			    List<ShutDownPlanDTO> list4 = new ArrayList<>();
+				shutDownPlanDTO.setDiscription(description+" Ramp Down");
+				shutDownPlanDTO.setDurationInMins(0);
+				list4.add(shutDownPlanDTO);
+			    slowdownPlanService.saveShutdownData(plantId,list4);
 	
 			} else {
 				// Updating an existing record
+
 				try {
 					Optional<PlantMaintenanceTransaction> plantMaintenance = 
 						shutDownPlanRepository.findById(UUID.fromString(shutDownPlanDTO.getId()));
@@ -144,7 +169,19 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 						PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenance.get();
 						plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 						plantMaintenanceTransaction.setDiscription(shutDownPlanDTO.getDiscription());
-						plantMaintenanceTransaction.setDurationInMins(shutDownPlanDTO.getDurationInMins());
+						// if(shutDownPlanDTO.getDurationInMins()!=null){
+						// 	plantMaintenanceTransaction.setDurationInMins(shutDownPlanDTO.getDurationInMins() * 60);
+						// }else{
+						// 	plantMaintenanceTransaction.setDurationInHrs(0d);
+						// }
+						
+				if (shutDownPlanDTO.getDurationInHrs() != null) {
+				    plantMaintenanceTransaction.setDurationInMins((int) (shutDownPlanDTO.getDurationInHrs() * 60));
+				} else {
+				    plantMaintenanceTransaction.setDurationInMins(0);
+				}
+						//plantMaintenanceTransaction.setDurationInMins(shutDownPlanDTO.getDurationInMins());
+						plantMaintenanceTransaction.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth()+1);
 						plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 						plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 						plantMaintenanceTransaction.setNormParametersFKId(shutDownPlanDTO.getProductId());

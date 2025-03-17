@@ -5,56 +5,89 @@ import React, { useState, useEffect } from 'react'
 import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
 import { useGridApiRef } from '@mui/x-data-grid'
+import NumericInputOnly from 'utils/NumericInputOnly'
 
 const ShutDown = () => {
-  const menu = useSelector((state) => state.menu)
-  const { sitePlantChange } = menu
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange } = dataGridStore
+  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [shutdownData, setShutdownData] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
+  const [rows, setRows] = useState()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  // States for the Remark Dialog
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+
   const keycloak = useSession()
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
-
-    // Keep track of original values before editing
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
 
-    // setHasUnsavedRows(true)
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
     return newRow
   }, [])
-  const saveChanges = React.useCallback(async () => {
-    console.log(
-      'Edited Data: ',
-      Object.values(unsavedChangesRef.current.unsavedRows),
-    )
-    try {
-      // if (title === 'Business Demand') {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      saveShutdownData(data)
-      // }
 
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
-      }
-    } catch (error) {
-      // setIsSaving(false);
-    }
+  const saveChanges = React.useCallback(async () => {
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
+        // Validate that both normParameterId and remark are not empty
+        const invalidRows = data.filter(
+          (row) =>
+            // !row.normParameterId.trim() ||
+            !row.remark.trim(),
+        )
+
+        if (invalidRows.length > 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Please fill required fields: Remark.',
+            severity: 'error',
+          })
+          return
+        }
+        saveShutdownData(data)
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {}
+    }, 1000)
   }, [apiRef])
 
   const saveShutdownData = async (newRow) => {
@@ -67,15 +100,13 @@ const ShutDown = () => {
         plantId = parsedPlant.id
       }
 
-      // plantId = plantId;
-
       const shutdownDetails = newRow.map((row) => ({
         productId: row.product,
         discription: row.discription,
-        durationInMins: parseFloat(findDuration('1', row)),
+        durationInHrs: parseFloat(findDuration('1', row)),
         maintEndDateTime: row.maintEndDateTime,
         maintStartDateTime: row.maintStartDateTime,
-        audityear: '2024-25',
+        audityear: localStorage.getItem('year'),
         id: row.idFromApi || null,
         remark: row.remark || 'null',
       }))
@@ -109,7 +140,7 @@ const ShutDown = () => {
       const slowDownDetails = {
         productId: newRow.product,
         discription: newRow.discription,
-        durationInMins: newRow.durationInMins,
+        durationInHrs: newRow.durationInHrs,
         maintEndDateTime: newRow.maintEndDateTime,
         maintStartDateTime: newRow.maintStartDateTime,
       }
@@ -142,14 +173,8 @@ const ShutDown = () => {
         params?.row?.idFromApi ||
         params?.row?.maintenanceId ||
         params?.NormParameterMonthlyTransactionId
-
-      // console.log(maintenanceId, params, id)
-
-      // Ensure UI state updates before the deletion process
       setOpen1(true)
       setDeleteId(id)
-
-      // Perform the delete operation
       return await DataService.deleteShutdownData(maintenanceId, keycloak)
     } catch (error) {
       console.error(`Error deleting Shutdown data:`, error)
@@ -166,6 +191,7 @@ const ShutDown = () => {
         id: index,
       }))
       setShutdownData(formattedData)
+      setRows(formattedData)
     } catch (error) {
       console.error('Error fetching Shutdown data:', error)
     }
@@ -173,12 +199,13 @@ const ShutDown = () => {
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(keycloak)
-        // console.log('API Response:', data)
-
-        // Extract only displayName and id
+        const data = await DataService.getAllProducts(
+          keycloak,
+          lowerVertName === 'meg' ? 'Production' : 'Grade',
+        )
         const productList = data.map((product) => ({
-          id: product.id,
+          // id: product.id.toLowerCase(), // Convert id to lowercase
+          id: product.id, // Convert id to lowercase
           displayName: product.displayName,
         }))
 
@@ -224,7 +251,7 @@ const ShutDown = () => {
     {
       field: 'discription',
       headerName: 'Shutdown Desc',
-      minWidth: 325,
+      minWidth: 125,
       editable: true,
       renderHeader: () => (
         <div style={{ textAlign: 'center', fontWeight: 'normal' }}>
@@ -242,9 +269,9 @@ const ShutDown = () => {
 
     {
       field: 'product',
-      headerName: 'Product',
+      headerName: lowerVertName === 'meg' ? 'Product' : 'Grade Name',
       editable: true,
-      minWidth: 225,
+      minWidth: 125,
       valueGetter: (params) => {
         // console.log('p1', params);
         // console.log('p2', params2);
@@ -300,7 +327,7 @@ const ShutDown = () => {
       valueGetter: (params) => {
         const value = params
         const parsedDate = value
-          ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate()
+          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
           : null
         return parsedDate
       },
@@ -315,30 +342,49 @@ const ShutDown = () => {
       valueGetter: (params) => {
         const value = params
         const parsedDate = value
-          ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate()
+          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
           : null
         return parsedDate
       },
     },
     {
-      field: 'durationInMins',
+      field: 'durationInHrs',
       headerName: 'Duration (hrs)',
       editable: false,
       minWidth: 100,
-      type: 'number',
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      // valueGetter: (params) => params?.durationInHrs || 0,
       valueGetter: findDuration,
     },
-    { field: 'remark', headerName: 'Remark', minWidth: 150, editable: true },
+    {
+      field: 'remark',
+      headerName: 'Remark',
+      minWidth: 250,
+      editable: true,
+      renderCell: (params) => {
+        return (
+          <div
+            style={{
+              cursor: 'pointer',
+              color: params.value ? 'inherit' : 'gray',
+            }}
+            onClick={() => handleRemarkCellClick(params.row)}
+          >
+            {params.value || 'Click to add remark'}
+          </div>
+        )
+      },
+    },
   ]
 
-  const handleRowEditStop = (params, event) => {
-    setRowModesModel({
-      ...rowModesModel,
-      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
-    })
-  }
+  // const handleRowEditStop = (params, event) => {
+  //   setRowModesModel({
+  //     ...rowModesModel,
+  //     [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+  //   })
+  // }
 
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
@@ -347,9 +393,14 @@ const ShutDown = () => {
   return (
     <div>
       <ASDataGrid
+        setRows={setRows}
         columns={colDefs}
-        rows={shutdownData}
-        title='Shutdown Plan'
+        rows={rows}
+        title={
+          lowerVertName === 'meg'
+            ? 'Shutdown/Turnaround Activities'
+            : 'Shutdown Activities'
+        }
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
@@ -368,19 +419,15 @@ const ShutDown = () => {
         setSnackbarData={setSnackbarData}
         // handleDeleteClick={handleDeleteClick}
         fetchData={fetchData}
-        onRowEditStop={handleRowEditStop}
+        // onRowEditStop={handleRowEditStop}
         onProcessRowUpdateError={onProcessRowUpdateError}
         experimentalFeatures={{ newEditingApi: true }}
-        onCellEditStop={(params, event) => {
-          event.defaultMuiPrevented = true
-          if (
-            params.reason === 'cellFocusOut' ||
-            params.reason === 'escapeKeyDown'
-          ) {
-            const updatedRow = { ...params.row, [params.field]: params.value }
-            processRowUpdate(updatedRow, params.row)
-          }
-        }}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        unsavedChangesRef={unsavedChangesRef}
         permissions={{
           showAction: true,
           addButton: true,

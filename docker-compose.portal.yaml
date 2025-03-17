@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-    case-portal-aop:
+    case-portal:
         build:
             context: apps/react/case-portal
             args:
@@ -16,4 +16,4 @@ services:
                 REACT_APP_NOVU_ENABLED: ${NOVU_ENABLED}     
                 REACT_APP_NOVU_PUBLISHER_API_URL: ${NOVU_PUBLISHER_API_URL}   
         ports:
-            - 3003:80
+            - 3001:80

@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
 
-  novu-publisher-aop:
+  novu-publisher:
     build:
       context: apps/node/novu-publisher
     environment:
@@ -15,8 +15,8 @@ services:
         - NOVU_HUMAN_TASK_CREATE_WORKFLOW=${KAFKA_TOPIC_CREATE_HUMAN_TASK}
         - NOVU_TOPIC_CASE_EMAIL_OUTBOUND=${KAFKA_TOPIC_CASE_EMAIL_OUTBOUND}
     depends_on:
-      - kafka-aop
-      - zookeeper-aop
+      - kafka
+      - zookeeper
     ports:
-        - 3004:3002
+        - 3002:3002
                     

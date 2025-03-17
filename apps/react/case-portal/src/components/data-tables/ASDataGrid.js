@@ -1,22 +1,27 @@
+import CancelIcon from '@mui/icons-material/Close'
+import DeleteIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
+import SaveIcon from '@mui/icons-material/Save'
 import { Box, Button, IconButton, TextField, Typography } from '@mui/material'
-import { DataGrid } from '@mui/x-data-grid'
+import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import * as React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { GridActionsCellItem, GridRowModes } from '@mui/x-data-grid'
-import { DataService } from 'services/DataService'
-import { useSession } from 'SessionStoreContext'
+import SearchIcon from '@mui/icons-material/Search'
+import { InputAdornment } from '@mui/material'
+import Backdrop from '@mui/material/Backdrop'
+import Chip from '@mui/material/Chip'
+import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
-import { MenuItem } from '../../../node_modules/@mui/material/index'
+import { GridActionsCellItem, GridRowModes } from '@mui/x-data-grid'
 import Notification from 'components/Utilities/Notification'
-import CancelIcon from '@mui/icons-material/Close'
-import DeleteIcon from '@mui/icons-material/Delete'
-import EditIcon from '@mui/icons-material/Edit'
-import SaveIcon from '@mui/icons-material/Save'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
+import { MenuItem } from '../../../node_modules/@mui/material/index'
 
 import {
   FileDownload,
@@ -37,7 +42,6 @@ const jioColors = {
 
 const DataGridTable = ({
   columns: initialColumns = [],
-  rows: initialRows = [],
   title = 'Turnaround Plan Details',
   onAddRow,
   onDeleteRow,
@@ -51,7 +55,21 @@ const DataGridTable = ({
   setSnackbarOpen,
   fetchData,
   handleUnitChange,
+  handleCalculate,
+  setRows,
+  rows,
+  loading,
+  remarkDialogOpen,
+  setRemarkDialogOpen,
+  currentRemark,
+  setCurrentRemark,
+  // setCurrentRowId,
+  currentRowId,
+  unsavedChangesRef,
+  // handleRemarkCellClick,
+  // units,
 }) => {
+  const [tempHide, setTempHide] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [resizedColumns, setResizedColumns] = useState({})
@@ -61,26 +79,29 @@ const DataGridTable = ({
   const [openRemark, setOpenRemark] = useState(false)
   const keycloak = useSession()
   const [days, setDays] = useState([])
-  const [rows, setRows] = useState(initialRows)
   const [searchText, setSearchText] = useState('')
   const [isFilterActive, setIsFilterActive] = useState(false)
   const [selectedRowId, setSelectedRowId] = useState(null)
-  const unitOptions = ['TPD', 'TPH']
   const [selectedUnit, setSelectedUnit] = useState()
-  const [open1, setOpen1] = useState(false)
+  const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
+  const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
   const [deleteId, setDeleteId] = useState(false)
+  const [deleteIdTemp, setDeleteIdTemp] = useState(false)
   const handleOpenRemark = () => setOpenRemark(true)
   const handleCloseRemark = () => setOpenRemark(false)
-  const handleClose1 = () => setOpen1(false)
+  const closeDeleteDialogeBox = () => setOpenDeleteDialogeBox(false)
+  const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
   const handleSearchChange = (event) => {
     setSearchText(event.target.value)
   }
   const [rowModesModel, setRowModesModel] = useState({})
   const [changedRowIds, setChangedRowIds] = useState([])
+  const [columnFilters, setColumnFilters] = useState({})
 
   const handleRowEditCommit = (id, event) => {
     const editedRow = rows.find((row) => row.id === id)
   }
+
   const handleCellEditCommit = (id, event) => {}
 
   const handleEditClick = (id, row) => () => {
@@ -113,15 +134,8 @@ const DataGridTable = ({
   }
 
   useEffect(() => {
-    setRows(initialRows)
-  }, [initialRows])
-  // useEffect(() => {
-  //   setRows((prevRows) => {
-  //     // Keep newly added rows and merge with initialRows
-  //     const newRows = prevRows.filter((row) => row.isNew) // Preserve new rows
-  //     return [...newRows, ...initialRows] // Merge with DB rows
-  //   })
-  // }, [initialRows])
+    if (rows) setRows(rows)
+  }, [rows, setRows])
 
   const onColumnResized = (params) => {
     if (params.column) {
@@ -143,33 +157,51 @@ const DataGridTable = ({
 
   const deleteTheRecord = async () => {
     try {
-      if (!deleteId) return
-      if (title == 'Business Demand') {
-        await DataService.deleteBusinessDemandData(deleteId, keycloak)
-      }
-      if (title == 'Shutdown Plan') {
-        await DataService.deleteShutdownData(deleteId, keycloak)
-      }
-      if (title == 'Slowdown Plan') {
-        await DataService.deleteSlowdownData(deleteId, keycloak)
-      }
-      if (title == 'Turnaround Plan') {
-        await DataService.deleteTurnAroundData(deleteId, keycloak)
+      if (deleteId) {
+        if (title == 'Business Demand') {
+          await DataService.deleteBusinessDemandData(deleteId, keycloak)
+        }
+        if (title == 'Shutdown/Turnaround Activities') {
+          await DataService.deleteShutdownData(deleteId, keycloak)
+        }
+        if (title == 'Slowdown Activities') {
+          await DataService.deleteSlowdownData(deleteId, keycloak)
+        }
+        if (title == 'Turnaround Activities') {
+          await DataService.deleteTurnAroundData(deleteId, keycloak)
+        }
+
+        setRows((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId || deleteIdTemp),
+        )
+        onDeleteRow?.(deleteId || deleteIdTemp)
+      } else {
+        handleCancelClick(deleteIdTemp)
       }
 
-      setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-      onDeleteRow?.(deleteId)
       setDeleteId(null)
-      setOpen1(false)
+      setDeleteIdTemp(null)
+      setOpenDeleteDialogeBox(false)
       setSnackbarOpen(true)
+
       setSnackbarData({
         message: `${title} deleted successfully!`,
         severity: 'success',
       })
+
       fetchData()
     } catch (error) {
       console.error('Error deleting Business data:', error)
     }
+  }
+
+  const saveConfirmation = async () => {
+    saveChanges()
+    setOpenSaveDialogeBox(false)
+  }
+
+  const saveModalOpen = async () => {
+    setOpenSaveDialogeBox(true)
   }
 
   const handleAddRow = () => {
@@ -190,15 +222,6 @@ const DataGridTable = ({
       [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
     }))
   }
-  const handleKeyDown = (event, rowId) => {
-    if (event.key === 'Enter') {
-      event.preventDefault() // Prevent default Enter behavior (exiting edit mode)
-      setRowModesModel((oldModel) => ({
-        ...oldModel,
-        [rowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
-      }))
-    }
-  }
 
   const handleDeleteClick = async (id, params) => {
     const maintenanceId =
@@ -206,8 +229,9 @@ const DataGridTable = ({
       params?.row?.idFromApi ||
       params?.row?.maintenanceId ||
       params?.NormParameterMonthlyTransactionId
-    setOpen1(true)
+    setOpenDeleteDialogeBox(true)
     setDeleteId(maintenanceId)
+    setDeleteIdTemp(id)
   }
 
   const defaultColumns = useMemo(() => {
@@ -230,6 +254,11 @@ const DataGridTable = ({
 
             getActions: (params) => {
               const { id, row } = params
+
+              if (row.isGroupHeader) {
+                return []
+              }
+
               const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit
               if (isInEditMode) {
                 return [
@@ -282,55 +311,36 @@ const DataGridTable = ({
       : []), // If no permissions, hide the Actions column
   ])
 
-  const addRemark1 = () => {
-    // setRows((prevRows) =>
-    //   prevRows.map((row) =>
-    //     row.id === selectedRowId ? { ...row, remark } : row,
-    //   ),
-    // )
-
-    // setOpenRemark(false)
-    // setRemark('')
-
-    const updatedRow = filteredRows.find((row) => row.id === selectedRowId)
-    if (updatedRow) {
-      setRows((prevRows) =>
-        prevRows.map((row) =>
-          row.id === selectedRowId ? { ...row, remark } : row,
-        ),
-      )
-      processRowUpdate({ ...updatedRow, remark: remark })
-    }
-    setOpenRemark(false)
-    setRemark('')
+  const handleRemarkSave = () => {
+    setRows((prevRows) => {
+      const updatedRows = prevRows.map((row) => {
+        if (row.id === currentRowId) {
+          const keyToUpdate =
+            ('aopRemarks' || 'remarks') in row
+              ? 'aopRemarks' || 'remarks'
+              : 'remark'
+          // const keyToUpdate =
+          //   'aopRemark' || 'aopRemarks' || 'remark' || 'remarks'
+          return { ...row, [keyToUpdate]: currentRemark }
+        }
+        return row
+      })
+      const updatedRow = updatedRows.find((row) => row.id === currentRowId)
+      unsavedChangesRef.current.unsavedRows[currentRowId] = updatedRow
+      return updatedRows
+    })
+    setRemarkDialogOpen(false)
   }
 
-  const addRemark = () => {
-    const updatedRow = filteredRows.find((row) => row.id === selectedRowId)
-    if (updatedRow) {
-      const updatedData = { ...updatedRow, remark }
-      processRowUpdate(updatedData) // Pass updated row to the parent
-    }
-    setOpenRemark(false)
-    setRemark('')
-  }
-
-  const handleCellClick = (params) => {
-    //UNCOMMENT IT FOR REMARK POP UP
-    // if (params?.field === 'remark' || params?.field === 'aopRemarks') {
-    //   setRemark(params?.value || '')
-    //   setSelectedRowId(params.id)
-    //   handleOpenRemark()
-    // }
-  }
+  const handleCellClick = (params) => {}
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false)
   }
 
-  const [columnFilters, setColumnFilters] = useState({})
-
   const filteredRows = useMemo(() => {
+    if (!Array.isArray(rows)) return []
+
     return rows.filter((row) => {
       // Global search across all fields
       const matchesSearch = Object.values(row).some((value) =>
@@ -340,7 +350,7 @@ const DataGridTable = ({
       // Duration filter condition
       const matchesDuration = !isFilterActive || row.durationHrs > 100
 
-      // Column-specific filters: For each column filter, check if row's value includes the filter
+      // Column-specific filters
       const matchesColumnFilters = Object.entries(columnFilters).every(
         ([field, filterValue]) => {
           if (!filterValue) return true // No filter applied for this column
@@ -357,32 +367,6 @@ const DataGridTable = ({
   const handleRefresh = async () => {
     try {
       fetchData()
-    } catch (error) {
-      console.error('Error saving refresh data:', error)
-    }
-  }
-
-  const handleCalculate = async (year) => {
-    try {
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
-      var plantId = plantId
-      const response = await DataService.handleCalculate(
-        plantId,
-        year,
-        keycloak,
-      )
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Data refresh successfully!',
-        severity: 'success',
-      })
-
-      return response
     } catch (error) {
       console.error('Error saving refresh data:', error)
     }
@@ -423,19 +407,35 @@ const DataGridTable = ({
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginTop: 2,
           marginBottom: 1,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {permissions?.UnitToShow && (
+            <Chip
+              label={permissions.UnitToShow}
+              variant='outlined'
+              sx={{
+                borderRadius: 1,
+                padding: '8px 24px',
+                textTransform: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                height: '40px',
+              }}
+            />
+          )}
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {permissions?.showCalculate && (
             <Button
               variant='contained'
               onClick={handleCalculate}
               sx={{
-                // marginTop: 2,
                 backgroundColor: jioColors.primaryBlue,
                 color: jioColors.background,
                 borderRadius: 1,
@@ -452,12 +452,12 @@ const DataGridTable = ({
               CALCULATE
             </Button>
           )}
-          {permissions?.showRefreshBtn && (
+
+          {permissions?.showRefreshBtn && !tempHide && (
             <Button
               variant='contained'
               onClick={handleRefresh}
               sx={{
-                // marginTop: 2,
                 backgroundColor: jioColors.primaryBlue,
                 color: jioColors.background,
                 borderRadius: 1,
@@ -478,7 +478,7 @@ const DataGridTable = ({
           {permissions?.showUnit && (
             <TextField
               select
-              value={selectedUnit || permissions?.UOM || ''}
+              value={selectedUnit || permissions?.units?.[0]}
               onChange={(e) => {
                 setSelectedUnit(e.target.value)
                 handleUnitChange(e.target.value)
@@ -490,7 +490,9 @@ const DataGridTable = ({
               <MenuItem value='' disabled>
                 Select UOM
               </MenuItem>
-              {unitOptions.map((unit) => (
+
+              {/* Render the correct unit options dynamically */}
+              {(permissions?.units).map((unit) => (
                 <MenuItem key={unit} value={unit}>
                   {unit}
                 </MenuItem>
@@ -498,106 +500,110 @@ const DataGridTable = ({
             </TextField>
           )}
 
-          {/* commented for demo 4 March
-          
-          <TextField
-            variant='outlined'
-            placeholder='Search...'
-            value={searchText}
-            onChange={handleSearchChange}
-            sx={{
-              width: '300px',
-              borderRadius: 1,
-              backgroundColor: jioColors.background,
-              color: '#8A9BC2',
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position='start'>
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          /> */}
-          <IconButton
-            aria-label='import'
-            onClick={handleImportExport}
-            sx={{
-              border: `1px solid ${jioColors.border}`,
-              borderRadius: 1,
-              padding: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-              color: 'inherit',
-              width: '150px',
-              '&:hover': {
-                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF', // Removes hover effect
-              },
-            }}
-          >
-            <FileDownload
-              sx={{ color: '#2A3ACD' }}
-              // sx={{ color: isFilterActive ? jioColors.background : 'inherit' }}
+          {!tempHide && (
+            <TextField
+              variant='outlined'
+              placeholder='Search...'
+              value={searchText}
+              onChange={handleSearchChange}
+              sx={{
+                width: '300px',
+                borderRadius: 1,
+                backgroundColor: jioColors.background,
+                color: '#8A9BC2',
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
             />
-            <span
-              style={{
-                fontSize: '0.875rem',
-                color: '#2A3ACD',
+          )}
+
+          {!tempHide && (
+            <IconButton
+              aria-label='import'
+              onClick={handleImportExport}
+              sx={{
+                border: `1px solid ${jioColors.border}`,
+                borderRadius: 1,
+                padding: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                color: 'inherit',
+                width: '150px',
+                '&:hover': {
+                  backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                },
               }}
             >
-              Import
-            </span>
-          </IconButton>
-          <IconButton
-            aria-label='export'
-            onClick={handleImportExport}
-            sx={{
-              border: `1px solid ${jioColors.border}`,
-              borderRadius: 1,
-              padding: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-              color: 'inherit',
-              width: '150px',
-              '&:hover': {
-                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF', // Removes hover effect
-              },
-            }}
-          >
-            <FileUpload
-              sx={{ color: '#2A3ACD' }}
-              // sx={{ color: isFilterActive ? jioColors.background : 'inherit' }}
-            />
-            <span
-              style={{
-                fontSize: '0.875rem',
-                color: '#2A3ACD',
+              <FileDownload sx={{ color: '#2A3ACD' }} />
+              <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
+                Import
+              </span>
+            </IconButton>
+          )}
+
+          {!tempHide && (
+            <IconButton
+              aria-label='export'
+              onClick={handleImportExport}
+              sx={{
+                border: `1px solid ${jioColors.border}`,
+                borderRadius: 1,
+                padding: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                color: 'inherit',
+                width: '150px',
+                '&:hover': {
+                  backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                },
               }}
             >
-              Export
-            </span>
-          </IconButton>
+              <FileUpload sx={{ color: '#2A3ACD' }} />
+              <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
+                Export
+              </span>
+            </IconButton>
+          )}
         </Box>
       </Box>
 
       <Box sx={{ height: 'calc(100% - 150px)', width: '100%' }}>
-        {/* <Grid container spacing={2}>
-          {columns.map((col) => (
-            <Grid item xs key={col.field}>
-              <TextField
-                placeholder={`Filter ${col.headerName}`}
-                variant='outlined'
-                size='small'
-                onChange={(e) => handleFilterChange(col.field, e.target.value)}
-              />
-            </Grid>
-          ))}
-        </Grid> */}
+        {/* {!tempHide && (
+          <Grid container spacing={2}>
+            {columns.map((col) => (
+              <Grid item xs key={col.field}>
+                <TextField
+                  placeholder={`Filter ${col.headerName}`}
+                  variant='outlined'
+                  size='small'
+                  // onChange={(e) =>
+                  //   handleFilterChange(col.field, e.target.value)
+                  // }
+                />
+              </Grid>
+            ))}
+          </Grid>
+        )} */}
+
+        {/* Backdrop inside child component */}
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={loading}
+        >
+          <CircularProgress color='inherit' />
+        </Backdrop>
+
         <DataGrid
+          loading={loading}
           apiRef={apiRef}
           rows={filteredRows}
           columns={columns.map((col) => ({
@@ -616,34 +622,33 @@ const DataGridTable = ({
             // NormParametersId: false,
             aopStatus: false,
             idFromApi: false,
+            period: false,
           }}
           rowHeight={35}
           processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={onProcessRowUpdateError}
           onColumnResized={onColumnResized}
           onCellClick={handleCellClick}
+          //Added Single Click EDIT for the ROW
+          // onCellClick={(params) => {
+          //   setRowModesModel({
+          //     ...rowModesModel,
+          //     [params.id]: { mode: GridRowModes.Edit },
+          //   })
+          // }}
           onRowEditCommit={handleRowEditCommit}
           onCellEditCommit={(params) => handleCellEditCommit(params)} // Real-time updates
           experimentalFeatures={{ newEditingApi: true }}
           editMode='row'
           rowModesModel={rowModesModel}
           onRowModesModelChange={handleRowModesModelChange}
-          // onRowEditStop={handleRowEditStop}
+          handleCalculate={handleCalculate}
           slotProps={{
-            toolbar: { setRows, setRowModesModel },
-          }}
-          onCellEditStop={(params, event) => {
-            // Always prevent default edit stop behavior
-            event.defaultMuiPrevented = true
-
-            // But still capture the updated value and save it
-            if (
-              params.reason === 'cellFocusOut' ||
-              params.reason === 'escapeKeyDown'
-            ) {
-              const updatedRow = { ...params.row, [params.field]: params.value }
-              processRowUpdate(updatedRow, params.row)
-            }
+            toolbar: { setRows, setRowModesModel, GridToolbar },
+            loadingOverlay: {
+              variant: 'linear-progress',
+              noRowsVariant: 'skeleton',
+            },
           }}
           getRowClassName={(params) =>
             params.indexRelativeToCurrentPage % 2 === 0 ? 'even-row' : 'odd-row'
@@ -773,6 +778,7 @@ const DataGridTable = ({
           }}
         />
       </Box>
+
       <Box
         sx={{
           marginTop: 2,
@@ -792,7 +798,7 @@ const DataGridTable = ({
               textTransform: 'none',
               fontSize: '0.875rem',
               fontWeight: 500,
-              minWidth: 120, // Same width for consistency
+              minWidth: 120,
               '&:hover': {
                 backgroundColor: '#143B6F',
                 boxShadow: 'none',
@@ -803,11 +809,11 @@ const DataGridTable = ({
             Add Item
           </Button>
         )}
+
         {permissions.saveBtn && (
           <Button
             variant='contained'
             sx={{
-              // marginTop: 2,
               backgroundColor: jioColors.primaryBlue,
               color: jioColors.background,
               borderRadius: 1,
@@ -815,17 +821,14 @@ const DataGridTable = ({
               textTransform: 'none',
               fontSize: '0.875rem',
               fontWeight: 500,
-              minWidth: 120, // Same width for consistency
+              minWidth: 120,
               '&:hover': {
                 backgroundColor: '#143B6F',
                 boxShadow: 'none',
               },
             }}
-            // onClick={handleSaveClick} // Pass row data
-            onClick={saveChanges}
+            onClick={saveModalOpen}
             loadingPosition='start'
-            // disabled={!hasUnsavedRows}
-            // loading={isSaving}
           >
             Save
           </Button>
@@ -840,8 +843,8 @@ const DataGridTable = ({
       />
 
       <Dialog
-        open={open1}
-        onClose={handleClose1}
+        open={openDeleteDialogeBox}
+        onClose={closeDeleteDialogeBox}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
       >
@@ -852,14 +855,37 @@ const DataGridTable = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose1}>Cancel</Button>
+          <Button onClick={closeDeleteDialogeBox}>Cancel</Button>
           <Button onClick={deleteTheRecord} autoFocus>
             Delete
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={openRemark} onClose={handleCloseRemark}>
+      <Dialog
+        open={openSaveDialogeBox}
+        onClose={closeSaveDialogeBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+      >
+        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+            Are you sure you want to save these changes?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeSaveDialogeBox}>Cancel</Button>
+          <Button onClick={saveConfirmation} autoFocus>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={remarkDialogOpen}
+        onClose={() => setRemarkDialogOpen(false)}
+      >
         <DialogTitle>Add Remark</DialogTitle>
         <DialogContent>
           <TextField
@@ -870,22 +896,29 @@ const DataGridTable = ({
             type='text'
             fullWidth
             variant='outlined'
-            sx={{ width: '100%', minWidth: '400px' }}
-            value={remark}
-            onChange={(e) => {
-              setRemark(e.target.value)
-              // setRowModesModel((prev) => ({
-              //   ...prev,
-              //   [id]: { mode: GridRowModes.View },
-              // }))
-            }}
+            sx={{ width: '100%', minWidth: '600px' }}
+            value={currentRemark || ''}
+            // value={remark}
+            onChange={(e) => setCurrentRemark(e.target.value)}
             multiline
-            rows={4}
+            rows={8}
+            //     onChange={(e) => {
+            //   setRemark(e.target.value)
+            //   // setRowModesModel((prev) => ({
+            //   //   ...prev,
+            //   //   [id]: { mode: GridRowModes.View },
+            //   // }))
+            // }}
+            // multiline
+            // rows={4}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseRemark}>Cancel</Button>
-          <Button onClick={addRemark}>Add</Button>
+          <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
+          {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
+          <Button onClick={handleRemarkSave} disabled={!currentRemark?.trim()}>
+            Add
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

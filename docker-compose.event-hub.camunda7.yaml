@@ -1,9 +1,9 @@
 version: '3.7'
 
 services:
-  camunda-aop:
+  camunda:
       links:
-          - kafka-aop
+          - kafka
       volumes:
           - ./apps/java/libraries/c7-plugins/target/c7-plugins-1.0-SNAPSHOT.jar:/camunda/configuration/userlib/c7-plugins-1.0-SNAPSHOT.jar
           - ./configs/camunda/kafka-clients-3.4.1.jar:/camunda/configuration/userlib/kafka-clients-3.4.1.jar
@@ -12,40 +12,40 @@ services:
           - KAFKA_URL=${KAFKA_URL}
           - KAFKA_TOPIC_CREATE_HUMAN_TASK=${KAFKA_TOPIC_CREATE_HUMAN_TASK}
       depends_on:
-        - kafka-aop
-        - zookeeper-aop
+        - kafka
+        - zookeeper
 
-  zookeeper-aop:
+  zookeeper:
     image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
     ports:
-      - "2281:2181"
+      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
 
-  kafka-aop:
+  kafka:
     image: wurstmeister/kafka:latest
+    container_name: kafka
     ports:
-      - "9094:9092"
-      - "9095:9093"
+      - "9092:9092"
+      - "9093:9093"
     environment:
-      KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka-aop:9093,OUTSIDE://host.docker.internal:9094
-      #KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka-aop:9093,OUTSIDE://localhost:9094
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      #KAFKA_LISTENERS: INSIDE://kafka-aop:9093,OUTSIDE://kafka-aop:9092
+      KAFKA_LISTENERS: INSIDE://kafka:9093,OUTSIDE://kafka:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper-aop:2181
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     depends_on:
-      - zookeeper-aop
+      - zookeeper
 
-  c7-external-tasks-aop:
+  c7-external-tasks:
       links:
-          - kafka-aop
+          - kafka
       environment:
           - KAFKA_ENABLED=true
           - KAFKA_URL=${KAFKA_URL}
           - KAFKA_TOPIC_CASE_CREATE=${KAFKA_TOPIC_CASE_CREATE}
           - KAFKA_TOPIC_CASE_EMAIL_OUTBOUND=${KAFKA_TOPIC_CASE_EMAIL_OUTBOUND}
       depends_on:
-        - kafka-aop
-        - zookeeper-aop
+        - kafka
+        - zookeeper

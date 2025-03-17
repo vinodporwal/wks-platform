@@ -1,15 +1,15 @@
 version: '3.7'
 
 services:
-  websocket-publisher-aop:
+  websocket-publisher:
     build:
       context: apps/node/websocket-publisher
     ports:
-      - "8485:8484"
+      - "8484:8484"
     environment:
         - LOG_LEVEL=${WEBSOCKET_LOG_LEVEL}
-        - WEBSOCKET_PORT=8485
+        - WEBSOCKET_PORT=8484
         - KAFKA_URL=${KAFKA_URL}
     depends_on:
-      - kafka-aop
-      - zookeeper-aop
+      - kafka
+      - zookeeper

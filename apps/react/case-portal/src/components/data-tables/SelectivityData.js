@@ -6,10 +6,15 @@ import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 // Import the catalyst options from the JSON file
 // import catalystOptionsData from '../../assets/Catalyst.json'
 import { useSelector } from 'react-redux'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import NumericInputOnly from 'utils/NumericInputOnly'
+import getEnhancedColDefs from './CommonHeader/index'
+
+const headerMap = generateHeaderNames()
 
 const SelectivityData = () => {
-  const menu = useSelector((state) => state.menu)
-  const { sitePlantChange } = menu
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange } = dataGridStore
   const keycloak = useSession()
   const [csData, setCsData] = useState([])
   const [allProducts, setAllProducts] = useState([])
@@ -17,64 +22,90 @@ const SelectivityData = () => {
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+
+  const [rows, setRows] = useState()
+
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  // States for the Remark Dialog
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-    const start = new Date(newRow.maintStartDateTime)
-    const end = new Date(newRow.maintEndDateTime)
-    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
-
-    console.log(`Duration in minutes: ${durationInMins}`)
-
-    // Update the duration in newRow
-    newRow.durationInMins = durationInMins.toFixed(2)
-    // newRow.durationInMins = durationInMins
-    setCsData((prevData) =>
-      prevData.map((row) => (row.id === rowId ? newRow : row)),
-    )
-
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
-    // Keep track of original values before editing
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
 
-    // setHasUnsavedRows(true)
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
+
     return newRow
   }, [])
-  const saveChanges = React.useCallback(async () => {
-    console.log(
-      'Edited Data: ',
-      Object.values(unsavedChangesRef.current.unsavedRows),
-    )
-    try {
-      // if (title === 'Business Demand') {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      saveCatalystData(data)
-      // }
 
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
+  const saveChanges = React.useCallback(async () => {
+    setTimeout(() => {
+      // console.log(
+      //   'Edited Data: ',
+      //   Object.values(unsavedChangesRef.current.unsavedRows),
+      // )
+      try {
+        // if (title === 'Business Demand') {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        // Validation: Check if there are any rows to save
+        if (data.length === 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
+
+        // Validate that both normParameterId and remark are not empty
+        const invalidRows = data.filter((row) => !row.remark.trim())
+
+        if (invalidRows.length > 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Please fill required fields: Remark.',
+            severity: 'error',
+          })
+          return
+        }
+        saveCatalystData(data)
+        // }
+
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {
+        // setIsSaving(false);
       }
-    } catch (error) {
-      // setIsSaving(false);
-    }
+    }, 1000)
   }, [apiRef])
   const saveCatalystData = async (newRow) => {
-    console.log('new Row ', newRow)
+    // console.log('new Row ', newRow)
 
     try {
       var plantId = ''
@@ -136,7 +167,7 @@ const SelectivityData = () => {
         params?.row?.maintenanceId ||
         params?.NormParameterMonthlyTransactionId
 
-      console.log(maintenanceId, params, id)
+      // console.log(maintenanceId, params, id)
 
       // Ensure UI state updates before the deletion process
       setOpen1(true)
@@ -161,6 +192,7 @@ const SelectivityData = () => {
         }))
       }
       setCsData(formattedData)
+      setRows(formattedData)
     } catch (error) {
       console.error('Error fetching Turnaround data:', error)
     }
@@ -168,7 +200,7 @@ const SelectivityData = () => {
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(keycloak)
+        const data = await DataService.getAllProducts(keycloak, 'Consumption')
         const productList = data.map((product) => ({
           id: product.id,
           displayName: product.displayName,
@@ -185,13 +217,13 @@ const SelectivityData = () => {
         const data = await DataService.getAllCatalyst(keycloak)
 
         const productList = data.map((product) => {
-          console.log('Original ID:', product.id)
+          // console.log('Original ID:', product.id)
           return {
             id: product.id, // Should not change the case
             displayName: product.displayName,
           }
         })
-        console.log('Mapped Product List:', productList)
+        // console.log('Mapped Product List:', productList)
 
         setAllCatalyst(productList)
       } catch (error) {
@@ -207,7 +239,7 @@ const SelectivityData = () => {
   // Use catalyst options from the JSON file
   // const productOptions = catalystOptionsData.catalystOptions
 
-  const productionColumns = [
+  const productionColumns1 = [
     // {
     //   field: 'catalystId',
     //   headerName: 'Catalyst',
@@ -258,110 +290,146 @@ const SelectivityData = () => {
       minWidth: 250,
     },
     {
-      field: 'apr24',
-      headerName: 'Apr-24',
+      field: 'UOM',
+      headerName: 'UOM',
       editable: true,
-      type: 'number',
+      align: 'left',
+      headerAlign: 'left',
+      // valueGetter: convertUnits,
+    },
+    {
+      field: 'april',
+      headerName: headerMap[4],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+      // valueGetter: convertUnits,
+    },
+
+    {
+      field: 'may',
+      headerName: headerMap[5],
+      editable: true,
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
     },
     {
-      field: 'may24',
-      headerName: 'May-24',
+      field: 'june',
+      headerName: headerMap[6],
       editable: true,
-      type: 'number',
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
     },
     {
-      field: 'jun24',
-      headerName: 'Jun-24',
+      field: 'july',
+      headerName: headerMap[7],
       editable: true,
-      type: 'number',
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
     },
     {
-      field: 'jul24',
-      headerName: 'Jul-24',
+      field: 'aug',
+      headerName: headerMap[8],
       editable: true,
-      type: 'number',
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
     },
     {
-      field: 'aug24',
-      headerName: 'Aug-24',
+      field: 'sep',
+      headerName: headerMap[9],
       editable: true,
-      type: 'number',
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
     },
     {
-      field: 'sep24',
-      headerName: 'Sep-24',
+      field: 'oct',
+      headerName: headerMap[10],
       editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'oct24',
-      headerName: 'Oct-24',
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'nov24',
-      headerName: 'Nov-24',
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'dec24',
-      headerName: 'Dec-24',
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jan25',
-      headerName: 'Jan-25',
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'feb25',
-      headerName: 'Feb-25',
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'mar25',
-      headerName: 'Mar-25',
-      editable: true,
-      type: 'number',
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
     },
 
-    { field: 'remark', headerName: 'Remark', minWidth: 150, editable: true },
+    {
+      field: 'nov',
+      headerName: headerMap[11],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'dec',
+      headerName: headerMap[12],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'jan',
+      headerName: headerMap[1],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'feb',
+      headerName: headerMap[2],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'march',
+      headerName: headerMap[3],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+
+    {
+      field: 'remark',
+      headerName: 'Remark',
+      minWidth: 150,
+      editable: true,
+      renderCell: (params) => {
+        return (
+          <div
+            style={{
+              cursor: 'pointer',
+              color: params.value ? 'inherit' : 'gray',
+            }}
+            onClick={() => handleRemarkCellClick(params.row)}
+          >
+            {params.value || 'Click to add remark'}
+          </div>
+        )
+      },
+    },
   ]
+
+  // const productionColumns = getEnhancedColDefs({
+  //   allProducts,
+  //   headerMap,
+  //   handleRemarkCellClick,
+  // })
 
   return (
     <div>
       <ASDataGrid
-        columns={productionColumns}
-        rows={csData}
+        columns={productionColumns1}
+        rows={rows}
+        setRows={setRows}
         title='Configuration'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
@@ -380,12 +448,18 @@ const SelectivityData = () => {
         deleteId={deleteId}
         open1={open1}
         handleDeleteClick={handleDeleteClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        unsavedChangesRef={unsavedChangesRef}
         permissions={{
           showAction: true,
           addButton: true,
           deleteButton: true,
           editButton: true,
-          showUnit: true,
+          showUnit: false,
           saveWithRemark: true,
           saveBtn: true,
         }}

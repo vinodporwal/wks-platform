@@ -10,11 +10,11 @@ logging:
 
 spring.mvc.converters.preferred-json-mapper: gson
 
-zeebe.client.broker.gateway-address: ${CAMUNDA8_ZEEBE_GATEWAY_ADDRESS:127.0.0.1:26501}
+zeebe.client.broker.gateway-address: ${CAMUNDA8_ZEEBE_GATEWAY_ADDRESS:127.0.0.1:26500}
 zeebe.client.security.plaintext: true
 
-wks-case-api.base.url: ${WKS_CASE_API_URL:http://localhost:8091}
-wks-case-api.auth.url: ${KEYCLOAK_URL:http://localhost:8092/realms/localhost/protocol/openid-connect/token}
+wks-case-api.base.url: ${WKS_CASE_API_URL:http://localhost:8081}
+wks-case-api.auth.url: ${KEYCLOAK_URL:http://localhost:8082/realms/localhost/protocol/openid-connect/token}
 wks-case-api.auth.client_id: ${WKS_CLIENT_ID:wks-external-tasks}
 wks-case-api.auth.client_secret: ${WKS_CLIENT_SECRET:replaceme}
 wks-case-api.auth.grant_type: client_credentials
@@ -32,4 +32,4 @@ management.endpoint.health.show-details: never
 
 wks.kafka.enabled: ${KAFKA_ENABLED:false}
 wks.kafka.topic.case-create: ${KAFKA_TOPIC_CASE_CREATE:case-create}
-spring.kafka.bootstrap-servers: ${KAFKA_URL:localhost:9094}
+spring.kafka.bootstrap-servers: ${KAFKA_URL:localhost:9092}

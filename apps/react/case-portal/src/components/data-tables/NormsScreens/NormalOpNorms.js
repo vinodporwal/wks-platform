@@ -1,446 +1,346 @@
-import { useSession } from 'SessionStoreContext'
-import DataGridTable from '../ASDataGrid'
-import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
+import Tooltip from '@mui/material/Tooltip'
 import { useGridApiRef } from '@mui/x-data-grid'
-
-// Define columns as usual
-const productionColumns = [
-  {
-    field: 'srNo',
-    headerName: 'Sr. No',
-    minWidth: 210,
-    maxWidth: 200,
-    editable: false,
-    flex: 2,
-  },
-  {
-    field: 'particulars',
-    headerName: 'Particulars',
-    minWidth: 150,
-    maxWidth: 160,
-    editable: true,
-  },
-  { field: 'unit', headerName: 'Unit', width: 100, editable: true },
-  {
-    field: 'apr24',
-    headerName: 'Apr-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'may24',
-    headerName: 'May-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'jun24',
-    headerName: 'Jun-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'jul24',
-    headerName: 'Jul-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'aug24',
-    headerName: 'Aug-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'sep24',
-    headerName: 'Sep-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'oct24',
-    headerName: 'Oct-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'nov24',
-    headerName: 'Nov-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'dec24',
-    headerName: 'Dec-24',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'jan25',
-    headerName: 'Jan-25',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'feb25',
-    headerName: 'Feb-25',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'mar25',
-    headerName: 'Mar-25',
-    width: 100,
-    editable: true,
-    type: 'number',
-    align: 'left',
-    headerAlign: 'left',
-  },
-  {
-    field: 'remark',
-    headerName: 'Remark',
-    minWidth: 180,
-    maxWidth: 200,
-    editable: true,
-  },
-]
-
-// Sample production data (10 rows)
-const productionData = [
-  {
-    id: 1,
-    srNo: 1,
-    particulars: 'Material A',
-    unit: 'Kg',
-    apr24: 50,
-    may24: 60,
-    jun24: 55,
-    jul24: 70,
-    aug24: 65,
-    sep24: 75,
-    oct24: 80,
-    nov24: 85,
-    dec24: 90,
-    jan25: 95,
-    feb25: 85,
-    mar25: 100,
-    remark: 'Stock Updated',
-  },
-  {
-    id: 2,
-    srNo: 2,
-    particulars: 'Material B',
-    unit: 'Litre',
-    apr24: 30,
-    may24: 40,
-    jun24: 35,
-    jul24: 45,
-    aug24: 50,
-    sep24: 55,
-    oct24: 60,
-    nov24: 65,
-    dec24: 70,
-    jan25: 75,
-    feb25: 65,
-    mar25: 80,
-    remark: 'Reorder Needed',
-  },
-  {
-    id: 3,
-    srNo: 3,
-    particulars: 'Material C',
-    unit: 'Pcs',
-    apr24: 100,
-    may24: 120,
-    jun24: 110,
-    jul24: 130,
-    aug24: 125,
-    sep24: 135,
-    oct24: 140,
-    nov24: 145,
-    dec24: 150,
-    jan25: 155,
-    feb25: 145,
-    mar25: 160,
-    remark: 'Sufficient Stock',
-  },
-  {
-    id: 4,
-    srNo: 4,
-    particulars: 'Material D',
-    unit: 'Kg',
-    apr24: 20,
-    may24: 25,
-    jun24: 30,
-    jul24: 35,
-    aug24: 30,
-    sep24: 40,
-    oct24: 45,
-    nov24: 50,
-    dec24: 55,
-    jan25: 60,
-    feb25: 50,
-    mar25: 65,
-    remark: 'Check Expiry',
-  },
-  {
-    id: 5,
-    srNo: 5,
-    particulars: 'Material E',
-    unit: 'Box',
-    apr24: 5,
-    may24: 10,
-    jun24: 15,
-    jul24: 20,
-    aug24: 25,
-    sep24: 30,
-    oct24: 35,
-    nov24: 40,
-    dec24: 45,
-    jan25: 50,
-    feb25: 40,
-    mar25: 55,
-    remark: 'New Shipment Arrived',
-  },
-  {
-    id: 6,
-    srNo: 6,
-    particulars: 'Material F',
-    unit: 'Tonne',
-    apr24: 15,
-    may24: 20,
-    jun24: 18,
-    jul24: 25,
-    aug24: 22,
-    sep24: 28,
-    oct24: 30,
-    nov24: 32,
-    dec24: 35,
-    jan25: 38,
-    feb25: 34,
-    mar25: 40,
-    remark: 'Monitor Usage',
-  },
-  {
-    id: 7,
-    srNo: 7,
-    particulars: 'Material G',
-    unit: 'Meter',
-    apr24: 200,
-    may24: 220,
-    jun24: 210,
-    jul24: 250,
-    aug24: 230,
-    sep24: 270,
-    oct24: 280,
-    nov24: 290,
-    dec24: 300,
-    jan25: 310,
-    feb25: 290,
-    mar25: 320,
-    remark: 'Stable Supply',
-  },
-  {
-    id: 8,
-    srNo: 8,
-    particulars: 'Material H',
-    unit: 'Kg',
-    apr24: 12,
-    may24: 18,
-    jun24: 16,
-    jul24: 20,
-    aug24: 22,
-    sep24: 24,
-    oct24: 26,
-    nov24: 28,
-    dec24: 30,
-    jan25: 32,
-    feb25: 28,
-    mar25: 35,
-    remark: 'Low Demand',
-  },
-  {
-    id: 9,
-    srNo: 9,
-    particulars: 'Material I',
-    unit: 'Litre',
-    apr24: 55,
-    may24: 60,
-    jun24: 58,
-    jul24: 70,
-    aug24: 68,
-    sep24: 75,
-    oct24: 80,
-    nov24: 85,
-    dec24: 90,
-    jan25: 95,
-    feb25: 88,
-    mar25: 100,
-    remark: 'Reorder Soon',
-  },
-  {
-    id: 10,
-    srNo: 10,
-    particulars: 'Material J',
-    unit: 'Box',
-    apr24: 8,
-    may24: 12,
-    jun24: 10,
-    jul24: 15,
-    aug24: 14,
-    sep24: 18,
-    oct24: 20,
-    nov24: 22,
-    dec24: 24,
-    jan25: 26,
-    feb25: 23,
-    mar25: 28,
-    remark: 'New Variant Available',
-  },
-]
-
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import React, { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
+import NumericInputOnly from 'utils/NumericInputOnly'
+import DataGridTable from '../ASDataGrid'
+const headerMap = generateHeaderNames()
 const NormalOpNormsScreen = () => {
+  const [allProducts, setAllProducts] = useState([])
+  const [bdData, setBDData] = useState([])
   const menu = useSelector((state) => state.menu)
   const { sitePlantChange } = menu
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
+  const [rows, setRows] = useState()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
   const keycloak = useSession()
+  const fetchData = async () => {
+    try {
+      const data = await DataService.getNormalOperationNormsData(keycloak)
+      const groupedRows = []
+      const groups = new Map()
+      let groupId = 0
+
+      data.forEach((item) => {
+        const groupKey = item.normParameterTypeDisplayName || 'By Products'
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, [])
+          groupedRows.push({
+            id: groupId++,
+            Particulars: groupKey,
+            isGroupHeader: true,
+          })
+        }
+        const formattedItem = {
+          ...item,
+          idFromApi: item.id,
+          id: groupId++,
+        }
+
+        groups.get(groupKey).push(formattedItem)
+        groupedRows.push(formattedItem)
+      })
+
+      setBDData(groupedRows)
+      setRows(groupedRows)
+    } catch (error) {
+      console.error('Error fetching Business Demand data:', error)
+    }
+  }
+
+  useEffect(() => {
+    const getAllProducts = async () => {
+      try {
+        const data = await DataService.getAllProducts(keycloak, 'Consumption')
+        const productList = data.map((product) => ({
+          id: product.id,
+          displayName: product.displayName,
+        }))
+        setAllProducts(productList)
+      } catch (error) {
+        console.error('Error fetching product:', error)
+      } finally {
+        // handleMenuClose();
+      }
+    }
+    fetchData()
+    getAllProducts()
+  }, [sitePlantChange, keycloak])
+
+  const colDefs = [
+    {
+      field: 'Particulars',
+      headerName: 'Type',
+      minWidth: 140,
+      groupable: true,
+      renderCell: (params) => <strong>{params.value}</strong>,
+    },
+
+    { field: 'unit', headerName: 'Unit', width: 100, editable: true },
+    {
+      field: 'april',
+      headerName: headerMap[4],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'may',
+      headerName: headerMap[5],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'june',
+      headerName: headerMap[6],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'july',
+      headerName: headerMap[7],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+
+    {
+      field: 'august',
+      headerName: headerMap[8],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'september',
+      headerName: headerMap[9],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'october',
+      headerName: headerMap[10],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'november',
+      headerName: headerMap[11],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'december',
+      headerName: headerMap[12],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'january',
+      headerName: headerMap[1],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'february',
+      headerName: headerMap[2],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'march',
+      headerName: headerMap[3],
+      editable: true,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    {
+      field: 'remarks',
+      headerName: 'Remark',
+      minWidth: 150,
+      editable: true,
+      renderCell: (params) => (
+        <Tooltip title={params.value || ''} arrow>
+          <div
+            style={{
+              cursor: 'pointer',
+              color: params.value ? 'inherit' : 'gray',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: 140,
+            }}
+            onClick={() => handleRemarkCellClick(params.row)}
+          >
+            {params.value}
+          </div>
+        </Tooltip>
+      ),
+    },
+    {
+      field: 'idFromApi',
+      headerName: 'idFromApi',
+    },
+  ]
+
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    // console.log(newRow)
-    const start = new Date(newRow.maintStartDateTime)
-    const end = new Date(newRow.maintEndDateTime)
-    const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
-
-    // console.log(`Duration in minutes: ${durationInMins}`)
-
-    // Update the duration in newRow
-    newRow.durationInMins = durationInMins.toFixed(2)
-    // newRow.durationInMins = durationInMins
-    // setShutdownData((prevData) =>
-    //   prevData.map((row) => (row.id === rowId ? newRow : row)),
-    // )
-
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
-    // Keep track of original values before editing
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
 
-    // setHasUnsavedRows(true)
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
+
     return newRow
   }, [])
-  const saveChanges = React.useCallback(async () => {
-    console.log(
-      'Edited Data: ',
-      Object.values(unsavedChangesRef.current.unsavedRows),
-    )
-    try {
-      // var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      // saveShutdownData(data)
 
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
+  const saveChanges = React.useCallback(async () => {
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
+
+        saveNormalOperationNormsData(data)
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {}
+    }, 1000)
+  }, [apiRef])
+
+  const saveNormalOperationNormsData = async (newRows) => {
+    try {
+      let plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      const businessData = newRows.map((row) => ({
+        april: row.april || null,
+        may: row.may || null,
+        june: row.june || null,
+        july: row.july || null,
+        august: row.august || null,
+        september: row.september || null,
+        october: row.october || null,
+        november: row.november || null,
+        december: row.december || null,
+        january: row.january || null,
+        february: row.february || null,
+        march: row.march || null,
+        remark: row.remarks,
+        remarks: row.remarks,
+        financialYear: localStorage.getItem('year'),
+        plantId: plantId,
+        normParameterId: row.normParameterId,
+        id: row.idFromApi || null,
+        materialFkId: row.materialFkId || null,
+        mcuVersion: row.mcuVersion || null,
+        plantFkId: row.plantFkId || null,
+        siteFkId: row.siteFkId || null,
+        verticalFkId: row.verticalFkId || null,
+        unit: row.unit || null,
+        normParameterTypeId: row.normParameterTypeId || null,
+      }))
+      if (businessData.length > 0) {
+        // console.log(title)
+
+        const response = await DataService.saveNormalOperationNormsData(
+          plantId,
+          businessData,
+          keycloak,
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Normal Operations Norms Saved Successfully!`,
+          severity: 'success',
+        })
+        // fetchData()
+        return response
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Normal Operations Norms not saved!`,
+          severity: 'error',
+        })
       }
     } catch (error) {
-      // setIsSaving(false);
+      console.error(`Error saving Normal Operations Norms`, error)
+    } finally {
+      fetchData()
     }
-  }, [apiRef])
-  // Create groups by inserting a row with a groupHeader property
-  const rawMaterialsData = productionData.slice(0, 2) // 2 rows for Raw Materials
-  const byProductsData = productionData.slice(2, 5) // 3 rows for By Products
-  const calChemData = productionData.slice(5, 9) // 1 row for Cal-chem
-
-  const groupedRows = [
-    { id: 'group-raw', groupHeader: 'Raw Materials' },
-    ...rawMaterialsData,
-    { id: 'group-by', groupHeader: 'By Products' },
-    ...byProductsData,
-    { id: 'group-cal', groupHeader: 'Cat-chem' },
-    ...calChemData,
-  ]
-
-  // Custom render function for cells
-  const groupRenderCell = (params) => {
-    if (params.row.groupHeader) {
-      // In the first column show the group title
-      if (params.field === 'srNo') {
-        return (
-          <span
-            style={{
-              fontWeight: 'bold',
-              padding: '4px 8px',
-            }}
-          >
-            {params.row.groupHeader}
-          </span>
-        )
-      }
-      // For other columns, render empty
-      return ''
-    }
-    return params.value
   }
 
-  // Enhance columns to use the custom render function
-  const enhancedColumns = productionColumns.map((col) => ({
-    ...col,
-    renderCell: groupRenderCell,
-  }))
+  const onProcessRowUpdateError = React.useCallback((error) => {
+    console.log(error)
+  }, [])
 
   return (
     <div>
       <DataGridTable
-        columns={enhancedColumns}
-        rows={groupedRows}
+        columns={colDefs}
+        setRows={setRows}
+        rows={rows}
         title='Normal Operations Norms'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
@@ -451,34 +351,28 @@ const NormalOpNormsScreen = () => {
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         apiRef={apiRef}
-        // deleteId={deleteId}
         open1={open1}
-        // setDeleteId={setDeleteId}
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // handleDeleteClick={handleDeleteClick}
-        // fetchData={fetchData}
+        onProcessRowUpdateError={onProcessRowUpdateError}
+        fetchData={fetchData}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        unsavedChangesRef={unsavedChangesRef}
+        handleRemarkCellClick={handleRemarkCellClick}
         permissions={{
-          showAction: true,
+          showAction: false,
           addButton: false,
           deleteButton: false,
           editButton: true,
-          showUnit: true,
+          showUnit: false,
           saveWithRemark: true,
           saveBtn: true,
-        }}
-        getRowClassName={(params) =>
-          params.row.groupHeader ? 'group-header-row' : ''
-        }
-        sx={{
-          '& .group-header-row .MuiDataGrid-cell': {
-            borderRight: 'none !important',
-          },
-          '& .MuiDataGrid-row.MuiDataGrid-row--firstVisible:nth-child(even) .MuiDataGrid-cell':
-            {
-              borderRight: 'none !important',
-            },
+          showCalculate: false,
         }}
       />
     </div>

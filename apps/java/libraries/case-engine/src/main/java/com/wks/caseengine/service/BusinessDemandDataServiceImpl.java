@@ -1,14 +1,20 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.Objects;
+
 import com.wks.caseengine.entity.BusinessDemand;
+import com.wks.caseengine.entity.NormParameters;
+import com.wks.caseengine.entity.Product;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.repository.BusinessDemandDataRepository;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
@@ -16,6 +22,8 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 	@Autowired
 	private BusinessDemandDataRepository businessDemandDataRepository;
 	
+	 @Autowired
+	 private NormParametersService normParametersService;
 	
 
 	@Override
@@ -25,7 +33,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 
 		for (Object[] row : obj) {
 		    BusinessDemandDataDTO businessDemandDataDTO = new BusinessDemandDataDTO();
-		    
+
 		    businessDemandDataDTO.setId(row[0].toString());
 		    businessDemandDataDTO.setRemark(row[1] != null ? row[1].toString() : null);
 		    businessDemandDataDTO.setJan(row[2] != null ? Float.parseFloat(row[2].toString()) : null);
@@ -39,15 +47,20 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 		    businessDemandDataDTO.setSep(row[10] != null ? Float.parseFloat(row[10].toString()) : null);
 		    businessDemandDataDTO.setOct(row[11] != null ? Float.parseFloat(row[11].toString()) : null);
 		    businessDemandDataDTO.setNov(row[12] != null ? Float.parseFloat(row[12].toString()) : null);
-		    businessDemandDataDTO.setDec(row[13] != null ? Float.parseFloat(row[13].toString()) : null);    
+		    businessDemandDataDTO.setDec(row[13] != null ? Float.parseFloat(row[13].toString()) : null);
 		    businessDemandDataDTO.setYear(row[14].toString());
 		    businessDemandDataDTO.setPlantId(row[15] != null ? row[15].toString().toUpperCase() : null);
 		    businessDemandDataDTO.setNormParameterId(row[16] != null ? row[16].toString() : null);
 		    businessDemandDataDTO.setAvgTph(row[17] != null ? Float.parseFloat(row[17].toString()) : null);
 		    businessDemandDataDTO.setDisplayOrder(row[18] != null ? Integer.parseInt(row[18].toString()) : null);
+		    businessDemandDataDTO.setNormParameterTypeId(row[19] != null ? row[19].toString() : null);
+		    businessDemandDataDTO.setNormParameterTypeName(row[20] != null ? row[20].toString() : null);
+		    businessDemandDataDTO.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
+
 		    businessDemandDataDTOList.add(businessDemandDataDTO);
 		}
-			return businessDemandDataDTOList;
+		 
+        return businessDemandDataDTOList;
 	}
 
 	@Override

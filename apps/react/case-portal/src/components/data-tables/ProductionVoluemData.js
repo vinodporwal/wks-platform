@@ -5,6 +5,7 @@ import ASDataGrid from './ASDataGrid'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import getEnhancedProductionColDefs from './CommonHeader/ProductionVolumeHeader'
 const headerMap = generateHeaderNames()
 
 const ProductionvolumeData = () => {
@@ -12,18 +13,32 @@ const ProductionvolumeData = () => {
   const [productNormData, setProductNormData] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
-  const menu = useSelector((state) => state.menu)
-  const { sitePlantChange } = menu
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange } = dataGridStore
+  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const [rows, setRows] = useState()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [selectedUnit, setSelectedUnit] = useState('TPH')
+
+  // States for the Remark Dialog
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remark || row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
 
   const findAvg = (value, row) => {
     const months = [
@@ -51,6 +66,7 @@ const ProductionvolumeData = () => {
   const editAOPMCCalculatedData = async (newRows) => {
     try {
       let plantId = ''
+      const isTPH = selectedUnit == 'TPD'
       const storedPlant = localStorage.getItem('selectedPlant')
       if (storedPlant) {
         const parsedPlant = JSON.parse(storedPlant)
@@ -66,29 +82,34 @@ const ProductionvolumeData = () => {
       }
 
       const aopmccCalculatedData = newRows.map((row) => ({
-        april: row.april || null,
-        may: row.may || null,
-        june: row.june || null,
-        july: row.july || null,
-        august: row.august || null,
-        september: row.september || null,
-        october: row.october || null,
-        november: row.november || null,
-        december: row.december || null,
-        january: row.january || null,
-        february: row.february || null,
-        march: row.march || null,
+        april: isTPH && row.april ? row.april * 24 : row.april || null,
+        may: isTPH && row.may ? row.may * 24 : row.may || null,
+        june: isTPH && row.june ? row.june * 24 : row.june || null,
+        july: isTPH && row.july ? row.july * 24 : row.july || null,
+        august: isTPH && row.august ? row.august * 24 : row.august || null,
+        september:
+          isTPH && row.september ? row.september * 24 : row.september || null,
+        october: isTPH && row.october ? row.october * 24 : row.october || null,
+        november:
+          isTPH && row.november ? row.november * 24 : row.november || null,
+        december:
+          isTPH && row.december ? row.december * 24 : row.december || null,
+        january: isTPH && row.january ? row.january * 24 : row.january || null,
+        february:
+          isTPH && row.february ? row.february * 24 : row.february || null,
+        march: isTPH && row.march ? row.march * 24 : row.march || null,
 
         aopStatus: row.aopStatus || 'draft',
-        year: '2024-25',
+        year: localStorage.getItem('year'),
         plant: plantId,
         plantFKId: plantId,
         site: siteId,
         material: 'EOE',
         normParametersFKId: row.normParametersFKId,
         id: row.idFromApi || null,
-
         avgTPH: findAvg('1', row) || null,
+        remark: row.remark,
+        remarks: row.remark,
       }))
 
       const response = await DataService.editAOPMCCalculatedData(
@@ -112,52 +133,114 @@ const ProductionvolumeData = () => {
 
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
-
-    // Keep track of original values before editing
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
     return newRow
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    console.log(
-      'Edited Data: ',
-      Object.values(unsavedChangesRef.current.unsavedRows),
-    )
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      editAOPMCCalculatedData(data)
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
+        // Validate that both normParameterId and remark are not empty
+        const invalidRows = data.filter(
+          (row) => !row.normParametersFKId.trim(),
+          // (row) => !row.normParametersFKId.trim() || !row.remark.trim(),
+        )
+
+        if (invalidRows.length > 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Please fill required fields: Product and Remark.',
+            severity: 'error',
+          })
+          return
+        }
+        editAOPMCCalculatedData(data)
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {
+        // setIsSaving(false);
       }
-    } catch (error) {
-      // setIsSaving(false);
-    }
-  }, [apiRef])
+    }, 1000)
+  }, [apiRef, selectedUnit])
 
   const fetchData = async () => {
     try {
       const data = await DataService.getAOPMCCalculatedData(keycloak)
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item?.id,
-        normParametersFKId: item?.normParametersFKId.toLowerCase(),
-        id: index,
-      }))
+      const formattedData = data.map((item, index) => {
+        const isTPD = selectedUnit == 'TPD'
+        return {
+          ...item,
+          idFromApi: item?.id,
+          normParametersFKId: item?.normParametersFKId.toLowerCase(),
+          id: index,
+
+          ...(isTPD && {
+            april: item.april
+              ? (item.april / 24).toFixed(2)
+              : item.april || null,
+            may: item.may ? (item.may / 24).toFixed(2) : item.may || null,
+            june: item.june ? (item.june / 24).toFixed(2) : item.june || null,
+            july: item.july ? (item.july / 24).toFixed(2) : item.july || null,
+            august: item.august
+              ? (item.august / 24).toFixed(2)
+              : item.august || null,
+            september: item.september
+              ? (item.september / 24).toFixed(2)
+              : item.september || null,
+            october: item.october
+              ? (item.october / 24).toFixed(2)
+              : item.october || null,
+            november: item.november
+              ? (item.november / 24).toFixed(2)
+              : item.november || null,
+            december: item.december
+              ? (item.december / 24).toFixed(2)
+              : item.december || null,
+            january: item.january
+              ? (item.january / 24).toFixed(2)
+              : item.january || null,
+            february: item.february
+              ? (item.february / 24).toFixed(2)
+              : item.february || null,
+            march: item.march
+              ? (item.march / 24).toFixed(2)
+              : item.march || null,
+          }),
+        }
+      })
       setProductNormData(formattedData)
+      setRows(formattedData)
     } catch (error) {
       console.error('Error fetching data:', error)
     }
   }
+
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(keycloak)
+        const data = await DataService.getAllProducts(
+          keycloak,
+          lowerVertName === 'meg' ? 'Production' : 'Grade',
+        )
         const productList = data.map((product) => ({
           id: product.id.toLowerCase(),
           displayName: product.displayName,
@@ -173,7 +256,7 @@ const ProductionvolumeData = () => {
 
     getAllProducts()
     fetchData()
-  }, [sitePlantChange, keycloak])
+  }, [sitePlantChange, keycloak, selectedUnit])
 
   const getProductName = async (value, row) => {
     if (!row || !row.normParametersFKId) {
@@ -185,7 +268,7 @@ const ProductionvolumeData = () => {
       product = allProducts.find((p) => p.id === row.normParametersFKId)
     } else {
       try {
-        const data = await DataService.getAllProducts(keycloak)
+        const data = await DataService.getAllProducts(keycloak, 'Production')
         product = data.find((p) => p.id === row.normParametersFKId)
       } catch (error) {
         console.error('Error fetching products:', error)
@@ -196,196 +279,224 @@ const ProductionvolumeData = () => {
     return product ? product.name : ''
   }
 
-  const productionColumns = [
-    { field: 'idFromApi', headerName: 'ID' },
-    {
-      field: 'aopCaseId',
-      headerName: 'Case ID',
-      minWidth: 120,
-      editable: false,
-    },
+  // const productionColumns = [
+  //   { field: 'idFromApi', headerName: 'ID' },
+  //   {
+  //     field: 'aopCaseId',
+  //     headerName: 'Case ID',
+  //     minWidth: 120,
+  //     editable: false,
+  //   },
 
-    // normParametersFKId
-    {
-      field: 'normParametersFKId',
-      headerName: 'Product',
-      editable: false,
-      minWidth: 225,
-      valueGetter: (params) => {
-        return params || ''
-      },
-      valueFormatter: (params) => {
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : ''
-      },
-      renderEditCell: (params) => {
-        const { value } = params
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              params.api.setEditCellValue({
-                id: params.id,
-                field: 'normParametersFKId',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-            }}
-          >
-            {/* Disabled first option */}
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.displayName}
-              </option>
-            ))}
-          </select>
-        )
-      },
-    },
+  //   // normParametersFKId
+  //   {
+  //     field: 'normParametersFKId',
+  //     headerName: 'Product',
+  //     editable: false,
+  //     minWidth: 225,
+  //     valueGetter: (params) => {
+  //       return params || ''
+  //     },
+  //     valueFormatter: (params) => {
+  //       const product = allProducts.find((p) => p.id === params)
+  //       return product ? product.displayName : ''
+  //     },
+  //     renderEditCell: (params) => {
+  //       const { value } = params
+  //       return (
+  //         <select
+  //           value={value || ''}
+  //           onChange={(event) => {
+  //             params.api.setEditCellValue({
+  //               id: params.id,
+  //               field: 'normParametersFKId',
+  //               value: event.target.value,
+  //             })
+  //           }}
+  //           style={{
+  //             width: '100%',
+  //             padding: '5px',
+  //             border: 'none',
+  //             outline: 'none',
+  //             background: 'transparent',
+  //           }}
+  //         >
+  //           {/* Disabled first option */}
+  //           <option value='' disabled>
+  //             Select
+  //           </option>
+  //           {allProducts.map((product) => (
+  //             <option key={product.id} value={product.id}>
+  //               {product.displayName}
+  //             </option>
+  //           ))}
+  //         </select>
+  //       )
+  //     },
+  //   },
 
-    // { field: 'plant', headerName: 'Plant', editable: false },
-    // { field: 'site', headerName: 'Site', editable: false },
+  //   // { field: 'plant', headerName: 'Plant', editable: false },
+  //   // { field: 'site', headerName: 'Site', editable: false },
 
-    // {
-    //   field: 'productNameHide',
-    //   headerName: 'Product Name',
-    //   valueGetter: getProductName,
-    // },
+  //   // {
+  //   //   field: 'productNameHide',
+  //   //   headerName: 'Product Name',
+  //   //   valueGetter: getProductName,
+  //   // },
 
-    {
-      field: 'april',
-      headerName: headerMap['apr'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'may',
-      headerName: headerMap['may'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'june',
-      headerName: headerMap['jun'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'july',
-      headerName: headerMap['jul'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
+  //   {
+  //     field: 'april',
+  //     headerName: headerMap['apr'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'may',
+  //     headerName: headerMap['may'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'june',
+  //     headerName: headerMap['jun'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'july',
+  //     headerName: headerMap['jul'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
 
-    {
-      field: 'august',
-      headerName: headerMap['aug'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'september',
-      headerName: headerMap['sep'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'october',
-      headerName: headerMap['oct'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'november',
-      headerName: headerMap['nov'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'december',
-      headerName: headerMap['dec'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'january',
-      headerName: headerMap['jan'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'february',
-      headerName: headerMap['feb'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'march',
-      headerName: headerMap['mar'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
+  //   {
+  //     field: 'august',
+  //     headerName: headerMap['aug'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'september',
+  //     headerName: headerMap['sep'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'october',
+  //     headerName: headerMap['oct'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'november',
+  //     headerName: headerMap['nov'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'december',
+  //     headerName: headerMap['dec'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'january',
+  //     headerName: headerMap['jan'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'february',
+  //     headerName: headerMap['feb'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
+  //   {
+  //     field: 'march',
+  //     headerName: headerMap['mar'],
+  //     editable: true,
+  //     type: 'number',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //   },
 
-    {
-      field: 'avgTph',
-      headerName: 'AVG',
-      minWidth: 150,
-      editable: false,
-      valueGetter: findAvg,
-    },
+  //   {
+  //     field: 'avgTph',
+  //     headerName: 'AVG',
+  //     minWidth: 150,
+  //     editable: false,
+  //     valueGetter: findAvg,
+  //   },
 
-    { field: 'aopStatus', headerName: 'Remark', minWidth: 75, editable: true },
-  ]
+  //   {
+  //     field: 'remark',
+  //     headerName: 'Remark',
+  //     minWidth: 150,
+  //     editable: true,
+  //     renderCell: (params) => {
+  //       return (
+  //         <div
+  //           style={{
+  //             cursor: 'pointer',
+  //             color: params.value ? 'inherit' : 'gray',
+  //           }}
+  //           onClick={() => handleRemarkCellClick(params.row)}
+  //         >
+  //           {params.value || 'Click to add remark'}
+  //         </div>
+  //       )
+  //     },
+  //   },
+  // ]
 
-  const handleRowEditStop = (params, event) => {
-    setRowModesModel({
-      ...rowModesModel,
-      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
-    })
-  }
-
+  // const handleRowEditStop = (params, event) => {
+  //   setRowModesModel({
+  //     ...rowModesModel,
+  //     [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+  //   })
+  // }
+  const productionColumns = getEnhancedProductionColDefs({
+    headerMap,
+    allProducts,
+    handleRemarkCellClick,
+    findAvg,
+  })
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
   }, [])
 
+  const handleUnitChange = (unit) => {
+    setSelectedUnit(unit)
+  }
+
   return (
     <div>
       <ASDataGrid
+        setRows={setRows}
         columns={productionColumns}
-        rows={productNormData}
+        rows={rows}
         title='Production Volume Data'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
@@ -404,28 +515,27 @@ const ProductionvolumeData = () => {
         // open1={open1}
         // handleDeleteClick={handleDeleteClick}
         fetchData={fetchData}
-        onRowEditStop={handleRowEditStop}
+        // onRowEditStop={handleRowEditStop}
         onProcessRowUpdateError={onProcessRowUpdateError}
+        handleRemarkCellClick={handleRemarkCellClick}
+        handleUnitChange={handleUnitChange}
         experimentalFeatures={{ newEditingApi: true }}
-        onCellEditStop={(params, event) => {
-          event.defaultMuiPrevented = true
-          if (
-            params.reason === 'cellFocusOut' ||
-            params.reason === 'escapeKeyDown'
-          ) {
-            const updatedRow = { ...params.row, [params.field]: params.value }
-            processRowUpdate(updatedRow, params.row)
-          }
-        }}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        unsavedChangesRef={unsavedChangesRef}
         permissions={{
           showAction: true,
           addButton: false,
           deleteButton: false,
           editButton: true,
-          showUnit: false,
+          showUnit: true,
           saveWithRemark: true,
           showRefreshBtn: true,
           saveBtn: true,
+          units: ['TPH', 'TPD'],
         }}
       />
     </div>

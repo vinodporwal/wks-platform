@@ -1,6 +1,6 @@
 export const generateHeaderNames = () => {
-  // const yearRange = localStorage.getItem("year"); // Example: "2024-2025"
-  const yearRange = '2024-2025'
+  // const yearRange = localStorage.getItem("year");
+  const yearRange = '2025-2026'
   if (!yearRange) {
     console.error('YEAR not found in localStorage')
     return {}
@@ -31,7 +31,7 @@ export const generateHeaderNames = () => {
 
   months.forEach((month, index) => {
     const year = index >= 3 ? startYear : endYear // Apr-Dec → startYear, Jan-Mar → endYear
-    headerMap[month] =
+    headerMap[index + 1] =
       `${month.charAt(0).toUpperCase() + month.slice(1)}-${year % 100}`
   })
 

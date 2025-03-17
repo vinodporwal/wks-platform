@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-    demo-data-loader-aop:
+    demo-data-loader:
         build:
             context: apps/java/services/demo-data-loader
         environment:
@@ -18,13 +18,13 @@ services:
             - KEYCLOAK_DEFAULT_USER_LAST_NAME=${KEYCLOAK_DEFAULT_USER_LAST_NAME}
             - KEYCLOAK_DATA_IMPORT_REALM_DISPLAY_NAME=${KEYCLOAK_DATA_IMPORT_REALM_DISPLAY_NAME}
         links:
-            - mongodb-aop
-            - camunda-aop
-            - keycloak-aop
+            - mongodb
+            - camunda
+            - keycloak
         depends_on:
-            mongodb-aop:
+            mongodb:
                 condition: service_healthy
-            camunda-aop:
+            camunda:
                 condition: service_healthy
-            keycloak-aop:
+            keycloak:
                 condition: service_healthy            

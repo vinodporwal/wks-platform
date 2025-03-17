@@ -40,5 +40,4 @@ public class AOPDTO {
     private String normParametersFKId;
     private String bDNormParametersFKId;
     private Integer displayOrder;
-
 }

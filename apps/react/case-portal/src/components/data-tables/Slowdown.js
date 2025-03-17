@@ -5,49 +5,59 @@ import React, { useState, useEffect } from 'react'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import { useSelector } from 'react-redux'
+import NumericInputOnly from 'utils/NumericInputOnly'
+
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
 
 const SlowDown = () => {
-  const menu = useSelector((state) => state.menu)
-  const { sitePlantChange } = menu
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange } = dataGridStore
+  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const [slowDownData, setSlowDownData] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+  const [rows, setRows] = useState()
+  const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const keycloak = useSession()
+  // States for the Remark Dialog
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    // console.log(newRow)
-    // const start = new Date(newRow.maintStartDateTime)
-    // const end = new Date(newRow.maintEndDateTime)
-    // const durationInMins = Math.floor((end - start) / (1000 * 60 * 60)) // Convert ms to Hrs
-    // // const durationInMins = Math.floor((end - start) / (1000 * 60)) // Convert ms to minutes
 
-    // console.log(`Duration in minutes: ${durationInMins}`)
-
-    // // Update the duration in newRow
-    // newRow.durationInMins = durationInMins.toFixed(2)
-    // // newRow.durationInMins = durationInMins
-
-    // setSlowDownData((prevData) =>
-    //   prevData.map((row) => (row.id === rowId ? newRow : row)),
-    // )
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
     // Keep track of original values before editing
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
+
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
 
     // setHasUnsavedRows(true)
     return newRow
@@ -64,12 +74,13 @@ const SlowDown = () => {
       const slowDownDetails = newRow.map((row) => ({
         productId: row.product,
         discription: row.discription,
-        durationInMins: parseFloat(findDuration('1', row)),
+        // durationInHrs: parseFloat(findDuration('1', row)),
+        durationInHrs: parseFloat(row.durationInHrs),
         maintEndDateTime: row.maintEndDateTime,
         maintStartDateTime: row.maintStartDateTime,
-        remark: row.remarks,
+        remark: row.remark,
         rate: row.rate,
-        audityear: '2024-25',
+        audityear: localStorage.getItem('year'),
         id: row.idFromApi || null,
       }))
       const response = await DataService.saveSlowdownData(
@@ -98,18 +109,43 @@ const SlowDown = () => {
       'Edited Data: ',
       Object.values(unsavedChangesRef.current.unsavedRows),
     )
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      saveSlowDownData(data)
+    setLoading(true)
+    setTimeout(async () => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
+        // Validate that both normParameterId and remark are not empty
+        const invalidRows = data.filter(
+          (row) => !row.product.trim() || !row.remark.trim(),
+        )
 
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
+        if (invalidRows.length > 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Please fill required fields: Product and Remark.',
+            severity: 'error',
+          })
+          return
+        }
+        saveSlowDownData(data)
+
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {
+        // setIsSaving(false);
       }
-    } catch (error) {
-      // setIsSaving(false);
-    }
+    }, 1000) // Delay of 2 seconds
   }, [apiRef])
+
   const updateSlowdownData = async (newRow) => {
     try {
       var maintenanceId = newRow?.maintenanceId
@@ -117,7 +153,7 @@ const SlowDown = () => {
       const slowDownDetails = {
         productId: newRow.product,
         discription: newRow.discription,
-        durationInMins: newRow.durationInMins,
+        durationInHrs: newRow.durationInHrs,
         maintEndDateTime: newRow.maintEndDateTime,
         maintStartDateTime: newRow.maintStartDateTime,
         remark: newRow.remarks,
@@ -145,23 +181,44 @@ const SlowDown = () => {
       fetchData()
     }
   }
+
   const fetchData = async () => {
+    setLoading(true)
     try {
       const data = await DataService.getSlowDownPlantData(keycloak)
+
+      // const data = [
+      //   {
+      //     discription: 'MEG slowdown',
+      //     maintStartDateTime: null,
+      //     maintEndDateTime: null,
+      //     durationInHrs: null,
+      //     rate: 20,
+      //     remarks: 'MEG slowdown',
+      //     product: '92E0AF06-9535-4B93-8998-E56A71354393',
+      //     maintenanceId: 'f79675e1-2973-4844-90ff-6894b4b6bd72',
+      //   },
+      // ]
       const formattedData = data.map((item, index) => ({
         ...item,
-        idFromApi: item?.maintenanceId,
+        idFromApi: item?.maintenanceId || item?.id,
         id: index,
       }))
       setSlowDownData(formattedData)
+      setRows(formattedData)
+      setLoading(false) // Hide loading
     } catch (error) {
       console.error('Error fetching SlowDown data:', error)
     }
   }
+
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(keycloak)
+        const data = await DataService.getAllProducts(
+          keycloak,
+          lowerVertName === 'meg' ? 'Production' : 'Grade',
+        )
         // console.log('API Response:', data);
 
         // Extract only displayName and id
@@ -192,7 +249,7 @@ const SlowDown = () => {
     //     const shutdownDetails = {
     //       product: 'Oxygen',
     //       discription: '1 Shutdown maintenance',
-    //       durationInMins: 120,
+    //       durationInHrs: 120,
     //       maintEndDateTime: '2025-02-20T18:00:00Z',
     //       maintStartDateTime: '2025-02-20T16:00:00Z',
     //     }
@@ -285,9 +342,9 @@ const SlowDown = () => {
 
     {
       field: 'product',
-      headerName: 'Product',
+      headerName: lowerVertName === 'meg' ? 'Product' : 'Grade Name',
       editable: true,
-      minWidth: 225,
+      minWidth: 125,
       valueGetter: (params) => {
         return params || ''
       },
@@ -339,7 +396,7 @@ const SlowDown = () => {
       valueGetter: (params) => {
         const value = params
         const parsedDate = value
-          ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate()
+          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
           : null
         return parsedDate
       },
@@ -354,47 +411,60 @@ const SlowDown = () => {
       valueGetter: (params) => {
         const value = params
         const parsedDate = value
-          ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate()
+          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
           : null
         return parsedDate
       },
     },
 
     {
-      field: 'durationInMins',
+      field: 'durationInHrs',
       headerName: 'Duration (hrs)',
-      editable: false,
-      minWidth: 100,
-      type: 'number',
+      editable: true,
+      minWidth: 75,
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
-      valueGetter: findDuration,
+      // valueGetter: findDuration,
     },
 
     {
       field: 'rate',
       headerName: 'Rate',
       editable: true,
-      minWidth: 100,
-      type: 'number',
+      minWidth: 75,
+      renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
     },
 
     {
-      field: 'remarks',
+      field: 'remark',
       headerName: 'Remarks',
       editable: true,
-      minWidth: 200,
+      minWidth: 250,
+      renderCell: (params) => {
+        return (
+          <div
+            style={{
+              cursor: 'pointer',
+              color: params.value ? 'inherit' : 'gray',
+            }}
+            onClick={() => handleRemarkCellClick(params.row)}
+          >
+            {params.value || 'Click to add remark'}
+          </div>
+        )
+      },
     },
   ]
 
-  const handleRowEditStop = (params, event) => {
-    setRowModesModel({
-      ...rowModesModel,
-      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
-    })
-  }
+  // const handleRowEditStop = (params, event) => {
+  //   setRowModesModel({
+  //     ...rowModesModel,
+  //     [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+  //   })
+  // }
 
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
@@ -402,10 +472,18 @@ const SlowDown = () => {
 
   return (
     <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <ASDataGrid
+        setRows={setRows}
         columns={colDefs}
-        rows={slowDownData}
-        title='Slowdown Plan'
+        rows={rows}
+        title={'Slowdown Activities'}
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
@@ -424,19 +502,15 @@ const SlowDown = () => {
         open1={open1}
         // handleDeleteClick={handleDeleteClick}
         fetchData={fetchData}
-        onRowEditStop={handleRowEditStop}
+        // onRowEditStop={handleRowEditStop}
         onProcessRowUpdateError={onProcessRowUpdateError}
         experimentalFeatures={{ newEditingApi: true }}
-        onCellEditStop={(params, event) => {
-          event.defaultMuiPrevented = true
-          if (
-            params.reason === 'cellFocusOut' ||
-            params.reason === 'escapeKeyDown'
-          ) {
-            const updatedRow = { ...params.row, [params.field]: params.value }
-            processRowUpdate(updatedRow, params.row)
-          }
-        }}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        unsavedChangesRef={unsavedChangesRef}
         permissions={{
           showAction: true,
           addButton: true,

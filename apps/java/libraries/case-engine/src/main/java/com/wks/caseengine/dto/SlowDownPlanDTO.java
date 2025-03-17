@@ -28,6 +28,5 @@ public class SlowDownPlanDTO {
     private String product;
     private UUID maintenanceId;
     private Integer displayOrder;
-
     }
 

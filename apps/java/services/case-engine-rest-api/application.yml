@@ -18,16 +18,16 @@ spring.mvc.converters.preferred-json-mapper: gson
 
 wks.bpm.engine.camunda.version: ${CAMUNDA_VERSION:camunda7}
 
-camunda.bpm.client.base-url: ${CAMUNDA_BASE_URL:http://localhost:8090/engine-rest}
+camunda.bpm.client.base-url: ${CAMUNDA_BASE_URL:http://localhost:8080/engine-rest}
 
-zeebe.client.broker.gateway-address: ${CAMUNDA8_ZEEBE_GATEWAY_ADDRESS:127.0.0.1:26501}
+zeebe.client.broker.gateway-address: ${CAMUNDA8_ZEEBE_GATEWAY_ADDRESS:127.0.0.1:26500}
 zeebe.client.security.plaintext: true
 camunda.operate.client.enabled: true
-camunda.operate.client.url: ${CAMUNDA8_OPERATE_URL:http://localhost:8381}
+camunda.operate.client.url: ${CAMUNDA8_OPERATE_URL:http://localhost:8281}
 camunda.operate.client.username: ${CAMUNDA8_OPERATE_USERNAME:demo}
 camunda.operate.client.password: ${CAMUNDA8_OPERATE_PASSWORD:demo}
 
-camunda.tasklist.client.url: ${CAMUNDA8_TASKLIST_URL:http://localhost:8282}
+camunda.tasklist.client.url: ${CAMUNDA8_TASKLIST_URL:http://localhost:8182}
 camunda.tasklist.client.username: ${CAMUNDA8_TASKLIST_USERNAME:demo}
 camunda.tasklist.client.password: ${CAMUNDA8_TASKLIST_PASSWORD:demo}
 
@@ -38,8 +38,8 @@ spring.data.mongodb.database.max-pool-size: 5
 spring.data.mongodb.database.max-connection-idle-time: 3000
 spring.data.mongodb.database.max-connection-life-time: 3000
 
-opa.url: ${OPA_URL:http://localhost:8281/v1/data/wks/authz/allow}
-keycloak.url: ${KEYCLOAK_URL:http://localhost:8092}
+opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
+keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
 
 management.health.mongo.enabled: false
 management.health.reds.enabled: false

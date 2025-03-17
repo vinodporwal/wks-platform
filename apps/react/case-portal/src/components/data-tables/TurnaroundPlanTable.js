@@ -5,26 +5,39 @@ import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import ASDataGrid from './ASDataGrid'
+import NumericInputOnly from 'utils/NumericInputOnly'
 
 const TurnaroundPlanTable = () => {
-  const menu = useSelector((state) => state.menu)
-  const { sitePlantChange } = menu
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange } = dataGridStore
+  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const [TaData, setTaData] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+  const [rows, setRows] = useState()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  // States for the Remark Dialog
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
   const keycloak = useSession()
-
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
@@ -33,6 +46,12 @@ const TurnaroundPlanTable = () => {
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
+
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
 
     // setHasUnsavedRows(true)
     return newRow
@@ -50,22 +69,33 @@ const TurnaroundPlanTable = () => {
       const turnAroundDetails = newRow.map((row) => ({
         productId: row.product,
         discription: row.discription,
-        // durationInMins: findDuration('1', row),
-        durationInMins: parseFloat(findDuration('1', row)),
+        // durationInMins: parseFloat(findDuration('1', row)),
+        durationInHrs: parseFloat(row.durationInHrs),
         maintEndDateTime: row.maintEndDateTime,
         maintStartDateTime: row.maintStartDateTime,
         remark: row.remark,
-        audityear: '2024-25',
+        audityear: localStorage.getItem('year'),
         id: row.idFromApi || null,
       }))
+
       const response = await DataService.saveTurnAroundData(
         plantId,
         turnAroundDetails,
         keycloak,
       )
+      console.log(response)
+      // if (response.ok && response.length < 0) {
+      //   const errorData = await response.json() // Get the actual error message
+      //   throw new Error(errorData.errorMessage || 'Failed to save data')
+      // }
+      // Check if response is empty or not defined
+      if (!response || (Array.isArray(response) && response.length === 0)) {
+        throw new Error('Failed to save data: No data returned')
+      }
 
-      if (!response.ok) {
-        const errorData = await response.json() // Get the actual error message
+      // Optionally, if response has an 'ok' flag:
+      if (response.ok === false) {
+        const errorData = await response.json()
         throw new Error(errorData.errorMessage || 'Failed to save data')
       }
 
@@ -93,17 +123,19 @@ const TurnaroundPlanTable = () => {
       'Edited Data: ',
       Object.values(unsavedChangesRef.current.unsavedRows),
     )
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      saveTurnAroundData(data)
+    setTimeout(async () => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        saveTurnAroundData(data)
 
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {
+        // setIsSaving(false);
       }
-    } catch (error) {
-      // setIsSaving(false);
-    }
+    }, 1000) // Delay of 1 seconds
   }, [apiRef])
 
   const fetchData = async () => {
@@ -116,6 +148,7 @@ const TurnaroundPlanTable = () => {
       }))
 
       setTaData(formattedData)
+      setRows(formattedData)
     } catch (error) {
       console.error('Error fetching Turnaround data:', error)
     }
@@ -123,8 +156,10 @@ const TurnaroundPlanTable = () => {
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(keycloak)
-
+        const data = await DataService.getAllProducts(
+          keycloak,
+          lowerVertName === 'meg' ? 'Production' : 'Grade',
+        )
         const productList = data.map((product) => ({
           id: product.id,
           displayName: product.displayName,
@@ -183,9 +218,9 @@ const TurnaroundPlanTable = () => {
 
     {
       field: 'product',
-      headerName: 'Product',
+      headerName: 'Grade Name',
       editable: true,
-      minWidth: 225,
+      minWidth: 125,
       valueGetter: (params) => {
         return params || ''
       },
@@ -237,7 +272,7 @@ const TurnaroundPlanTable = () => {
       valueGetter: (params) => {
         const value = params
         const parsedDate = value
-          ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate()
+          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
           : null
         return parsedDate
       },
@@ -252,7 +287,7 @@ const TurnaroundPlanTable = () => {
       valueGetter: (params) => {
         const value = params
         const parsedDate = value
-          ? dayjs(value, 'MMM D, YYYY, h:mm:ss A').toDate()
+          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
           : null
         return parsedDate
       },
@@ -262,12 +297,14 @@ const TurnaroundPlanTable = () => {
       field: 'durationInMins',
       headerName: 'Duration (hrs)',
       editable: false,
-      type: 'number',
+      renderEditCell: NumericInputOnly,
       minWidth: 100,
       align: 'left',
       headerAlign: 'left',
       valueGetter: findDuration,
     },
+
+    //HIDDEN FILLED SUGGESTED FROM HW
     {
       field: 'period',
       headerName: 'Periods (in months)',
@@ -280,6 +317,19 @@ const TurnaroundPlanTable = () => {
       headerName: 'Remarks',
       editable: true,
       minWidth: 200,
+      renderCell: (params) => {
+        return (
+          <div
+            style={{
+              cursor: 'pointer',
+              color: params.value ? 'inherit' : 'gray',
+            }}
+            onClick={() => handleRemarkCellClick(params.row)}
+          >
+            {params.value || 'Click to add remark'}
+          </div>
+        )
+      },
     },
   ]
 
@@ -314,12 +364,12 @@ const TurnaroundPlanTable = () => {
     }
   }
 
-  const handleRowEditStop = (params, event) => {
-    setRowModesModel({
-      ...rowModesModel,
-      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
-    })
-  }
+  // const handleRowEditStop = (params, event) => {
+  //   setRowModesModel({
+  //     ...rowModesModel,
+  //     [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+  //   })
+  // }
 
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
@@ -328,9 +378,10 @@ const TurnaroundPlanTable = () => {
   return (
     <div>
       <ASDataGrid
+        setRows={setRows}
         columns={colDefs}
-        rows={TaData}
-        title='Turnaround Plan'
+        rows={rows}
+        title='Turnaround Activities'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
@@ -349,19 +400,15 @@ const TurnaroundPlanTable = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         // handleDeleteClick={handleDeleteClick}
-        onRowEditStop={handleRowEditStop}
+        // onRowEditStop={handleRowEditStop}
         onProcessRowUpdateError={onProcessRowUpdateError}
         experimentalFeatures={{ newEditingApi: true }}
-        onCellEditStop={(params, event) => {
-          event.defaultMuiPrevented = true
-          if (
-            params.reason === 'cellFocusOut' ||
-            params.reason === 'escapeKeyDown'
-          ) {
-            const updatedRow = { ...params.row, [params.field]: params.value }
-            processRowUpdate(updatedRow, params.row)
-          }
-        }}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        unsavedChangesRef={unsavedChangesRef}
         permissions={{
           showAction: true,
           addButton: true,

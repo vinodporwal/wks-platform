@@ -1,10 +1,11 @@
-import { DataService } from 'services/DataService'
-import ASDataGrid from './ASDataGrid'
-import React, { useEffect, useState } from 'react'
-import { useSession } from 'SessionStoreContext'
-import { useSelector } from 'react-redux'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useGridApiRef } from '@mui/x-data-grid'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import React, { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
+import ASDataGrid from './ASDataGrid'
+import getEnhancedColDefs from './CommonHeader/index'
 const headerMap = generateHeaderNames()
 
 const BusinessDemand = () => {
@@ -13,14 +14,21 @@ const BusinessDemand = () => {
   const [bdData, setBDData] = useState([])
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
-  const menu = useSelector((state) => state.menu)
-  const { sitePlantChange } = menu
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange } = dataGridStore
+  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
   const apiRef = useGridApiRef()
+  const [rows, setRows] = useState()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  // States for the Remark Dialog
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -30,24 +38,48 @@ const BusinessDemand = () => {
   const fetchData = async () => {
     try {
       const data = await DataService.getBDData(keycloak)
+      const groupedRows = []
+      const groups = new Map()
+      let groupId = 0
 
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-      }))
-      setBDData(formattedData)
+      data.forEach((item) => {
+        const groupKey = item.normParameterTypeDisplayName || 'Group'
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, [])
+          groupedRows.push({
+            id: groupId++,
+            Particulars: groupKey,
+            isGroupHeader: true,
+          })
+        }
+        const formattedItem = {
+          ...item,
+          idFromApi: item.id,
+          id: groupId++,
+        }
+
+        groups.get(groupKey).push(formattedItem)
+        groupedRows.push(formattedItem)
+      })
+
+      setBDData(groupedRows)
+      setRows(groupedRows)
     } catch (error) {
-      console.error('Error fetching Turnaround data:', error)
+      console.error('Error fetching Business Demand data:', error)
     }
   }
 
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(keycloak)
+        const data = await DataService.getAllProducts(
+          keycloak,
+          lowerVertName === 'meg' ? 'Production' : 'Grade',
+        )
         const productList = data.map((product) => ({
-          id: product.id.toLowerCase(), // Convert id to lowercase
+          id: product.id, // Convert id to lowercase
+          // id: product.id.toLowerCase(), // Convert id to lowercase
           displayName: product.displayName,
         }))
         setAllProducts(productList)
@@ -61,193 +93,70 @@ const BusinessDemand = () => {
     getAllProducts()
   }, [sitePlantChange, keycloak])
 
-  const colDefs = [
-    {
-      field: 'normParameterId',
-      headerName: 'Product',
-      editable: true,
-      minWidth: 225,
-      valueGetter: (params) => {
-        return params || ''
-      },
-      valueFormatter: (params) => {
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : ''
-      },
-      renderEditCell: (params) => {
-        const { value } = params
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              // console.log('event',event);
+  const handleRemarkCellClick = (row, newRow) => {
+    // console.log(row, newRow)
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
 
-              params.api.setEditCellValue({
-                id: params.id,
-                field: 'normParameterId',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-            }}
-          >
-            {/* Disabled first option */}
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.displayName}
-              </option>
-            ))}
-          </select>
-        )
-      },
-    },
-
-    {
-      field: 'april',
-      headerName: headerMap['apr'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'may',
-      headerName: headerMap['may'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'june',
-      headerName: headerMap['jun'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'july',
-      headerName: headerMap['jul'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'aug',
-      headerName: headerMap['aug'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'sep',
-      headerName: headerMap['sep'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'oct',
-      headerName: headerMap['oct'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'nov',
-      headerName: headerMap['nov'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'dec',
-      headerName: headerMap['dec'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jan',
-      headerName: headerMap['jan'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'feb',
-      headerName: headerMap['feb'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'march',
-      headerName: headerMap['mar'],
-      editable: true,
-      type: 'number',
-      align: 'left',
-      headerAlign: 'left',
-    },
-
-    // { field: 'avgTph', headerName: 'AVG TPH', minWidth: 150, editable: true },
-    { field: 'remark', headerName: 'Remark', minWidth: 150, editable: true },
-    {
-      field: 'idFromApi',
-      headerName: 'idFromApi',
-    },
-  ]
+  const colDefs = getEnhancedColDefs({
+    allProducts,
+    headerMap,
+    handleRemarkCellClick,
+  })
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    // Store edited row data
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
-    // onRowUpdate.updatedRow(unsavedChangesRef.current.unsavedRows)
-    console.log(unsavedChangesRef.current.unsavedRows)
 
     // Keep track of original values before editing
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
 
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
+
     return newRow
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    console.log(
-      'Edited Data: ',
-      Object.values(unsavedChangesRef.current.unsavedRows),
-    )
-    try {
-      // if (title === 'Business Demand') {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      saveBusinessDemandData(data)
-      // }
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
+        // Validate that both normParameterId and remark are not empty
+        const invalidRows = data.filter(
+          (row) => !row.normParameterId.trim() || !row.remark.trim(),
+        )
 
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
-      }
-    } catch (error) {
-      // setIsSaving(false);
-    }
+        if (invalidRows.length > 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Please fill required fields: Product and Remark.',
+            severity: 'error',
+          })
+          return
+        }
+        saveBusinessDemandData(data)
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {}
+    }, 1000)
   }, [apiRef])
+
   const saveBusinessDemandData = async (newRows) => {
     try {
       let plantId = ''
@@ -270,26 +179,33 @@ const BusinessDemand = () => {
         jan: row.jan || null,
         feb: row.feb || null,
         march: row.march || null,
-        remark: row.remark,
+        remark: row.remark || null,
         avgTph: row.avgTph || null,
-        year: '2024-25',
+        year: localStorage.getItem('year'),
         plantId: plantId,
         normParameterId: row.normParameterId,
         id: row.idFromApi || null,
       }))
-
-      const response = await DataService.saveBusinessDemandData(
-        plantId,
-        businessData, // Now sending an array of rows
-        keycloak,
-      )
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Business Demand data Saved Successfully!',
-        severity: 'success',
-      })
-      // fetchData()
-      return response
+      if (businessData.length > 0) {
+        const response = await DataService.saveBusinessDemandData(
+          plantId,
+          businessData,
+          keycloak,
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Business Demand data Saved Successfully!',
+          severity: 'success',
+        })
+        // fetchData()
+        return response
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Business Demand data not saved!',
+          severity: 'error',
+        })
+      }
     } catch (error) {
       console.error('Error saving Business Demand data:', error)
     } finally {
@@ -297,12 +213,12 @@ const BusinessDemand = () => {
     }
   }
 
-  const handleRowEditStop = (params, event) => {
-    setRowModesModel({
-      ...rowModesModel,
-      [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
-    })
-  }
+  // const handleRowEditStop = (params, event) => {
+  //   setRowModesModel({
+  //     ...rowModesModel,
+  //     [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
+  //   })
+  // }
 
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
@@ -310,9 +226,18 @@ const BusinessDemand = () => {
 
   return (
     <div>
+      {/* <div>
+        {`Plant: ${verticalChange?.verticalChange?.selectedPlant}, Site: ${verticalChange?.verticalChange?.selectedSite}, Vertical: ${verticalChange?.verticalChange?.selectedVertical}`}
+      </div> */}
       <ASDataGrid
-        columns={colDefs}
-        rows={bdData}
+        setRows={setRows}
+        columns={
+          colDefs
+          // lowerVertName === 'meg'
+          //   ? vertical_meg_coldefs_bd
+          //   : vertical_pe_coldefs_bd
+        }
+        rows={rows}
         title='Business Demand'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
@@ -324,15 +249,21 @@ const BusinessDemand = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        onRowEditStop={handleRowEditStop}
         apiRef={apiRef}
         deleteId={deleteId}
         setDeleteId={setDeleteId}
         setOpen1={setOpen1}
         open1={open1}
-        // handleDeleteClick={handleDeleteClick}
         fetchData={fetchData}
         onProcessRowUpdateError={onProcessRowUpdateError}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={setCurrentRowId}
+        unsavedChangesRef={unsavedChangesRef}
+        handleRemarkCellClick={handleRemarkCellClick}
         permissions={{
           showAction: true,
           addButton: true,
@@ -341,6 +272,7 @@ const BusinessDemand = () => {
           showUnit: false,
           saveWithRemark: true,
           saveBtn: true,
+          units: ['TPH', 'TPD'],
         }}
       />
     </div>
