@@ -603,39 +603,65 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String targetDate = outputFormat.format(date);
          Map<String, Object> requestBody = new HashMap<>();
-//		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
-		requestBody.put("Auther_Domain_Id", "Devang.Bhatt@ril.com");
+		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
          requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
-		requestBody.put("Approved_Domain_Id", "Vipul.Rupareliya@ril.com");
-		requestBody.put("RECOMMENDATION_Des", "EED Headline");
-		requestBody.put("MI_REC_BASIS", "Recommendation Basis EED");
-		requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
-		requestBody.put("MI_REC_LONG_DESCR_TX", "EED Long Description");
-		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", "2024-02-28 10:00:00");
+		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
+		requestBody.put("RECOMMENDATION_Des", dataGridEntry.path("recommendationDescription1").asText());
+		requestBody.put("MI_REC_BASIS", dataGridEntry.path("recommendationHeadline").asText());
+		requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
+		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
+		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
-		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
-		requestBody.put("CaseID", "123456");
+		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText());
+		requestBody.put("CaseID", caseNo);
+//		requestBody.put("Auther_Domain_Id", "Devang.Bhatt@ril.com");
+//		requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
+//		requestBody.put("Approved_Domain_Id", "Vipul.Rupareliya@ril.com");
+//		requestBody.put("RECOMMENDATION_Des", "EED Headline");
+//		requestBody.put("MI_REC_BASIS", "Recommendation Basis EED");
+//		requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
+//		requestBody.put("MI_REC_LONG_DESCR_TX", "EED Long Description");
+//		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", "2024-02-28 10:00:00");
+//		requestBody.put("MI_REC_PRIORITY_C", "2");
+//		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
+//		requestBody.put("CaseID", "123456");
 		 System.out.println("GE APM Create Case body: " + requestBody.toString());
+		String recommendationId = "";
+		String status = "Assigned";
+		String[] recommendationStatusAndId = new String[2];
+		try {
          HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 		 ResponseEntity<Map> response = restTemplate.postForEntity(geCreateCaseAPI, requestEntity, Map.class);
 		 System.out.println("Response Code: " + response.getStatusCode());
 		 System.out.println("Response Body: " + response.getBody());
-		 String prefix = "REC-";
+
+			if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+				Map<String, Object> responseBody = response.getBody();
+				if (responseBody != null && responseBody.get("Data") instanceof Map) {
+		            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.get("Data");
+		            recommendationId = responseBody.get("MI_REC_ID") != null ? (String) responseBody.get("MI_REC_ID") : "";
+					System.out.println("Recommendation Id: " + recommendationId);
+					recommendationStatusAndId[0] = recommendationId;
+					recommendationStatusAndId[1] = status;
+				}
+			}	
+		}catch(Exception e) {
+       	 System.out.println("GE APM Post Recommendation API failed " + e.getLocalizedMessage());
+       	 e.printStackTrace();
+        }
 		 sendMailToAssignedPerson(assignedUserId);
 		 sendMailToReviewerPerson(reviewerUserId);
 	        
+//		String prefix = "REC-";
         // Generate a random number between 1 and 999999
-        int randomNumber = ThreadLocalRandom.current().nextInt(1, 1000000);
+//		int randomNumber = ThreadLocalRandom.current().nextInt(1, 1000000);
         
         // Format the random number as a 6-digit string with leading zeros
-        String formattedId = String.format("%06d", randomNumber);
+//		String formattedId = String.format("%06d", randomNumber);
         
         // Return the generated ID with the prefix
-        String id = prefix + formattedId;
-        String status = "Assigned";
-        String[] recommendationStatusAndId = new String[2];
-        recommendationStatusAndId[0] = id;
-        recommendationStatusAndId[1] = status;
+//		String id = prefix + formattedId;
+//		String status = "Assigned";
         return recommendationStatusAndId;
 	}
 	
@@ -924,7 +950,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
 	        System.out.println("Response Code: " + response.getStatusCode());
-	        System.out.println("Response Body: " + response.getBody());
+//	        System.out.println("Response Body: " + response.getBody());
 	        Map<String, Object> responseBody = response.getBody();
 	        if (responseBody != null && responseBody.get("output") instanceof Map) {
 	            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.get("output");
