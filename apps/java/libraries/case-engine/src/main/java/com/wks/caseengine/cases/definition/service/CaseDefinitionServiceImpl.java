@@ -639,8 +639,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
 				Map<String, Object> responseBody = response.getBody();
 				if (responseBody != null && responseBody.get("Data") instanceof Map) {
-		            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.get("Data");
-		            recommendationId = responseBody.get("MI_REC_ID") != null ? (String) responseBody.get("MI_REC_ID") : "";
+		            Map<String, Object> responseData = (Map<String, Object>) responseBody.get("Data");
+		            recommendationId = responseData.get("MI_REC_ID") != null ? (String) responseData.get("MI_REC_ID") : "";
 					System.out.println("Recommendation Id: " + recommendationId);
 					recommendationStatusAndId[0] = recommendationId;
 					recommendationStatusAndId[1] = status;
