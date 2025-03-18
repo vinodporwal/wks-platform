@@ -11,7 +11,7 @@ const headerMap = generateHeaderNames()
 const BusinessDemand = () => {
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
-  const [bdData, setBDData] = useState([])
+  // const [bdData, setBDData] = useState([])
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -42,28 +42,33 @@ const BusinessDemand = () => {
       const groups = new Map()
       let groupId = 0
 
-      data.forEach((item) => {
-        const groupKey = item.normParameterTypeDisplayName || 'Group'
+      console.log('lowerVertName', lowerVertName)
 
-        if (!groups.has(groupKey)) {
-          groups.set(groupKey, [])
-          groupedRows.push({
-            id: groupId++,
-            Particulars: groupKey,
-            isGroupHeader: true,
-          })
-        }
+      data.forEach((item) => {
         const formattedItem = {
           ...item,
           idFromApi: item.id,
           id: groupId++,
         }
 
-        groups.get(groupKey).push(formattedItem)
+        if (lowerVertName !== 'pe') {
+          const groupKey = item.normParameterTypeDisplayName
+
+          if (!groups.has(groupKey)) {
+            groups.set(groupKey, [])
+            groupedRows.push({
+              id: groupId++,
+              Particulars: groupKey,
+              isGroupHeader: true,
+            })
+          }
+
+          groups.get(groupKey).push(formattedItem)
+        }
+
         groupedRows.push(formattedItem)
       })
 
-      setBDData(groupedRows)
       setRows(groupedRows)
     } catch (error) {
       console.error('Error fetching Business Demand data:', error)
@@ -91,9 +96,9 @@ const BusinessDemand = () => {
     }
     fetchData()
     getAllProducts()
-  }, [sitePlantChange, keycloak])
+  }, [sitePlantChange, keycloak, verticalChange, lowerVertName])
 
-  const handleRemarkCellClick = (row, newRow) => {
+  const handleRemarkCellClick = (row) => {
     // console.log(row, newRow)
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -153,7 +158,9 @@ const BusinessDemand = () => {
           unsavedRows: {},
           rowsBeforeChange: {},
         }
-      } catch (error) {}
+      } catch (error) {
+        console.logk('Error saving changes:', error)
+      }
     }, 1000)
   }, [apiRef])
 

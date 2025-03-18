@@ -12,8 +12,8 @@ const ShutDown = () => {
   const { sitePlantChange, verticalChange } = dataGridStore
   const vertName = verticalChange?.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
-  const [shutdownData, setShutdownData] = useState([])
-  const [allProducts, setAllProducts] = useState([])
+  // const [shutdownData, setShutdownData] = useState([])
+  // const [allProducts, setAllProducts] = useState([])
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
@@ -86,7 +86,9 @@ const ShutDown = () => {
           unsavedRows: {},
           rowsBeforeChange: {},
         }
-      } catch (error) {}
+      } catch (error) {
+        console.log('Error saving changes:', error)
+      }
     }, 1000)
   }, [apiRef])
 
@@ -166,22 +168,22 @@ const ShutDown = () => {
       fetchData()
     }
   }
-  const handleDeleteClick = async (id, params) => {
-    try {
-      const maintenanceId =
-        id?.maintenanceId ||
-        params?.row?.idFromApi ||
-        params?.row?.maintenanceId ||
-        params?.NormParameterMonthlyTransactionId
-      setOpen1(true)
-      setDeleteId(id)
-      return await DataService.deleteShutdownData(maintenanceId, keycloak)
-    } catch (error) {
-      console.error(`Error deleting Shutdown data:`, error)
-    } finally {
-      fetchData()
-    }
-  }
+  // const handleDeleteClick = async (id, params) => {
+  //   try {
+  //     const maintenanceId =
+  //       id?.maintenanceId ||
+  //       params?.row?.idFromApi ||
+  //       params?.row?.maintenanceId ||
+  //       params?.NormParameterMonthlyTransactionId
+  //     setOpen1(true)
+  //     setDeleteId(id)
+  //     return await DataService.deleteShutdownData(maintenanceId, keycloak)
+  //   } catch (error) {
+  //     console.error(`Error deleting Shutdown data:`, error)
+  //   } finally {
+  //     fetchData()
+  //   }
+  // }
   const fetchData = async () => {
     try {
       const data = await DataService.getShutDownPlantData(keycloak)
@@ -190,37 +192,37 @@ const ShutDown = () => {
         idFromApi: item?.id,
         id: index,
       }))
-      setShutdownData(formattedData)
+      // setShutdownData(formattedData)
       setRows(formattedData)
     } catch (error) {
       console.error('Error fetching Shutdown data:', error)
     }
   }
   useEffect(() => {
-    const getAllProducts = async () => {
-      try {
-        const data = await DataService.getAllProducts(
-          keycloak,
-          lowerVertName === 'meg' ? 'Production' : 'Grade',
-        )
-        const productList = data.map((product) => ({
-          // id: product.id.toLowerCase(), // Convert id to lowercase
-          id: product.id, // Convert id to lowercase
-          displayName: product.displayName,
-        }))
+    // const getAllProducts = async () => {
+    //   try {
+    //     const data = await DataService.getAllProducts(
+    //       keycloak,
+    //       lowerVertName === 'meg' ? 'Production' : 'Grade',
+    //     )
+    //     const productList = data.map((product) => ({
+    //       // id: product.id.toLowerCase(), // Convert id to lowercase
+    //       id: product.id, // Convert id to lowercase
+    //       displayName: product.displayName,
+    //     }))
 
-        setAllProducts(productList)
-      } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        // handleMenuClose();
-      }
-    }
+    //     // setAllProducts(productList)
+    //   } catch (error) {
+    //     console.error('Error fetching product:', error)
+    //   } finally {
+    //     // handleMenuClose();
+    //   }
+    // }
 
     fetchData()
     // saveShutdownData()
-    getAllProducts()
-  }, [sitePlantChange, keycloak])
+    // getAllProducts()
+  }, [sitePlantChange, keycloak, verticalChange, lowerVertName])
 
   const findDuration = (value, row) => {
     if (row && row.maintStartDateTime && row.maintEndDateTime) {
@@ -267,56 +269,56 @@ const ShutDown = () => {
       hide: true,
     },
 
-    {
-      field: 'product',
-      headerName: lowerVertName === 'meg' ? 'Product' : 'Grade Name',
-      editable: true,
-      minWidth: 125,
-      valueGetter: (params) => {
-        // console.log('p1', params);
-        // console.log('p2', params2);
-        return params || ''
-      },
-      valueFormatter: (params) => {
-        // console.log('params valueFormatter ', params)
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : ''
-      },
-      renderEditCell: (params) => {
-        const { value } = params
-        // console.log('q1', params);
-        // console.log('q2', params2);
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              params.api.setEditCellValue({
-                id: params.id,
-                field: 'product',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none', // Removes border
-              outline: 'none', // Removes focus outline
-              background: 'transparent', // Keeps background clean
-            }}
-          >
-            {/* Disabled first option */}
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.displayName}
-              </option>
-            ))}
-          </select>
-        )
-      },
-    },
+    // {
+    //   field: 'product',
+    //   headerName: lowerVertName === 'meg' ? 'Product' : 'Grade Name',
+    //   editable: true,
+    //   minWidth: 125,
+    //   valueGetter: (params) => {
+    //     // console.log('p1', params);
+    //     // console.log('p2', params2);
+    //     return params || ''
+    //   },
+    //   valueFormatter: (params) => {
+    //     // console.log('params valueFormatter ', params)
+    //     const product = allProducts.find((p) => p.id === params)
+    //     return product ? product.displayName : ''
+    //   },
+    //   renderEditCell: (params) => {
+    //     const { value } = params
+    //     // console.log('q1', params);
+    //     // console.log('q2', params2);
+    //     return (
+    //       <select
+    //         value={value || ''}
+    //         onChange={(event) => {
+    //           params.api.setEditCellValue({
+    //             id: params.id,
+    //             field: 'product',
+    //             value: event.target.value,
+    //           })
+    //         }}
+    //         style={{
+    //           width: '100%',
+    //           padding: '5px',
+    //           border: 'none', // Removes border
+    //           outline: 'none', // Removes focus outline
+    //           background: 'transparent', // Keeps background clean
+    //         }}
+    //       >
+    //         {/* Disabled first option */}
+    //         <option value='' disabled>
+    //           Select
+    //         </option>
+    //         {allProducts.map((product) => (
+    //           <option key={product.id} value={product.id}>
+    //             {product.displayName}
+    //           </option>
+    //         ))}
+    //       </select>
+    //     )
+    //   },
+    // },
 
     {
       field: 'maintStartDateTime',

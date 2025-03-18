@@ -10,11 +10,11 @@ import DataGridTable from '../ASDataGrid'
 const headerMap = generateHeaderNames()
 const NormalOpNormsScreen = () => {
   const [allProducts, setAllProducts] = useState([])
-  const [bdData, setBDData] = useState([])
+  // const [bdData, setBDData] = useState([])
   const menu = useSelector((state) => state.menu)
   const { sitePlantChange } = menu
   const [open1, setOpen1] = useState(false)
-  const [deleteId, setDeleteId] = useState(null)
+  // const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
   const [snackbarData, setSnackbarData] = useState({
@@ -59,7 +59,7 @@ const NormalOpNormsScreen = () => {
         groupedRows.push(formattedItem)
       })
 
-      setBDData(groupedRows)
+      // setBDData(groupedRows)
       setRows(groupedRows)
     } catch (error) {
       console.error('Error fetching Business Demand data:', error)
@@ -69,7 +69,7 @@ const NormalOpNormsScreen = () => {
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(keycloak, 'Consumption')
+        const data = await DataService.getAllProducts(keycloak, null)
         const productList = data.map((product) => ({
           id: product.id,
           displayName: product.displayName,
@@ -85,6 +85,9 @@ const NormalOpNormsScreen = () => {
     getAllProducts()
   }, [sitePlantChange, keycloak])
 
+  const formatValueToThreeDecimals = (params) =>
+    params ? parseFloat(params).toFixed(3) : ''
+
   const colDefs = [
     {
       field: 'Particulars',
@@ -93,8 +96,50 @@ const NormalOpNormsScreen = () => {
       groupable: true,
       renderCell: (params) => <strong>{params.value}</strong>,
     },
+    {
+      field: 'materialFkId',
+      headerName: 'Particular',
+      minWidth: 140,
+      valueGetter: (params) => params || '',
+      valueFormatter: (params) => {
+        const product = allProducts.find((p) => p.id === params)
+        return product ? product.displayName : ''
+      },
+      renderEditCell: (params) => {
+        const { value, id, api } = params
+        return (
+          <select
+            value={value || ''}
+            onChange={(event) => {
+              api.setEditCellValue({
+                id,
+                field: 'materialFkId',
+                value: event.target.value,
+              })
+            }}
+            style={{
+              width: '100%',
+              padding: '5px',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+            }}
+          >
+            <option value='' disabled>
+              Select
+            </option>
+            {allProducts.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.displayName}
+              </option>
+            ))}
+          </select>
+        )
+      },
+    },
 
     { field: 'unit', headerName: 'Unit', width: 100, editable: true },
+
     {
       field: 'april',
       headerName: headerMap[4],
@@ -102,6 +147,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'may',
@@ -110,6 +156,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'june',
@@ -118,6 +165,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'july',
@@ -126,6 +174,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
 
     {
@@ -135,6 +184,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'september',
@@ -143,6 +193,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'october',
@@ -151,6 +202,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'november',
@@ -159,6 +211,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'december',
@@ -167,6 +220,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'january',
@@ -175,6 +229,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'february',
@@ -183,6 +238,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'march',
@@ -191,6 +247,7 @@ const NormalOpNormsScreen = () => {
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'remarks',
@@ -262,7 +319,9 @@ const NormalOpNormsScreen = () => {
           unsavedRows: {},
           rowsBeforeChange: {},
         }
-      } catch (error) {}
+      } catch (error) {
+        /* empty */
+      }
     }, 1000)
   }, [apiRef])
 
@@ -338,10 +397,10 @@ const NormalOpNormsScreen = () => {
   return (
     <div>
       <DataGridTable
+        title='Normal Operations Norms'
         columns={colDefs}
         setRows={setRows}
         rows={rows}
-        title='Normal Operations Norms'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}

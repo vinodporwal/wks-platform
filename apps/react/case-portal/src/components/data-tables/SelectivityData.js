@@ -8,7 +8,6 @@ import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import NumericInputOnly from 'utils/NumericInputOnly'
-import getEnhancedColDefs from './CommonHeader/index'
 
 const headerMap = generateHeaderNames()
 
@@ -16,9 +15,9 @@ const SelectivityData = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange } = dataGridStore
   const keycloak = useSession()
-  const [csData, setCsData] = useState([])
-  const [allProducts, setAllProducts] = useState([])
-  const [allCatalyst, setAllCatalyst] = useState([])
+  // const [csData, setCsData] = useState([])
+  // const [allProducts, setAllProducts] = useState([])
+  // const [allCatalyst, setAllCatalyst] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -191,55 +190,55 @@ const SelectivityData = () => {
           id: index,
         }))
       }
-      setCsData(formattedData)
+      // setCsData(formattedData)
       setRows(formattedData)
     } catch (error) {
       console.error('Error fetching Turnaround data:', error)
     }
   }
   useEffect(() => {
-    const getAllProducts = async () => {
-      try {
-        const data = await DataService.getAllProducts(keycloak, 'Consumption')
-        const productList = data.map((product) => ({
-          id: product.id,
-          displayName: product.displayName,
-        }))
-        setAllProducts(productList)
-      } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        // handleMenuClose();
-      }
-    }
-    const getAllCatalyst = async () => {
-      try {
-        const data = await DataService.getAllCatalyst(keycloak)
+    // const getAllProducts = async () => {
+    //   try {
+    //     // const data = await DataService.getAllProducts(keycloak, 'Consumption')
+    //     // const productList = data.map((product) => ({
+    //     //   id: product.id,
+    //     //   displayName: product.displayName,
+    //     // }))
+    //     // setAllProducts(productList)
+    //   } catch (error) {
+    //     console.error('Error fetching product:', error)
+    //   } finally {
+    //     // handleMenuClose();
+    //   }
+    // }
+    // const getAllCatalyst = async () => {
+    //   try {
+    //     const data = await DataService.getAllCatalyst(keycloak)
 
-        const productList = data.map((product) => {
-          // console.log('Original ID:', product.id)
-          return {
-            id: product.id, // Should not change the case
-            displayName: product.displayName,
-          }
-        })
-        // console.log('Mapped Product List:', productList)
+    //     const productList = data.map((product) => {
+    //       // console.log('Original ID:', product.id)
+    //       return {
+    //         id: product.id, // Should not change the case
+    //         displayName: product.displayName,
+    //       }
+    //     })
+    //     // console.log('Mapped Product List:', productList)
 
-        setAllCatalyst(productList)
-      } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        // handleMenuClose();
-      }
-    }
-    getAllProducts()
-    getAllCatalyst()
+    //     // setAllCatalyst(productList)
+    //   } catch (error) {
+    //     console.error('Error fetching product:', error)
+    //   } finally {
+    //     // handleMenuClose();
+    //   }
+    // }
+    // getAllProducts()
+    // getAllCatalyst()
     fetchData()
   }, [sitePlantChange, keycloak])
   // Use catalyst options from the JSON file
   // const productOptions = catalystOptionsData.catalystOptions
 
-  const productionColumns1 = [
+  const productionColumns = [
     // {
     //   field: 'catalystId',
     //   headerName: 'Catalyst',
@@ -418,16 +417,10 @@ const SelectivityData = () => {
     },
   ]
 
-  // const productionColumns = getEnhancedColDefs({
-  //   allProducts,
-  //   headerMap,
-  //   handleRemarkCellClick,
-  // })
-
   return (
     <div>
       <ASDataGrid
-        columns={productionColumns1}
+        columns={productionColumns}
         rows={rows}
         setRows={setRows}
         title='Configuration'
