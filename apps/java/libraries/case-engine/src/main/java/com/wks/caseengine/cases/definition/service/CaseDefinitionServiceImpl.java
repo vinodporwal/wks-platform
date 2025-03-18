@@ -612,7 +612,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
-		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText());
+		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
 		requestBody.put("CaseID", caseNo);
 //		requestBody.put("Auther_Domain_Id", "Devang.Bhatt@ril.com");
 //		requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
