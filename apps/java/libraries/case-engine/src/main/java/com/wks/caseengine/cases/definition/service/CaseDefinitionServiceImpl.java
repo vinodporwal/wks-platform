@@ -354,6 +354,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
 		}
 		caseData.setHierarchyNodePKID(hierarchyNodePKID);
+		if (caseData.getAssignedTo() != null) {
+		    caseData.setAssignedTo(usersRepository.findByEmailId(caseData.getAssignedTo().getEmailId()));
+		}
 		Case caseDetails = new Case();
 		String caseNo = "";
 		Long statusId = null;

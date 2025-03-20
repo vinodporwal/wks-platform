@@ -7,5 +7,5 @@ import com.wks.caseengine.rest.db2.entity.Users;
 
 @Repository
 public interface UsersRepository  extends JpaRepository<Users, String> {
-
+    Users findByEmailId(String emailId);
 }

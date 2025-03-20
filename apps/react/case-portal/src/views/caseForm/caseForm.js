@@ -697,6 +697,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })
@@ -1013,58 +1014,29 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         ${uploadedFiles
           .map(
             (file, index) => `
-              <li 
-                style="margin-bottom: 8px; cursor: pointer; color: #007bff; text-decoration: underline;"
-                onclick="window.handleFileDownload(${index})"
+                  <li style="margin-bottom: 8px; cursor: pointer; color: #007bff; text-decoration: underline;">
+                    <a 
+                      href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      download="${file.name}" 
+                      target="_blank"
               >
                 ${file.name}
+                    </a>
               </li>
-            `,
+                `
           )
           .join('')}
       </ul>
       </div>
-    </div>
-    <script>
       // Add this function dynamically to handle file download
-      window.handleFileDownload = (fileIndex) => {
-        const files = ${JSON.stringify(uploadedFiles)};
-        const file = files[fileIndex];
 
         // Call the download function from FileService
-        const keycloak = {
-          token: '${keycloak.token}' // Pass your keycloak token dynamically
-        };
 
-        const getObjectForUrl = \`${Config.StorageUrl}/storage/files/cases/downloads/\${file.name}?content-type=\${file.type}\`;
-        fetch(getObjectForUrl, {
-          headers: {
-            Authorization: \`Bearer ${keycloak.token}\`,
-          },
-        })
-          .then((resp) => resp.json())
-          .then(async (data) => {
-            const resp = await fetch(data.url);
-            const blob = await resp.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
 
-            const anchor = document.createElement('a');
-            document.body.appendChild(anchor);
-            anchor.href = downloadUrl;
-            anchor.download = file.name || 'downloaded-file';
-            anchor.click();
 
-            setTimeout(() => {
-              window.URL.revokeObjectURL(downloadUrl);
-              document.body.removeChild(anchor);
-            }, 0);
-          })
-          .catch((err) => console.error('Error downloading file:', err));
-      };
-    </script>
-  `
+      `;
     } else {
-      content += `<p>No files uploaded.</p>`
+      content += `<p>No files uploaded.</p>`;
     }
 
     return content
@@ -1072,10 +1044,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   // Print function
   const printCaseDetails = () => {
-    const printContent = generatePrintContent(aCase, formStructure)
+    const printContent = generatePrintContent(aCase, formStructure);
 
     // Open a new window and print the generated content
-    const printWindow = window.open('', '_blank')
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
     printWindow.document.write(`
     <html>
       <head>
@@ -1085,9 +1058,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         ${printContent}
       </body>
     </html>
-  `)
-    printWindow.document.close()
-    printWindow.print()
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500); // 500ms delay (you can adjust this if needed)
+    } else {
+      console.error('Failed to open the print window.');
+    }
   }
 
   return (

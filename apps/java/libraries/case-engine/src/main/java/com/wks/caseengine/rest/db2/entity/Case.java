@@ -71,6 +71,9 @@ public class Case {
     @Column(name = "case_url")
     private String caseUrl;
 
+    @ManyToOne
+    @JoinColumn(name = "assigned_to", nullable = true)
+    private Users assignedTo;
 	public String getCaseNo() {
 		return caseNo;
 	}
@@ -183,6 +186,12 @@ public class Case {
 		this.caseUrl = caseUrl;
 	}
 
+	public Users getAssignedTo() {
+		return assignedTo;
+	}
+	public void setAssignedTo(Users assignedTo) {
+		this.assignedTo = assignedTo;
+	}
 	@Override
 	public String toString() {
 		return "Case [caseNo=" + caseNo + ", caseDefinitionId=" + caseDefinitionId + ", owner=" + owner

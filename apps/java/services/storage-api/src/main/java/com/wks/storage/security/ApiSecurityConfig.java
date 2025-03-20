@@ -16,6 +16,7 @@ import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,8 +37,10 @@ public class ApiSecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http.cors().and().csrf().disable()
-				.authorizeRequests(authz -> authz.filterSecurityInterceptorOncePerRequest(false).anyRequest()
-						.authenticated().accessDecisionManager(accessDecisionManager()))
+	            .authorizeRequests(authz -> authz
+	                    .requestMatchers(HttpMethod.GET, "/storage/files1/**").permitAll()  // Allow GET without authentication
+	                    .anyRequest().authenticated()
+	                    .accessDecisionManager(accessDecisionManager()))  // OPA policy applies to other requests
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.authenticationManagerResolver(new JwksIssuerAuthenticationManagerResolver(keycloakUrl)));
 		return http.build();

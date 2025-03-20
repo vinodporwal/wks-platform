@@ -11,6 +11,7 @@
  */
 package com.wks.storage.service.minio;
 
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -34,8 +35,14 @@ public class MinioBucketService implements BucketService {
 
 	@Override
 	public String createAssignedTenant() {
-		String bucketByTenant = tenantHolder.getTenantId().get();
+	    Optional<String> tenantIdOptional = tenantHolder.getTenantId();
+	    if (!tenantIdOptional.isPresent()) {
+	        System.out.println("Tenant ID is not provided.");
+	        return "localhost"; // Or throw a custom exception, e.g., new IllegalStateException("Tenant ID is missing.");
+	    }
+	    String bucketByTenant = tenantIdOptional.get();
 
+	    System.out.println("bucketByTenant " + bucketByTenant);
 		boolean found = client.bucketExists(BucketExistsArgs.builder().bucket(bucketByTenant).build());
 		if (!found) {
 			client.makeBucket(MakeBucketArgs.builder().bucket(bucketByTenant).build());

@@ -229,6 +229,14 @@ export const CaseList = ({ status, caseDefId }) => {
         width: 150,
         valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
       },
+      {
+        field: 'assignedTo',
+        headerName: 'Case Assigned To',
+        flex: 1,
+        valueGetter: (value, row) => {
+          return value ? value?.userId : '';
+        },
+      },
       // {
       //   field: "createdOn",
       //   headerName: "Created On",

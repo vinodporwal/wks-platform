@@ -293,6 +293,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })
