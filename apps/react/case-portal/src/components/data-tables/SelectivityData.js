@@ -8,8 +8,14 @@ import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import NumericInputOnly from 'utils/NumericInputOnly'
+import Tooltip from '@mui/material/Tooltip'
+import { truncateRemarks } from 'utils/remarksUtils'
 
 const headerMap = generateHeaderNames()
+
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { validateFields } from 'utils/validationUtils'
 
 const SelectivityData = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -18,6 +24,9 @@ const SelectivityData = () => {
   // const [csData, setCsData] = useState([])
   // const [allProducts, setAllProducts] = useState([])
   // const [allCatalyst, setAllCatalyst] = useState([])
+
+  const [loading, setLoading] = useState(false)
+
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -33,6 +42,7 @@ const SelectivityData = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [allProducts, setAllProducts] = useState([])
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -62,50 +72,35 @@ const SelectivityData = () => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    setTimeout(() => {
-      // console.log(
-      //   'Edited Data: ',
-      //   Object.values(unsavedChangesRef.current.unsavedRows),
-      // )
-      try {
-        // if (title === 'Business Demand') {
-        var data = Object.values(unsavedChangesRef.current.unsavedRows)
-        // Validation: Check if there are any rows to save
-        if (data.length === 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
-
-        // Validate that both normParameterId and remark are not empty
-        const invalidRows = data.filter((row) => !row.remark.trim())
-
-        if (invalidRows.length > 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Please fill required fields: Remark.',
-            severity: 'error',
-          })
-          return
-        }
-        saveCatalystData(data)
-        // }
-
-        unsavedChangesRef.current = {
-          unsavedRows: {},
-          rowsBeforeChange: {},
-        }
-      } catch (error) {
-        // setIsSaving(false);
+    try {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
       }
-    }, 1000)
-  }, [apiRef])
-  const saveCatalystData = async (newRow) => {
-    // console.log('new Row ', newRow)
 
+      const requiredFields = ['remark']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+
+      saveCatalystData(data)
+    } catch (error) {
+      // Handle error if necessary
+    }
+  }, [apiRef])
+
+  const saveCatalystData = async (newRow) => {
     try {
       var plantId = ''
       const storedPlant = localStorage.getItem('selectedPlant')
@@ -114,50 +109,58 @@ const SelectivityData = () => {
         plantId = parsedPlant.id
       }
 
-      const turnAroundDetails = {
-        april: newRow.apr24,
-        may: newRow.may24,
-        june: newRow.jun24,
-        july: newRow.jul24,
-        aug: newRow.aug24,
-        sep: newRow.sep24,
-        oct: newRow.oct24,
-        nov: newRow.nov24,
-        dec: newRow.dec24,
-        jan: newRow.jan25,
-        feb: newRow.feb25,
-        march: newRow.mar25,
-        TPH: '100',
-        attributeName: 'Silver Ox',
-        normParameterFKId: '',
-        catalystAttributeFKId: 'C6352800-C64A-4944-B490-5A60D1BCE285',
-        catalystId: '',
-        remarks: '123',
-        avgTPH: '123',
-        year: 2024,
-      }
+      const turnAroundDetails = newRow.map((row) => ({
+        apr: row.apr,
+        may: row.may,
+        jun: row.jun,
+        jul: row.jul,
+        aug: row.aug,
+        sep: row.sep,
+        oct: row.oct,
+        nov: row.nov,
+        dec: row.dec,
+        jan: row.jan,
+        feb: row.feb,
+        mar: row.mar,
+        UOM: '',
+        year: '2025-26',
+        normParameterFKId: row.NormParameterFKId,
+        remarks: row.remark,
+      }))
 
       const response = await DataService.saveCatalystData(
         plantId,
         turnAroundDetails,
         keycloak,
       )
-      //console.log('Catalyst data Saved Successfully:', response)
-      setSnackbarOpen(true)
-      // setSnackbarMessage("Catalyst data Saved Successfully !");
-      setSnackbarData({
-        message: 'Catalyst data Saved Successfully!',
-        severity: 'success',
-      })
-      // setSnackbarOpen(true);
-      // setSnackbarData({ message: "Catalyst data Saved Successfully!", severity: "success" });
+
+      if (response.status === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Configuration data Saved Successfully!',
+          severity: 'success',
+        })
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Falied!',
+          severity: 'error',
+        })
+      }
+
       return response
     } catch (error) {
-      console.error('Error saving Catalyst data:', error)
+      console.error('Error saving Configuration data:', error)
     } finally {
-      fetchData()
+      // fetchData()
     }
   }
+
   const handleDeleteClick = async (id, params) => {
     try {
       const maintenanceId =
@@ -181,6 +184,7 @@ const SelectivityData = () => {
     }
   }
   const fetchData = async () => {
+    setLoading(true)
     try {
       const data = await DataService.getCatalystSelectivityData(keycloak)
       var formattedData = []
@@ -192,46 +196,29 @@ const SelectivityData = () => {
       }
       // setCsData(formattedData)
       setRows(formattedData)
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching Turnaround data:', error)
+      setLoading(false)
     }
   }
   useEffect(() => {
-    // const getAllProducts = async () => {
-    //   try {
-    //     // const data = await DataService.getAllProducts(keycloak, 'Consumption')
-    //     // const productList = data.map((product) => ({
-    //     //   id: product.id,
-    //     //   displayName: product.displayName,
-    //     // }))
-    //     // setAllProducts(productList)
-    //   } catch (error) {
-    //     console.error('Error fetching product:', error)
-    //   } finally {
-    //     // handleMenuClose();
-    //   }
-    // }
-    // const getAllCatalyst = async () => {
-    //   try {
-    //     const data = await DataService.getAllCatalyst(keycloak)
+    const getAllProducts = async () => {
+      try {
+        const data = await DataService.getAllProducts(keycloak, null)
+        const productList = data.map((product) => ({
+          id: product.id,
+          displayName: product.displayName,
+        }))
+        setAllProducts(productList)
+      } catch (error) {
+        console.error('Error fetching product:', error)
+      } finally {
+        // handleMenuClose();
+      }
+    }
 
-    //     const productList = data.map((product) => {
-    //       // console.log('Original ID:', product.id)
-    //       return {
-    //         id: product.id, // Should not change the case
-    //         displayName: product.displayName,
-    //       }
-    //     })
-    //     // console.log('Mapped Product List:', productList)
-
-    //     // setAllCatalyst(productList)
-    //   } catch (error) {
-    //     console.error('Error fetching product:', error)
-    //   } finally {
-    //     // handleMenuClose();
-    //   }
-    // }
-    // getAllProducts()
+    getAllProducts()
     // getAllCatalyst()
     fetchData()
   }, [sitePlantChange, keycloak])
@@ -239,65 +226,74 @@ const SelectivityData = () => {
   // const productOptions = catalystOptionsData.catalystOptions
 
   const productionColumns = [
-    // {
-    //   field: 'catalystId',
-    //   headerName: 'Catalyst',
-    //   editable: true,
-    //   minWidth: 225,
-    //   valueGetter: (params , params2) => {
-    //     console.log('params ',params);
-    //     return params || '';
-    //   },
-    //   valueFormatter: (params) => {
-    //     const product = allCatalyst.find((p) => String(p.id).toUpperCase() === String(params));
-    //     return product ? product.displayName : '';
-    //   },
-    //   renderEditCell: (params , params2) => {
-    //     const { id, value } = params;
-    //     return (
-    //       <select
-    //         value={value}
-    //         onChange={(event) => {
-    //           params.api.setEditCellValue({
-    //             id: params.id,
-    //             field: 'catalystId',
-    //             value: event.target.value,
-    //           });
-    //         }}
-    //         style={{
-    //           width: '100%',
-    //           padding: '5px',
-    //           border: 'none',
-    //           outline: 'none',
-    //           background: 'transparent',
-    //         }}
-    //       >
-    //         {allCatalyst.map((product) => (
-    //           <option key={product.id} value={product.id}>
-    //             {product.displayName}
-    //           </option>
-    //         ))}
-    //       </select>
-    //     );
-    //   },
-    // },
-
     {
-      field: 'description',
-      headerName: 'Description',
+      field: 'NormParameterFKId',
+      headerName: 'Particulars',
       editable: true,
-      minWidth: 250,
+      minWidth: 140,
+      valueGetter: (params) => params || '',
+      valueFormatter: (params) => {
+        const product = allProducts.find((p) => p.id === params)
+        return product ? product.displayName : ''
+      },
+      renderEditCell: (params) => {
+        const { value, id, api } = params
+
+        const existingValues = new Set(
+          [...api.getRowModels().values()]
+            .filter((row) => row.id !== id)
+            .map((row) => row.NormParameterFKId),
+        )
+
+        return (
+          <select
+            value={value || ''}
+            onChange={(event) => {
+              api.setEditCellValue({
+                id: params.id,
+                field: 'NormParameterFKId',
+                value: event.target.value,
+              })
+            }}
+            style={{
+              width: '100%',
+              padding: '5px',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+            }}
+          >
+            <option value='' disabled>
+              Select
+            </option>
+            {allProducts
+              .filter((product) => !existingValues.has(product.id))
+              .map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.displayName}
+                </option>
+              ))}
+          </select>
+        )
+      },
     },
+
+    // {
+    //   field: 'NormParameterFKId',
+    //   headerName: 'NormParameterFKId',
+    //   // editable: true,
+    //   minWidth: 250,
+    // },
     {
       field: 'UOM',
       headerName: 'UOM',
-      editable: true,
+      editable: false,
       align: 'left',
       headerAlign: 'left',
       // valueGetter: convertUnits,
     },
     {
-      field: 'april',
+      field: 'apr',
       headerName: headerMap[4],
       editable: true,
       renderEditCell: NumericInputOnly,
@@ -315,7 +311,7 @@ const SelectivityData = () => {
       headerAlign: 'left',
     },
     {
-      field: 'june',
+      field: 'jun',
       headerName: headerMap[6],
       editable: true,
       renderEditCell: NumericInputOnly,
@@ -323,7 +319,7 @@ const SelectivityData = () => {
       headerAlign: 'left',
     },
     {
-      field: 'july',
+      field: 'jul',
       headerName: headerMap[7],
       editable: true,
       renderEditCell: NumericInputOnly,
@@ -388,7 +384,7 @@ const SelectivityData = () => {
       headerAlign: 'left',
     },
     {
-      field: 'march',
+      field: 'mar',
       headerName: headerMap[3],
       editable: true,
       renderEditCell: NumericInputOnly,
@@ -402,16 +398,25 @@ const SelectivityData = () => {
       minWidth: 150,
       editable: true,
       renderCell: (params) => {
+        const displayText = truncateRemarks(params.value)
+        const isEditable = !params.row.Particulars
+
         return (
-          <div
-            style={{
-              cursor: 'pointer',
-              color: params.value ? 'inherit' : 'gray',
-            }}
-            onClick={() => handleRemarkCellClick(params.row)}
-          >
-            {params.value || 'Click to add remark'}
-          </div>
+          <Tooltip title={params.value || ''} arrow>
+            <div
+              style={{
+                cursor: 'pointer',
+                color: params.value ? 'inherit' : 'gray',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: 140,
+              }}
+              onClick={() => handleRemarkCellClick(params.row)}
+            >
+              {displayText || (isEditable ? 'Click to add remark' : '')}
+            </div>
+          </Tooltip>
         )
       },
     },
@@ -419,6 +424,12 @@ const SelectivityData = () => {
 
   return (
     <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <ASDataGrid
         columns={productionColumns}
         rows={rows}

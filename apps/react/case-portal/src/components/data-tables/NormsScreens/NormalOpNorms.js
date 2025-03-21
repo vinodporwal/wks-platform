@@ -1,4 +1,5 @@
 import Tooltip from '@mui/material/Tooltip'
+import { truncateRemarks } from 'utils/remarksUtils'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import React, { useEffect, useState } from 'react'
@@ -7,6 +8,11 @@ import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import NumericInputOnly from 'utils/NumericInputOnly'
 import DataGridTable from '../ASDataGrid'
+
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { validateFields } from 'utils/validationUtils'
+
 const headerMap = generateHeaderNames()
 const NormalOpNormsScreen = () => {
   const [allProducts, setAllProducts] = useState([])
@@ -25,6 +31,7 @@ const NormalOpNormsScreen = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -32,6 +39,7 @@ const NormalOpNormsScreen = () => {
   })
   const keycloak = useSession()
   const fetchData = async () => {
+    setLoading(true)
     try {
       const data = await DataService.getNormalOperationNormsData(keycloak)
       const groupedRows = []
@@ -39,7 +47,7 @@ const NormalOpNormsScreen = () => {
       let groupId = 0
 
       data.forEach((item) => {
-        const groupKey = item.normParameterTypeDisplayName || 'By Products'
+        const groupKey = item.normParameterTypeDisplayName
 
         if (!groups.has(groupKey)) {
           groups.set(groupKey, [])
@@ -61,7 +69,9 @@ const NormalOpNormsScreen = () => {
 
       // setBDData(groupedRows)
       setRows(groupedRows)
+      setLoading(false)
     } catch (error) {
+      setLoading(false)
       console.error('Error fetching Business Demand data:', error)
     }
   }
@@ -98,7 +108,7 @@ const NormalOpNormsScreen = () => {
     },
     {
       field: 'materialFkId',
-      headerName: 'Particular',
+      headerName: 'Particulars',
       minWidth: 140,
       valueGetter: (params) => params || '',
       valueFormatter: (params) => {
@@ -112,7 +122,7 @@ const NormalOpNormsScreen = () => {
             value={value || ''}
             onChange={(event) => {
               api.setEditCellValue({
-                id,
+                id: params.id,
                 field: 'materialFkId',
                 value: event.target.value,
               })
@@ -138,7 +148,12 @@ const NormalOpNormsScreen = () => {
       },
     },
 
-    { field: 'unit', headerName: 'Unit', width: 100, editable: true },
+    {
+      field: 'unit',
+      headerName: 'UOM',
+      width: 100,
+      editable: false,
+    },
 
     {
       field: 'april',
@@ -254,24 +269,30 @@ const NormalOpNormsScreen = () => {
       headerName: 'Remark',
       minWidth: 150,
       editable: true,
-      renderCell: (params) => (
-        <Tooltip title={params.value || ''} arrow>
-          <div
-            style={{
-              cursor: 'pointer',
-              color: params.value ? 'inherit' : 'gray',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: 140,
-            }}
-            onClick={() => handleRemarkCellClick(params.row)}
-          >
-            {params.value}
-          </div>
-        </Tooltip>
-      ),
+      renderCell: (params) => {
+        const displayText = truncateRemarks(params.value)
+        const isEditable = !params.row.Particulars
+
+        return (
+          <Tooltip title={params.value || ''} arrow>
+            <div
+              style={{
+                cursor: 'pointer',
+                color: params.value ? 'inherit' : 'gray',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: 140,
+              }}
+              onClick={() => handleRemarkCellClick(params.row)}
+            >
+              {displayText || (isEditable ? 'Click to add remark' : '')}
+            </div>
+          </Tooltip>
+        )
+      },
     },
+
     {
       field: 'idFromApi',
       headerName: 'idFromApi',
@@ -302,27 +323,32 @@ const NormalOpNormsScreen = () => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    setTimeout(() => {
-      try {
-        var data = Object.values(unsavedChangesRef.current.unsavedRows)
-        if (data.length == 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
-
-        saveNormalOperationNormsData(data)
-        unsavedChangesRef.current = {
-          unsavedRows: {},
-          rowsBeforeChange: {},
-        }
-      } catch (error) {
-        /* empty */
+    try {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
       }
-    }, 1000)
+
+      const requiredFields = ['materialFkId', 'remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+
+      saveNormalOperationNormsData(data)
+    } catch (error) {
+      /* empty */
+    }
   }, [apiRef])
 
   const saveNormalOperationNormsData = async (newRows) => {
@@ -369,24 +395,31 @@ const NormalOpNormsScreen = () => {
           businessData,
           keycloak,
         )
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `Normal Operations Norms Saved Successfully!`,
-          severity: 'success',
-        })
-        // fetchData()
+
+        if (response.status === 200) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Normal Operations Norms Saved Successfully!`,
+            severity: 'success',
+          })
+          unsavedChangesRef.current = {
+            unsavedRows: {},
+            rowsBeforeChange: {},
+          }
+          fetchData()
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Normal Operations Norms not saved!`,
+            severity: 'error',
+          })
+        }
         return response
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `Normal Operations Norms not saved!`,
-          severity: 'error',
-        })
       }
     } catch (error) {
       console.error(`Error saving Normal Operations Norms`, error)
     } finally {
-      fetchData()
+      // fetchData()
     }
   }
 
@@ -394,8 +427,59 @@ const NormalOpNormsScreen = () => {
     console.log(error)
   }, [])
 
+  const isCellEditable = (params) => {
+    return !params.row.Particulars
+  }
+
+  const handleCalculate = async (year) => {
+    try {
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      var plantId = plantId
+      const data = await DataService.handleCalculateNormalOpsNorms(
+        plantId,
+        year,
+        keycloak,
+      )
+
+      if (data.status === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
+  }
+
   return (
     <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <DataGridTable
         title='Normal Operations Norms'
         columns={colDefs}
@@ -407,7 +491,9 @@ const NormalOpNormsScreen = () => {
         paginationOptions={[100, 200, 300]}
         processRowUpdate={processRowUpdate}
         saveChanges={saveChanges}
+        isCellEditable={isCellEditable}
         snackbarData={snackbarData}
+        handleCalculate={handleCalculate}
         snackbarOpen={snackbarOpen}
         apiRef={apiRef}
         open1={open1}
@@ -431,7 +517,7 @@ const NormalOpNormsScreen = () => {
           showUnit: false,
           saveWithRemark: true,
           saveBtn: true,
-          showCalculate: false,
+          showCalculate: true,
         }}
       />
     </div>

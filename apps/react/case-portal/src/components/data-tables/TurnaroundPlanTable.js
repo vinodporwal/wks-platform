@@ -1,4 +1,6 @@
 import dayjs from 'dayjs'
+import Tooltip from '@mui/material/Tooltip'
+import { truncateRemarks } from 'utils/remarksUtils'
 import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -7,11 +9,16 @@ import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import ASDataGrid from './ASDataGrid'
 import NumericInputOnly from 'utils/NumericInputOnly'
 
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+
 const TurnaroundPlanTable = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange } = dataGridStore
   const vertName = verticalChange?.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+
+  const [loading, setLoading] = useState(false)
 
   // const [TaData, setTaData] = useState([])
   const [allProducts, setAllProducts] = useState([])
@@ -140,6 +147,7 @@ const TurnaroundPlanTable = () => {
 
   const fetchData = async () => {
     try {
+      setLoading(true)
       const data = await DataService.getTAPlantData(keycloak)
       const formattedData = data.map((item, index) => ({
         ...item,
@@ -149,8 +157,10 @@ const TurnaroundPlanTable = () => {
 
       // setTaData(formattedData)
       setRows(formattedData)
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching Turnaround data:', error)
+      setLoading(false)
     }
   }
   useEffect(() => {
@@ -218,7 +228,7 @@ const TurnaroundPlanTable = () => {
 
     {
       field: 'product',
-      headerName: 'Grade Name',
+      headerName: 'Particulars',
       editable: true,
       minWidth: 125,
       valueGetter: (params) => {
@@ -318,16 +328,25 @@ const TurnaroundPlanTable = () => {
       editable: true,
       minWidth: 200,
       renderCell: (params) => {
+        const displayText = truncateRemarks(params.value)
+        const isEditable = !params.row.Particulars
+
         return (
-          <div
-            style={{
-              cursor: 'pointer',
-              color: params.value ? 'inherit' : 'gray',
-            }}
-            onClick={() => handleRemarkCellClick(params.row)}
-          >
-            {params.value || 'Click to add remark'}
-          </div>
+          <Tooltip title={params.value || ''} arrow>
+            <div
+              style={{
+                cursor: 'pointer',
+                color: params.value ? 'inherit' : 'gray',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: 140,
+              }}
+              onClick={() => handleRemarkCellClick(params.row)}
+            >
+              {displayText || (isEditable ? 'Click to add remark' : '')}
+            </div>
+          </Tooltip>
         )
       },
     },
@@ -377,6 +396,12 @@ const TurnaroundPlanTable = () => {
 
   return (
     <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
       <ASDataGrid
         setRows={setRows}
         columns={colDefs}

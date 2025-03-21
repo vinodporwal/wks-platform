@@ -25,6 +25,7 @@ export const DataService = {
 
   saveBusinessDemandData,
   saveNormalOperationNormsData,
+  saveShutDownNormsData,
   editAOPMCCalculatedData,
 
   updateSlowdownData,
@@ -47,6 +48,7 @@ export const DataService = {
   deleteBusinessDemandData,
   handleRefresh,
   handleCalculate,
+  handleCalculateNormalOpsNorms,
   getNormalOperationNormsData,
   getShutdownNormsData,
 }
@@ -77,6 +79,28 @@ async function handleRefresh(year, plantId, keycloak) {
 async function handleCalculate(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/calculateData?year=${year1}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+async function handleCalculateNormalOpsNorms(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${process.env.REACT_APP_API_URL}/task/handleCalculateNormalOpsNorms?year=${year1}&plantId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -668,6 +692,23 @@ async function saveNormalOperationNormsData(
   keycloak,
 ) {
   const url = `${Config.CaseEngineUrl}/task/saveNormalOperationNormsData`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(turnAroundDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 
   const headers = {
     Accept: 'application/json',
@@ -770,6 +811,8 @@ async function getAllSites(keycloak) {
 }
 
 async function getAllProducts(keycloak, type) {
+  const storedPlant = localStorage.getItem('selectedPlant')
+  const parsedPlant = JSON.parse(storedPlant)
   const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=${type}`
 
   const headers = {

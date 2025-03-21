@@ -7,6 +7,9 @@ import { useSession } from 'SessionStoreContext'
 import ASDataGrid from './ASDataGrid'
 import getEnhancedColDefs from './CommonHeader/index'
 const headerMap = generateHeaderNames()
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { validateFields } from 'utils/validationUtils'
 
 const BusinessDemand = () => {
   const keycloak = useSession()
@@ -25,6 +28,7 @@ const BusinessDemand = () => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
   // States for the Remark Dialog
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -36,13 +40,14 @@ const BusinessDemand = () => {
   })
 
   const fetchData = async () => {
+    setLoading(true)
     try {
       const data = await DataService.getBDData(keycloak)
       const groupedRows = []
       const groups = new Map()
       let groupId = 0
 
-      console.log('lowerVertName', lowerVertName)
+      // console.log('lowerVertName', lowerVertName)
 
       data.forEach((item) => {
         const formattedItem = {
@@ -70,8 +75,10 @@ const BusinessDemand = () => {
       })
 
       setRows(groupedRows)
+      setLoading(false) // Hide loading
     } catch (error) {
       console.error('Error fetching Business Demand data:', error)
+      setLoading(false) // Hide loading
     }
   }
 
@@ -80,7 +87,8 @@ const BusinessDemand = () => {
       try {
         const data = await DataService.getAllProducts(
           keycloak,
-          lowerVertName === 'meg' ? 'Production' : 'Grade',
+          // lowerVertName === 'meg' ? 'Production' : 'Grade',
+          null,
         )
         const productList = data.map((product) => ({
           id: product.id, // Convert id to lowercase
@@ -105,11 +113,16 @@ const BusinessDemand = () => {
     setRemarkDialogOpen(true)
   }
 
+  const isCellEditable = (params) => {
+    return !params.row.Particulars
+  }
+
   const colDefs = getEnhancedColDefs({
     allProducts,
     headerMap,
     handleRemarkCellClick,
   })
+
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
@@ -129,39 +142,35 @@ const BusinessDemand = () => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    setTimeout(() => {
-      try {
-        var data = Object.values(unsavedChangesRef.current.unsavedRows)
-        if (data.length == 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
-        // Validate that both normParameterId and remark are not empty
-        const invalidRows = data.filter(
-          (row) => !row.normParameterId.trim() || !row.remark.trim(),
-        )
-
-        if (invalidRows.length > 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Please fill required fields: Product and Remark.',
-            severity: 'error',
-          })
-          return
-        }
-        saveBusinessDemandData(data)
-        unsavedChangesRef.current = {
-          unsavedRows: {},
-          rowsBeforeChange: {},
-        }
-      } catch (error) {
-        console.logk('Error saving changes:', error)
+    try {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
       }
-    }, 1000)
+
+      const requiredFields = ['normParameterId', 'remark']
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+      saveBusinessDemandData(data)
+
+      // setLoading(true)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+      // setLoading(true)
+    }
   }, [apiRef])
 
   const saveBusinessDemandData = async (newRows) => {
@@ -193,30 +202,40 @@ const BusinessDemand = () => {
         normParameterId: row.normParameterId,
         id: row.idFromApi || null,
       }))
+
       if (businessData.length > 0) {
         const response = await DataService.saveBusinessDemandData(
           plantId,
           businessData,
           keycloak,
         )
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Business Demand data Saved Successfully!',
-          severity: 'success',
-        })
-        // fetchData()
-        return response
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Business Demand data not saved!',
-          severity: 'error',
-        })
+
+        // console.log(response)
+
+        if (response.status == 200) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Business Demand data Saved Successfully!',
+            severity: 'success',
+          })
+          unsavedChangesRef.current = {
+            unsavedRows: {},
+            rowsBeforeChange: {},
+          }
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Error saving Business Demand data!',
+            severity: 'error',
+          })
+        }
       }
-    } catch (error) {
-      console.error('Error saving Business Demand data:', error)
-    } finally {
       fetchData()
+      return response
+    } catch (error) {
+      console.error('Error saving Business Demand data!', error)
+    } finally {
+      // fetchData()
     }
   }
 
@@ -236,6 +255,14 @@ const BusinessDemand = () => {
       {/* <div>
         {`Plant: ${verticalChange?.verticalChange?.selectedPlant}, Site: ${verticalChange?.verticalChange?.selectedSite}, Vertical: ${verticalChange?.verticalChange?.selectedVertical}`}
       </div> */}
+
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <ASDataGrid
         setRows={setRows}
         columns={
@@ -245,6 +272,7 @@ const BusinessDemand = () => {
           //   : vertical_pe_coldefs_bd
         }
         rows={rows}
+        isCellEditable={isCellEditable}
         title='Business Demand'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}

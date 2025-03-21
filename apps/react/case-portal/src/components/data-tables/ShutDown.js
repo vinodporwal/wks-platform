@@ -6,6 +6,11 @@ import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
 import { useGridApiRef } from '@mui/x-data-grid'
 import NumericInputOnly from 'utils/NumericInputOnly'
+import Tooltip from '@mui/material/Tooltip'
+import { truncateRemarks } from 'utils/remarksUtils'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { validateFields } from 'utils/validationUtils'
 
 const ShutDown = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -18,6 +23,7 @@ const ShutDown = () => {
   const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
+  const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -55,41 +61,41 @@ const ShutDown = () => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    setTimeout(() => {
-      try {
-        var data = Object.values(unsavedChangesRef.current.unsavedRows)
-        if (data.length == 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
-        // Validate that both normParameterId and remark are not empty
-        const invalidRows = data.filter(
-          (row) =>
-            // !row.normParameterId.trim() ||
-            !row.remark.trim(),
-        )
-
-        if (invalidRows.length > 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Please fill required fields: Remark.',
-            severity: 'error',
-          })
-          return
-        }
-        saveShutdownData(data)
-        unsavedChangesRef.current = {
-          unsavedRows: {},
-          rowsBeforeChange: {},
-        }
-      } catch (error) {
-        console.log('Error saving changes:', error)
+    try {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
       }
-    }, 1000)
+
+      const requiredFields = [
+        'maintStartDateTime',
+        'maintEndDateTime',
+        'discription',
+        'remark',
+      ]
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+
+      saveShutdownData(data)
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    }
   }, [apiRef])
 
   const saveShutdownData = async (newRow) => {
@@ -112,11 +118,12 @@ const ShutDown = () => {
         id: row.idFromApi || null,
         remark: row.remark || 'null',
       }))
-
+      // const verticalName= lowerVertName
       const response = await DataService.saveShutdownData(
         plantId,
         shutdownDetails,
         keycloak,
+        // verticalName
       )
 
       setSnackbarOpen(true)
@@ -186,6 +193,7 @@ const ShutDown = () => {
   // }
   const fetchData = async () => {
     try {
+      setLoading(true)
       const data = await DataService.getShutDownPlantData(keycloak)
       const formattedData = data.map((item, index) => ({
         ...item,
@@ -194,8 +202,10 @@ const ShutDown = () => {
       }))
       // setShutdownData(formattedData)
       setRows(formattedData)
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching Shutdown data:', error)
+      setLoading(false)
     }
   }
   useEffect(() => {
@@ -255,11 +265,6 @@ const ShutDown = () => {
       headerName: 'Shutdown Desc',
       minWidth: 125,
       editable: true,
-      renderHeader: () => (
-        <div style={{ textAlign: 'center', fontWeight: 'normal' }}>
-          Shutdown Desc
-        </div>
-      ),
       flex: 3,
     },
     {
@@ -366,16 +371,25 @@ const ShutDown = () => {
       minWidth: 250,
       editable: true,
       renderCell: (params) => {
+        const displayText = truncateRemarks(params.value)
+        const isEditable = !params.row.Particulars
+
         return (
-          <div
-            style={{
-              cursor: 'pointer',
-              color: params.value ? 'inherit' : 'gray',
-            }}
-            onClick={() => handleRemarkCellClick(params.row)}
-          >
-            {params.value || 'Click to add remark'}
-          </div>
+          <Tooltip title={params.value || ''} arrow>
+            <div
+              style={{
+                cursor: 'pointer',
+                color: params.value ? 'inherit' : 'gray',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: 140,
+              }}
+              onClick={() => handleRemarkCellClick(params.row)}
+            >
+              {displayText || (isEditable ? 'Click to add remark' : '')}
+            </div>
+          </Tooltip>
         )
       },
     },
@@ -394,15 +408,18 @@ const ShutDown = () => {
 
   return (
     <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <ASDataGrid
         setRows={setRows}
         columns={colDefs}
         rows={rows}
-        title={
-          lowerVertName === 'meg'
-            ? 'Shutdown/Turnaround Activities'
-            : 'Shutdown Activities'
-        }
+        title={'Shutdown/Turnaround Activities'}
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}

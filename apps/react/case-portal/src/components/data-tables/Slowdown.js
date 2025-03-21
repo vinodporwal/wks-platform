@@ -6,9 +6,12 @@ import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import { useSelector } from 'react-redux'
 import NumericInputOnly from 'utils/NumericInputOnly'
+import Tooltip from '@mui/material/Tooltip'
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
+import { truncateRemarks } from 'utils/remarksUtils'
+import { validateFields } from 'utils/validationUtils'
 
 const SlowDown = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -38,6 +41,7 @@ const SlowDown = () => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -105,45 +109,45 @@ const SlowDown = () => {
     }
   }
   const saveChanges = React.useCallback(async () => {
-    console.log(
-      'Edited Data: ',
-      Object.values(unsavedChangesRef.current.unsavedRows),
-    )
-    setLoading(true)
-    setTimeout(async () => {
-      try {
-        var data = Object.values(unsavedChangesRef.current.unsavedRows)
-        if (data.length == 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
-        // Validate that both normParameterId and remark are not empty
-        const invalidRows = data.filter(
-          (row) => !row.product.trim() || !row.remark.trim(),
-        )
-
-        if (invalidRows.length > 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Please fill required fields: Product and Remark.',
-            severity: 'error',
-          })
-          return
-        }
-        saveSlowDownData(data)
-
-        unsavedChangesRef.current = {
-          unsavedRows: {},
-          rowsBeforeChange: {},
-        }
-      } catch (error) {
-        // setIsSaving(false);
+    try {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
       }
-    }, 1000) // Delay of 2 seconds
+
+      const requiredFields = [
+        'maintStartDateTime',
+        'maintEndDateTime',
+        'discription',
+        'remark',
+        'rate',
+        'durationInHrs',
+        'product',
+      ]
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+
+      saveSlowDownData(data)
+
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
+    } catch (error) {
+      // setIsSaving(false);
+    }
   }, [apiRef])
 
   const updateSlowdownData = async (newRow) => {
@@ -197,6 +201,7 @@ const SlowDown = () => {
       setLoading(false) // Hide loading
     } catch (error) {
       console.error('Error fetching SlowDown data:', error)
+      setLoading(false) // Hide loading
     }
   }
 
@@ -313,11 +318,6 @@ const SlowDown = () => {
       headerName: 'Slowdown Desc',
       minWidth: 250,
       editable: true,
-      renderHeader: () => (
-        <div style={{ textAlign: 'center', fontWeight: 'normal' }}>
-          Slowdown Desc
-        </div>
-      ),
       flex: 3,
     },
 
@@ -330,19 +330,23 @@ const SlowDown = () => {
 
     {
       field: 'product',
-      headerName: lowerVertName === 'meg' ? 'Product' : 'Grade Name',
+      headerName: 'Particulars',
       editable: true,
       minWidth: 125,
-      valueGetter: (params) => {
-        return params || ''
-      },
+      valueGetter: (params) => params || '',
       valueFormatter: (params) => {
-        // console.log('params valueFormatter ', params)
         const product = allProducts.find((p) => p.id === params)
         return product ? product.displayName : ''
       },
       renderEditCell: (params) => {
-        const { value } = params
+        const { value, id, api } = params
+
+        const existingValues = new Set(
+          [...api.getRowModels().values()]
+            .filter((row) => row.id !== id)
+            .map((row) => row.product),
+        )
+
         return (
           <select
             value={value || ''}
@@ -361,15 +365,19 @@ const SlowDown = () => {
               background: 'transparent',
             }}
           >
-            {/* Disabled first option */}
             <option value='' disabled>
               Select
             </option>
-            {allProducts.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.displayName}
-              </option>
-            ))}
+            {allProducts
+              .filter(
+                (product) =>
+                  product.id === value || !existingValues.has(product.id),
+              ) // Ensure selected value is included
+              .map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.displayName}
+                </option>
+              ))}
           </select>
         )
       },
@@ -432,16 +440,25 @@ const SlowDown = () => {
       editable: true,
       minWidth: 250,
       renderCell: (params) => {
+        const displayText = truncateRemarks(params.value)
+        const isEditable = !params.row.Particulars
+
         return (
-          <div
-            style={{
-              cursor: 'pointer',
-              color: params.value ? 'inherit' : 'gray',
-            }}
-            onClick={() => handleRemarkCellClick(params.row)}
-          >
-            {params.value || 'Click to add remark'}
-          </div>
+          <Tooltip title={params.value || ''} arrow>
+            <div
+              style={{
+                cursor: 'pointer',
+                color: params.value ? 'inherit' : 'gray',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: 140,
+              }}
+              onClick={() => handleRemarkCellClick(params.row)}
+            >
+              {displayText || (isEditable ? 'Click to add remark' : '')}
+            </div>
+          </Tooltip>
         )
       },
     },
