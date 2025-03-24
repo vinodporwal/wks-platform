@@ -40,7 +40,7 @@ export const MainRoutes = (
     children: [
       {
         path: '/',
-        element: <DashboardDefault />,
+        element: <ProductionvolumeData />,
       },
 
       {
@@ -116,6 +116,10 @@ export const MainRoutes = (
         path: 'production-norms-plan',
         children: [
           {
+            path: 'business-demand',
+            element: <BusinessDemand />,
+          },
+          {
             path: 'production-volume-data',
             element: <ProductionvolumeData />,
           },
@@ -142,10 +146,6 @@ export const MainRoutes = (
           {
             path: 'shutdown-norms',
             element: <ShutdownNorms />,
-          },
-          {
-            path: 'business-demand',
-            element: <BusinessDemand />,
           },
           {
             path: 'shutdown-plan',
