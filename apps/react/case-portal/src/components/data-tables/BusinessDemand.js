@@ -165,11 +165,8 @@ const BusinessDemand = () => {
         return
       }
       saveBusinessDemandData(data)
-
-      // setLoading(true)
     } catch (error) {
       console.log('Error saving changes:', error)
-      // setLoading(true)
     }
   }, [apiRef])
 
@@ -203,32 +200,24 @@ const BusinessDemand = () => {
         id: row.idFromApi || null,
       }))
 
-      if (businessData.length > 0) {
-        const response = await DataService.saveBusinessDemandData(
-          plantId,
-          businessData,
-          keycloak,
-        )
+      // if (businessData.length > 0) {
+      const response = await DataService.saveBusinessDemandData(
+        plantId,
+        businessData,
+        keycloak,
+      )
 
-        // console.log(response)
+      // console.log(response)
 
-        if (response.status == 200) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Business Demand data Saved Successfully!',
-            severity: 'success',
-          })
-          unsavedChangesRef.current = {
-            unsavedRows: {},
-            rowsBeforeChange: {},
-          }
-        } else {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Error saving Business Demand data!',
-            severity: 'error',
-          })
-        }
+      // if (response.status == 200) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Business Demand data Saved Successfully!',
+        severity: 'success',
+      })
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
       }
       fetchData()
       return response
@@ -239,16 +228,33 @@ const BusinessDemand = () => {
     }
   }
 
-  // const handleRowEditStop = (params, event) => {
-  //   setRowModesModel({
-  //     ...rowModesModel,
-  //     [params.id]: { mode: GridRowModes.View, ignoreModifications: false },
-  //   })
-  // }
-
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
   }, [])
+
+  const deleteRowData = async (paramsForDelete) => {
+    try {
+      const { idFromApi, id } = paramsForDelete.row
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      }
+
+      if (idFromApi) {
+        await DataService.deleteBusinessDemandData(idFromApi, keycloak)
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error deleting Record!', error)
+    }
+  }
 
   return (
     <div>
@@ -258,7 +264,7 @@ const BusinessDemand = () => {
 
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
+        open={!!loading}
       >
         <CircularProgress color='inherit' />
       </Backdrop>
@@ -299,6 +305,7 @@ const BusinessDemand = () => {
         setCurrentRowId={setCurrentRowId}
         unsavedChangesRef={unsavedChangesRef}
         handleRemarkCellClick={handleRemarkCellClick}
+        deleteRowData={deleteRowData}
         permissions={{
           showAction: true,
           addButton: true,

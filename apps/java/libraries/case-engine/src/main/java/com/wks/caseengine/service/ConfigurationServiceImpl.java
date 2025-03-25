@@ -1,15 +1,21 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.regex.Matcher;
 
@@ -18,139 +24,153 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+
+import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDataDTO;
+import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 @Service
 public class ConfigurationServiceImpl implements ConfigurationService{
 	
 	@PersistenceContext
     private EntityManager entityManager;
-
-	public List<Map<String, Object>> getConfigurationData(String year, UUID plantFKId) {
-	    try {
-	    	String pivotColumnsQuery = """
-	    		    WITH ParsedYear AS (
-	    		        SELECT 
-	    		            LEFT(:auditYear, CHARINDEX('-', :auditYear) - 1) AS StartYear,
-	    		            RIGHT(:auditYear, LEN(:auditYear) - CHARINDEX('-', :auditYear)) AS EndYear
-	    		    ),
-	    		    Months AS (
-	    		        SELECT DISTINCT 
-	    		            CASE 
-	    		                WHEN Month BETWEEN 4 AND 12 THEN 
-	    		                    CASE Month 
-	    		                        WHEN 4 THEN 'Apr' WHEN 5 THEN 'May' WHEN 6 THEN 'Jun' WHEN 7 THEN 'Jul' 
-	    		                        WHEN 8 THEN 'Aug' WHEN 9 THEN 'Sep' WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' 
-	    		                        WHEN 12 THEN 'Dec' 
-	    		                    END + RIGHT(StartYear, 2)  -- Use last 2 digits of StartYear for Apr-Dec
-	    		                ELSE 
-	    		                    CASE Month 
-	    		                        WHEN 1 THEN 'Jan' WHEN 2 THEN 'Feb' WHEN 3 THEN 'Mar' 
-	    		                    END + RIGHT(EndYear, 2)  -- Use last 2 digits of EndYear for Jan-Mar
-	    		            END AS MonthYear 
-	    		        FROM NormAttributeTransactions, ParsedYear
-	    		        WHERE AuditYear = :auditYear AND Plant_FK_Id = :plantFKId
-	    		    )
-	    		    SELECT COALESCE(STRING_AGG(
-	    		        'MAX(CASE WHEN MonthYear = ''' + MonthYear + ''' THEN AttributeValue END) AS [' + LOWER(MonthYear) + ']',
-	    		        ', '
-	    		    ), 'NULL AS NoData') AS ColumnsList 
-	    		    FROM Months
-	    		""";
-
-	    		String pivotColumns = (String) entityManager.createNativeQuery(pivotColumnsQuery)
-	    		        .setParameter("auditYear", year)
-	    		        .setParameter("plantFKId", plantFKId)
-	    		        .getSingleResult();
-
-	    		if (pivotColumns == null || pivotColumns.isBlank()) {
-	    		    pivotColumns = "NULL AS NoData";
-	    		}
-
-	    		String finalQuery = """
-	    		    WITH ParsedYear AS (
-	    		        SELECT 
-	    		            LEFT(:auditYear, CHARINDEX('-', :auditYear) - 1) AS StartYear,
-	    		            RIGHT(:auditYear, LEN(:auditYear) - CHARINDEX('-', :auditYear)) AS EndYear
-	    		    ),
-	    		    Data_CTE AS (
-	    		        SELECT 
-	    		            nat.Id, 
-	    		            ca.CatalystName AS catalyst, 
-	    		            CASE 
-	    		                WHEN nat.Month BETWEEN 4 AND 12 THEN 
-	    		                    CASE nat.Month 
-	    		                        WHEN 4 THEN 'Apr' WHEN 5 THEN 'May' WHEN 6 THEN 'Jun' WHEN 7 THEN 'Jul' 
-	    		                        WHEN 8 THEN 'Aug' WHEN 9 THEN 'Sep' WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' 
-	    		                        WHEN 12 THEN 'Dec' 
-	    		                    END + RIGHT(StartYear, 2)  -- First part for Apr to Dec
-	    		                ELSE 
-	    		                    CASE nat.Month 
-	    		                        WHEN 1 THEN 'Jan' WHEN 2 THEN 'Feb' WHEN 3 THEN 'Mar' 
-	    		                    END + RIGHT(EndYear, 2)  -- Second part for Jan to Mar
-	    		            END AS MonthYear,
-	    		            TRY_CAST(nat.AttributeValue AS FLOAT) AS AttributeValue,
-	    		            nat.Remarks, 
-	    		            nat.CatalystAttribute_FK_Id AS catalystId,  
-	    		            nat.NormParameter_FK_Id AS NormParameterFKId 
-	    		        FROM NormAttributeTransactions AS nat 
-	    		        JOIN CatalystAttributes AS ca 
-	    		            ON nat.CatalystAttribute_FK_Id = ca.Id, ParsedYear
-	    		        WHERE nat.AuditYear = :auditYear AND nat.Plant_FK_Id = :plantFKId
-	    		    )
-	    		    SELECT d.Id, d.catalyst, """ + pivotColumns + """ 
-	    		           ,d.Remarks AS remark, d.catalystId, d.NormParameterFKId
-	    		    FROM Data_CTE d
-	    		    GROUP BY d.Id, d.catalyst, d.Remarks, d.catalystId, d.NormParameterFKId
-	    		    ORDER BY d.Id
-	    		""";
-
-	    		List<Object[]> results = entityManager.createNativeQuery(finalQuery)
-	    		        .setParameter("auditYear", year)
-	    		        .setParameter("plantFKId", plantFKId)
-	    		        .getResultList();
-
-	        List<Map<String, Object>> responseList = new ArrayList<>();
-	        List<String> columnNames = getColumnNames(pivotColumns);
-
-	        for (Object[] row : results) {
-	            Map<String, Object> map = new LinkedHashMap<>();
-	            map.put("id", row[0]);
-	            map.put("catalyst", row[1]);
-	            for (String column : columnNames) {
-	                map.put(column, null);
-	            }
-	            for (int i = 2; i < row.length - 3; i++) {
-	                map.put(columnNames.get(i - 2), row[i]);
-	            }
-	            map.put("remark", row[row.length - 3]);
-	            map.put("catalystId", row[row.length - 2]);
-	            map.put("NormParameterFKId", row[row.length - 1] != null ? row[row.length - 1].toString().toUpperCase() : null);
-	            responseList.add(map);
-	        }
-
-	        return responseList;
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return Collections.emptyList();
-	    }
-	}
-
-	/**
-	 * Extracts column names from the pivot SQL string.
-	 */
-	private List<String> getColumnNames(String pivotColumns) {
-	    List<String> columnNames = new ArrayList<>();
-	    if (pivotColumns != null) {
-	        String regex = "MAX\\(CASE WHEN MonthYear = '([^']+)' THEN AttributeValue END\\) AS \\[([^\\]]+)\\]";
-	        Pattern pattern = Pattern.compile(regex);
-	        Matcher matcher = pattern.matcher(pivotColumns);
-	        while (matcher.find()) {
-	            columnNames.add(matcher.group(2));  // Extract the alias inside []
-	        }
-	    }
-	    return columnNames;
-	}
 	
+	
+
+	@Autowired
+	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+	
+	
+	public List<ConfigurationDTO> getConfigurationData(String year, UUID plantFKId) {
+        System.out.println("GET CofigurationDataService==============================>");
+		 List<Object[]> obj= normAttributeTransactionsRepository.findByYearAndPlantFkId(year,plantFKId);
+	     List<ConfigurationDTO> configurationDTOList = new ArrayList<>();
+      int i=0;
+		 for (Object[] row : obj) {
+			ConfigurationDTO configurationDTO = new ConfigurationDTO();
+		
+			
+			configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+			configurationDTO.setJan((row[1] != null && !row[1].toString().trim().isEmpty()) ? Float.parseFloat(row[1].toString()) : null);
+			configurationDTO.setFeb((row[2] != null && !row[2].toString().trim().isEmpty()) ? Float.parseFloat(row[2].toString()) : null);
+			configurationDTO.setMar((row[3] != null && !row[3].toString().trim().isEmpty()) ? Float.parseFloat(row[3].toString()) : null);
+			configurationDTO.setApr((row[4] != null && !row[4].toString().trim().isEmpty()) ? Float.parseFloat(row[4].toString()) : null);
+			configurationDTO.setMay((row[5] != null && !row[5].toString().trim().isEmpty()) ? Float.parseFloat(row[5].toString()) : null);
+			configurationDTO.setJun((row[6] != null && !row[6].toString().trim().isEmpty()) ? Float.parseFloat(row[6].toString()) : null);
+			configurationDTO.setJul((row[7] != null && !row[7].toString().trim().isEmpty()) ? Float.parseFloat(row[7].toString()) : null);
+			configurationDTO.setAug((row[8] != null && !row[8].toString().trim().isEmpty()) ? Float.parseFloat(row[8].toString()) : null);
+			configurationDTO.setSep((row[9] != null && !row[9].toString().trim().isEmpty()) ? Float.parseFloat(row[9].toString()) : null);
+			configurationDTO.setOct((row[10] != null && !row[10].toString().trim().isEmpty()) ? Float.parseFloat(row[10].toString()) : null);
+			configurationDTO.setNov((row[11] != null && !row[11].toString().trim().isEmpty()) ? Float.parseFloat(row[11].toString()) : null);
+			configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty()) ? Float.parseFloat(row[12].toString()) : null);
+			configurationDTO.setRemark((row[13] != null ? row[13].toString() : "" ));
+			configurationDTO.setId(row[14] != null ? row[14].toString() : i+"#");
+			configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "" );
+			
+			
+			configurationDTOList.add(configurationDTO);
+			if(row[14] == null){
+				i++;
+			}
+
+		}
+	   
+		return configurationDTOList;
+	}
+ 	/**
+ 	 * Extracts column names from the pivot SQL string.
+ 	 */
+ 	private List<String> getColumnNames(String pivotColumns) {
+ 	    List<String> columnNames = new ArrayList<>();
+ 	    if (pivotColumns != null) {
+ 	        String regex = "MAX\\(CASE WHEN MonthYear = '([^']+)' THEN AttributeValue END\\) AS \\[([^\\]]+)\\]";
+ 	        Pattern pattern = Pattern.compile(regex);
+ 	        Matcher matcher = pattern.matcher(pivotColumns);
+ 	        while (matcher.find()) {
+ 	            columnNames.add(matcher.group(2));  // Extract the alias inside []
+ 	        }
+ 	    }
+ 	    return columnNames;
+ 	}
+
+	 @Transactional(propagation = Propagation.REQUIRES_NEW)
+	 @Override
+	 public String saveConfigurationData(String year, List<ConfigurationDTO> configurationDTOList) {
+		 for (ConfigurationDTO configurationDTO : configurationDTOList) {
+			 UUID normParameterFKId = UUID.fromString(configurationDTO.getNormParameterFKId());
+ 
+			
+			 for (int i = 1; i <= 12; i++) {
+				 Float attributeValue = getAttributeValue(configurationDTO, i);
+ 
+				
+				 Optional<NormAttributeTransactions> existingRecord = 
+					 normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(
+						 normParameterFKId, i, year
+					 );
+ 
+				 NormAttributeTransactions normAttributeTransactions;
+				 
+				 if (existingRecord.isPresent()) {
+				   
+					 normAttributeTransactions = existingRecord.get();
+					 normAttributeTransactions.setModifiedOn(new Date()); 
+				 } else {
+				  
+					 normAttributeTransactions = new NormAttributeTransactions();
+ //	                normAttributeTransactions.setId(UUID.randomUUID());
+					 normAttributeTransactions.setCreatedOn(new Date());
+					 normAttributeTransactions.setAttributeValueVersion("V1");
+					 normAttributeTransactions.setUserName("System");
+					 normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+					 normAttributeTransactions.setAopMonth(i);
+					 normAttributeTransactions.setAuditYear(configurationDTO.getAuditYear());
+					 normAttributeTransactions.setAuditYear(year);
+					 
+				 }
+ 
+			 
+				 normAttributeTransactions.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+				 normAttributeTransactions.setRemarks(configurationDTO.getRemark());
+ 
+				
+				 normAttributeTransactionsRepository.save(normAttributeTransactions);
+			 }
+		 }
+		 return "Configuration Data Saved/Updated Successfully";
+	 }
+ 
+	 
+	 public Float getAttributeValue(ConfigurationDTO configurationDTO, Integer i) {
+		 switch (i) {
+			 case 1:
+				 return configurationDTO.getJan();
+			 case 2:
+				 return configurationDTO.getFeb();
+			 case 3:
+				 return configurationDTO.getMar();
+			 case 4:
+				 return configurationDTO.getApr();
+			 case 5:
+				 return configurationDTO.getMay();
+			 case 6:
+				 return configurationDTO.getJun();
+			 case 7:
+				 return configurationDTO.getJul();
+			 case 8:
+				 return configurationDTO.getAug();
+			 case 9:
+				 return configurationDTO.getSep();
+			 case 10:
+				 return configurationDTO.getOct();
+			 case 11:
+				 return configurationDTO.getNov();
+			 case 12:
+				 return configurationDTO.getDec();
+ 
+		 }
+		 return configurationDTO.getJan();
+	 }
+
 	
 }

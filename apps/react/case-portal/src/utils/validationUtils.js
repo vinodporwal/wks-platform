@@ -8,6 +8,8 @@ export const validateFields = (data, requiredFields) => {
     rate: 'Rate',
     durationInHrs: 'Duration',
     product: 'Particular',
+    normParametersFKId: 'Particular',
+    aopRemarks: 'Remark',
   }
 
   const invalidRows = data.filter((row) =>
@@ -38,9 +40,11 @@ export const validateFields = (data, requiredFields) => {
       .filter((msg) => msg !== '') // Remove empty messages
       .join(', ')
 
-    return missingFields
-      ? `Please fill in the required fields: ${missingFields}`
-      : ''
+    if (missingFields) {
+      const uniqueFields = [...new Set(missingFields.split(', '))].join(', ')
+      return `Please fill in the required fields: ${uniqueFields}`
+    }
+    return ''
   }
 
   return ''

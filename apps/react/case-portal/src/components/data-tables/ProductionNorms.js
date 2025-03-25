@@ -13,6 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 // import NumericCellEditor from 'utils/NumericCellEditor'
 // import NumericInputOnly from 'utils/NumericInputOnly'
 import getEnhancedColDefs from './CommonHeader/ProductionAopHeader'
+import { validateFields } from 'utils/validationUtils'
 const ProductionNorms = () => {
   const keycloak = useSession()
   // const [csData, setCsData] = useState([])
@@ -77,14 +78,13 @@ const ProductionNorms = () => {
         return
       }
 
-      const invalidRows = updatedRows.filter(
-        (row) => !row.normParametersFKId.trim() || !row.aopRemarks.trim(),
-      )
+      const requiredFields = ['aopRemarks']
 
-      if (invalidRows.length > 0) {
+      const validationMessage = validateFields(allRows, requiredFields)
+      if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Please fill required fields: Product and Remark.',
+          message: validationMessage,
           severity: 'error',
         })
         return
@@ -160,8 +160,9 @@ const ProductionNorms = () => {
     }
   }
 
-  const handleCalculate = async (year) => {
+  const handleCalculate = async () => {
     try {
+      const year = localStorage.getItem('year')
       const storedPlant = localStorage.getItem('selectedPlant')
       if (storedPlant) {
         const parsedPlant = JSON.parse(storedPlant)
@@ -377,7 +378,7 @@ const ProductionNorms = () => {
     <div>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
+        open={!!loading}
       >
         <CircularProgress color='inherit' />
       </Backdrop>
@@ -424,7 +425,6 @@ const ProductionNorms = () => {
           units: ['Ton', 'Kilo Ton'],
           // UnitToShow: 'Values/Ton',
         }}
-        loading={isSaving}
       />
     </div>
   )
