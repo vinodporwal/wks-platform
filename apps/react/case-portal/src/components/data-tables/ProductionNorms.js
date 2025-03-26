@@ -21,7 +21,7 @@ const ProductionNorms = () => {
   const apiRef = useGridApiRef()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange } = dataGridStore
-  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -111,7 +111,7 @@ const ProductionNorms = () => {
         aopStatus: row.aopStatus || null,
         aopYear: localStorage.getItem('year'),
         plantFkId: plantId,
-        normParametersFKId: row.normParametersFKId,
+        materialFKId: row.normParametersFKId,
         // normItem: getProductName('1', row.normParametersFKId) || null,
         // normItem: 'EOE',
         april: isKiloTon && row.april ? row.april * 1000 : row.april || null,
@@ -172,7 +172,8 @@ const ProductionNorms = () => {
       var plantId = plantId
       const data = await DataService.handleCalculate(plantId, year, keycloak)
 
-      if (data.status === 200) {
+      // if (data.status === 200) {
+      if(data){
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
@@ -203,7 +204,7 @@ const ProductionNorms = () => {
           }
         })
 
-        setCsData(formattedData)
+        // setCsData(formattedData)
         setRows(formattedData)
       } else {
         setSnackbarOpen(true)
@@ -222,7 +223,9 @@ const ProductionNorms = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
+
       const data1 = await DataService.getAOPData(keycloak)
+
       const data2 = data1
         .map((product) => ({
           ...product,
@@ -232,8 +235,11 @@ const ProductionNorms = () => {
             : {}),
         }))
         .map(({ materialFKId, ...rest }) => rest)
+
+      // console.log(data)
+
       const data = data2.slice(0, 3)
-      // const data1 = data1.slice(0, 3)
+
       // if (data.status === 200) {
       const formattedData = data.map((item, index) => {
         const isKiloTon = selectedUnit !== 'Ton'
@@ -367,7 +373,7 @@ const ProductionNorms = () => {
 
     fetchData()
     getAllProducts()
-  }, [sitePlantChange, keycloak, selectedUnit, verticalChange, lowerVertName])
+  }, [sitePlantChange, keycloak, selectedUnit, lowerVertName])
 
   const productionColumns = getEnhancedColDefs({
     allProducts,

@@ -20,7 +20,7 @@ const BusinessDemand = () => {
   const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange } = dataGridStore
-  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
@@ -83,6 +83,7 @@ const BusinessDemand = () => {
     }
   }
 
+  // console.log(verticalChange)
   useEffect(() => {
     const getAllProducts = async () => {
       try {
@@ -114,7 +115,7 @@ const BusinessDemand = () => {
     }
     fetchData()
     getAllProducts()
-  }, [sitePlantChange, keycloak, verticalChange, lowerVertName])
+  }, [sitePlantChange, keycloak, lowerVertName])
 
   const handleRemarkCellClick = (row) => {
     // console.log(row, newRow)
@@ -285,7 +286,7 @@ const BusinessDemand = () => {
   return (
     <div>
       {/* <div>
-        {`Plant: ${verticalChange?.verticalChange?.selectedPlant}, Site: ${verticalChange?.verticalChange?.selectedSite}, Vertical: ${verticalChange?.verticalChange?.selectedVertical}`}
+        {`Plant: ${verticalChange?.selectedVertical?.selectedPlant}, Site: ${verticalChange?.selectedVertical?.selectedSite}, Vertical: ${verticalChange?.selectedVertical?.selectedVertical}`}
       </div> */}
 
       <Backdrop

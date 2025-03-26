@@ -90,7 +90,9 @@ const HeaderContent = ({ keycloak }) => {
 
         dispatch(
           setVerticalChange({
-            verticalChange: { selectedPlant, selectedSite, selectedVertical },
+            selectedPlant,
+            selectedSite,
+            selectedVertical,
           }),
         )
         // setAllSites(sitesData)
@@ -219,7 +221,7 @@ const HeaderContent = ({ keycloak }) => {
   }
 
   const handleVerticalChange = (event) => {
-    dispatch(setSitePlantChange({ sitePlantChange: true }))
+    // dispatch(setSitePlantChange({ sitePlantChange: true }))
     const verticalName = event.target.value
     setSelectedVertical(verticalName)
     const verticalData = verticals.find((v) => v.name === verticalName)
@@ -279,7 +281,9 @@ const HeaderContent = ({ keycloak }) => {
     )
     dispatch(
       setVerticalChange({
-        verticalChange: { selectedPlant, selectedSite, selectedVertical },
+        selectedPlant,
+        selectedSite,
+        selectedVertical,
       }),
     )
   }, [selectedPlant, allPlants])
@@ -298,7 +302,9 @@ const HeaderContent = ({ keycloak }) => {
     setSelectedSite(siteAvailable[0] || '')
     dispatch(
       setVerticalChange({
-        verticalChange: { selectedPlant, selectedSite, selectedVertical },
+        selectedPlant,
+        selectedSite,
+        selectedVertical,
       }),
     )
   }, [verticals, selectedVertical])

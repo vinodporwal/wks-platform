@@ -68,42 +68,40 @@ const App = () => {
     }
   }
 
-  // useEffect(() => {
-  //   if (keycloak) {
-  //     buildMenuItems(keycloak)
-  //   }
-  // }, [verticalChange, sitePlantChange, keycloak])
+  useEffect(() => {
+    if (keycloak) {
+      buildMenuItems(keycloak)
+    }
+  }, [verticalChange, keycloak])
 
   async function buildMenuItems(keycloak) {
+    let rawAllowedVerticals = []
+    const verticals = keycloak?.idTokenParsed?.verticals
+    if (verticals) {
+      try {
+        rawAllowedVerticals = JSON.parse(verticals)
+      } catch (error) {
+        console.error('Error parsing verticals JSON:', error)
+        rawAllowedVerticals = []
+      }
+    } else {
+      console.warn('No verticals found in idTokenParsed')
+    }
+    const allowedVerticalsMapping = rawAllowedVerticals.reduce((acc, obj) => {
+      return { ...acc, ...obj }
+    }, {})
+    const selectedVertical = verticalChange?.selectedVertical?.toLowerCase()
+    const allowedChildIds =
+      (selectedVertical && allowedVerticalsMapping[selectedVertical]) || []
     const menu = {
       items: [...menuItemsDefs.items],
     }
 
     // Get the selected vertical
-    const selectedVertical = verticalChange?.verticalChange?.selectedVertical
 
-    const alternateMapping = {
-      PE: {
-        'product-demand': 'Business Demand',
-        'product-mcu-val': 'Production Volume Data',
-        'shutdown-plan': 'Shutdown Activities',
-        'slowdown-plan': 'Slowdown Activities',
-        'ta-plan': 'Turnaround Activities',
-        'production-norms': 'Production AOP',
-      },
-      MEG: {
-        'product-demand': 'Business Demand',
-        'product-mcu-val': 'Production Volume Data',
-        'shutdown-plan': 'Shutdown Activities',
-        'slowdown-plan': 'Slowdown Activities',
-        'ta-plan': ' Turnaround Activities', // but we are hiding in meg
-        'production-norms': 'Production AOP',
-      },
       // ... add more vertical mappings if needed.
-    }
 
     // eslint-disable-next-line no-constant-condition
-    if (true) {
       // If vertical is MEG, hide the ta-plan item.
       menu.items = menu.items.map((item) => {
         if (item.id === 'utilities') {
@@ -113,8 +111,10 @@ const App = () => {
               if (group.id === 'production-norms-plan') {
                 return {
                   ...group,
-                  children: group.children.filter(
-                    (child) => child.id !== 'ta-plan',
+                children: group.children.filter((child) =>
+                  allowedChildIds.length > 0
+                    ? allowedChildIds.includes(child.id)
+                    : true,
                   ),
                 }
               }
@@ -124,36 +124,15 @@ const App = () => {
         }
         return item
       })
-    } else if (selectedVertical && alternateMapping[selectedVertical]) {
       // For non-MEG verticals with a defined alternate mapping, update the titles.
-      const mapping = alternateMapping[selectedVertical]
-      menu.items = menu.items.map((item) => {
-        if (item.id === 'utilities') {
-          return {
-            ...item,
-            children: item.children.map((group) => {
-              if (group.id === 'production-norms-plan') {
-                return {
-                  ...group,
-                  children: group.children.map((child) => {
                     // If an alternate title exists for this child's id, update the title.
-                    if (mapping[child.id]) {
-                      return { ...child, title: mapping[child.id] }
-                    }
-                    return child
-                  }),
-                }
-              }
-              return group
-            }),
-          }
-        }
-        return item
-      })
-    }
 
     // Additional modifications (e.g., manager check)
-    if (!accountStore.isManagerUser(keycloak)) {
+    const isManagerUser =
+      typeof keycloak.hasRealmRole === 'function'
+        ? keycloak.hasRealmRole('manager')
+        : false
+    if (!isManagerUser) {
       delete menu.items[3]
     }
 

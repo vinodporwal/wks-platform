@@ -151,6 +151,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				String description = shutDownPlanDTO.getDiscription();
 				// if(shutDownPlanDTO.getVerticalName().equalsIgnoreCase("MEG")) {
 					List<ShutDownPlanDTO> list = new ArrayList<>();
+					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					shutDownPlanDTO.setDiscription(description+" Ramp Up");
 					shutDownPlanDTO.setProductId(UUID.fromString("A061E050-0281-421F-81C1-B136CE2ED3F3"));
@@ -160,6 +161,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 					List<ShutDownPlanDTO> list2 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Down");
 					shutDownPlanDTO.setProductId(UUID.fromString("A061E050-0281-421F-81C1-B136CE2ED3F3"));
+					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list2.add(shutDownPlanDTO);
 				    slowdownPlanService.saveShutdownData(plantId,list2);
@@ -167,6 +169,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				    List<ShutDownPlanDTO> list3 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Down");
 					shutDownPlanDTO.setProductId(UUID.fromString("00DC05B1-9607-470E-A159-62497E0123E2"));
+					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list3.add(shutDownPlanDTO);
 				    slowdownPlanService.saveShutdownData(plantId,list3);
@@ -174,6 +177,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				    List<ShutDownPlanDTO> list4 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Up");
 					shutDownPlanDTO.setProductId(UUID.fromString("00DC05B1-9607-470E-A159-62497E0123E2"));
+					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list4.add(shutDownPlanDTO);
 				    slowdownPlanService.saveShutdownData(plantId,list4);

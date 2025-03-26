@@ -34,7 +34,7 @@ const NormalOpNormsScreen = () => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [loading, setLoading] = useState(false)
   const { sitePlantChange, verticalChange } = dataGridStore
-  const vertName = verticalChange?.verticalChange?.selectedVertical
+  const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
   const unsavedChangesRef = React.useRef({
@@ -97,7 +97,7 @@ const NormalOpNormsScreen = () => {
     }
     fetchData()
     getAllProducts()
-  }, [sitePlantChange, keycloak, verticalChange, lowerVertName])
+  }, [sitePlantChange, keycloak, lowerVertName])
 
   const formatValueToThreeDecimals = (params) =>
     params ? parseFloat(params).toFixed(3) : ''
