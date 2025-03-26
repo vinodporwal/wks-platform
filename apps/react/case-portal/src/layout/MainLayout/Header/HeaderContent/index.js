@@ -78,6 +78,8 @@ const HeaderContent = ({ keycloak }) => {
                     id: plant.id,
                     name: plant.name,
                     siteName: site.name,
+                    siteId: site.id,
+                    verticalId: vertical.id,
                     verticalName: vertical.name,
                   })
                 })
@@ -136,17 +138,24 @@ const HeaderContent = ({ keycloak }) => {
           )
           setPlants(finalFilteredPlants)
 
+          localStorage.setItem('verticalId', defaultPlant.verticalId)
           localStorage.setItem(
             'selectedPlant',
             JSON.stringify({ id: defaultPlant.id, name: defaultPlant.name }),
           )
           localStorage.setItem(
             'selectedSite',
-            JSON.stringify({ name: defaultPlant.siteName }),
+            JSON.stringify({
+              id: defaultPlant.siteId,
+              name: defaultPlant.siteName,
+            }),
           )
           localStorage.setItem(
             'selectedVertical',
-            JSON.stringify({ name: defaultPlant.verticalName }),
+            JSON.stringify({
+              id: defaultPlant.verticalId,
+              name: defaultPlant.verticalName,
+            }),
           )
         }
       }

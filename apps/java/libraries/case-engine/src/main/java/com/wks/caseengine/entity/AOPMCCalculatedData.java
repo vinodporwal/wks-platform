@@ -1,5 +1,6 @@
 package com.wks.caseengine.entity;
 
+import java.util.Date;
 import java.util.UUID;
 
 import org.hibernate.annotations.GenericGenerator;
@@ -8,7 +9,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "AOPMCCalculatedData")
+@Table(name = "MCUValue")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,14 +21,16 @@ public class AOPMCCalculatedData {
     @Column(name = "Id", nullable = false, updatable = false)
     private UUID id;
     
-    @Column(name = "Site")
-    private String site;
+    @Column(name = "Site_FK_ID")
+    private UUID siteFKId;
     
-    @Column(name = "Plant")
-    private String plant;
+    @Column(name = "Plant_FK_ID")
+    private UUID plantFKId;
+    @Column(name = "Vertical_FK_ID")
+    private UUID verticalFKId;
     
-    @Column(name = "Material")
-    private String material;
+    @Column(name = "Material_FK_ID")
+    private UUID materialFKId;
     
     @Column(name = "April")
     private Float april;
@@ -64,16 +67,22 @@ public class AOPMCCalculatedData {
     
     @Column(name = "March")
     private Float march;
+    @Column(name="FinancialYear")
+    private String financialYear;
     
-    @Column(name="Plant_FK_Id")
-    private UUID plantFKId;
+    @Column(name="Remarks")
+    private String remarks;
+    @Column(name="CreatedOn")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdOn;
 
-    @Column(name="Year")
-    private String year;
+    @Column(name="ModifiedOn")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date modifiedOn;
     
-    @Column(name="NormParameters_FK_Id")
-    private UUID normParametersFKId;
+    @Column(name="MCUVersion")
+    private String mcuVersion;
     
-    @Column(name="Remark")
-    private String remark;
+    @Column(name="UpdatedBy")
+    private String updatedBy;
 }

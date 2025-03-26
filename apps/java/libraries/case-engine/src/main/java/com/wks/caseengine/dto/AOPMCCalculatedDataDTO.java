@@ -1,5 +1,6 @@
 package com.wks.caseengine.dto;
 
+import java.util.Date;
 import org.springframework.context.annotation.Configuration;
 
 import lombok.AllArgsConstructor;
@@ -14,9 +15,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class AOPMCCalculatedDataDTO {
 	private String id;
-    private String site;
-    private String plant;
-    private String material;
     private Float april;
     private Float may;
     private Float june;
@@ -29,10 +27,15 @@ public class AOPMCCalculatedDataDTO {
     private Float january;
     private Float february;
     private Float march;
-    private String plantFKId;
-    private String year;
-    private String normParametersFKId;
-    private String bDNormParametersFKId;
     private Integer displayOrder;
-    private String remark;
+    private String remarks;
+    private String plantFKId;
+    private String siteFKId;
+    private String verticalFKId;
+	private String materialFKId;
+    private String financialYear;
+    private Date createdOn;
+    private Date modifiedOn;
+    private String mcuVersion;
+    private String updatedBy;
 }

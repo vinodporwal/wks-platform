@@ -70,6 +70,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
  			BusinessDemandDataDTO businessDemandDataDTO = new BusinessDemandDataDTO();
 
  			businessDemandDataDTO.setNormParameterId(obj1[0]!=null? obj1[0].toString():null);
+ 			businessDemandDataDTO.setNormParameterTypeDisplayName(obj1[1]!=null? obj1[1].toString():null);
  			businessDemandDataDTO.setId(i+"#");
  			businessDemandDataDTOList.add(businessDemandDataDTO);
  			i++;
@@ -114,6 +115,12 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 			businessDemand.setRemark(businessDemandDataDTO.getRemark());
 			businessDemand.setSep(businessDemandDataDTO.getSep());
 			businessDemand.setYear(businessDemandDataDTO.getYear());
+			if(businessDemandDataDTO.getSiteFKId()!=null) {
+				businessDemand.setSiteFKId(UUID.fromString(businessDemandDataDTO.getSiteFKId()));
+			}
+			if(businessDemandDataDTO.getVerticalFKId()!=null) {
+				businessDemand.setVerticalFKId(UUID.fromString(businessDemandDataDTO.getVerticalFKId()));
+			}
 			businessDemandDataRepository.save(businessDemand);
 			
 			
