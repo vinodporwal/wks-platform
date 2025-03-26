@@ -72,11 +72,13 @@ const App = () => {
     if (keycloak) {
       buildMenuItems(keycloak)
     }
+    // console.log(verticalChange)
   }, [verticalChange, keycloak])
 
   async function buildMenuItems(keycloak) {
     let rawAllowedVerticals = []
     const verticals = keycloak?.idTokenParsed?.verticals
+
     if (verticals) {
       try {
         rawAllowedVerticals = JSON.parse(verticals)
@@ -87,51 +89,52 @@ const App = () => {
     } else {
       console.warn('No verticals found in idTokenParsed')
     }
+
     const allowedVerticalsMapping = rawAllowedVerticals.reduce((acc, obj) => {
       return { ...acc, ...obj }
     }, {})
+
+    // console.log(allowedVerticalsMapping)
+    // console.log(verticalChange)
+
     const selectedVertical = verticalChange?.selectedVertical?.toLowerCase()
     const allowedChildIds =
       (selectedVertical && allowedVerticalsMapping[selectedVertical]) || []
+
+    // Build the menu based on allowed verticals
     const menu = {
       items: [...menuItemsDefs.items],
     }
 
-    // Get the selected vertical
-
-      // ... add more vertical mappings if needed.
-
-    // eslint-disable-next-line no-constant-condition
-      // If vertical is MEG, hide the ta-plan item.
-      menu.items = menu.items.map((item) => {
-        if (item.id === 'utilities') {
-          return {
-            ...item,
-            children: item.children.map((group) => {
-              if (group.id === 'production-norms-plan') {
-                return {
-                  ...group,
+    menu.items = menu.items.map((item) => {
+      if (item.id === 'utilities') {
+        return {
+          ...item,
+          children: item.children.map((group) => {
+            if (group.id === 'production-norms-plan') {
+              return {
+                ...group,
                 children: group.children.filter((child) =>
                   allowedChildIds.length > 0
                     ? allowedChildIds.includes(child.id)
                     : true,
-                  ),
-                }
+                ),
               }
-              return group
-            }),
-          }
+            }
+            return group
+          }),
         }
-        return item
-      })
-      // For non-MEG verticals with a defined alternate mapping, update the titles.
-                    // If an alternate title exists for this child's id, update the title.
+      }
+      return item
+    })
 
-    // Additional modifications (e.g., manager check)
+    // Safely determine if the user is a manager.
+    // If keycloak.hasRealmRole is not a function, default to false.
     const isManagerUser =
       typeof keycloak.hasRealmRole === 'function'
         ? keycloak.hasRealmRole('manager')
         : false
+
     if (!isManagerUser) {
       delete menu.items[3]
     }

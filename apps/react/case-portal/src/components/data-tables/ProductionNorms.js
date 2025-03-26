@@ -172,8 +172,7 @@ const ProductionNorms = () => {
       var plantId = plantId
       const data = await DataService.handleCalculate(plantId, year, keycloak)
 
-      // if (data.status === 200) {
-      if(data){
+      if (data) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
