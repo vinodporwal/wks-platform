@@ -100,7 +100,7 @@ async function handleCalculate(plantId, year, keycloak) {
 }
 async function handleCalculateNormalOpsNorms(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
-  const url = `${process.env.REACT_APP_API_URL}/task/handleCalculateNormalOpsNorms?year=${year1}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/handleCalculateNormalOpsNorms?year=${year1}&plantId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -376,7 +376,8 @@ async function getCatalystSelectivityData(keycloak) {
   // }
   var year = localStorage.getItem('year')
 
-  const url = `${Config.CaseEngineUrl}/task/getCatalystSelectivityData?year=${year}&plantId=${plantId}&siteId=${siteId}`
+  //const url = `${process.env.REACT_APP_API_URL}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -643,7 +644,8 @@ async function saveTurnAroundData(plantId, turnAroundDetails, keycloak) {
 }
 
 async function saveCatalystData(plantId, turnAroundDetails, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/saveCatalystData`
+  var year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/saveConfigurationData?year=${year}`
 
   const headers = {
     Accept: 'application/json',
@@ -815,7 +817,8 @@ async function getAllSites(keycloak) {
 async function getAllProducts(keycloak, type) {
   const storedPlant = localStorage.getItem('selectedPlant')
   const parsedPlant = JSON.parse(storedPlant)
-  const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=${type}`
+  // const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=${type}&plantId=${parsedPlant.id}`
+  const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=null&plantId=${parsedPlant.id}`
 
   const headers = {
     Accept: 'application/json',
