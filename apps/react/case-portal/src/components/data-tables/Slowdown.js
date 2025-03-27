@@ -74,6 +74,7 @@ const SlowDown = () => {
     date.setUTCMinutes(date.getUTCMinutes() + 30)
     return date
   }
+
   const saveSlowDownData = async (newRow) => {
     try {
       var plantId = ''

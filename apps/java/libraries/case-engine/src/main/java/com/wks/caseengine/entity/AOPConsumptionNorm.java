@@ -1,35 +1,39 @@
 package com.wks.caseengine.entity;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
-
 import java.util.UUID;
 
+@Getter
+@Setter
 @Entity
-@Table(name = "AOP")
-@Data
-public class AOP {
+@Table(name = "AOPConsumptionNorm", schema = "dbo")
+public class AOPConsumptionNorm {
 
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "Id", nullable = false, updatable = false)
+    @Column(name = "Id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name = "AOPCaseId", length = 255)
+    @Column(name = "Site_FK_Id", nullable = false)
+    private UUID siteFkId;
+
+    @Column(name = "Vertical_FK_Id", nullable = false)
+    private UUID verticalFkId;
+
+    @Column(name = "AOPCaseId", length = 255, nullable = false)
     private String aopCaseId;
 
-    @Column(name = "AOPStatus", length = 255)
+    @Column(name = "AOPStatus", length = 255, nullable = false)
     private String aopStatus;
 
     @Column(name = "AOPRemarks", length = 500)
     private String aopRemarks;
 
-//    @Column(name = "NormItem", length = 255)
-//    private String normItem;
-
-    @Column(name = "AOPType", length = 255)
-    private String aopType;
+    @Column(name = "Material_FK_Id", nullable = false)
+    private UUID materialFkId;
 
     @Column(name = "Jan")
     private Float jan;
@@ -67,19 +71,9 @@ public class AOP {
     @Column(name = "Dec")
     private Float dec;
 
-    @Column(name = "AOPYear", length = 100)
+    @Column(name = "AOPYear", length = 100, nullable = false)
     private String aopYear;
 
     @Column(name = "Plant_FK_Id", nullable = false)
     private UUID plantFkId;
-
-    @Column(name = "AvgTPH")
-    private Float avgTPH;
-    
-    @Column(name="Material_FK_Id")
-    private UUID MaterialFKId;
-    @Column(name = "Site_FK_Id", nullable = false)
-    private UUID siteFkId;
-    @Column(name = "Vertical_FK_Id", nullable = false)
-    private UUID verticalFkId;
 }

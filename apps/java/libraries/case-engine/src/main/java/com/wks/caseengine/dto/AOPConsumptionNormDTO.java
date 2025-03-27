@@ -1,7 +1,5 @@
 package com.wks.caseengine.dto;
 
-import java.util.UUID;
-
 import org.springframework.context.annotation.Configuration;
 
 import lombok.AllArgsConstructor;
@@ -14,14 +12,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Data
-public class AOPDTO {
+public class AOPConsumptionNormDTO {
 	
 	private String id;
+    private String siteFkId;
+    private String verticalFkId;
     private String aopCaseId;
     private String aopStatus;
     private String aopRemarks;
-    private String normItem;
-    private String aopType;
+    private String materialFkId;
     private Float jan;
     private Float feb;
     private Float march;
@@ -35,11 +34,6 @@ public class AOPDTO {
     private Float nov;
     private Float dec;
     private String aopYear;
-    private String plantFKId;
-    private Float avgTPH;
-    private String materialFKId;
-    private String bDNormParametersFKId;
-    private Integer displayOrder;
-    private String siteFKId;
-    private String verticalFKId;
+    private String plantFkId;
+
 }

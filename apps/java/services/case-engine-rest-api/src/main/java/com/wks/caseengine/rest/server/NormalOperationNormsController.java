@@ -19,12 +19,12 @@ public class NormalOperationNormsController {
 	@Autowired
 	private NormalOperationNormsService normalOperationNormsService;
 	
-	@GetMapping(value="/getNormalOperationNormsData")
+	@GetMapping(value="/normalOperationNorms")
 	public List<MCUNormsValueDTO> getNormalOperationNormsData(@RequestParam String year,@RequestParam String plantId){
 		return	normalOperationNormsService.getNormalOperationNormsData(year, plantId);
 	}
 	
-	@PostMapping(value="/saveNormalOperationNormsData")
+	@PostMapping(value="/normalOperationNorms")
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData(@RequestBody List<MCUNormsValueDTO> mCUNormsValueDTOList){
 		try {
 			return	normalOperationNormsService.saveNormalOperationNormsData(mCUNormsValueDTOList);
@@ -32,6 +32,10 @@ public class NormalOperationNormsController {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	@GetMapping(value="/handleCalculateNormalOpsNorms")
+	public List<Object[]> getNormalOperationNormsDataFromSP(@RequestParam String year){
+		return normalOperationNormsService.calculateExpressionConsumptionNorms(year);
 	}
 
 }

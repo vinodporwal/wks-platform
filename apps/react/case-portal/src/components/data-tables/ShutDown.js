@@ -105,6 +105,7 @@ const ShutDown = () => {
     date.setUTCMinutes(date.getUTCMinutes() + 30)
     return date
   }
+
   const saveShutdownData = async (newRow) => {
     try {
       let plantId = ''

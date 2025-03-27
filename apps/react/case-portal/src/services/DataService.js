@@ -314,7 +314,7 @@ async function getNormalOperationNormsData(keycloak) {
     // const parsedSite = JSON.parse(storedSite)
     // siteId = parsedSite.id
   }
-  const url = `${Config.CaseEngineUrl}/task/getNormalOperationNormsData?year=${year}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/normalOperationNorms?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -343,7 +343,7 @@ async function getShutdownNormsData(keycloak) {
     // const parsedSite = JSON.parse(storedSite)
     // siteId = parsedSite.id
   }
-  const url = `${Config.CaseEngineUrl}/task/getShutdownNormsData?year=${year}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/shutdownNorms?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -693,7 +693,7 @@ async function saveNormalOperationNormsData(
   turnAroundDetails,
   keycloak,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/saveNormalOperationNormsData`
+  const url = `${Config.CaseEngineUrl}/task/normalOperationNorms`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -713,7 +713,7 @@ async function saveNormalOperationNormsData(
 }
 
 async function saveShutDownNormsData(plantId, turnAroundDetails, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/saveShutdownNormsDataNew`
+  const url = `${Config.CaseEngineUrl}/task/shutdownNorms`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

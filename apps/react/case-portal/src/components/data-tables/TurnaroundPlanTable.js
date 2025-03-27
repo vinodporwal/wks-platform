@@ -71,6 +71,7 @@ const TurnaroundPlanTable = () => {
     date.setUTCMinutes(date.getUTCMinutes() + 30)
     return date
   }
+
   const saveTurnAroundData = async (newRow) => {
     try {
       var plantId = ''
