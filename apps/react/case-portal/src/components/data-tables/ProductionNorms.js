@@ -184,7 +184,7 @@ const ProductionNorms = () => {
           return {
             ...item,
             idFromApi: item.id,
-            normParametersFKId: item?.normParametersFKId?.toLowerCase(),
+            normParametersFKId: item?.normParametersFKId?.toLowerCase() || item?.materialFKId?.toLowerCase(),
             id: index,
             ...(isKiloTon && {
               jan: item.jan ? item.jan / 1000 : item.jan,
