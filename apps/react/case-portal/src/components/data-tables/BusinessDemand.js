@@ -14,8 +14,6 @@ import { validateFields } from 'utils/validationUtils'
 const BusinessDemand = () => {
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
-  // const [bdData, setBDData] = useState([])
-  //test
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -30,7 +28,6 @@ const BusinessDemand = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  // States for the Remark Dialog
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -91,7 +88,6 @@ const BusinessDemand = () => {
     }
   }
 
-  // console.log(verticalChange)
   useEffect(() => {
     const getAllProducts = async () => {
       try {
@@ -100,19 +96,22 @@ const BusinessDemand = () => {
           // lowerVertName === 'meg' ? 'Production' : 'Grade',
           null,
         )
-        const allowedIds = [
-          '4D8E17F6-D6CB-407E-8C9C-4BEDBC422C57',
-          '00DC05B1-9607-470E-A159-62497E0123E2',
-          'A061E050-0281-421F-81C1-B136CE2ED3F3',
-          '92E0AF06-9535-4B93-8998-E56A71354393',
-        ]
-
-        const productList = data
-          // .filter((product) => allowedIds.includes(product.id))
-          .map((product) => ({
+        var productList = []
+        if (lowerVertName === 'meg') {
+          productList = data
+            .filter((product) =>
+              ['EO', 'EOE', 'MEG', 'CO2'].includes(product.displayName),
+            )
+            .map((product) => ({
+              id: product.id,
+              displayName: product.displayName,
+            }))
+        } else {
+          productList = data.map((product) => ({
             id: product.id,
             displayName: product.displayName,
           }))
+        }
 
         setAllProducts(productList)
       } catch (error) {
@@ -294,7 +293,7 @@ const BusinessDemand = () => {
   return (
     <div>
       {/* <div>
-        {`Plant: ${verticalChange?.selectedVertical?.selectedPlant}, Site: ${verticalChange?.selectedVertical?.selectedSite}, Vertical: ${verticalChange?.selectedVertical?.selectedVertical}`}
+        {`Plant: ${verticalChange?.verticalChange?.selectedPlant}, Site: ${verticalChange?.verticalChange?.selectedSite}, Vertical: ${verticalChange?.verticalChange?.selectedVertical}`}
       </div> */}
 
       <Backdrop
