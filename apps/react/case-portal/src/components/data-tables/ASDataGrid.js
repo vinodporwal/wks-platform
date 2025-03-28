@@ -7,7 +7,6 @@ import { Box, Button, IconButton, TextField, Typography } from '@mui/material'
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
 import * as React from 'react'
 import { useEffect, useMemo, useState } from 'react'
-
 import SearchIcon from '@mui/icons-material/Search'
 import { InputAdornment } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
@@ -29,7 +28,8 @@ import {
 } from '../../../node_modules/@mui/icons-material/index'
 
 const jioColors = {
-  primaryBlue: '#0F3CC9',
+  primaryBlue: '#387ec3',
+  // primaryBlue: 'red',
   accentRed: '#E31C3D',
   background: '#FFFFFF',
   headerBg: '#0F3CC9',
@@ -353,6 +353,7 @@ const DataGridTable = ({
       console.error('Error saving refresh data:', error)
     }
   }
+
   const handleCalculateBtn = async () => {
     setIsButtonDisabled(true)
     handleCalculate()
@@ -446,6 +447,34 @@ const DataGridTable = ({
               }}
             >
               Calculate
+            </Button>
+          )}
+          {permissions?.showRefresh && (
+            <Button
+              variant='contained'
+              onClick={handleCalculateBtn}
+              disabled={isButtonDisabled}
+              sx={{
+                backgroundColor: jioColors.primaryBlue,
+                color: jioColors.background,
+                borderRadius: 1,
+                padding: '8px 24px',
+                textTransform: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+
+                '&:hover': {
+                  backgroundColor: '#143B6F',
+                  boxShadow: 'none',
+                },
+                '&.Mui-disabled': {
+                  backgroundColor: jioColors.primaryBlue,
+                  color: jioColors.background,
+                  opacity: 0.7,
+                },
+              }}
+            >
+              Refresh
             </Button>
           )}
 
@@ -915,15 +944,6 @@ const DataGridTable = ({
             onChange={(e) => setCurrentRemark(e.target.value)}
             multiline
             rows={8}
-            //     onChange={(e) => {
-            //   setRemark(e.target.value)
-            //   // setRowModesModel((prev) => ({
-            //   //   ...prev,
-            //   //   [id]: { mode: GridRowModes.View },
-            //   // }))
-            // }}
-            // multiline
-            // rows={4}
           />
         </DialogContent>
         <DialogActions>
