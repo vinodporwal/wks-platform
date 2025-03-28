@@ -43,7 +43,15 @@ const BusinessDemand = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data = await DataService.getBDData(keycloak)
+      const data1 = await DataService.getBDData(keycloak)
+
+      const data = data1.sort((a, b) =>
+        b.normParameterTypeDisplayName.localeCompare(
+          a.normParameterTypeDisplayName,
+        ),
+      )
+      // console.log(sortedData)
+
       const groupedRows = []
       const groups = new Map()
       let groupId = 0
@@ -100,7 +108,7 @@ const BusinessDemand = () => {
         ]
 
         const productList = data
-          .filter((product) => allowedIds.includes(product.id))
+          // .filter((product) => allowedIds.includes(product.id))
           .map((product) => ({
             id: product.id,
             displayName: product.displayName,

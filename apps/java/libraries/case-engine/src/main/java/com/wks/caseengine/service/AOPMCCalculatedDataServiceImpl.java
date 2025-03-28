@@ -24,6 +24,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public List<AOPMCCalculatedDataDTO> getAOPMCCalculatedData(String plantId, String year) {
 	    
 		//  List<Object[]> obj= aOPMCCalculatedDataRepository.findByYearAndPlantFkId(year, UUID.fromString(plantId));
+				 
 		List<Object[]> obj= aOPMCCalculatedDataRepository.getDataMCUValuesAllData(year, plantId);
 	    List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
@@ -81,6 +82,11 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			aOPMCCalculatedData.setVerticalFKId(UUID.fromString(aOPMCCalculatedDataDTO.getVerticalFKId()));
 			aOPMCCalculatedData.setMaterialFKId(UUID.fromString(aOPMCCalculatedDataDTO.getMaterialFKId()));
 			
+//			aOPMCCalculatedData.setPlantFKId(aOPMCCalculatedDataDTO.getPlantFKId());
+//			aOPMCCalculatedData.setSiteFKId(aOPMCCalculatedDataDTO.getSiteFKId());
+//			aOPMCCalculatedData.setVerticalFKId(aOPMCCalculatedDataDTO.getVerticalFKId());
+//			aOPMCCalculatedData.setMaterialFKId(aOPMCCalculatedDataDTO.getMaterialFKId());
+			
 			aOPMCCalculatedData.setJanuary(aOPMCCalculatedDataDTO.getJanuary());
 			aOPMCCalculatedData.setFebruary(aOPMCCalculatedDataDTO.getFebruary());
 			aOPMCCalculatedData.setMarch(aOPMCCalculatedDataDTO.getMarch());
@@ -91,13 +97,12 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			aOPMCCalculatedData.setAugust(aOPMCCalculatedDataDTO.getAugust());
 			aOPMCCalculatedData.setSeptember(aOPMCCalculatedDataDTO.getSeptember());
 			aOPMCCalculatedData.setOctober(aOPMCCalculatedDataDTO.getOctober());
-
 			aOPMCCalculatedData.setNovember(aOPMCCalculatedDataDTO.getNovember());
 			aOPMCCalculatedData.setDecember(aOPMCCalculatedDataDTO.getDecember());			aOPMCCalculatedData.setJanuary(aOPMCCalculatedDataDTO.getJanuary());
+
 			aOPMCCalculatedData.setFinancialYear(aOPMCCalculatedDataDTO.getFinancialYear());
 			aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
 
-			
 			aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
 		}
 		// TODO Auto-generated method stub

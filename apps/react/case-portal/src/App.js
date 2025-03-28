@@ -69,7 +69,7 @@ const App = () => {
   }
 
   useEffect(() => {
-    if (keycloak) {
+    if (keycloak && verticalChange) {
       buildMenuItems(keycloak)
     }
     // console.log(verticalChange)

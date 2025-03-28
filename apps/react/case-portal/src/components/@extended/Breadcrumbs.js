@@ -96,6 +96,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                   color='textSecondary'
                   variant='h6'
                   sx={{ textDecoration: 'none' }}
+                >
+                  Home
                 </Typography> */}
                 {mainContent}
                 {itemContent}
