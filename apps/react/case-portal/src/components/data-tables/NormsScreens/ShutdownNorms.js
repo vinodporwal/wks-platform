@@ -140,7 +140,7 @@ const ShutdownNorms = () => {
       },
     },
 
-    { field: 'unit', headerName: 'UOM', width: 100, editable: true },
+    { field: 'UOM', headerName: 'UOM', width: 100, editable: false },
 
     {
       field: 'april',
@@ -251,6 +251,8 @@ const ShutdownNorms = () => {
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
+
+    // remarks
     {
       field: 'remarks',
       headerName: 'Remark',
@@ -382,6 +384,21 @@ const ShutdownNorms = () => {
     try {
       setLoading(true)
       const data = await DataService.getShutdownNormsData(keycloak)
+
+      // const customOrder = [
+      //   'Raw Material',
+      //   'By Products',
+      //   'Cat Chem',
+      //   'Utility Consumption',
+      //   'Configuration',
+      // ]
+
+      // const data = data1.sort(
+      //   (a, b) =>
+      //     customOrder.indexOf(a.normParameterTypeDisplayName) -
+      //     customOrder.indexOf(b.normParameterTypeDisplayName),
+      // )
+
       const groupedRows = []
       const groups = new Map()
       let groupId = 0

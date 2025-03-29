@@ -131,7 +131,23 @@ public class AOPServiceImpl implements  AOPService{
 		for(AOPDTO aOPDTO:aOPDTOList) {
 			AOP aOP= null;
 			if(aOPDTO.getId()==null) {
-				Optional<UUID> Id=aOPRepository.findAopIdByFilters(UUID.fromString(aOPDTO.getSiteFKId()),UUID.fromString(aOPDTO.getVerticalFKId()),UUID.fromString(aOPDTO.getMaterialFKId()),UUID.fromString(aOPDTO.getPlantFKId()),aOPDTO.getAopYear());
+				UUID Site=null;
+				UUID Vertical=null;
+				UUID Material=null;
+				UUID Plant=null;
+				if(aOPDTO.getSiteFKId()!=null) {
+					Site=UUID.fromString(aOPDTO.getSiteFKId());
+				}
+				if(aOPDTO.getVerticalFKId()!=null) {
+					Vertical=UUID.fromString(aOPDTO.getVerticalFKId());
+				}
+				if(aOPDTO.getMaterialFKId()!=null) {
+					Material=UUID.fromString(aOPDTO.getMaterialFKId());
+				}
+				if(aOPDTO.getPlantFKId()!=null) {
+					Plant=UUID.fromString(aOPDTO.getPlantFKId());
+				}
+				Optional<UUID> Id=aOPRepository.findAopIdByFilters(Site,Vertical,Material,Plant,aOPDTO.getAopYear());
 				aOP=new AOP();
 				if(Id!=null && !Id.isEmpty()) {
 					aOP.setId(Id.get());

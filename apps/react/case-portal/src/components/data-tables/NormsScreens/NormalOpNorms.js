@@ -46,6 +46,21 @@ const NormalOpNormsScreen = () => {
     setLoading(true)
     try {
       const data = await DataService.getNormalOperationNormsData(keycloak)
+
+      // const customOrder = [
+      //   'Raw Material',
+      //   'By Products',
+      //   'Cat Chem',
+      //   'Utility Consumption',
+      //   'Configuration',
+      // ]
+
+      // const data = data1.sort(
+      //   (a, b) =>
+      //     customOrder.indexOf(a.normParameterTypeDisplayName) -
+      //     customOrder.indexOf(b.normParameterTypeDisplayName),
+      // )
+
       const groupedRows = []
       const groups = new Map()
       let groupId = 0
@@ -64,6 +79,7 @@ const NormalOpNormsScreen = () => {
         const formattedItem = {
           ...item,
           idFromApi: item.id,
+
           id: groupId++,
         }
 
@@ -154,7 +170,7 @@ const NormalOpNormsScreen = () => {
     },
 
     {
-      field: 'unit',
+      field: 'UOM',
       headerName: 'UOM',
       width: 100,
       editable: false,

@@ -48,6 +48,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	        dto.setAopYear(row[19] != null ? row[19].toString() : null);
 	        dto.setPlantFkId(row[20] != null ? row[20].toString() : null);
 	        dto.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
+	        dto.setUOM(row[22] != null ? row[22].toString() : null);
 
 	        aOPConsumptionNormDTOList.add(dto);
 	    }
@@ -57,6 +58,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 
 	@Override
 	public List<AOPConsumptionNormDTO> saveAOPConsumptionNorm(List<AOPConsumptionNormDTO> aOPConsumptionNormDTOList) {
+		
 		for(AOPConsumptionNormDTO aOPConsumptionNormDTO:aOPConsumptionNormDTOList) {
 			AOPConsumptionNorm aOPConsumptionNorm=new AOPConsumptionNorm();
 			aOPConsumptionNorm.setAopCaseId(aOPConsumptionNormDTO.getAopCaseId());
@@ -91,12 +93,16 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 		        if(aOPConsumptionNormDTO.getPlantFkId()!=null) {
 		        	aOPConsumptionNorm.setPlantFkId(UUID.fromString(aOPConsumptionNormDTO.getPlantFkId()));
 		        }
+		        
 		        aOPConsumptionNormRepository.save(aOPConsumptionNorm);
 		}
+		// TODO Auto-generated method stub
 		return aOPConsumptionNormDTOList;
 	}
+
 	@Override
 	public int calculateExpressionConsumptionNorms(String year) {
 		return aOPConsumptionNormRepository.calculateExpressionConsumptionNorms(year);
 	}
+
 }

@@ -79,7 +79,8 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 			 MAX(CASE WHEN NAT.AOPMonth = '12' THEN NAT.AttributeValue ELSE NULL END) AS Dec,
 			 MAX(NAT.Remarks) AS Remarks ,
 			 MAX(NAT.Id) AS NormAttributeTransaction_Id,
-			 MAX(NAT.AuditYear) AS AuditYear
+			 MAX(NAT.AuditYear) AS AuditYear,
+			 MAX(NP.UOM) AS UOM
 			FROM NormParameters NP
 			JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id
 			LEFT JOIN NormAttributeTransactions NAT
@@ -95,6 +96,7 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 				SELECT * FROM NormAttributeTransactions d WHERE d.NormParameter_FK_Id = :normParameterFKId  AND d.AOPMonth = :month AND d.AuditYear = :auditYear
 			""", nativeQuery = true)
 	Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYear(@Param("normParameterFKId") UUID normParameterFKId,
-			@Param("month")	Integer month,@Param("auditYear") String auditYear);
+	@Param("month")	Integer month, @Param("auditYear") String auditYear);
+
 
 }
