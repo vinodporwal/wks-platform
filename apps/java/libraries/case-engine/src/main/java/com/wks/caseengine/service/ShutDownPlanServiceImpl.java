@@ -158,13 +158,15 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					shutDownPlanDTO.setDiscription(description+" Ramp Up");
-					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO",shutDownPlanDTO.getPlantId()));
+					System.out.println(plantId);
+					System.out.println("plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId(\"EO\",shutDownPlanDTO.getPlantId())"+plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO",plantId));
+					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO",plantId));
 					list.add(shutDownPlanDTO);
 				    slowdownPlanService.saveShutdownData(plantId, list);
 
 					List<ShutDownPlanDTO> list2 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Down");
-					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO",shutDownPlanDTO.getPlantId()));
+					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO",plantId));
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list2.add(shutDownPlanDTO);
@@ -172,7 +174,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				    
 				    List<ShutDownPlanDTO> list3 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Down");
-					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EOE",shutDownPlanDTO.getPlantId()));
+					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EOE",plantId));
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list3.add(shutDownPlanDTO);
@@ -180,7 +182,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				    
 				    List<ShutDownPlanDTO> list4 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Up");
-					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EOE",shutDownPlanDTO.getPlantId()));
+					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EOE",plantId));
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list4.add(shutDownPlanDTO);
