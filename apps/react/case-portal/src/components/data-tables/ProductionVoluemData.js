@@ -10,6 +10,7 @@ const headerMap = generateHeaderNames()
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
+import { validateFields } from 'utils/validationUtils'
 
 const ProductionvolumeData = () => {
   const keycloak = useSession()
@@ -161,16 +162,13 @@ const ProductionvolumeData = () => {
         })
         return
       }
-      // Validate that both normParameterId and remark are not empty
-      const invalidRows = data.filter(
-        (row) => !row.normParametersFKId.trim(),
-        // (row) => !row.normParametersFKId.trim() || !row.remark.trim(),
-      )
+      const requiredFields = ['remarks']
 
-      if (invalidRows.length > 0) {
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Please fill required fields: Product and Remark.',
+          message: validationMessage,
           severity: 'error',
         })
         return
@@ -196,6 +194,7 @@ const ProductionvolumeData = () => {
           ...item,
           idFromApi: item?.id,
           normParametersFKId: item?.materialFKId.toLowerCase(),
+          remarks: item?.remarks?.trim() || null,
           id: index,
 
           ...(isTPH && {

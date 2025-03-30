@@ -47,7 +47,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
  	    	aOPMCCalculatedDataDTO.setFebruary(row[14] != null ? Float.parseFloat(row[14].toString()) : null);
  	    	aOPMCCalculatedDataDTO.setMarch(row[15] != null ? Float.parseFloat(row[15].toString()) : null);
  	    	aOPMCCalculatedDataDTO.setFinancialYear(row[16] != null ? row[16].toString() : null);
- 	    	aOPMCCalculatedDataDTO.setRemarks(row[17] != null ? row[17].toString() : null);
+ 	    	aOPMCCalculatedDataDTO.setRemarks(row[17] != null ? row[17].toString() : " ");
+ 	    	aOPMCCalculatedDataDTO.setVerticalFKId(row[22] != null ? row[22].toString() : null);
  	    	aOPMCCalculatedDataDTOList.add(aOPMCCalculatedDataDTO);
  	    }
 	    
@@ -82,11 +83,6 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			aOPMCCalculatedData.setVerticalFKId(UUID.fromString(aOPMCCalculatedDataDTO.getVerticalFKId()));
 			aOPMCCalculatedData.setMaterialFKId(UUID.fromString(aOPMCCalculatedDataDTO.getMaterialFKId()));
 			
-//			aOPMCCalculatedData.setPlantFKId(aOPMCCalculatedDataDTO.getPlantFKId());
-//			aOPMCCalculatedData.setSiteFKId(aOPMCCalculatedDataDTO.getSiteFKId());
-//			aOPMCCalculatedData.setVerticalFKId(aOPMCCalculatedDataDTO.getVerticalFKId());
-//			aOPMCCalculatedData.setMaterialFKId(aOPMCCalculatedDataDTO.getMaterialFKId());
-			
 			aOPMCCalculatedData.setJanuary(aOPMCCalculatedDataDTO.getJanuary());
 			aOPMCCalculatedData.setFebruary(aOPMCCalculatedDataDTO.getFebruary());
 			aOPMCCalculatedData.setMarch(aOPMCCalculatedDataDTO.getMarch());
@@ -98,7 +94,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			aOPMCCalculatedData.setSeptember(aOPMCCalculatedDataDTO.getSeptember());
 			aOPMCCalculatedData.setOctober(aOPMCCalculatedDataDTO.getOctober());
 			aOPMCCalculatedData.setNovember(aOPMCCalculatedDataDTO.getNovember());
-			aOPMCCalculatedData.setDecember(aOPMCCalculatedDataDTO.getDecember());			aOPMCCalculatedData.setJanuary(aOPMCCalculatedDataDTO.getJanuary());
+			aOPMCCalculatedData.setDecember(aOPMCCalculatedDataDTO.getDecember());			
+			aOPMCCalculatedData.setJanuary(aOPMCCalculatedDataDTO.getJanuary());
 
 			aOPMCCalculatedData.setFinancialYear(aOPMCCalculatedDataDTO.getFinancialYear());
 			aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
