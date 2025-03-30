@@ -37,7 +37,7 @@ public interface AOPRepository extends JpaRepository<AOP, UUID>{
 		JOIN NormParameterType NPT ON NPT.Id = NP.NormParameterType_FK_Id
 		WHERE AOP.AOPYear = :aopYear 
 		AND AOP.Plant_FK_Id = :plantFkId 
-		ORDER BY NPT.DisplayOrder;
+		ORDER BY NP.DisplayOrder;
  	        """, nativeQuery = true)
  	    List<Object[]> findByAOPYearAndPlantFkId(@Param("aopYear") String aopYear, @Param("plantFkId") UUID plantFkId);
 
