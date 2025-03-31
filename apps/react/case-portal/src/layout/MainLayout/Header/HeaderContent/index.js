@@ -17,7 +17,10 @@ import {
   setVerticalChange,
 } from 'store/reducers/dataGridStore'
 import { DataService } from 'services/DataService'
-import honLogo from 'assets/images/hon.svg'
+
+import honLogo from 'assets/images/hon_white.png' //WHITE COLOR
+// import honLogo from 'assets/images/hon.svg' //RED COLOR
+
 // import siteData from '../../../../assets/sitesData.json'
 
 const HeaderContent = ({ keycloak }) => {
@@ -204,6 +207,10 @@ const HeaderContent = ({ keycloak }) => {
       )
 
       localStorage.setItem('selectedSite', JSON.stringify({ name: siteName }))
+      localStorage.setItem(
+        'selectedSiteId',
+        JSON.stringify({ id: filteredPlants[0].siteId }),
+      )
     }
   }
 
@@ -231,6 +238,9 @@ const HeaderContent = ({ keycloak }) => {
     const verticalName = event.target.value
     setSelectedVertical(verticalName)
     const verticalData = verticals.find((v) => v.name === verticalName)
+    // console.log(verticalData)
+    localStorage.setItem('verticalId', verticalData?.id)
+
     if (verticalData) {
       const { allowedSiteIds, allowedPlantIds } = getAllowedFilter()
       // Filter the vertical's sites using allowed site IDs.
@@ -303,10 +313,22 @@ const HeaderContent = ({ keycloak }) => {
     const allowedSites = verticalData.sites.filter((site) =>
       allowedSiteIds.includes(site.id),
     )
-    const siteAvailable = allowedSites.map((site) => site.name)
-    setSites(siteAvailable)
-    setSelectedSite(siteAvailable[0] || '')
+    // console.log(allowedSites)
+    const siteAvailable = allowedSites.map((site) => ({
+      name: site.name,
+      id: site.id,
+    }))
+
+    // console.log(siteAvailable)
+    // console.log(siteAvailable[0]?.name)
+    // console.log(siteAvailable?.map((n) => n.name))
+    setSites(siteAvailable?.map((n) => n.name))
+    setSelectedSite(siteAvailable[0]?.name || '')
     //  console.log(selectedVertical)
+    localStorage.setItem(
+      'selectedSiteId',
+      JSON.stringify({ id: siteAvailable[0].id }),
+    )
     dispatch(
       setVerticalChange({
         selectedPlant,
@@ -334,6 +356,7 @@ const HeaderContent = ({ keycloak }) => {
 
       {matchesXs && <Search />}
       {!matchesXs && <Box sx={{ width: '100%', ml: 1 }} />}
+
       <Stack direction='row' spacing={2} alignItems='center'>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography

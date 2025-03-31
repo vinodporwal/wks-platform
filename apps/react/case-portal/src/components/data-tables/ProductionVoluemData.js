@@ -11,7 +11,7 @@ const headerMap = generateHeaderNames()
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
-const ProductionvolumeData = () => {
+const ProductionvolumeData = ({ permissions }) => {
   const keycloak = useSession()
   // const [productNormData, setProductNormData] = useState([])
   const [allProducts, setAllProducts] = useState([])
@@ -79,7 +79,7 @@ const ProductionvolumeData = () => {
 
       let siteId = ''
 
-      const storedSite = localStorage.getItem('selectedSite')
+      const storedSite = localStorage.getItem('selectedSiteId')
       if (storedSite) {
         const parsedSite = JSON.parse(storedSite)
         siteId = parsedSite.id
@@ -110,7 +110,7 @@ const ProductionvolumeData = () => {
         siteFKId: row.siteFKId || siteId,
         // material: 'EOE',
         materialFKId: row.normParametersFKId,
-        verticalFKId: localStorage.getItem('verticalId'),
+        verticalFKId: row.verticalFKId ?? localStorage.getItem('verticalId'),
         id: row.idFromApi || null,
         avgTPH: findAvg('1', row) || null,
         remark: row.remarks,
@@ -122,17 +122,26 @@ const ProductionvolumeData = () => {
         aopmccCalculatedData,
         keycloak,
       )
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Production Vol Data Saved Successfully!',
-        severity: 'success',
-      })
-      // fetchData()
+      // console.log(response)
+      if (response?.length > 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Production Vol Data Saved Successfully!',
+          severity: 'success',
+        })
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please fill all fields, try again!',
+          severity: 'error',
+        })
+      }
+      fetchData()
       return response
     } catch (error) {
       console.error('Error saving Production Vol Data:', error)
     } finally {
-      fetchData()
+      // fetchData()
     }
   }
 
@@ -162,26 +171,78 @@ const ProductionvolumeData = () => {
         return
       }
       // Validate that both normParameterId and remark are not empty
-      const invalidRows = data.filter(
-        (row) => !row.normParametersFKId.trim(),
-        // (row) => !row.normParametersFKId.trim() || !row.remark.trim(),
-      )
+
+      // const invalidRows = data.filter(
+      //   (row) => !row.normParametersFKId.trim(),
+      //   // (row) => !row.normParametersFKId.trim() || !row.remark.trim(),
+      // )
+      // console.log(data)
+      const months = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
+      ]
+
+      const invalidRows = data.filter((row) => {
+        // Check normParametersFKId: if missing or blank after trim, mark invalid.
+        if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
+          return true
+        }
+
+        // Check all month fields.
+        for (const month of months) {
+          const value = row[month]
+          if (
+            value === 0 ||
+            value === null ||
+            (typeof value === 'string' && !value.trim())
+          ) {
+            return true
+          }
+        }
+
+        // Use "remarks" as the key since your data uses "remarks"
+        const remarkValue = row.remark || row.remarks
+        if (
+          !remarkValue ||
+          (typeof remarkValue === 'string' && !remarkValue.trim())
+        ) {
+          return true
+        }
+
+        // If all checks pass, the row is valid.
+        return false
+      })
+
+      console.log('Invalid rows:', invalidRows)
 
       if (invalidRows.length > 0) {
-        setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Please fill required fields: Product and Remark.',
+          message: 'Please fill all fields in edited row!',
           severity: 'error',
         })
-        return
+        setSnackbarOpen(true)
+        // console.log('Invalid rows:', invalidRows)
+        return // Prevent further processing until data is valid.
+      } else {
+        editAOPMCCalculatedData(data)
       }
-      editAOPMCCalculatedData(data)
+
       unsavedChangesRef.current = {
         unsavedRows: {},
         rowsBeforeChange: {},
       }
     } catch (error) {
-      // setIsSaving(false);
+      console.log('Facing issue at saving data', error)
     }
   }, [apiRef, selectedUnit])
 
@@ -196,6 +257,7 @@ const ProductionvolumeData = () => {
           ...item,
           idFromApi: item?.id,
           normParametersFKId: item?.materialFKId.toLowerCase(),
+          remarks: item?.remarks?.trim() || null,
           id: index,
 
           ...(isTPH && {
@@ -321,15 +383,16 @@ const ProductionvolumeData = () => {
         currentRowId={currentRowId}
         unsavedChangesRef={unsavedChangesRef}
         permissions={{
-          showAction: true,
-          addButton: false,
-          deleteButton: false,
-          editButton: true,
-          showUnit: true,
-          saveWithRemark: true,
-          showRefreshBtn: true,
-          saveBtn: true,
+          showAction: permissions?.showAction ?? true,
+          addButton: permissions?.addButton ?? false,
+          deleteButton: permissions?.deleteButton ?? false,
+          editButton: permissions?.editButton ?? true,
+          showUnit: permissions?.showUnit ?? true,
+          saveWithRemark: permissions?.saveWithRemark ?? true,
+          showRefreshBtn: permissions?.showRefreshBtn ?? true,
+          saveBtn: permissions?.saveBtn ?? true,
           units: ['TPH', 'TPD'],
+          customHeight: permissions?.customHeight,
         }}
       />
     </div>

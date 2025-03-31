@@ -11,11 +11,9 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 
-const BusinessDemand = () => {
+const BusinessDemand = ({ permissions }) => {
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
-  // const [bdData, setBDData] = useState([])
-  //test
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -30,7 +28,6 @@ const BusinessDemand = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  // States for the Remark Dialog
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -43,13 +40,16 @@ const BusinessDemand = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data1 = await DataService.getBDData(keycloak)
+      var data = await DataService.getBDData(keycloak)
 
-      const data = data1.sort((a, b) =>
-        b.normParameterTypeDisplayName.localeCompare(
-          a.normParameterTypeDisplayName,
-        ),
-      )
+      if (lowerVertName !== 'pe') {
+        data = data.sort((a, b) =>
+          b.normParameterTypeDisplayName.localeCompare(
+            a.normParameterTypeDisplayName,
+          ),
+        )
+      }
+
       // console.log(sortedData)
 
       const groupedRows = []
@@ -65,20 +65,20 @@ const BusinessDemand = () => {
           id: groupId++,
         }
 
-        if (lowerVertName !== 'pe') {
-          const groupKey = item.normParameterTypeDisplayName
+        // if (lowerVertName !== 'pe') {
+        const groupKey = item.normParameterTypeDisplayName
 
-          if (!groups.has(groupKey)) {
-            groups.set(groupKey, [])
-            groupedRows.push({
-              id: groupId++,
-              Particulars: groupKey,
-              isGroupHeader: true,
-            })
-          }
-
-          groups.get(groupKey).push(formattedItem)
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, [])
+          groupedRows.push({
+            id: groupId++,
+            Particulars: groupKey,
+            isGroupHeader: true,
+          })
         }
+
+        groups.get(groupKey).push(formattedItem)
+        // }
 
         groupedRows.push(formattedItem)
       })
@@ -202,18 +202,13 @@ const BusinessDemand = () => {
       }
 
       let siteId = ''
-      const storedSite = localStorage.getItem('selectedSite')
+      const storedSite = localStorage.getItem('selectedSiteId')
       if (storedSite) {
         const parsedSite = JSON.parse(storedSite)
         siteId = parsedSite.id
       }
 
       let verticalId = localStorage.getItem('verticalId')
-      // const storedVertical = localStorage.getItem('selectedSite')
-      // if (storedVertical) {
-      //   const parsedVertical = JSON.parse(storedVertical)
-      //   verticalId = parsedVertical.id
-      // }
 
       const businessData = newRows.map((row) => ({
         april: row.april || null,
@@ -297,7 +292,7 @@ const BusinessDemand = () => {
   return (
     <div>
       {/* <div>
-        {`Plant: ${verticalChange?.selectedVertical?.selectedPlant}, Site: ${verticalChange?.selectedVertical?.selectedSite}, Vertical: ${verticalChange?.selectedVertical?.selectedVertical}`}
+        {`Plant: ${verticalChange?.verticalChange?.selectedPlant}, Site: ${verticalChange?.verticalChange?.selectedSite}, Vertical: ${verticalChange?.verticalChange?.selectedVertical}`}
       </div> */}
 
       <Backdrop
@@ -345,14 +340,15 @@ const BusinessDemand = () => {
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={deleteRowData}
         permissions={{
-          showAction: true,
-          addButton: true,
-          deleteButton: true,
-          editButton: true,
-          showUnit: false,
-          saveWithRemark: true,
-          saveBtn: true,
+          showAction: permissions?.showAction ?? true,
+          addButton: permissions?.addButton ?? true,
+          deleteButton: permissions?.deleteButton ?? true,
+          editButton: permissions?.editButton ?? true,
+          showUnit: permissions?.showUnit ?? false,
+          saveWithRemark: permissions?.saveWithRemark ?? true,
+          saveBtn: permissions?.saveBtn ?? true,
           units: ['TPH', 'TPD'],
+          customHeight: permissions?.customHeight,
         }}
       />
     </div>

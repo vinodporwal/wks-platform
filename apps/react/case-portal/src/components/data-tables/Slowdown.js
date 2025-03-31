@@ -13,7 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { truncateRemarks } from 'utils/remarksUtils'
 import { validateFields } from 'utils/validationUtils'
 
-const SlowDown = () => {
+const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
@@ -74,7 +74,30 @@ const SlowDown = () => {
     date.setUTCMinutes(date.getUTCMinutes() + 30)
     return date
   }
+  const findDuration = (value, row) => {
+    if (row && row.maintStartDateTime && row.maintEndDateTime) {
+      const start = new Date(row.maintStartDateTime)
+      const end = new Date(row.maintEndDateTime)
 
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        // Check if dates are valid
+        const durationInMs = end - start
+
+        // Calculate duration in hours and minutes
+        const durationInHours = Math.floor(durationInMs / (1000 * 60 * 60))
+        const remainingMs = durationInMs % (1000 * 60 * 60)
+        const durationInMinutes = Math.floor(remainingMs / (1000 * 60))
+
+        // Format the duration as "HH:MM"
+        const formattedDuration = `${String(durationInHours).padStart(2, '0')}:${String(durationInMinutes).padStart(2, '0')}`
+        return formattedDuration
+      } else {
+        return '' // Or handle invalid dates as needed
+      }
+    } else {
+      return '' // Or handle missing dates as needed
+    }
+  }
   const saveSlowDownData = async (newRow) => {
     try {
       var plantId = ''
@@ -86,7 +109,17 @@ const SlowDown = () => {
       const slowDownDetails = newRow.map((row) => ({
         productId: row.product,
         discription: row.discription,
-        // durationInHrs: parseFloat(findDuration('1', row)),
+        durationInHrs: parseFloat(findDuration('1', row)),
+        maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+        maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+        remark: row.remark,
+        rate: row.rate,
+        audityear: localStorage.getItem('year'),
+        id: row.idFromApi || null,
+      }))
+      const slowDownDetailsMEG = newRow.map((row) => ({
+        productId: row.product,
+        discription: row.discription,
         durationInHrs: parseFloat(row.durationInHrs),
         maintEndDateTime: addTimeOffset(row.maintEndDateTime),
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
@@ -97,7 +130,7 @@ const SlowDown = () => {
       }))
       const response = await DataService.saveSlowdownData(
         plantId,
-        slowDownDetails,
+        lowerVertName === 'meg' ? slowDownDetailsMEG : slowDownDetails,
         keycloak,
       )
       //console.log('Slowdown data Saved Successfully:', response)
@@ -134,7 +167,7 @@ const SlowDown = () => {
         'discription',
         'remark',
         'rate',
-        'durationInHrs',
+        // 'durationInHrs',
         'product',
       ]
       const validationMessage = validateFields(data, requiredFields)
@@ -285,7 +318,7 @@ const SlowDown = () => {
     {
       field: 'discription',
       headerName: 'Slowdown Desc',
-      minWidth: 250,
+      minWidth: 180,
       editable: true,
       flex: 3,
     },
@@ -388,16 +421,26 @@ const SlowDown = () => {
       },
     },
 
-    {
-      field: 'durationInHrs',
-      headerName: 'Duration (hrs)',
-      editable: true,
-      minWidth: 75,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-      // valueGetter: findDuration,
-    },
+    lowerVertName === 'meg'
+      ? {
+          field: 'durationInHrs',
+          headerName: 'Duration (hrs)',
+          editable: true,
+          minWidth: 75,
+          renderEditCell: NumericInputOnly,
+          align: 'left',
+          headerAlign: 'left',
+        }
+      : {
+          field: 'durationInHrs',
+          headerName: 'Duration (hrs)',
+          editable: false,
+          minWidth: 75,
+          renderEditCell: NumericInputOnly,
+          align: 'left',
+          headerAlign: 'left',
+          valueGetter: findDuration,
+        },
 
     {
       field: 'rate',
@@ -413,7 +456,7 @@ const SlowDown = () => {
       field: 'remark',
       headerName: 'Remarks',
       editable: true,
-      minWidth: 250,
+      minWidth: 180,
       renderCell: (params) => {
         const displayText = truncateRemarks(params.value)
         const isEditable = !params.row.Particulars
@@ -517,13 +560,14 @@ const SlowDown = () => {
         unsavedChangesRef={unsavedChangesRef}
         deleteRowData={deleteRowData}
         permissions={{
-          showAction: true,
-          addButton: true,
-          deleteButton: true,
-          editButton: true,
-          showUnit: false,
-          saveWithRemark: true,
-          saveBtn: true,
+          showAction: permissions?.showAction ?? true,
+          addButton: permissions?.addButton ?? true,
+          deleteButton: permissions?.deleteButton ?? true,
+          editButton: permissions?.editButton ?? true,
+          showUnit: permissions?.showUnit ?? false,
+          saveWithRemark: permissions?.saveWithRemark ?? true,
+          saveBtn: permissions?.saveBtn ?? true,
+          customHeight: permissions?.customHeight,
         }}
       />
     </div>

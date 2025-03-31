@@ -14,7 +14,7 @@ import { useSelector } from 'react-redux'
 // import NumericInputOnly from 'utils/NumericInputOnly'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from './CommonHeader/ProductionAopHeader'
-const ProductionNorms = () => {
+const ProductionNorms = ({ permissions }) => {
   const keycloak = useSession()
   // const [csData, setCsData] = useState([])
   const [allProducts, setAllProducts] = useState([])
@@ -69,6 +69,7 @@ const ProductionNorms = () => {
       const updatedRows = allRows.map(
         (row) => unsavedChangesRef.current.unsavedRows[row.id] || row,
       )
+      //  console.log(updatedRows)
       if (updatedRows.length === 0) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -89,6 +90,7 @@ const ProductionNorms = () => {
         })
         return
       }
+
       updateProductNormData(updatedRows)
     } catch (error) {
       console.log('Error saving changes:', error)
@@ -96,6 +98,7 @@ const ProductionNorms = () => {
   }, [apiRef, selectedUnit])
 
   const updateProductNormData = async (newRow) => {
+    setLoading(true)
     try {
       let plantId = ''
       const isKiloTon = selectedUnit != 'Ton'
@@ -105,6 +108,9 @@ const ProductionNorms = () => {
         plantId = parsedPlant.id
       }
 
+      let siteID =
+        JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
+
       const productNormData = newRow.map((row) => ({
         aopType: row.aopType || 'production',
         aopCaseId: row.aopCaseId || null,
@@ -112,7 +118,7 @@ const ProductionNorms = () => {
         aopYear: localStorage.getItem('year'),
         plantFKId: plantId,
         materialFKId: row.normParametersFKId,
-        siteFKId: JSON.parse(localStorage.getItem('selectedSite')).id,
+        siteFKId: JSON.parse(localStorage.getItem('selectedSiteId')).id,
         verticalFKId: localStorage.getItem('verticalId'),
         // normItem: getProductName('1', row.normParametersFKId) || null,
         // normItem: 'EOE',
@@ -145,6 +151,7 @@ const ProductionNorms = () => {
           message: 'Production AOP Saved Successfully !',
           severity: 'success',
         })
+        setLoading(false)
         unsavedChangesRef.current = {
           unsavedRows: {},
           rowsBeforeChange: {},
@@ -156,9 +163,17 @@ const ProductionNorms = () => {
           message: 'Data Saved Falied!',
           severity: 'error',
         })
+        setLoading(false)
       }
     } catch (error) {
       console.error('Error Saving Production AOP:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error Saving Production AOP!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -436,16 +451,17 @@ const ProductionNorms = () => {
         currentRowId={currentRowId}
         unsavedChangesRef={unsavedChangesRef}
         permissions={{
-          showAction: true,
-          addButton: false,
-          deleteButton: false,
-          editButton: true,
-          showUnit: true,
-          saveWithRemark: true,
-          showCalculate: true,
-          saveBtn: true,
+          showAction: permissions?.showAction ?? true,
+          addButton: permissions?.addButton ?? false,
+          deleteButton: permissions?.deleteButton ?? false,
+          editButton: permissions?.editButton ?? true,
+          showUnit: permissions?.showUnit ?? true,
+          saveWithRemark: permissions?.saveWithRemark ?? true,
+          showCalculate: permissions?.showCalculate ?? true,
+          saveBtn: permissions?.saveBtn ?? true,
           // UOM: 'Ton',
           units: ['Ton', 'Kilo Ton'],
+          customHeight: permissions?.customHeight,
           // UnitToShow: 'Values/Ton',
         }}
       />
