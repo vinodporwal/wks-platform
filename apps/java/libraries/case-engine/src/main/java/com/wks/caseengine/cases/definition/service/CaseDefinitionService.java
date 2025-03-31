@@ -15,6 +15,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.rest.db2.entity.Case;
 import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
@@ -70,4 +72,5 @@ public interface CaseDefinitionService {
 
 //	List<com.wks.caseengine.rest.db2.entity.Users> getAllUsersFromAD();
 	List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers();
+	List<Case> getGEAPMCaseStatus() throws JsonMappingException, JsonProcessingException;
 }

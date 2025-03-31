@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,9 +31,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -170,6 +172,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     private String geUsersAPI;
  	@Value("${ge.create_case.api}")
     private String geCreateCaseAPI;
+	@Value("${ge.case_status.api}")
+    private String geCaseStatusAPI;
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
 		return commandExecutor.execute(
@@ -283,58 +287,88 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
 		System.out.println(eventIds);
 		System.out.println(eventIds.get(0));
-		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
-		String equipmentDisplayName = "";
-		String equipmentName = "";
-		List<Long> eventEnrichmentsPKIds = new ArrayList<>();
-		for(FaultHistoryModel faultHistory: faultHistorys) {
-			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
-			equipmentDisplayName = equipemnets.get(0).getDisplayName();
-			equipmentName = equipemnets.get(0).getName();
-			break;
-		}
-		for(FaultHistoryModel faultHistory: faultHistorys) {
+	    List<FaultHistoryModel> faultHistories = fetchRecords.getFaultHistories(eventIds);
+	    List<FaultEvents> faultEventsList = new ArrayList<>();
+	    for (FaultHistoryModel faultHistory : faultHistories) {
+	        FaultEvents faultEvent = new FaultEvents();
+
+	        faultEvent.setStartTime(faultHistory.getStartTime());
+	        faultEvent.setEndTime(faultHistory.getEndTime());
+
+	        // Set Fault History Data
 			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
+	        faultEvent.setEventEnrichment(new EventEnrichmentModel());
 			if(!eventEnrichmentPkIdStr.isEmpty()) {
-				long eventEnrichmentPkId = Long.parseLong(eventEnrichmentPkIdStr);
-				eventEnrichmentsPKIds.add(eventEnrichmentPkId);
+	            EventEnrichmentModel eventEnrichment = fetchRecords.getEventEnrichment(eventEnrichmentPkIdStr);
+	            faultEvent.setEventEnrichment(eventEnrichment);
+		        List<EventsModel> events = fetchRecords.findEventsByEventId(eventEnrichment.getEventPkId());
+		        faultEvent.setEvents(!events.isEmpty() ? events.get(0) : new EventsModel());
 			}
+	        List<EquipmentModel> equipments = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
+	        if (!equipments.isEmpty()) {
+	            EquipmentModel equipment = equipments.get(0);
+	            faultEvent.setAssetName(equipment.getName());
+	            faultEvent.setAssetDisplayName(equipment.getDisplayName());
 		}
-		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
-		
-		List<EventEnrichmentModel> eventEnrichments = fetchRecords.getEventEnrichments(eventEnrichmentsPKIds);
-		for(EventEnrichmentModel eventEnrichment: eventEnrichments) {
-			String eventId = eventEnrichment.getEventPkId();
-			String eventCategoryId = eventEnrichment.getEventCategoryPkId();
-			
-			List<EventsModel> events = fetchRecords.findEventsByEventId(eventId);
-			EventsModel event = new EventsModel();
-			if(events.size()>=1) {
-				event = events.get(0);
-			}
-			System.out.println("Events List");
-			System.out.println(eventIds.get(0));
-			System.out.println(eventId);
-			for(EventsModel event1: events) {
-				System.out.println(event1.getEventName());
-			}
-			List<EventCategoryModel> eventCategorys = fetchRecords.getCategoryByCategoryId(eventCategoryId);
-			EventCategoryModel eventCategory = new EventCategoryModel();
-			if(eventCategorys.size()>=1) {
-				eventCategory = eventCategorys.get(0);
-			}
-			FaultEvents faultEvent = new FaultEvents();
-			faultEvent.setEvents(event);
-			faultEvent.setEventEnrichment(eventEnrichment);
-			faultEvent.setEventCategory(eventCategory);
-			faultEvent.setAssetName(equipmentName);
-			faultEvent.setAssetDisplayName(equipmentDisplayName);
-			faultEvents.add(faultEvent);
-		}
-		return faultEvents;
+	        List<EventCategoryModel> eventCategories = fetchRecords.getCategoryByCategoryId(faultHistory.getEventCategoryPkId());
+	        faultEvent.setEventCategory(!eventCategories.isEmpty() ? eventCategories.get(0) : new EventCategoryModel());
+	        faultEventsList.add(faultEvent);
+	    }
+	    return faultEventsList;
 	}
-	
-	
+//	public List<FaultEvents> getAllEvents(List<Long> eventIds) {
+//		System.out.println(eventIds);
+//		System.out.println(eventIds.get(0));
+//		List<FaultHistoryModel> faultHistorys = fetchRecords.getFaultHistories(eventIds); 
+//		String equipmentDisplayName = "";
+//		String equipmentName = "";
+//		List<Long> eventEnrichmentsPKIds = new ArrayList<>();
+//		for(FaultHistoryModel faultHistory: faultHistorys) {
+//			List<EquipmentModel> equipemnets = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
+//			equipmentDisplayName = equipemnets.get(0).getDisplayName();
+//			equipmentName = equipemnets.get(0).getName();
+//			break;
+//		}
+//		for(FaultHistoryModel faultHistory: faultHistorys) {
+//			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
+//			if(!eventEnrichmentPkIdStr.isEmpty()) {
+//				long eventEnrichmentPkId = Long.parseLong(eventEnrichmentPkIdStr);
+//				eventEnrichmentsPKIds.add(eventEnrichmentPkId);
+//			}
+//		}
+//		List<FaultEvents> faultEvents = new ArrayList<FaultEvents>();
+//		
+//		List<EventEnrichmentModel> eventEnrichments = fetchRecords.getEventEnrichments(eventEnrichmentsPKIds);
+//		for(EventEnrichmentModel eventEnrichment: eventEnrichments) {
+//			String eventId = eventEnrichment.getEventPkId();
+//			String eventCategoryId = eventEnrichment.getEventCategoryPkId();
+//			
+//			List<EventsModel> events = fetchRecords.findEventsByEventId(eventId);
+//			EventsModel event = new EventsModel();
+//			if(events.size()>=1) {
+//				event = events.get(0);
+//			}
+//			System.out.println("Events List");
+//			System.out.println(eventIds.get(0));
+//			System.out.println(eventId);
+//			for(EventsModel event1: events) {
+//				System.out.println(event1.getEventName());
+//			}
+//			List<EventCategoryModel> eventCategorys = fetchRecords.getCategoryByCategoryId(eventCategoryId);
+//			EventCategoryModel eventCategory = new EventCategoryModel();
+//			if(eventCategorys.size()>=1) {
+//				eventCategory = eventCategorys.get(0);
+//			}
+//			FaultEvents faultEvent = new FaultEvents();
+//			faultEvent.setEvents(event);
+//			faultEvent.setEventEnrichment(eventEnrichment);
+//			faultEvent.setEventCategory(eventCategory);
+//			faultEvent.setAssetName(equipmentName);
+//			faultEvent.setAssetDisplayName(equipmentDisplayName);
+//			faultEvents.add(faultEvent);
+//		}
+//		return faultEvents;
+//	}
 
 	@Override
 	public Case saveCase(Case caseData) {
@@ -550,52 +584,15 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId,
 			String reviewerUserId) throws ParseException {
 		System.out.println("Calling Recommendation GEAPM API...");
-		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println(dataGridEntry.toPrettyString().toString());
-//		
-//		try {
-//			URL url = new URL("https://your-api-url.com/endpoint");
-//			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-//            conn.setRequestMethod("POST");
-//            conn.setRequestProperty("Content-Type", "application/json; utf-8");
-//            conn.setRequestProperty("Accept", "application/json");
-//            conn.setDoOutput(true);
-//            
-//            String jsonInputString = "{"
-//                    + "\"recommendationHeadline\":\"Headline\","
-//                    + "\"recommendationDescription1\":\"Description\","
-//                    + "\"recommendationAssignedTo1\":\"\","
-//                    + "\"recommendationStatus\":\"\","
-//                    + "\"equipmentFunctionLocation\":48,"
-//                    + "\"recommendationTargetCompletionDate1\":\"2024-10-15T00:00:00+05:30\","
-//                    + "\"recommendationReviewer\":\"Bhaumik.Darji@ril.com\","
-//                    + "\"recommendationNo1\":\"\","
-//                    + "\"RecommendationSubmit\":false,"
-//                    + "\"recommendationAssignedTo2\":\"Balasubramanian.R.Iyer@ril.com\","
-//                    + "\"RecommendationConfirm\":\"\""
-//                    + "}";
-//
-//            // Send the request
-//            try (OutputStream os = conn.getOutputStream()) {
-//                byte[] input = jsonInputString.getBytes("utf-8");
-//                os.write(input, 0, input.length);
-//            }
-//            
-//         // Read the response
-//            int responseCode = conn.getResponseCode();
-//            System.out.println("Response Code: " + responseCode);
-//
-//            try (Scanner scanner = new Scanner(conn.getInputStream())) {
-//                String responseBody = scanner.useDelimiter("\\A").next();
-//                System.out.println("Response Body: " + responseBody);
-//            }
-//
-//            conn.disconnect();
-//		} catch(Exception  e) {
-//			e.printStackTrace();
-//		}
 		 String geAPMAcsessToken = geLogin();
 		 System.out.println("GE APM Acsess Token: " + geAPMAcsessToken);
+		Boolean isFunctionalLocationAvailableInGEAPM = checkFunctionalLocationAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("equipmentFunctionLocation").asText());
+		Boolean isUserAvailableInGEAPM = checkUserAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("recommendationAssignedTo2").asText());
+		String recommendationId = "";
+		String status = "Assigned";
+		String[] recommendationStatusAndId = new String[2];
+		if(isFunctionalLocationAvailableInGEAPM && isUserAvailableInGEAPM) {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
@@ -630,9 +627,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
 //		requestBody.put("CaseID", "123456");
 		 System.out.println("GE APM Create Case body: " + requestBody.toString());
-		String recommendationId = "";
-		String status = "Assigned";
-		String[] recommendationStatusAndId = new String[2];
+
 		try {
          HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 		 ResponseEntity<Map> response = restTemplate.postForEntity(geCreateCaseAPI, requestEntity, Map.class);
@@ -666,6 +661,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         // Return the generated ID with the prefix
 //		String id = prefix + formattedId;
 //		String status = "Assigned";
+		} else {
+			recommendationStatusAndId[0] = null;
+			recommendationStatusAndId[1] = status;
+		}
         return recommendationStatusAndId;
 	}
 	
@@ -874,7 +873,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	private String saveRecommendations(String attributeValue, String caseNo, Recommendations newRecommendation) {
 	    attributeValue = attributeValue.replace("\\\"", "\"");
 
-	    System.out.println("Attribute Value: " + attributeValue);
+//	    System.out.println("Attribute Value: " + attributeValue);
 
 	    try {
 	        ObjectMapper objectMapper = new ObjectMapper();
@@ -939,80 +938,201 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() {
 	    List<com.wks.caseengine.rest.db2.entity.Users> geUsers = new ArrayList<>();
 	    String geAPMAcsessToken = geLogin();
+	    if (geAPMAcsessToken.isEmpty()) {
+	        System.err.println("GE APM Access Token is empty. Aborting API call.");
+	        return geUsers;
+	    }
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.add("MeridiumToken", geAPMAcsessToken);
-	    Map<String, Object> inputsingleParams = new HashMap<>();
-	    inputsingleParams.put("userValidation", "");
-	    Map<String, Object> requestBody = new HashMap<>();
-		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API");
-	    requestBody.put("Page", 0);
-	    requestBody.put("PageSize", 10000);
-	    requestBody.put("InputsingleParams", inputsingleParams);
-	    try {
-	        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
-	        System.out.println("Response Code: " + response.getStatusCode());
-//	        System.out.println("Response Body: " + response.getBody());
-	        Map<String, Object> responseBody = response.getBody();
-	        if (responseBody != null && responseBody.get("output") instanceof Map) {
-	            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.get("output");
-	            if (responseOutput.get("data") instanceof Map) {
-	                Map<String, Object> usersData = (Map<String, Object>) responseOutput.get("data");
-	                if (usersData.get("rows") instanceof List) {
-	                    List<Map<String, Object>> usersList = (List<Map<String, Object>>) usersData.get("rows");
-	                for (Map<String, Object> userMap : usersList) {
-	                        if ("A".equals(userMap.get("Status"))) { // Corrected String comparison
-	                    com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
 
-	                            user.setUserId(userMap.get("User ID") != null ? userMap.get("User ID").toString() : null);
-	                            user.setEmailId(userMap.get("User ID") != null ? userMap.get("User ID").toString() : null);
-		                    geUsers.add(user);
+	    Map<String, Object> requestBody = Map.of(
+	        "QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API",
+	        "Page", 0,
+	        "PageSize", 10000,
+	        "InputsingleParams", Map.of("userValidation", "")
+	    );
+	    try {
+	        ResponseEntity<Map> response = restTemplate.postForEntity(
+	            geUsersAPI, 
+	            new HttpEntity<>(requestBody, headers), 
+	            Map.class
+	        );
+	        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+	            System.err.println("GE APM API call failed. Response code: " + response.getStatusCode());
+	            return geUsers;
+	        }
+	        Map<String, Object> responseBody = response.getBody();
+	        Map<String, Object> responseOutput = (Map<String, Object>) responseBody.getOrDefault("output", Map.of());
+	        Map<String, Object> usersData = (Map<String, Object>) responseOutput.getOrDefault("data", Map.of());
+	        List<Map<String, Object>> usersList = (List<Map<String, Object>>) usersData.getOrDefault("rows", List.of());
+
+	        usersList.stream()
+	            .filter(userMap -> "A".equals(userMap.get("Status"))) // Ensure only active users are processed
+	            .forEach(userMap -> geUsers.add(createUserFromMap(userMap)));
+
+	    } catch (RestClientException e) {
+	        System.err.println("GE APM API request failed: " + e.getMessage());
+	    } catch (Exception e) {
+	        System.err.println("Unexpected error in getGEUsers(): " + e.getMessage());
+	        e.printStackTrace();
 	                        }
-	                    } 
+
+	    return geUsers;
+	                }
+
+	private String geLogin() {
+	    RestTemplate restTemplate = new RestTemplate();
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    Map<String, Object> requestBody = Map.of(
+	        "DatasourceId", geAuthenticationDatasource,
+	        "Id", geAuthenticationId,
+	        "Password", geAuthenticationPassword
+	    );
+	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+	    try {
+	        ResponseEntity<Map> response = restTemplate.postForEntity(geAuthenticationAPI, requestEntity, Map.class);
+	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+	            return (String) response.getBody().getOrDefault("sessionId", "");
+	        } else {
+	            System.err.println("GE APM Authentication API failed: Non-successful response - " + response.getStatusCode());
+	        }
+	    } catch (RestClientException e) {
+	        System.err.println("GE APM Authentication API request failed: " + e.getMessage());
+	    } catch (Exception e) {
+	        System.err.println("Unexpected error during authentication: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	    return "";
+	}
+	
+	@Override
+	public List<Case> getGEAPMCaseStatus() throws JsonMappingException, JsonProcessingException {
+	    LocalDate today = LocalDate.now();
+	    LocalDate oneMonthBefore = today.minusMonths(1);
+	    String geAPMAcsessToken = geLogin();
+	    List<Case> cases = getCaseDetails(oneMonthBefore, today, "Open");
+	    System.out.println("Cases size: " + cases.size());
+	    ObjectMapper objectMapper = new ObjectMapper();
+	    for (Case caseDetails : cases) {
+	        boolean updated = false; // Track if updates are made
+	        for (Attribute attribute : caseDetails.getAttributes()) {
+	            String attributeValue = attribute.getValue();
+	            System.out.println("Case No: " + caseDetails.getCaseNo() + " :: Attribute: " + attributeValue);
+	            JsonNode rootNode = objectMapper.readTree(attributeValue);
+	            JsonNode recommendationNode = rootNode.path("dataGrid1");
+	            if (recommendationNode.isArray()) {
+	                for (JsonNode node : recommendationNode) {
+	                    if (node.has("recommendationNo1") && node.isObject()) {
+	                        String recommendationNo = node.get("recommendationNo1").asText();
+	                        String recommendationStatus = getGEAPMRecommendationStatusAndUpdateRecommendationStatus(geAPMAcsessToken, recommendationNo);
+	                        if (recommendationStatus != null) {
+	                            ((ObjectNode) node).put("recommendationStatus", recommendationStatus);
+	                            updated = true; // Mark that an update occurred
+	                        }
+	                    }
+	                }
+	                if (updated) { // Only update attribute if changes were made
+	                    attribute.setValue(objectMapper.writeValueAsString(rootNode));
 	                }
 	            }
 	        }
-	    } catch (Exception e) {
-	        System.out.println("GE APM Authentication API failed: " + e.getLocalizedMessage());
-	        e.printStackTrace();
+	        if (updated) { // Save only if changes were made
+	            caseRepository.save(caseDetails);
+	        }
 	    }
-	    return geUsers;
+	    return cases;
 	}
-	private String geLogin() {
-		 String geAPMAcsessToken="";
+	private String getGEAPMRecommendationStatusAndUpdateRecommendationStatus(String geAPMAcsessToken, String recommendationNo) {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
+	    headers.add("MeridiumToken", geAPMAcsessToken);
+	    Map<String, Object> inputsingleParams = new HashMap<>();
+	    inputsingleParams.put("RecommendationID", recommendationNo);
          Map<String, Object> requestBody = new HashMap<>();
-         requestBody.put("DatasourceId", geAuthenticationDatasource);
-         requestBody.put("Id", geAuthenticationId);
-         requestBody.put("Password", geAuthenticationPassword);
-         try {
+		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\EED_APM_RECO_STATUS");
+	    requestBody.put("Page", 0);
+	    requestBody.put("PageSize", 1000);
+	    requestBody.put("InputsingleParams", inputsingleParams);
+	    
         	 HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-    		 ResponseEntity<Map> response = restTemplate.postForEntity(geAuthenticationAPI, requestEntity, Map.class);
+	    try {
+	        ResponseEntity<Map> response = restTemplate.postForEntity(geCaseStatusAPI, requestEntity, Map.class);
     		 
+	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
     		 System.out.println("Response Code: " + response.getStatusCode());
     		 System.out.println("Response Body: " + response.getBody());
-    		 Map<String, Object> responseBody = response.getBody();
-    		 if (responseBody != null) {
-    			 geAPMAcsessToken = responseBody.get("sessionId") != null ? (String) responseBody.get("sessionId") : "";
-    		     System.out.println("GE APM Access Token: " + geAPMAcsessToken);
+
+	            return "";
     		 }
          }catch(Exception e) {
-        	 System.out.println("GE APM Authentication API failed " + e.getLocalizedMessage());
-        	 e.printStackTrace();
+	        System.err.println("GE APM API call failed: " + e.getMessage());
+	    }
+	    return null; // Return null if API call fails
          }
-		 return geAPMAcsessToken;
+	public Boolean checkFunctionalLocationAvailableInGEAPM(String geAPMAcsessToken, String functionalLocation) {
+	    RestTemplate restTemplate = new RestTemplate();
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    headers.set("MeridiumToken", geAPMAcsessToken);
+	    Map<String, Object> requestBody = Map.of(
+	        "QueryPath", "Public\\Meridium\\Client\\APIs\\EED_APM_API",
+	        "Page", 0,
+	        "PageSize", 100,
+	        "InputsingleParams", Map.of("FL", functionalLocation)
+	    );
+	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+	    try {
+	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
+	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+	            Object rowCount = response.getBody().get("rowCount");
+	            return rowCount != null && Integer.parseInt(rowCount.toString()) == 1;
 	}
-//	@Scheduled(cron = "0 0/1 * * * ?")// You can adjust this cron expression to run at a specific time (e.g., every day at noon)
+	    } catch (RestClientException e) {
 //    public void scheduleTask() {
-//        System.out.println("Scheduler triggered");
-//        List<Case> cases = caseRepository.findAll();
-//        System.out.println("Cases fetahed: "+ cases.size());
-//        System.out.println("")
+	        System.err.println("GE APM API request failed: " + e.getMessage());
+	    } catch (NumberFormatException e) {
+	        System.err.println("Invalid rowCount format in response: " + e.getMessage());
+	    }
 //    }
+	    return false;
+	}
 	
-	
+	public Boolean checkUserAvailableInGEAPM(String geAPMAcsessToken, String userId) {
+	    RestTemplate restTemplate = new RestTemplate();
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    headers.set("MeridiumToken", geAPMAcsessToken);
+	    Map<String, Object> requestBody = Map.of(
+	        "QueryPath",  "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API",
+	        "Page", 0,
+	        "PageSize", 100,
+	        "InputsingleParams", Map.of("Domain", userId)
+	    );
+	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+	    try {
+	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
+	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+	            Object rowCount = response.getBody().get("rowCount");
+	            return rowCount != null && Integer.parseInt(rowCount.toString()) == 1;
+	        }
+	    } catch (RestClientException e) {
+	        System.err.println("GE APM API request failed: " + e.getMessage());
+	    } catch (NumberFormatException e) {
+	        System.err.println("Invalid rowCount format in response: " + e.getMessage());
+	    }
+	    return false;
+	}
+	private com.wks.caseengine.rest.db2.entity.Users createUserFromMap(Map<String, Object> userMap) {
+	    com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
+	    user.setUserId(getString(userMap, "User ID"));
+	    user.setEmailId(getString(userMap, "User ID")); // Should this be "Email ID"?
+	    return user;
+	}
+	private String getString(Map<String, Object> map, String key) {
+	    return map.getOrDefault(key, "").toString();
+	}
 }

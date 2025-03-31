@@ -445,6 +445,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })

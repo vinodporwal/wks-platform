@@ -41,10 +41,12 @@ public class FetchRecordsServiceImpl {
 	
 	    return jdbcTemplate.query(sql, (rs, rowNum) -> {
             EventEnrichmentModel eventEnrichment = new EventEnrichmentModel();
-            java.sql.Date creationDate = rs.getDate("CreationDate");
+//            java.sql.Date creationDate = rs.getDate("CreationDate");
+            String creationDate = rs.getString("CreationDate");
             eventEnrichment.setCreationDate(creationDate != null ? creationDate.toString() : null);
 
-            java.sql.Date modifiedDate = rs.getDate("ModifiedDate");
+//            java.sql.Date modifiedDate = rs.getDate("ModifiedDate");
+            String modifiedDate = rs.getString("ModifiedDate");
             eventEnrichment.setModifiedDate(modifiedDate != null ? modifiedDate.toString() : null);
             eventEnrichment.setEventPkId(rs.getString("Event_PK_ID"));
             eventEnrichment.setEnrichmentKey(rs.getString("EnrichmentKey"));
@@ -59,6 +61,7 @@ public class FetchRecordsServiceImpl {
             eventEnrichment.setDestinationType(rs.getString("DestinationType"));
             eventEnrichment.setDestinationJson(rs.getString("DestinationJSon"));
             eventEnrichment.setTrendDetailJsonTemplate(rs.getString("TrendDetailJSonTemplate"));
+            eventEnrichment.setEventEnrichmentPkId(rs.getString("EventEnrichment_PK_ID"));
             
             String modifiedUserPkId = rs.getString("ModifiedUser_PK_ID");
             eventEnrichment.setModifiedUserPkId(modifiedUserPkId != null ? modifiedUserPkId.toString() : null);
@@ -76,6 +79,38 @@ public class FetchRecordsServiceImpl {
         }
         return null;
     }
+	public EventEnrichmentModel getEventEnrichment(String eventId) {
+	    try {
+	        String sql = "SELECT * FROM EventEnrichments WHERE EventEnrichment_PK_ID = ?";
+	        List<EventEnrichmentModel> eventEnrichments = jdbcTemplate.query(sql, new Object[]{eventId}, (rs, rowNum) -> {
+	            EventEnrichmentModel eventEnrichment = new EventEnrichmentModel();
+	            eventEnrichment.setCreationDate(rs.getString("CreationDate"));
+	            eventEnrichment.setModifiedDate(rs.getString("ModifiedDate"));
+	            eventEnrichment.setEventPkId(rs.getString("Event_PK_ID"));
+	            eventEnrichment.setEnrichmentKey(rs.getString("EnrichmentKey"));
+	            eventEnrichment.setDisplayNameTemplate(rs.getString("DisplayNameTemplate"));
+	            eventEnrichment.setDescriptionTemplate(rs.getString("DescriptionTemplate"));
+	            eventEnrichment.setExpression(rs.getString("Expression"));
+	            eventEnrichment.setFaultSeverity(rs.getString("FaultSeverity"));
+	            eventEnrichment.setMessageType(rs.getString("MessageType"));
+	            eventEnrichment.setAutoReset(rs.getBoolean("AutoReset"));
+	            eventEnrichment.setOnTimerIntervalMinutes(rs.getInt("OnTimerIntervalMinutes"));
+	            eventEnrichment.setOffTimerIntervalMinutes(rs.getInt("OffTimerIntervalMinutes"));
+	            eventEnrichment.setDestinationType(rs.getString("DestinationType"));
+	            eventEnrichment.setDestinationJson(rs.getString("DestinationJSon"));
+	            eventEnrichment.setTrendDetailJsonTemplate(rs.getString("TrendDetailJSonTemplate"));
+	            eventEnrichment.setEventEnrichmentPkId(rs.getString("EventEnrichment_PK_ID"));
+	            eventEnrichment.setModifiedUserPkId(rs.getString("ModifiedUser_PK_ID"));
+	            eventEnrichment.setEventCausePkId(rs.getString("EventCause_PK_ID"));
+	            eventEnrichment.setEventCategoryPkId(rs.getString("EventCategory_PK_ID"));
+	            return eventEnrichment;
+	        });
+	        return eventEnrichments.isEmpty() ? null : eventEnrichments.get(0);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
 	
 	 public List<FaultHistoryModel> getFaultHistories(List<Long> eventIds) {
 	     try {   
