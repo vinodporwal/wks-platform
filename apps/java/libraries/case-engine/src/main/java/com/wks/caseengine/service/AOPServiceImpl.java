@@ -137,7 +137,17 @@ public class AOPServiceImpl implements  AOPService{
 	@Override
 	public List<AOPDTO> updateAOP(List<AOPDTO> aOPDTOList) {
 		for(AOPDTO aOPDTO:aOPDTOList) {
+			
 			AOP aOP= null;
+			Plants plant=null;
+			Sites site=null;
+			Verticals vertical=null;
+			if(aOPDTO.getSiteFKId()==null || aOPDTO.getVerticalFKId()==null) {
+				 plant = plantsRepository.findById(UUID.fromString(aOPDTO.getPlantFKId())).get();
+				 site = siteRepository.findById(plant.getSiteFkId()).get();
+				 vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			}
+
 			if(aOPDTO.getId()==null) {
 				UUID Site=null;
 				UUID Vertical=null;
@@ -145,9 +155,13 @@ public class AOPServiceImpl implements  AOPService{
 				UUID Plant=null;
 				if(aOPDTO.getSiteFKId()!=null) {
 					Site=UUID.fromString(aOPDTO.getSiteFKId());
+				}else {
+					Site=site.getId();
 				}
 				if(aOPDTO.getVerticalFKId()!=null) {
 					Vertical=UUID.fromString(aOPDTO.getVerticalFKId());
+				}else {
+					Vertical=vertical.getId();
 				}
 				if(aOPDTO.getMaterialFKId()!=null) {
 					Material=UUID.fromString(aOPDTO.getMaterialFKId());
@@ -195,11 +209,16 @@ public class AOPServiceImpl implements  AOPService{
 			// aOP.setNormItem(aOPDTO.getNormItem());
 			aOP.setNov(aOPDTO.getNov());
 			aOP.setOct(aOPDTO.getOct());
+						
 			if(aOPDTO.getSiteFKId()!=null) {
 				aOP.setSiteFkId(UUID.fromString(aOPDTO.getSiteFKId()));
+			}else {
+				aOP.setSiteFkId(site.getId());
 			}
 			if(aOPDTO.getVerticalFKId()!=null) {
 				aOP.setVerticalFkId(UUID.fromString(aOPDTO.getVerticalFKId()));
+			}else {
+				aOP.setVerticalFkId(vertical.getId());
 			}
 			if(aOPDTO.getMaterialFKId()!=null) {
 				aOP.setMaterialFKId(UUID.fromString(aOPDTO.getMaterialFKId()));
@@ -259,6 +278,7 @@ public class AOPServiceImpl implements  AOPService{
 					aopDto.setAopStatus("Draft");
 					aopDto.setAopYear(year);
 					aopDto.setMaterialFKId(obj[0] != null ? (obj[0].toString()) : null);
+					aopDto.setSiteFKId(site.getId().toString());					
 						aopDto.setJan(obj[3]!=null? (Float.parseFloat(obj[3].toString())) : null);
 						aopDto.setFeb(obj[4]!=null? (Float.parseFloat(obj[4].toString())) : null);
 						aopDto.setMarch(obj[5]!=null?(Float.parseFloat(obj[5].toString())) : null);

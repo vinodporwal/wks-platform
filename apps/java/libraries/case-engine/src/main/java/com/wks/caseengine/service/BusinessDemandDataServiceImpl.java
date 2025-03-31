@@ -1,22 +1,17 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import java.util.List;
 import java.util.UUID;
-
 import com.wks.caseengine.entity.BusinessDemand;
-import com.wks.caseengine.entity.NormParameters;
-import com.wks.caseengine.entity.Product;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.repository.BusinessDemandDataRepository;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.wks.caseengine.repository.PlantsRepository;
 
 @Service
 public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
@@ -26,11 +21,20 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 	
 	 @Autowired
 	 private NormParametersService normParametersService;
+	 
+	 @Autowired
+	 private PlantsRepository plantsRepository;
+	 
+	 @PersistenceContext
+	 private EntityManager entityManager;
 	
 
 	@Override
 	public List<BusinessDemandDataDTO> getBusinessDemandData(String year,String plantId) {
-		List<Object[]> obj = businessDemandDataRepository.findByYearAndPlantFkId(year, UUID.fromString(plantId));
+		
+		String verticalName=plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+		String viewName="vwScrn"+verticalName+"BusinessDemand";
+		List<Object[]> obj = findByYearAndPlantFkId(year, UUID.fromString(plantId),viewName);
 		System.out.println("obj"+obj);
 		List<BusinessDemandDataDTO> businessDemandDataDTOList = new ArrayList<>();
 
@@ -59,7 +63,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 		    businessDemandDataDTO.setNormParameterTypeId(row[19] != null ? row[19].toString() : null);
 		    businessDemandDataDTO.setNormParameterTypeName(row[20] != null ? row[20].toString() : null);
 		    businessDemandDataDTO.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
-
+		    
 		    businessDemandDataDTOList.add(businessDemandDataDTO);
 		}
 		
@@ -68,7 +72,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 // 		for(Object[] obj1 :list){
 //            System.out.println("obj1"+obj1);
 // 			BusinessDemandDataDTO businessDemandDataDTO = new BusinessDemandDataDTO();
-//
+
 // 			businessDemandDataDTO.setNormParameterId(obj1[0]!=null? obj1[0].toString():null);
 // 			businessDemandDataDTO.setNormParameterTypeDisplayName(obj1[1]!=null? obj1[1].toString():null);
 // 			businessDemandDataDTO.setId(i+"#");
@@ -171,5 +175,24 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService{
 		businessDemandDataRepository.delete(businessDemand);
 		return null;
 	}
+	
+	public List<Object[]> findByYearAndPlantFkId(String year, UUID plantFkId, String viewName) {
+        String sql = "SELECT " +
+                "Id, Remark, Jan, Feb, March, April, May, June, July, Aug, Sep, Oct, Nov, Dec, " +
+                "Year, Plant_FK_Id, NormParameters_FK_Id, AvgTPH, NormTypeDisplayOrder, " +
+                "NormParameterTypeId, NormParameterTypeName, NormParameterTypeDisplayName, " +
+                "CreatedOn, ModifiedOn, UpdatedBy, IsDeleted, MaterialDisplayOrder, " +
+                "Site_FK_Id, Vertical_FK_Id " +
+                "FROM " + viewName + " " +
+                "WHERE (Year = :year OR Year IS NULL) " +
+                "AND Plant_FK_Id = :plantFkId " +
+                "ORDER BY NormTypeDisplayOrder, MaterialDisplayOrder";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("year", year);
+        query.setParameter("plantFkId", plantFkId);
+
+        return query.getResultList();
+    }
 
 }

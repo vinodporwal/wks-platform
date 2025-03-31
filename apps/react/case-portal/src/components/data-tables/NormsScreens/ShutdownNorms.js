@@ -24,7 +24,7 @@ const ShutdownNorms = () => {
   // const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState([])
-  const [productNormData, setProductNormData] = useState([])
+  // const [productNormData, setProductNormData] = useState([])
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -420,6 +420,7 @@ const ShutdownNorms = () => {
           ...item,
           idFromApi: item.id,
           id: groupId++,
+          remarks: item?.remarks?.trim() || null,
           materialFkId: item?.materialFkId.toLowerCase(),
 
           ...(isTPD && {

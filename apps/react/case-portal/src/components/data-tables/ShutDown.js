@@ -12,7 +12,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 
-const ShutDown = () => {
+const ShutDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
@@ -126,6 +126,7 @@ const ShutDown = () => {
         id: row.idFromApi || null,
         remark: row.remark || 'null',
       }))
+
       // const verticalName= lowerVertName
       const response = await DataService.saveShutdownData(
         plantId,
@@ -282,6 +283,57 @@ const ShutDown = () => {
       hide: true,
     },
 
+    // {
+    //   field: 'product',
+    //   headerName: lowerVertName === 'meg' ? 'Product' : 'Grade Name',
+    //   editable: true,
+    //   minWidth: 125,
+    //   valueGetter: (params) => {
+    //     // console.log('p1', params);
+    //     // console.log('p2', params2);
+    //     return params || ''
+    //   },
+    //   valueFormatter: (params) => {
+    //     // console.log('params valueFormatter ', params)
+    //     const product = allProducts.find((p) => p.id === params)
+    //     return product ? product.displayName : ''
+    //   },
+    //   renderEditCell: (params) => {
+    //     const { value } = params
+    //     // console.log('q1', params);
+    //     // console.log('q2', params2);
+    //     return (
+    //       <select
+    //         value={value || ''}
+    //         onChange={(event) => {
+    //           params.api.setEditCellValue({
+    //             id: params.id,
+    //             field: 'product',
+    //             value: event.target.value,
+    //           })
+    //         }}
+    //         style={{
+    //           width: '100%',
+    //           padding: '5px',
+    //           border: 'none', // Removes border
+    //           outline: 'none', // Removes focus outline
+    //           background: 'transparent', // Keeps background clean
+    //         }}
+    //       >
+    //         {/* Disabled first option */}
+    //         <option value='' disabled>
+    //           Select
+    //         </option>
+    //         {allProducts.map((product) => (
+    //           <option key={product.id} value={product.id}>
+    //             {product.displayName}
+    //           </option>
+    //         ))}
+    //       </select>
+    //     )
+    //   },
+    // },
+
     {
       field: 'maintStartDateTime',
       headerName: 'SD- From',
@@ -436,13 +488,13 @@ const ShutDown = () => {
         unsavedChangesRef={unsavedChangesRef}
         deleteRowData={deleteRowData}
         permissions={{
-          showAction: true,
-          addButton: true,
-          deleteButton: true,
-          editButton: true,
-          showUnit: false,
-          saveWithRemark: true,
-          saveBtn: true,
+          showAction: permissions?.showAction ?? true,
+          addButton: permissions?.addButton ?? true,
+          deleteButton: permissions?.deleteButton ?? true,
+          editButton: permissions?.editButton ?? true,
+          showUnit: permissions?.showUnit ?? false,
+          saveWithRemark: permissions?.saveWithRemark ?? true,
+          saveBtn: permissions?.saveBtn ?? true,
         }}
       />
     </div>

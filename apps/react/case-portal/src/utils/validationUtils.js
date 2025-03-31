@@ -15,15 +15,15 @@ export const validateFields = (data, requiredFields) => {
   const invalidRows = data.filter((row) =>
     requiredFields.some((field) => {
       const value = row[field]
-      if (value === undefined || value === null) return true // Missing values
-      if (typeof value === 'string' && value.trim() === '') return true // Empty string
+      if (value === undefined || value === null) return true
+      if (typeof value === 'string' && value.trim() === '') return true
       return false
     }),
   )
 
   if (invalidRows.length > 0) {
     const missingFields = invalidRows
-      .map((row, index) => {
+      .map((row) => {
         const missingFieldsMessage = []
         requiredFields.forEach((field) => {
           const value = row[field]
@@ -37,7 +37,7 @@ export const validateFields = (data, requiredFields) => {
 
         return missingFieldsMessage.join(', ')
       })
-      .filter((msg) => msg !== '') // Remove empty messages
+      .filter((msg) => msg !== '')
       .join(', ')
 
     if (missingFields) {

@@ -10,9 +10,8 @@ const headerMap = generateHeaderNames()
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
-import { validateFields } from 'utils/validationUtils'
 
-const ProductionvolumeData = () => {
+const ProductionvolumeData = ({ permissions }) => {
   const keycloak = useSession()
   // const [productNormData, setProductNormData] = useState([])
   const [allProducts, setAllProducts] = useState([])
@@ -78,13 +77,8 @@ const ProductionvolumeData = () => {
         plantId = parsedPlant.id
       }
 
-      let siteId = ''
-
-      const storedSite = localStorage.getItem('selectedSite')
-      if (storedSite) {
-        const parsedSite = JSON.parse(storedSite)
-        siteId = parsedSite.id
-      }
+      let siteID =
+        JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
 
       const aopmccCalculatedData = newRows.map((row) => ({
         april: isTPH && row.april ? row.april / 24 : row.april || null,
@@ -108,10 +102,10 @@ const ProductionvolumeData = () => {
         financialYear: row.financialYear,
         // plant: plantId,
         plantFKId: row.plantFKId || plantId,
-        siteFKId: row.siteFKId || siteId,
+        siteFKId: siteID || row.siteFKId,
         // material: 'EOE',
         materialFKId: row.normParametersFKId,
-        verticalFKId: localStorage.getItem('verticalId'),
+        verticalFKId: row.verticalFKId ?? localStorage.getItem('verticalId'),
         id: row.idFromApi || null,
         avgTPH: findAvg('1', row) || null,
         remark: row.remarks,
@@ -162,18 +156,53 @@ const ProductionvolumeData = () => {
         })
         return
       }
-      const requiredFields = ['remarks']
 
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
+      const requiredMonths = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
+      ]
+
+      const invalidRows = data.filter((row) => {
+        const hasProduct =
+          row.normParametersFKId && row.normParametersFKId.trim() !== ''
+
+        const hasRemark = row.remarks && row.remarks.trim() !== ''
+        const hasValidMonth = requiredMonths.some((month) => {
+          let value = row[month]
+          if (value === 0) {
+            value = null
+          }
+          return value !== null && value !== ''
+        })
+
+        // console.log(
+        //   `Row ID ${row.id}: hasProduct=${hasProduct}, hasRemark=${hasRemark}, hasValidMonth=${hasValidMonth}`,
+        // )
+
+        return !(hasProduct && hasRemark && hasValidMonth)
+      })
+
+      if (invalidRows.length > 0) {
         setSnackbarData({
-          message: validationMessage,
+          message:
+            'Please fill required fields: Product, Remark, and Months Values.',
           severity: 'error',
         })
+        setSnackbarOpen(true)
+        console.log('Invalid rows:', invalidRows)
         return
       }
-      editAOPMCCalculatedData(data)
+      await editAOPMCCalculatedData(data)
       unsavedChangesRef.current = {
         unsavedRows: {},
         rowsBeforeChange: {},
@@ -320,14 +349,14 @@ const ProductionvolumeData = () => {
         currentRowId={currentRowId}
         unsavedChangesRef={unsavedChangesRef}
         permissions={{
-          showAction: true,
-          addButton: false,
-          deleteButton: false,
-          editButton: true,
-          showUnit: true,
-          saveWithRemark: true,
-          showRefreshBtn: true,
-          saveBtn: true,
+          showAction: permissions?.showAction ?? true,
+          addButton: permissions?.addButton ?? false,
+          deleteButton: permissions?.deleteButton ?? false,
+          editButton: permissions?.editButton ?? true,
+          showUnit: permissions?.showUnit ?? true,
+          saveWithRemark: permissions?.saveWithRemark ?? true,
+          showRefreshBtn: permissions?.showRefreshBtn ?? true,
+          saveBtn: permissions?.saveBtn ?? true,
           units: ['TPH', 'TPD'],
         }}
       />
