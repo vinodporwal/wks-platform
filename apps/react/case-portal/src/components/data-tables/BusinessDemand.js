@@ -348,6 +348,7 @@ const BusinessDemand = ({ permissions }) => {
           saveWithRemark: permissions?.saveWithRemark ?? true,
           saveBtn: permissions?.saveBtn ?? true,
           units: ['TPH', 'TPD'],
+          customHeight: permissions?.customHeight,
         }}
       />
     </div>

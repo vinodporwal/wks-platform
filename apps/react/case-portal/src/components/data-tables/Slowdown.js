@@ -109,11 +109,18 @@ const SlowDown = ({ permissions }) => {
       const slowDownDetails = newRow.map((row) => ({
         productId: row.product,
         discription: row.discription,
-        durationInHrs:
-          lowerVertName === 'meg'
-            ? parseFloat(row.durationInHrs)
-            : parseFloat(findDuration('1', row)),
-        // durationInHrs: parseFloat(row.durationInHrs),
+        durationInHrs: parseFloat(findDuration('1', row)),
+        maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+        maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+        remark: row.remark,
+        rate: row.rate,
+        audityear: localStorage.getItem('year'),
+        id: row.idFromApi || null,
+      }))
+      const slowDownDetailsMEG = newRow.map((row) => ({
+        productId: row.product,
+        discription: row.discription,
+        durationInHrs: parseFloat(row.durationInHrs),
         maintEndDateTime: addTimeOffset(row.maintEndDateTime),
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
         remark: row.remark,
@@ -123,7 +130,7 @@ const SlowDown = ({ permissions }) => {
       }))
       const response = await DataService.saveSlowdownData(
         plantId,
-        slowDownDetails,
+        lowerVertName === 'meg' ? slowDownDetailsMEG : slowDownDetails,
         keycloak,
       )
       //console.log('Slowdown data Saved Successfully:', response)
@@ -311,7 +318,7 @@ const SlowDown = ({ permissions }) => {
     {
       field: 'discription',
       headerName: 'Slowdown Desc',
-      minWidth: 250,
+      minWidth: 180,
       editable: true,
       flex: 3,
     },
@@ -560,6 +567,7 @@ const SlowDown = ({ permissions }) => {
           showUnit: permissions?.showUnit ?? false,
           saveWithRemark: permissions?.saveWithRemark ?? true,
           saveBtn: permissions?.saveBtn ?? true,
+          customHeight: permissions?.customHeight,
         }}
       />
     </div>

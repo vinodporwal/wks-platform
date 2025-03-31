@@ -461,6 +461,7 @@ const ProductionNorms = ({ permissions }) => {
           saveBtn: permissions?.saveBtn ?? true,
           // UOM: 'Ton',
           units: ['Ton', 'Kilo Ton'],
+          customHeight: permissions?.customHeight,
           // UnitToShow: 'Values/Ton',
         }}
       />
