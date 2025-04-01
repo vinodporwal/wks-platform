@@ -41,7 +41,6 @@ import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
-import com.wks.caseengine.rest.model.Users;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -198,9 +197,17 @@ public class CaseDefinitionController {
         }
     }
 	@GetMapping(value = "/users/ge-apm")
-	public ResponseEntity<List<?>> getUsersFromAD() {
+	public ResponseEntity<List<?>> getUsersFromAD() throws Exception {
 		try {
 			return ResponseEntity.ok(caseDefinitionService.getGEUsers());
+		} catch (CaseDefinitionNotFoundException e) {
+			throw new RestResourceNotFoundException(e.getMessage());
+		}
+	}
+	@GetMapping(value = "/ge-apm/recommendation/status")
+	public ResponseEntity<List<Case>> updateRecommendationStatus() throws Exception {
+		try {
+			return ResponseEntity.ok(caseDefinitionService.updateRecommendationStatus());
 		} catch (CaseDefinitionNotFoundException e) {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}

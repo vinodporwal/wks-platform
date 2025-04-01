@@ -621,6 +621,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const submitRecommendation = async () => {
     try {
       const response = await CaseService.saveRecommendation(keycloak, apiBody)
+      if(response.status !== 500){
       console.log('Recommendation submitted successfully:', response)
       setSnackbarMessages(['Recommendation submitted successfully'])
       setSnackbarOpen(true)
@@ -629,6 +630,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         window.location.href = response.caseUrl;
         // window.location.reload()
       }, 1000)
+      }else{
+        setIsConfirmationOpen(false)
+        console.error('Error submitting recommendation:', response)
+        console.error('Error submitting recommendation:', JSON.stringify(response.body))
+        setSnackbarMessages(['Error submitting recommendation'])
+        setSnackbarOpen(true)
+      }
       // getCaseInfo(aCase)
     } catch (error) {
       console.error('Error submitting recommendation:', error)

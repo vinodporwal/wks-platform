@@ -11,7 +11,6 @@
  */
 package com.wks.caseengine.cases.definition.service;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,8 +35,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -570,7 +567,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		return null;
 	}
 	
-	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) throws ParseException {
+	private String[] saveRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId, String reviewerUserId) throws Exception {
 		String[] recommendationStatusAndId = saveRecommendationGEAPMApi(dataGridEntry, caseNo, assignedUserId, reviewerUserId);
 		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
 		caseRecommendationMapping.setCaseNo(caseNo);
@@ -582,7 +579,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	private String[] saveRecommendationGEAPMApi(JsonNode dataGridEntry, String caseNo, String assignedUserId,
-			String reviewerUserId) throws ParseException {
+			String reviewerUserId) throws Exception {
 		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println(dataGridEntry.toPrettyString().toString());
 		 String geAPMAcsessToken = geLogin();
@@ -608,7 +605,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
 		requestBody.put("RECOMMENDATION_Des", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_BASIS", dataGridEntry.path("recommendationHeadline").asText());
-		requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
+//			requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
+			requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
@@ -935,8 +933,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	public List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() {
+	public List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() throws Exception {
 	    List<com.wks.caseengine.rest.db2.entity.Users> geUsers = new ArrayList<>();
+	    try {
 	    String geAPMAcsessToken = geLogin();
 	    if (geAPMAcsessToken.isEmpty()) {
 	        System.err.println("GE APM Access Token is empty. Aborting API call.");
@@ -953,7 +952,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        "PageSize", 10000,
 	        "InputsingleParams", Map.of("userValidation", "")
 	    );
-	    try {
+		    
 	        ResponseEntity<Map> response = restTemplate.postForEntity(
 	            geUsersAPI, 
 	            new HttpEntity<>(requestBody, headers), 
@@ -974,15 +973,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	    } catch (RestClientException e) {
 	        System.err.println("GE APM API request failed: " + e.getMessage());
+	        throw new Exception("GE APM Users API request failed:"+ e.getMessage());
 	    } catch (Exception e) {
 	        System.err.println("Unexpected error in getGEUsers(): " + e.getMessage());
 	        e.printStackTrace();
+	        throw new Exception("GE APM Users API request failed:"+ e.getMessage());
 	                        }
 
 	    return geUsers;
 	                }
 
-	private String geLogin() {
+	private String geLogin() throws Exception {
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
@@ -1001,17 +1002,19 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        }
 	    } catch (RestClientException e) {
 	        System.err.println("GE APM Authentication API request failed: " + e.getMessage());
+	        throw new Exception("GE APM Authentication API request failed: " + e.getMessage());
 	    } catch (Exception e) {
 	        System.err.println("Unexpected error during authentication: " + e.getMessage());
 	        e.printStackTrace();
+	        throw new Exception("GE APM Authentication API request failed: " + e.getMessage());
 	    }
 	    return "";
 	}
 	
 	@Override
-	public List<Case> getGEAPMCaseStatus() throws JsonMappingException, JsonProcessingException {
+	public List<Case> updateRecommendationStatus() throws Exception {
 	    LocalDate today = LocalDate.now();
-	    LocalDate oneMonthBefore = today.minusMonths(1);
+	    LocalDate oneMonthBefore = today.minusDays(10); //.minusMonths(1);
 	    String geAPMAcsessToken = geLogin();
 	    List<Case> cases = getCaseDetails(oneMonthBefore, today, "Open");
 	    System.out.println("Cases size: " + cases.size());
@@ -1028,7 +1031,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	                    if (node.has("recommendationNo1") && node.isObject()) {
 	                        String recommendationNo = node.get("recommendationNo1").asText();
 	                        String recommendationStatus = getGEAPMRecommendationStatusAndUpdateRecommendationStatus(geAPMAcsessToken, recommendationNo);
-	                        if (recommendationStatus != null) {
+	                        if (recommendationStatus != null && !recommendationStatus.isEmpty()) {
 	                            ((ObjectNode) node).put("recommendationStatus", recommendationStatus);
 	                            updated = true; // Mark that an update occurred
 	                        }
@@ -1050,30 +1053,37 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.add("MeridiumToken", geAPMAcsessToken);
-	    Map<String, Object> inputsingleParams = new HashMap<>();
-	    inputsingleParams.put("RecommendationID", recommendationNo);
-         Map<String, Object> requestBody = new HashMap<>();
-		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\EED_APM_RECO_STATUS");
-	    requestBody.put("Page", 0);
-	    requestBody.put("PageSize", 1000);
-	    requestBody.put("InputsingleParams", inputsingleParams);
+
+	    Map<String, Object> requestBody = Map.of(
+	        "QueryPath", "Public\\Meridium\\Client\\APIs\\Recommendation_Status_EED",
+	        "Page", 0,
+	        "PageSize", 1000,
+	        "InputsingleParams", Map.of("ID", recommendationNo)
+	    );
 	    
         	 HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 	    try {
 	        ResponseEntity<Map> response = restTemplate.postForEntity(geCaseStatusAPI, requestEntity, Map.class);
     		 
 	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-    		 System.out.println("Response Code: " + response.getStatusCode());
-    		 System.out.println("Response Body: " + response.getBody());
+	            Map<String, Object> responseBody = response.getBody();
+	            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.getOrDefault("output", Map.of());
+	            Map<String, Object> usersData = (Map<String, Object>) responseOutput.getOrDefault("data", Map.of());
+	            List<Map<String, Object>> rows = (List<Map<String, Object>>) usersData.getOrDefault("rows", List.of());
+	            System.out.println("Recommendation Status API:- recommendationNo: " + recommendationNo);
 
-	            return "";
+	            if (!rows.isEmpty()) {
+		            System.out.println("Recommendation Status API:- recommendationStatus: " + (String) rows.get(0).getOrDefault("State Caption", ""));
+
+	                return (String) rows.get(0).getOrDefault("State Caption", "");
     		 }
+	        }
          }catch(Exception e) {
 	        System.err.println("GE APM API call failed: " + e.getMessage());
 	    }
 	    return null; // Return null if API call fails
          }
-	public Boolean checkFunctionalLocationAvailableInGEAPM(String geAPMAcsessToken, String functionalLocation) {
+	public Boolean checkFunctionalLocationAvailableInGEAPM(String geAPMAcsessToken, String functionalLocation) throws Exception {
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
@@ -1094,6 +1104,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    } catch (RestClientException e) {
 //    public void scheduleTask() {
 	        System.err.println("GE APM API request failed: " + e.getMessage());
+	        throw new Exception("GE APM Check Available FL API request failed:"+ e.getMessage());
 	    } catch (NumberFormatException e) {
 	        System.err.println("Invalid rowCount format in response: " + e.getMessage());
 	    }
@@ -1101,7 +1112,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    return false;
 	}
 	
-	public Boolean checkUserAvailableInGEAPM(String geAPMAcsessToken, String userId) {
+	public Boolean checkUserAvailableInGEAPM(String geAPMAcsessToken, String userId) throws Exception {
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
@@ -1121,6 +1132,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        }
 	    } catch (RestClientException e) {
 	        System.err.println("GE APM API request failed: " + e.getMessage());
+	        throw new Exception("GE APM Check Available User API request failed:"+ e.getMessage());
 	    } catch (NumberFormatException e) {
 	        System.err.println("Invalid rowCount format in response: " + e.getMessage());
 	    }

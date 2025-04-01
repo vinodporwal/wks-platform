@@ -71,6 +71,6 @@ public interface CaseDefinitionService {
 	void sendEmail(String emailId, String subject, String body);
 
 //	List<com.wks.caseengine.rest.db2.entity.Users> getAllUsersFromAD();
-	List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers();
-	List<Case> getGEAPMCaseStatus() throws JsonMappingException, JsonProcessingException;
+	List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() throws Exception;
+	List<Case> updateRecommendationStatus() throws JsonMappingException, JsonProcessingException, Exception;
 }
