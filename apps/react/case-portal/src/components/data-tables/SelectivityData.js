@@ -18,9 +18,13 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 
 const SelectivityData = () => {
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { sitePlantChange } = dataGridStore
   const keycloak = useSession()
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange } = dataGridStore
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   // const [csData, setCsData] = useState([])
   // const [allProducts, setAllProducts] = useState([])
   // const [allCatalyst, setAllCatalyst] = useState([])
@@ -229,7 +233,7 @@ const SelectivityData = () => {
     getAllProducts()
     // getAllCatalyst()
     fetchData()
-  }, [sitePlantChange, keycloak])
+  }, [sitePlantChange, keycloak, lowerVertName])
   // Use catalyst options from the JSON file
   // const productOptions = catalystOptionsData.catalystOptions
 

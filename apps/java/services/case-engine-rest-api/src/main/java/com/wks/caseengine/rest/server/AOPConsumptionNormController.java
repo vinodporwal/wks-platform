@@ -29,11 +29,14 @@ public class AOPConsumptionNormController {
 	
 	@PostMapping(value="/saveAOPConsumptionNorm")
 	public List<AOPConsumptionNormDTO> saveAOPConsumptionNorm(@RequestBody List<AOPConsumptionNormDTO> aOPConsumptionNormDTOList){
+		
 		return aOPConsumptionNormService.saveAOPConsumptionNorm(aOPConsumptionNormDTOList);
+		
 	}
+
 	@GetMapping(value="/handleCalculateonsumptionNorms")
-	public int getNormalOperationNormsDataFromSP(@RequestParam String year){
-	return	 aOPConsumptionNormService.calculateExpressionConsumptionNorms(year);
+	public int getNormalOperationNormsDataFromSP(@RequestParam String year,@RequestParam String plantId){
+	return	 aOPConsumptionNormService.calculateExpressionConsumptionNorms(year,plantId);
 		
 	}
 	

@@ -99,6 +99,7 @@ const SlowDown = ({ permissions }) => {
     }
   }
   const saveSlowDownData = async (newRow) => {
+    setLoading(true)
     try {
       var plantId = ''
       const storedPlant = localStorage.getItem('selectedPlant')
@@ -140,13 +141,16 @@ const SlowDown = ({ permissions }) => {
         message: 'Slowdown data Saved Successfully!',
         severity: 'success',
       })
+      setLoading(false)
       // setSnackbarOpen(true);
       // setSnackbarData({ message: "Slowdown data Saved Successfully!", severity: "success" });
       return response
     } catch (error) {
       console.error('Error saving Slowdown data:', error)
+      setLoading(false)
     } finally {
       fetchData()
+      setLoading(false)
     }
   }
   const saveChanges = React.useCallback(async () => {

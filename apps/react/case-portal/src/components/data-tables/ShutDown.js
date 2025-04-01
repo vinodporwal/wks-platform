@@ -107,6 +107,7 @@ const ShutDown = ({ permissions }) => {
   }
 
   const saveShutdownData = async (newRow) => {
+    setLoading(true)
     try {
       let plantId = ''
 
@@ -141,13 +142,16 @@ const ShutDown = ({ permissions }) => {
         message: 'Shutdown data Saved Successfully!',
         severity: 'success',
       })
+      setLoading(false)
       // setSnackbarOpen(true);
       // setSnackbarData({ message: "Shutdown data Saved Successfully!", severity: "success" });
       return response
     } catch (error) {
+      setLoading(false)
       console.error('Error saving shutdown data:', error)
     } finally {
       fetchData()
+      setLoading(false)
     }
   }
 

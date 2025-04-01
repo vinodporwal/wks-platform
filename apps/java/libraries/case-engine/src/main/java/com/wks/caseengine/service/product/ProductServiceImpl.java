@@ -101,28 +101,40 @@ public class ProductServiceImpl implements ProductService {
 
 
 	public List<Object[]> getAllProductsFromNormParameters(String normParameterTypeName, UUID plantId) {
+		
 	    System.out.println("normParameterTypeName: " + normParameterTypeName);
+
+		if(normParameterTypeName.equalsIgnoreCase("BusinessDemandMEG")){
+			return getProductsFromDynamicView("vwScrnMEGBusinessDemandGetAllProducts" , plantId);
+		}
+
+	    // Convert "null" string to actual null (if needed)
 	    if ("null".equals(normParameterTypeName)) {
 	        normParameterTypeName = null;
 	        System.out.println("normParameterTypeName is the string 'null'");
 	    }
 
+	    // Start query construction
 	    StringBuilder queryBuilder = new StringBuilder(
 	        "SELECT CAST(np.Id AS VARCHAR(36)) as NormParameterId, np.Name, np.DisplayName " +
 	        "FROM NormParameters np "
 	    );
+
+	    // If filtering by norm type, join with NormTypes
 	    if (!"All".equals(normParameterTypeName)) {
 	        queryBuilder.append("JOIN NormTypes nt ON np.NormType_FK_Id = nt.Id ")
 	                    .append("WHERE np.Plant_FK_Id = :plantId AND np.NormParameterType_FK_Id IS NOT NULL ");
-
-	    if (normParameterTypeName != null) {
+	        if (normParameterTypeName != null) {
 	            queryBuilder.append("AND nt.NormName = :normParameterTypeName ");
 	        }
 	    } else {
 	        queryBuilder.append("WHERE np.Plant_FK_Id = :plantId ");
 	    }
+
+	    // Append ordering clause
 	    queryBuilder.append("ORDER BY np.DisplayOrder");
 
+	    // Create and set parameters in the query
 	    Query query = entityManager.createNativeQuery(queryBuilder.toString());
 	    query.setParameter("plantId", plantId);
 	    if (!"All".equals(normParameterTypeName) && normParameterTypeName != null) {
@@ -134,9 +146,22 @@ public class ProductServiceImpl implements ProductService {
 
 
 
+
+
+
+
 	public List<Object[]> getMonthlyDataForYear(int year) {
         String query = "SELECT NormParameter_FK_Id, month, monthValue, Remarks FROM NormParameterMonthlyTransaction WHERE year = :year";
         return entityManager.createNativeQuery(query).setParameter("year", year).getResultList();
     }
+
+	
+	public List<Object[]> getProductsFromDynamicView(String viewName, UUID plantId) {
+        String sql = "SELECT Id, Name, DisplayName, Plant_FK_Id FROM " + viewName + " WHERE Plant_FK_Id = :plantId";
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", plantId);
+        return query.getResultList();
+	}
+
 
 }
