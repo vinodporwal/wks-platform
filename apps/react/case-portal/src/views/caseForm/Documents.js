@@ -55,6 +55,7 @@ function Documents({ aCase, initialValue }) {
 
   const handleError = (error) => {
     console.log('error code ' + error.code + ': ' + error.message)
+    alert('error code ' + error.code + ': ' + error.message)
   }
 
   const handleCloseMesssage = () => {
@@ -129,7 +130,8 @@ function Documents({ aCase, initialValue }) {
             multiple
             clickable={isDraft} // Prevents clicking when disabled
             disabled={!isDraft} // Disable the component if aCase.isDraft is true
-            minFileSize={10240} // 10KB (some libraries support this)
+            minFileSize={1024} // 1KB 
+            maxFileSize={20000000} // 20MB
           >
             <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: isDraft ? 1 : 0.5 }}>
               Drop files here or click to upload
