@@ -89,10 +89,6 @@ const ShutDown = ({ permissions }) => {
       }
 
       saveShutdownData(data)
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
-      }
     } catch (error) {
       console.log('Error saving changes:', error)
     }
@@ -142,6 +138,10 @@ const ShutDown = ({ permissions }) => {
         message: 'Shutdown data Saved Successfully!',
         severity: 'success',
       })
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
       setLoading(false)
       // setSnackbarOpen(true);
       // setSnackbarData({ message: "Shutdown data Saved Successfully!", severity: "success" });
@@ -251,25 +251,17 @@ const ShutDown = ({ permissions }) => {
     if (row && row.maintStartDateTime && row.maintEndDateTime) {
       const start = new Date(row.maintStartDateTime)
       const end = new Date(row.maintEndDateTime)
-
       if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        // Check if dates are valid
         const durationInMs = end - start
-
-        // Calculate duration in hours and minutes
-        const durationInHours = Math.floor(durationInMs / (1000 * 60 * 60))
-        const remainingMs = durationInMs % (1000 * 60 * 60)
-        const durationInMinutes = Math.floor(remainingMs / (1000 * 60))
-
-        // Format the duration as "HH:MM"
-        const formattedDuration = `${String(durationInHours).padStart(2, '0')}:${String(durationInMinutes).padStart(2, '0')}`
+        const durationInMinutes = durationInMs / (1000 * 60)
+        const hours = Math.floor(durationInMinutes / 60)
+        const minutes = durationInMinutes % 60
+        // const formattedDuration = (hours + minutes / 60).toFixed(2)
+        const formattedDuration = `${hours}.${minutes}`
         return formattedDuration
-      } else {
-        return '' // Or handle invalid dates as needed
       }
-    } else {
-      return '' // Or handle missing dates as needed
     }
+    return ''
   }
 
   const colDefs = [

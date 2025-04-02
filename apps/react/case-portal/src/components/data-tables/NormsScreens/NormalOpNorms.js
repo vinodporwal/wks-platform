@@ -111,7 +111,9 @@ const NormalOpNormsScreen = () => {
         // handleMenuClose();
       }
     }
-    fetchData()
+    setTimeout(() => {
+      fetchData()
+    }, 450)
     getAllProducts()
   }, [sitePlantChange, keycloak, lowerVertName])
 
@@ -473,8 +475,8 @@ const NormalOpNormsScreen = () => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        setLoading(false)
         fetchData()
+        setLoading(false)
       } else {
         setSnackbarOpen(true)
 

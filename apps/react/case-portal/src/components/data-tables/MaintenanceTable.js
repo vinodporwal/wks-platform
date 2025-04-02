@@ -101,7 +101,7 @@ const MaintenanceTable = () => {
   const productionColumns = [
     {
       field: 'Name',
-      headerName: 'Description in (Hrs)',
+      headerName: 'Description',
       align: 'left',
       headerAlign: 'left',
       minWidth: 250,

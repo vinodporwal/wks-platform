@@ -101,7 +101,6 @@ public class ProductServiceImpl implements ProductService {
 
 
 	public List<Object[]> getAllProductsFromNormParameters(String normParameterTypeName, UUID plantId) {
-		
 	    System.out.println("normParameterTypeName: " + normParameterTypeName);
 
 		if(normParameterTypeName.equalsIgnoreCase("BusinessDemandMEG")){
