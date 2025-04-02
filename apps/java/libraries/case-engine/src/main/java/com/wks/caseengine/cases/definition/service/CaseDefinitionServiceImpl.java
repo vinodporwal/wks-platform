@@ -610,8 +610,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
-//		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
-		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
+			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
+//			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
 		requestBody.put("CaseID", caseNo);
 //		requestBody.put("Auther_Domain_Id", "Devang.Bhatt@ril.com");
 //		requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
@@ -1012,6 +1012,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
+	@Scheduled(cron = "0 5 * * * ?")
 	public List<Case> updateRecommendationStatus() throws Exception {
 	    LocalDate today = LocalDate.now();
 	    LocalDate oneMonthBefore = today.minusDays(10); //.minusMonths(1);
@@ -1030,7 +1031,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	                for (JsonNode node : recommendationNode) {
 	                    if (node.has("recommendationNo1") && node.isObject()) {
 	                        String recommendationNo = node.get("recommendationNo1").asText();
-	                        String recommendationStatus = getGEAPMRecommendationStatusAndUpdateRecommendationStatus(geAPMAcsessToken, recommendationNo);
+							String recommendationStatus = getGEAPMRecommendationStatusAndUpdateRecommendationStatus(
+									geAPMAcsessToken, recommendationNo);
 	                        if (recommendationStatus != null && !recommendationStatus.isEmpty()) {
 	                            ((ObjectNode) node).put("recommendationStatus", recommendationStatus);
 	                            updated = true; // Mark that an update occurred

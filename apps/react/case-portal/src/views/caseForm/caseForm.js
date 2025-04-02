@@ -1037,12 +1037,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           .join('')}
       </ul>
       </div>
-      // Add this function dynamically to handle file download
-
-        // Call the download function from FileService
-
-
-
       `;
     } else {
       content += `<p>No files uploaded.</p>`;
