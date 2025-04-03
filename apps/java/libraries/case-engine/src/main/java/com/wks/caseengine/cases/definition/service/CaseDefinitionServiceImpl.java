@@ -950,7 +950,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        "QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API",
 	        "Page", 0,
 	        "PageSize", 10000,
-	        "InputsingleParams", Map.of("userValidation", "")
+		        "InputsingleParams", Map.of("UserValidation", "")
 	    );
 		    
 	        ResponseEntity<Map> response = restTemplate.postForEntity(
