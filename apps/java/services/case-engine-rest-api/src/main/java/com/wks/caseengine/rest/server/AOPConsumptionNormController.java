@@ -1,4 +1,4 @@
-package com.wks.caseengine.rest.server;
+	package com.wks.caseengine.rest.server;
 
 import java.util.List;
 
@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wks.caseengine.dto.CalculatedConsumptionNormsDTO;
 import com.wks.caseengine.dto.AOPConsumptionNormDTO;
 import com.wks.caseengine.service.AOPConsumptionNormService;
 
@@ -29,14 +30,19 @@ public class AOPConsumptionNormController {
 	
 	@PostMapping(value="/saveAOPConsumptionNorm")
 	public List<AOPConsumptionNormDTO> saveAOPConsumptionNorm(@RequestBody List<AOPConsumptionNormDTO> aOPConsumptionNormDTOList){
-		
 		return aOPConsumptionNormService.saveAOPConsumptionNorm(aOPConsumptionNormDTOList);
 		
 	}
 
 	@GetMapping(value="/handleCalculateonsumptionNorms")
 	public int getNormalOperationNormsDataFromSP(@RequestParam String year,@RequestParam String plantId){
-	return	 aOPConsumptionNormService.calculateExpressionConsumptionNorms(year,plantId);
+		return	 aOPConsumptionNormService.calculateExpressionConsumptionNorms(year,plantId);
+		
+	}
+	
+	@GetMapping(value="/getCalculatedConsumptionNorms")
+	public  List<CalculatedConsumptionNormsDTO>  getCalculatedConsumptionNorms(@RequestParam String year,@RequestParam String plantId){
+		return	 aOPConsumptionNormService.getCalculatedConsumptionNorms(year,plantId);
 		
 	}
 	
