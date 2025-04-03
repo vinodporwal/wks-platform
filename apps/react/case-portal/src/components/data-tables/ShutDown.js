@@ -124,16 +124,13 @@ const ShutDown = ({ permissions }) => {
         remark: row.remark || 'null',
       }))
 
-      // const verticalName= lowerVertName
       const response = await DataService.saveShutdownData(
         plantId,
         shutdownDetails,
         keycloak,
-        // verticalName
       )
 
       setSnackbarOpen(true)
-      // setSnackbarMessage("Shutdown data Saved Successfully !");
       setSnackbarData({
         message: 'Shutdown data Saved Successfully!',
         severity: 'success',
@@ -143,8 +140,6 @@ const ShutDown = ({ permissions }) => {
         rowsBeforeChange: {},
       }
       setLoading(false)
-      // setSnackbarOpen(true);
-      // setSnackbarData({ message: "Shutdown data Saved Successfully!", severity: "success" });
       return response
     } catch (error) {
       setLoading(false)
@@ -188,22 +183,7 @@ const ShutDown = ({ permissions }) => {
       fetchData()
     }
   }
-  // const handleDeleteClick = async (id, params) => {
-  //   try {
-  //     const maintenanceId =
-  //       id?.maintenanceId ||
-  //       params?.row?.idFromApi ||
-  //       params?.row?.maintenanceId ||
-  //       params?.NormParameterMonthlyTransactionId
-  //     setOpen1(true)
-  //     setDeleteId(id)
-  //     return await DataService.deleteShutdownData(maintenanceId, keycloak)
-  //   } catch (error) {
-  //     console.error(`Error deleting Shutdown data:`, error)
-  //   } finally {
-  //     fetchData()
-  //   }
-  // }
+
   const fetchData = async () => {
     try {
       setLoading(true)
@@ -213,7 +193,6 @@ const ShutDown = ({ permissions }) => {
         idFromApi: item?.id,
         id: index,
       }))
-      // setShutdownData(formattedData)
       setRows(formattedData)
       setLoading(false)
     } catch (error) {
@@ -256,8 +235,8 @@ const ShutDown = ({ permissions }) => {
         const durationInMinutes = durationInMs / (1000 * 60)
         const hours = Math.floor(durationInMinutes / 60)
         const minutes = durationInMinutes % 60
-        // const formattedDuration = (hours + minutes / 60).toFixed(2)
-        const formattedDuration = `${hours}.${minutes}`
+        const formattedMinutes = minutes.toString().padStart(2, '0')
+        const formattedDuration = `${hours}.${formattedMinutes}`
         return formattedDuration
       }
     }

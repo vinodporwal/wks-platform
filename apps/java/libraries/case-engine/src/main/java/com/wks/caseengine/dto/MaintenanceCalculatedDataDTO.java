@@ -7,8 +7,6 @@ import java.util.UUID;
 import org.springframework.context.annotation.Configuration;
 
 import com.wks.caseengine.entity.MaintenanceCalculatedData;
-
-
 //@Configuration
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,7 +26,6 @@ public class MaintenanceCalculatedDataDTO {
     private Integer monthNo;
     private String aopYear;
     private String plantFKId;
-    
     public MaintenanceCalculatedDataDTO(MaintenanceCalculatedData entity) {
         this.id = entity.getId()!= null ? entity.getId().toString() : null;
         this.runningHoursInMonth = entity.getRunningHoursInMonth();

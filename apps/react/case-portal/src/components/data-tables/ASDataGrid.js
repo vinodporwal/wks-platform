@@ -293,9 +293,9 @@ const DataGridTable = ({
           const keysToUpdate = ['aopRemarks', 'remarks', 'remark'].filter(
             (key) => key in row,
           )
-//          console.log(keysToUpdate)
+          //          console.log(keysToUpdate)
           const keyToUpdate = keysToUpdate[0] || 'remark'
-//          console.log([keyToUpdate])
+          //          console.log([keyToUpdate])
           updatedRow = { ...row, [keyToUpdate]: currentRemark }
           return updatedRow
         }
@@ -675,7 +675,9 @@ const DataGridTable = ({
             },
           }}
           getRowClassName={(params) => {
-            return params.row.Particulars
+            // console.log('params getRowClassName', params)
+
+            return params.row.Particulars || params.row.Particulars2
               ? 'no-border-row'
               : params.indexRelativeToCurrentPage % 2 === 0
                 ? 'even-row'
@@ -764,10 +766,6 @@ const DataGridTable = ({
             },
 
             '& .MuiDataGrid-columnHeaders': {
-              // borderRight: `1px solid ${jioColors.border}`,
-              // backgroundColor: jioColors.headerBg,
-              // color: '#FFFFFF',
-
               backgroundColor: '#FAFAFC',
               color: '#3E4E75',
               fontSize: '0.8rem',

@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import jakarta.persistence.EntityManager;
@@ -10,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.wks.caseengine.dto.CalculatedConsumptionNormsDTO;
 import com.wks.caseengine.dto.AOPConsumptionNormDTO;
 import com.wks.caseengine.entity.AOPConsumptionNorm;
 import com.wks.caseengine.entity.Plants;
@@ -78,7 +80,41 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	public List<AOPConsumptionNormDTO> saveAOPConsumptionNorm(List<AOPConsumptionNormDTO> aOPConsumptionNormDTOList) {
 		
 		for(AOPConsumptionNormDTO aOPConsumptionNormDTO:aOPConsumptionNormDTOList) {
+			
+
 			AOPConsumptionNorm aOPConsumptionNorm=new AOPConsumptionNorm();
+
+			// AOPConsumptionNorm aOPConsumptionNorm = new AOPConsumptionNorm();
+
+			if (aOPConsumptionNormDTO.getId() != null && !aOPConsumptionNormDTO.getId().isEmpty()) {
+				aOPConsumptionNorm.setId(UUID.fromString(aOPConsumptionNormDTO.getId()));
+				// aOPConsumptionNorm.setModifiedOn(new Date());
+			} else {
+				UUID plantId = null;
+				UUID siteId = null;
+				UUID verticalId = null;
+				UUID materialId = null;
+	
+				if (aOPConsumptionNormDTO.getSiteFkId() != null) {
+					siteId = UUID.fromString(aOPConsumptionNormDTO.getSiteFkId());
+				}
+				if (aOPConsumptionNormDTO.getPlantFkId() != null) {
+					plantId = UUID.fromString(aOPConsumptionNormDTO.getPlantFkId());
+				}
+				if (aOPConsumptionNormDTO.getVerticalFkId() != null) {
+					verticalId = UUID.fromString(aOPConsumptionNormDTO.getVerticalFkId());
+				}
+				if (aOPConsumptionNormDTO.getMaterialFkId() != null) {
+					materialId = UUID.fromString(aOPConsumptionNormDTO.getMaterialFkId());
+				}
+	
+				UUID Id = aOPConsumptionNormRepository.findIdByFilters(plantId, siteId, verticalId, materialId, aOPConsumptionNormDTO.getAopYear());
+				if (Id != null) {
+					aOPConsumptionNorm.setId(Id);
+				}
+	
+				// aOPConsumptionNorm.setCreatedOn(new Date());
+			}
 			aOPConsumptionNorm.setAopCaseId(aOPConsumptionNormDTO.getAopCaseId());
 			aOPConsumptionNorm.setAopCaseId(aOPConsumptionNormDTO.getAopCaseId());
 			aOPConsumptionNorm.setAopRemarks(aOPConsumptionNormDTO.getAopRemarks());
@@ -130,19 +166,85 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	}
 	
 	@Transactional
-	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId, String finYear) {
-	    String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @finYear = :finYear"; // Ensure correct parameter format
+	public int executeDynamicUpdateProcedure(String procedureName,String plantId, String siteId, String verticalId, String finYear) {
+		String sql = "EXEC " + procedureName + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @finYear = :finYear";
 	    Query query = entityManager.createNativeQuery(sql);
-
-
-	        // Setting all parameters
-    query.setParameter("plantId", plantId);
-    query.setParameter("siteId", siteId);
-    query.setParameter("verticalId", verticalId);
-    query.setParameter("finYear", finYear);
+	    query.setParameter("plantId", plantId);
+	     query.setParameter("siteId", siteId);
+	     query.setParameter("verticalId", verticalId);
+	     query.setParameter("finYear", finYear);
 	    
 	    return query.executeUpdate();
 	}
+	
+
+	
+	@Override
+	 @Transactional
+	    public List<CalculatedConsumptionNormsDTO> getCalculatedConsumptionNorms(String year, String plantId) {
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+	        Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
+	        
+	        List<CalculatedConsumptionNormsDTO> listDTO=new ArrayList<>();
+	        String storedProcedure = vertical.getName() + "_HMD_CalculateConsumptionAOPValues";
+	        System.out.println("Executing SP: " + storedProcedure);
+
+	        List<Object[]> results = getCalculatedConsumptionNormsSP(storedProcedure, year, plant.getId().toString(), site.getId().toString(), vertical.getId().toString());
+	    	
+	        for(Object[] row :results){
+	        	CalculatedConsumptionNormsDTO dto = new CalculatedConsumptionNormsDTO();
+//	        	dto.setId(row[0] != null ? UUID.fromString(row[0].toString()) : null);
+	        	dto.setSiteFkId(row[0] != null ? UUID.fromString(row[0].toString()) : null);
+	        	dto.setVerticalFkId(row[1] != null ? UUID.fromString(row[1].toString()) : null);
+	        	dto.setAopCaseId(row[2] != null ? row[2].toString() : "N/A");
+	        	dto.setAopStatus(row[3] != null ? row[3].toString() : "N/A");
+	        	dto.setAopRemarks(row[4] != null ? row[4].toString() : "");
+	        	dto.setMaterialFkId(row[5] != null ? UUID.fromString(row[5].toString()) : null);
+
+	        	
+	        	dto.setJan(row[8] != null ? Float.parseFloat(row[8].toString()) : 0.0f);
+	        	dto.setFeb(row[9] != null ? Float.parseFloat(row[9].toString()) : 0.0f);
+	        	dto.setMarch(row[10] != null ? Float.parseFloat(row[10].toString()) : 0.0f);
+	        	dto.setApril(row[11] != null ? Float.parseFloat(row[11].toString()) : 0.0f);
+	        	dto.setMay(row[12] != null ? Float.parseFloat(row[12].toString()) : 0.0f);
+	        	dto.setJune(row[13] != null ? Float.parseFloat(row[13].toString()) : 0.0f);
+	        	dto.setJuly(row[14] != null ? Float.parseFloat(row[14].toString()) : 0.0f);
+	        	dto.setAug(row[15] != null ? Float.parseFloat(row[15].toString()) : 0.0f);
+	        	dto.setSep(row[16] != null ? Float.parseFloat(row[16].toString()) : 0.0f);
+	        	dto.setOct(row[17] != null ? Float.parseFloat(row[17].toString()) : 0.0f);
+	        	dto.setNov(row[18] != null ? Float.parseFloat(row[18].toString()) : 0.0f);
+	        	dto.setDec(row[19] != null ? Float.parseFloat(row[19].toString()) : 0.0f);
+
+	        	dto.setAopYear(row[20] != null ? row[20].toString() : "N/A");
+	        	dto.setPlantFkId(row[21] != null ? UUID.fromString(row[21].toString()) : null);
+	        	dto.setNormParameterTypeDisplayName(row[7] != null ? row[7].toString() : "N/A");
+	        	dto.setUOM(row[6] != null ? row[6].toString() : "");
+
+	        	
+
+	        	listDTO.add(dto);
+	        }
+
+//	        return results.stream().map(this::mapToAopDataDTO).collect(Collectors.toList());
+	        return listDTO;
+	    }
+	 
+	
+	  @Transactional
+	    public List<Object[]> getCalculatedConsumptionNormsSP(String procedureName, String finYear, String plantId, String siteId, String verticalId) {
+	        String sql = "EXEC " + procedureName + 
+	                     " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @finYear = :finYear";
+	        
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("plantId", plantId);
+	        query.setParameter("siteId", siteId);
+	        query.setParameter("verticalId", verticalId);
+	        query.setParameter("finYear", finYear);
+
+	        return query.getResultList();
+	    }
+
 
 
 }

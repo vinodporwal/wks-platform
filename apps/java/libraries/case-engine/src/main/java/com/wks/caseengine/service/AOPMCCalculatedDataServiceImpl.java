@@ -24,7 +24,6 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public List<AOPMCCalculatedDataDTO> getAOPMCCalculatedData(String plantId, String year) {
 	    
 		//  List<Object[]> obj= aOPMCCalculatedDataRepository.findByYearAndPlantFkId(year, UUID.fromString(plantId));
-				 
 		List<Object[]> obj= aOPMCCalculatedDataRepository.getDataMCUValuesAllData(year, plantId);
 	    List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
@@ -100,6 +99,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			aOPMCCalculatedData.setFinancialYear(aOPMCCalculatedDataDTO.getFinancialYear());
 			aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
 
+			
 			aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
 		}
 		// TODO Auto-generated method stub

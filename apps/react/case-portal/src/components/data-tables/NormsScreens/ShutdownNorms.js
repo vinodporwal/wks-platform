@@ -14,6 +14,7 @@ const headerMap = generateHeaderNames()
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
+import { validateFields } from 'utils/validationUtils'
 
 const ShutdownNorms = () => {
   const [loading, setLoading] = useState(false)
@@ -29,6 +30,12 @@ const ShutdownNorms = () => {
     message: '',
     severity: 'info',
   })
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { verticalChange } = dataGridStore
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('TPH')
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -42,24 +49,66 @@ const ShutdownNorms = () => {
   const keycloak = useSession()
 
   const saveChanges = React.useCallback(async () => {
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      if (data.length == 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
+    setLoading(true)
+    if (lowerVertName == 'meg') {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          setLoading(false)
+          return
+        }
 
-      saveShutDownNormsData(data)
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
+        saveShutDownNormsData(data)
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {
+        /* empty */
+        setLoading(false)
       }
-    } catch (error) {
-      /* empty */
+    }
+    if (lowerVertName == 'pe') {
+      try {
+        var editedData = Object.values(unsavedChangesRef.current.unsavedRows)
+        var allRows = Array.from(apiRef.current.getRowModels().values())
+        allRows = allRows.filter((row) => !row.isGroupHeader)
+
+        const updatedRows = allRows.map(
+          (row) => unsavedChangesRef.current.unsavedRows[row.id] || row,
+        )
+
+        if (updatedRows.length === 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
+
+        const requiredFields = ['remarks']
+
+        const validationMessage = validateFields(editedData, requiredFields)
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
+        saveShutDownNormsData(updatedRows)
+      } catch (error) {
+        console.log('Error saving changes:', error)
+        setLoading(false)
+      }
     }
   }, [apiRef, selectedUnit])
 
@@ -80,7 +129,7 @@ const ShutdownNorms = () => {
     }
     fetchData()
     getAllProducts()
-  }, [sitePlantChange, keycloak, selectedUnit])
+  }, [sitePlantChange, keycloak, selectedUnit, lowerVertName])
 
   const formatValueToThreeDecimals = (params) =>
     params ? parseFloat(params).toFixed(3) : ''
@@ -478,6 +527,78 @@ const ShutdownNorms = () => {
     console.log(error)
   }, [])
 
+  const handleCalculatePe = async () => {
+    setLoading(true)
+    try {
+      const year = localStorage.getItem('year')
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      var plantId = plantId
+      const data = await DataService.handleCalculateShutdownNorms(
+        plantId,
+        year,
+        keycloak,
+      )
+
+      if (data) {
+        const groupedRows = []
+        const groups = new Map()
+        let groupId = 0
+
+        data.forEach((item) => {
+          const groupKey = item.normParameterTypeDisplayName
+
+          if (!groups.has(groupKey)) {
+            groups.set(groupKey, [])
+            groupedRows.push({
+              id: groupId++,
+              Particulars: groupKey,
+              isGroupHeader: true,
+            })
+          }
+          const formattedItem = {
+            ...item,
+            idFromApi: item.id,
+            // NormParametersId: item.materialFkId.toLowerCase(),
+            materialFkId: item?.materialFkId.toLowerCase(),
+            id: groupId++,
+            remarks: item?.remarks?.trim() || null,
+          }
+
+          groups.get(groupKey).push(formattedItem)
+          groupedRows.push(formattedItem)
+        })
+
+        setRows(groupedRows)
+        setLoading(false)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+        setLoading(false)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error saving refresh data:', error)
+      setLoading(false)
+    }
+  }
+
+  const handleCalculate = () => {
+    if (lowerVertName == 'meg') {
+      // handleCalculateMeg()
+    } else {
+      handleCalculatePe()
+    }
+  }
+
   return (
     <div>
       <Backdrop
@@ -515,6 +636,7 @@ const ShutdownNorms = () => {
         currentRowId={currentRowId}
         unsavedChangesRef={unsavedChangesRef}
         handleRemarkCellClick={handleRemarkCellClick}
+        handleCalculate={handleCalculate}
         permissions={{
           showAction: true,
           addButton: false,
@@ -524,6 +646,7 @@ const ShutdownNorms = () => {
           units: ['TPH', 'TPD'],
           saveWithRemark: false,
           saveBtn: true,
+          showCalculate: lowerVertName == 'pe' ? true : false,
         }}
       />
     </div>
