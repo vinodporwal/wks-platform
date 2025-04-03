@@ -935,49 +935,50 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	@Override
 	public List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() throws Exception {
 	    List<com.wks.caseengine.rest.db2.entity.Users> geUsers = new ArrayList<>();
-	    try {
 	    String geAPMAcsessToken = geLogin();
-	    if (geAPMAcsessToken.isEmpty()) {
-	        System.err.println("GE APM Access Token is empty. Aborting API call.");
-	        return geUsers;
-	    }
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.add("MeridiumToken", geAPMAcsessToken);
+ 	    Map<String, Object> inputsingleParams = new HashMap<>();
+ 	    inputsingleParams.put("userValidation", "");
+ 	    Map<String, Object> requestBody = new HashMap<>();
+ 		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API");
+ 	    requestBody.put("Page", 0);
+ 	    requestBody.put("PageSize", 10000);
+ 	    requestBody.put("InputsingleParams", inputsingleParams);
+ 
+ 	    try {
+ 	        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+ 	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
+ 	        System.out.println("Response Code: " + response.getStatusCode());
+ 	        System.out.println("Response Body: " + response.getBody());
+ 	      
 
-	    Map<String, Object> requestBody = Map.of(
-	        "QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API",
-	        "Page", 0,
-	        "PageSize", 10000,
-		        "InputsingleParams", Map.of("UserValidation", "")
-	    );
-		    
-	        ResponseEntity<Map> response = restTemplate.postForEntity(
-	            geUsersAPI, 
-	            new HttpEntity<>(requestBody, headers), 
-	            Map.class
-	        );
-	        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-	            System.err.println("GE APM API call failed. Response code: " + response.getStatusCode());
-	            return geUsers;
-	        }
 	        Map<String, Object> responseBody = response.getBody();
-	        Map<String, Object> responseOutput = (Map<String, Object>) responseBody.getOrDefault("output", Map.of());
-	        Map<String, Object> usersData = (Map<String, Object>) responseOutput.getOrDefault("data", Map.of());
-	        List<Map<String, Object>> usersList = (List<Map<String, Object>>) usersData.getOrDefault("rows", List.of());
+ 	        if (responseBody != null && responseBody.get("output") instanceof Map) {
+ 	            Map<String, Object> responseOutput = (Map<String, Object>) responseBody.get("output");
+ 	            if (responseOutput.get("data") instanceof Map) {
+ 	                Map<String, Object> usersData = (Map<String, Object>) responseOutput.get("data");
+ 	                if (usersData.get("rows") instanceof List) {
+ 	                    List<Map<String, Object>> usersList = (List<Map<String, Object>>) usersData.get("rows");
+ 	                for (Map<String, Object> userMap : usersList) {
+ 	                        if ("A".equals(userMap.get("Status"))) { // Corrected String comparison
+ 	                    com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
 
-	        usersList.stream()
-	            .filter(userMap -> "A".equals(userMap.get("Status"))) // Ensure only active users are processed
-	            .forEach(userMap -> geUsers.add(createUserFromMap(userMap)));
-
+ 	                            user.setUserId(userMap.get("User ID") != null ? userMap.get("User ID").toString() : null);
+ 	                            user.setEmailId(userMap.get("User ID") != null ? userMap.get("User ID").toString() : null);
+ 		                    geUsers.add(user);
+ 	                        }
+ 	                }
+ 	                }
+ 	            }
+ 	        }
 	    } catch (RestClientException e) {
 	        System.err.println("GE APM API request failed: " + e.getMessage());
-	        throw new Exception("GE APM Users API request failed:"+ e.getMessage());
 	    } catch (Exception e) {
 	        System.err.println("Unexpected error in getGEUsers(): " + e.getMessage());
 	        e.printStackTrace();
-	        throw new Exception("GE APM Users API request failed:"+ e.getMessage());
 	                        }
 
 	    return geUsers;
@@ -995,6 +996,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
 	    try {
 	        ResponseEntity<Map> response = restTemplate.postForEntity(geAuthenticationAPI, requestEntity, Map.class);
+	        System.out.println("Response Body: " + response.getBody());
 	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
 	            return (String) response.getBody().getOrDefault("sessionId", "");
 	        } else {
