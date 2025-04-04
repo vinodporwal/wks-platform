@@ -599,14 +599,16 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		Date date = inputFormat.parse(targetDateString);
 		SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String targetDate = outputFormat.format(date);
+
+			// Create request body
          Map<String, Object> requestBody = new HashMap<>();
 		requestBody.put("Auther_Domain_Id", dataGridEntry.path("recommendationAssignedTo2").asText());
          requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
 		requestBody.put("Approved_Domain_Id", dataGridEntry.path("recommendationReviewer").asText());
 		requestBody.put("RECOMMENDATION_Des", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_BASIS", dataGridEntry.path("recommendationHeadline").asText());
-//			requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
-			requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
+			requestBody.put("MI_REC_LOC_ID_CHR", dataGridEntry.path("equipmentFunctionLocation").asText());
+//			requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
@@ -941,7 +943,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.add("MeridiumToken", geAPMAcsessToken);
  	    Map<String, Object> inputsingleParams = new HashMap<>();
- 	    inputsingleParams.put("Domain", "ronit1.chavan@ril.com");
+ 	    inputsingleParams.put("Domain", "");
  	    Map<String, Object> requestBody = new HashMap<>();
  		requestBody.put("QueryPath", "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API");
  	    requestBody.put("Page", 0);
