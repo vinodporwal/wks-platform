@@ -588,7 +588,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //		
 //		Boolean isUserAvailableInGEAPM = checkUserAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("recommendationAssignedTo2").asText());
 		String recommendationId = "";
-		String status = "Assigned";
+		String status = "Pending Approval";
 		String[] recommendationStatusAndId = new String[2];
 //		if(isFunctionalLocationAvailableInGEAPM && isUserAvailableInGEAPM) {
 		 RestTemplate restTemplate = new RestTemplate();

@@ -185,8 +185,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             eventIds: eventIds,
             businessKey: businessKey,
             owner: {
-              // id: keycloak.subject || '123123',
-              id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+              id: keycloak.subject || '',
+              // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
               phone: keycloak.idTokenParsed.phone || '1234543211',
@@ -259,8 +259,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       JSON.stringify({
         caseDefinitionId: caseDefId,
         owner: {
-          // id: keycloak.subject || '',
-          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+          id: keycloak.subject || '',
+          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
           phone: keycloak.idTokenParsed.phone || '',
