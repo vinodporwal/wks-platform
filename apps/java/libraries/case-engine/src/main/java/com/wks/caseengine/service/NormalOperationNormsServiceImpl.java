@@ -159,43 +159,63 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
             return query.executeUpdate();
 
         } catch (Exception e) {
-            e.printStackTrace(); // Log detailed exception for debugging
-            return 0; // Return 0 if execution fails
+            e.printStackTrace();
+            return 0; 
         }
     }
-	@Transactional
-	public List<Object[]> getCalculatedNormalOpsNormsSP(String procedureName, String finYear,String plantId, String siteId, String verticalId) {
-	    try {
-	    	 // Create a native query to execute the stored procedure
-	        String sql = "EXEC " + procedureName + 
-	                     " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @finYear = :finYear";
+	// @Transactional
+	// public List<Object[]> getCalculatedNormalOpsNormsSP(String procedureName, String finYear,String plantId, String siteId, String verticalId) {
+	//     try {
+	//     	 // Create a native query to execute the stored procedure
+	//         String sql = "EXEC " + procedureName + 
+	//                      " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @finYear = :finYear";
 	        
-	        Query query = entityManager.createNativeQuery(sql);
+	//         Query query = entityManager.createNativeQuery(sql);
 	        
-	        // Set parameters
-	        query.setParameter("plantId", plantId);
-	        query.setParameter("siteId", siteId);
-	        query.setParameter("verticalId", verticalId);
-	        query.setParameter("finYear", finYear);
+	//         // Set parameters
+	//         query.setParameter("plantId", plantId);
+	//         query.setParameter("siteId", siteId);
+	//         query.setParameter("verticalId", verticalId);
+	//         query.setParameter("finYear", finYear);
 
-	        return query.getResultList(); // Fetch results instead of executing an update
-	    } catch (Exception e) {
-	        e.printStackTrace(); // Log detailed exception for debugging
-	        return Collections.emptyList(); // Return an empty list instead of 0
-	    }
-	}
+	//         return query.getResultList(); // Fetch results instead of executing an update
+	//     } catch (Exception e) {
+	//         e.printStackTrace(); // Log detailed exception for debugging
+	//         return Collections.emptyList(); // Return an empty list instead of 0
+	//     }
+	// }
 
 
-	@Override
-	@Transactional
-	public List<Object[]> getCalculatedNormalOpsNorms(String year, String plantId) {
-		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		String storedProcedure=vertical.getName()+"_HMD_NormsCalculation";
-		return getCalculatedNormalOpsNormsSP(storedProcedure,year,plant.getId().toString(),site.getId().toString(),vertical.getId().toString());
-		// TODO Auto-generated method stub
-	}
+	// @Transactional
+	// public int getCalculatedNormalOpsNormsSP(String procedureName, String finYear, String plantId, String siteId, String verticalId) {
+	// 	try {
+	// 		String sql = "EXEC " + procedureName + 
+	// 					 " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @finYear = :finYear";
+	// 		Query query = entityManager.createNativeQuery(sql);
+	// 		query.setParameter("plantId", plantId);
+	// 		query.setParameter("siteId", siteId);
+	// 		query.setParameter("verticalId", verticalId);
+	// 		query.setParameter("finYear", finYear);
+	
+	// 		return query.executeUpdate(); // returns number of rows affected
+	// 	} catch (Exception e) {
+	// 		e.printStackTrace();
+	// 		return -1; // return -1 or any error code to indicate failure
+	// 	}
+	// }
+	
+
+
+	// @Override
+	// @Transactional
+	// public List<Object[]> getCalculatedNormalOpsNorms(String year, String plantId) {
+	// 	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+	// 	Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+	// 	Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+	// 	String storedProcedure=vertical.getName()+"_HMD_NormsCalculation";
+	// 	return getCalculatedNormalOpsNormsSP(storedProcedure,year,plant.getId().toString(),site.getId().toString(),vertical.getId().toString());
+	// 	// TODO Auto-generated method stub
+	// }
 	 
 
 }
