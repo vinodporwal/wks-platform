@@ -584,12 +584,13 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		System.out.println(dataGridEntry.toPrettyString().toString());
 		 String geAPMAcsessToken = geLogin();
 		 System.out.println("GE APM Acsess Token: " + geAPMAcsessToken);
-		Boolean isFunctionalLocationAvailableInGEAPM = checkFunctionalLocationAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("equipmentFunctionLocation").asText());
-		Boolean isUserAvailableInGEAPM = checkUserAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("recommendationAssignedTo2").asText());
+//		Boolean isFunctionalLocationAvailableInGEAPM = checkFunctionalLocationAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("equipmentFunctionLocation").asText());
+//		
+//		Boolean isUserAvailableInGEAPM = checkUserAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("recommendationAssignedTo2").asText());
 		String recommendationId = "";
 		String status = "Assigned";
 		String[] recommendationStatusAndId = new String[2];
-		if(isFunctionalLocationAvailableInGEAPM && isUserAvailableInGEAPM) {
+//		if(isFunctionalLocationAvailableInGEAPM && isUserAvailableInGEAPM) {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
@@ -612,8 +613,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
-			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
-//			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
+//			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
+			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
 		requestBody.put("CaseID", caseNo);
 //		requestBody.put("Auther_Domain_Id", "Devang.Bhatt@ril.com");
 //		requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
@@ -661,10 +662,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         // Return the generated ID with the prefix
 //		String id = prefix + formattedId;
 //		String status = "Assigned";
-		} else {
-			recommendationStatusAndId[0] = null;
-			recommendationStatusAndId[1] = status;
-		}
+//		} else {
+//			recommendationStatusAndId[0] = null;
+//			recommendationStatusAndId[1] = status;
+//		}
         return recommendationStatusAndId;
 	}
 	
