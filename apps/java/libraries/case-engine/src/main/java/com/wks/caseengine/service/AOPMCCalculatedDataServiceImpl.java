@@ -1,6 +1,16 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ShutdownNormsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +22,9 @@ import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.entity.AOPMCCalculatedData;
 import com.wks.caseengine.entity.NormParameters;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.repository.AOPMCCalculatedDataRepository;
 
 @Service
@@ -19,11 +32,24 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	
 	@Autowired
 	private AOPMCCalculatedDataRepository aOPMCCalculatedDataRepository;
+	
+	@Autowired
+	private PlantsRepository plantsRepository;
+	
+	@Autowired
+	private SiteRepository siteRepository;
+	
+	@Autowired
+	private VerticalsRepository verticalRepository;
+	
+	@PersistenceContext
+    private EntityManager entityManager;
 
 	@Override
 	public List<AOPMCCalculatedDataDTO> getAOPMCCalculatedData(String plantId, String year) {
 	    
 		//  List<Object[]> obj= aOPMCCalculatedDataRepository.findByYearAndPlantFkId(year, UUID.fromString(plantId));
+				 
 		List<Object[]> obj= aOPMCCalculatedDataRepository.getDataMCUValuesAllData(year, plantId);
 	    List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
@@ -50,20 +76,6 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
  	    	aOPMCCalculatedDataDTO.setVerticalFKId(row[22] != null ? row[22].toString() : null);
  	    	aOPMCCalculatedDataDTOList.add(aOPMCCalculatedDataDTO);
  	    }
-	    
-	   
- 		// List<Object[]> list = aOPMCCalculatedDataRepository.getDataBusinessAllData(plantId,year);
- 		// int i=1;
- 		// for(Object[] obj1 :list){
-               
- 		// 	AOPMCCalculatedDataDTO aOPMCCalculatedDataDTO = new AOPMCCalculatedDataDTO();
-
- 		// 	aOPMCCalculatedDataDTO.setNormParametersFKId(obj1[0]!=null? obj1[0].toString():null);
- 		// 	aOPMCCalculatedDataDTO.setId(i+"#");
- 		// 	aOPMCCalculatedDataDTOList.add(aOPMCCalculatedDataDTO);
- 		// 	i++;
- 		// }
-
 
 	    return aOPMCCalculatedDataDTOList;
 	}
@@ -82,6 +94,11 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			aOPMCCalculatedData.setVerticalFKId(UUID.fromString(aOPMCCalculatedDataDTO.getVerticalFKId()));
 			aOPMCCalculatedData.setMaterialFKId(UUID.fromString(aOPMCCalculatedDataDTO.getMaterialFKId()));
 			
+//			aOPMCCalculatedData.setPlantFKId(aOPMCCalculatedDataDTO.getPlantFKId());
+//			aOPMCCalculatedData.setSiteFKId(aOPMCCalculatedDataDTO.getSiteFKId());
+//			aOPMCCalculatedData.setVerticalFKId(aOPMCCalculatedDataDTO.getVerticalFKId());
+//			aOPMCCalculatedData.setMaterialFKId(aOPMCCalculatedDataDTO.getMaterialFKId());
+			
 			aOPMCCalculatedData.setJanuary(aOPMCCalculatedDataDTO.getJanuary());
 			aOPMCCalculatedData.setFebruary(aOPMCCalculatedDataDTO.getFebruary());
 			aOPMCCalculatedData.setMarch(aOPMCCalculatedDataDTO.getMarch());
@@ -99,11 +116,30 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			aOPMCCalculatedData.setFinancialYear(aOPMCCalculatedDataDTO.getFinancialYear());
 			aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
 
-			
 			aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
 		}
 		// TODO Auto-generated method stub
 		return aOPMCCalculatedDataDTOList;
 	}
+
+	@Override
+	public int getAOPMCCalculatedDataSP(String plantId, String finYear) {
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		UUID siteId=site.getId();
+		UUID verticalId=vertical.getId();
+		String storedProcedure="MEG_LoadMCValues";
+		String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @siteId = :siteId, @verticalId = :verticalId, @finYear = :finYear";
+	    Query query = entityManager.createNativeQuery(sql);
+	    query.setParameter("plantId", plantId);
+	     query.setParameter("siteId", siteId);
+	     query.setParameter("verticalId", verticalId);
+	     query.setParameter("finYear", finYear);
+	    
+	    return query.executeUpdate();
+	}
+	
+	
 
 }

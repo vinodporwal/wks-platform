@@ -124,7 +124,7 @@ const SlowDown = ({ permissions }) => {
       }))
       const response = await DataService.saveSlowdownData(
         plantId,
-        lowerVertName === 'meg' ? slowDownDetailsMEG : slowDownDetails,
+        lowerVertName === 'meg' ? slowDownDetailsMEG : slowDownDetailsMEG,
         keycloak,
       )
       //console.log('Slowdown data Saved Successfully:', response)
@@ -245,10 +245,12 @@ const SlowDown = ({ permissions }) => {
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(
-          keycloak,
-          lowerVertName === 'meg' ? 'Production' : 'Grade',
-        )
+        var data = []
+        if (lowerVertName == 'meg')
+          data = await DataService.getAllProducts(keycloak, null)
+        else {
+          data = await DataService.getAllProductsAll(keycloak, 'Production')
+        }
         var productList = []
         if (lowerVertName === 'meg') {
           productList = data
@@ -421,11 +423,12 @@ const SlowDown = ({ permissions }) => {
       ? {
           field: 'durationInHrs',
           headerName: 'Duration (hrs)',
-          editable: true,
+          editable: false,
           minWidth: 75,
           renderEditCell: NumericInputOnly,
           align: 'left',
           headerAlign: 'left',
+          valueGetter: findDuration,
         }
       : {
           field: 'durationInHrs',

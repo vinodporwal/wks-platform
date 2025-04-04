@@ -95,11 +95,12 @@ const BusinessDemand = ({ permissions }) => {
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const data = await DataService.getAllProducts(
-          keycloak,
-          // lowerVertName === 'meg' ? 'Production' : 'Grade',
-          null,
-        )
+        var data = []
+        if (lowerVertName == 'meg')
+          data = await DataService.getAllProducts(keycloak, null)
+        else {
+          data = await DataService.getAllProductsAll(keycloak, 'Production')
+        }
         var productList = []
         if (lowerVertName === 'meg') {
           productList = data

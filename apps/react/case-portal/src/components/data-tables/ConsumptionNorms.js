@@ -27,6 +27,7 @@ const NormalOpNormsScreen = () => {
     message: '',
     severity: 'info',
   })
+  const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -132,6 +133,8 @@ const NormalOpNormsScreen = () => {
             message: 'No Records to Save!',
             severity: 'info',
           })
+          setLoading(false)
+
           return
         }
         const requiredFields = ['aopRemarks']
@@ -168,6 +171,8 @@ const NormalOpNormsScreen = () => {
             message: 'No Records to Save!',
             severity: 'info',
           })
+          setLoading(false)
+
           return
         }
 
@@ -183,13 +188,31 @@ const NormalOpNormsScreen = () => {
           setLoading(false)
           return
         }
-        saveEditedData(updatedRows)
+
+        if (calculatebtnClicked == false) {
+          if (editedData.length === 0) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: 'No Records to Save!',
+              severity: 'info',
+            })
+            setLoading(false)
+
+            setCalculatebtnClicked(false)
+            return
+          }
+
+          saveEditedData(editedData)
+        } else {
+          saveEditedData(updatedRows)
+        }
       } catch (error) {
         setLoading(false)
         console.log('Error saving changes:', error)
+        setCalculatebtnClicked(false)
       }
     }
-  }, [apiRef, selectedUnit])
+  }, [apiRef, selectedUnit, calculatebtnClicked])
 
   const fetchData = async () => {
     setLoading(true)
@@ -239,9 +262,11 @@ const NormalOpNormsScreen = () => {
       // setBDData(groupedRows)
       setRows(groupedRows)
       setLoading(false)
+      setCalculatebtnClicked(false)
     } catch (error) {
       console.error('Error fetching data:', error)
       setLoading(false)
+      setCalculatebtnClicked(false)
     }
   }
 
@@ -330,6 +355,8 @@ const NormalOpNormsScreen = () => {
 
   const handleCalculatePe = async () => {
     try {
+      setCalculatebtnClicked(true)
+
       const storedPlant = localStorage.getItem('selectedPlant')
       const year = localStorage.getItem('year')
       if (storedPlant) {
@@ -367,6 +394,11 @@ const NormalOpNormsScreen = () => {
             id: groupId++,
             aopRemarks: item?.aopRemarks?.trim() || null,
           }
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Data refreshed successfully!',
+            severity: 'success',
+          })
 
           groups.get(groupKey).push(formattedItem)
           groupedRows.push(formattedItem)

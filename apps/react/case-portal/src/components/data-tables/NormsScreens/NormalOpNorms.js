@@ -463,7 +463,7 @@ const NormalOpNormsScreen = () => {
         plantId = parsedPlant.id
       }
       var plantId = plantId
-      const data = await DataService.handleCalculateNormalOpsNorms(
+      const data = await DataService.handleCalculateNormalOpsNorms1(
         plantId,
         year,
         keycloak,

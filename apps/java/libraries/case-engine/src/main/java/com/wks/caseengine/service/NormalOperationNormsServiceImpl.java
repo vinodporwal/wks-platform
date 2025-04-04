@@ -139,7 +139,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		String storedProcedure=vertical.getName()+"_HMD_CalculateExpressionConsumptionNorms";
+		String storedProcedure=vertical.getName()+"_HMD_NormsCalculation";
 		System.out.println("storedProcedure"+storedProcedure);
 		return executeDynamicUpdateProcedure(storedProcedure,plantId,site.getId().toString(), vertical.getId().toString(),year);
 	}
@@ -192,7 +192,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		String storedProcedure=vertical.getName()+"_HMD_CalculateExpressionConsumptionNorms";
+		String storedProcedure=vertical.getName()+"_HMD_NormsCalculation";
 		return getCalculatedNormalOpsNormsSP(storedProcedure,year,plant.getId().toString(),site.getId().toString(),vertical.getId().toString());
 		// TODO Auto-generated method stub
 	}

@@ -31,10 +31,12 @@ const ShutdownNorms = () => {
     severity: 'info',
   })
 
+  const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('TPH')
@@ -104,13 +106,29 @@ const ShutdownNorms = () => {
           setLoading(false)
           return
         }
-        saveShutDownNormsData(updatedRows)
+
+        if (calculatebtnClicked == false) {
+          if (editedData.length === 0) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: 'No Records to Save!',
+              severity: 'info',
+            })
+            setCalculatebtnClicked(false)
+            return
+          }
+
+          saveShutDownNormsData(editedData)
+        } else {
+          saveShutDownNormsData(updatedRows)
+        }
       } catch (error) {
         console.log('Error saving changes:', error)
         setLoading(false)
+        setCalculatebtnClicked(false)
       }
     }
-  }, [apiRef, selectedUnit])
+  }, [apiRef, selectedUnit, calculatebtnClicked])
 
   useEffect(() => {
     const getAllProducts = async () => {
@@ -413,6 +431,8 @@ const ShutdownNorms = () => {
           message: `Shutdown Norms Saved Successfully!`,
           severity: 'success',
         })
+        setCalculatebtnClicked(false)
+
         // fetchData()
         return response
       } else {
@@ -421,11 +441,13 @@ const ShutdownNorms = () => {
           message: `Shutdown Norms not saved!`,
           severity: 'error',
         })
+        setCalculatebtnClicked(false)
       }
     } catch (error) {
       console.error(`Error saving Shutdown Norms`, error)
     } finally {
       fetchData()
+      setCalculatebtnClicked(false)
     }
   }
 
@@ -515,7 +537,7 @@ const ShutdownNorms = () => {
       setLoading(false)
     } catch (error) {
       setLoading(false)
-      console.error('Error fetching Business Demand data:', error)
+      console.error('Error fetching data:', error)
     }
   }
 
@@ -528,6 +550,7 @@ const ShutdownNorms = () => {
   }, [])
 
   const handleCalculatePe = async () => {
+    setCalculatebtnClicked(true)
     setLoading(true)
     try {
       const year = localStorage.getItem('year')
@@ -568,6 +591,11 @@ const ShutdownNorms = () => {
             id: groupId++,
             remarks: item?.remarks?.trim() || null,
           }
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Data refreshed successfully!',
+            severity: 'success',
+          })
 
           groups.get(groupKey).push(formattedItem)
           groupedRows.push(formattedItem)

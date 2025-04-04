@@ -24,6 +24,7 @@ const ProductionNorms = ({ permissions }) => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [loading, setLoading] = useState(false)
+  const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -50,7 +51,6 @@ const ProductionNorms = ({ permissions }) => {
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
     if (newRow.id === 'total') {
-      // Prevent updates on the total row
       return newRow
     }
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
@@ -97,12 +97,28 @@ const ProductionNorms = ({ permissions }) => {
         return
       }
       // const finalData = [...rowsToSave, editedData]
-      // console.log(finalData)
-      updateProductNormData(rowsToSave)
+      // console.log('calculatebtnClicked', calculatebtnClicked)
+
+      if (calculatebtnClicked == false) {
+        if (editedData.length === 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          setCalculatebtnClicked(false)
+          return
+        }
+
+        updateProductNormData(editedData)
+      } else {
+        updateProductNormData(rowsToSave)
+      }
     } catch (error) {
       console.log('Error saving changes:', error)
+      setCalculatebtnClicked(false)
     }
-  }, [apiRef, selectedUnit])
+  }, [apiRef, selectedUnit, calculatebtnClicked])
 
   const updateProductNormData = async (newRow) => {
     setLoading(true)
@@ -144,7 +160,7 @@ const ProductionNorms = ({ permissions }) => {
         march: isKiloTon && row.march ? row.march * 1000 : row.march || null,
         // avgTPH: findAvg('1', row) || null,
         avgTPH: findSum('1', row) || null,
-        aopRemarks: row.aopRemarks || 'remarks',
+        aopRemarks: row.aopRemarks,
         id: row.idFromApi || null,
       }))
 
@@ -159,11 +175,13 @@ const ProductionNorms = ({ permissions }) => {
           message: 'Production AOP Saved Successfully !',
           severity: 'success',
         })
+        setCalculatebtnClicked(false)
         setLoading(false)
         unsavedChangesRef.current = {
           unsavedRows: {},
           rowsBeforeChange: {},
         }
+        setCalculatebtnClicked(false)
         fetchData()
       } else {
         setSnackbarOpen(true)
@@ -172,6 +190,7 @@ const ProductionNorms = ({ permissions }) => {
           severity: 'error',
         })
         setLoading(false)
+        setCalculatebtnClicked(false)
       }
     } catch (error) {
       console.error('Error Saving Production AOP:', error)
@@ -182,10 +201,12 @@ const ProductionNorms = ({ permissions }) => {
       })
     } finally {
       setLoading(false)
+      setCalculatebtnClicked(false)
     }
   }
 
   const handleCalculate = async () => {
+    setCalculatebtnClicked(true)
     setLoading(true)
     try {
       const year = localStorage.getItem('year')
@@ -208,6 +229,7 @@ const ProductionNorms = ({ permissions }) => {
 
         const formattedData = data.map((item, index) => {
           const isKiloTon = selectedUnit != 'Ton'
+
           return {
             ...item,
             idFromApi: item.id,
@@ -216,18 +238,18 @@ const ProductionNorms = ({ permissions }) => {
               item?.materialFKId?.toLowerCase(),
             id: index,
             ...(isKiloTon && {
-              jan: item.jan ? item.jan / 1000 : item.jan,
-              feb: item.feb ? item.feb / 1000 : item.feb,
-              march: item.march ? item.march / 1000 : item.march,
-              april: item.april ? item.april / 1000 : item.april,
-              may: item.may ? item.may / 1000 : item.may,
-              june: item.june ? item.june / 1000 : item.june,
-              july: item.july ? item.july / 1000 : item.july,
-              aug: item.aug ? item.aug / 1000 : item.aug,
-              sep: item.sep ? item.sep / 1000 : item.sep,
-              oct: item.oct ? item.oct / 1000 : item.oct,
-              nov: item.nov ? item.nov / 1000 : item.nov,
-              dec: item.dec ? item.dec / 1000 : item.dec,
+              jan: item.jan != null ? item.jan / 1000 : item.jan,
+              feb: item.feb != null ? item.feb / 1000 : item.feb,
+              march: item.march != null ? item.march / 1000 : item.march,
+              april: item.april != null ? item.april / 1000 : item.april,
+              may: item.may != null ? item.may / 1000 : item.may,
+              june: item.june != null ? item.june / 1000 : item.june,
+              july: item.july != null ? item.july / 1000 : item.july,
+              aug: item.aug != null ? item.aug / 1000 : item.aug,
+              sep: item.sep != null ? item.sep / 1000 : item.sep,
+              oct: item.oct != null ? item.oct / 1000 : item.oct,
+              nov: item.nov != null ? item.nov / 1000 : item.nov,
+              dec: item.dec != null ? item.dec / 1000 : item.dec,
             }),
           }
         })
@@ -236,8 +258,19 @@ const ProductionNorms = ({ permissions }) => {
         if (formattedData) {
           totalRows = totalRow(formattedData)
         }
+
         const finalData = [...formattedData, totalRows]
-        setRows(finalData)
+
+        if (lowerVertName == 'pe') {
+          setRows(finalData)
+        }
+        if (lowerVertName == 'meg') {
+          setRows(formattedData)
+        } else {
+          setRows(finalData)
+        }
+
+        // setRows(finalData)
         setLoading(false)
       } else {
         setSnackbarOpen(true)
@@ -299,13 +332,21 @@ const ProductionNorms = ({ permissions }) => {
           }),
         }
       })
-      console.log(formattedData)
+
       let totalRows = []
       if (formattedData.length > 0) {
         totalRows = totalRow(formattedData)
       }
       const finalData = [...formattedData, totalRows]
-      setRows(finalData)
+
+      if (lowerVertName == 'pe') {
+        setRows(finalData)
+      }
+      if (lowerVertName == 'meg') {
+        setRows(formattedData)
+      } else {
+        setRows(finalData)
+      }
 
       // setRows(formattedData)
       setLoading(false) // Hide loading
