@@ -1017,7 +1017,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	@Scheduled(cron = "0 5 * * * ?")
+	@Scheduled(cron = "0 */5 * * * ?")
 	public List<Case> updateRecommendationStatus() throws Exception {
 	    LocalDate today = LocalDate.now();
 	    LocalDate oneMonthBefore = today.minusDays(10); //.minusMonths(1);
