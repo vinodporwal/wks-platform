@@ -123,7 +123,8 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
       JSON.stringify({
         caseDefinitionId: caseDefId,
         owner: {
-          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+          id: keycloak.subject || '',
+          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
           phone: keycloak.idTokenParsed.phone || '',
@@ -207,7 +208,8 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
       JSON.stringify({
         caseDefinitionId: caseDefId,
         owner: {
-          id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+          id: keycloak.subject || '',
+          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
           phone: keycloak.idTokenParsed.phone || '',
@@ -231,7 +233,8 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
             eventIds: eventIds,
             businessKey: businessKey,
             owner: {
-              id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+              id: keycloak.subject || '',
+              // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
               phone: keycloak.idTokenParsed.phone || '',

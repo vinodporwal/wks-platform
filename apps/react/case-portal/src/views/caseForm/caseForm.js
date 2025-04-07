@@ -214,6 +214,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         )
 
         aCase.documents = caseData?.documents || []
+        aCase.comments = caseData?.comments || []
         // aCase.stage = caseData?.stage || "Stage 0";
         return { caseData: aCase, updatedFormStructure }
       })
@@ -276,6 +277,18 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               // if (caseAssign) {
               //   caseAssign.disabled = true
               // }
+
+              // Disable case status if currentUser is different than case owner
+              const level3 = level1.components?.[3] ?? null;
+
+              const caseStatus = level3?.components?.[1]?.columns?.[1]?.components?.[0] ?? null;
+
+              const caseOwner = caseData?.owner?.id;
+              const currentUser = keycloak?.subject;
+
+              if (caseOwner !== currentUser && caseStatus) {
+                caseStatus.disabled = true;
+              }
 
               const faultCategorySelect =
                 level2.components[0].columns.length > 2
@@ -1243,10 +1256,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     label={t('pages.caseform.tabs.attachments')}
                     {...a11yProps(1)}
                   />
-                  {/* <Tab
+                  <Tab
                     label={t('pages.caseform.tabs.comments')}
                     {...a11yProps(2)}
-                  /> */}
+                  />
                 </Tabs>
               </Box>
               <Box
