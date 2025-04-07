@@ -224,14 +224,34 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
           if(!isDraft){
-          const recommendation =
-            level1.components.length > 6 ? level1.components[6] : null;
-          level1.components.forEach((component) => {
-            if (component.id !== recommendation.id) {
+          const recommendation = level1.components?.[6] ?? null;
+          const caseDetails = level1.components?.[3] ?? null;
+          level1.components?.forEach((component) => {
+            if (
+              component.id !== recommendation?.id &&
+              component.id !== caseDetails?.id
+            ) {
               component.disabled = true;
+            }
+          });
+          const caseDetails0 = caseDetails?.components?.[0];
+          if (caseDetails0) {
+            caseDetails0.disabled = true;
           }
+        
+          const caseDetails1 = caseDetails?.components?.[1];
+          const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
+        
+          // Disable all components inside columns of caseDetails1, except caseStatus
+          caseDetails1?.columns?.forEach((column) => {
+            column?.components?.forEach((component) => {
+              if (component.id !== caseStatus?.id) {
+                component.disabled = true;
+              }
+            });
           });
         }
+
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
