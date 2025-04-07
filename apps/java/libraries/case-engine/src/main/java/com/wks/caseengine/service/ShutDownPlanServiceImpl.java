@@ -163,15 +163,14 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 				System.out.println("verticalName"+verticalName);
 				String description = shutDownPlanDTO.getDiscription();
 				 if(verticalName.equalsIgnoreCase("MEG")) {
+					shutDownPlanDTO.setMaintEndDateTime(shutDownPlanDTO.getMaintStartDateTime());
 					List<ShutDownPlanDTO> list = new ArrayList<>();
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					shutDownPlanDTO.setDiscription(description+" Ramp Up");
-					System.out.println(plantId);
-					System.out.println("plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId(\"EO\",shutDownPlanDTO.getPlantId())"+plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO",plantId));
 					shutDownPlanDTO.setProductId(plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO",plantId));
 					list.add(shutDownPlanDTO);
-				    slowdownPlanService.saveShutdownData2(plantId, list);
+				    slowdownPlanService.saveShutdownData(plantId, list);
 
 					List<ShutDownPlanDTO> list2 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Down");
@@ -179,7 +178,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list2.add(shutDownPlanDTO);
-				    slowdownPlanService.saveShutdownData2(plantId,list2);
+				    slowdownPlanService.saveShutdownData(plantId,list2);
 				    
 				    List<ShutDownPlanDTO> list3 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Down");
@@ -187,7 +186,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list3.add(shutDownPlanDTO);
-				    slowdownPlanService.saveShutdownData2(plantId,list3);
+				    slowdownPlanService.saveShutdownData(plantId,list3);
 				    
 				    List<ShutDownPlanDTO> list4 = new ArrayList<>();
 					shutDownPlanDTO.setDiscription(description+" Ramp Up");
@@ -195,7 +194,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService{
 					shutDownPlanDTO.setDurationInHrs(0.00);
 					shutDownPlanDTO.setDurationInMins(0);
 					list4.add(shutDownPlanDTO);
-				    slowdownPlanService.saveShutdownData2(plantId,list4);
+				    slowdownPlanService.saveShutdownData(plantId,list4);
 
 				 }
 			} else {
