@@ -360,6 +360,8 @@ const ProductionNorms = ({ permissions }) => {
         .map((product) => ({
           ...product,
           normParametersFKId: product.materialFKId,
+          originalRemark: product.aopRemarks,
+
           ...(product.materialFKId !== undefined
             ? { materialFKId: undefined }
             : {}),

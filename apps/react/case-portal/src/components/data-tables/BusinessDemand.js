@@ -63,6 +63,7 @@ const BusinessDemand = ({ permissions }) => {
           ...item,
           idFromApi: item.id,
           id: groupId++,
+          originalRemark: item.remark,
         }
 
         // if (lowerVertName !== 'pe') {
@@ -97,7 +98,10 @@ const BusinessDemand = ({ permissions }) => {
       try {
         var data = []
         if (lowerVertName == 'meg')
-          data = await DataService.getAllProducts(keycloak, null)
+          data = await DataService.getAllProductsAll(
+            keycloak,
+            'BusinessDemandMEG',
+          )
         else {
           data = await DataService.getAllProductsAll(keycloak, 'Production')
         }

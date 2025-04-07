@@ -232,6 +232,7 @@ const SlowDown = ({ permissions }) => {
         ...item,
         idFromApi: item?.maintenanceId || item?.id,
         id: index,
+        originalRemark: item.remark,
       }))
       // setSlowDownData(formattedData)
       setRows(formattedData)
@@ -419,27 +420,16 @@ const SlowDown = ({ permissions }) => {
       },
     },
 
-    lowerVertName === 'meg'
-      ? {
-          field: 'durationInHrs',
-          headerName: 'Duration (hrs)',
-          editable: false,
-          minWidth: 75,
-          renderEditCell: NumericInputOnly,
-          align: 'left',
-          headerAlign: 'left',
-          valueGetter: findDuration,
-        }
-      : {
-          field: 'durationInHrs',
-          headerName: 'Duration (hrs)',
-          editable: false,
-          minWidth: 75,
-          renderEditCell: NumericInputOnly,
-          align: 'left',
-          headerAlign: 'left',
-          valueGetter: findDuration,
-        },
+    {
+      field: 'durationInHrs',
+      headerName: 'Duration (hrs)',
+      editable: false,
+      minWidth: 75,
+      renderEditCell: NumericInputOnly,
+      align: 'left',
+      headerAlign: 'left',
+      valueGetter: findDuration,
+    },
 
     {
       field: 'rate',
