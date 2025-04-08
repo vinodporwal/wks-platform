@@ -935,7 +935,7 @@
                                 ],
                                 "redrawOn": "container.caseStatus",
                                 "clearOnHide": false,
-                                "calculateValue": "const callApi = function() {\r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n\r\n  // Get 'eventIds' from the URL parameters\r\n  const urlParams = new URLSearchParams(window.location.search);\r\n  const eventIds = urlParams.get('eventIds');\r\n\r\n  if (!eventIds) {\r\n    console.error('eventIds parameter not found in the URL');\r\n    return;\r\n  }\r\n\r\n const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n    \r\n   // Encode the eventIds to be passed as a comma-separated string in the API request\r\n  const encodedEventIds = encodeURIComponent(eventIds);\r\n\r\n  // Make a single API call for all eventIds\r\n  fetch(`${baseUrl}/case-definition/fault-history/eventIds?eventIds=${encodedEventIds}`, {\r\n    method: 'GET',\r\n    headers: {\r\n      'Content-Type': 'application/json',\r\n      'Authorization': `Bearer ${token}`\r\n    }\r\n  })\r\n  .then(response => {\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n    return response.json();\r\n  })\r\n  .then(data => {\r\n    if (Array.isArray(data)) {\r\n      const mappedData = data.map(item => {\r\n       // const creationDate = item.eventEnrichment?.creationDate || 'Default Value';\r\n\r\n const creationDate = item.startTime';        // Format the creation date to display only the date (YYYY-MM-DD)\r\n        const formattedDate = creationDate !== 'Default Value' \r\n          ? new Date(creationDate).toLocaleString('en-GB', {\r\n              day: '2-digit',\r\n              month: '2-digit',\r\n              year: 'numeric',\r\n              hour: '2-digit',\r\n              minute: '2-digit',\r\n              hour12: true\r\n            }).replace(/\\//g, '-') // Replace \"/\" with \"-\" to get dd-MM-yyyy format\r\n          : 'Default Value';\r\n\r\n        return {\r\n          'textField1': item.AssetDisplayName || 'Default Value',\r\n          'textField2': item.assetName || 'Default Value',\r\n          'textField3': item.events?.eventName || 'Default Value',\r\n          'textField4': item.eventCategory?.name || 'Default Value',\r\n          'TextFaultStartTimeDate': formattedDate // Only date part\r\n        };\r\n      });\r\n\r\n      // Assign the mapped data to component.calculateValue\r\n      component.calculateValue = mappedData;\r\n    } else {\r\n      console.error('Data is not an array or is undefined:', data);\r\n    }\r\n  })\r\n  .catch(error => {\r\n    console.error('Error during API call:', error);\r\n  });\r\n};\r\n\r\n// Call the function\r\ncallApi();\r\n",
+                                "calculateValue": "const callApi = function() {\r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n\r\n  // Get 'eventIds' from the URL parameters\r\n  const urlParams = new URLSearchParams(window.location.search);\r\n  const eventIds = urlParams.get('eventIds');\r\n\r\n  if (!eventIds) {\r\n    console.error('eventIds parameter not found in the URL');\r\n    return;\r\n  }\r\n\r\n const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n    \r\n   // Encode the eventIds to be passed as a comma-separated string in the API request\r\n  const encodedEventIds = encodeURIComponent(eventIds);\r\n\r\n  // Make a single API call for all eventIds\r\n  fetch(`${baseUrl}/case-definition/fault-history/eventIds?eventIds=${encodedEventIds}`, {\r\n    method: 'GET',\r\n    headers: {\r\n      'Content-Type': 'application/json',\r\n      'Authorization': `Bearer ${token}`\r\n    }\r\n  })\r\n  .then(response => {\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n    return response.json();\r\n  })\r\n  .then(data => {\r\n    if (Array.isArray(data)) {\r\n      const mappedData = data.map(item => {\r\n       // const creationDate = item.eventEnrichment?.creationDate || 'Default Value';\r\n\r\n const creationDate = item.startTime;        // Format the creation date to display only the date (YYYY-MM-DD)\r\n        const formattedDate = creationDate !== 'Default Value' \r\n          ? new Date(creationDate).toLocaleString('en-GB', {\r\n              day: '2-digit',\r\n              month: '2-digit',\r\n              year: 'numeric',\r\n              hour: '2-digit',\r\n              minute: '2-digit',\r\n              hour12: true\r\n            }).replace(/\\//g, '-') // Replace \"/\" with \"-\" to get dd-MM-yyyy format\r\n          : 'Default Value';\r\n\r\n        return {\r\n          'textField1': item.AssetDisplayName || 'Default Value',\r\n          'textField2': item.assetName || 'Default Value',\r\n          'textField3': item.events?.eventName || 'Default Value',\r\n          'textField4': item.eventCategory?.name || 'Default Value',\r\n          'TextFaultStartTimeDate': formattedDate // Only date part\r\n        };\r\n      });\r\n\r\n      // Assign the mapped data to component.calculateValue\r\n      component.calculateValue = mappedData;\r\n    } else {\r\n      console.error('Data is not an array or is undefined:', data);\r\n    }\r\n  })\r\n  .catch(error => {\r\n    console.error('Error during API call:', error);\r\n  });\r\n};\r\n\r\n// Call the function\r\ncallApi();\r\n",
                                 "key": "dataGrid2",
                                 "type": "datagrid",
                                 "input": true,
@@ -3895,7 +3895,7 @@
                                                     {
                                                         "label": "Recommendation No.",
                                                         "applyMaskOn": "change",
-                                                        "disabled": true,
+                                                        "disabled": false,
                                                         "tableView": true,
                                                         "clearOnHide": false,
                                                         "key": "recommendationNo1",
@@ -3947,6 +3947,37 @@
                                                             "show": null,
                                                             "when": null
                                                         },
+                                                        "customConditional": "",
+                                                        "logic": [
+                                                            {
+                                                                "name": "Read Only - recommendationNo",
+                                                                "trigger": {
+                                                                    "type": "javascript",
+                                                                    "javascript": "true"
+                                                                },
+                                                                "actions": [
+                                                                    {
+                                                                        "name": "Make recommendationNo read only.",
+                                                                        "type": "customAction",
+                                                                        "customAction": "instance.root.getComponent(instance.path)?.element?.querySelector(\u0027input\u0027)?.setAttribute(\u0027readonly\u0027, true);"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "name": "Hyperlink - recommendationNo",
+                                                                "trigger": {
+                                                                    "type": "javascript",
+                                                                    "javascript": "//data?.container?.caseNo\\r\\n\\r\\n\r\nresult \u003d !!(row.recommendationNo1 \u0026\u0026 row.recommendationNo1.trim() !\u003d\u003d \"\");\r\n"
+                                                                },
+                                                                "actions": [
+                                                                    {
+                                                                        "name": "Add hyperlink to recommendationNo.",
+                                                                        "type": "customAction",
+                                                                        "customAction": "// console.log(\\u0027inside logic\\u0027);\\r\\n// if (instance.element) {\\r\\n//   instance.element.style.cursor \\u003d \\u0027pointer\\u0027;\\r\\n//   instance.element.style.color \\u003d \\u0027blue\\u0027;\\r\\n//   instance.element.style.textDecoration \\u003d \\u0027underline\\u0027;\\r\\n\\r\\n//   instance.element.addEventListener(\\u0027click\\u0027, () \\u003d\\u003e {\\r\\n//           window.open(`https://www.google.com/`, \\u0027_blank\\u0027);\\r\\n\\r\\n//     // if (data?.container?.caseNo) {\\r\\n//     //   window.open(`https://your-site.com/case/${data.container.caseNo}`, \\u0027_blank\\u0027);\\r\\n//     // }\\r\\n//   });\\r\\n// }\\r\\n\\r\\nsetTimeout(() \\u003d\\u003e {\\r\\n  const inputEl \\u003d instance.element.querySelector(\\u0027input\\u0027);\\r\\n  if (inputEl \\u0026\\u0026 data?.container?.caseNo) {\\r\\n    inputEl.style.cursor \\u003d \\u0027pointer\\u0027;\\r\\n    inputEl.style.color \\u003d \\u0027blue\\u0027;\\r\\n    inputEl.style.textDecoration \\u003d \\u0027underline\\u0027;\\r\\n\\r\\n    inputEl.addEventListener(\\u0027click\\u0027, () \\u003d\\u003e {\\r\\n          window.open(`https://www.google.com/`, \\u0027_blank\\u0027);\\r\\n    });\\r\\n  }\\r\\n}, 300);\\r\\n\\r\\n\"\r\n"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ],
                                                         "overlay": {
                                                             "style": "",
                                                             "left": "",
