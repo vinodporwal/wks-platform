@@ -12,6 +12,9 @@ import DataGridTable from '../ASDataGrid'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
+import { useDispatch } from 'react-redux'
+import { setIsBlocked } from 'store/reducers/dataGridStore'
+import TextField from '@mui/material/TextField'
 
 const headerMap = generateHeaderNames()
 
@@ -36,11 +39,19 @@ const NormalOpNormsScreen = () => {
   const { sitePlantChange, verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const dispatch = useDispatch()
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+
+  const getProductDisplayName = (id) => {
+    if (!id) return
+    const product = allProducts.find((p) => p.id === id)
+    return product ? product.displayName : ''
+  }
+
   const keycloak = useSession()
   const fetchData = async () => {
     setLoading(true)
@@ -144,8 +155,44 @@ const NormalOpNormsScreen = () => {
         const product = allProducts.find((p) => p.id === params)
         return product ? product.displayName : ''
       },
+
+      filterOperators: [
+        {
+          label: 'contains',
+          value: 'contains',
+          getApplyFilterFn: (filterItem) => {
+            if (!filterItem?.value) {
+              return
+            }
+            return (rowId) => {
+              const filterValue = filterItem.value.toLowerCase()
+              if (filterValue) {
+                const productName = getProductDisplayName(rowId)
+                if (productName) {
+                  return productName.toLowerCase().includes(filterValue)
+                }
+              }
+              return true
+            }
+          },
+          InputComponent: ({ item, applyValue, focusElementRef }) => (
+            <TextField
+              autoFocus
+              inputRef={focusElementRef}
+              size='small'
+              label='Contains'
+              value={item.value || ''}
+              onChange={(event) =>
+                applyValue({ ...item, value: event.target.value })
+              }
+              style={{ marginTop: '8px' }}
+            />
+          ),
+        },
+      ],
+
       renderEditCell: (params) => {
-        const { value, id, api } = params
+        const { value, api } = params
         return (
           <select
             value={value || ''}
@@ -425,6 +472,7 @@ const NormalOpNormsScreen = () => {
 
         // if (response.status === 200) {
         if (response) {
+          dispatch(setIsBlocked(false))
           setSnackbarOpen(true)
           setSnackbarData({
             message: `Normal Operations Norms Saved Successfully!`,
@@ -476,6 +524,8 @@ const NormalOpNormsScreen = () => {
       )
 
       if (data == 0 || data) {
+        dispatch(setIsBlocked(true))
+
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',

@@ -3,45 +3,31 @@ import ASDataGrid from './ASDataGrid'
 import React, { useEffect, useState } from 'react'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
-// Import the catalyst options from the JSON file
-// import catalystOptionsData from '../../assets/Catalyst.json'
 import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import NumericInputOnly from 'utils/NumericInputOnly'
-import Tooltip from '@mui/material/Tooltip'
-import { truncateRemarks } from 'utils/remarksUtils'
-
-const headerMap = generateHeaderNames()
-
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
+import getEnhancedAOPColDefs from './CommonHeader/ConfigHeader'
 
 const SelectivityData = (props) => {
+  const headerMap = generateHeaderNames()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const keycloak = useSession()
-  // const [csData, setCsData] = useState([])
-  // const [allProducts, setAllProducts] = useState([])
-  // const [allCatalyst, setAllCatalyst] = useState([])
-
   const [loading, setLoading] = useState(false)
-
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
-
-  // const [rows, setRows] = useState()
-  // const [rows2, setRows2] = useState()
+  const [allGradesReciepes, setAllGradesReciepes] = useState(null)
 
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  // States for the Remark Dialog
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -51,6 +37,7 @@ const SelectivityData = (props) => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
@@ -60,17 +47,14 @@ const SelectivityData = (props) => {
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
-
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
     }
-
     props.setRows((prevRows) =>
       prevRows.map((row) =>
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
-
     return newRow
   }, [])
 
@@ -85,19 +69,22 @@ const SelectivityData = (props) => {
         })
         return
       }
-
-      const requiredFields = ['remarks']
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        return
+      // console.log(props?.configType)
+      if (props?.configType !== 'grades') {
+        const requiredFields = ['remarks']
+        const validationMessage = validateFields(data, requiredFields)
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          return
+        }
+        saveCatalystData(data)
+      } else {
+        handleUpdate(data)
       }
-
-      saveCatalystData(data)
     } catch (error) {
       // Handle error if necessary
     }
@@ -105,7 +92,6 @@ const SelectivityData = (props) => {
 
   const saveCatalystData = async (newRow) => {
     setLoading(true)
-
     try {
       var plantId = ''
       const storedPlant = localStorage.getItem('selectedPlant')
@@ -113,8 +99,7 @@ const SelectivityData = (props) => {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
-
-      const turnAroundDetails = newRow.map((row) => ({
+      const payload = newRow.map((row) => ({
         apr: row.apr || null,
         may: row.may || null,
         jun: row.jun || null,
@@ -136,10 +121,9 @@ const SelectivityData = (props) => {
 
       const response = await DataService.saveCatalystData(
         plantId,
-        turnAroundDetails,
+        payload,
         keycloak,
       )
-
       if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -152,7 +136,9 @@ const SelectivityData = (props) => {
         }
         setLoading(false)
 
-        props.fetchData()
+        if (props?.configType !== 'grades') {
+          props.fetchData()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -171,6 +157,45 @@ const SelectivityData = (props) => {
     }
   }
 
+  const handleUpdate = async (updatedRows) => {
+    setLoading(true)
+    try {
+      const payload = updatedRows.map((row) => ({
+        recId: row.Reciepe_FK_ID.toString(),
+        grades: Object.entries(row)
+          .filter(([key]) => /^[0-9A-Fa-f-]{36}$/.test(key))
+          .reduce((acc, [key, value]) => {
+            acc[key] = Number(value)
+            return acc
+          }, {}),
+      }))
+
+      if (payload.length > 0) {
+        const response = await DataService.updatePeConfigData(keycloak, payload)
+        if (response) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Configuration Data Saved Successfully!',
+            severity: 'success',
+          })
+          fetchConfigData()
+        } else {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Configuration Data Saved failed!',
+            severity: 'error',
+          })
+        }
+
+        return response
+      }
+    } catch (error) {
+      console.error('Error updating data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const isCellEditable = (params) => {
     return !(
       params.row.Particulars ||
@@ -178,125 +203,6 @@ const SelectivityData = (props) => {
       params.row.isSubGroupHeader
     )
   }
-
-  const handleDeleteClick = async (id, params) => {
-    try {
-      const maintenanceId =
-        id?.maintenanceId ||
-        params?.row?.idFromApi ||
-        params?.row?.maintenanceId ||
-        params?.NormParameterMonthlyTransactionId
-
-      // console.log(maintenanceId, params, id)
-
-      // Ensure UI state updates before the deletion process
-      setOpen1(true)
-      setDeleteId(id)
-
-      // Perform the delete operation
-      return await DataService.deleteBusinessDemandData(maintenanceId, keycloak)
-    } catch (error) {
-      console.error(`Error deleting Configuration data:`, error)
-    } finally {
-      props.fetchData()
-    }
-  }
-  // const fetchData = async () => {
-  //   setLoading(true)
-  //   try {
-  //     const data = await DataService.getCatalystSelectivityData(keycloak)
-  //     console.log(data)
-  //     if (lowerVertName === 'meg') {
-  //       // For 'meg', simply map items without grouping.
-  //       const formattedData = data.map((item, index) => ({
-  //         ...item,
-  //         idFromApi: item.id,
-  //         id: index,
-  //       }))
-  //       setRows(formattedData)
-  //     } else {
-  //       // Create a nested grouping: first by lossCategory then by normType.
-  //       const groups = new Map()
-
-  //       data.forEach((item) => {
-  //         const lossCategory = item.lossCategory
-  //         const normType = item.normType
-
-  //         if (!groups.has(lossCategory)) {
-  //           groups.set(lossCategory, new Map())
-  //         }
-  //         const normGroup = groups.get(lossCategory)
-  //         if (!normGroup.has(normType)) {
-  //           normGroup.set(normType, [])
-  //         }
-  //         normGroup.get(normType).push(item)
-  //       })
-
-  //       let groupId = 0
-  //       const groupedRows = []
-  //       const shutdownRows = []
-
-  //       // Build the final grouped arrays.
-  //       groups.forEach((normGroup, lossCategory) => {
-  //         if (lossCategory.toLowerCase() === 'shutdownnorms') {
-  //           // Add shutdown norms to the shutdownRows array.
-  //           shutdownRows.push({
-  //             id: groupId++,
-  //             Particulars: lossCategory,
-  //             isGroupHeader: true,
-  //           })
-  //           normGroup.forEach((items, normType) => {
-  //             shutdownRows.push({
-  //               id: groupId++,
-  //               Particulars2: normType,
-  //               isSubGroupHeader: true,
-  //             })
-  //             items.forEach((item) => {
-  //               shutdownRows.push({
-  //                 ...item,
-  //                 idFromApi: item.id,
-  //                 id: groupId++,
-  //               })
-  //             })
-  //           })
-  //         } else {
-  //           // Add all other items to the groupedRows array.
-  //           groupedRows.push({
-  //             id: groupId++,
-  //             Particulars: lossCategory,
-  //             isGroupHeader: true,
-  //           })
-  //           normGroup.forEach((items, normType) => {
-  //             groupedRows.push({
-  //               id: groupId++,
-  //               Particulars2: normType,
-  //               isSubGroupHeader: true,
-  //             })
-  //             items.forEach((item) => {
-  //               groupedRows.push({
-  //                 ...item,
-  //                 idFromApi: item.id,
-  //                 id: groupId++,
-  //               })
-  //             })
-  //           })
-  //         }
-  //       })
-
-  //       console.log('groupedRows:', groupedRows)
-  //       console.log('shutdownRows:', shutdownRows)
-  //       setRows(groupedRows)
-  //       setRows2(shutdownRows)
-
-  //       // If needed, you can store shutdownRows separately, e.g.:
-  //       // setShutdownRows(shutdownRows);
-  //     }
-  //     setLoading(false)
-  //   } catch (error) {
-  //     console.error('Error fetching data:', error)
-  //     setLoading(false)
-  //   }
-  // }
 
   useEffect(() => {
     const getAllProducts = async () => {
@@ -313,553 +219,89 @@ const SelectivityData = (props) => {
         // handleMenuClose();
       }
     }
+    const getAllGrades = async () => {
+      try {
+        const data = await DataService.getAllGrades(keycloak)
+        setAllGradesReciepes(data)
+      } catch (error) {
+        console.error('Error fetching Grades/Reciepes:', error)
+      } finally {
+        // handleMenuClose();
+      }
+    }
 
     getAllProducts()
+    getAllGrades()
     // getAllCatalyst()
-    props.fetchData()
+    if (props?.configType !== 'grades') {
+      props.fetchData()
+    }
+    if (props?.configType === 'grades') fetchConfigData()
   }, [sitePlantChange, keycloak, lowerVertName])
 
-  // Use catalyst options from the JSON file
-  // const productOptions = catalystOptionsData.catalystOptions
-  const productionColumns = [
-    {
-      field: 'normParameterFKId',
-      headerName: 'Particulars',
-      editable: false,
-      minWidth: 160,
-      valueGetter: (params) => params || '',
-      valueFormatter: (params) => {
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : ''
-      },
-      renderEditCell: (params) => {
-        const { value, id, api } = params
+  const [columnConfig, setColumnConfig] = useState([])
 
-        const existingValues = new Set(
-          [...api.getRowModels().values()]
-            .filter((row) => row.id !== id)
-            .map((row) => row.normParameterFKId),
-        )
+  // setColumnConfig()
 
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              api.setEditCellValue({
-                id: params.id,
-                field: 'normParameterFKId',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-            }}
-          >
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts
-              .filter((product) => !existingValues.has(product.id))
-              .map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.displayName}
-                </option>
-              ))}
-          </select>
-        )
-      },
-    },
+  const fetchConfigData = async () => {
+    setLoading(true)
+    try {
+      var data = await DataService.getPeConfigData(keycloak)
 
-    // {
-    //   field: 'NormParameterFKId',
-    //   headerName: 'NormParameterFKId',
-    //   // editable: true,
-    //   minWidth: 250,
-    // },
-    {
-      field: 'UOM',
-      headerName: 'UOM',
-      editable: false,
-      align: 'left',
-      headerAlign: 'left',
-      // valueGetter: convertUnits,
-    },
-    {
-      field: 'apr',
-      headerName: headerMap[4],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-      // valueGetter: convertUnits,
-    },
+      data = data.map((item, index) => ({
+        ...item,
+        id: index,
+      }))
 
-    {
-      field: 'may',
-      headerName: headerMap[5],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jun',
-      headerName: headerMap[6],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jul',
-      headerName: headerMap[7],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'aug',
-      headerName: headerMap[8],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'sep',
-      headerName: headerMap[9],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'oct',
-      headerName: headerMap[10],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
+      // data = [
+      //   {
+      //     id: 1,
+      //     Reciepe_FK_ID: 12345,
+      //     ReceipeName: 'Reciepe 01',
+      //     AOPYear: '2025-26',
+      //     '91278FC9-6554-4F80-B52B-05A5F8AC1B42': 100,
+      //     '54E12CC7-6306-4E36-BEE5-0D97FC3BABCE': 120,
+      //     '34D6DCB6-31E6-4D8D-B2F6-112649E23737': 120,
+      //     '6481FB2E-373F-4CB5-8D1C-15E80D187060': 120,
+      //     '23E76D93-7804-403F-A5E3-20FA11917505': 1020,
+      //     '483EE917-9C42-4B16-8665-25CF39F7B454': 1020,
+      //     '97FE0795-1900-43FD-A513-269BF965712C': 1020,
+      //     '60733500-7F07-443B-B893-2FCA2EBD8744': 1020,
+      //     'D1B0E1D0-50C7-429C-B545-4560DBB20A83': 1020,
+      //     'EF022EA3-2A44-4B5C-BB3C-622B38DCA38C': 1020,
+      //     '39C5CE0A-7C91-423F-BD8E-656B07B33002': 1020,
+      //     '445D935C-D3A6-4AD4-99E3-67FED285E665': 1020,
+      //     '9929136F-0CEF-402B-8FE9-825EC325E14E': 1020,
+      //     '37D843AB-8066-4011-80CE-8E813A58A87A': 1020,
+      //     '7BB94524-FFE3-4D04-8CAC-972047D8AD2F': 1020,
+      //     '1AC76D49-D113-4FF0-9516-9F9E96D85DAE': 1020,
+      //     '7744C9A0-7292-4D3E-A55C-B266EA2FAD3F': 1020,
+      //     '051934D2-3C1B-47C3-8624-BA56018C22A3': 1020,
+      //     '45657662-4EB2-4BF4-B529-E3175A754882': 1020,
+      //     'EA9CE255-E8D2-4173-93C9-EEFA4BE0A0DA': 1020,
+      //     '321E1892-7084-4918-AC47-F407F6363E47': 1020,
+      //     '0F21B398-A787-48DA-B586-FA90E0E83D4E': 1020,
+      //     'BC4DBDB9-349A-4755-818C-FDB213BE3596': 1020,
+      //   },
+      // ]
 
-    {
-      field: 'nov',
-      headerName: headerMap[11],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'dec',
-      headerName: headerMap[12],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jan',
-      headerName: headerMap[1],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'feb',
-      headerName: headerMap[2],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'mar',
-      headerName: headerMap[3],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
+      props?.setRows(data)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-    {
-      field: 'remarks',
-      headerName: 'Remark',
-      minWidth: 150,
-      editable: true,
-      renderCell: (params) => {
-        const displayText = truncateRemarks(params.value)
-        const isEditable = !params.row.Particulars
-
-        return (
-          <Tooltip title={params.value || ''} arrow>
-            <div
-              style={{
-                cursor: 'pointer',
-                color: params.value ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: 140,
-              }}
-              onClick={() => handleRemarkCellClick(params.row)}
-            >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
-            </div>
-          </Tooltip>
-        )
-      },
-    },
-  ]
-  const productionColumnsPE1 = [
-    {
-      field: 'Particulars',
-      headerName: 'Type',
-      minWidth: 125,
-      groupable: true,
-      renderCell: (params) => <strong>{params.value}</strong>,
-    },
-    // {
-    //   field: 'Particulars2',
-    //   headerName: 'Sub-Type',
-    //   minWidth: 125,
-    //   groupable: true,
-    //   headerClass: 'bold-header',
-    // },
-
-    {
-      field: 'normParameterFKId',
-      headerName: 'Particulars',
-      editable: false,
-      minWidth: 160,
-      renderCell: (params) => {
-        if (
-          params.value === 'By Products' ||
-          params.value === 'Cat Chem' ||
-          params.value === 'Utility Consumption' ||
-          params.value === 'Raw Material'
-        ) {
-          return <strong>{params.value}</strong>
-        } else {
-          const product = allProducts.find((p) => p.id === params.value)
-          return product ? product.displayName : params.value
-        }
-      },
-
-      valueGetter: (params) => {
-        // console.log('valueGetter params:', params)
-        return params ?? ''
-      },
-      valueFormatter: (params) => {
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : params?.Particulars2
-      },
-      renderEditCell: (params) => {
-        const { value, id, api } = params
-
-        const existingValues = new Set(
-          [...api.getRowModels().values()]
-            .filter((row) => row.id !== id)
-            .map((row) => row.normParameterFKId || row.Particulars2),
-        )
-
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              api.setEditCellValue({
-                id: params.id,
-                field: 'normParameterFKId',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-            }}
-          >
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts
-              .filter((product) => !existingValues.has(product.id))
-              .map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.displayName}
-                </option>
-              ))}
-          </select>
-        )
-      },
-    },
-
-    // {
-    //   field: 'NormParameterFKId',
-    //   headerName: 'NormParameterFKId',
-    //   // editable: true,
-    //   minWidth: 250,
-    // },
-    {
-      field: 'UOM',
-      headerName: 'UOM',
-      editable: false,
-      align: 'left',
-      headerAlign: 'left',
-      // valueGetter: convertUnits,
-    },
-    {
-      field: 'apr',
-      headerName: headerMap[4],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-      // valueGetter: convertUnits,
-    },
-
-    {
-      field: 'may',
-      headerName: headerMap[5],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jun',
-      headerName: headerMap[6],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jul',
-      headerName: headerMap[7],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'aug',
-      headerName: headerMap[8],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'sep',
-      headerName: headerMap[9],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'oct',
-      headerName: headerMap[10],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-
-    {
-      field: 'nov',
-      headerName: headerMap[11],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'dec',
-      headerName: headerMap[12],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'jan',
-      headerName: headerMap[1],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'feb',
-      headerName: headerMap[2],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-    {
-      field: 'mar',
-      headerName: headerMap[3],
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-    },
-
-    {
-      field: 'remarks',
-      headerName: 'Remark',
-      minWidth: 110,
-      editable: true,
-      renderCell: (params) => {
-        const displayText = truncateRemarks(params.value)
-        const isEditable = !(
-          params.row.Particulars || params.row.isSubGroupHeader
-        )
-        return (
-          <Tooltip title={params.value || ''} arrow>
-            <div
-              style={{
-                cursor: 'pointer',
-                color: params.value ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: 140,
-              }}
-              onClick={() => handleRemarkCellClick(params.row)}
-            >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
-            </div>
-          </Tooltip>
-        )
-      },
-    },
-  ]
-  const productionColumnsPE2 = [
-    {
-      field: 'Particulars',
-      headerName: 'Constant',
-      minWidth: 125,
-      groupable: true,
-      flex: 1,
-      renderCell: (params) => <strong>{params.value}</strong>,
-    },
-    {
-      field: 'Particulars2',
-      headerName: 'Type',
-      minWidth: 125,
-      groupable: true,
-      flex: 1,
-      renderCell: (params) => <strong>{params.value}</strong>,
-    },
-    {
-      field: 'normParameterFKId',
-      headerName: 'Particulars',
-      editable: false,
-      minWidth: 160,
-      valueGetter: (params) => params || '',
-      valueFormatter: (params) => {
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : ''
-      },
-      renderEditCell: (params) => {
-        const { value, id, api } = params
-
-        const existingValues = new Set(
-          [...api.getRowModels().values()]
-            .filter((row) => row.id !== id)
-            .map((row) => row.normParameterFKId),
-        )
-
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              api.setEditCellValue({
-                id: params.id,
-                field: 'normParameterFKId',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-            }}
-          >
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts
-              .filter((product) => !existingValues.has(product.id))
-              .map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.displayName}
-                </option>
-              ))}
-          </select>
-        )
-      },
-    },
-
-    // {
-    //   field: 'NormParameterFKId',
-    //   headerName: 'NormParameterFKId',
-    //   // editable: true,
-    //   minWidth: 250,
-    // },
-    {
-      field: 'apr',
-      headerName: 'Values',
-      editable: true,
-      renderEditCell: NumericInputOnly,
-      align: 'left',
-      headerAlign: 'left',
-      // valueGetter: NumericInputOnly || 0,
-    },
-
-    {
-      field: 'remarks',
-      headerName: 'Remark',
-      minWidth: 250,
-      editable: true,
-      renderCell: (params) => {
-        const displayText = truncateRemarks(params.value)
-        const isEditable = !params.row.Particulars && !params.row.Particulars2
-
-        return (
-          <Tooltip title={params.value || ''} arrow>
-            <div
-              style={{
-                cursor: 'pointer',
-                color: params.value ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                maxWidth: 140,
-              }}
-              onClick={() => handleRemarkCellClick(params.row)}
-            >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
-            </div>
-          </Tooltip>
-        )
-      },
-    },
-  ]
+  const productionColumns = getEnhancedAOPColDefs({
+    allGradesReciepes,
+    allProducts,
+    headerMap,
+    handleRemarkCellClick,
+    configType: props?.configType,
+    columnConfig,
+  })
 
   return (
     <div>
@@ -870,13 +312,7 @@ const SelectivityData = (props) => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <ASDataGrid
-        columns={
-          lowerVertName === 'meg'
-            ? productionColumns
-            : props?.tabIndex === 1
-              ? productionColumnsPE2
-              : productionColumnsPE1
-        }
+        columns={productionColumns}
         rows={props?.rows}
         setRows={props?.setRows}
         title='Configuration'
@@ -891,13 +327,11 @@ const SelectivityData = (props) => {
         snackbarOpen={snackbarOpen}
         apiRef={apiRef}
         setDeleteId={setDeleteId}
-        // fetchData={props?.fetchData}
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         deleteId={deleteId}
         open1={open1}
-        handleDeleteClick={handleDeleteClick}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

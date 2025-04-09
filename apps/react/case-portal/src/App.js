@@ -97,7 +97,9 @@ const App = () => {
     // console.log(allowedVerticalsMapping)
     // console.log(verticalChange)
 
-    const selectedVertical = verticalChange?.selectedVertical?.toLowerCase()
+    const selectedVertical =
+      localStorage.getItem('verticalId') ||
+      verticalChange?.selectedVertical?.toLowerCase()
     const allowedChildIds =
       (selectedVertical && allowedVerticalsMapping[selectedVertical]) || []
 

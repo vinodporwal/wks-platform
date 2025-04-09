@@ -42,6 +42,10 @@ const jioColors = {
 
 const DataGridTable = ({
   columns: initialColumns = [],
+
+  // filterModel = () => {},
+  // setFilterModel = () => {},
+
   // title = '',
   onAddRow = () => {},
   // onDeleteRow = () => {},
@@ -358,6 +362,11 @@ const DataGridTable = ({
       setIsButtonDisabled(false)
     }, 500)
   }
+
+  // onFilterModelChange = (newFilterModel) => {
+  //   console.log('You typed in filter:', newFilterModel)
+  // }
+
   const boxHeight = permissions?.customHeight?.mainBox
   const otherHeight = permissions?.customHeight?.otherBox
   // console.log(boxHeight)
@@ -639,16 +648,13 @@ const DataGridTable = ({
           loading={loading}
           apiRef={apiRef}
           rows={filteredRows}
-          disableColumnFilter
-          disableColumnMenu
-          onFilterModelChange={() => {}}
-          disableColumnSelector
+          // disableColumnFilter
+          // disableColumnMenu
+          // onFilterModelChange={() => {}}
+          // disableColumnSelector
           sortingOrder={[]}
           disableSelectionOnClick
-          columns={columns.map((col) => ({
-            ...col,
-            editable: col.field === 'product' ? true : col.editable,
-          }))}
+          columns={columns}
           columnVisibilityModel={{
             maintenanceId: false,
             id: false,
@@ -681,8 +687,6 @@ const DataGridTable = ({
             },
           }}
           getRowClassName={(params) => {
-            // console.log('params getRowClassName', params)
-
             return params.row.Particulars || params.row.Particulars2
               ? 'no-border-row'
               : params.indexRelativeToCurrentPage % 2 === 0
@@ -819,6 +823,7 @@ const DataGridTable = ({
           }}
         />
       </Box>
+
       {(permissions?.allAction ?? true) && (
         <Box
           sx={{

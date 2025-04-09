@@ -9,7 +9,9 @@ import getEnhancedColDefs from './CommonHeader/consumptionHeader'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
-
+import TextField from '@mui/material/TextField'
+import { useDispatch } from 'react-redux'
+import { setIsBlocked } from 'store/reducers/dataGridStore'
 const NormalOpNormsScreen = () => {
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
@@ -32,6 +34,7 @@ const NormalOpNormsScreen = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const dispatch = useDispatch()
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -42,6 +45,13 @@ const NormalOpNormsScreen = () => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+
+  const getProductDisplayName = (id) => {
+    if (!id) return
+    const product = allProducts.find((p) => p.id === id)
+    return product ? product.displayName : ''
+  }
+
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
@@ -113,6 +123,8 @@ const NormalOpNormsScreen = () => {
         rowsBeforeChange: {},
       }
       fetchData()
+      dispatch(setIsBlocked(false))
+
       return response
     } catch (error) {
       console.error('Error saving Consumption AOP!', error)
@@ -330,6 +342,7 @@ const NormalOpNormsScreen = () => {
       )
 
       if (data || data == 0) {
+        dispatch(setIsBlocked(true))
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',

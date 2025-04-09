@@ -1,24 +1,41 @@
-// import { useSelector } from 'react-redux'
-import { useSelector } from 'react-redux'
-import productionColDefs from '../../../assets/production_aop_meg.json' // Adjust path as needed
-import productionColDefsPE from '../../../assets/production_aop_pe.json' // Adjust path as needed
+import productionColumns from '../../../assets/config_meg.json'
+import productionColumnsPE1 from '../../../assets/config_pe1.json'
+import productionColumnsPE2 from '../../../assets/config_pe2.json'
+import productionColumnsPE3 from '../../../assets/config_pe3.json'
+import productionColumnsPE4 from '../../../assets/config_pe4.json'
+import NumericInputOnly from 'utils/NumericInputOnly'
 import Tooltip from '@mui/material/Tooltip'
 import { truncateRemarks } from 'utils/remarksUtils'
-import NumericInputOnly from 'utils/NumericInputOnly'
-
-// import Autocomplete from '@mui/material/Autocomplete'
 import TextField from '@mui/material/TextField'
+// import { allProducts } from 'data/allProducts'; // adjust path as needed
 
-const getEnhancedColDefs = ({
+// This function returns the appropriate JSON configuration based on the configType
+const getConfigByType = (configType) => {
+  switch (configType) {
+    case 'meg':
+      return productionColumns
+    case 'startupLosses':
+      return productionColumnsPE1
+    case 'otherLosses':
+      return productionColumnsPE2
+    case 'shutdownNorms':
+      return productionColumnsPE3
+    case 'grades':
+      return productionColumnsPE4
+    default:
+      return productionColumns
+  }
+}
+
+const getEnhancedAOPColDefs = ({
+  allGradesReciepes,
   allProducts,
   headerMap,
   handleRemarkCellClick,
-  findSum,
+  configType,
+  columnConfig,
 }) => {
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const config = getConfigByType(configType)
 
   const getProductDisplayName = (id) => {
     if (!id) return
@@ -26,37 +43,11 @@ const getEnhancedColDefs = ({
     return product ? product.displayName : ''
   }
 
-  const formatValueToThreeDecimals = (params) =>
-    params ? parseFloat(params).toFixed(3) : ''
-
-  let cols
-
-  if (lowerVertName == 'pe') {
-    cols = productionColDefsPE
-  } else {
-    cols = productionColDefs
-  }
-
-  const enhancedColDefs = cols.map((col) => {
-    let updatedCol = { ...col }
-
-    // For the normParametersFKId column, change the header based on vertical:
-    if (col.field === 'normParametersFKId') {
-      updatedCol = {
-        ...updatedCol,
-        headerName: 'Particulars',
+  const enhancedColDefs = config.map((col) => {
+    if (col.field === 'normParameterFKId') {
+      return {
+        ...col,
         valueGetter: (params) => params || '',
-        renderCell: (params) => {
-          // console.log(params?.row)
-          if (params?.row?.id === 'total') {
-            return params?.row?.Particulars
-          } else {
-            const product = allProducts.find(
-              (p) => p.id === params?.row?.normParametersFKId,
-            )
-            return product ? product.displayName : ''
-          }
-        },
         valueFormatter: (params) => {
           const product = allProducts.find((p) => p.id === params)
           return product ? product.displayName : ''
@@ -86,7 +77,7 @@ const getEnhancedColDefs = ({
                 autoFocus
                 inputRef={focusElementRef}
                 size='small'
-                label='Contains'
+                label='Value'
                 value={item.value || ''}
                 onChange={(event) =>
                   applyValue({ ...item, value: event.target.value })
@@ -99,13 +90,18 @@ const getEnhancedColDefs = ({
 
         renderEditCell: (params) => {
           const { value, id, api } = params
+          const existingValues = new Set(
+            [...api.getRowModels().values()]
+              .filter((row) => row.id !== id)
+              .map((row) => row.normParameterFKId),
+          )
           return (
             <select
               value={value || ''}
               onChange={(event) => {
                 api.setEditCellValue({
                   id,
-                  field: 'normParametersFKId',
+                  field: 'normParameterFKId',
                   value: event.target.value,
                 })
               }}
@@ -120,27 +116,31 @@ const getEnhancedColDefs = ({
               <option value='' disabled>
                 Select
               </option>
-              {allProducts.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.displayName}
-                </option>
-              ))}
+              {allProducts
+                .filter((product) => !existingValues.has(product.id))
+                .map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.displayName}
+                  </option>
+                ))}
             </select>
           )
         },
       }
     }
 
-    // For the remark column, add a custom renderCell.
-    if (col.field === 'aopRemarks') {
-      updatedCol = {
-        ...updatedCol,
+    if (col.field === 'remarks') {
+      return {
+        ...col,
         renderCell: (params) => {
-          const displayText = truncateRemarks(params.value)
-          const isEditable = !params.row.Particulars
-
+          const displayText = truncateRemarks(params?.value)
+          // For PE2 configuration, we might have two fields (Particulars, Particulars2) to check
+          const isEditable =
+            !params.row.Particulars &&
+            (!params?.row.Particulars2 ||
+              params?.row.isSubGroupHeader === false)
           return (
-            <Tooltip title={params.value || ''} arrow>
+            <Tooltip title={params?.value || ''} arrow>
               <div
                 style={{
                   cursor: 'pointer',
@@ -160,25 +160,45 @@ const getEnhancedColDefs = ({
       }
     }
 
-    // For the "Total" column, use findSum to compute the value.
-    if (col.field === 'averageTPH') {
-      updatedCol.valueGetter = findSum
+    if ((headerMap && headerMap[col.headerName]) ) {
+      return {
+        ...col,
+        renderEditCell: NumericInputOnly,
+        headerName: headerMap[col.headerName],
+      }
     }
 
-    // Optionally, override headerName using headerMap if provided.
-    if (headerMap && headerMap[col.headerName] !== undefined) {
-      updatedCol = {
-        ...updatedCol,
-        headerName: headerMap[col.headerName],
-        valueFormatter: formatValueToThreeDecimals,
+    if (col.field == 'apr') {
+      return {
+        ...col,
         renderEditCell: NumericInputOnly,
       }
     }
 
-    return updatedCol
+    if (col.field === 'Particulars' || col.field === 'Particulars2') {
+      return {
+        ...col,
+        renderCell: (params) => <strong>{params?.value}</strong>,
+        filterable: false,
+      }
+    }
+
+    if (col.isGradeHeader === 'true') {
+      const matchedGrade = allGradesReciepes?.find(
+        (item) => item.id.toLowerCase() === col.field.toLowerCase(),
+      )
+
+      return {
+        ...col,
+        headerName: matchedGrade?.displayName ?? col.headerName,
+        renderEditCell: NumericInputOnly,
+      }
+    }
+
+    return col
   })
 
   return enhancedColDefs
 }
 
-export default getEnhancedColDefs
+export default getEnhancedAOPColDefs

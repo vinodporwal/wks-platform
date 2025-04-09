@@ -7,7 +7,8 @@ import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getEnhancedProductionColDefs from './CommonHeader/ProductionVolumeHeader'
 const headerMap = generateHeaderNames()
-
+import { useDispatch } from 'react-redux'
+import { setIsBlocked } from 'store/reducers/dataGridStore'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
@@ -33,7 +34,7 @@ const ProductionvolumeData = ({ permissions }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
+  const dispatch = useDispatch()
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -124,6 +125,8 @@ const ProductionvolumeData = ({ permissions }) => {
       )
       // console.log(response)
       if (response?.length > 0) {
+        dispatch(setIsBlocked(false))
+
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Production Vol Data Saved Successfully!',
@@ -170,13 +173,7 @@ const ProductionvolumeData = ({ permissions }) => {
         })
         return
       }
-      // Validate that both normParameterId and remark are not empty
 
-      // const invalidRows = data.filter(
-      //   (row) => !row.normParametersFKId.trim(),
-      //   // (row) => !row.normParametersFKId.trim() || !row.remark.trim(),
-      // )
-      // console.log(data)
       const months = [
         'april',
         'may',
@@ -193,12 +190,10 @@ const ProductionvolumeData = ({ permissions }) => {
       ]
 
       const invalidRows = data.filter((row) => {
-        // Check normParametersFKId: if missing or blank after trim, mark invalid.
         if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
           return true
         }
 
-        // Check all month fields.
         for (const month of months) {
           const value = row[month]
           if (
@@ -369,6 +364,7 @@ const ProductionvolumeData = ({ permissions }) => {
       )
 
       if (data || data == 0) {
+        dispatch(setIsBlocked(true))
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',

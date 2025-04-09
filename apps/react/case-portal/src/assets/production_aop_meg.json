@@ -1,21 +1,23 @@
 [
+  { "field": "idFromApi", "headerName": "ID" },
   {
-    "field": "Particulars",
-    "headerName": "Type",
-    "minWidth": 125,
-    "groupable": true,
-    "headerClass": "bold-header",
-    "filterable": "false"
+    "field": "aopCaseId",
+    "headerName": "Case ID",
+    "minWidth": 120,
+    "editable": false
   },
+  { "field": "aopType", "headerName": "Type", "minWidth": 80 },
+  { "field": "aopYear", "headerName": "Year", "minWidth": 80 },
+  { "field": "plantFkId", "headerName": "Plant ID", "minWidth": 80 },
   {
-    "field": "normParameterId",
-    "headerName": "Particulars",
-    "editable": true,
-    "minWidth": 150
+    "field": "normParametersFKId",
+    "headerName": "Particulars/Grade",
+    "editable": false,
+    "minWidth": 125
   },
   {
     "field": "april",
-    "headerName": 4,
+    "headerName": "4",
     "editable": true,
 
     "align": "left",
@@ -23,7 +25,7 @@
   },
   {
     "field": "may",
-    "headerName": 5,
+    "headerName": "5",
     "editable": true,
 
     "align": "left",
@@ -31,7 +33,7 @@
   },
   {
     "field": "june",
-    "headerName": 6,
+    "headerName": "6",
     "editable": true,
 
     "align": "left",
@@ -39,7 +41,7 @@
   },
   {
     "field": "july",
-    "headerName": 7,
+    "headerName": "7",
     "editable": true,
 
     "align": "left",
@@ -47,7 +49,7 @@
   },
   {
     "field": "aug",
-    "headerName": 8,
+    "headerName": "8",
     "editable": true,
 
     "align": "left",
@@ -55,16 +57,15 @@
   },
   {
     "field": "sep",
-    "headerName": 9,
+    "headerName": "9",
     "editable": true,
 
     "align": "left",
     "headerAlign": "left"
   },
-
   {
     "field": "oct",
-    "headerName": 10,
+    "headerName": "10",
     "editable": true,
 
     "align": "left",
@@ -72,7 +73,7 @@
   },
   {
     "field": "nov",
-    "headerName": 11,
+    "headerName": "11",
     "editable": true,
 
     "align": "left",
@@ -80,7 +81,7 @@
   },
   {
     "field": "dec",
-    "headerName": 12,
+    "headerName": "12",
     "editable": true,
 
     "align": "left",
@@ -88,7 +89,7 @@
   },
   {
     "field": "jan",
-    "headerName": 1,
+    "headerName": "1",
     "editable": true,
 
     "align": "left",
@@ -96,7 +97,7 @@
   },
   {
     "field": "feb",
-    "headerName": 2,
+    "headerName": "2",
     "editable": true,
 
     "align": "left",
@@ -104,21 +105,22 @@
   },
   {
     "field": "march",
-    "headerName": 3,
+    "headerName": "3",
     "editable": true,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "remark",
-    "headerName": "Remark",
-    "editable": true,
-    "minWidth": 150
+    "field": "averageTPH",
+    "headerName": "Total",
+    "editable": false
   },
   {
-    "field": "idFromApi",
-    "headerName": "idFromApi",
-    "filterable": "false"
-  }
+    "field": "aopRemarks",
+    "headerName": "Remark",
+    "minWidth": 175,
+    "editable": true
+  },
+  { "field": "aopStatus", "headerName": "aopStatus", "editable": false }
 ]
