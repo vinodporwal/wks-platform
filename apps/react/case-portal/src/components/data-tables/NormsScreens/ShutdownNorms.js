@@ -164,6 +164,8 @@ const ShutdownNorms = () => {
     return !params.row.Particulars
   }
 
+  const months = ['july', 'june', 'may', 'april']
+
   const colDefs = [
     {
       field: 'Particulars',
@@ -172,6 +174,7 @@ const ShutdownNorms = () => {
       groupable: true,
       renderCell: (params) => <strong>{params.value}</strong>,
     },
+
     {
       field: 'materialFkId',
       headerName: 'Particulars',
@@ -715,7 +718,7 @@ const ShutdownNorms = () => {
           units: ['TPH', 'TPD'],
           saveWithRemark: false,
           saveBtn: true,
-          showCalculate: true,
+          showCalculate: lowerVertName == 'meg' ? false : true,
         }}
       />
     </div>
