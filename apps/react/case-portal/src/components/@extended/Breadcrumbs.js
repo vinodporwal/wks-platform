@@ -17,6 +17,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
+  const plantName = JSON.parse(localStorage.getItem('selectedPlant'))?.name
+  // const siteName = JSON.parse(localStorage.getItem('selectedSite'))?.name;
 
   const [notification, setNotification] = useState({
     open: false,
@@ -25,7 +27,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   })
 
   async function handleOpenPdf(title) {
-    const url = `${Config.StorageUrl}/storage/files1/newFile/downloads/${title}_${vertName}.pdf?content-type=application/pdf`
+    const url = `${Config.StorageUrl}/storage/files1/newFile/downloads/${title}_${vertName}_${plantName}.pdf?content-type=application/pdf`
     const headers = {
       Authorization: `Bearer ${keycloak.token}`,
     }
