@@ -1056,14 +1056,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         ${uploadedFiles
           .map(
             (file, index) => `
-                  <li style="margin-bottom: 8px; cursor: pointer; color: #007bff; text-decoration: underline;">
-                    <a 
-                      href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
-                      download="${file.name}" 
-                      target="_blank"
-              >
-                ${file.name}
-                    </a>
+                  <li style="margin-bottom: 16px;">
+                    <img 
+                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      alt="${file.name}"
+                      style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 4px;"
+                    />
               </li>
                 `
           )
