@@ -2,6 +2,7 @@ import CancelIcon from '@mui/icons-material/Close'
 // import DeleteIcon from '@mui/icons-material/Delete'
 import DeleteIcon from '@mui/icons-material/DeleteOutlined'
 import EditIcon from '@mui/icons-material/Edit'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import SaveIcon from '@mui/icons-material/Save'
 import { Box, Button, IconButton, TextField } from '@mui/material'
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
@@ -26,6 +27,7 @@ import {
   FileDownload,
   FileUpload,
 } from '../../../node_modules/@mui/icons-material/index'
+// import { useNavigate } from '../../../node_modules/react-router-dom/dist/index'
 
 const jioColors = {
   primaryBlue: '#387ec3',
@@ -42,10 +44,6 @@ const jioColors = {
 
 const DataGridTable = ({
   columns: initialColumns = [],
-
-  // filterModel = () => {},
-  // setFilterModel = () => {},
-
   // title = '',
   onAddRow = () => {},
   // onDeleteRow = () => {},
@@ -54,6 +52,8 @@ const DataGridTable = ({
   isCellEditable = () => true,
   saveChanges = () => {},
   apiRef = null,
+  rowModesModel: rowModesModel,
+  // setRowModesModel,
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
   // setSnackbarData = () => {},
@@ -65,42 +65,29 @@ const DataGridTable = ({
   rows = [],
   loading = false,
   remarkDialogOpen = false,
+  onRowModesModelChange = () => {},
   setRemarkDialogOpen = () => {},
   currentRemark = '',
   setCurrentRemark = () => {},
   currentRowId = null,
   unsavedChangesRef = { current: { unsavedRows: {}, rowsBeforeChange: {} } },
   deleteRowData = () => {},
+  handleAddPlantSite = () => {},
 }) => {
-  // const [tempHide, setTempHide] = useState(true)
-  // const [isUpdating, setIsUpdating] = useState(false)
-  // const [isSaving, setIsSaving] = useState(false)
   const [resizedColumns, setResizedColumns] = useState({})
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-
-  // const [open, setOpen] = useState(false)
-  // const [remark, setRemark] = useState('')
-  // const [product, setProduct] = useState('')
-  // const [openRemark, setOpenRemark] = useState(false)
-  // const keycloak = useSession()
-  // const [days, setDays] = useState([])
   const [searchText, setSearchText] = useState('')
   const isFilterActive = false
-  // const [selectedRowId, setSelectedRowId] = useState(null)
   const [selectedUnit, setSelectedUnit] = useState()
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
-  // const [deleteId, setDeleteId] = useState(false)
-  // const [deleteIdTemp, setDeleteIdTemp] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
-  // const handleOpenRemark = () => setOpenRemark(true)
-  // const handleCloseRemark = () => setOpenRemark(false)
   const closeDeleteDialogeBox = () => setOpenDeleteDialogeBox(false)
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
   const handleSearchChange = (event) => {
     setSearchText(event.target.value)
   }
-  const [rowModesModel, setRowModesModel] = useState({})
+  // const [rowModesModel, setRowModesModel] = useState({})
   // const [changedRowIds, setChangedRowIds] = useState([])
   // const [columnFilters, setColumnFilters] = useState({})
   const columnFilters = {}
@@ -111,24 +98,29 @@ const DataGridTable = ({
 
   // const handleCellEditCommit = (id, event) => {}
 
-  const handleEditClick = (id) => () => {
+  const handleEditClick = (row) => () => {
     // setIsUpdating(true)
-    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } })
+    // setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } })
+    handleAddPlantSite(row)
+    // setRowModesModel({
+    //   ...rowModesModel,
+    //   [row.id]: { mode: GridRowModes.Edit },
+    // })
   }
 
-  const handleSaveClick = (id) => {
+  const handleSaveClick = () => {
     // handleOpenRemark()
-    setRowModesModel((prev) => ({
-      ...prev,
-      [id]: { mode: GridRowModes.View },
-    }))
+    // setRowModesModel((prev) => ({
+    //   ...prev,
+    //   [id]: { mode: GridRowModes.View },
+    // }))
   }
 
   const handleCancelClick = (id) => () => {
-    setRowModesModel({
-      ...rowModesModel,
-      [id]: { mode: GridRowModes.View, ignoreModifications: true },
-    })
+    // setRowModesModel({
+    //   ...rowModesModel,
+    //   [id]: { mode: GridRowModes.View, ignoreModifications: true },
+    // })
 
     const editedRow = rows.find((row) => row.id === id)
     if (editedRow.isNew) {
@@ -136,9 +128,9 @@ const DataGridTable = ({
     }
   }
 
-  const handleRowModesModelChange = (newRowModesModel) => {
-    setRowModesModel(newRowModesModel)
-  }
+  // const handleRowModesModelChange = (newRowModesModel) => {
+  //   setRowModesModel(newRowModesModel)
+  // }
 
   useEffect(() => {
     if (rows) setRows(rows)
@@ -195,10 +187,10 @@ const DataGridTable = ({
     setRows((prevRows) => [newRow, ...prevRows])
     onAddRow?.(newRow)
     // setProduct('')
-    setRowModesModel((oldModel) => ({
-      ...oldModel,
-      [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
-    }))
+    // setRowModesModel((oldModel) => ({
+    //   ...oldModel,
+    //   [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
+    // }))
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
@@ -256,6 +248,18 @@ const DataGridTable = ({
               }
 
               return [
+                permissions?.viewBtn && (
+                  <GridActionsCellItem
+                    key={`view-${id}`}
+                    // icon={<EditIcon sx={{ color: jioColors.primaryBlue }} />}
+                    icon={<VisibilityIcon />}
+                    label='View'
+                    className='textPrimary'
+                    onClick={handleEditClick(row)}
+                    color='inherit'
+                    // sx={{ display: 'none' }}
+                  />
+                ),
                 permissions?.editButton && (
                   <GridActionsCellItem
                     key={`edit-${id}`}
@@ -263,7 +267,7 @@ const DataGridTable = ({
                     icon={<EditIcon />}
                     label='Edit'
                     className='textPrimary'
-                    onClick={handleEditClick(id, row)}
+                    onClick={handleEditClick(row)}
                     color='inherit'
                     sx={{ display: 'none' }}
                   />
@@ -362,18 +366,14 @@ const DataGridTable = ({
       setIsButtonDisabled(false)
     }, 500)
   }
-
-  // onFilterModelChange = (newFilterModel) => {
-  //   console.log('You typed in filter:', newFilterModel)
-  // }
-
   const boxHeight = permissions?.customHeight?.mainBox
   const otherHeight = permissions?.customHeight?.otherBox
   // console.log(boxHeight)
   return (
     <Box
       sx={{
-        height: `${boxHeight ?? '80vh'}`,
+        height: `${boxHeight ?? (permissions.customHeight2 ? '50vh' : '80vh')}`,
+
         width: '100%',
         padding: '0px 5px',
         margin: '0px 5px 0px',
@@ -614,7 +614,7 @@ const DataGridTable = ({
 
       <Box
         sx={{
-          height: `calc( ${otherHeight ?? '102%'} - 120px)`,
+          height: `calc(${otherHeight ?? (permissions.customHeight2 ? '95%' : '102%')} - 120px)`,
           width: '100%',
           marginBottom: 0,
           padding: 0,
@@ -648,13 +648,14 @@ const DataGridTable = ({
           loading={loading}
           apiRef={apiRef}
           rows={filteredRows}
-          // disableColumnFilter
-          // disableColumnMenu
-          // onFilterModelChange={() => {}}
-          // disableColumnSelector
           sortingOrder={[]}
           disableSelectionOnClick
-          columns={columns}
+          checkboxSelection={permissions?.showCheckBox}
+          columns={columns.map((col) => ({
+            ...col,
+            cellClassName: col.isDisabled ? 'disabled-cell' : undefined,
+            headerClassName: col.isDisabled ? 'disabled-header' : undefined,
+          }))}
           columnVisibilityModel={{
             maintenanceId: false,
             id: false,
@@ -676,11 +677,11 @@ const DataGridTable = ({
           experimentalFeatures={{ newEditingApi: true }}
           editMode='row'
           rowModesModel={rowModesModel}
-          onRowModesModelChange={handleRowModesModelChange}
+          onRowModesModelChange={onRowModesModelChange}
           handleCalculate={handleCalculate}
           deleteRowData={deleteRowData}
           slotProps={{
-            toolbar: { setRows, setRowModesModel, GridToolbar },
+            toolbar: { setRows, GridToolbar },
             loadingOverlay: {
               variant: 'linear-progress',
               noRowsVariant: 'skeleton',
@@ -689,9 +690,9 @@ const DataGridTable = ({
           getRowClassName={(params) => {
             return params.row.Particulars || params.row.Particulars2
               ? 'no-border-row'
-              : params.indexRelativeToCurrentPage % 2 === 0
+              : params.indexRelativeToCurrentPage % 3 === 0
                 ? 'even-row'
-                : 'odd-row'
+                : 'even-row'
           }}
           sx={{
             borderRadius: '0px',
@@ -752,6 +753,7 @@ const DataGridTable = ({
             },
             //Do not remove this prop (for Grouped row it can be usefull !!!!!)
             '& .MuiDataGrid-row.no-border-row .MuiDataGrid-cell:after': {
+              backgroundColor: jioColors.rowOdd,
               borderRight: 'none !important',
             },
 
@@ -801,9 +803,17 @@ const DataGridTable = ({
             '& .even-row': {
               backgroundColor: jioColors.rowEven,
             },
-            '& .odd-row': {
+            '& .no-border-row': {
               backgroundColor: jioColors.rowOdd,
             },
+
+            '& .odd-row': {
+              filter: 'grayscale(1)', // Makes the row look faded
+              opacity: 0.1, // Slightly transparent
+              // pointerEvents: 'none', // Optional: prevents interaction
+              backgroundColor: 'rgba(200, 200, 200, 0.3)', // Example faded background color
+            },
+
             '& .MuiDataGrid-toolbarContainer': {
               display: 'flex',
               justifyContent: 'flex-end',
@@ -819,6 +829,27 @@ const DataGridTable = ({
             // },
             '& .MuiDataGrid-columnHeaderTitle': {
               fontWeight: 'bold', // Ensure column titles are bold
+            },
+
+            // '& .MuiDataGrid-columnHeader[data-field="Particulars"] .MuiDataGrid-columnHeaderTitle':
+            //   {
+            //     color: 'red',
+            //   },
+
+            '& .disabled-cell': {
+              // color: '#A9A9A9 !important', // Grey color for disabled text
+              // backgroundColor: '#F0F0F0 !important', // Light grey background
+              // cursor: 'not-allowed !important', // Indicate it's not interactive
+              // Optional: Add a border or other visual cues
+              // border: '1px solid #ccc !important',
+              opacity: 0.2, // Slightly transparent
+              filter: 'grayscale(1)', // Makes the row look faded
+              backgroundColor: 'rgba(200, 200, 200, 0.3)', // Example faded background color
+            },
+            '& .disabled-header': {
+              color: '#A9A9A9 !important', // Fade the header text color
+              opacity: 0.7, // Optionally fade the header opacity as well
+              // You might want to adjust other header styles if needed
             },
           }}
         />
@@ -892,8 +923,44 @@ const DataGridTable = ({
               Save
             </Button>
           )}
+          {permissions?.nextBtn && (
+            <Button
+              variant='contained'
+              sx={{
+                backgroundColor: jioColors.primaryBlue,
+                color: jioColors.background,
+                borderRadius: 1,
+                padding: '8px 24px',
+                textTransform: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                minWidth: 120,
+                '&:hover': {
+                  backgroundColor: '#143B6F',
+                  boxShadow: 'none',
+                },
+                '&.Mui-disabled': {
+                  backgroundColor: jioColors.primaryBlue,
+                  color: jioColors.background,
+                  opacity: 0.7,
+                },
+              }}
+              onClick={() => {
+                // Write any additional logic here before navigating.
+                // console.log('Navigating to dashboard')
+                // navigate('/user-form')
+                handleAddPlantSite()
+              }}
+              disabled={isButtonDisabled}
+              loading={loading} // Use the loading prop to trigger loading state
+              loadingposition='start' // Use loadingPosition to control where the spinner appears
+            >
+              Next
+            </Button>
+          )}
         </Box>
       )}
+
       {(permissions?.allAction ?? true) && (
         <Notification
           open={snackbarOpen}
@@ -902,6 +969,7 @@ const DataGridTable = ({
           onClose={() => setSnackbarOpen(false)}
         />
       )}
+
       <Dialog
         open={openDeleteDialogeBox}
         onClose={closeDeleteDialogeBox}

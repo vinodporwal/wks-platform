@@ -6,6 +6,8 @@ import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import { useSelector } from 'react-redux'
 import NumericInputOnly from 'utils/NumericInputOnly'
+import { StartDateTimeEditCell } from 'utils/StartDateTimeEditCell'
+import { EndDateTimeEditCell } from 'utils/EndDateTimeEditCell'
 import Tooltip from '@mui/material/Tooltip'
 
 import Autocomplete from '@mui/material/Autocomplete'
@@ -23,6 +25,8 @@ const SlowDown = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
   // const [slowDownData, setSlowDownData] = useState([])
+  const [rowModesModel, setRowModesModel] = useState({})
+
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
@@ -117,7 +121,7 @@ const SlowDown = ({ permissions }) => {
       const slowDownDetailsMEG = newRow.map((row) => ({
         productId: row.product,
         discription: row.discription,
-        durationInHrs: parseFloat(row.durationInHrs),
+        durationInHrs: parseFloat(findDuration('1', row)),
         maintEndDateTime: addTimeOffset(row.maintEndDateTime),
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
         remark: row.remark,
@@ -154,41 +158,50 @@ const SlowDown = ({ permissions }) => {
     }
   }
   const saveChanges = React.useCallback(async () => {
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      if (data.length == 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
 
-      const requiredFields = [
-        'maintStartDateTime',
-        'maintEndDateTime',
-        'discription',
-        'remark',
-        'rate',
-        // 'durationInHrs',
-        'product',
-      ]
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        return
-      }
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
 
-      saveSlowDownData(data)
-    } catch (error) {
-      // setIsSaving(false);
-    }
-  }, [apiRef])
+        const requiredFields = [
+          'maintStartDateTime',
+          'maintEndDateTime',
+          'discription',
+          'remark',
+          'rate',
+          // 'durationInHrs',
+          'product',
+        ]
+        const validationMessage = validateFields(data, requiredFields)
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          return
+        }
+
+        saveSlowDownData(data)
+      } catch (error) {
+        // setIsSaving(false);
+      }
+    }, 400)
+  }, [apiRef, rowModesModel])
 
   const updateSlowdownData = async (newRow) => {
     try {
@@ -441,15 +454,12 @@ const SlowDown = ({ permissions }) => {
       type: 'dateTime',
       minWidth: 200,
       editable: true,
-      valueGetter: (params) => {
-        const value = params
-        const parsedDate = value
-          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
-          : null
-        return parsedDate
-      },
+      renderEditCell: (params) => <StartDateTimeEditCell {...params} />,
       valueFormatter: (params) => {
-        return params ? dayjs(params).format('DD/MM/YYYY, h:mm:ss A') : ''
+        const value = params
+        return value && dayjs(value).isValid()
+          ? dayjs(value).format('DD/MM/YYYY, h:mm:ss A')
+          : ''
       },
     },
 
@@ -459,15 +469,12 @@ const SlowDown = ({ permissions }) => {
       type: 'dateTime',
       minWidth: 200,
       editable: true,
-      valueGetter: (params) => {
-        const value = params
-        const parsedDate = value
-          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
-          : null
-        return parsedDate
-      },
+      renderEditCell: (params) => <EndDateTimeEditCell {...params} />,
       valueFormatter: (params) => {
-        return params ? dayjs(params).format('DD/MM/YYYY, h:mm:ss A') : ''
+        const value = params
+        return value && dayjs(value).isValid()
+          ? dayjs(value).format('DD/MM/YYYY, h:mm:ss A')
+          : ''
       },
     },
 
@@ -495,7 +502,7 @@ const SlowDown = ({ permissions }) => {
     {
       field: 'remark',
       headerName: 'Remarks',
-      editable: true,
+      editable: false,
       minWidth: 180,
       renderCell: (params) => {
         const displayText = truncateRemarks(params.value)
@@ -532,6 +539,10 @@ const SlowDown = ({ permissions }) => {
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
   }, [])
+
+  const onRowModesModelChange = (newRowModesModel) => {
+    setRowModesModel(newRowModesModel)
+  }
 
   const deleteRowData = async (paramsForDelete) => {
     try {
@@ -577,6 +588,8 @@ const SlowDown = ({ permissions }) => {
         paginationOptions={[100, 200, 300]}
         updateSlowdownData={updateSlowdownData}
         processRowUpdate={processRowUpdate}
+        rowModesModel={rowModesModel}
+        onRowModesModelChange={onRowModesModelChange}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

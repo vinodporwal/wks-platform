@@ -14,6 +14,11 @@
     "minWidth": 150
   },
   {
+    "field": "UOM",
+    "headerName": "UOM",
+    "editable": false
+  },
+  {
     "field": "april",
     "headerName": 4,
     "editable": true,
@@ -113,7 +118,7 @@
   {
     "field": "remark",
     "headerName": "Remark",
-    "editable": true,
+    "editable": false,
     "minWidth": 150
   },
   {

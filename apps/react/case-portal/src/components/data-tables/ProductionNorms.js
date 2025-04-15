@@ -22,6 +22,8 @@ const ProductionNorms = ({ permissions }) => {
   // const [csData, setCsData] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
+  const [rowModesModel, setRowModesModel] = useState({})
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
@@ -74,57 +76,68 @@ const ProductionNorms = ({ permissions }) => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    try {
-      var editedData = Object.values(unsavedChangesRef.current.unsavedRows)
-      const allRows = Array.from(apiRef.current.getRowModels().values())
-      const updatedRows = allRows.map(
-        (row) => unsavedChangesRef.current.unsavedRows[row.id] || row,
-      )
-      const rowsToSave = updatedRows.filter((row) => row.id !== 'total')
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
 
-      if (updatedRows.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
 
-      const requiredFields = ['aopRemarks']
+    setTimeout(() => {
+      try {
+        var editedData = Object.values(unsavedChangesRef.current.unsavedRows)
+        const allRows = Array.from(apiRef.current.getRowModels().values())
+        const updatedRows = allRows.map(
+          (row) => unsavedChangesRef.current.unsavedRows[row.id] || row,
+        )
+        const rowsToSave = updatedRows.filter((row) => row.id !== 'total')
 
-      const validationMessage = validateFields(editedData, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        return
-      }
-      // const finalData = [...rowsToSave, editedData]
-      // console.log('calculatebtnClicked', calculatebtnClicked)
-
-      if (calculatebtnClicked == false) {
-        if (editedData.length === 0) {
+        if (updatedRows.length === 0) {
           setSnackbarOpen(true)
           setSnackbarData({
             message: 'No Records to Save!',
             severity: 'info',
           })
-          setCalculatebtnClicked(false)
           return
         }
 
-        updateProductNormData(editedData)
-      } else {
-        updateProductNormData(rowsToSave)
+        const requiredFields = ['aopRemarks']
+
+        const validationMessage = validateFields(editedData, requiredFields)
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          return
+        }
+
+        if (calculatebtnClicked == false) {
+          //Consition changed if permissions?.saveBtn --> SET TO FALSE
+          //UNCOMMENT THE CODE IF permissions?.saveBtn --> SET TO TRUE
+          // if (editedData.length === 0) {
+          //   setSnackbarOpen(true)
+          //   setSnackbarData({
+          //     message: 'No Records to Save!',
+          //     severity: 'info',
+          //   })
+          //   setCalculatebtnClicked(false)
+          //   return
+          // }
+          // updateProductNormData(editedData)
+          updateProductNormData(rowsToSave)
+        } else {
+          updateProductNormData(rowsToSave)
+        }
+      } catch (error) {
+        console.log('Error saving changes:', error)
+
+        setCalculatebtnClicked(false)
       }
-    } catch (error) {
-      console.log('Error saving changes:', error)
-      setCalculatebtnClicked(false)
-    }
-  }, [apiRef, selectedUnit, calculatebtnClicked])
+    }, 400)
+  }, [apiRef, rowModesModel, selectedUnit, calculatebtnClicked])
 
   const updateProductNormData = async (newRow) => {
     setLoading(true)
@@ -244,12 +257,14 @@ const ProductionNorms = ({ permissions }) => {
           message: 'Production AOP Saved Successfully !',
           severity: 'success',
         })
+
         setCalculatebtnClicked(false)
         setLoading(false)
         unsavedChangesRef.current = {
           unsavedRows: {},
           rowsBeforeChange: {},
         }
+
         setCalculatebtnClicked(false)
         fetchData()
       } else {
@@ -259,6 +274,7 @@ const ProductionNorms = ({ permissions }) => {
           severity: 'error',
         })
         setLoading(false)
+
         setCalculatebtnClicked(false)
       }
     } catch (error) {
@@ -270,12 +286,14 @@ const ProductionNorms = ({ permissions }) => {
       })
     } finally {
       setLoading(false)
+
       setCalculatebtnClicked(false)
     }
   }
 
   const handleCalculate = async () => {
     dispatch(setIsBlocked(true))
+
     setCalculatebtnClicked(true)
     setLoading(true)
     try {
@@ -342,6 +360,10 @@ const ProductionNorms = ({ permissions }) => {
 
         // setRows(finalData)
         setLoading(false)
+
+        // setTimeout(() => {
+        saveChanges()
+        // }, 1000)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -470,6 +492,7 @@ const ProductionNorms = ({ permissions }) => {
     }
     return totalRow
   }
+
   const findSum = (value, row) => {
     const months = [
       'april',
@@ -528,6 +551,10 @@ const ProductionNorms = ({ permissions }) => {
     console.log(error)
   }, [])
 
+  const onRowModesModelChange = (newRowModesModel) => {
+    setRowModesModel(newRowModesModel)
+  }
+
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
   }
@@ -555,6 +582,8 @@ const ProductionNorms = ({ permissions }) => {
         paginationOptions={[100, 200, 300]}
         updateProductNormData={updateProductNormData}
         processRowUpdate={processRowUpdate}
+        rowModesModel={rowModesModel}
+        onRowModesModelChange={onRowModesModelChange}
         // onRowEditStop={handleRowEditStop}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
@@ -580,7 +609,7 @@ const ProductionNorms = ({ permissions }) => {
           showUnit: permissions?.showUnit ?? true,
           saveWithRemark: permissions?.saveWithRemark ?? true,
           showCalculate: permissions?.showCalculate ?? true,
-          saveBtn: permissions?.saveBtn ?? true,
+          saveBtn: permissions?.saveBtn ?? false,
           // UOM: 'MT',
           units: ['MT', 'KT'],
           customHeight: permissions?.customHeight,

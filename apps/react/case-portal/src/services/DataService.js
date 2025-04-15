@@ -67,6 +67,11 @@ export const DataService = {
   getPeConfigData,
   getAllGrades,
   getHeaderData,
+
+  getShutdownMonths,
+  getUsersData,
+  getUserRoles,
+  getUserAllData,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -327,7 +332,13 @@ async function handleCalculateMaintenance(plantId, year, keycloak) {
 }
 
 async function deleteSlowdownData(maintenanceId, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/deleteSlowdownData/${maintenanceId}`
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/deleteSlowdownData/${maintenanceId}?plantId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -353,7 +364,13 @@ async function deleteSlowdownData(maintenanceId, keycloak) {
   }
 }
 async function deleteShutdownData(maintenanceId, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/deleteShutdownData/${maintenanceId}`
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/deleteShutdownData/${maintenanceId}?plantId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -379,7 +396,13 @@ async function deleteShutdownData(maintenanceId, keycloak) {
   }
 }
 async function deleteTurnAroundData(maintenanceId, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/deleteTurnaroundData/${maintenanceId}`
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/deleteTurnaroundData/${maintenanceId}?plantId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -571,6 +594,54 @@ async function getAllGrades(keycloak) {
 
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getUsersData(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/users`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getUserRoles(keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/users/roles`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getUserAllData(keycloak, userId) {
+  const url = `${Config.CaseEngineUrl}/task/users/${userId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'PUT', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
@@ -1132,6 +1203,28 @@ async function getAllProducts(keycloak) {
   const parsedPlant = JSON.parse(storedPlant)
   // const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=${type}&plantId=${parsedPlant.id}`
   const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=null&plantId=${parsedPlant.id}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getShutdownMonths(keycloak) {
+  const storedPlant = localStorage.getItem('selectedPlant')
+  const parsedPlant = JSON.parse(storedPlant)
+  // const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=${type}&plantId=${parsedPlant.id}`
+  // http://localhost:8080/task/shutdown-months?plantId=AACDBE12-C5F6-4B79-9C88-751169815B42&MaintenanceName=Shutdown
+  const url = `${Config.CaseEngineUrl}/task/shutdown-months?plantId=${parsedPlant.id}&maintenanceName=Shutdown`
 
   const headers = {
     Accept: 'application/json',

@@ -1,5 +1,11 @@
 [
   {
+    "field": "srNo",
+    "headerName": "Sr. No",
+    "width": 70,
+    "editable": false
+  },
+  {
     "field": "normParameterFKId",
     "headerName": "Particulars",
     "editable": false,
@@ -115,7 +121,7 @@
     "field": "remarks",
     "headerName": "Remark",
     "minWidth": 150,
-    "editable": true,
+    "editable": false,
     "renderCell": "renderRemarkCell"
   }
 ]

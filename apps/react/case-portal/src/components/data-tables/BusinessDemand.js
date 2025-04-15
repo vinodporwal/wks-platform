@@ -10,8 +10,11 @@ const headerMap = generateHeaderNames()
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
+import SimpleDataTable from 'components/data-tables-views/SimpleDataTable'
+import { Box } from '@mui/material'
 
 const BusinessDemand = ({ permissions }) => {
+  const [rowModesModel, setRowModesModel] = useState({})
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
   const [open1, setOpen1] = useState(false)
@@ -22,6 +25,7 @@ const BusinessDemand = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
+  const [rows2, setRows2] = useState()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -129,20 +133,8 @@ const BusinessDemand = ({ permissions }) => {
         // handleMenuClose();
       }
     }
-    const getHeaderData = async () => {
-      try {
-        const res = await DataService.getHeaderData(keycloak, 'Business Demand')
-        if (res) {
-          console.log(res)
-          // setHeader(res);
-        }
-        return res
-      } catch (err) {
-        console.log(err)
-      }
-    }
-    getHeaderData()
     fetchData()
+    // fetchData2()
     getAllProducts()
   }, [sitePlantChange, keycloak, lowerVertName])
 
@@ -182,33 +174,46 @@ const BusinessDemand = ({ permissions }) => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      if (data.length == 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
+    setLoading(true)
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
 
-      const requiredFields = ['normParameterId', 'remark']
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
 
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        return
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          setLoading(false)
+          return
+        }
+
+        const requiredFields = ['normParameterId', 'remark']
+
+        const validationMessage = validateFields(data, requiredFields)
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          setLoading(false)
+          return
+        }
+        saveBusinessDemandData(data)
+      } catch (error) {
+        console.log('Error saving changes:', error)
       }
-      saveBusinessDemandData(data)
-    } catch (error) {
-      console.log('Error saving changes:', error)
-    }
-  }, [apiRef])
+    }, 400)
+  }, [apiRef, rowModesModel])
 
   const saveBusinessDemandData = async (newRows) => {
     try {
@@ -283,6 +288,10 @@ const BusinessDemand = ({ permissions }) => {
     console.log(error)
   }, [])
 
+  const onRowModesModelChange = (newRowModesModel) => {
+    setRowModesModel(newRowModesModel)
+  }
+
   const deleteRowData = async (paramsForDelete) => {
     try {
       const { idFromApi, id } = paramsForDelete.row
@@ -309,10 +318,6 @@ const BusinessDemand = ({ permissions }) => {
 
   return (
     <div>
-      {/* <div>
-        {`Plant: ${verticalChange?.verticalChange?.selectedPlant}, Site: ${verticalChange?.verticalChange?.selectedSite}, Vertical: ${verticalChange?.verticalChange?.selectedVertical}`}
-      </div> */}
-
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
@@ -320,14 +325,26 @@ const BusinessDemand = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
+      {lowerVertName === 'meg' && (
+        <Box
+          sx={{
+            // height: '30vh',
+            width: '100%',
+            padding: '0px 5px',
+            margin: '0px 5px 0px',
+            backgroundColor: '#F2F3F8',
+            // backgroundColor: '#fff',
+            borderRadius: 0,
+            borderBottom: 'none',
+          }}
+        >
+          <SimpleDataTable />
+        </Box>
+      )}
+
       <ASDataGrid
         setRows={setRows}
-        columns={
-          colDefs
-          // lowerVertName === 'meg'
-          //   ? vertical_meg_coldefs_bd
-          //   : vertical_pe_coldefs_bd
-        }
+        columns={colDefs}
         rows={rows}
         isCellEditable={isCellEditable}
         title='Business Demand'
@@ -336,6 +353,8 @@ const BusinessDemand = ({ permissions }) => {
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
         paginationOptions={[100, 200, 300]}
         processRowUpdate={processRowUpdate}
+        rowModesModel={rowModesModel}
+        onRowModesModelChange={onRowModesModelChange}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
@@ -359,14 +378,15 @@ const BusinessDemand = ({ permissions }) => {
         deleteRowData={deleteRowData}
         permissions={{
           showAction: permissions?.showAction ?? true,
-          addButton: permissions?.addButton ?? true,
-          deleteButton: permissions?.deleteButton ?? true,
-          editButton: permissions?.editButton ?? true,
+          addButton: permissions?.addButton ?? false,
+          deleteButton: permissions?.deleteButton ?? false,
+          editButton: permissions?.editButton ?? false,
           showUnit: permissions?.showUnit ?? false,
           saveWithRemark: permissions?.saveWithRemark ?? true,
           saveBtn: permissions?.saveBtn ?? true,
           units: ['TPH', 'TPD'],
           customHeight: permissions?.customHeight,
+          customHeight2: lowerVertName === 'meg' ? true : false,
         }}
       />
     </div>

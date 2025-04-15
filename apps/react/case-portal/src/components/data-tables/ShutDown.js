@@ -6,6 +6,9 @@ import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
 import { useGridApiRef } from '@mui/x-data-grid'
 import NumericInputOnly from 'utils/NumericInputOnly'
+import { StartDateTimeEditCell } from 'utils/StartDateTimeEditCell'
+import { EndDateTimeEditCell } from 'utils/EndDateTimeEditCell'
+
 import Tooltip from '@mui/material/Tooltip'
 import { truncateRemarks } from 'utils/remarksUtils'
 import Backdrop from '@mui/material/Backdrop'
@@ -19,6 +22,8 @@ const ShutDown = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   // const [shutdownData, setShutdownData] = useState([])
   // const [allProducts, setAllProducts] = useState([])
+  const [rowModesModel, setRowModesModel] = useState({})
+
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
@@ -61,38 +66,47 @@ const ShutDown = ({ permissions }) => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      if (data.length == 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
 
-      const requiredFields = [
-        'maintStartDateTime',
-        'maintEndDateTime',
-        'discription',
-        'remark',
-      ]
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        return
-      }
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
+        }
 
-      saveShutdownData(data)
-    } catch (error) {
-      console.log('Error saving changes:', error)
-    }
-  }, [apiRef])
+        const requiredFields = [
+          'maintStartDateTime',
+          'maintEndDateTime',
+          'discription',
+          'remark',
+        ]
+        const validationMessage = validateFields(data, requiredFields)
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          return
+        }
+
+        saveShutdownData(data)
+      } catch (error) {
+        console.log('Error saving changes:', error)
+      }
+    }, 400)
+  }, [apiRef, rowModesModel])
 
   function addTimeOffset(dateTime) {
     if (!dateTime) return null
@@ -202,29 +216,7 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    // const getAllProducts = async () => {
-    //   try {
-    //     const data = await DataService.getAllProducts(
-    //       keycloak,
-    //       lowerVertName === 'meg' ? 'Production' : 'Grade',
-    //     )
-    //     const productList = data.map((product) => ({
-    //       // id: product.id.toLowerCase(), // Convert id to lowercase
-    //       id: product.id, // Convert id to lowercase
-    //       displayName: product.displayName,
-    //     }))
-
-    //     // setAllProducts(productList)
-    //   } catch (error) {
-    //     console.error('Error fetching product:', error)
-    //   } finally {
-    //     // handleMenuClose();
-    //   }
-    // }
-
     fetchData()
-    // saveShutdownData()
-    // getAllProducts()
   }, [sitePlantChange, keycloak, verticalChange, lowerVertName])
 
   const findDuration = (value, row) => {
@@ -314,17 +306,18 @@ const ShutDown = ({ permissions }) => {
       field: 'maintStartDateTime',
       headerName: 'SD- From',
       type: 'dateTime',
-      minWidth: 175,
+      minWidth: 200,
       editable: true,
-      valueGetter: (params) => {
-        const value = params
-        const parsedDate = value
-          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
-          : null
-        return parsedDate
-      },
+      // renderEditCell: (params) => <StartDateTimeEditCell {...params} />,
+      renderEditCell: (params) => (
+        <StartDateTimeEditCell {...params} apiRef={apiRef} />
+      ),
+
       valueFormatter: (params) => {
-        return params ? dayjs(params).format('DD/MM/YYYY, h:mm:ss A') : ''
+        const value = params
+        return value && dayjs(value).isValid()
+          ? dayjs(value).format('DD/MM/YYYY, h:mm:ss A')
+          : ''
       },
     },
 
@@ -332,17 +325,18 @@ const ShutDown = ({ permissions }) => {
       field: 'maintEndDateTime',
       headerName: 'SD- To',
       type: 'dateTime',
+      minWidth: 200,
       editable: true,
-      minWidth: 175,
-      valueGetter: (params) => {
-        const value = params
-        const parsedDate = value
-          ? dayjs(value, 'D MMM, YYYY, h:mm:ss A').toDate()
-          : null
-        return parsedDate
-      },
+      // renderEditCell: (params) => <EndDateTimeEditCell {...params} />,
+      // renderEditCell: (params) => <StartDateTimeEditCell {...params} apiRef={apiRef} />,
+      renderEditCell: (params) => (
+        <EndDateTimeEditCell {...params} apiRef={apiRef} />
+      ),
       valueFormatter: (params) => {
-        return params ? dayjs(params).format('DD/MM/YYYY, h:mm:ss A') : ''
+        const value = params
+        return value && dayjs(value).isValid()
+          ? dayjs(value).format('DD/MM/YYYY, h:mm:ss A')
+          : ''
       },
     },
     {
@@ -360,7 +354,7 @@ const ShutDown = ({ permissions }) => {
       field: 'remark',
       headerName: 'Remark',
       minWidth: 250,
-      editable: true,
+      editable: false,
       renderCell: (params) => {
         const displayText = truncateRemarks(params.value)
         const isEditable = !params.row.Particulars
@@ -396,6 +390,10 @@ const ShutDown = ({ permissions }) => {
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
   }, [])
+
+  const onRowModesModelChange = (newRowModesModel) => {
+    setRowModesModel(newRowModesModel)
+  }
 
   const deleteRowData = async (paramsForDelete) => {
     try {
@@ -441,6 +439,8 @@ const ShutDown = ({ permissions }) => {
         paginationOptions={[100, 200, 300]}
         updateShutdownData={updateShutdownData}
         processRowUpdate={processRowUpdate}
+        rowModesModel={rowModesModel}
+        onRowModesModelChange={onRowModesModelChange}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}

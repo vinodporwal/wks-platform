@@ -18,6 +18,8 @@ import {
   IconFile, // General file icon
   IconFileText, // For textual reports
   // IconFlow, // For workflow-related processes
+  IconSettingsAutomation,
+  IconUserCog,
 } from '@tabler/icons-react'
 
 import i18n from '../i18n'
@@ -29,6 +31,8 @@ const icons = {
   IconArchive,
   IconSquareAsterisk,
   IconList,
+  IconUserCog,
+  IconSettingsAutomation,
   IconDatabase,
   IconChartBar,
   IconSettings,
@@ -44,7 +48,7 @@ const icons = {
 }
 
 const workspace = {
-  id: 'utilities2',
+  id: 'utilities',
   title: '',
   type: 'group',
   children: [
@@ -56,6 +60,47 @@ const workspace = {
     //   children: [],
     // },
 
+    // {
+
+    //   id: 'functions',
+    //   title: i18n.t('menu.functions'),
+    //   type: 'collapse',
+    //   icon: icons.IconFunction, // You can choose an appropriate icon
+    //   children: [
+    //     {
+    //       id: 'safety',
+    //       title: i18n.t('menu.safety'),
+    //       type: 'item',
+    //       url: '/functions/safety',
+    //       icon: icons.IconShield,
+    //       breadcrumbs: true,
+    //     },
+    //     {
+    //       id: 'reliability',
+    //       title: i18n.t('menu.reliability'),
+    //       type: 'item',
+    //       url: '/functions/reliability',
+    //       icon: icons.IconSettings,
+    //       breadcrumbs: true,
+    //     },
+    //   ],
+    // },
+
+    // {
+    //   id: 'record-list',
+    //   title: i18n.t('menu.record'),
+    //   type: 'collapse',
+    //   icon: icons.IconDatabase,
+    //   children: [],
+    // },
+    // {
+    //   id: 'task-list',
+    //   title: i18n.t('menu.task'),
+    //   type: 'item',
+    //   url: '/task-list',
+    //   icon: icons.IconList,
+    //   breadcrumbs: true,
+    // },
     {
       id: 'functions',
       title: i18n.t('menu.functions'),
@@ -133,7 +178,15 @@ const workspace = {
       title: i18n.t('menu.workflow'),
       type: 'item',
       url: '/workflow',
-      icon: icons?.IconList,
+      icon: icons?.IconSettingsAutomation,
+      breadcrumbs: true,
+    },
+    {
+      id: 'user-management',
+      title: i18n.t('menu.userManage'),
+      type: 'item',
+      url: '/user-management',
+      icon: icons?.IconUserCog,
       breadcrumbs: true,
     },
   ],

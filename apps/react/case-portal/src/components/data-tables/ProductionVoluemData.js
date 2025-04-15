@@ -15,6 +15,8 @@ import CircularProgress from '@mui/material/CircularProgress'
 const ProductionvolumeData = ({ permissions }) => {
   const keycloak = useSession()
   // const [productNormData, setProductNormData] = useState([])
+  const [rowModesModel, setRowModesModel] = useState({})
+
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -163,89 +165,97 @@ const ProductionvolumeData = ({ permissions }) => {
   }, [])
 
   const saveChanges = React.useCallback(async () => {
-    try {
-      var data = Object.values(unsavedChangesRef.current.unsavedRows)
-      if (data.length == 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        return
-      }
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
 
-      const months = [
-        'april',
-        'may',
-        'june',
-        'july',
-        'august',
-        'september',
-        'october',
-        'november',
-        'december',
-        'january',
-        'february',
-        'march',
-      ]
-
-      const invalidRows = data.filter((row) => {
-        if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
-          return true
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
+    setTimeout(() => {
+      try {
+        var data = Object.values(unsavedChangesRef.current.unsavedRows)
+        if (data.length == 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          return
         }
 
-        for (const month of months) {
-          const value = row[month]
+        const months = [
+          'april',
+          'may',
+          'june',
+          'july',
+          'august',
+          'september',
+          'october',
+          'november',
+          'december',
+          'january',
+          'february',
+          'march',
+        ]
+
+        const invalidRows = data.filter((row) => {
+          if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
+            return true
+          }
+
+          for (const month of months) {
+            const value = row[month]
+            if (
+              value === 0 ||
+              value === null ||
+              (typeof value === 'string' && !value.trim())
+            ) {
+              return true
+            }
+          }
+
+          const remarkValue = row.remark || row.remarks
+          const originalRemarkValue =
+            row.originalRemark || row.originalRemarks || ''
+
           if (
-            value === 0 ||
-            value === null ||
-            (typeof value === 'string' && !value.trim())
+            !remarkValue ||
+            (typeof remarkValue === 'string' && !remarkValue.trim()) ||
+            remarkValue.trim() === originalRemarkValue.trim()
           ) {
             return true
           }
-        }
 
-        const remarkValue = row.remark || row.remarks
-        const originalRemarkValue =
-          row.originalRemark || row.originalRemarks || ''
-
-        if (
-          !remarkValue ||
-          (typeof remarkValue === 'string' && !remarkValue.trim()) ||
-          remarkValue.trim() === originalRemarkValue.trim()
-        ) {
-          return true
-        }
-
-        return false
-      })
-
-      if (invalidRows.length > 0) {
-        setSnackbarData({
-          message:
-            'Please fill all fields in edited row and update the Remark!',
-          severity: 'error',
+          return false
         })
-        setSnackbarOpen(true)
-        return
-      } else {
-        editAOPMCCalculatedData(data)
-      }
 
-      unsavedChangesRef.current = {
-        unsavedRows: {},
-        rowsBeforeChange: {},
+        if (invalidRows.length > 0) {
+          setSnackbarData({
+            message:
+              'Please fill all fields in edited row and update the Remark!',
+            severity: 'error',
+          })
+          setSnackbarOpen(true)
+          return
+        } else {
+          editAOPMCCalculatedData(data)
+        }
+
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } catch (error) {
+        console.log('Facing issue at saving data', error)
       }
-    } catch (error) {
-      console.log('Facing issue at saving data', error)
-    }
-  }, [apiRef, selectedUnit])
+    }, 400)
+  }, [apiRef, rowModesModel, selectedUnit])
 
   const fetchData = async () => {
     try {
       setLoading(true)
       const data = await DataService.getAOPMCCalculatedData(keycloak)
-      // const data = data1.slice(0, 3)
       const formattedData = data.map((item, index) => {
         const isTPH = selectedUnit == 'TPD'
         return {
@@ -291,7 +301,6 @@ const ProductionvolumeData = ({ permissions }) => {
           }),
         }
       })
-      // setProductNormData(formattedData)
       setRows(formattedData)
       setLoading(false)
     } catch (error) {
@@ -331,9 +340,14 @@ const ProductionvolumeData = ({ permissions }) => {
     handleRemarkCellClick,
     findAvg,
   })
+
   const onProcessRowUpdateError = React.useCallback((error) => {
     console.log(error)
   }, [])
+
+  const onRowModesModelChange = (newRowModesModel) => {
+    setRowModesModel(newRowModesModel)
+  }
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
@@ -408,6 +422,8 @@ const ProductionvolumeData = ({ permissions }) => {
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
         paginationOptions={[100, 200, 300]}
         processRowUpdate={processRowUpdate}
+        rowModesModel={rowModesModel}
+        onRowModesModelChange={onRowModesModelChange}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
@@ -439,10 +455,12 @@ const ProductionvolumeData = ({ permissions }) => {
           showUnit: permissions?.showUnit ?? true,
           saveWithRemark: permissions?.saveWithRemark ?? true,
           showRefreshBtn: permissions?.showRefreshBtn ?? true,
-          saveBtn: permissions?.saveBtn ?? true,
+          saveBtn: permissions?.saveBtn ?? false,
+          // permissions?.saveBtn ?? lowerVertName == 'meg' ? false : true,
           units: ['TPH', 'TPD'],
           customHeight: permissions?.customHeight,
-          showCalculate: lowerVertName == 'meg' ? true : false,
+          showCalculate: permissions?.showCalculate ?? false,
+          // permissions?.showCalculate ?? lowerVertName == 'meg' ? true : false,
         }}
       />
     </div>

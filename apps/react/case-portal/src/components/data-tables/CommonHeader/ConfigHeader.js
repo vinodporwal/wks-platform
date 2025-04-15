@@ -22,6 +22,10 @@ const getConfigByType = (configType) => {
       return productionColumnsPE3
     case 'grades':
       return productionColumnsPE4
+    case 'production':
+      return productionColumns
+    case 'consumption':
+      return productionColumns
     default:
       return productionColumns
   }
@@ -198,6 +202,13 @@ const getEnhancedAOPColDefs = ({
         renderEditCell: NumericInputOnly,
       }
     }
+
+    // if (col.field === 'srNo') {
+    //   return {
+    //     ...col,
+    //     renderCell: (params) => params.id + 1,
+    //   }
+    // }
 
     if (col.field === 'Particulars' || col.field === 'Particulars2') {
       return {
