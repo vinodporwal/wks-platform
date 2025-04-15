@@ -23,6 +23,7 @@ import {
   IconBarrierBlock,
   IconChartHistogram,
   IconPackages,
+  IconTrafficCone,
 } from '@tabler/icons-react'
 // import { useSelector } from 'react-redux'
 import i18n from '../i18n'
@@ -51,6 +52,7 @@ const icons = {
   IconBarrierBlock,
   IconChartHistogram,
   IconPackages,
+  IconTrafficCone,
 }
 
 const plan = {
@@ -149,6 +151,14 @@ const plan = {
           type: 'item',
           url: '/production-norms-plan/shutdown-norms',
           icon: icons.IconPower,
+          breadcrumbs: true,
+        },
+        {
+          id: 'slowdown-norms',
+          title: i18n.t('menu.slowdownNorms'),
+          type: 'item',
+          url: '/production-norms-plan/slowdown-norms',
+          icon: icons.IconTrafficCone,
           breadcrumbs: true,
         },
 

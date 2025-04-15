@@ -9,8 +9,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
+
 
 @Repository
 public interface PlantMaintenanceTransactionRepository extends JpaRepository<PlantMaintenanceTransaction, UUID> {
@@ -22,14 +23,13 @@ public interface PlantMaintenanceTransactionRepository extends JpaRepository<Pla
 	UUID findIdByNameAndPlantFkId(@Param("name") String name, @Param("plantFkId") UUID plantFkId);
 
 	@Modifying
+	@Transactional
 	@Query(value = "DELETE FROM PlantMaintenanceTransaction "
-	        + "WHERE "
-	        + " NormParameter_FK_Id = :normParamId "
-	        + "AND CreatedOn = :createdOn", nativeQuery = true)
+			+ "WHERE "
+			+ " NormParameter_FK_Id = :normParamId "
+			+ "AND Name = :name", nativeQuery = true)
 	int deleteRampActivitiesByNormAndDate(
-	    @Param("normParamId") UUID normParamId,
-	    @Param("createdOn") Date createdOn
-	);
-
+			@Param("normParamId") UUID normParamId,
+			@Param("name") String name);
 
 }

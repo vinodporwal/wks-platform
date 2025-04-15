@@ -19,7 +19,7 @@ import TextField from '@mui/material/TextField'
 import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 
-const ShutdownNorms = () => {
+const SlowdownNorms = () => {
   const [loading, setLoading] = useState(false)
   const menu = useSelector((state) => state.dataGridStore)
   const [allProducts, setAllProducts] = useState([])
@@ -797,4 +797,4 @@ const ShutdownNorms = () => {
   )
 }
 
-export default ShutdownNorms
+export default SlowdownNorms
