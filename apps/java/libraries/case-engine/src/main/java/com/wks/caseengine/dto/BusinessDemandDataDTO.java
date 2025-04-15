@@ -18,8 +18,8 @@ import lombok.NoArgsConstructor;
 @Data
 @JsonInclude(Include.ALWAYS)
 public class BusinessDemandDataDTO {
-	
-	private String id;
+
+    private String id;
     private String remark;
     private String normParameterId;
     private Float jan;
@@ -44,5 +44,8 @@ public class BusinessDemandDataDTO {
     private String normParameterTypeName;
     private String siteFKId;
     private String verticalFKId;
+    private Boolean isEditable;
+    private Boolean isVisible;
+    private String UOM;
 
 }
