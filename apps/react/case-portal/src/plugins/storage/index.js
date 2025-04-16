@@ -4,6 +4,9 @@ import MemoryTokenManager from '../MemoryTokenManager'
 
 export class StorageService {
   async uploadFile(storage, file, fileName, dir, evt) {
+    if(!dir){
+      dir = 'cases'
+    }
     return minio().uploadFile(file, dir, evt)
   }
 
@@ -107,39 +110,40 @@ export function minio() {
         })
     },
     downloadFile(file) {
-      let getObjectForUrl = `${Config.StorageUrl}/storage/files/${file.dir}/downloads/${file.name}?content-type=${file.type}`
+      let getObjectForUrl = `${Config.StorageUrl}/storage/files1/${file.dir}/downloads/${file.name}?content-type=${file.type}`
       if (!file.dir) {
-        getObjectForUrl = `${Config.StorageUrl}/storage/files/downloads/${file.name}?content-type=${file.type}`
+        getObjectForUrl = `${Config.StorageUrl}/storage/files1/downloads/${file.name}?content-type=${file.type}`
       }
 
-      return fetch(getObjectForUrl, createHeaders())
-        .then((resp) => resp.json())
-        .then(async (data) => {
-          const resp = await fetch(data.url)
-          const blob = await resp.blob()
-          const downloadUrl = window.URL.createObjectURL(blob)
+      return {url:getObjectForUrl};
+      // return fetch(getObjectForUrl)
+      //   .then((resp) => resp.json())
+      //   .then(async (data) => {
+          // const resp = await fetch(data.url)
+          // const blob = await resp.blob()
+          // const downloadUrl = window.URL.createObjectURL(blob)
 
-          const anchor = document.createElement('a')
-          document.body.appendChild(anchor)
-          anchor.href = downloadUrl
+          // const anchor = document.createElement('a')
+          // document.body.appendChild(anchor)
+          // anchor.href = downloadUrl
 
-          const url = new URL(data.url)
-          if (url.pathname) {
-            anchor.download = url.pathname
-              .slice(url.pathname.lastIndexOf('/') + 1)
-              .replaceAll("'")
-          } else {
-            anchor.download = downloadUrl
-          }
+          // const url = new URL(data.url)
+          // if (url.pathname) {
+          //   anchor.download = url.pathname
+          //     .slice(url.pathname.lastIndexOf('/') + 1)
+          //     .replaceAll("'")
+          // } else {
+          //   anchor.download = downloadUrl
+          // }
 
-          anchor.click()
+          // anchor.click()
 
-          setTimeout(() => {
-            window.URL.revokeObjectURL(downloadUrl)
-            document.body.removeChild(anchor)
-          }, 0)
-          return
-        })
+          // setTimeout(() => {
+          //   window.URL.revokeObjectURL(downloadUrl)
+          //   document.body.removeChild(anchor)
+          // }, 0)
+        //   return;
+        // })
     },
   }
 }

@@ -224,12 +224,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
           if(!isDraft){
+          const analysis = level1.components?.[5] ?? null;
           const recommendation = level1.components?.[6] ?? null;
           const caseDetails = level1.components?.[3] ?? null;
           level1.components?.forEach((component) => {
             if (
               component.id !== recommendation?.id &&
-              component.id !== caseDetails?.id
+              component.id !== caseDetails?.id && 
+              component.id !== analysis?.id
             ) {
               component.disabled = true;
             }
@@ -1002,7 +1004,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   `
 
     // Conditional display based on RecommendationsRadio value
-    if (containerData.RecommendationsRadio === 'no') {
+    // if (containerData.RecommendationsRadio === 'no') {
       const caseCauseCategoryLabel = getCategoryLabel(
         containerData.caseCauseCategory,
       )
@@ -1010,6 +1012,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         containerData.caseCauseDescription,
         containerData.caseCauseCategory,
       )
+      const files = containerData.file;
       content += `
       <!-- Analysis -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
@@ -1018,10 +1021,28 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
           <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
           <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
-        </div>
-      </div>
+        </div>`
+    if (files.length > 0) {
+      content += `
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            ${files
+              .map(
+                (file, index) => `
+                  <li style="margin-bottom: 16px;">
+                    <img 
+                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      alt="${file.name}"
+                      style="max-width: 100%; height: auto;"
+                    />
+                  </li>
     `
-    } else {
+              )
+              .join('')}
+          </ul>
+      `;
+    }
+    content +=`</div>`
+    if (containerData.RecommendationsRadio === 'yes') {
       content += `
       <!-- Data Grid 1 -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
