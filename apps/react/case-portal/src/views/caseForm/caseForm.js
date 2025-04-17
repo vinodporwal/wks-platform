@@ -1311,11 +1311,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 {'Print'}
               </Button>
 
-              <Button hidden={aCase?.isDraft !== 'y'} color='inherit' onClick={onSave}>
+              <Button color='inherit' onClick={onSave}>
                 {'Save'}
               </Button>
               {/* Case Actions Menu */}
-              {/* <IconButton
+              <IconButton
                 edge='end'
                 color='inherit'
                 onClick={handleMenuOpen}
@@ -1337,7 +1337,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     {t('pages.caseform.actions.startProcess')}
                   </MenuItem>
                 }
-              </Menu> */}
+              </Menu>
             </Toolbar>
           </AppBar>
 
