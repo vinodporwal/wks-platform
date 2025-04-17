@@ -19,6 +19,7 @@ export const CaseService = {
   saveCase,
   getCasesById,
   saveRecommendation,
+  saveAnalysis
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -388,4 +389,24 @@ function mapperToCase(resp) {
   }
 
   return Promise.resolve({ data: toCase, paging: toPaging })
+}
+
+async function saveAnalysis(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/analysis`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
 }

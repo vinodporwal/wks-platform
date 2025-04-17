@@ -405,14 +405,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     setLoading(true)
     const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
 
-    const faultCategoryValue = formData.data.container.faultCategory
-    if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
-      requiredFields.push(
-        'caseCauseCategory',
-        'caseCauseDescription',
-        'analysisDesc',
-      )
-    }
+    // const faultCategoryValue = formData.data.container.faultCategory
+    // if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
+    //   requiredFields.push(
+    //     'caseCauseCategory',
+    //     'caseCauseDescription',
+    //     'analysisDesc',
+    //   )
+    // }
     const missingFields = requiredFields.filter(
       (field) => !formData.data.container[field],
     )
@@ -474,6 +474,91 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          }),
+        )
+      })
+      .then((data) => {
+        setLastCreatedCase(data)
+        setSnackOpen(true)
+        setTimeout(() => {
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
+      })
+      .catch((err) => {
+        console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
+      })
+  }
+
+  const onAnalysisSave = () => {
+    setLoading(true)
+    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
+    const missingFields = requiredFields.filter(
+      (field) => !formData.data.container[field],
+    )
+    if (missingFields.length > 0) {
+      setSnackbarMessages(['Please fill in all required fields.'])
+      setSnackbarOpen(true)
+      setLoading(false)
+      return
+    }
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }))
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        caseNo: aCase.caseNo,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
+        },
+        attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
+      }),
+    )
+      .then((data) => {
+        const businessKey = data.businessKey
+
+        return CaseService.saveAnalysis(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            isDraft: 'n',
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
               name: keycloak.idTokenParsed.name || '',
               email: keycloak.idTokenParsed.email || '',
               phone: keycloak.idTokenParsed.phone || '',
