@@ -35,7 +35,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   })
 
   async function handleOpenPdf(title) {
-    const url = `${Config.StorageUrl}/storage/files1/newFile/downloads/${title}_${vertName}_${plantName}.pdf?content-type=application/pdf`
+    const url = `${Config.StorageUrl}/storage/files/${vertName}/${siteName}/${plantName}/${title}.pdf?content-type=application/pdf`
     const headers = {
       Authorization: `Bearer ${keycloak.token}`,
     }
@@ -166,7 +166,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
               },
               padding: '6px', // Slightly increase padding for better spacing
             }}
-            onClick={() => handleOpenPdf(item.title)}
+            onClick={() => handleOpenPdf(item?.id)}
           >
             <InfoIcon
               fontSize='medium'
