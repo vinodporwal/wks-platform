@@ -35,7 +35,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   })
 
   async function handleOpenPdf(title) {
-    const url = `${Config.StorageUrl}/storage/files/${vertName}/${siteName}/${plantName}/${title}.pdf?content-type=application/pdf`
+    const url = `${Config.StorageUrl}/storage/files/${vertName}/${siteName}/${plantName}/downloads/${title}.pdf?content-type=application/pdf`
     const headers = {
       Authorization: `Bearer ${keycloak.token}`,
     }

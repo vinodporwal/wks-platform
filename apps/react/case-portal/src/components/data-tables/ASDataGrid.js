@@ -698,11 +698,15 @@ const DataGridTable = ({
             },
           }}
           getRowClassName={(params) => {
-            return params.row.Particulars || params.row.Particulars2
-              ? 'no-border-row'
-              : params.row.isEditable == false
-                ? 'odd-row'
-                : 'even-row'
+            if (params.row.Particulars || params.row.Particulars2) {
+              return 'no-border-row'
+            }
+
+            if (params.row.isEditable === false) {
+              return permissions?.noColor === true ? 'even-row' : 'odd-row'
+            }
+
+            return 'even-row'
           }}
           sx={{
             borderRadius: '0px',
@@ -834,7 +838,7 @@ const DataGridTable = ({
             '& .odd-row': {
               opacity: 0.9,
               pointerEvents: 'none',
-              backgroundColor: 'rgba(200, 200, 200, 0.3)',
+              backgroundColor: 'rgba(145, 145, 145, 0.3)',
               color: 'rgba(0, 0, 0, 0.6)',
             },
             '& .MuiDataGrid-toolbarContainer': {

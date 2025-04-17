@@ -14,11 +14,11 @@ const getConfigByType = (configType) => {
   switch (configType) {
     case 'meg':
       return productionColumns
-    case 'startupLosses':
+    case 'StartupLosses':
       return productionColumnsPE1
-    case 'otherLosses':
+    case 'Otherlosses':
       return productionColumnsPE2
-    case 'shutdownNorms':
+    case 'ShutdownNorms':
       return productionColumnsPE3
     case 'grades':
       return productionColumnsPE4

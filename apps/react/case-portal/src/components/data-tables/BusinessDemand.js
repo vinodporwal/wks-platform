@@ -330,6 +330,8 @@ const BusinessDemand = ({ permissions }) => {
     }
   }
 
+  const defaultCustomHeight = { mainBox: '50vh', otherBox: '112%' }
+
   return (
     <div>
       <Backdrop
@@ -339,44 +341,46 @@ const BusinessDemand = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
-        <Accordion defaultExpanded sx={{ margin: '0px 5px 5px 0px' }}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography component='span' sx={{ fontWeight: 'bold' }}>
-              Production Volume Data
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Box
-              sx={{
-                width: '100%',
-                padding: '0px ',
-                margin: '0px',
-                backgroundColor: '#F2F3F8',
-                borderRadius: 0,
-                borderBottom: 'none',
-              }}
-            >
-              <SimpleDataTable />
-            </Box>
-          </AccordionDetails>
-        </Accordion>
-      )}
-
       <div>
-        <Typography
-          variant='h6'
-          gutterBottom
-          fontWeight='bold'
-          sx={{ marginLeft: 1 }}
-        >
-          Business Demand Data
-        </Typography>
+        {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
+          <Accordion
+            defaultExpanded
+            disableGutters
+            // sx={{ margin: '0px 5px 5px 0px', marginLeft: '13px' }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls='meg-grid-content'
+              id='meg-grid-header'
+            >
+              <Typography component='span' sx={{ fontWeight: 'bold' }}>
+                Production Volume Data
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box
+                sx={{
+                  width: '100%',
+                  padding: '0px ',
+                  margin: '0px',
+                  backgroundColor: '#F2F3F8',
+                  borderRadius: 0,
+                  borderBottom: 'none',
+                }}
+              >
+                <SimpleDataTable />
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        )}
       </div>
+
+      <Typography
+        component='div'
+        sx={{ fontWeight: 'bold', ml: '5px', mt: '25px' }}
+      >
+        Business Demand Data
+      </Typography>
 
       <ASDataGrid
         setRows={setRows}
@@ -421,8 +425,7 @@ const BusinessDemand = ({ permissions }) => {
           saveWithRemark: permissions?.saveWithRemark ?? true,
           saveBtn: permissions?.saveBtn ?? true,
           units: ['TPH', 'TPD'],
-          customHeight: permissions?.customHeight,
-          customHeight2: lowerVertName === 'meg' ? true : false,
+          customHeight: permissions?.customHeight || defaultCustomHeight,
         }}
       />
     </div>

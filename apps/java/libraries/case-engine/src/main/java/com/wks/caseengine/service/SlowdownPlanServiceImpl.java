@@ -111,7 +111,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService{
 			
 			plantMaintenanceTransaction.setRate(shutDownPlanDTO.getRate());
 			plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
-			plantMaintenanceTransaction.setName("Default Name"); 
+			// plantMaintenanceTransaction.setName("Default Name"); 
 	        plantMaintenanceTransaction.setVersion("V1");
 			plantMaintenanceTransaction.setUser("system"); 
 	        if(shutDownPlanDTO.getProductId()!=null) {
@@ -150,7 +150,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService{
 			plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 			plantMaintenanceTransaction.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth()+1);
 			plantMaintenanceTransaction.setUser("system");
-			plantMaintenanceTransaction.setName("Default Name");
+			// plantMaintenanceTransaction.setName("Default Name");
 			plantMaintenanceTransaction.setVersion("V1");
 			System.out.println("shutDownPlanDTO.getCreatedOn()"+shutDownPlanDTO.getCreatedOn());
 			if(shutDownPlanDTO.getCreatedOn()==null) {
