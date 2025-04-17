@@ -11,9 +11,8 @@ import { validateFields } from 'utils/validationUtils'
 import getEnhancedAOPColDefs from './CommonHeader/ConfigHeader'
 
 const SelectivityData = (props) => {
-  const headerMap = generateHeaderNames()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { sitePlantChange, verticalChange } = dataGridStore
+  const { sitePlantChange, verticalChange, yearChanged } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const keycloak = useSession()
@@ -32,6 +31,8 @@ const SelectivityData = (props) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [allProducts, setAllProducts] = useState([])
+
+  const headerMap = generateHeaderNames(localStorage.getItem('year'))
 
   const [rowModesModel, setRowModesModel] = useState({})
 
@@ -252,7 +253,7 @@ const SelectivityData = (props) => {
       props.fetchData()
     }
     if (props?.configType === 'grades') fetchConfigData()
-  }, [sitePlantChange, keycloak, lowerVertName])
+  }, [sitePlantChange, yearChanged, keycloak, lowerVertName])
 
   const [columnConfig, setColumnConfig] = useState([])
 

@@ -10,7 +10,6 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { DataService } from 'services/DataService'
 import NumericInputOnly from 'utils/NumericInputOnly'
 import { truncateRemarks } from 'utils/remarksUtils'
-const headerMap = generateHeaderNames()
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -23,8 +22,9 @@ const SlowdownNorms = () => {
   const [loading, setLoading] = useState(false)
   const menu = useSelector((state) => state.dataGridStore)
   const [allProducts, setAllProducts] = useState([])
-  const [shutdownMonths, setShutdownMonths] = useState([])
-  const { sitePlantChange } = menu
+
+  const [slowdownMonths, setSlowdownMonths] = useState([])
+  const { sitePlantChange, yearChanged } = menu
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
@@ -35,6 +35,8 @@ const SlowdownNorms = () => {
     message: '',
     severity: 'info',
   })
+
+  const headerMap = generateHeaderNames(localStorage.getItem('year'))
 
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [rowModesModel, setRowModesModel] = useState({}) // Track row edit state
@@ -179,11 +181,10 @@ const SlowdownNorms = () => {
         // handleMenuClose();
       }
     }
-    const getShutdownMonths = async () => {
+    const getSlowdownMonths = async () => {
       try {
-        const data = await DataService.getShutdownMonths(keycloak, null)
-        setShutdownMonths(data)
-        // console.log('setShutdownMonths', data)
+        const data = await DataService.getSlowdownMonths(keycloak, null)
+        if (data && data?.ok == 200) setSlowdownMonths(data)
       } catch (error) {
         console.error('Error fetching months:', error)
       } finally {
@@ -192,8 +193,8 @@ const SlowdownNorms = () => {
     }
     fetchData()
     getAllProducts()
-    getShutdownMonths()
-  }, [sitePlantChange, keycloak, selectedUnit, lowerVertName])
+    getSlowdownMonths()
+  }, [sitePlantChange, yearChanged, keycloak, selectedUnit, lowerVertName])
 
   const formatValueToThreeDecimals = (params) =>
     params ? parseFloat(params).toFixed(3) : ''
@@ -202,7 +203,7 @@ const SlowdownNorms = () => {
     return !params.row.Particulars
   }
 
-  // const months = shutdownMonths
+  // const months = slowdownMonths
 
   const colDefs = [
     {
@@ -297,127 +298,127 @@ const SlowdownNorms = () => {
     {
       field: 'april',
       headerName: headerMap[4],
-      editable: shutdownMonths?.includes(4),
+      editable: slowdownMonths?.includes(4),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(4),
+      isDisabled: !slowdownMonths?.includes(4),
       columnClassName: 'first-column',
     },
 
     {
       field: 'may',
       headerName: headerMap[5],
-      editable: shutdownMonths?.includes(5),
+      editable: slowdownMonths?.includes(5),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(5),
+      isDisabled: !slowdownMonths?.includes(5),
       columnClassName: 'first-column',
     },
 
     {
       field: 'june',
       headerName: headerMap[6],
-      editable: shutdownMonths?.includes(6),
+      editable: slowdownMonths?.includes(6),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(6),
+      isDisabled: !slowdownMonths?.includes(6),
     },
     {
       field: 'july',
       headerName: headerMap[7],
-      editable: shutdownMonths?.includes(7),
+      editable: slowdownMonths?.includes(7),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(7),
+      isDisabled: !slowdownMonths?.includes(7),
     },
 
     {
       field: 'august',
       headerName: headerMap[8],
-      editable: shutdownMonths?.includes(8),
+      editable: slowdownMonths?.includes(8),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(8),
+      isDisabled: !slowdownMonths?.includes(8),
     },
     {
       field: 'september',
       headerName: headerMap[9],
-      editable: shutdownMonths?.includes(9),
+      editable: slowdownMonths?.includes(9),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(9),
+      isDisabled: !slowdownMonths?.includes(9),
     },
     {
       field: 'october',
       headerName: headerMap[10],
-      editable: shutdownMonths?.includes(10),
+      editable: slowdownMonths?.includes(10),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(10),
+      isDisabled: !slowdownMonths?.includes(10),
     },
     {
       field: 'november',
       headerName: headerMap[11],
-      editable: shutdownMonths?.includes(11),
+      editable: slowdownMonths?.includes(11),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(11),
+      isDisabled: !slowdownMonths?.includes(11),
     },
     {
       field: 'december',
       headerName: headerMap[12],
-      editable: shutdownMonths?.includes(12),
+      editable: slowdownMonths?.includes(12),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(12),
+      isDisabled: !slowdownMonths?.includes(12),
     },
     {
       field: 'january',
       headerName: headerMap[1],
-      editable: shutdownMonths?.includes(1),
+      editable: slowdownMonths?.includes(1),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(1),
+      isDisabled: !slowdownMonths?.includes(1),
     },
     {
       field: 'february',
       headerName: headerMap[2],
-      editable: shutdownMonths?.includes(2),
+      editable: slowdownMonths?.includes(2),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(2),
+      isDisabled: !slowdownMonths?.includes(2),
     },
     {
       field: 'march',
       headerName: headerMap[3],
-      editable: shutdownMonths?.includes(3),
+      editable: slowdownMonths?.includes(3),
       renderEditCell: NumericInputOnly,
       align: 'left',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
-      isDisabled: !shutdownMonths?.includes(3),
+      isDisabled: !slowdownMonths?.includes(3),
     },
 
     // remarks
@@ -566,7 +567,8 @@ const SlowdownNorms = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const data = await DataService.getShutdownNormsData(keycloak)
+      // const data = await DataService.getShutdownNormsData(keycloak)
+      const data = await DataService.getSlowdownNormsData(keycloak)
 
       // const customOrder = [
       //   'Raw Material',
@@ -674,7 +676,7 @@ const SlowdownNorms = () => {
       }
 
       var plantId = plantId
-      const data = await DataService.handleCalculateShutdownNorms(
+      const data = await DataService.handleCalculateSlowdownNorms(
         plantId,
         year,
         keycloak,
@@ -790,7 +792,7 @@ const SlowdownNorms = () => {
           units: ['TPH', 'TPD'],
           saveWithRemark: false,
           saveBtn: true,
-          showCalculate: lowerVertName == 'meg' ? false : true,
+          showCalculate: lowerVertName == 'meg' ? false : false,
         }}
       />
     </div>

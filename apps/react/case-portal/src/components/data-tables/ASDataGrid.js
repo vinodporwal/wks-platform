@@ -614,7 +614,7 @@ const DataGridTable = ({
 
       <Box
         sx={{
-          height: `calc(${otherHeight ?? (permissions.customHeight2 ? '95%' : '102%')} - 120px)`,
+          height: `calc(${otherHeight ?? (permissions.customHeight2 ? '95%' : '95%')} - 120px)`,
           width: '100%',
           marginBottom: 0,
           padding: 0,
@@ -653,7 +653,16 @@ const DataGridTable = ({
           checkboxSelection={permissions?.showCheckBox}
           columns={columns.map((col) => ({
             ...col,
-            cellClassName: col.isDisabled ? 'disabled-cell' : undefined,
+            cellClassName: (params) => {
+              if (col.isDisabled) {
+                if (params.row.Particulars) {
+                  return undefined
+                } else {
+                  return 'disabled-cell'
+                }
+              }
+              return undefined
+            },
             headerClassName: col.isDisabled ? 'disabled-header' : undefined,
           }))}
           columnVisibilityModel={{
@@ -782,12 +791,26 @@ const DataGridTable = ({
               backgroundColor: '#FAFAFC',
               color: '#3E4E75',
               fontSize: '0.8rem',
-              // fontWeight: 600,
               fontWeight: 'bold',
-              borderBottom: `2px solid ${'#DAE0EF'}`,
+              borderBottom: `2px solid #DAE0EF`,
               borderTopLeftRadius: '0px',
               borderTopRightRadius: '0px',
+              minHeight: '45px',
+              maxHeight: '45px',
             },
+            '& .MuiDataGrid-columnHeader': {
+              minHeight: '45px',
+              maxHeight: '45px',
+              lineHeight: '45px', // ensure text is vertically aligned
+              paddingTop: '0px',
+              paddingBottom: '0px',
+            },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              lineHeight: '45px', // aligns text better
+              fontSize: '0.75rem',
+              fontWeight: 'bold', // Ensure column titles are bold
+            },
+
             '& .MuiDataGrid-cell': {
               // borderRight: `1px solid ${jioColors.border}`,
               borderBottom: `1px solid ${'#DAE0EF'}`,
@@ -827,9 +850,6 @@ const DataGridTable = ({
             // '& .MuiDataGrid-cell.last-column-cell': {
             //   paddingRight: '16px',
             // },
-            '& .MuiDataGrid-columnHeaderTitle': {
-              fontWeight: 'bold', // Ensure column titles are bold
-            },
 
             // '& .MuiDataGrid-columnHeader[data-field="Particulars"] .MuiDataGrid-columnHeaderTitle':
             //   {
@@ -837,6 +857,12 @@ const DataGridTable = ({
             //   },
 
             '& .disabled-cell': {
+              backgroundColor: 'rgba(233, 233, 233, 0.3)',
+              borderRadius: '0px',
+              border: `1px solid ${jioColors.border}`,
+            },
+
+            '& .disabled-cell1': {
               // color: '#A9A9A9 !important', // Grey color for disabled text
               // backgroundColor: '#F0F0F0 !important', // Light grey background
               // cursor: 'not-allowed !important', // Indicate it's not interactive
@@ -844,7 +870,7 @@ const DataGridTable = ({
               // border: '1px solid #ccc !important',
               opacity: 0.2, // Slightly transparent
               filter: 'grayscale(1)', // Makes the row look faded
-              backgroundColor: 'rgba(200, 200, 200, 0.3)', // Example faded background color
+              backgroundColor: 'rgba(235, 224, 224, 0.3)', // Example faded background color
             },
             '& .disabled-header': {
               color: '#A9A9A9 !important', // Fade the header text color

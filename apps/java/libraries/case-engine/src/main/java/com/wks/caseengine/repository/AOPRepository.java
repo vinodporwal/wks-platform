@@ -103,6 +103,8 @@ List<Object[]> getDataBusinessAllData(@Param("plantId") String plantId,@Param("y
                                @Param("materialId") UUID materialId,
                                @Param("plantId") UUID plantId,
                                @Param("aopYear") String aopYear);
-	
+    
+    @Query(value = "SELECT DISTINCT [AOPYear], [AOPYear] FROM vwGetAOPYears", nativeQuery = true)
+    List<Object[]> getAOPYears();
 
 }

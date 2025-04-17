@@ -6,7 +6,7 @@ import { useGridApiRef } from '@mui/x-data-grid'
 import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getEnhancedProductionColDefs from './CommonHeader/ProductionVolumeHeader'
-const headerMap = generateHeaderNames()
+
 import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import Backdrop from '@mui/material/Backdrop'
@@ -20,9 +20,11 @@ const ProductionvolumeData = ({ permissions }) => {
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { sitePlantChange, verticalChange } = dataGridStore
+  const { sitePlantChange, verticalChange, yearChanged } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+
+  const headerMap = generateHeaderNames(localStorage.getItem('year'))
   const [rows, setRows] = useState()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -332,7 +334,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
     getAllProducts()
     fetchData()
-  }, [sitePlantChange, keycloak, selectedUnit, lowerVertName])
+  }, [sitePlantChange, yearChanged, keycloak, selectedUnit, lowerVertName])
 
   const productionColumns = getEnhancedProductionColDefs({
     headerMap,
@@ -459,8 +461,9 @@ const ProductionvolumeData = ({ permissions }) => {
           // permissions?.saveBtn ?? lowerVertName == 'meg' ? false : true,
           units: ['TPH', 'TPD'],
           customHeight: permissions?.customHeight,
-          showCalculate: permissions?.showCalculate ?? false,
-          // permissions?.showCalculate ?? lowerVertName == 'meg' ? true : false,
+          showCalculate:
+            // permissions?.showCalculate ?? false,
+            permissions?.showCalculate ?? lowerVertName == 'meg' ? true : false,
         }}
       />
     </div>
