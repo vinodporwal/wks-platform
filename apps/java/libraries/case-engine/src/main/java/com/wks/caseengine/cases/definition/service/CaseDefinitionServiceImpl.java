@@ -1055,6 +1055,53 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    }
 	    return cases;
 	}
+	@Override
+	public Case saveAnalysis(Case caseData) {
+		String assetName = "%"+caseData.getAssetName();
+		String hierarchyNodePKID = "";
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		if(hierarychyNodes.size()>=1) {
+			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
+		}
+		if(assetName!=null) {
+			System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
+		}
+		caseData.setHierarchyNodePKID(hierarchyNodePKID);
+		if (caseData.getAssignedTo() != null) {
+			caseData.setAssignedTo(usersRepository.findByEmailId(caseData.getAssignedTo().getEmailId()));
+		}
+		Case caseDetails = new Case();
+		String caseNo = "";
+		Long statusId = null;
+		List<Attribute> attributes = caseData.getAttributes();
+		Attribute attribute = attributes.get(0);
+		String attributeValue = attribute.getValue();
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			JsonNode rootNode = objectMapper.readTree(attributeValue);
+			caseNo = rootNode.path("caseNo").asText();
+			if (rootNode.has("caseStatus")) {
+				statusId = rootNode.path("caseStatus").asLong();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (statusId != null) {
+			Optional<CaseStatus> caseStatus = caseStatusRepository.findById(statusId);
+			if (caseStatus.isPresent()) {
+				caseData.setStatus(caseStatus.get());
+			}
+		}
+		System.out.println("Saving Exsting Case Details....");
+		caseData.setCaseNo(caseNo);
+		if (caseData.getCaseUrl() != null && !caseData.getCaseUrl().contains("&caseNo")) {
+			caseData.setCaseUrl(caseData.getCaseUrl() + "&caseNo=" + caseNo);
+		}
+		Case savedCase = caseRepository.getByCaseNo(caseNo);
+		caseData.setCreationDate(savedCase.getCreationDate());
+		caseDetails = caseRepository.save(caseData);
+		return caseDetails;
+	}
 	private String getGEAPMRecommendationStatusAndUpdateRecommendationStatus(String geAPMAcsessToken, String recommendationNo) {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();

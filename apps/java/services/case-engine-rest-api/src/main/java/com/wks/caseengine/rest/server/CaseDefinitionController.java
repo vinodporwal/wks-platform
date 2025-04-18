@@ -212,4 +212,9 @@ public class CaseDefinitionController {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
 	}
+	@PostMapping("/analysis")
+    public ResponseEntity<Case> saveAnalysis(@RequestBody Case caseData) {
+        Case savedCase = caseDefinitionService.saveAnalysis(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
 }
