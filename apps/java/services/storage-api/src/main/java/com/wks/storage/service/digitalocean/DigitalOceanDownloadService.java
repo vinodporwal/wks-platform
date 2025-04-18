@@ -70,11 +70,18 @@ public class DigitalOceanDownloadService implements DownloadService {
 
 		return new DownloadFileUrl(url);
 	}
-		@Override
+
+	@Override
 	public ResponseEntity<InputStreamResource> downloadObj(String dir, String fileName, String contentType) {
-		
+
 		return null;
 	}
 
+	@Override
+	public ResponseEntity<InputStreamResource> downloadFile(String vertical, String site, String plant,
+			String fileName, String contentType) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'downloadFile'");
+	}
 
 }

@@ -97,4 +97,37 @@ public class MinioDownloadService implements DownloadService {
 	            .body(new InputStreamResource(fileInputStream));
 	}
 
+	public ResponseEntity<InputStreamResource> downloadFile(String vertical, String site, String plant, String fileName,
+			String contentType) {
+		// Generate pre-signed URL for GET (Download)
+		String bucketName = bucketService.createAssignedTenant();
+		String objectName = fileName;
+
+		System.out.println("0") ;
+		System.out.println("vertical"+vertical) ;
+		System.out.println("site"+site) ;
+		System.out.println("plant"+plant) ;
+		
+		if (vertical != null && !vertical.isBlank()) {
+			objectName = bucketService.createObjectWithNestedPath(vertical, site, plant, fileName);
+		}
+
+		System.out.println("objectName"+objectName) ;
+
+		GetObjectArgs getObjectArgs = GetObjectArgs.builder().bucket(bucketName).object(objectName).build();
+		GetObjectResponse response = client.getObject(getObjectArgs);
+		String fileContentType = response.headers().get(HttpHeaders.CONTENT_TYPE);
+		if (fileContentType == null) {
+			fileContentType = "application/octet-stream"; // Default content type for unknown files
+		}
+		InputStream fileInputStream = new BufferedInputStream(response); // Buffered stream for efficiency
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+		headers.add(HttpHeaders.CONTENT_TYPE, fileContentType); // Use content type from MinIO response
+
+		return ResponseEntity.ok()
+				.headers(headers)
+				.body(new InputStreamResource(fileInputStream));
+	}
+
 }

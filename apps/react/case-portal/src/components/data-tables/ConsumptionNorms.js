@@ -40,6 +40,12 @@ const NormalOpNormsScreen = () => {
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
   const [rowModesModel, setRowModesModel] = useState({})
 
+  const [isAccordionExpanded, setIsAccordionExpanded] = useState(true)
+
+  const handleAccordionChange = (event, isExpanded) => {
+    setIsAccordionExpanded(isExpanded)
+  }
+
   const [open1, setOpen1] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -527,6 +533,7 @@ const NormalOpNormsScreen = () => {
           <Accordion
             defaultExpanded
             disableGutters
+            onChange={handleAccordionChange}
             // sx={{ margin: '0px 5px 5px 0px', marginLeft: '13px' }}
           >
             <AccordionSummary
@@ -613,7 +620,7 @@ const NormalOpNormsScreen = () => {
       <TextField
         label='Summary'
         multiline
-        minRows={4}
+        minRows={isAccordionExpanded ? 4 : 20}
         fullWidth
         margin='normal'
         variant='outlined'
@@ -641,6 +648,9 @@ const NormalOpNormsScreen = () => {
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: '#1976d2',
+          },
+          '& .MuiInputBase-input': {
+            resize: 'vertical',
           },
         }}
       />
