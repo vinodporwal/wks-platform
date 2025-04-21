@@ -55,31 +55,31 @@ export const MainRoutes = (
         path: 'home',
         element: <DashboardDefault />,
       },
-      {
-        path: 'case-list',
-        children: [
-          {
-            path: 'cases',
-            element: <CaseList />,
-          },
-          {
-            path: 'wip-cases',
-            element: <CaseList status={CaseStatus.WipCaseStatus.description} />,
-          },
-          {
-            path: 'closed-cases',
-            element: (
-              <CaseList status={CaseStatus.ClosedCaseStatus.description} />
-            ),
-          },
-          {
-            path: 'archived-cases',
-            element: (
-              <CaseList status={CaseStatus.ArchivedCaseStatus.description} />
-            ),
-          },
-        ],
-      },
+      // {
+      //   path: 'case-list',
+      //   children: [
+      //     {
+      //       path: 'cases',
+      //       element: <CaseList />,
+      //     },
+      //     {
+      //       path: 'wip-cases',
+      //       element: <CaseList status={CaseStatus.WipCaseStatus.description} />,
+      //     },
+      //     {
+      //       path: 'closed-cases',
+      //       element: (
+      //         <CaseList status={CaseStatus.ClosedCaseStatus.description} />
+      //       ),
+      //     },
+      //     {
+      //       path: 'archived-cases',
+      //       element: (
+      //         <CaseList status={CaseStatus.ArchivedCaseStatus.description} />
+      //       ),
+      //     },
+      //   ],
+      // },
       {
         path: 'task-list',
         element: <TaskList />,
@@ -94,31 +94,31 @@ export const MainRoutes = (
         ],
       },
 
-      {
-        path: 'case-life-cycle',
-        children: [
-          {
-            path: 'process-definition',
-            element: <ProcessDefList />,
-          },
-          {
-            path: 'case-definition',
-            element: <CaseDefList />,
-          },
-          {
-            path: 'record-type',
-            element: <RecordTypeList />,
-          },
-          {
-            path: 'form',
-            element: <FormList />,
-          },
-          {
-            path: 'queue',
-            element: <QueueList />,
-          },
-        ],
-      },
+      // {
+      //   path: 'case-life-cycle',
+      //   children: [
+      //     {
+      //       path: 'process-definition',
+      //       element: <ProcessDefList />,
+      //     },
+      //     {
+      //       path: 'case-definition',
+      //       element: <CaseDefList />,
+      //     },
+      //     {
+      //       path: 'record-type',
+      //       element: <RecordTypeList />,
+      //     },
+      //     {
+      //       path: 'form',
+      //       element: <FormList />,
+      //     },
+      //     {
+      //       path: 'queue',
+      //       element: <QueueList />,
+      //     },
+      //   ],
+      // },
 
       {
         path: 'production-norms-plan',

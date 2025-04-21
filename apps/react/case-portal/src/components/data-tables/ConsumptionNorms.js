@@ -79,11 +79,11 @@ const NormalOpNormsScreen = () => {
     setRemarkDialogOpen(true)
   }
 
-  const getProductDisplayName = (id) => {
-    if (!id) return
-    const product = allProducts.find((p) => p.id === id)
-    return product ? product.displayName : ''
-  }
+  // const getProductDisplayName = (id) => {
+  //   if (!id) return
+  //   const product = allProducts.find((p) => p.id === id)
+  //   return product ? product.displayName : ''
+  // }
 
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id

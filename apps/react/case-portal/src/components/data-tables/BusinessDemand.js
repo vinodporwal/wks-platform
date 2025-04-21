@@ -385,7 +385,7 @@ const BusinessDemand = ({ permissions }) => {
       <ASDataGrid
         setRows={setRows}
         columns={colDefs}
-        rows={rows}
+        rows={rows || []}
         isCellEditable={isCellEditable}
         title='Business Demand'
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
@@ -417,7 +417,7 @@ const BusinessDemand = ({ permissions }) => {
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={deleteRowData}
         permissions={{
-          showAction: permissions?.showAction ?? true,
+          showAction: permissions?.showAction ?? false,
           addButton: permissions?.addButton ?? false,
           deleteButton: permissions?.deleteButton ?? false,
           editButton: permissions?.editButton ?? false,

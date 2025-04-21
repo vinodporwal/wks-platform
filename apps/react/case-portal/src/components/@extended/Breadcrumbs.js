@@ -71,7 +71,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     const verticalRoleMap = roleMapping[verticalId]
     return verticalRoleMap?.[screenId]
       ? `Role : ${verticalRoleMap[screenId]}`
-      : 'Role : N/A'
+      : ' '
   }
 
   async function handleOpenPdf(title) {
