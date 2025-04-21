@@ -73,6 +73,9 @@ const DataGridTable = ({
   unsavedChangesRef = { current: { unsavedRows: {}, rowsBeforeChange: {} } },
   deleteRowData = () => {},
   handleAddPlantSite = () => {},
+  selectedUsers = [],
+  setSelectedUsers = () => {},
+  columnGroupingModel,
 }) => {
   const [resizedColumns, setResizedColumns] = useState({})
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -210,7 +213,7 @@ const DataGridTable = ({
 
   const columns = useMemo(() => [
     ...defaultColumns,
-    ...(permissions?.showAction && permissions?.deleteButton
+    ...(permissions?.showAction
       ? [
           {
             field: 'actions',
@@ -269,7 +272,7 @@ const DataGridTable = ({
                     className='textPrimary'
                     onClick={handleEditClick(row)}
                     color='inherit'
-                    sx={{ display: 'none' }}
+                    // sx={{ display: 'none' }}
                   />
                 ),
                 permissions?.deleteButton && (
@@ -369,14 +372,22 @@ const DataGridTable = ({
   const boxHeight = permissions?.customHeight?.mainBox
   const otherHeight = permissions?.customHeight?.otherBox
   // console.log(boxHeight)
+  const handleDeleteAll = () => {
+    setSelectedUsers([])
+    setRows([])
+  }
+  // console.log(selectedUsers?.length)
+  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
+  // console.log(showDeleteAll)
+
   return (
     <Box
       sx={{
         height: `${boxHeight ?? (permissions.customHeight2 ? '50vh' : '80vh')}`,
 
         width: '100%',
-        padding: '0px 5px',
-        margin: '0px 5px 0px',
+        padding: '0px 0px',
+        margin: '0px 0px 0px',
         backgroundColor: '#F2F3F8',
         // backgroundColor: '#fff',
         borderRadius: 0,
@@ -708,11 +719,33 @@ const DataGridTable = ({
 
             return 'even-row'
           }}
+          columnGroupingModel={columnGroupingModel}
           sx={{
             borderRadius: '0px',
             border: `1px solid ${jioColors.border}`,
             backgroundColor: jioColors.background,
             fontSize: '0.8rem',
+            '& .MuiDataGrid-columnHeaderGroup': {
+              justifyContent: 'center !important',
+            },
+
+            // '& .vertical-center .MuiDataGrid-columnHeaderTitleContainer': {
+            //   display: 'flex',
+            //   alignItems: 'center', // vertical
+            //   justifyContent: 'center', // horizontal
+            //   height: '100%', // fill the two-row header
+            // },
+            // '& .MuiDataGrid-columnHeaderTitle': {
+            //   textAlign: 'center',
+            //   justifyContent: 'center',
+            //   width: '100%',
+            //   display: 'flex',
+            // },
+
+            '& .MuiDataGrid-columnHeaderGroup .MuiDataGrid-columnHeaderTitle': {
+              textAlign: 'center',
+              width: '100%',
+            },
             ' & .MuiDataGrid-columnHeaderTitleContainer:last-child:after .MuiDataGrid-columnHeaderTitleContainer:after':
               {
                 bordeRight: 'none !important',
@@ -799,8 +832,6 @@ const DataGridTable = ({
               borderBottom: `2px solid #DAE0EF`,
               borderTopLeftRadius: '0px',
               borderTopRightRadius: '0px',
-              minHeight: '45px',
-              maxHeight: '45px',
             },
             '& .MuiDataGrid-columnHeader': {
               minHeight: '45px',
@@ -809,11 +840,11 @@ const DataGridTable = ({
               paddingTop: '0px',
               paddingBottom: '0px',
             },
-            '& .MuiDataGrid-columnHeaderTitle': {
-              lineHeight: '45px', // aligns text better
-              fontSize: '0.75rem',
-              fontWeight: 'bold', // Ensure column titles are bold
-            },
+            // '& .MuiDataGrid-columnHeaderTitle': {
+            //   lineHeight: '45px', // aligns text better
+            //   fontSize: '0.75rem',
+            //   fontWeight: 'bold', // Ensure column titles are bold
+            // },
 
             '& .MuiDataGrid-cell': {
               // borderRight: `1px solid ${jioColors.border}`,
@@ -854,6 +885,9 @@ const DataGridTable = ({
             // '& .MuiDataGrid-cell.last-column-cell': {
             //   paddingRight: '16px',
             // },
+            '& .MuiDataGrid-columnHeaderTitle': {
+              fontWeight: 'bold', // Ensure column titles are bold
+            },
 
             // '& .MuiDataGrid-columnHeader[data-field="Particulars"] .MuiDataGrid-columnHeaderTitle':
             //   {
@@ -986,6 +1020,41 @@ const DataGridTable = ({
               loadingposition='start' // Use loadingPosition to control where the spinner appears
             >
               Next
+            </Button>
+          )}
+          {showDeleteAll && (
+            <Button
+              variant='contained'
+              sx={{
+                backgroundColor: jioColors.primaryBlue,
+                color: jioColors.background,
+                borderRadius: 1,
+                padding: '8px 24px',
+                textTransform: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                minWidth: 120,
+                '&:hover': {
+                  backgroundColor: '#143B6F',
+                  boxShadow: 'none',
+                },
+                '&.Mui-disabled': {
+                  backgroundColor: jioColors.primaryBlue,
+                  color: jioColors.background,
+                  opacity: 0.7,
+                },
+              }}
+              onClick={() => {
+                // Write any additional logic here before navigating.
+                // console.log('Navigating to dashboard')
+                // navigate('/user-form')
+                handleDeleteAll()
+              }}
+              disabled={isButtonDisabled}
+              loading={loading} // Use the loading prop to trigger loading state
+              loadingposition='start' // Use loadingPosition to control where the spinner appears
+            >
+              Delete
             </Button>
           )}
         </Box>

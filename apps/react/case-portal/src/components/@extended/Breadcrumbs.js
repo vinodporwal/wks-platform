@@ -233,7 +233,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
               },
               padding: '6px', // Slightly increase padding for better spacing
             }}
-            onClick={() => handleOpenPdfTemp(item?.id)}
+            onClick={() => handleOpenPdf(item?.id)}
           >
             <InfoIcon
               fontSize='medium'
