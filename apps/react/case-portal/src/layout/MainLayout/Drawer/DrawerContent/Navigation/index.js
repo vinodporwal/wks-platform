@@ -7,6 +7,7 @@ import LogoBottom from 'components/Logo/LogoBottom'
 const Navigation = () => {
   const menu = useMenu()
 
+
   const navGroups = menu.items.map((item, index) => {
     switch (item.type) {
       case 'group':

@@ -90,6 +90,8 @@ const DataGridTable = ({
   const handleSearchChange = (event) => {
     setSearchText(event.target.value)
   }
+  // const navigate = useNavigate()
+
   // const [rowModesModel, setRowModesModel] = useState({})
   // const [changedRowIds, setChangedRowIds] = useState([])
   // const [columnFilters, setColumnFilters] = useState({})
@@ -918,7 +920,6 @@ const DataGridTable = ({
           }}
         />
       </Box>
-
       {(permissions?.allAction ?? true) && (
         <Box
           sx={{
@@ -1059,7 +1060,6 @@ const DataGridTable = ({
           )}
         </Box>
       )}
-
       {(permissions?.allAction ?? true) && (
         <Notification
           open={snackbarOpen}
@@ -1068,7 +1068,6 @@ const DataGridTable = ({
           onClose={() => setSnackbarOpen(false)}
         />
       )}
-
       <Dialog
         open={openDeleteDialogeBox}
         onClose={closeDeleteDialogeBox}

@@ -37,6 +37,21 @@ async function getAllByStatus(keycloak, status, limit) {
   }
 }
 
+// async function getCaseDefinitions(keycloak) {
+//   const url = `${Config.CaseEngineUrl}/case-definition?deployed=true`
+
+//   const headers = {
+//     Authorization: `Bearer ${keycloak.token}`,
+//   }
+
+//   try {
+//     const resp = await fetch(url, { headers })
+//     return json(keycloak, resp)
+//   } catch (e) {
+//     console.log(e)
+//     return await Promise.reject(e)
+//   }
+// }
 async function getCaseDefinitions(keycloak) {
   const url = `${Config.CaseEngineUrl}/case-definition?deployed=true`
 

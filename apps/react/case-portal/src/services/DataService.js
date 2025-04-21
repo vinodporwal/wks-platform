@@ -88,6 +88,26 @@ export const DataService = {
   saveworkflow,
 }
 
+// async function CheckIsTokenExp(keycloak) {
+//   if (keycloak.isTokenExpired()) {
+//     keycloak.logout({ redirectUri: window.location.origin })
+//   }
+
+//   const headers = {
+//     Authorization: `Bearer ${keycloak.token}`,
+//   }
+
+//   var url = `${Config.CaseEngineUrl}/business-demand`
+
+//   try {
+//     const resp = await fetch(url, { headers })
+//     return json(keycloak, resp)
+//   } catch (err) {
+//     console.log(err)
+//     return await Promise.reject(err)
+//   }
+// }
+
 async function handleRefresh(year, plantId, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/handleRefresh?year=${year}&plantId=${plantId}`
 
@@ -373,12 +393,6 @@ async function handleCalculateMaintenance(plantId, year, keycloak) {
 }
 
 async function deleteSlowdownData(maintenanceId, keycloak) {
-  // var plantId = ''
-  // const storedPlant = localStorage.getItem('selectedPlant')
-  // if (storedPlant) {
-  //   const parsedPlant = JSON.parse(storedPlant)
-  //   plantId = parsedPlant.id
-  // }
   const url = `${Config.CaseEngineUrl}/task/deleteSlowdownData/${maintenanceId}`
 
   const headers = {

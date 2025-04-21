@@ -52,7 +52,6 @@ const WorkFlowMerge = () => {
   // const [businessKey, setBusinessKey] = useState('')
   const [isCreatingCase, setIsCreatingCase] = useState(false)
   const [actionDisabled, setActionDisabled] = useState(false)
-
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -94,9 +93,9 @@ const WorkFlowMerge = () => {
       groupId: 'annualAOP',
       headerName: 'Annual AOP Cost',
       children: [
-        { field: 'aop_2025_26' },
-        { field: 'actual_2025_26' },
-        { field: 'aop_2026_27' },
+        { field: 'fy202425AOP' },
+        { field: 'fy202425Actual' },
+        { field: 'fy202526AOP' },
       ],
     },
   ]
@@ -105,7 +104,7 @@ const WorkFlowMerge = () => {
     setLoading(true)
     try {
       var data = await DataService.getWorkflowData(keycloak, plantId)
-      console.log(data)
+      // console.log(data)
       const formattedRows = data.results.map((row, id) => {
         // build a new row, formatting only the numeric fields
         const newRow = { id }
@@ -153,12 +152,13 @@ const WorkFlowMerge = () => {
       setLoading(false) // Hide loading
     } catch (error) {
       console.error('Error fetching Business Demand data:', error)
+      setRows([]) // Clear rows on error
       setLoading(false) // Hide loading
     }
   }
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [plantId])
   const defaultCustomHeight = { mainBox: '60vh', otherBox: '114%' }
 
   const handleRejectClick = () => {
@@ -210,7 +210,7 @@ const WorkFlowMerge = () => {
   }
 
   useEffect(() => {
-    console.log('in the case id')
+    // console.log('in the case id')
     // showCreateCasebutton = false;
 
     getCaseId()
@@ -220,7 +220,7 @@ const WorkFlowMerge = () => {
     try {
       // 1. Fetch existing cases
       const cases = await DataService.getCaseId(keycloak)
-      console.log(cases)
+      // console.log(cases)
       if (!cases?.length) {
         setShowCreateCasebutton(true)
         return
@@ -233,7 +233,7 @@ const WorkFlowMerge = () => {
 
       // 3. Grab realm roles (array of strings)
       const roles = keycloak.tokenParsed?.realm_access?.roles || []
-      console.log('User roles:', roles)
+      // console.log('User roles:', roles)
 
       // 4. Find first task whose assignee matches any role
       let matchingTask = tasks.find((task) => roles.includes(task.assignee))
@@ -243,8 +243,11 @@ const WorkFlowMerge = () => {
       //   matchingTask = tasks.find((task) => name.includes(task.name))
       // }
 
-      console.log(matchingTask)
-      if (matchingTask) {
+      // console.log(matchingTask)
+      if (matchingTask?.assignee === 'plant_manager') {
+        setShowTextBox(false)
+        setTaskId(matchingTask.id)
+      } else if (matchingTask) {
         setShowTextBox(true)
         setTaskId(matchingTask.id)
       }
@@ -277,6 +280,9 @@ const WorkFlowMerge = () => {
         message: 'Workflow instance created successfully',
         severity: 'success',
       })
+
+      // getCaseId()
+      handleCompleteSubmit()
     } catch (error) {
       console.error('Error creating workflow:', error)
       setSnackbarData({
@@ -290,56 +296,39 @@ const WorkFlowMerge = () => {
       setSnackbarOpen(true)
     }
   }
+  // 1. Complete Task (Submit)
+  const handleCompleteSubmit = async () => {
+    try {
+      const taskDone = await DataService.completeTask(
+        keycloak,
+        taskId,
+        caseData.attributes,
+      )
 
-  // const createCase = async () => {
-  //   try {
-  //     const result = await DataService.createCase(keycloak, caseData)
-  //     // console.log('Response:', result)
-  //     //   setBusinessKey(result?.businessKey)
-  //     var year = localStorage.getItem('year')
-  //     var plantId = ''
-  //     var siteId = ''
-  //     const storedPlant = localStorage.getItem('selectedPlant')
-  //     if (storedPlant) {
-  //       const parsedPlant = JSON.parse(storedPlant)
-  //       plantId = parsedPlant.id
-  //     }
+      if (!taskDone) throw new Error('Unexpected response completing task')
 
-  //     const storedSite = localStorage.getItem('selectedSite')
-  //     if (storedSite) {
-  //       const parsedSite = JSON.parse(storedSite)
-  //       siteId = parsedSite.id
-  //     }
+      setSnackbarData({
+        message: 'Workflow instance created successfully',
+        severity: 'success',
+      })
+    } catch (err) {
+      console.error('Error completing task:', err)
+      setSnackbarData({
+        message: err.message || 'Failed to complete task',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+      // you can reset or leave other state here
+    }
+  }
 
-  //     const verticalId = localStorage.getItem('verticalId')
-
-  //     let workflowData = {
-  //       year: year,
-  //       plantFkId: plantId,
-  //       caseDefId: caseData.caseDefinitionId,
-  //       caseId: result.businessKey,
-  //       siteFKId: siteId,
-  //       verticalFKId: verticalId,
-  //     }
-
-  //     const workFlowResult = await DataService.saveworkflow(
-  //       workflowData,
-  //       keycloak,
-  //     )
-  //     console.log(workFlowResult)
-  //     getCaseId()
-  //     // alert('Submitted successfully!')
-  //   } catch (error) {
-  //     console.error('Error submitting:', error)
-  //     // alert('Something went wrong!')
-  //   }
-  // }
-
-  const handleSubmit = async () => {
-    // 1. Don’t submit empty text
+  // 2. Post Comment
+  const handleCommentSubmit = async () => {
+    // 1. Validation
     if (!text.trim()) {
       setSnackbarData({
-        message: 'Please enter a message!',
+        message: 'Please enter a comment!',
         severity: 'warning',
       })
       setSnackbarOpen(true)
@@ -347,58 +336,102 @@ const WorkFlowMerge = () => {
     }
 
     try {
-      // 2. Complete the task (204 = success)
-      const taskDone = await DataService.completeTask(
-        keycloak,
-        taskId,
-        caseData.attributes,
-      )
-
-      if (!taskDone) {
-        throw new Error('Unexpected response completing task')
-      }
-      console.log(taskDone)
-      // 3. Now post your comment
-      // 1. Fetch existing cases
+      // Fetch businessKey once (or reuse if stored)
       const cases = await DataService.getCaseId(keycloak)
-      // if (!cases?.length) {
-      //   setShowCreateCasebutton(true)
-      //   return
-      // }
+      const businessKey = cases[0].caseId
 
-      // 2. Fetch tasks for the first case
-      const { caseId } = cases[0]
-      //    parentId can be null or a comment id if you're replying
-      console.log(caseId)
-      let businessKey = caseId
       const commentPosted = await CaseService.addComment(
         keycloak,
         text,
-        '', // parentId, // e.g. null or some existing comment ID
-        businessKey, // your business key
+        '', // parentId
+        businessKey, // businessKey
       )
+      if (!commentPosted) throw new Error('Failed to post comment')
 
-      if (!commentPosted) {
-        throw new Error('Failed to post comment')
-      }
-
-      // 4. Both succeeded!
-      setSnackbarData({
-        message: 'Task completed and comment added! 🎉',
-        severity: 'success',
-      })
+      // setSnackbarData({
+      //   message: 'Comment added successfully! 🎉',
+      //   severity: 'success',
+      // })
     } catch (err) {
-      console.error('Error submitting:', err)
+      console.error('Error posting comment:', err)
       setSnackbarData({
-        message: err.message || 'Something went wrong!',
+        message: err.message || 'Failed to post comment',
         severity: 'error',
       })
     } finally {
       setSnackbarOpen(true)
-      setOpenRejectDialog(false)
       setText('')
     }
   }
+  const handleSubmit = () => {
+    // 1. Don’t submit empty text
+    handleCompleteSubmit()
+    handleCommentSubmit()
+  }
+  // const handleSubmit = async () => {
+  //   // 1. Don’t submit empty text
+  //   if (!text.trim()) {
+  //     setSnackbarData({
+  //       message: 'Please enter a message!',
+  //       severity: 'warning',
+  //     })
+  //     setSnackbarOpen(true)
+  //     return
+  //   }
+
+  //   try {
+  //     // 2. Complete the task (204 = success)
+  //     const taskDone = await DataService.completeTask(
+  //       keycloak,
+  //       taskId,
+  //       caseData.attributes,
+  //     )
+
+  //     if (!taskDone) {
+  //       throw new Error('Unexpected response completing task')
+  //     }
+  //     console.log(taskDone)
+  //     // 3. Now post your comment
+  //     // 1. Fetch existing cases
+  //     const cases = await DataService.getCaseId(keycloak)
+  //     // if (!cases?.length) {
+  //     //   setShowCreateCasebutton(true)
+  //     //   return
+  //     // }
+
+  //     // 2. Fetch tasks for the first case
+  //     const { caseId } = cases[0]
+  //     //    parentId can be null or a comment id if you're replying
+  //     console.log(caseId)
+  //     let businessKey = caseId
+  //     const commentPosted = await CaseService.addComment(
+  //       keycloak,
+  //       text,
+  //       '', // parentId, // e.g. null or some existing comment ID
+  //       businessKey, // your business key
+  //     )
+
+  //     if (!commentPosted) {
+  //       throw new Error('Failed to post comment')
+  //     }
+
+  //     // 4. Both succeeded!
+  //     setSnackbarData({
+  //       message: 'Task completed and comment added! 🎉',
+  //       severity: 'success',
+  //     })
+  //   } catch (err) {
+  //     console.error('Error submitting:', err)
+  //     setSnackbarData({
+  //       message: err.message || 'Something went wrong!',
+  //       severity: 'error',
+  //     })
+  //   } finally {
+  //     setSnackbarOpen(true)
+  //     setOpenRejectDialog(false)
+  //     setText('')
+  //   }
+  // }
 
   return (
     <div
@@ -420,7 +453,7 @@ const WorkFlowMerge = () => {
         direction='row'
         spacing={1}
         justifyContent='right'
-        sx={{ mt: 2, mb: 1 }}
+        sx={{ mt: 2, mb: 0 }}
       >
         {showTextBox && (
           <>
@@ -464,25 +497,29 @@ const WorkFlowMerge = () => {
           customHeight: defaultCustomHeight,
         }}
       />
-      <Button
-        variant='contained'
-        color='primary'
-        onClick={createCase}
-        disabled={!showCreateCasebutton || isCreatingCase}
-        sx={{
-          backgroundColor: jioColors.primaryBlue,
-          color: jioColors.background,
-          borderRadius: 1,
-          padding: '8px 24px',
-          textTransform: 'none',
-          fontSize: '0.875rem',
-          fontWeight: 500,
-          width: '200px',
-          '&:hover': { backgroundColor: '#143B6F', boxShadow: 'none' },
-        }}
-      >
-        {isCreatingCase ? 'Submitting…' : 'Submit for Approval'}
-      </Button>
+      {(keycloak?.tokenParsed?.realm_access?.roles ?? []).includes(
+        'plant_manager',
+      ) && (
+        <Button
+          variant='contained'
+          color='primary'
+          onClick={createCase}
+          disabled={!showCreateCasebutton || isCreatingCase}
+          sx={{
+            backgroundColor: jioColors.primaryBlue,
+            color: jioColors.background,
+            borderRadius: 1,
+            padding: '8px 24px',
+            textTransform: 'none',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            width: '200px',
+            '&:hover': { backgroundColor: '#143B6F', boxShadow: 'none' },
+          }}
+        >
+          {isCreatingCase ? 'Submitting…' : 'Submit for Approval'}
+        </Button>
+      )}
       {/* <Button
         variant='contained'
         color='primary'
