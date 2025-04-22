@@ -20,14 +20,15 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import { GridActionsCellItem, GridRowModes } from '@mui/x-data-grid'
 import Notification from 'components/Utilities/Notification'
-// import { useSession } from 'SessionStoreContext'
+import './data-grid-css.css'
+import './extra-css.css'
+
 import { MenuItem } from '../../../node_modules/@mui/material/index'
 
 import {
   FileDownload,
   FileUpload,
 } from '../../../node_modules/@mui/icons-material/index'
-// import { useNavigate } from '../../../node_modules/react-router-dom/dist/index'
 
 const jioColors = {
   primaryBlue: '#387ec3',
@@ -90,8 +91,6 @@ const DataGridTable = ({
   const handleSearchChange = (event) => {
     setSearchText(event.target.value)
   }
-  // const navigate = useNavigate()
-
   // const [rowModesModel, setRowModesModel] = useState({})
   // const [changedRowIds, setChangedRowIds] = useState([])
   // const [columnFilters, setColumnFilters] = useState({})
@@ -256,7 +255,6 @@ const DataGridTable = ({
                 permissions?.viewBtn && (
                   <GridActionsCellItem
                     key={`view-${id}`}
-                    // icon={<EditIcon sx={{ color: jioColors.primaryBlue }} />}
                     icon={<VisibilityIcon />}
                     label='View'
                     className='textPrimary'
@@ -268,7 +266,6 @@ const DataGridTable = ({
                 permissions?.editButton && (
                   <GridActionsCellItem
                     key={`edit-${id}`}
-                    // icon={<EditIcon sx={{ color: jioColors.primaryBlue }} />}
                     icon={<EditIcon />}
                     label='Edit'
                     className='textPrimary'
@@ -280,21 +277,20 @@ const DataGridTable = ({
                 permissions?.deleteButton && (
                   <GridActionsCellItem
                     key={`delete-${id}`}
-                    // icon={<DeleteIcon sx={{ color: jioColors.accentRed }} />}
                     icon={<DeleteIcon />}
                     label='Delete'
                     onClick={() => handleDeleteClick(id, params)}
                     color='inherit'
                   />
                 ),
-              ].filter(Boolean) // Remove `null` values if permission is false
+              ].filter(Boolean)
             },
             minWidth: 70,
             maxWidth: 100,
             headerClassName: 'last-column-header',
           },
         ]
-      : []), // If no permissions, hide the Actions column
+      : []),
   ])
 
   const handleRemarkSave = () => {
@@ -324,12 +320,6 @@ const DataGridTable = ({
 
     setRemarkDialogOpen(false)
   }
-
-  // const handleCellClick = (params) => {}
-
-  // const handleCloseSnackbar = () => {
-  //   setSnackbarOpen(false)
-  // }
 
   const filteredRows = useMemo(() => {
     if (!Array.isArray(rows)) return []
@@ -418,56 +408,24 @@ const DataGridTable = ({
       </Box> */}
       {/* )} */}
       {(permissions?.allAction ?? true) && (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 2,
-            marginBottom: 1,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box className='action-box'>
+          <Box className='action-inner'>
             {permissions?.UnitToShow && (
               <Chip
                 label={permissions.UnitToShow}
                 variant='outlined'
-                sx={{
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  height: '40px',
-                }}
+                className='unit-chip'
               />
             )}
           </Box>
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {permissions?.showCalculate && (
               <Button
                 variant='contained'
                 onClick={handleCalculateBtn}
                 disabled={isButtonDisabled}
-                sx={{
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-
-                  '&:hover': {
-                    backgroundColor: '#143B6F',
-                    boxShadow: 'none',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: jioColors.primaryBlue,
-                    color: jioColors.background,
-                    opacity: 0.7,
-                  },
-                }}
+                className='btn-save'
               >
                 Calculate
               </Button>
@@ -477,25 +435,7 @@ const DataGridTable = ({
                 variant='contained'
                 onClick={handleCalculateBtn}
                 disabled={isButtonDisabled}
-                sx={{
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-
-                  '&:hover': {
-                    backgroundColor: '#143B6F',
-                    boxShadow: 'none',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: jioColors.primaryBlue,
-                    color: jioColors.background,
-                    opacity: 0.7,
-                  },
-                }}
+                className='btn-save'
               >
                 Refresh
               </Button>
@@ -505,19 +445,7 @@ const DataGridTable = ({
               <Button
                 variant='contained'
                 onClick={handleRefresh}
-                sx={{
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  '&:hover': {
-                    backgroundColor: '#143B6F',
-                    boxShadow: 'none',
-                  },
-                }}
+                className='btn-save'
               >
                 Refresh
               </Button>
@@ -659,6 +587,7 @@ const DataGridTable = ({
 
         <DataGrid
           loading={loading}
+          className='custom-data-grid'
           apiRef={apiRef}
           rows={filteredRows}
           sortingOrder={[]}
@@ -722,204 +651,9 @@ const DataGridTable = ({
             return 'even-row'
           }}
           columnGroupingModel={columnGroupingModel}
-          sx={{
-            borderRadius: '0px',
-            border: `1px solid ${jioColors.border}`,
-            backgroundColor: jioColors.background,
-            fontSize: '0.8rem',
-            '& .MuiDataGrid-columnHeaderGroup': {
-              justifyContent: 'center !important',
-            },
-
-            // '& .vertical-center .MuiDataGrid-columnHeaderTitleContainer': {
-            //   display: 'flex',
-            //   alignItems: 'center', // vertical
-            //   justifyContent: 'center', // horizontal
-            //   height: '100%', // fill the two-row header
-            // },
-            // '& .MuiDataGrid-columnHeaderTitle': {
-            //   textAlign: 'center',
-            //   justifyContent: 'center',
-            //   width: '100%',
-            //   display: 'flex',
-            // },
-
-            '& .MuiDataGrid-columnHeaderGroup .MuiDataGrid-columnHeaderTitle': {
-              textAlign: 'center',
-              width: '100%',
-            },
-            ' & .MuiDataGrid-columnHeaderTitleContainer:last-child:after .MuiDataGrid-columnHeaderTitleContainer:after':
-              {
-                bordeRight: 'none !important',
-              },
-
-            '& .MuiDataGrid-cell:last-child:after': {
-              borderRight: 'none',
-            },
-            '& .MuiDataGrid-columnHeader:last-child:after': {
-              borderRight: 'none',
-            },
-            '& .MuiDataGrid-columnHeader:last-child .MuiDataGrid-columnHeaderTitleContainer:after':
-              {
-                borderRight: 'none',
-              },
-            // Added direct rule for the title container without the pseudo-element:
-            '& .MuiDataGrid-columnHeader:last-child .MuiDataGrid-columnHeaderTitleContainer':
-              {
-                borderRight: 'none',
-              },
-            '& .MuiDataGrid-cell.last-column, & .MuiDataGrid-columnHeaderTitleContainer.last-column & .MuiDataGrid-columnHeader.last-column':
-              {
-                borderRight: 'none',
-              },
-
-            // borderRight: `1px solid ${jioColors.border}`,
-            '& .MuiDataGrid-root .MuiDataGrid-cell': {
-              fontSize: '0.8rem',
-              color: '#A9A9A9',
-            },
-            '& .MuiDataGrid-root': {
-              borderRadius: '0px',
-            },
-            '& .MuiDataGrid-footerContainer': {
-              display: 'none',
-            },
-            // Remove the direct right border from cells and headers
-            '& .MuiDataGrid-cell, & .MuiDataGrid-columnHeaders & .MuiDataGrid-columnHeaderTitleContainer':
-              {
-                borderRight: 'none',
-                position: 'relative',
-              },
-            // Apply a pseudo-element for a short right border on cells
-            '& .MuiDataGrid-cell:after': {
-              content: '""',
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              height: '60%',
-              borderRight: `1px solid ${jioColors.border}`,
-            },
-            //Do not remove this prop (for Grouped row it can be usefull !!!!!)
-            '& .MuiDataGrid-row.no-border-row .MuiDataGrid-cell:after': {
-              backgroundColor: jioColors.rowOdd,
-              borderRight: 'none !important',
-            },
-
-            // Apply a similar pseudo-element for header cells
-            '& .MuiDataGrid-columnHeaders:after': {
-              content: '""',
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              height: '60%', // Adjust as needed
-              borderRight: `1px solid ${jioColors.border}`,
-            },
-            '& .MuiDataGrid-columnHeaderTitleContainer:after': {
-              content: '""',
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              height: '60%', // Adjust as needed
-              borderRight: `1px solid ${jioColors.border}`,
-            },
-
-            '& .MuiDataGrid-columnHeaders': {
-              backgroundColor: '#FAFAFC',
-              color: '#3E4E75',
-              fontSize: '0.8rem',
-              fontWeight: 'bold',
-              borderBottom: `2px solid #DAE0EF`,
-              borderTopLeftRadius: '0px',
-              borderTopRightRadius: '0px',
-            },
-            '& .MuiDataGrid-columnHeader': {
-              minHeight: '45px',
-              maxHeight: '45px',
-              lineHeight: '45px', // ensure text is vertically aligned
-              paddingTop: '0px',
-              paddingBottom: '0px',
-            },
-            // '& .MuiDataGrid-columnHeaderTitle': {
-            //   lineHeight: '45px', // aligns text better
-            //   fontSize: '0.75rem',
-            //   fontWeight: 'bold', // Ensure column titles are bold
-            // },
-
-            '& .MuiDataGrid-cell': {
-              // borderRight: `1px solid ${jioColors.border}`,
-              borderBottom: `1px solid ${'#DAE0EF'}`,
-              color: '#3E4E75',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-            },
-            '& .MuiDataGrid-row': {
-              borderBottom: `1px solid ${jioColors.border}`,
-            },
-            '& .even-row': {
-              backgroundColor: jioColors.rowEven,
-            },
-            '& .no-border-row': {
-              backgroundColor: jioColors.rowOdd,
-            },
-
-            '& .odd-row': {
-              opacity: 0.9,
-              pointerEvents: 'none',
-              backgroundColor: 'rgba(145, 145, 145, 0.3)',
-              color: 'rgba(0, 0, 0, 0.6)',
-            },
-            '& .MuiDataGrid-toolbarContainer': {
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 1,
-              paddingRight: 2,
-              alignSelf: 'flex-end',
-            },
-            // '& .MuiDataGrid-columnHeaders .last-column-header': {
-            //   paddingRight: '16px',
-            // },
-            // '& .MuiDataGrid-cell.last-column-cell': {
-            //   paddingRight: '16px',
-            // },
-            '& .MuiDataGrid-columnHeaderTitle': {
-              fontWeight: 'bold', // Ensure column titles are bold
-            },
-
-            // '& .MuiDataGrid-columnHeader[data-field="Particulars"] .MuiDataGrid-columnHeaderTitle':
-            //   {
-            //     color: 'red',
-            //   },
-
-            '& .disabled-cell': {
-              backgroundColor: 'rgba(233, 233, 233, 0.3)',
-              borderRadius: '0px',
-              border: `1px solid ${jioColors.border}`,
-            },
-
-            '& .disabled-cell1': {
-              // color: '#A9A9A9 !important', // Grey color for disabled text
-              // backgroundColor: '#F0F0F0 !important', // Light grey background
-              // cursor: 'not-allowed !important', // Indicate it's not interactive
-              // Optional: Add a border or other visual cues
-              // border: '1px solid #ccc !important',
-              opacity: 0.2, // Slightly transparent
-              filter: 'grayscale(1)', // Makes the row look faded
-              backgroundColor: 'rgba(235, 224, 224, 0.3)', // Example faded background color
-            },
-            '& .disabled-header': {
-              color: '#A9A9A9 !important', // Fade the header text color
-              opacity: 0.7, // Optionally fade the header opacity as well
-              // You might want to adjust other header styles if needed
-            },
-          }}
         />
       </Box>
+
       {(permissions?.allAction ?? true) && (
         <Box
           sx={{
@@ -931,26 +665,7 @@ const DataGridTable = ({
           {permissions.addButton && (
             <Button
               variant='contained'
-              sx={{
-                // marginTop: 2,
-                backgroundColor: jioColors.primaryBlue,
-                color: jioColors.background,
-                borderRadius: 1,
-                padding: '8px 24px',
-                textTransform: 'none',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                minWidth: 120,
-                '&:hover': {
-                  backgroundColor: '#143B6F',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  opacity: 0.7,
-                },
-              }}
+              className='btn-save'
               onClick={handleAddRow}
               disabled={isButtonDisabled}
             >
@@ -961,29 +676,11 @@ const DataGridTable = ({
           {permissions.saveBtn && (
             <Button
               variant='contained'
-              sx={{
-                backgroundColor: jioColors.primaryBlue,
-                color: jioColors.background,
-                borderRadius: 1,
-                padding: '8px 24px',
-                textTransform: 'none',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                minWidth: 120,
-                '&:hover': {
-                  backgroundColor: '#143B6F',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  opacity: 0.7,
-                },
-              }}
+              className='btn-save'
               onClick={saveModalOpen}
               disabled={isButtonDisabled}
-              loading={loading} // Use the loading prop to trigger loading state
-              loadingposition='start' // Use loadingPosition to control where the spinner appears
+              loading={loading}
+              loadingposition='start'
             >
               Save
             </Button>
@@ -991,25 +688,7 @@ const DataGridTable = ({
           {permissions?.nextBtn && (
             <Button
               variant='contained'
-              sx={{
-                backgroundColor: jioColors.primaryBlue,
-                color: jioColors.background,
-                borderRadius: 1,
-                padding: '8px 24px',
-                textTransform: 'none',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                minWidth: 120,
-                '&:hover': {
-                  backgroundColor: '#143B6F',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  opacity: 0.7,
-                },
-              }}
+              className='btn-save'
               onClick={() => {
                 // Write any additional logic here before navigating.
                 // console.log('Navigating to dashboard')
@@ -1026,25 +705,7 @@ const DataGridTable = ({
           {showDeleteAll && (
             <Button
               variant='contained'
-              sx={{
-                backgroundColor: jioColors.primaryBlue,
-                color: jioColors.background,
-                borderRadius: 1,
-                padding: '8px 24px',
-                textTransform: 'none',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                minWidth: 120,
-                '&:hover': {
-                  backgroundColor: '#143B6F',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  opacity: 0.7,
-                },
-              }}
+              className='btn-save'
               onClick={() => {
                 // Write any additional logic here before navigating.
                 // console.log('Navigating to dashboard')
@@ -1060,6 +721,7 @@ const DataGridTable = ({
           )}
         </Box>
       )}
+
       {(permissions?.allAction ?? true) && (
         <Notification
           open={snackbarOpen}
@@ -1068,6 +730,7 @@ const DataGridTable = ({
           onClose={() => setSnackbarOpen(false)}
         />
       )}
+
       <Dialog
         open={openDeleteDialogeBox}
         onClose={closeDeleteDialogeBox}
