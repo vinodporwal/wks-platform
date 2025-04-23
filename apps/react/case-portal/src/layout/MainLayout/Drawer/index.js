@@ -28,6 +28,8 @@ const MainDrawer = ({ open, handleDrawerToggle, window }) => {
         onClose={handleDrawerToggle}
         ModalProps={{
           keepMounted: true,
+
+          BackdropProps: { invisible: true },
         }}
         sx={{
           '& .MuiDrawer-paper': {
@@ -43,7 +45,6 @@ const MainDrawer = ({ open, handleDrawerToggle, window }) => {
         <Box
           sx={{
             height: '100vh',
-
             overflowY: 'auto',
             overflowX: 'hidden',
           }}

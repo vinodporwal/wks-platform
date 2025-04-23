@@ -12,6 +12,9 @@ import {
   TextField,
 } from '../../../../node_modules/@mui/material/index'
 
+import '../data-grid-css.css'
+import '../extra-css.css'
+
 import AuditTrail from './AuditTrail'
 import './jio-grid-style.css'
 import DataGridTable from '../ASDataGrid'
@@ -551,25 +554,15 @@ const WorkFlowMerge = () => {
           customHeight: defaultCustomHeight,
         }}
       />
-        <Button
-          variant='contained'
-          color='primary'
-          onClick={createCase}
-          disabled={!showCreateCasebutton || isCreatingCase}
-          sx={{
-            backgroundColor: jioColors.primaryBlue,
-            color: jioColors.background,
-            borderRadius: 1,
-            padding: '8px 24px',
-            textTransform: 'none',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            width: '200px',
-            '&:hover': { backgroundColor: '#143B6F', boxShadow: 'none' },
-          }}
-        >
-          {isCreatingCase ? 'Submitting…' : 'Submit for Approval'}
-        </Button>
+      {/* <Button
+        variant='contained'
+        color='primary'
+        onClick={createCase}
+        disabled={!showCreateCasebutton || isCreatingCase}
+        className='btn-save'
+      >
+        {isCreatingCase ? 'Submitting…' : 'Submit'}
+      </Button> */}
       {/* <Button
         variant='contained'
         color='primary'
