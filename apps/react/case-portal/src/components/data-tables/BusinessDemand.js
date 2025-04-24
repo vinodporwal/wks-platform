@@ -63,7 +63,10 @@ const BusinessDemand = ({ permissions }) => {
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { sitePlantChange, verticalChange, yearChanged, year } = dataGridStore
+  const { sitePlantChange, verticalChange, yearChanged, oldYear } =
+    dataGridStore
+  //const isOldYear = oldYear?.oldYear
+  const isOldYear = 0
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const apiRef = useGridApiRef()
@@ -146,6 +149,7 @@ const BusinessDemand = ({ permissions }) => {
 
   // console.log(verticalChange)
   useEffect(() => {
+    // console.log('oldYear', oldYear?.oldYear)
     const getAllProducts = async () => {
       try {
         var data = []
@@ -181,10 +185,11 @@ const BusinessDemand = ({ permissions }) => {
         // handleMenuClose();
       }
     }
+
     fetchData()
     // fetchData2()
     getAllProducts()
-  }, [sitePlantChange, yearChanged, keycloak, lowerVertName])
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   // useEffect(()=>{
   //   console.log('this is test for api call ')
@@ -370,6 +375,37 @@ const BusinessDemand = ({ permissions }) => {
 
   const defaultCustomHeight = { mainBox: '50vh', otherBox: '112%' }
 
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 10) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+    }
+  }
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      addButton: permissions?.addButton ?? false,
+      deleteButton: permissions?.deleteButton ?? false,
+      editButton: permissions?.editButton ?? false,
+      showUnit: permissions?.showUnit ?? false,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      saveBtn: permissions?.saveBtn ?? true,
+      units: ['TPH', 'TPD'],
+      customHeight: permissions?.customHeight || defaultCustomHeight,
+    },
+    isOldYear,
+  )
+
+  // permissions={adjustedPermissions}
+
   return (
     <div>
       <Backdrop
@@ -437,17 +473,18 @@ const BusinessDemand = ({ permissions }) => {
         unsavedChangesRef={unsavedChangesRef}
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={deleteRowData}
-        permissions={{
-          showAction: permissions?.showAction ?? false,
-          addButton: permissions?.addButton ?? false,
-          deleteButton: permissions?.deleteButton ?? false,
-          editButton: permissions?.editButton ?? false,
-          showUnit: permissions?.showUnit ?? false,
-          saveWithRemark: permissions?.saveWithRemark ?? true,
-          saveBtn: permissions?.saveBtn ?? true,
-          units: ['TPH', 'TPD'],
-          customHeight: permissions?.customHeight || defaultCustomHeight,
-        }}
+        permissions={adjustedPermissions}
+        // permissions={{
+        //   showAction: permissions?.showAction ?? false,
+        //   addButton: permissions?.addButton ?? false,
+        //   deleteButton: permissions?.deleteButton ?? false,
+        //   editButton: permissions?.editButton ?? false,
+        //   showUnit: permissions?.showUnit ?? false,
+        //   saveWithRemark: permissions?.saveWithRemark ?? true,
+        //   saveBtn: permissions?.saveBtn ?? true,
+        //   units: ['TPH', 'TPD'],
+        //   customHeight: permissions?.customHeight || defaultCustomHeight,
+        // }}
       />
     </div>
   )

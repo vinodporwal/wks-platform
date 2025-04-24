@@ -1,7 +1,17 @@
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { Box, Step, StepLabel, Stepper } from '@mui/material'
+import MuiAccordion from '@mui/material/Accordion'
+import MuiAccordionDetails from '@mui/material/AccordionDetails'
+import MuiAccordionSummary from '@mui/material/AccordionSummary'
+import { styled } from '@mui/material/styles'
+import Typography from '@mui/material/Typography'
+import Notification from 'components/Utilities/Notification'
 import { useEffect, useState } from 'react'
-
-import { Stepper, Step, StepLabel } from '@mui/material'
-
+import { useSelector } from 'react-redux'
+import { CaseService } from 'services/CaseService'
+import { DataService } from 'services/DataService'
+import { TaskService } from 'services/TaskService'
+import { useSession } from 'SessionStoreContext'
 import {
   Button,
   Dialog,
@@ -11,33 +21,40 @@ import {
   Stack,
   TextField,
 } from '../../../../node_modules/@mui/material/index'
-
-import '../data-grid-css.css'
-import '../extra-css.css'
+import DataGridTable from '../ASDataGrid'
+// import '../data-tables/data-grid-css.css'
+// import '../data-tables/extra-css.css'
+// import '../data-tables/jio-grid-style.css'
 
 import AuditTrail from './AuditTrail'
-import './jio-grid-style.css'
-import DataGridTable from '../ASDataGrid'
-import { DataService } from 'services/DataService'
-import Notification from 'components/Utilities/Notification'
-import { CaseService } from 'services/CaseService'
-import { TaskService } from 'services/TaskService'
-import { useSession } from 'SessionStoreContext'
 
-const jioColors = {
-  primaryBlue: '#387ec3',
-  // primaryBlue: 'red',
-  accentRed: '#E31C3D',
-  background: '#FFFFFF',
-  headerBg: '#0F3CC9',
-  rowEven: '#FFFFFF',
-  rowOdd: '#E8F1FF',
-  textPrimary: '#2D2D2D',
-  border: '#D0D0D0',
-  darkTransparentBlue: 'rgba(127, 147, 206, 0.8)',
-}
+import ProductionAopView from 'components/data-tables-views/DataTable-production-aop'
+const CustomAccordion = styled((props) => (
+  <MuiAccordion disableGutters elevation={0} square {...props} />
+))(() => ({
+  position: 'unset',
+  border: 'none',
+  boxShadow: 'none',
+  margin: '0px',
+  '&:before': {
+    display: 'none',
+  },
+}))
+const CustomAccordionSummary = styled((props) => (
+  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
+))(() => ({
+  backgroundColor: '#fff',
+  padding: '0px 12px',
+  minHeight: '40px',
+  '& .MuiAccordionSummary-content': {
+    margin: '8px 0',
+  },
+}))
+const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
+  padding: '0px 0px 12px',
+  backgroundColor: '#F2F3F8',
+}))
 
-// import DataGridTable from '../ASDataGrid'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   const [activeStep, setActiveStep] = useState(0)
@@ -52,8 +69,14 @@ const WorkFlowMerge = () => {
   const [showCreateCasebutton, setShowCreateCasebutton] = useState(false)
   const [taskId, setTaskId] = useState('')
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  // const verticalId = localStorage.getItem('verticalId')
-  // const siteName = JSON.parse(localStorage.getItem('selectedSite'))?.name
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange, yearChanged, oldYear } =
+    dataGridStore
+
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const [businessKey, setBusinessKey] = useState('')
   const [isCreatingCase, setIsCreatingCase] = useState(false)
   const [actionDisabled, setActionDisabled] = useState(false)
@@ -68,55 +91,17 @@ const WorkFlowMerge = () => {
     'Review Plant AOP',
     'Approve AOP',
     'Final Approval O2C AOP',
-    // 'Closed',
   ]
-  // const columns = [
-  //   {
-  //     field: 'particulars',
-  //     headerName: 'Particulars',
-  //     minWidth: 300,
-  //     // custom header renderer
-  //   },
-  //   {
-  //     field: 'UOM',
-  //     headerName: 'UOM',
-  //     minWidth: 100,
-  //   },
-  //   // grouped children can skip renderHeader:
-  //   { field: 'firstYear', headerName: 'FY 2025-26 AOP', minWidth: 150 },
-  //   { field: 'secondYear', headerName: 'FY 2025-26 Actual', minWidth: 150 },
-  //   { field: 'thirdYear', headerName: 'FY 2026-27 AOP', minWidth: 150 },
-  //   {
-  //     field: 'remarks',
-  //     headerName: 'Remarks',
-  //     minWidth: 200,
-  //   },
-  // ]
-
-  // const columnGroupingModel = [
-  //   {
-  //     groupId: 'annualAOP',
-  //     headerName: 'Annual AOP Cost',
-  //     children: [
-  //       { field: 'fy202425AOP' },
-  //       { field: 'fy202425Actual' },
-  //       { field: 'fy202526AOP' },
-  //     ],
-  //   },
-  // ]
 
   const fetchData = async () => {
     setLoading(true)
     try {
       var data = await DataService.getWorkflowData(keycloak, plantId)
-      // console.log(data)
       const formattedRows = data.results.map((row, id) => {
-        // build a new row, formatting only the numeric fields
         const newRow = { id }
         Object.entries(row).forEach(([key, val]) => {
-          // if val is a number string, format it
           if (!isNaN(val) && val !== '') {
-            newRow[key] = Number(val).toFixed(2) // "9999.00" :contentReference[oaicite:0]{index=0}
+            newRow[key] = Number(val).toFixed(2)
           } else {
             newRow[key] = val
           }
@@ -124,47 +109,30 @@ const WorkFlowMerge = () => {
         return newRow
       })
       setRows(formattedRows)
-      // setColumns(data?.headers)
       const generateColumns = ({ headers, keys }) => {
         return headers.map((header, idx) => ({
           field: keys[idx],
           headerName: header,
           minWidth: idx === 0 ? 300 : 150,
-          // Optional: center headers except the first
-          // align: idx === 0 ? 'left' : 'center',
-          // headerAlign: idx === 0 ? 'left' : 'center',
-          // Optional: custom header renderer for the first column
           ...(idx === 0 && {
-            renderHeader: (params) => (
-              <div
-              // style={{
-              //   display: 'flex',
-              //   alignItems: 'center',
-              //   justifyContent: 'center',
-              //   width: '100%',
-              //   height: '100%',
-              // }}
-              >
-                {params.colDef.headerName}
-              </div>
-            ),
+            renderHeader: (params) => <div>{params.colDef.headerName}</div>,
           }),
         }))
       }
-
-      // 2. Use it in your component
       setColumns(generateColumns(data))
-      setLoading(false) // Hide loading
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching Business Demand data:', error)
-      setRows([]) // Clear rows on error
-      setLoading(false) // Hide loading
+      setRows([])
+      setLoading(false)
     }
   }
+
   useEffect(() => {
     fetchData()
-  }, [plantId])
-  const defaultCustomHeight = { mainBox: '60vh', otherBox: '114%' }
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
+
+  const defaultCustomHeight = { mainBox: '40vh', otherBox: '114%' }
 
   const handleRejectClick = () => {
     setActionDisabled(true)
@@ -533,16 +501,40 @@ const WorkFlowMerge = () => {
         {!(keycloak?.tokenParsed?.realm_access?.roles ?? []).includes(
           'plant_manager',
         ) && (
-          <Button
-            variant='outlined'
-            color='primary'
-            sx={{ fontWeight: 'bold', textTransform: 'none', px: 3 }}
-            onClick={handleAuditOpen}
-          >
+          <Button className='btn-save' onClick={handleAuditOpen}>
             Audit Trail
           </Button>
         )}
       </Stack>
+      <div>
+        {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
+          <CustomAccordion defaultExpanded disableGutters>
+            <CustomAccordionSummary
+              aria-controls='meg-grid-content'
+              id='meg-grid-header'
+            >
+              <Typography component='span' className='grid-title'>
+                Production Data
+              </Typography>
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box
+                sx={{
+                  width: '100%',
+                  margin: 0,
+                  marginTop: '-26px',
+                  marginBottom: '-70px',
+                }}
+              >
+                <ProductionAopView />
+              </Box>
+            </CustomAccordionDetails>
+          </CustomAccordion>
+        )}
+      </div>
+      <Typography component='div' className='grid-title'>
+        Annual AOP Cost
+      </Typography>
       <DataGridTable
         columns={columns}
         rows={rows}
@@ -552,6 +544,8 @@ const WorkFlowMerge = () => {
         className='jio-data-grid'
         permissions={{
           customHeight: defaultCustomHeight,
+          saveBtn: true,
+          approveBtn: false,
         }}
       />
       {/* <Button

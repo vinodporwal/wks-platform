@@ -10,6 +10,11 @@ import menuItemsDefs from './menu'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
+
+import './extra-css.css'
+import './data-grid-css.css'
+import './jio-grid-style.css'
+
 import { useSelector } from 'react-redux'
 import Layout from 'layout/FooterLayout/index'
 

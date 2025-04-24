@@ -10,4 +10,5 @@ public interface WorkflowService {
     public List<WorkflowDTO> getCaseId(String year, String plantId, String siteId, String verticalId);
     public WorkflowDTO saveWorkFlow(WorkflowDTO workflowDTO);
     public Map<String, Object> getWorkFlow(String plantId,String year);
+    public Map<String, Object> getProductionAOPWorkflowData(String plantId,String year);
 }

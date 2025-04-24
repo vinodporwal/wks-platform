@@ -20,8 +20,8 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import { GridActionsCellItem, GridRowModes } from '@mui/x-data-grid'
 import Notification from 'components/Utilities/Notification'
-import './data-grid-css.css'
-import './extra-css.css'
+//import './data-grid-css.css'
+//import './extra-css.css'
 
 import { MenuItem } from '../../../node_modules/@mui/material/index'
 
@@ -634,21 +634,30 @@ const DataGridTable = ({
           deleteRowData={deleteRowData}
           slotProps={{
             toolbar: { setRows, GridToolbar },
-            loadingOverlay: {
-              variant: 'linear-progress',
-              norowsvariant: 'skeleton',
-            },
+            // loadingOverlay: {
+            //   variant: 'linear-progress',
+            //   norowsvariant: 'skeleton',
+            // },
           }}
           getRowClassName={(params) => {
+            const classes = []
+
+            if (permissions?.isOldYear == 0) {
+              classes.push('odd-row-disabled')
+            }
+
             if (params.row.Particulars || params.row.Particulars2) {
-              return 'no-border-row'
+              classes.push('no-border-row')
             }
 
             if (params.row.isEditable === false) {
-              return permissions?.noColor === true ? 'even-row' : 'odd-row'
+              return [
+                ...classes,
+                permissions?.noColor === true ? 'even-row' : 'odd-row',
+              ].join(' ')
             }
 
-            return 'even-row'
+            return [...classes, 'even-row'].join(' ')
           }}
           columnGroupingModel={columnGroupingModel}
         />
@@ -683,6 +692,19 @@ const DataGridTable = ({
               loadingposition='start'
             >
               Save
+            </Button>
+          )}
+
+          {permissions.approveBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={saveModalOpen}
+              disabled={isButtonDisabled}
+              loading={loading}
+              loadingposition='start'
+            >
+              Approve
             </Button>
           )}
           {permissions?.nextBtn && (

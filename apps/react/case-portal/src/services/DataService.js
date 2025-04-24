@@ -83,6 +83,7 @@ export const DataService = {
   getUserScreen,
   getScreenbyPlant,
   getWorkflowData,
+  getWorkflowDataProduction,
   updateUserPlants,
   getCaseId,
   saveworkflow,
@@ -722,6 +723,24 @@ async function getScreenbyPlant(keycloak, verticalId, plantId) {
 async function getWorkflowData(keycloak, plantId) {
   let year = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/work-flow?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getWorkflowDataProduction(keycloak, plantId) {
+  let year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/production-aop/work-flow?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

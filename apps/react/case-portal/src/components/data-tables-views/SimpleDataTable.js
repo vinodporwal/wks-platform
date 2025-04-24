@@ -8,14 +8,18 @@ import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-import '../data-tables/data-grid-css.css'
-import '../data-tables/extra-css.css'
+// import '../data-tables/data-grid-css.css'
+// import '../data-tables/extra-css.css'
 
 const SimpleDataTable = () => {
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { sitePlantChange, verticalChange, yearChanged } = dataGridStore
+  const { sitePlantChange, verticalChange, yearChanged, oldYear } =
+    dataGridStore
+  //const isOldYear = oldYear?.oldYear
+  const isOldYear = 0
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [rows, setRows] = useState()
@@ -28,7 +32,6 @@ const SimpleDataTable = () => {
       setLoading(true)
       const data = await DataService.getAOPMCCalculatedData(keycloak)
       const formattedData = data.map((item, index) => {
-        // const isTPH = selectedUnit == 'TPD'
         const isTPH = false
         return {
           ...item,
@@ -123,7 +126,7 @@ const SimpleDataTable = () => {
 
     getAllProducts()
     fetchData()
-  }, [sitePlantChange, yearChanged, keycloak, lowerVertName])
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   const productionColumns = getEnhancedProductionColDefsView({
     headerMap,

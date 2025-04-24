@@ -14,6 +14,8 @@ import {
   setYearChange,
   setVerticalChange,
   setSitePlantChange,
+  setCurrentYear,
+  setOldYear,
 } from 'store/reducers/dataGridStore'
 import { DataService } from 'services/DataService'
 import Search from './Search'
@@ -226,6 +228,26 @@ export default function HeaderContent({ keycloak }) {
     localStorage.setItem('year', newYear)
     dispatch(setYearChange({ yearChanged: true }))
     dispatch(setAopYear({ selectedYear: newYear }))
+
+    // Find the selected year object to determine if it's the current year
+    const selectedYearObj = aopYears.find((y) => y.AOPYear === newYear)
+    const isCurrentYear = selectedYearObj?.currentYear == 1
+
+    const currentYear = aopYears.find((y) => y.currentYear == 1)
+
+    dispatch(setCurrentYear({ currentYear: isCurrentYear ? 1 : 0 }))
+
+    let isOldYear = 0
+    let currentYear1 = currentYear?.AOPYear
+
+    const [currentStartYear] = currentYear1.split('-').map(Number)
+    const [selectedStartYear] = newYear.split('-').map(Number)
+
+    if (selectedStartYear < currentStartYear) {
+      isOldYear = 1
+    }
+
+    dispatch(setOldYear({ oldYear: isOldYear }))
   }
   // inside HeaderContent, above the return
   const handlePlantChange = (e) => {
