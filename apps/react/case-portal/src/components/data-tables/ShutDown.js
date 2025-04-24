@@ -531,7 +531,7 @@ const ShutDown = ({ permissions }) => {
       editButton: permissions?.editButton ?? false,
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? true,
+      saveBtn: permissions?.saveBtn ?? false,
       customHeight: permissions?.customHeight,
     },
     isOldYear,
