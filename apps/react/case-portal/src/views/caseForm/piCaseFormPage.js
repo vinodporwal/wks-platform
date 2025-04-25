@@ -241,6 +241,7 @@ export const PiCaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })

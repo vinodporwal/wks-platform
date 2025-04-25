@@ -552,7 +552,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
-            isDraft: 'n',
+            isDraft: aCase?.isDraft,
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
