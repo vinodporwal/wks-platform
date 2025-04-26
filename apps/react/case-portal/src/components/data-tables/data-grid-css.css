@@ -151,7 +151,7 @@
 } */
 
 .custom-data-grid .no-border-row:hover {
-  background-color: #bfbfbf !important;
+  background-color: #e9e9e9 !important;
   pointer-events: none;
 }
 
@@ -204,7 +204,7 @@
 }
 
 .custom-data-grid .no-border-row {
-  background-color: #bfbfbf;
+  background-color: #e9e9e9;
   color: white !important;
 }
 

@@ -21,7 +21,7 @@ const ShutDown = ({ permissions }) => {
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
   //const isOldYear = oldYear?.oldYear
-  const isOldYear = 0
+  const isOldYear = oldYear?.oldYear
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -509,7 +509,7 @@ const ShutDown = ({ permissions }) => {
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
-    if (isOldYear != 10) return permissions
+    if (isOldYear != 1) return permissions
     return {
       ...permissions,
       showAction: false,
@@ -531,7 +531,7 @@ const ShutDown = ({ permissions }) => {
       editButton: permissions?.editButton ?? false,
       showUnit: permissions?.showUnit ?? false,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: permissions?.saveBtn ?? false,
+      saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
     },
     isOldYear,

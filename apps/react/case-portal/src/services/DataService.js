@@ -84,30 +84,11 @@ export const DataService = {
   getScreenbyPlant,
   getWorkflowData,
   getWorkflowDataProduction,
+  getAnnualCostAopReport,
   updateUserPlants,
   getCaseId,
   saveworkflow,
 }
-
-// async function CheckIsTokenExp(keycloak) {
-//   if (keycloak.isTokenExpired()) {
-//     keycloak.logout({ redirectUri: window.location.origin })
-//   }
-
-//   const headers = {
-//     Authorization: `Bearer ${keycloak.token}`,
-//   }
-
-//   var url = `${Config.CaseEngineUrl}/business-demand`
-
-//   try {
-//     const resp = await fetch(url, { headers })
-//     return json(keycloak, resp)
-//   } catch (err) {
-//     console.log(err)
-//     return await Promise.reject(err)
-//   }
-// }
 
 async function handleRefresh(year, plantId, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/handleRefresh?year=${year}&plantId=${plantId}`
@@ -394,6 +375,12 @@ async function handleCalculateMaintenance(plantId, year, keycloak) {
 }
 
 async function deleteSlowdownData(maintenanceId, keycloak) {
+  // var plantId = ''
+  // const storedPlant = localStorage.getItem('selectedPlant')
+  // if (storedPlant) {
+  //   const parsedPlant = JSON.parse(storedPlant)
+  //   plantId = parsedPlant.id
+  // }
   const url = `${Config.CaseEngineUrl}/task/deleteSlowdownData/${maintenanceId}`
 
   const headers = {
@@ -723,6 +710,36 @@ async function getScreenbyPlant(keycloak, verticalId, plantId) {
 async function getWorkflowData(keycloak, plantId) {
   let year = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/work-flow?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+//http://localhost:8081/task/report/annual-aop?plantId=AACDBE12-C5F6-4B79-9C88-751169815B42&year=2026-27&reportType='production'
+
+async function getAnnualCostAopReport(
+  keycloak,
+  reportType = 'production',
+  aopYearFilter1 = 'null',
+) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  var url = ''
+  if (reportType == 'aopYearFilter') {
+    url = `${Config.CaseEngineUrl}/task/report/annual-aop?plantId=${plantId}&year=${year}&reportType=${reportType}&aopYearFilter=null`
+  } else {
+    url = `${Config.CaseEngineUrl}/task/report/annual-aop?plantId=${plantId}&year=${year}&reportType=${reportType}&aopYearFilter=${aopYearFilter1}`
+  }
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

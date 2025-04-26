@@ -18,7 +18,7 @@ const SimpleDataTable = () => {
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
   //const isOldYear = oldYear?.oldYear
-  const isOldYear = 0
+  const isOldYear = oldYear?.oldYear
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -143,7 +143,6 @@ const SimpleDataTable = () => {
     <Box
       sx={{
         height: '228px',
-
         width: '100%',
         padding: '0px 0px',
         margin: '0px 0px 0px',

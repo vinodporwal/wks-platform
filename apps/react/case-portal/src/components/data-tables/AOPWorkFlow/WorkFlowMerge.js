@@ -132,7 +132,7 @@ const WorkFlowMerge = () => {
     fetchData()
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
-  const defaultCustomHeight = { mainBox: '40vh', otherBox: '114%' }
+  const defaultCustomHeight = { mainBox: '42vh', otherBox: '114%' }
 
   const handleRejectClick = () => {
     setActionDisabled(true)
@@ -460,16 +460,42 @@ const WorkFlowMerge = () => {
         display: 'flex',
         flexDirection: 'column',
         gap: '5px',
-        marginTop: '20px',
+        marginTop: '0px',
       }}
     >
-      <Stepper activeStep={activeStep} alternativeLabel>
+      <Stepper
+        activeStep={activeStep}
+        alternativeLabel
+        sx={{
+          '& .MuiStepLabel-label': {
+            fontSize: '0.75rem', // optional: reduce text size too
+          },
+          '& .MuiStepConnector-line': {
+            minHeight: '75%', // reduce connector line height
+          },
+          '& .MuiStepIcon-root': {
+            transform: 'scale(0.75)', // scale down the circle
+          },
+          minHeight: '40px', // optional: overall stepper height
+        }}
+      >
         {steps.map((label, index) => (
           <Step key={label} onClick={() => setActiveStep(index)}>
-            <StepLabel>{label}</StepLabel>
+            <StepLabel
+              StepIconProps={{
+                sx: {
+                  '&.Mui-active': {
+                    color: '#0100cb',
+                  },
+                },
+              }}
+            >
+              {label}
+            </StepLabel>
           </Step>
         ))}
-      </Stepper>{' '}
+      </Stepper>
+
       <Stack
         direction='row'
         spacing={1}
@@ -507,30 +533,26 @@ const WorkFlowMerge = () => {
         )}
       </Stack>
       <div>
-        {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Production Data
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box
+              sx={{
+                width: '100%',
+                margin: 0,
+              }}
             >
-              <Typography component='span' className='grid-title'>
-                Production Data
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box
-                sx={{
-                  width: '100%',
-                  margin: 0,
-                  marginTop: '-26px',
-                  marginBottom: '-70px',
-                }}
-              >
-                <ProductionAopView />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        )}
+              <ProductionAopView />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
       </div>
       <Typography component='div' className='grid-title'>
         Annual AOP Cost

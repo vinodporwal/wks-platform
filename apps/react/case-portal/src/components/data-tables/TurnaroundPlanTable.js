@@ -17,7 +17,7 @@ const TurnaroundPlanTable = () => {
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
   //const isOldYear = oldYear?.oldYear
-  const isOldYear = 0
+  const isOldYear = oldYear?.oldYear
 
   const vertName = verticalChange?.selectedVertical
   const [rowModesModel, setRowModesModel] = useState({})
@@ -451,7 +451,7 @@ const TurnaroundPlanTable = () => {
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
-    if (isOldYear != 10) return permissions
+    if (isOldYear != 1) return permissions
     return {
       ...permissions,
       showAction: false,

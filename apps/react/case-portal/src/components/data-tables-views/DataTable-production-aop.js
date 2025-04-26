@@ -1,14 +1,15 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import MuiAccordion from '@mui/material/Accordion'
-import MuiAccordionDetails from '@mui/material/AccordionDetails'
-import MuiAccordionSummary from '@mui/material/AccordionSummary'
-import { styled } from '@mui/material/styles'
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 
-import DataGridTable from 'components/data-tables/ASDataGrid'
+// import DataGridTable from 'components/data-tables/ASDataGrid'
+import { DataGrid } from '@mui/x-data-grid'
+import {
+  Backdrop,
+  Box,
+  CircularProgress,
+} from '../../../node_modules/@mui/material/index'
 
 const ProductionAopView = () => {
   const keycloak = useSession()
@@ -42,7 +43,7 @@ const ProductionAopView = () => {
         return headers.map((header, idx) => ({
           field: keys[idx],
           headerName: header,
-          minWidth: idx === 0 ? 300 : 150,
+          flex: 1,
           ...(idx === 0 && {
             renderHeader: (params) => <div>{params.colDef.headerName}</div>,
           }),
@@ -64,25 +65,66 @@ const ProductionAopView = () => {
   const defaultCustomHeight = { mainBox: '22vh', otherBox: '114%' }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '5px',
-        marginTop: '20px',
+    <Box
+      sx={{
+        height: '80px',
+        width: '100%',
+        padding: '0px 0px',
+        margin: '0px 0px 0px',
+        backgroundColor: '#F2F3F8',
+        borderRadius: 0,
+        borderBottom: 'none',
       }}
     >
-      <DataGridTable
-        columns={columns}
-        rows={rows}
-        loading={loading}
-        setRows={setRows}
-        className='jio-data-grid'
-        permissions={{
-          customHeight: defaultCustomHeight,
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
+      <DataGrid
+        rows={rows || []}
+        className='custom-data-grid'
+        columns={columns.map((col) => ({
+          ...col,
+          filterable: false,
+          sortable: true,
+        }))}
+        disableColumnMenu
+        disableColumnFilter
+        disableColumnSelector
+        disableColumnSorting
+        columnVisibilityModel={{
+          maintenanceId: false,
+          id: false,
+          plantFkId: false,
+          aopCaseId: false,
+          aopType: false,
+          aopYear: false,
+          avgTph: false,
+          NormParameterMonthlyTransactionId: false,
+          aopStatus: false,
+          idFromApi: false,
+          period: false,
+        }}
+        rowHeight={35}
+        slotProps={{
+          toolbar: { setRows },
+          loadingOverlay: {
+            variant: 'linear-progress',
+            norowsvariant: 'skeleton',
+          },
+        }}
+        getRowClassName={(params) => {
+          return params.row.Particulars || params.row.Particulars2
+            ? 'no-border-row'
+            : params.indexRelativeToCurrentPage % 2 === 0
+              ? 'even-row'
+              : 'even-row'
         }}
       />
-    </div>
+    </Box>
   )
 }
 

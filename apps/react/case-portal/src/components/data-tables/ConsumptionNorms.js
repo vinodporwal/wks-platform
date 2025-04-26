@@ -80,7 +80,7 @@ const NormalOpNormsScreen = () => {
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
   //const isOldYear = oldYear?.oldYear
-  const isOldYear = 0
+  const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
@@ -556,7 +556,7 @@ const NormalOpNormsScreen = () => {
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
-    if (isOldYear != 10) return permissions
+    if (isOldYear != 1) return permissions
     return {
       ...permissions,
       showAction: false,
@@ -696,6 +696,7 @@ const NormalOpNormsScreen = () => {
         fullWidth
         margin='normal'
         variant='outlined'
+        disabled={isOldYear == 1}
         sx={{
           '& .MuiInputBase-root': {
             backgroundColor: '#ffffff',
@@ -726,10 +727,11 @@ const NormalOpNormsScreen = () => {
           },
         }}
       />
-
-      <Button variant='contained' className='btn-save'>
-        Save
-      </Button>
+      {isOldYear !== 1 && (
+        <Button variant='contained' className='btn-save'>
+          Save
+        </Button>
+      )}
     </div>
   )
 }

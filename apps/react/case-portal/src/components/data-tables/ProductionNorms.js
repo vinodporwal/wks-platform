@@ -28,7 +28,7 @@ const ProductionNorms = ({ permissions }) => {
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
   //const isOldYear = oldYear?.oldYear
-  const isOldYear = 0
+  const isOldYear = oldYear?.oldYear
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -572,7 +572,7 @@ const ProductionNorms = ({ permissions }) => {
   const isCellEditable = (params) => params.row.id !== 'total'
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
-    if (isOldYear != 10) return permissions
+    if (isOldYear != 1) return permissions
     return {
       ...permissions,
       showAction: false,

@@ -26,7 +26,7 @@ const SlowdownNorms = () => {
   const [slowdownMonths, setSlowdownMonths] = useState([])
   const { sitePlantChange, yearChanged, oldYear } = menu
   //const isOldYear = oldYear?.oldYear
-  const isOldYear = 0
+  const isOldYear = oldYear?.oldYear
 
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
@@ -754,7 +754,7 @@ const SlowdownNorms = () => {
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
-    if (isOldYear != 10) return permissions
+    if (isOldYear != 1) return permissions
     return {
       ...permissions,
       showAction: false,

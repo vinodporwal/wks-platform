@@ -621,6 +621,8 @@ const DataGridTable = ({
             isEditable: false,
             period: false,
           }}
+          disableColumnSelector
+          disableColumnSorting
           rowHeight={35}
           processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={onProcessRowUpdateError}
@@ -642,7 +644,7 @@ const DataGridTable = ({
           getRowClassName={(params) => {
             const classes = []
 
-            if (permissions?.isOldYear == 0) {
+            if (permissions?.isOldYear == 1) {
               classes.push('odd-row-disabled')
             }
 
