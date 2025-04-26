@@ -94,27 +94,27 @@ const AnnualAopCost = ({ permissions }) => {
         setLoading(false)
 
         if (reportType == 'aopYearFilter') {
-          data = {
-            code: 200,
-            message: 'Data fetched successfully',
-            // data: [
-            //   {
-            //     displayName: 'abc1display',
-            //     displayOrder: 1,
-            //     name: 'abc1',
-            //   },
-            //   {
-            //     displayName: 'abc2display',
-            //     displayOrder: 2,
-            //     name: 'abc2',
-            //   },
-            //   {
-            //     displayName: 'abc3display',
-            //     displayOrder: 3,
-            //     name: 'abc3',
-            //   },
-            // ],
-          }
+          // data = {
+          //   code: 200,
+          //   message: 'Data fetched successfully',
+          // data: [
+          //   {
+          //     displayName: 'abc1display',
+          //     displayOrder: 1,
+          //     name: 'abc1',
+          //   },
+          //   {
+          //     displayName: 'abc2display',
+          //     displayOrder: 2,
+          //     name: 'abc2',
+          //   },
+          //   {
+          //     displayName: 'abc3display',
+          //     displayOrder: 3,
+          //     name: 'abc3',
+          //   },
+          // ],
+          // }
 
           setUnit(data?.data)
           setSelectedUnit(data?.data[0]?.name)
