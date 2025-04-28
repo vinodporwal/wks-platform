@@ -181,7 +181,7 @@ const WorkFlowMerge = () => {
       )
 
       if (data || data == 0) {
-        dispatch(setIsBlocked(true))
+        // dispatch(setIsBlocked(true))
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
