@@ -139,8 +139,9 @@ const NormalOpNormsScreen = () => {
     getAllProducts()
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
-  const formatValueToThreeDecimals = (params) =>
-    params ? parseFloat(params).toFixed(3) : ''
+  const formatValueToThreeDecimals = (params) => {
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
+  }
 
   const colDefs = [
     {
@@ -231,7 +232,7 @@ const NormalOpNormsScreen = () => {
 
     {
       field: 'UOM',
-      headerName: 'UOM/MT',
+      headerName: 'UOM / MT',
       width: 100,
       editable: false,
     },

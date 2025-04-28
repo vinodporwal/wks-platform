@@ -766,6 +766,7 @@ const SlowdownNorms = () => {
       saveBtn: false,
       isOldYear: isOldYear,
       showCalculate: false,
+      noColor: true,
     }
   }
 
@@ -780,6 +781,7 @@ const SlowdownNorms = () => {
       saveWithRemark: false,
       saveBtn: true,
       showCalculate: lowerVertName == 'meg' ? false : false,
+      noColor: true,
     },
     isOldYear,
   )

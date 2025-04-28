@@ -532,7 +532,7 @@ const SlowDown = ({ permissions }) => {
 
     {
       field: 'rate',
-      headerName: 'Rate',
+      headerName: 'Rate (TPH)',
       editable: true,
       minWidth: 75,
       renderEditCell: NumericInputOnly,
