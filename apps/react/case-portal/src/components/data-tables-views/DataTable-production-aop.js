@@ -23,6 +23,9 @@ const ProductionAopView = () => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
+  const formatValueToNoDecimals = (val) =>
+    val && !isNaN(val) ? Math.round(val) : val
+
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -31,7 +34,7 @@ const ProductionAopView = () => {
         const newRow = { id }
         Object.entries(row).forEach(([key, val]) => {
           if (!isNaN(val) && val !== '') {
-            newRow[key] = Number(val).toFixed(2)
+            newRow[key] = formatValueToNoDecimals(val)
           } else {
             newRow[key] = val
           }

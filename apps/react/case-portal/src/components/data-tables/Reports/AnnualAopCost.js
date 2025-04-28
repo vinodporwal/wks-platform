@@ -55,6 +55,9 @@ const AnnualAopCost = ({ permissions }) => {
   const [rowsQuantity, setRowsQuantity] = useState([])
   const [rowsNormCost, setRowsNormCost] = useState([])
 
+  const [headers2, setHeaders2] = useState([])
+  const [keys2, setKeys2] = useState([])
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
@@ -94,30 +97,18 @@ const AnnualAopCost = ({ permissions }) => {
         setLoading(false)
 
         if (reportType == 'aopYearFilter') {
-          // data = {
-          //   code: 200,
-          //   message: 'Data fetched successfully',
-          // data: [
-          //   {
-          //     displayName: 'abc1display',
-          //     displayOrder: 1,
-          //     name: 'abc1',
-          //   },
-          //   {
-          //     displayName: 'abc2display',
-          //     displayOrder: 2,
-          //     name: 'abc2',
-          //   },
-          //   {
-          //     displayName: 'abc3display',
-          //     displayOrder: 3,
-          //     name: 'abc3',
-          //   },
-          // ],
-          // }
-
           setUnit(data?.data)
           setSelectedUnit(data?.data[0]?.name)
+        } else if (reportType == 'price') {
+          const headers2 = data?.data[0]?.headers
+          setHeaders2(headers2)
+          const keys2 = data?.data[0]?.keys
+          setKeys2(keys2)
+          const rowsWithId2 = data?.data[0]?.results?.map((item, index) => ({
+            ...item,
+            id: index,
+          }))
+          setState(rowsWithId2)
         } else {
           setState(rowsWithId)
         }
@@ -132,16 +123,32 @@ const AnnualAopCost = ({ permissions }) => {
     }
   }
 
-  const headerMap = generateHeaderNames(localStorage.getItem('year'))
+  // const headerMap = generateHeaderNames(localStorage.getItem('year'))
+
+  const year = extractYear(selectedUnit)
+  const headerMap = generateHeaderNames(year)
+
+  function extractYear(dropdownValue) {
+    if (!dropdownValue) return ''
+    const parts = dropdownValue.trim().split(' ')
+    return parts.length > 1 ? parts[1] : ''
+  }
 
   const colsProduction = getEnhancedAnnualAopCostReport({
     headerMap,
     type: 'Production',
   })
 
+  // const colsPrice = getEnhancedAnnualAopCostReport({
+  //   headerMap,
+  //   type: 'Price',
+  // })
+
   const colsPrice = getEnhancedAnnualAopCostReport({
     headerMap,
     type: 'Price',
+    headers2,
+    keys2,
   })
 
   const colsNorm = getEnhancedAnnualAopCostReport({
@@ -199,7 +206,7 @@ const AnnualAopCost = ({ permissions }) => {
               setSelectedUnit(value)
               handleUnitChange(value)
             }}
-            sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+            sx={{ width: '200px', backgroundColor: '#FFFFFF' }}
             variant='outlined'
             label='Select AOP Year'
           >
@@ -230,7 +237,7 @@ const AnnualAopCost = ({ permissions }) => {
                 <AopCostReportView
                   rows={rowsProduction}
                   cols={colsProduction}
-                  height='85px'
+                  height='93px'
                 />
               </Box>
             </CustomAccordionDetails>
@@ -251,7 +258,7 @@ const AnnualAopCost = ({ permissions }) => {
                 <AopCostReportView
                   rows={rowsPrice}
                   cols={colsPrice}
-                  height='240px'
+                  height='340px'
                 />
               </Box>
             </CustomAccordionDetails>
@@ -272,7 +279,7 @@ const AnnualAopCost = ({ permissions }) => {
                 <AopCostReportView
                   rows={rowsNorm}
                   cols={colsNorm}
-                  height='240px'
+                  height='340px'
                 />
               </Box>
             </CustomAccordionDetails>
@@ -285,7 +292,7 @@ const AnnualAopCost = ({ permissions }) => {
               id='meg-grid-header'
             >
               <Typography component='span' className='grid-title'>
-                Quantity
+                Quantity (EOE Production * Individual Particluars Norms Value)
               </Typography>
             </CustomAccordionSummary>
             <CustomAccordionDetails>
@@ -293,7 +300,7 @@ const AnnualAopCost = ({ permissions }) => {
                 <AopCostReportView
                   rows={rowsQuantity}
                   cols={colsQuantity}
-                  height='240px'
+                  height='340px'
                 />
               </Box>
             </CustomAccordionDetails>
@@ -306,7 +313,7 @@ const AnnualAopCost = ({ permissions }) => {
               id='meg-grid-header'
             >
               <Typography component='span' className='grid-title'>
-                Norm Cost
+                Annual AOP Cost ((Total Quantity * AvgPrice)/Total Production)
               </Typography>
             </CustomAccordionSummary>
             <CustomAccordionDetails>
@@ -314,7 +321,7 @@ const AnnualAopCost = ({ permissions }) => {
                 <AopCostReportView
                   rows={rowsNormCost}
                   cols={colsNormCost}
-                  height='240px'
+                  height='340px'
                 />
               </Box>
             </CustomAccordionDetails>

@@ -29,6 +29,7 @@ import {
   FileDownload,
   FileUpload,
 } from '../../../node_modules/@mui/icons-material/index'
+import Typography from 'themes/overrides/Typography'
 
 const jioColors = {
   primaryBlue: '#387ec3',
@@ -420,6 +421,11 @@ const DataGridTable = ({
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {permissions?.showTitle && (
+              <Typography component='div' className='grid-title'>
+                Annual AOP Cost
+              </Typography>
+            )}
             {permissions?.showCalculate && (
               <Button
                 variant='contained'

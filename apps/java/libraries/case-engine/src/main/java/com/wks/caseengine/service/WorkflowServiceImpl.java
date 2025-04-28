@@ -6,9 +6,14 @@ import java.util.HashMap;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+// import jakarta.transaction.Transactional;
+
 import java.util.List;
 import java.util.UUID;
 import com.wks.caseengine.entity.BusinessDemand;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.entity.Workflow;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +27,15 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Map;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.WorkflowDTO;
 import com.wks.caseengine.dto.WorkflowYearDTO;
 import com.wks.caseengine.repository.BusinessDemandDataRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
+// import com.wks.caseengine.repository.WorkflowMasterRepository;
 import com.wks.caseengine.repository.WorkflowRepository;
 
 @Service
@@ -40,6 +49,11 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	@Autowired
 	private DataSource dataSource;
+
+	@Autowired
+	private PlantsRepository plantsRepository;
+	@Autowired
+	private VerticalsRepository verticalRepository;
 
 	@Override
 	public List<WorkflowDTO> getCaseId(String year, String plantId, String siteId, String verticalId) {
@@ -271,4 +285,37 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 		return headers;
 	}
+
+	@Override
+	@Transactional
+	public int calculateExpressionWorkFlow(String year, String plantId) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String storedProcedure = vertical.getName() + "_HMD_LoadAnnualAOPCost";
+			System.out.println(storedProcedure);
+			return executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	@Transactional
+	public int executeDynamicUpdateProcedure(String procedureName, String plantId,
+			String aopYear) {
+		try {
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear";
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
 }

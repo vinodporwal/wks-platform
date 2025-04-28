@@ -153,13 +153,13 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       localStorage.getItem('selectedVertical'),
     )?.name?.toLowerCase()
 
-    if (title === 'Business Demand') {
-      if (verticalName === 'meg') {
-        title = 'Business Demand (Percentage)'
-      } else if (verticalName === 'pe') {
-        title = 'Business Demand (Absolute)'
-      }
-    }
+    // if (title === 'Business Demand') {
+    //   if (verticalName === 'meg') {
+    //     title = 'Business Demand (Percentage)'
+    //   } else if (verticalName === 'pe') {
+    //     title = 'Business Demand (Absolute)'
+    //   }
+    // }
 
     dispatch(
       setScreenTitle({

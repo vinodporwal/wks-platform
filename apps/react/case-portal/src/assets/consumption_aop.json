@@ -13,7 +13,7 @@
   },
   {
     "field": "UOM",
-    "headerName": "UOM",
+    "headerName": "UOM/MT",
     "minWidth": 50,
     "editable": false
   },

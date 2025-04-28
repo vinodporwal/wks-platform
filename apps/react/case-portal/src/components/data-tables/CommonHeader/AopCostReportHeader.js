@@ -1,13 +1,15 @@
-// Modify getEnhancedAnnualAopCostReport to include the type as a parameter
-
 import NumericInputOnly from 'utils/NumericInputOnly'
+const getEnhancedAnnualAopCostReport = ({
+  headerMap,
+  type,
+  headers2 = [],
+  keys2 = [],
+}) => {
+  // console.log('headers2', headers2)
 
-const getEnhancedAnnualAopCostReport = ({ headerMap, type }) => {
-  // Function to format values to 3 decimals
   const formatValueToThreeDecimals = (params) =>
     params ? parseFloat(params).toFixed(3) : ''
 
-  // Conditionally import the right JSON file based on the type
   let annual_aop_cost_report
   switch (type) {
     case 'Production':
@@ -29,16 +31,32 @@ const getEnhancedAnnualAopCostReport = ({ headerMap, type }) => {
       throw new Error('Invalid type provided')
   }
 
-  // Map through the data and apply the headerMap and other transformations
+  if (type == 'Price') {
+    // console.log('annual_aop_cost_report', annual_aop_cost_report)
+
+    const updatedColumns = annual_aop_cost_report.map((col, index) => {
+      const header = headers2[index]
+      const key = keys2[index]
+
+      return {
+        ...col,
+        field: key,
+        headerName: header,
+        flex: 1,
+        renderEditCell: NumericInputOnly,
+        valueFormatter: formatValueToThreeDecimals,
+      }
+    })
+    return updatedColumns
+
+    // console.log('updatedColumns updated ', updatedColumns)
+  }
+
   return annual_aop_cost_report.map((col) => {
     let updatedCol = { ...col }
-
-    // Update the column name if a headerMap is provided
     if (headerMap && headerMap[col.headerName]) {
       updatedCol.headerName = headerMap[col.headerName]
     }
-
-    // Return the updated column with additional properties if headerMap is available
     if (headerMap && headerMap[col.headerName]) {
       return {
         ...col,

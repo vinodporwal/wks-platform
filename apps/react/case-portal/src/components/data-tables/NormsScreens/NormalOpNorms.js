@@ -231,7 +231,7 @@ const NormalOpNormsScreen = () => {
 
     {
       field: 'UOM',
-      headerName: 'UOM',
+      headerName: 'UOM/MT',
       width: 100,
       editable: false,
     },

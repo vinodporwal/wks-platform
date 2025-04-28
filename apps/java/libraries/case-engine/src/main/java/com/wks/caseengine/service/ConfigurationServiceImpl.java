@@ -43,6 +43,7 @@ import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.NormAttributeTransactionReceipeRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 
@@ -154,6 +155,82 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId) {
+		 AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			System.out.println("GET CofigurationDataService==============================>");
+			List<Object[]> obj = new ArrayList<>();
+			
+				obj =findConfigurationIntermediateValues(year,plantFKId);
+			
+
+			List<ConfigurationDTO> configurationDTOList = new ArrayList<>();
+			int i = 0;
+			for (Object[] row : obj) {
+				ConfigurationDTO configurationDTO = new ConfigurationDTO();
+				configurationDTO.setId(row[0] != null ? row[0].toString() : i + "#");
+
+				configurationDTO.setNormParameterFKId(row[1] != null ? row[1].toString() : "");
+				configurationDTO.setJan(
+						(row[1] != null && !row[2].toString().trim().isEmpty()) ? Float.parseFloat(row[2].toString())
+								: null);
+				configurationDTO.setFeb(
+						(row[2] != null && !row[3].toString().trim().isEmpty()) ? Float.parseFloat(row[3].toString())
+								: null);
+				configurationDTO.setMar(
+						(row[3] != null && !row[4].toString().trim().isEmpty()) ? Float.parseFloat(row[4].toString())
+								: null);
+				configurationDTO.setApr(
+						(row[4] != null && !row[6].toString().trim().isEmpty()) ? Float.parseFloat(row[6].toString())
+								: null);
+				configurationDTO.setMay(
+						(row[5] != null && !row[7].toString().trim().isEmpty()) ? Float.parseFloat(row[7].toString())
+								: null);
+				configurationDTO.setJun(
+						(row[6] != null && !row[8].toString().trim().isEmpty()) ? Float.parseFloat(row[8].toString())
+								: null);
+				configurationDTO.setJul(
+						(row[7] != null && !row[8].toString().trim().isEmpty()) ? Float.parseFloat(row[8].toString())
+								: null);
+				configurationDTO.setAug(
+						(row[8] != null && !row[9].toString().trim().isEmpty()) ? Float.parseFloat(row[9].toString())
+								: null);
+				configurationDTO.setSep(
+						(row[9] != null && !row[10].toString().trim().isEmpty()) ? Float.parseFloat(row[10].toString())
+								: null);
+				configurationDTO.setOct(
+						(row[10] != null && !row[11].toString().trim().isEmpty()) ? Float.parseFloat(row[11].toString())
+								: null);
+				configurationDTO.setNov(
+						(row[11] != null && !row[12].toString().trim().isEmpty()) ? Float.parseFloat(row[12].toString())
+								: null);
+				configurationDTO.setDec(
+						(row[12] != null && !row[13].toString().trim().isEmpty()) ? Float.parseFloat(row[13].toString())
+								: null);
+				configurationDTO.setRemarks((row[14] != null ? row[14].toString() : ""));
+				//configurationDTO.setId(row[14] != null ? row[14].toString() : i + "#");
+				configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
+				configurationDTO.setUOM(row[16] != null ? row[16].toString() : "");
+				configurationDTO.setNormType(row[17] != null ? row[17].toString() : "");
+
+				configurationDTOList.add(configurationDTO);
+				if (row[14] == null) {
+					i++;
+				}
+
+			}
+			 aopMessageVM.setCode(200);
+	         aopMessageVM.setMessage("Data fetched successfully");
+	         aopMessageVM.setData(configurationDTOList);
+	         return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 
 	/**
 	 * Extracts column names from the pivot SQL string.
@@ -392,6 +469,69 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to update data", ex);
 		}
+	}
+	
+	public List<Object[]> findByYearAndPlantFkId(String year, UUID plantFKId, String viewName) {
+	    try {
+	    	String sql = 
+	    		    "SELECT " +
+	    		    "    NP.NormParameter_FK_Id AS NormParameter_FK_Id, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '1' THEN NAT.AttributeValue ELSE NULL END) AS Jan, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '2' THEN NAT.AttributeValue ELSE NULL END) AS Feb, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '3' THEN NAT.AttributeValue ELSE NULL END) AS Mar, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '4' THEN NAT.AttributeValue ELSE NULL END) AS Apr, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '5' THEN NAT.AttributeValue ELSE NULL END) AS May, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '6' THEN NAT.AttributeValue ELSE NULL END) AS Jun, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '7' THEN NAT.AttributeValue ELSE NULL END) AS Jul, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '8' THEN NAT.AttributeValue ELSE NULL END) AS Aug, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '9' THEN NAT.AttributeValue ELSE NULL END) AS Sep, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '10' THEN NAT.AttributeValue ELSE NULL END) AS Oct, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '11' THEN NAT.AttributeValue ELSE NULL END) AS Nov, " +
+	    		    "    MAX(CASE WHEN NAT.AOPMonth = '12' THEN NAT.AttributeValue ELSE NULL END) AS Dec, " +
+	    		    "    MAX(NAT.Remarks) AS Remarks, " +
+	    		    "    MAX(NAT.Id) AS NormAttributeTransaction_Id, " +
+	    		    "    MAX(NAT.AuditYear) AS AuditYear, " +
+	    		    "    MAX(NP.UOM) AS UOM, " +
+	    		    "    NP.ConfigTypeDisplayName AS ConfigTypeDisplayName, " +
+	    		    "    NP.TypeDisplayName AS TypeDisplayName, " +
+	    		    "    NP.ConfigTypeName AS ConfigTypeName, " +
+	    		    "    NP.TypeName AS TypeName " +
+	    		    "FROM " + viewName + " NP " +
+	    		    "JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id " +
+	    		    "LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.NormParameter_FK_Id " +
+	    		    "    AND NAT.AuditYear = :year " +
+	    		    "WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant') " +
+	    		    "  AND NP.Plant_FK_Id = :plantFKId " +
+	    		    "GROUP BY " +
+	    		    "    NP.NormParameter_FK_Id, " +
+	    		    "    NP.TypeDisplayName, " +
+	    		    "    NP.TypeDisplayOrder, " +
+	    		    "    NP.ConfigTypeDisplayName, " +
+	    		    "    NP.ConfigTypeName, " +
+	    		    "    NP.TypeName " +
+	    		    "ORDER BY NP.TypeDisplayOrder";
+
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("year", year);
+	        query.setParameter("plantFKId", plantFKId);
+
+	        return query.getResultList();
+	    } catch (Exception e) {
+	        throw new RuntimeException("Error fetching data with dynamic view name", e);
+	    }
+	}
+	public List<Object[]> findConfigurationIntermediateValues(String year, UUID plantFKId) {
+	    try {
+	        String sql = "SELECT * FROM vwScrnMEGConfigurationIntermediateValues";
+	        
+	        Query query = entityManager.createNativeQuery(sql);
+	        
+	        return query.getResultList();
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
 	}
 
 }

@@ -415,26 +415,6 @@ const BusinessDemand = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <div>
-        {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                Production Volume Data
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <SimpleDataTable />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        )}
-      </div>
-
       <Typography component='div' className='grid-title'>
         Business Demand Data
       </Typography>
@@ -486,6 +466,26 @@ const BusinessDemand = ({ permissions }) => {
         //   customHeight: permissions?.customHeight || defaultCustomHeight,
         // }}
       />
+
+      <div>
+        {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
+          <CustomAccordion defaultExpanded disableGutters>
+            <CustomAccordionSummary
+              aria-controls='meg-grid-content'
+              id='meg-grid-header'
+            >
+              <Typography component='span' className='grid-title'>
+                Production Volume Data (MT)
+              </Typography>
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box sx={{ width: '100%', margin: 0 }}>
+                <SimpleDataTable />
+              </Box>
+            </CustomAccordionDetails>
+          </CustomAccordion>
+        )}
+      </div>
     </div>
   )
 }

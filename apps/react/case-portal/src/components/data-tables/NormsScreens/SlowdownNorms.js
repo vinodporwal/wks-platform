@@ -464,10 +464,10 @@ const SlowdownNorms = () => {
       field: 'idFromApi',
       headerName: 'idFromApi',
     },
-    {
-      field: 'isEditable',
-      headerName: 'isEditable',
-    },
+    // {
+    //   field: 'isEditable',
+    //   headerName: 'isEditable',
+    // },
   ]
 
   const handleRemarkCellClick = (row) => {

@@ -93,6 +93,9 @@ const WorkFlowMerge = () => {
     'Final Approval O2C AOP',
   ]
 
+  const formatValueToNoDecimals = (val) =>
+    val && !isNaN(val) ? Math.round(val) : val
+
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -101,7 +104,7 @@ const WorkFlowMerge = () => {
         const newRow = { id }
         Object.entries(row).forEach(([key, val]) => {
           if (!isNaN(val) && val !== '') {
-            newRow[key] = Number(val).toFixed(2)
+            newRow[key] = formatValueToNoDecimals(val)
           } else {
             newRow[key] = val
           }
@@ -147,6 +150,61 @@ const WorkFlowMerge = () => {
   // Updated Audit handler: open popup dialog
   const handleAuditOpen = () => {
     setOpenAuditPopup(true)
+  }
+
+  // const handleCalculate = () => {
+  //   // setOpenAuditPopup(true)
+  // }
+
+  const handleCalculate = () => {
+    if (lowerVertName == 'meg') {
+      handleCalculateMeg()
+    } else {
+      // handleCalculatePe()
+    }
+  }
+
+  const handleCalculateMeg = async () => {
+    try {
+      const storedPlant = localStorage.getItem('selectedPlant')
+      const year = localStorage.getItem('year')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      var plantId = plantId
+      const data = await DataService.handleCalculateProductionVolData2(
+        plantId,
+        year,
+        keycloak,
+      )
+
+      if (data || data == 0) {
+        dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
   }
 
   const handleAuditClose = () => {
@@ -562,11 +620,13 @@ const WorkFlowMerge = () => {
         rows={rows}
         loading={loading}
         setRows={setRows}
+        handleCalculate={handleCalculate}
         // columnGroupingModel={columnGroupingModel}
         className='jio-data-grid'
         permissions={{
           customHeight: defaultCustomHeight,
           saveBtn: true,
+          showCalculate: true,
           approveBtn: false,
         }}
       />

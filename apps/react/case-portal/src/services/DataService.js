@@ -13,6 +13,7 @@ export const DataService = {
   getTAPlantData,
   getBDData,
   getCatalystSelectivityData,
+  getCatalystSelectivityDataIV,
   getProductionNormsData,
   getConsumptionNormsData,
   getMaintenanceData,
@@ -55,6 +56,7 @@ export const DataService = {
   handleCalculateNormalOpsNorms,
   handleCalculateonsumptionNorms,
   handleCalculateProductionVolData,
+  handleCalculateProductionVolData2,
   handleCalculateMaintenance,
   getNormalOperationNormsData,
   getShutdownNormsData,
@@ -324,6 +326,35 @@ async function handleCalculateonsumptionNorms(plantId, year, keycloak) {
 async function handleCalculateProductionVolData(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/getAOPMCCalculatedDataSP?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+
+// @GetMapping(value="/handle/calculate/work-flow")
+
+async function handleCalculateProductionVolData2(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/work-flow?year=${year1}&plantId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
@@ -950,6 +981,38 @@ async function getCatalystSelectivityData(keycloak) {
 
   //const url = `${process.env.REACT_APP_API_URL}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
   const url = `${Config.CaseEngineUrl}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getCatalystSelectivityDataIV(keycloak) {
+  var plantId = ''
+
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+
+  // let siteID =
+  //   JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
+
+  var year = localStorage.getItem('year')
+
+  //const url = `${process.env.REACT_APP_API_URL}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/configuration/intermediate-values?year=${year}&plantFKId=${plantId}`
 
   const headers = {
     Accept: 'application/json',
