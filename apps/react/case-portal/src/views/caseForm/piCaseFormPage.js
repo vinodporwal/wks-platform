@@ -353,7 +353,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href, caseDefId),
+        caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
         businessKey: aCase.businessKey,
       }),
     )
@@ -377,7 +377,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href, caseDefId),
+            caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
             assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
@@ -442,7 +442,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href, caseDefId),
+        caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
         businessKey: aCase.businessKey,
       }),
     )
@@ -466,7 +466,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href, caseDefId),
+            caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
             assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
@@ -600,7 +600,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href, caseDefId),
+        caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
         businessKey: aCase.businessKey,
       }),
     )
@@ -625,7 +625,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href, caseDefId),
+            caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
             assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
