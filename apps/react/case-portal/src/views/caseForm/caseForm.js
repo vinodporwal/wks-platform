@@ -186,7 +186,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const getCaseInfo = async (aCase) => {
     await loadOptions(keycloak);
-    console.log('Fetching case data of ', aCase)
+    console.log('Fetching EED case data of ', aCase)
     // setLoading(true)
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {

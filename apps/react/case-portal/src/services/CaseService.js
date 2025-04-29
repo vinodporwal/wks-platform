@@ -131,7 +131,7 @@ async function getCaseById(keycloak, id) {
 async function getCasesById(keycloak, caseDefId = '', assetName = '', hierarchyName = '') {
   console.log('caseDefId', caseDefId)
   // Use '/cases' in the URL directly, not appending the caseDefId
-  let url = `${Config.CaseEngineUrl}/case-definition/cases`;
+  let url = `${Config.CaseEngineUrl}/case-definition/cases/${caseDefId}`;
 
   // Append query parameters if provided
   const queryParams = new URLSearchParams();

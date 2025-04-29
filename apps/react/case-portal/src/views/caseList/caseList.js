@@ -42,6 +42,11 @@ const CaseForm = lazy(() =>
     default: module.CaseForm,
   })),
 )
+const PICaseForm = lazy(() =>
+  import('../caseForm/piCaseFormPage').then((module) => ({
+    default: module.PICaseFormPage,
+  })),
+)
 // const NewCaseForm = lazy(() =>
 //   import('../caseForm/newCaseForm').then((module) => ({
 //     default: module.NewCaseForm,
@@ -660,8 +665,16 @@ export const CaseList = ({ status, caseDefId }) => {
 
       <br />
 
-      {openCaseForm && (
+      {openCaseForm && caseDefId === 'create'  && (
         <CaseForm
+          aCase={aCase}
+          handleClose={handleCloseCaseForm}
+          open={openCaseForm}
+          keycloak={keycloak}
+        />
+      )}
+      {openCaseForm && caseDefId === 'picreate' && (
+        <PICaseForm
           aCase={aCase}
           handleClose={handleCloseCaseForm}
           open={openCaseForm}

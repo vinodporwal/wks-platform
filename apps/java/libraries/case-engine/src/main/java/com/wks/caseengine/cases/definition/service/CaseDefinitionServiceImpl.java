@@ -1102,6 +1102,21 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		caseDetails = caseRepository.save(caseData);
 		return caseDetails;
 	}
+	@Override
+	public List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName) {
+		String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c "
+				+ "WHERE c.caseDefinitionId = :caseDefinitionId AND TRY_CAST(c.hierarchy_node_pk_id AS UNIQUEIDENTIFIER) IN (" + "SELECT hn.HierarchyNode_PK_ID "
+				+ "FROM [" + db1Name + "].[dbo].[HierarchyNodes] hn " + "JOIN [" + db1Name
+				+ "].[dbo].[HierarchyTrees] ht " + "ON hn.HierarchyTree_PK_ID = ht.HierarchyTree_PK_ID "
+				+ "WHERE hn.IsDeleted = 0 " + "AND hn.Path LIKE CONCAT('%', :assetName, '%') "
+				+ "AND ht.HierarchyType = :hierarchyName" + ") ORDER BY c.case_no DESC";
+		Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
+		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+		nativeQuery.setParameter("assetName", assetName);
+		nativeQuery.setParameter("hierarchyName", hierarchyName);
+		List<Case> cases = nativeQuery.getResultList();
+		return cases;
+	}
 	private String getGEAPMRecommendationStatusAndUpdateRecommendationStatus(String geAPMAcsessToken, String recommendationNo) {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();

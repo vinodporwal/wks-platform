@@ -131,6 +131,13 @@ public class CaseDefinitionController {
         Case savedCase = caseDefinitionService.addRecommendation(recommendations);
         return ResponseEntity.ok(savedCase);
     }
+	@GetMapping("/cases/{caseDefinitionId}")
+	public ResponseEntity<List<Case>> getCasesByCaseDefinition(@PathVariable("caseDefinitionId") String caseDefinitionId, @RequestParam String assetName, @RequestParam String hierarchyName) {
+		System.out.println("AssetName: "+assetName);
+		System.out.println("HierarchyName: "+hierarchyName);
+		List<Case> cases = caseDefinitionService.getCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName);
+		return ResponseEntity.ok(cases);
+    }
 	
 	@GetMapping("/cases")
 	public ResponseEntity<List<Case>> getCases(@RequestParam String assetName, @RequestParam String hierarchyName) {

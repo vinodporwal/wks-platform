@@ -1,13 +1,20 @@
-export const buildCreateUrl = (url) => {
+export const buildCreateUrl = (url, caseDefId = 'create') => {
   const cleanedUrl = cleanUrl(url);
   let newUrl;
   if (cleanedUrl.includes('case-list')) {
     newUrl = cleanedUrl;
   } else {
+    if(caseDefId === 'create'){
     newUrl = cleanedUrl.replace(
     'create?assetName',
     'case-list/create?assetName',
     );
+    } else if (caseDefId === 'picreate'){
+      newUrl = cleanedUrl.replace(
+        'picreate?assetName',
+        'case-list/picreate?assetName',
+        );
+    }
   }
 
   return newUrl

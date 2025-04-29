@@ -8,6 +8,7 @@ import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
 import formPayload from './createFormJSON.json'
+import piFormPayload from './piCreateFormJSON.json'
 import Config from './consts'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
@@ -51,6 +52,7 @@ const App = () => {
 
       if (!formChecked) {
         checkAndPostForm(keycloak)
+        checkAndPostPIForm(keycloak)
         setFormChecked(true) // Ensure it runs only once per session
       }
     })
@@ -183,6 +185,40 @@ const App = () => {
     }
   }
 
+  async function checkAndPostPIForm(keycloak) {
+    if (localStorage.getItem('piFormCreated')) {
+      console.log('Form "PI Case Management System" already exists.')
+      return
+    }
+    try {
+      const data = await FormService.getAll(keycloak)
+      const formExists = data.some(
+        (form) => form.title === 'PI Case Management System',
+      )
+      if (formExists) {
+        console.log('Form "PI Case Management System" already exists.')
+      } else {
+        console.log(
+          'Form "PI Case Management System" does not exist. Creating form...',
+        )
+        await createPIForm(keycloak)
+      }
+    } catch (error) {
+      console.error('Error checking form existence:', error)
+    }
+  }
+  async function createPIForm(keycloak) {
+    try {
+      const response = await FormService.create(keycloak, piFormPayload)
+      if (!response.ok) {
+        throw new Error('Failed to create form')
+      }
+      console.log('PI Form created successfully')
+      localStorage.setItem('piFormCreated', 'true')
+    } catch (error) {
+      console.error('Error creating form:', error)
+    }
+  }
   return (
     keycloak &&
     authenticated && (
