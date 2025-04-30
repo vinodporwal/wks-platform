@@ -1114,9 +1114,133 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
 		nativeQuery.setParameter("assetName", assetName);
 		nativeQuery.setParameter("hierarchyName", hierarchyName);
+
 		List<Case> cases = nativeQuery.getResultList();
 		return cases;
 	}
+	
+	@Override
+	public Case savePICase(Case caseData) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+		LocalDateTime now = LocalDateTime.now();
+		String currentDate = now.format(formatter);
+		String assetName = "%"+caseData.getAssetName();
+		String hierarchyNodePKID = "";
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		if(hierarychyNodes.size()>=1) {
+			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
+		}
+		if(assetName!=null) {
+			System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
+		}
+		caseData.setHierarchyNodePKID(hierarchyNodePKID);
+		
+		if (caseData.getAssignedTo() != null) {
+		    caseData.setAssignedTo(usersRepository.findByEmailId(caseData.getAssignedTo().getEmailId()));
+		}
+
+		Case caseDetails = new Case();
+		String caseNo = "";
+		Long statusId = null;
+		List<Attribute> attributes = caseData.getAttributes();
+		Attribute attribute = attributes.get(0);
+		String attributeValue = attribute.getValue();
+		try {
+		    ObjectMapper objectMapper = new ObjectMapper();
+		    JsonNode rootNode = objectMapper.readTree(attributeValue);
+		    caseNo = rootNode.path("caseNo").asText();
+		    if (rootNode.has("caseStatus")) {
+			    statusId = rootNode.path("caseStatus").asLong();
+		    }
+		    
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		if(statusId!=null) {
+			Optional<CaseStatus> caseStatus =  caseStatusRepository.findById(statusId);
+			if(caseStatus.isPresent()) {
+				caseData.setStatus(caseStatus.get());
+			}		
+		}
+		
+		if(caseNo==null || caseNo.length()==0) {
+			caseNo = CaseNoGenerator();
+			caseData.setCaseNo(caseNo);
+			caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			caseData.setCreationDate(currentDate);
+			caseDetails  = caseRepository.save(caseData);
+			
+			List<Long> eventIds = new ArrayList<Long>();
+			for(String eventId: caseData.getEventIds()) {
+				eventIds.add(Long.parseLong(eventId));
+			}
+
+			HashMap<String, String> map = new HashMap<String, String>();
+			for(String eventId: caseData.getEventIds()) {
+				CasesAndEventsMapping mapping = new CasesAndEventsMapping();
+				mapping.setCaseNo(caseDetails.getCaseNo());
+				casesAndEventsMappingRepository.save(mapping);
+			}
+			
+		} else {
+			caseData.setCaseNo(caseNo);
+			if(caseData.getCaseUrl()!=null && !caseData.getCaseUrl().contains("&caseNo")) {
+				caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			}
+			Case savedCase =caseRepository.getByCaseNo(caseNo);
+			caseData.setCreationDate(savedCase.getCreationDate());
+			caseDetails  = caseRepository.save(caseData);
+		}
+		
+		if(!caseData.getIsDraft().equals("y")) {
+			attributeValue = attributeValue.replace("\\\"", "\"");
+	
+			try {
+			    ObjectMapper objectMapper = new ObjectMapper();
+			    JsonNode rootNode = objectMapper.readTree(attributeValue);
+			    String assignedTo = rootNode.path("caseAssignedTo").asText();
+			    String caseNumber = caseData.getCaseNo();
+			    String caseTitle = rootNode.path("caseTitle").asText();
+			    System.out.println(rootNode.path("caseAssignedTo").asText());
+			    Long caseStatusNo = rootNode.path("caseStatus").asLong();
+			    Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
+			    	    .filter(status -> status.getId().equals(caseStatusNo))
+			    	    .findFirst();
+			    String caseStatusValue = caseStatus.get().getName();
+			    JsonNode analysisTeam = rootNode.path("analysisTeam");
+			    String[] reviewers = new String[analysisTeam.size()];
+			    if (analysisTeam.isArray()) {
+			    	int counter = 0;
+			        for (JsonNode dataGridEntry : analysisTeam) {
+			        	reviewers[counter] = dataGridEntry.asText();
+			        	counter++;
+			        }
+			        
+				}
+			    if(!caseStatusValue.equals("Under Analysis")) {
+			    	System.out.println("Calling mail send method...");
+			    	Map<String, Object> data = new HashMap<>();
+			    	data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+					data.put("caseNumber", caseNumber);
+					data.put("status", caseStatusValue);
+					data.put("caseName", caseTitle);
+					data.put("caseUrl", caseDetails.getCaseUrl());
+					data.put("environment", "");
+			    	caseTitle = "CASE MANAGEMENT :"+ caseTitle;
+			    	caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
+			    }
+			    
+				caseData.setAttributes(attributes);
+				caseDetails = caseRepository.save(caseData);
+				return caseDetails;
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return caseDetails;
+	}
+
 	private String getGEAPMRecommendationStatusAndUpdateRecommendationStatus(String geAPMAcsessToken, String recommendationNo) {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
@@ -1154,18 +1278,23 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
          }
 	public Boolean checkFunctionalLocationAvailableInGEAPM(String geAPMAcsessToken, String functionalLocation) throws Exception {
 	    RestTemplate restTemplate = new RestTemplate();
+	    
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.set("MeridiumToken", geAPMAcsessToken);
+
 	    Map<String, Object> requestBody = Map.of(
 	        "QueryPath", "Public\\Meridium\\Client\\APIs\\EED_APM_API",
 	        "Page", 0,
 	        "PageSize", 100,
 	        "InputsingleParams", Map.of("FL", functionalLocation)
 	    );
+
 	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
 	    try {
 	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
+
 	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
 	            Object rowCount = response.getBody().get("rowCount");
 	            return rowCount != null && Integer.parseInt(rowCount.toString()) == 1;
@@ -1183,18 +1312,23 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	
 	public Boolean checkUserAvailableInGEAPM(String geAPMAcsessToken, String userId) throws Exception {
 	    RestTemplate restTemplate = new RestTemplate();
+	    
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
 	    headers.set("MeridiumToken", geAPMAcsessToken);
+
 	    Map<String, Object> requestBody = Map.of(
 	        "QueryPath",  "Public\\Meridium\\Client\\APIs\\UserValidation_EED_APM_API",
 	        "Page", 0,
 	        "PageSize", 100,
 	        "InputsingleParams", Map.of("Domain", userId)
 	    );
+
 	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
 	    try {
 	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
+
 	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
 	            Object rowCount = response.getBody().get("rowCount");
 	            return rowCount != null && Integer.parseInt(rowCount.toString()) == 1;
@@ -1205,15 +1339,19 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    } catch (NumberFormatException e) {
 	        System.err.println("Invalid rowCount format in response: " + e.getMessage());
 	    }
+	    
 	    return false;
 	}
+
 	private com.wks.caseengine.rest.db2.entity.Users createUserFromMap(Map<String, Object> userMap) {
 	    com.wks.caseengine.rest.db2.entity.Users user = new com.wks.caseengine.rest.db2.entity.Users();
 	    user.setUserId(getString(userMap, "User ID"));
 	    user.setEmailId(getString(userMap, "User ID")); // Should this be "Email ID"?
 	    return user;
 	}
+
 	private String getString(Map<String, Object> map, String key) {
 	    return map.getOrDefault(key, "").toString();
 	}
+
 }

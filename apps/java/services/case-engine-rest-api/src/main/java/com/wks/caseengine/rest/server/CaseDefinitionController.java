@@ -13,11 +13,17 @@ package com.wks.caseengine.rest.server;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,11 +37,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
+import com.wks.caseengine.cases.instance.CaseOwner;
 import com.wks.caseengine.rest.db2.entity.Case;
 import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
 import com.wks.caseengine.rest.db2.entity.CaseStatus;
 import com.wks.caseengine.rest.db2.entity.FaultCategory;
+import com.wks.caseengine.rest.db2.entity.OwnerDetails;
 import com.wks.caseengine.rest.exception.RestInvalidArgumentException;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.FaultEvents;
@@ -122,7 +130,61 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/save-case")
     public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
+		
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (authentication instanceof JwtAuthenticationToken) {
+		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+		    Jwt jwt = jwtAuth.getToken();
+		    
+		    String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
+		    Map<String, Object> claims = jwt.getClaims();
+		    
+		    System.out.println("userId: " + userId);
+		    System.out.println("Claims: " + claims);
+		    
+		    claims.entrySet().stream()
+		    .forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
+
+		    OwnerDetails owner = new OwnerDetails();
+			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
+			owner.setName(jwt.getClaimAsString("name"));
+			owner.setEmail(jwt.getClaimAsString("email"));
+
+			caseData.setOwner(owner);
+		}
         Case savedCase = caseDefinitionService.saveCase(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	@PostMapping("/pi/save-case")
+    public ResponseEntity<Case> createPICase(@RequestBody Case caseData) {
+		
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (authentication instanceof JwtAuthenticationToken) {
+		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+		    Jwt jwt = jwtAuth.getToken();
+		    
+		    String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
+		    Map<String, Object> claims = jwt.getClaims();
+		    
+		    System.out.println("userId: " + userId);
+		    System.out.println("Claims: " + claims);
+		    
+		    claims.entrySet().stream()
+		    .forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
+
+		    OwnerDetails owner = new OwnerDetails();
+			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
+			owner.setName(jwt.getClaimAsString("name"));
+			owner.setEmail(jwt.getClaimAsString("email"));
+
+			caseData.setOwner(owner);
+		}
+		
+        Case savedCase = caseDefinitionService.savePICase(caseData);
+        
         return ResponseEntity.ok(savedCase);
     }
 	
@@ -131,13 +193,14 @@ public class CaseDefinitionController {
         Case savedCase = caseDefinitionService.addRecommendation(recommendations);
         return ResponseEntity.ok(savedCase);
     }
+
 	@GetMapping("/cases/{caseDefinitionId}")
 	public ResponseEntity<List<Case>> getCasesByCaseDefinition(@PathVariable("caseDefinitionId") String caseDefinitionId, @RequestParam String assetName, @RequestParam String hierarchyName) {
 		System.out.println("AssetName: "+assetName);
 		System.out.println("HierarchyName: "+hierarchyName);
 		List<Case> cases = caseDefinitionService.getCasesByCaseDefinitionId(caseDefinitionId, assetName, hierarchyName);
 		return ResponseEntity.ok(cases);
-    }
+	}
 	
 	@GetMapping("/cases")
 	public ResponseEntity<List<Case>> getCases(@RequestParam String assetName, @RequestParam String hierarchyName) {
@@ -203,6 +266,7 @@ public class CaseDefinitionController {
             return ResponseEntity.status(500).body("Error while sending email: " + e.getMessage());
         }
     }
+	
 	@GetMapping(value = "/users/ge-apm")
 	public ResponseEntity<List<?>> getUsersFromAD() throws Exception {
 		try {
@@ -211,6 +275,7 @@ public class CaseDefinitionController {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
 	}
+	
 	@GetMapping(value = "/ge-apm/recommendation/status")
 	public ResponseEntity<List<Case>> updateRecommendationStatus() throws Exception {
 		try {
@@ -219,6 +284,7 @@ public class CaseDefinitionController {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
 	}
+	
 	@PostMapping("/analysis")
     public ResponseEntity<Case> saveAnalysis(@RequestBody Case caseData) {
         Case savedCase = caseDefinitionService.saveAnalysis(caseData);

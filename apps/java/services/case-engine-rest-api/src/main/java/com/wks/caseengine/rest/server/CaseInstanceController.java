@@ -11,8 +11,17 @@
  */
 package com.wks.caseengine.rest.server;
 
+import java.util.Collection;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -32,6 +41,7 @@ import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.CaseInstanceCommentNotFoundException;
 import com.wks.caseengine.cases.instance.CaseInstanceFilter;
 import com.wks.caseengine.cases.instance.CaseInstanceNotFoundException;
+import com.wks.caseengine.cases.instance.CaseOwner;
 import com.wks.caseengine.cases.instance.service.CaseInstanceService;
 import com.wks.caseengine.pagination.Cursor;
 import com.wks.caseengine.pagination.PageResult;
@@ -80,6 +90,29 @@ public class CaseInstanceController {
 	@PostMapping
 	public ResponseEntity<CaseInstance> startCaseCreationProcess(@RequestBody final CaseInstance caseInstance) {
 		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			
+			if (authentication instanceof JwtAuthenticationToken) {
+			    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+			    Jwt jwt = jwtAuth.getToken();
+			    
+			    String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
+			    Map<String, Object> claims = jwt.getClaims();
+			    
+			    System.out.println("userId: " + userId);
+			    System.out.println("Claims: " + claims);
+			    
+			    claims.entrySet().stream()
+			    .forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
+
+				CaseOwner owner = new CaseOwner();
+				owner.setId(jwt.getClaimAsString("sub"));
+				owner.setName(jwt.getClaimAsString("name"));
+				owner.setEmail(jwt.getClaimAsString("email"));
+
+				caseInstance.setOwner(owner);
+			}
+			
 			return ResponseEntity.ok(caseInstanceService.startWithValues(caseInstance));
 		} catch (CaseDefinitionNotFoundException e) {
 			throw new RestInvalidArgumentException("caseDefinitionId", e);
