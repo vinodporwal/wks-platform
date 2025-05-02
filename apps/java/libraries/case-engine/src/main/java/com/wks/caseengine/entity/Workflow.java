@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "Workflow")
+@Table(name = "WorkflowInstances")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,6 +30,9 @@ public class Workflow {
 
     @Column(name = "case_Id",  nullable = false)
     private String caseId;
+
+    @Column(name = "ProcessInstanceId",  nullable = true)
+    private String processInstanceId;
     
     @Column(name = "Plant_FK_Id", nullable = false)
     private UUID plantFKId;

@@ -16,18 +16,17 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 public class WorkflowDTO {
-	
+
 	private String id;
-   
-    private String year;
-    private String plantFkId;
-    private String caseDefId;
-    private String caseId;
-    private String plantId;
-    private String siteFKId;
-    private String verticalFKId;
-    private Boolean isDeleted;
 
-   
-
+	private String year;
+	private String plantFkId;
+	private String caseDefId;
+	private String caseId;
+	private String plantId;
+	private String siteFKId;
+	private String verticalFKId;
+	private Boolean isDeleted;
+	private String processInstanceId;
+	
 }

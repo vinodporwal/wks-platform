@@ -41,5 +41,8 @@ public class CaseComment {
 	private Date createdAt;
 
 	private String caseId;
+	private String role;
+
+	private String status;
 
 }

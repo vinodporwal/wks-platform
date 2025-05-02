@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.dto.WorkflowDTO;
+import com.wks.caseengine.dto.WorkflowPageDTO;
+import com.wks.caseengine.dto.WorkflowSubmitDTO;
 import com.wks.caseengine.service.BusinessDemandDataService;
 import com.wks.caseengine.service.WorkflowService;
 
@@ -25,7 +27,7 @@ public class WorkFlowController {
 
 
     @GetMapping(value="/getCaseId")
-	public	List<WorkflowDTO> getCaseId(@RequestParam String year, @RequestParam String plantId, @RequestParam String siteId,@RequestParam String verticalId){
+	public	WorkflowPageDTO getCaseId(@RequestParam String year, @RequestParam String plantId, @RequestParam String siteId,@RequestParam String verticalId){
 		System.out.println(plantId);
 		return workflowService.getCaseId(year,plantId, siteId, verticalId);	
 	}
@@ -46,13 +48,31 @@ public class WorkFlowController {
     	Map<String, Object> data= workflowService.getProductionAOPWorkflowData(plantId,year);
     	return data;
     }
+    
 
+	@PostMapping(value="/submitWorkflow")
+	public 	WorkflowDTO submitWorkflow(@RequestBody WorkflowSubmitDTO workflowSubmitDTO) {
+		return workflowService.submitWorkflow(workflowSubmitDTO);	
+	}
+
+
+	@PostMapping(value="/completetask")
+	public 	ResponseEntity<Void> completeTaskWithComment(@RequestBody WorkflowSubmitDTO workflowSubmitDTO) {
+		 workflowService.completeTaskWithComment(workflowSubmitDTO);
+		 return ResponseEntity.noContent().build();
+		 
+		 
+	}
 
 	@GetMapping(value="/handle/calculate/work-flow")
 	public int calculateExpressionWorkFlow(@RequestParam String year,@RequestParam String plantId){
 		return	 workflowService.calculateExpressionWorkFlow(year,plantId);
 		
 	}
+
+
+
+
 	
 	
 	

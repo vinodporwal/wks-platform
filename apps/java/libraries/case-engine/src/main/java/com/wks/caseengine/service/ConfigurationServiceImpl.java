@@ -76,11 +76,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			System.out.println("GET CofigurationDataService==============================>");
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("PE")) {
-				obj = normAttributeTransactionsRepository.findByYearAndPlantFkIdPE(year, plantFKId);
-			} else if (verticalName.equalsIgnoreCase("MEG")) {
+			if (verticalName.equalsIgnoreCase("MEG")) {
 				obj = normAttributeTransactionsRepository.findByYearAndPlantFkIdMEG(year, plantFKId);
 			}
+			else{
+				String viewName="vwScrn"+verticalName+"GetConfigTypes";
+				obj = findByYearAndPlantFkId(year, plantFKId,viewName);
+			}  
 
 			List<ConfigurationDTO> configurationDTOList = new ArrayList<>();
 			int i = 0;
@@ -129,7 +131,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
 				configurationDTO.setUOM(row[16] != null ? row[16].toString() : "");
 
-				if (verticalName.equalsIgnoreCase("PE")) {
+				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")) {
 					configurationDTO.setConfigTypeDisplayName(row[17] != null ? row[17].toString() : "");
 					configurationDTO.setTypeDisplayName(row[18] != null ? row[18].toString() : "");
 					configurationDTO.setConfigTypeName(row[19] != null ? row[19].toString() : "");
