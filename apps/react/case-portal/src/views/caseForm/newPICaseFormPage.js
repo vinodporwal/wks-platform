@@ -56,7 +56,7 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 1 ? level1.components[1] : null
+            level1.components.length > 3 ? level1.components[3] : null
           if (level2 && level2.components) {
             if (level7 && level7.columns) {
               const saveAsDraft =
@@ -241,6 +241,7 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
             businessKey: businessKey,
             isDraft: 'y',
             caseUrl: buildCreateUrl(window.location.href, caseDefId),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })

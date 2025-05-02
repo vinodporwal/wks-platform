@@ -326,7 +326,12 @@ export const CaseList = ({ status, caseDefId }) => {
           field: 'caseNumber',
           headerName: t('pages.caselist.datagrid.columns.caseNumber'),
           width: 150,
-      },
+        },
+        {
+          field: 'caseTitle',
+          headerName: t('pages.caselist.datagrid.columns.caseTitle'),
+          flex: 1
+        },
         {
           field: 'kpiName',
           headerName: t('pages.caselist.datagrid.columns.kpiName'),
@@ -354,30 +359,64 @@ export const CaseList = ({ status, caseDefId }) => {
           }
         },
         {
-          field: 'kpiDisplayName',
-          headerName: t('pages.caselist.datagrid.columns.kpiDisplayName'),
+          field: 'caseStatus',
+          headerName: 'Case Status',
           flex: 1,
           valueGetter: (value, row) => {
             try {
+              if (!row) {
+                return ''
+              }
+              const caseStatusOptions = JSON.parse(
+                localStorage.getItem('caseStatusOptions'),
+              ) || [
+                {
+                  label: 'Assigned',
+                  value: 1,
+                },
+                {
+                  label: 'Under Analysis',
+                  value: 2,
+                },
+                {
+                  label: 'Closed',
+                  value: 3,
+                },
+                {
+                  label: 'Rejected',
+                  value: 10002,
+                },
+              ]
+  
+              // Parse the container value to get the caseStatus value
               const attributes =
                 typeof row.attributes === 'string'
                   ? JSON.parse(row.attributes)
                   : row.attributes
   
-              const containerValue = attributes?.find(
+              if (!attributes) {
+                return ''
+              }
+  
+              const containerValue = attributes.find(
                 (attr) => attr.name === 'container',
               )?.value
-  
               const parsedContainer = containerValue
                 ? JSON.parse(containerValue)
                 : {}
   
-              return parsedContainer.kpiDisplayName || ''
+                const caseStatusValue = row.status?.id; // parsedContainer.caseStatus || ''
+  
+              // Find the label corresponding to the value
+              const matchingOption = caseStatusOptions.find(
+                (option) => option.value === caseStatusValue,
+              )
+              return matchingOption ? matchingOption.label : caseStatusValue
             } catch (error) {
-              console.error('Error parsing mainAsset:', error)
+              console.error('Error parsing caseStatus:', error)
               return ''
             }
-          }
+          },
         },
         {
           field: 'isDraft',

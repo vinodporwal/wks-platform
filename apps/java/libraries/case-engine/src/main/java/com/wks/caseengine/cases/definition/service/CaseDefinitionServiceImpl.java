@@ -1029,7 +1029,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	@Scheduled(cron = "0 */5 * * * ?")
+//	@Scheduled(cron = "0 */5 * * * ?")
 	public List<Case> updateRecommendationStatus() throws Exception {
 	    LocalDate today = LocalDate.now();
 	    LocalDate oneMonthBefore = today.minusDays(10); //.minusMonths(1);
@@ -1139,6 +1139,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		Case caseDetails = new Case();
 		String caseNo = "";
 		Long statusId = null;
+		
+		if (caseData.getAssignedTo() != null) {
+		    caseData.setAssignedTo(usersRepository.findByEmailId(caseData.getAssignedTo().getEmailId()));
+		}
+		
 		List<Attribute> attributes = caseData.getAttributes();
 		Attribute attribute = attributes.get(0);
 		String attributeValue = attribute.getValue();
@@ -1170,8 +1175,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			
 		} else {
 			caseData.setCaseNo(caseNo);
-			if(caseData.getCaseUrl()!=null && !caseData.getCaseUrl().contains("&caseNo")) {
-				caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			if(caseData.getCaseUrl()!=null && !caseData.getCaseUrl().contains("?caseNo")) {
+				caseData.setCaseUrl(caseData.getCaseUrl()+"?caseNo="+caseNo);
 			}
 			Case savedCase =caseRepository.getByCaseNo(caseNo);
 			caseData.setCreationDate(savedCase.getCreationDate());

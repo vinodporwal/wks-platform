@@ -201,7 +201,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 1 ? level1.components[1] : null
+            level1.components.length > 3 ? level1.components[3] : null
           if (level2 && level2.components) {
             const caseDescriptionField =
               level2.components.length > 1 ? level2.components[1] : null
@@ -340,10 +340,12 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
           keycloak,
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
+            caseNo: aCase.caseNo,
             isDraft: 'n',
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })
@@ -363,22 +365,9 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       })
   }
 
-
-
-
-
-
-          // handleClose()
-
-
-
-
-
-
-
-          // window.location.reload()
-
   const onSubmitForm = () => {
+    setLoading(true)
+
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
       value:
@@ -411,6 +400,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey, // Include businessKey in the payload
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })
@@ -424,6 +414,9 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       })
       .catch((err) => {
         console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false)
       })
   }
 
@@ -630,15 +623,40 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         <h2 style="text-align: center; margin: 0;">PI Case Management System</h2>
       </div>
 
+
       <!-- Case Information Panel -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Information</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
+          <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
+          <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
+          <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
+          <p><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
+        </div>
+      </div>
+
+      <!-- KPI Information Panel -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">KPI Information</h3>
+        <div style="padding: 10px;">
           <p><strong>${getLabel('kpiName')}</strong>: ${containerData.kpiName}</p>
           <p><strong>${getLabel('kpiDisplayName')}</strong>: ${containerData.kpiDisplayName}</p>
           <p><strong>${getLabel('timeVariant')}</strong>: ${containerData.timeVariant}</p>
           <p><strong>${getLabel('kpiDescription')}</strong>: ${containerData.kpiDescription}</p>
+        </div>
+      </div>
+
+
+       <!-- Case Details -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Details</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
+          <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
+          <p><strong>${getLabel('endDate')}</strong>: ${containerData?.endDate || 'N/A'}</p>
+          <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
+          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
         </div>
       </div>
   `
@@ -1072,11 +1090,11 @@ const loadOptions = async (keycloak) => {
     'categoryOptions',
     (item) => ({ label: item.name, value: item.id })
   );
-  const caseDefinitionGEAPMUsers = await fetchAndCacheOptions(
-    () => CaseDefService.getCaseDefinitionGEAPMUsers(keycloak),
-    'geAPMUsers',
-    (item) => ({ label: item.userId, value: item.emailId })
-  );
+  // const caseDefinitionGEAPMUsers = await fetchAndCacheOptions(
+  //   () => CaseDefService.getCaseDefinitionGEAPMUsers(keycloak),
+  //   'geAPMUsers',
+  //   (item) => ({ label: item.userId, value: item.emailId })
+  // );
 };
 
 function a11yProps(index) {
