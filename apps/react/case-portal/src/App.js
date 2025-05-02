@@ -9,6 +9,7 @@ import { accountStore, sessionStore } from './store'
 import './App.css'
 import formPayload from './createFormJSON.json'
 import piFormPayload from './piCreateFormJSON.json'
+
 import Config from './consts'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
@@ -219,6 +220,7 @@ const App = () => {
       console.error('Error creating form:', error)
     }
   }
+
   return (
     keycloak &&
     authenticated && (

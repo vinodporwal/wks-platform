@@ -19,7 +19,8 @@ export const CaseService = {
   saveCase,
   getCasesById,
   saveRecommendation,
-  saveAnalysis
+  saveAnalysis,
+  savePICase
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -131,7 +132,10 @@ async function getCaseById(keycloak, id) {
 async function getCasesById(keycloak, caseDefId = '', assetName = '', hierarchyName = '') {
   console.log('caseDefId', caseDefId)
   // Use '/cases' in the URL directly, not appending the caseDefId
-  let url = `${Config.CaseEngineUrl}/case-definition/cases/${caseDefId}`;
+  let url;
+  if(caseDefId === 'create'){
+    // Use '/cases' in the URL directly, not appending the caseDefId
+    url = `${Config.CaseEngineUrl}/case-definition/cases/${caseDefId}`;
 
   // Append query parameters if provided
   const queryParams = new URLSearchParams();
@@ -141,6 +145,9 @@ async function getCasesById(keycloak, caseDefId = '', assetName = '', hierarchyN
   // Add query parameters to the URL if they exist
   if (queryParams.toString()) {
     url += `?${queryParams.toString()}`;
+    }
+  }else{
+    url = `${Config.CaseEngineUrl}/case-definition/cases/pi/${caseDefId}`;
   }
 
   const headers = {
@@ -241,6 +248,25 @@ async function saveCase(keycloak, body) {
   }
 }
 
+async function savePICase(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/pi`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
 
 async function saveRecommendation(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-recommendation`;

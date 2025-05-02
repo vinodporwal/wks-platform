@@ -201,9 +201,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 8 ? level1.components[8] : null
-          const level6 =
-            level1.components.length > 6 ? level1.components[6] : null
+            level1.components.length > 1 ? level1.components[1] : null
           if (level2 && level2.components) {
             const caseDescriptionField =
               level2.components.length > 1 ? level2.components[1] : null
@@ -239,14 +237,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
               if (caseOwner !== currentUser && caseStatus) {
                 caseStatus.disabled = true;
-              }
-
-              const faultCategorySelect =
-                level2.components[0].columns.length > 2
-                  ? level2.components[0].columns[3].components[0]
-                  : null
-              if (faultCategorySelect && caseData.isDraft == 'n') {
-                faultCategorySelect.disabled = true
               }
             }
 
@@ -311,7 +301,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
   const onSave = () => {
     setLoading(true)
-    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
+    const requiredFields = []
 
     const missingFields = requiredFields.filter(
       (field) => !formData.data.container[field],
@@ -323,15 +313,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       setLoading(false)
       return
     }
-    const currentParams = window.location.search
-    setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
 
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
       value:
@@ -346,12 +328,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.caseNo,
-        owner: {
-          id: keycloak.subject || '',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '1234567890',
-        },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
         businessKey: aCase.businessKey,
@@ -360,25 +336,14 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       .then((data) => {
         const businessKey = data.businessKey
 
-        return CaseService.saveCase(
+        return CaseService.savePICase(
           keycloak,
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
-            assetName: assetName,
             isDraft: 'n',
-            hierarchyName: hierarchyName,
-            sourceSystem: sourceSystem,
-            eventIds: eventIds,
             businessKey: businessKey,
-            owner: {
-              id: keycloak.subject || '',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })
@@ -398,186 +363,22 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       })
   }
 
-  const onAnalysisSave = () => {
-    setLoading(true)
-    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
 
-    const missingFields = requiredFields.filter(
-      (field) => !formData.data.container[field],
-    )
 
-    if (missingFields.length > 0) {
-      setSnackbarMessages(['Please fill in all required fields.'])
-      setSnackbarOpen(true)
-      setLoading(false)
-      return
-    }
-    const currentParams = window.location.search
-    setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
 
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
-    const caseAttributes = Object.keys(formData.data).map((key) => ({
-      name: key,
-      value:
-        typeof formData.data[key] !== 'object'
-          ? formData.data[key]
-          : JSON.stringify(formData.data[key]),
-      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    }))
 
-    CaseService.createCase(
-      keycloak,
-      JSON.stringify({
-        caseDefinitionId: aCase.caseDefinitionId,
-        caseNo: aCase.caseNo,
-        owner: {
-          id: keycloak.subject || '',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '1234567890',
-        },
-        attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-        businessKey: aCase.businessKey,
-      }),
-    )
-      .then((data) => {
-        const businessKey = data.businessKey
 
-        return CaseService.saveAnalysis(
-          keycloak,
-          JSON.stringify({
-            caseDefinitionId: aCase.caseDefinitionId,
-            assetName: assetName,
-            isDraft: 'n',
-            hierarchyName: hierarchyName,
-            sourceSystem: sourceSystem,
-            eventIds: eventIds,
-            businessKey: businessKey,
-            owner: {
-              id: keycloak.subject || '',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
-            attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
-          }),
-        )
-      })
-      .then((data) => {
-        setLastCreatedCase(data)
-        setSnackOpen(true)
-        setTimeout(() => {
-          window.location.href = data.caseUrl;
           // handleClose()
-        }, 1000)
-      })
-      .catch((err) => {
-        console.error(err.message)
-      })
-      .finally(() => {
-        setLoading(false) // Stop loading after the process finishes
-      })
-  }
 
-  const onSubmitRecommendation = (event) => {
-    console.log('event onSubmitRecommendation', event)
-    let updatedFormData = JSON.parse(JSON.stringify(formData))
-    setFormData(updatedFormData)
 
-    const {
-      recommendationReviewer,
-      recommendationAssignedTo2,
-      recommendationHeadline,
-      recommendationTargetCompletionDate1,
-      recommendationDescription1,
-      equipmentFunctionLocation,
-      RecommendationConfirmSAP3,
-    } = event.data
 
-    const missingFields = []
-    if (!recommendationReviewer) 
-      missingFields.push('Recommendation Reviewer')
-    if (!recommendationAssignedTo2)
-      missingFields.push('Recommendation Assigned To')
-    if (!recommendationHeadline) 
-      missingFields.push('Recommendation Headline')
-    if (!recommendationTargetCompletionDate1)
-      missingFields.push('Target Completion Date')
-    if (!equipmentFunctionLocation)
-      missingFields.push('Equipment Function Location')
 
-    if (missingFields.length > 0) {
-      setSnackbarMessages(missingFields)
-      setSnackbarOpen(true)
-      setTimeout(() => {
-        setSnackbarOpen(false)
-      }, 2000)
-      return
-    }
 
-    setSnackbarMessages([])
 
-    const apiBodyData = {
-      recommendationHeadline,
-      recommendationDescription1,
-      recommendationAssignedTo2,
-      equipmentFunctionLocation,
-      recommendationTargetCompletionDate1,
-      recommendationReviewer,
-      RecommendationConfirmSAP3,
-      deleteRowButton4: false,
-      RecommendationSubmit3: false,
-      caseNo: aCase?.caseNo,
-      createdBy: keycloak.idTokenParsed.sub,
-    }
-    setApiBody(apiBodyData)
-    setIsConfirmationOpen(true)
-  }
 
-  const submitRecommendation = async () => {
-    try {
-      const response = await CaseService.saveRecommendation(keycloak, apiBody)
-      if(response.status !== 500){
-        console.log('Recommendation submitted successfully:', response)
-        setSnackbarMessages(['Recommendation submitted successfully'])
-        setSnackbarOpen(true)
-        setIsConfirmationOpen(false)
-        setTimeout(() => {
-          window.location.href = response.caseUrl;
           // window.location.reload()
-        }, 1000)
-      }else{
-        setIsConfirmationOpen(false)
-        console.error('Error submitting recommendation:', response)
-        console.error('Error submitting recommendation:', JSON.stringify(response.body))
-        setSnackbarMessages(['Error submitting recommendation'])
-        setSnackbarOpen(true)
-      }
-    } catch (error) {
-      console.error('Error submitting recommendation:', error)
-      setSnackbarMessages(['Error submitting recommendation'])
-      setSnackbarOpen(true)
-    }
-  }
 
   const onSubmitForm = () => {
-    const currentParams = window.location.search
-    setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
-
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
       value:
@@ -593,12 +394,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.caseNo,
-        owner: {
-          id: keycloak.subject || '',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '',
-        },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
         businessKey: aCase.businessKey,
@@ -608,25 +403,14 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         const businessKey = data.businessKey // Extract businessKey from the response
 
         // Second API call to saveCase with the businessKey
-        return CaseService.saveCase(
+        return CaseService.savePICase(
           keycloak,
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
-            assetName: assetName,
             isDraft: 'y',
-            hierarchyName: hierarchyName,
-            sourceSystem: sourceSystem,
-            eventIds: eventIds,
             businessKey: businessKey, // Include businessKey in the payload
-            owner: {
-              id: keycloak.subject || '',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })
@@ -843,7 +627,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">EED Case Management System</h2>
+        <h2 style="text-align: center; margin: 0;">PI Case Management System</h2>
       </div>
 
       <!-- Case Information Panel -->
@@ -851,99 +635,10 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Information</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
-          <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
-          <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
-          <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
-          <p><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
-        </div>
-      </div>
-
-      <!-- Case Details -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Details</h3>
-        <div style="padding: 10px;">
-          <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
-          <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
-          <p><strong>${getLabel('endDate')}</strong>: ${containerData?.endDate || 'N/A'}</p>
-          <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
-          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
-        </div>
-      </div>
-
-      <!-- Associated Faults -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Associated Faults</h3>
-        <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
-        ${formatDataGrid(containerData.dataGrid2, getLabel)}
-      </div>
-  `
-
-    // Conditional display based on RecommendationsRadio value
-    // if (containerData.RecommendationsRadio === 'no') {
-      const caseCauseCategoryLabel = getCategoryLabel(
-        containerData.caseCauseCategory,
-      )
-      const caseCauseDescriptionLabel = getCaseCauseDescriptionLabel(
-        containerData.caseCauseDescription,
-        containerData.caseCauseCategory,
-      )
-
-      const files = containerData.file;
-
-      content += `
-      <!-- Analysis -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
-        <div style="padding: 10px;">
-          <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
-          <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
-          <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
-        </div>`
-
-    if (files.length > 0) {
-      content += `
-          <ul style="list-style: none; padding: 0; margin: 0;">
-            ${files
-              .map(
-                (file, index) => `
-                  <li style="margin-bottom: 16px;">
-                    <img 
-                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
-                      alt="${file.name}"
-                      style="max-width: 100%; height: auto;"
-                    />
-                  </li>
-                `
-              )
-              .join('')}
-          </ul>
-      `;
-    }
-
-    content +=`</div>`
-
-    if (containerData.RecommendationsRadio === 'yes') {
-      content += `
-      <!-- Data Grid 1 -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
-        ${formatDataGrid(containerData.dataGrid1, getLabel)}
-      </div>
-    `
-    }
-
-    // Value Realization section
-    content += `
-      <!-- Value Realization -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
-        <div style="padding: 10px;">
-          <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
-          <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss || ''}</p>
-          <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost || ''}</p>
-          <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost || ''}</p>
-          <p><strong>${getLabel('totalValueCaptured')}</strong>: ${containerData.totalValueCaptured}</p>
-          <p><strong>${getLabel('valueRealizationConclusion')}</strong>: ${containerData.valueRealizationConclusion}</p>
+          <p><strong>${getLabel('kpiName')}</strong>: ${containerData.kpiName}</p>
+          <p><strong>${getLabel('kpiDisplayName')}</strong>: ${containerData.kpiDisplayName}</p>
+          <p><strong>${getLabel('timeVariant')}</strong>: ${containerData.timeVariant}</p>
+          <p><strong>${getLabel('kpiDescription')}</strong>: ${containerData.kpiDescription}</p>
         </div>
       </div>
   `
@@ -1204,51 +899,13 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                           console.log('Form event:', event)
                           if (event.component.key === 'saveAsDraft') {
                             onSubmitForm()
-                          } else if (
-                            event.component.key === 'RecommendationSubmit3'
-                          ) {
-                            onSubmitRecommendation(event)
                           } else if (event.component.key === 'onSave') {
                             // onSubmitRecommendation()
                             onSave()
-                          }  else if (event.component.key === 'analysisSubmit') {
-                            onAnalysisSave()
                           }
                         }}
                       />
                     )}
-                    <Dialog
-                      open={isConfirmationOpen}
-                      onClose={() => setIsConfirmationOpen(false)}
-                    >
-                      <DialogTitle>Confirm Submission</DialogTitle>
-                      <DialogContent>
-                        <DialogContentText>
-                          Are you sure you want to submit this recommendation?
-                        </DialogContentText>
-                        {apiBody &&
-                          apiBody?.RecommendationConfirmSAP3 == 'n' && (
-                            <DialogContentText sx={{ color: 'red' }}>
-                              Note: Create SAP Request is not selected
-                            </DialogContentText>
-                          )}
-                      </DialogContent>
-                      <DialogActions>
-                        <Button
-                          onClick={() => setIsConfirmationOpen(false)}
-                          color='primary'
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={submitRecommendation}
-                          color='primary'
-                          autoFocus
-                        >
-                          Submit
-                        </Button>
-                      </DialogActions>
-                    </Dialog>
                     <Snackbar
                       open={snackbarOpen}
                       autoHideDuration={2000}

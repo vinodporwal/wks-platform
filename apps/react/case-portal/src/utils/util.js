@@ -11,10 +11,11 @@ export const buildCreateUrl = (url, caseDefId = 'create') => {
     );
     } else if (caseDefId === 'picreate'){
       newUrl = cleanedUrl.replace(
-        'picreate?assetName',
-        'case-list/picreate?assetName',
+        'picreate',
+        'case-list/picreate',
         );
     }
+
   }
 
   return newUrl

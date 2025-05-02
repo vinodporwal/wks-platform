@@ -130,7 +130,8 @@ export const CaseList = ({ status, caseDefId }) => {
     })
   }, [])
 
-  const makeColumns = () => {
+  const makeColumns = (caseDefId) => {
+    if (caseDefId === 'create') {
     return [
       {
         field: 'caseNumber',
@@ -215,7 +216,7 @@ export const CaseList = ({ status, caseDefId }) => {
               ? JSON.parse(containerValue)
               : {}
 
-            const caseStatusValue = parsedContainer.caseStatus || ''
+              const caseStatusValue = row.status?.id; // parsedContainer.caseStatus || ''
 
             // Find the label corresponding to the value
             const matchingOption = caseStatusOptions.find(
@@ -316,9 +317,114 @@ export const CaseList = ({ status, caseDefId }) => {
               {t('pages.caselist.datagrid.action.details')}
             </Button>
           )
+          },
         },
+      ]
+    }else{
+      return [
+        {
+          field: 'caseNumber',
+          headerName: t('pages.caselist.datagrid.columns.caseNumber'),
+          width: 150,
       },
+        {
+          field: 'kpiName',
+          headerName: t('pages.caselist.datagrid.columns.kpiName'),
+          flex: 1,
+          valueGetter: (value, row) => {
+            try {
+              const attributes =
+                typeof row.attributes === 'string'
+                  ? JSON.parse(row.attributes)
+                  : row.attributes
+  
+              const containerValue = attributes?.find(
+                (attr) => attr.name === 'container',
+              )?.value
+  
+              const parsedContainer = containerValue
+                ? JSON.parse(containerValue)
+                : {}
+  
+              return parsedContainer.kpiName || ''
+            } catch (error) {
+              console.error('Error parsing mainAsset:', error)
+              return ''
+            }
+          }
+        },
+        {
+          field: 'kpiDisplayName',
+          headerName: t('pages.caselist.datagrid.columns.kpiDisplayName'),
+          flex: 1,
+          valueGetter: (value, row) => {
+            try {
+              const attributes =
+                typeof row.attributes === 'string'
+                  ? JSON.parse(row.attributes)
+                  : row.attributes
+  
+              const containerValue = attributes?.find(
+                (attr) => attr.name === 'container',
+              )?.value
+  
+              const parsedContainer = containerValue
+                ? JSON.parse(containerValue)
+                : {}
+  
+              return parsedContainer.kpiDisplayName || ''
+            } catch (error) {
+              console.error('Error parsing mainAsset:', error)
+              return ''
+            }
+          }
+        },
+        {
+          field: 'isDraft',
+          headerName: 'Status',
+          width: 150,
+          valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
+        },
+        {
+          field: 'creationDate',
+          headerName: 'Created On',
+          width: 150,
+          valueGetter: (value, row) => {
+            const date = row?.creationDate
+            if (date) {
+              const dateObj = new Date(date)
+              const day = String(dateObj.getDate()).padStart(2, '0')
+              const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+              const year = String(dateObj.getFullYear())
+              const hours = String(dateObj.getHours()).padStart(2, '0')
+              const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+              return `${day}-${month}-${year} ${hours}:${minutes}`
+            }
+            return ''
+          },
+        },
+        {
+          field: 'action',
+          headerName: 'Action',
+          sortable: false,
+          renderCell: (data) => {
+            const onClick = (e) => {
+              console.log('data.row', data.row)
+              setACase(data.row)
+              e.stopPropagation()
+              setOpenCaseForm(true)
+            }
+  
+            return (
+              <Button onClick={onClick}>
+                {t('pages.caselist.datagrid.action.details')}
+              </Button>
+            )
+          },
+        },
     ]
+    }
+
   }
 
   // const handleOpenCaseForm = (selectedCase) => {
@@ -608,7 +714,7 @@ export const CaseList = ({ status, caseDefId }) => {
                     },
                   }}
                   rows={cases}
-                  columns={makeColumns()}
+                  columns={makeColumns(caseDefId)}
                   getRowId={(row) => row.caseNo}
                   loading={fetching}
                   components={{ Pagination: CustomPagination }}

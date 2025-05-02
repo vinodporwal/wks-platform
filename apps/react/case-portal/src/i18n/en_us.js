@@ -51,6 +51,8 @@ const defs = {
           createdat: 'Created At',
           queue: 'Queue',
           caseOwnerName: 'Owner',
+          kpiName: 'KPI Name',
+          kpiDisplayName: "KPI Display Name"
         },
         action: {
           details: 'Details',

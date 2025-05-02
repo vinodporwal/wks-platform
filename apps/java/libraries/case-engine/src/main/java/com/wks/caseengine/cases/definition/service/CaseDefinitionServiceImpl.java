@@ -985,7 +985,19 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	                        }
 
 	    return geUsers;
-	                }
+	}
+ 	            
+	@Override
+	public List<Case> getPICases(String caseDefinitionId) {
+		String query = "SELECT c.* FROM [CaseManagement].[dbo].[Cases] c "
+				+ "WHERE c.caseDefinitionId = :caseDefinitionId ORDER BY c.case_no DESC";
+		
+		Query nativeQuery = entityManager.createNativeQuery(query, Case.class);
+		nativeQuery.setParameter("caseDefinitionId", caseDefinitionId);
+ 
+		List<Case> cases = nativeQuery.getResultList();
+		return cases;
+	}
 
 	private String geLogin() throws Exception {
 	    RestTemplate restTemplate = new RestTemplate();
@@ -1124,21 +1136,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 		LocalDateTime now = LocalDateTime.now();
 		String currentDate = now.format(formatter);
-		String assetName = "%"+caseData.getAssetName();
-		String hierarchyNodePKID = "";
-		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
-		if(hierarychyNodes.size()>=1) {
-			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
-		}
-		if(assetName!=null) {
-			System.out.println("hierarchyNodePKID: "+hierarchyNodePKID);
-		}
-		caseData.setHierarchyNodePKID(hierarchyNodePKID);
-		
-		if (caseData.getAssignedTo() != null) {
-		    caseData.setAssignedTo(usersRepository.findByEmailId(caseData.getAssignedTo().getEmailId()));
-		}
-
 		Case caseDetails = new Case();
 		String caseNo = "";
 		Long statusId = null;
@@ -1167,21 +1164,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		if(caseNo==null || caseNo.length()==0) {
 			caseNo = CaseNoGenerator();
 			caseData.setCaseNo(caseNo);
-			caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
+			caseData.setCaseUrl(caseData.getCaseUrl()+"?caseNo="+caseNo);
 			caseData.setCreationDate(currentDate);
 			caseDetails  = caseRepository.save(caseData);
-			
-			List<Long> eventIds = new ArrayList<Long>();
-			for(String eventId: caseData.getEventIds()) {
-				eventIds.add(Long.parseLong(eventId));
-			}
-
-			HashMap<String, String> map = new HashMap<String, String>();
-			for(String eventId: caseData.getEventIds()) {
-				CasesAndEventsMapping mapping = new CasesAndEventsMapping();
-				mapping.setCaseNo(caseDetails.getCaseNo());
-				casesAndEventsMappingRepository.save(mapping);
-			}
 			
 		} else {
 			caseData.setCaseNo(caseNo);
@@ -1197,39 +1182,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			attributeValue = attributeValue.replace("\\\"", "\"");
 	
 			try {
-			    ObjectMapper objectMapper = new ObjectMapper();
-			    JsonNode rootNode = objectMapper.readTree(attributeValue);
-			    String assignedTo = rootNode.path("caseAssignedTo").asText();
-			    String caseNumber = caseData.getCaseNo();
-			    String caseTitle = rootNode.path("caseTitle").asText();
-			    System.out.println(rootNode.path("caseAssignedTo").asText());
-			    Long caseStatusNo = rootNode.path("caseStatus").asLong();
-			    Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
-			    	    .filter(status -> status.getId().equals(caseStatusNo))
-			    	    .findFirst();
-			    String caseStatusValue = caseStatus.get().getName();
-			    JsonNode analysisTeam = rootNode.path("analysisTeam");
-			    String[] reviewers = new String[analysisTeam.size()];
-			    if (analysisTeam.isArray()) {
-			    	int counter = 0;
-			        for (JsonNode dataGridEntry : analysisTeam) {
-			        	reviewers[counter] = dataGridEntry.asText();
-			        	counter++;
-			        }
 			        
-				}
-			    if(!caseStatusValue.equals("Under Analysis")) {
-			    	System.out.println("Calling mail send method...");
-			    	Map<String, Object> data = new HashMap<>();
-			    	data.put("caseTitle", "This is to inform you, the new case has been assined to you");
-					data.put("caseNumber", caseNumber);
-					data.put("status", caseStatusValue);
-					data.put("caseName", caseTitle);
-					data.put("caseUrl", caseDetails.getCaseUrl());
-					data.put("environment", "");
-			    	caseTitle = "CASE MANAGEMENT :"+ caseTitle;
-			    	caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
-			    }
 			    
 				caseData.setAttributes(attributes);
 				caseDetails = caseRepository.save(caseData);

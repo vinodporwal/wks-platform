@@ -56,7 +56,7 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 8 ? level1.components[8] : null
+            level1.components.length > 1 ? level1.components[1] : null
           if (level2 && level2.components) {
             if (level7 && level7.columns) {
               const saveAsDraft =
@@ -157,13 +157,6 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
-        owner: {
-          id: keycloak.subject || '',
-          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '',
-        },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href, caseDefId),
       }),
@@ -220,15 +213,7 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
 
   const onSubmitForm = () => {
     setLoading(true)
-    const currentParams = window.location.search
-    setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
 
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
       value:
@@ -242,41 +227,20 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
-        owner: {
-          id: keycloak.subject || '',
-          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '',
-        },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href, caseDefId),
       }),
     )
       .then((data) => {
         const businessKey = data.businessKey
-        // setLastCreatedCase(data);
 
-        return CaseService.saveCase(
+        return CaseService.savePICase(
           keycloak,
           JSON.stringify({
             caseDefinitionId: caseDefId,
-            assetName: assetName,
-            isDraft: 'y',
-            hierarchyName: hierarchyName,
-            sourceSystem: sourceSystem,
-            eventIds: eventIds,
-            businessKey: businessKey,
-            owner: {
-              id: keycloak.subject || '',
-              // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
             attributes: caseAttributes,
+            businessKey: businessKey,
+            isDraft: 'y',
             caseUrl: buildCreateUrl(window.location.href, caseDefId),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
           }),
         )
       })

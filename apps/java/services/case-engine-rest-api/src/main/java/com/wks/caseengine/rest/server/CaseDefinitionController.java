@@ -157,7 +157,7 @@ public class CaseDefinitionController {
         return ResponseEntity.ok(savedCase);
     }
 	
-	@PostMapping("/pi/save-case")
+	@PostMapping("/pi")
     public ResponseEntity<Case> createPICase(@RequestBody Case caseData) {
 		
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -210,6 +210,12 @@ public class CaseDefinitionController {
 		return ResponseEntity.ok(cases);
 	}
 
+	@GetMapping("/cases/pi/{caseDefinitionId}")
+	public ResponseEntity<List<Case>> getPICases(@PathVariable("caseDefinitionId") String caseDefinitionId) {
+		List<Case> cases = caseDefinitionService.getPICases(caseDefinitionId);
+		return ResponseEntity.ok(cases);
+	}
+	
 	@GetMapping("/cases/filter")
 	public ResponseEntity<List<Case>> getCasesByFilter(@RequestParam(required = false) LocalDate from,@RequestParam(required = false) LocalDate to,@RequestParam(required = false) String status) {
 		List<Case> cases = caseDefinitionService.getCaseDetails(from, to, status);
