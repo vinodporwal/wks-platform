@@ -20,7 +20,6 @@ const NormalOpNormsScreen = () => {
   const [allProducts, setAllProducts] = useState([])
   // const [bdData, setBDData] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
-
   // const { sitePlantChange } = menu
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
@@ -38,7 +37,6 @@ const NormalOpNormsScreen = () => {
   const [loading, setLoading] = useState(false)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
-  //const isOldYear = oldYear?.oldYear
   const isOldYear = oldYear?.oldYear
 
   const vertName = verticalChange?.selectedVertical
@@ -62,26 +60,7 @@ const NormalOpNormsScreen = () => {
     setLoading(true)
     try {
       var data = []
-      // const data = await DataService.getNormalOperationNormsData(keycloak)
       data = await DataService.getNormalOperationNormsData(keycloak)
-
-      // data = data.filter(
-      //   (item) => item.normParameterTypeDisplayName !== 'Configuration',
-      // )
-
-      // const customOrder = [
-      //   'Raw Material',
-      //   'By Products',
-      //   'Cat Chem',
-      //   'Utility Consumption',
-      //   'Configuration',
-      // ]
-
-      // const data = data1.sort(
-      //   (a, b) =>
-      //     customOrder.indexOf(a.normParameterTypeDisplayName) -
-      //     customOrder.indexOf(b.normParameterTypeDisplayName),
-      // )
 
       const groupedRows = []
       const groups = new Map()
@@ -599,7 +578,7 @@ const NormalOpNormsScreen = () => {
       showAction: false,
       addButton: false,
       deleteButton: false,
-      editButton: true,
+      editButton: false,
       showUnit: false,
       saveWithRemark: true,
       saveBtn: true,
@@ -607,7 +586,6 @@ const NormalOpNormsScreen = () => {
     },
     isOldYear,
   )
-
   return (
     <div>
       <Backdrop
@@ -648,7 +626,6 @@ const NormalOpNormsScreen = () => {
         unsavedChangesRef={unsavedChangesRef}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
-
         // permissions={{
         //   showAction: false,
         //   addButton: false,

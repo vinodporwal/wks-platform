@@ -10,24 +10,27 @@ import menuItemsDefs from './menu'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
-
 import './extra-css.css'
 import './data-grid-css.css'
 import './jio-grid-style.css'
-
-import { useSelector } from 'react-redux'
+// import { useSelector } from 'react-redux'
 import Layout from 'layout/FooterLayout/index'
+import { useSelector } from 'react-redux'
+// import useMenuItems from 'menu/index'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
 const App = () => {
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
+  // const dataGridStore = useSelector((state) => state.dataGridStore)
+  // const { verticalChange } = dataGridStore
   const [keycloak, setKeycloak] = useState({})
   const [authenticated, setAuthenticated] = useState(null)
   // const [recordsTypes, setRecordsTypes] = useState([])
   // const [casesDefinitions, setCasesDefinitions] = useState([])
   const [menu, setMenu] = useState({ items: [] })
+  // const { items: menuItems } = useMenuItems()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { verticalChange } = dataGridStore
 
   useEffect(() => {
     const { keycloak } = sessionStore.bootstrap()
@@ -35,6 +38,7 @@ const App = () => {
     keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
+      // buildMenuItems(menuItems)
       buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
       RegisteOptions(keycloak)
@@ -77,63 +81,47 @@ const App = () => {
     }
   }
 
+  // useEffect(() => {
+  //   console.log(keycloak)
+  // }, [])
   useEffect(() => {
     if (keycloak && verticalChange) {
       buildMenuItems(keycloak)
     }
-    //console.log(verticalChange)
+    // console.log(verticalChange)
   }, [verticalChange, keycloak])
 
   async function buildMenuItems(keycloak) {
-    let allowedLinked = []
+    let rawAllowedVerticals = []
     const verticals = keycloak?.idTokenParsed?.verticals
-    const selectedVertical = localStorage.getItem('verticalId')?.toLowerCase()
 
-    //console.log('keycloak', verticals)
     if (verticals) {
       try {
-        allowedLinked = JSON.parse(verticals)
+        rawAllowedVerticals = JSON.parse(verticals)
       } catch (error) {
         console.error('Error parsing verticals JSON:', error)
-        allowedLinked = []
+        rawAllowedVerticals = []
       }
     } else {
       // console.log('No verticals found in idTokenParsed')
     }
 
-    const allowedVerticalsMapping = allowedLinked.reduce((acc, obj) => {
-      // Convert each key to lowercase for consistent matching.
-      const key = Object.keys(obj)[0].toLowerCase()
-      return { ...acc, [key]: obj[Object.keys(obj)[0]] }
+    const allowedVerticalsMapping = rawAllowedVerticals.reduce((acc, obj) => {
+      return { ...acc, ...obj }
     }, {})
 
     // console.log(allowedVerticalsMapping)
-    // console.log(selectedVertical)
+    // console.log(verticalChange)
 
-    // verticalChange?.selectedVertical?.toLowerCase()
+    const selectedVertical = verticalChange?.selectedVertical?.toLowerCase()
     const allowedChildIds =
       (selectedVertical && allowedVerticalsMapping[selectedVertical]) || []
-    // console.log(allowedChildIds)
+
     // Build the menu based on allowed verticals
     const menu = {
       items: [...menuItemsDefs.items],
     }
-    menu.items = menu.items.filter((item) => item.id !== 'ta-plan')
-    menu.items = menu.items.map((item) => {
-      if (item.children && Array.isArray(item.children)) {
-        item.children = item.children.filter((child) => child.id !== 'ta-plan')
-        // If you have nested groups inside children, you can further map and filter
-        item.children = item.children.map((group) => {
-          if (group.children && Array.isArray(group.children)) {
-            group.children = group.children.filter(
-              (child) => child.id !== 'ta-plan',
-            )
-          }
-          return group
-        })
-      }
-      return item
-    })
+
     menu.items = menu.items.map((item) => {
       if (item.id === 'utilities') {
         return {
@@ -144,7 +132,7 @@ const App = () => {
                 ...group,
                 children: group.children.filter((child) =>
                   allowedChildIds.length > 0
-                    ? allowedChildIds.includes(child.id.toLowerCase())
+                    ? allowedChildIds.includes(child.id)
                     : true,
                 ),
               }
@@ -156,46 +144,8 @@ const App = () => {
       return item
     })
 
-    // const recordTypes = await RecordService.getAllRecordTypes(keycloak)
-    // setRecordsTypes(recordTypes)
-
-    // recordTypes.forEach((element) => {
-    //   const recordListMenu = menu.items[1].children.find(
-    //     (menu) => menu.id === 'record-list',
-    //   )
-    //   recordListMenu?.children.push({
-    //     id: element.id,
-    //     title: element.id,
-    //     type: 'item',
-    //     url: `/record-list/${element.id}`,
-    //     breadcrumbs: true,
-    //   })
-    // })
-
-    // // Fetch Case Definitions and update menu
-    // const caseDefinitions = await CaseService.getCaseDefinitions(keycloak)
-    // setCasesDefinitions(caseDefinitions)
-    // // console.log(caseDefinitions)
-    // caseDefinitions.forEach((element) => {
-    //   const caseListMenu = menu.items[1].children.find(
-    //     (menu) => menu.id === 'case-list',
-    //   )
-    //   caseListMenu?.children.push({
-    //     id: element.id,
-    //     title: element.name,
-    //     type: 'item',
-    //     url: `/case-list/${element.id}`,
-    //     breadcrumbs: true,
-    //   })
-    // })
-
-    // console.log(menu)
     // Safely determine if the user is a manager.
     // If keycloak.hasRealmRole is not a function, default to false.
-    //toggle
-    // if (!accountStore.isManagerUser(keycloak)) {
-    //   delete menu.items[3]
-    // }
     const isManagerUser =
       typeof keycloak.hasRealmRole === 'function'
         ? keycloak.hasRealmRole('manager')
@@ -207,6 +157,27 @@ const App = () => {
 
     return setMenu(menu)
   }
+  // async function buildMenuItems(keycloak) {
+  //   // console.log(menuItems)
+  //   // const menu = { items: [...menuItems] }
+  //   const menu = {
+  //     items: [...menuItemsDefs.items],
+  //   }
+  //   // …filter by roles, inject dynamic screens, etc…
+  //   // console.log(menu)
+
+  //   const isManagerUser =
+  //     typeof keycloak.hasRealmRole === 'function'
+  //       ? keycloak.hasRealmRole('manager')
+  //       : false
+
+  //   if (!isManagerUser) {
+  //     delete menu.items[3]
+  //   }
+
+  //   //   return setMenu(menu)
+  //   setMenu(menu)
+  // }
 
   return (
     keycloak &&
@@ -230,5 +201,4 @@ const App = () => {
     )
   )
 }
-
 export default App

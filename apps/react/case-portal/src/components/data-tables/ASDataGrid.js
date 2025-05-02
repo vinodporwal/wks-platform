@@ -77,7 +77,7 @@ const DataGridTable = ({
   handleAddPlantSite = () => {},
   selectedUsers = [],
   setSelectedUsers = () => {},
-  columnGroupingModel,
+  // columnGroupingModel,
 }) => {
   const [resizedColumns, setResizedColumns] = useState({})
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -92,6 +92,8 @@ const DataGridTable = ({
   const handleSearchChange = (event) => {
     setSearchText(event.target.value)
   }
+  // const navigate = useNavigate()
+
   // const [rowModesModel, setRowModesModel] = useState({})
   // const [changedRowIds, setChangedRowIds] = useState([])
   // const [columnFilters, setColumnFilters] = useState({})
@@ -419,7 +421,6 @@ const DataGridTable = ({
               />
             )}
           </Box>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {permissions?.showTitle && (
               <Typography component='div' className='grid-title'>
@@ -649,11 +650,9 @@ const DataGridTable = ({
           }}
           getRowClassName={(params) => {
             const classes = []
-
             if (permissions?.isOldYear == 1) {
               classes.push('odd-row-disabled')
             }
-
             if (params.row.Particulars || params.row.Particulars2) {
               classes.push('no-border-row')
             }
@@ -667,10 +666,9 @@ const DataGridTable = ({
 
             return [...classes, 'even-row'].join(' ')
           }}
-          columnGroupingModel={columnGroupingModel}
+          // columnGroupingModel={columnGroupingModel}
         />
       </Box>
-
       {(permissions?.allAction ?? true) && (
         <Box
           sx={{
@@ -679,7 +677,7 @@ const DataGridTable = ({
             gap: 2,
           }}
         >
-          {permissions.addButton && (
+          {permissions?.addButton && (
             <Button
               variant='contained'
               className='btn-save'
@@ -690,7 +688,7 @@ const DataGridTable = ({
             </Button>
           )}
 
-          {permissions.saveBtn && (
+          {permissions?.saveBtn && (
             <Button
               variant='contained'
               className='btn-save'
@@ -702,8 +700,7 @@ const DataGridTable = ({
               Save
             </Button>
           )}
-
-          {permissions.approveBtn && (
+          {permissions?.approveBtn && (
             <Button
               variant='contained'
               className='btn-save'
@@ -751,7 +748,6 @@ const DataGridTable = ({
           )}
         </Box>
       )}
-
       {(permissions?.allAction ?? true) && (
         <Notification
           open={snackbarOpen}
@@ -760,7 +756,6 @@ const DataGridTable = ({
           onClose={() => setSnackbarOpen(false)}
         />
       )}
-
       <Dialog
         open={openDeleteDialogeBox}
         onClose={closeDeleteDialogeBox}

@@ -26,7 +26,7 @@ import ProductionvolumeData from '../ProductionVoluemData'
 import ShutDown from '../ShutDown'
 import SlowDown from '../Slowdown'
 import AuditTrail from './AuditTrail'
-//import './jio-grid-style.css'
+import './jio-grid-style.css'
 import DataGridTable from '../ASDataGrid'
 
 // import DataGridTable from '../ASDataGrid'
@@ -83,9 +83,9 @@ const FiveTables = () => {
       ),
     },
     // grouped children can skip renderHeader:
-    { field: 'aop_2025_26', headerName: 'FY�2025-26�AOP', minWidth: 150 },
-    { field: 'actual_2025_26', headerName: 'FY�2025-26�Actual', minWidth: 150 },
-    { field: 'aop_2026_27', headerName: 'FY�2026-27�AOP', minWidth: 150 },
+    { field: 'aop_2025_26', headerName: 'FY 2025-26 AOP', minWidth: 150 },
+    { field: 'actual_2025_26', headerName: 'FY 2025-26 Actual', minWidth: 150 },
+    { field: 'aop_2026_27', headerName: 'FY 2026-27 AOP', minWidth: 150 },
     {
       field: 'remarks',
       headerName: 'Remarks',

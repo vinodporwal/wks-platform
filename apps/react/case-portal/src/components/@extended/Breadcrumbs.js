@@ -18,9 +18,6 @@ import Stack from '@mui/material/Stack'
 
 const Breadcrumbs = ({ navigation, title, ...others }) => {
   const keycloak = useSession()
-  const role = keycloak.idTokenParsed
-  // console.log('role', role)
-
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical

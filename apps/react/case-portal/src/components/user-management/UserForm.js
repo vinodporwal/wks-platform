@@ -207,7 +207,15 @@ const UserAccessForm = ({ keycloak }) => {
           )
           if (response) {
             // Map the response data to get the display names of screens.
-            setScreens(response.data.map((item) => item.screenDisplayName))
+            // setScreens(
+            //   response.data[0].children[0].children[0].map(
+            //     (item) => item.title,
+            //   ),
+            // )
+            const screenTitles = response.data[0].children[0].children.map(
+              (item) => item.title,
+            )
+            setScreens(screenTitles)
           }
         } catch (error) {
           console.error('Error fetching screens:', error)
@@ -453,7 +461,7 @@ const UserAccessForm = ({ keycloak }) => {
       },
     }
 
-    // console.log('Saved JSON:', JSON.stringify(result, null, 2))
+  //console.log('Saved JSON:', JSON.stringify(result, null, 2))
     try {
       setLoading(true)
       const res = await DataService.updateUserPlants(keycloak, result)
