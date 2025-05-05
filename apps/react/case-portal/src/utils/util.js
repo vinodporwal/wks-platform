@@ -11,8 +11,8 @@ export const buildCreateUrl = (url, caseDefId = 'create') => {
     );
     } else if (caseDefId === 'cms'){
       newUrl = cleanedUrl.replace(
-        'cms',
-        'case-list/cms',
+        '/cms',
+        '/case-list/cms',
         );
     }
 
