@@ -188,19 +188,19 @@ const App = () => {
 
   async function checkAndPostPIForm(keycloak) {
     if (localStorage.getItem('piFormCreated')) {
-      console.log('Form "PI Case Management System" already exists.')
+      console.log('Form "CMS Case Management System" already exists.')
       return
     }
     try {
       const data = await FormService.getAll(keycloak)
       const formExists = data.some(
-        (form) => form.title === 'PI Case Management System',
+        (form) => form.title === 'CMS Case Management System',
       )
       if (formExists) {
-        console.log('Form "PI Case Management System" already exists.')
+        console.log('Form "CMS Case Management System" already exists.')
       } else {
         console.log(
-          'Form "PI Case Management System" does not exist. Creating form...',
+          'Form "CMS Case Management System" does not exist. Creating form...',
         )
         await createPIForm(keycloak)
       }

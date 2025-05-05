@@ -109,7 +109,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         color='primary'
         size='small'
         onClick={() => {
-          navigate(`/case-list/picreate${currentParams}`)
+          navigate(`/case-list/cms${currentParams}`)
           handleCloseSnack()
         }}
       >
@@ -165,43 +165,43 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
         if (!isDraft) {
-          const analysis = level1.components?.[5] ?? null;
-          const recommendation = level1.components?.[6] ?? null;
-          const caseDetails = level1.components?.[3] ?? null;
+          const analysis = level1.components?.[2] ?? null;
+          const recommendation = level1.components?.[3] ?? null;
+          const siteRecommendation = level1.components?.[4] ?? null;
 
           // Disable all components in level1 except recommendation and caseDetails
           level1.components?.forEach((component) => {
             if (
               component.id !== recommendation?.id &&
-              component.id !== caseDetails?.id && 
+              component.id !== siteRecommendation?.id && 
               component.id !== analysis?.id
             ) {
               component.disabled = true;
             }
           });
         
-          const caseDetails0 = caseDetails?.components?.[0];
-          if (caseDetails0) {
-            caseDetails0.disabled = true;
-          }
+          // const caseDetails0 = caseDetails?.components?.[0];
+          // if (caseDetails0) {
+          //   caseDetails0.disabled = true;
+          // }
         
-          const caseDetails1 = caseDetails?.components?.[1];
-          const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
+          // const caseDetails1 = caseDetails?.components?.[1];
+          // const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
         
-          // Disable all components inside columns of caseDetails1, except caseStatus
-          caseDetails1?.columns?.forEach((column) => {
-            column?.components?.forEach((component) => {
-              if (component.id !== caseStatus?.id) {
-                component.disabled = true;
-              }
-            });
-          });
+          // // Disable all components inside columns of caseDetails1, except caseStatus
+          // caseDetails1?.columns?.forEach((column) => {
+          //   column?.components?.forEach((component) => {
+          //     if (component.id !== caseStatus?.id) {
+          //       component.disabled = true;
+          //     }
+          //   });
+          // });
         }        
 
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 3 ? level1.components[3] : null
+            level1.components.length > 5 ? level1.components[5] : null
           if (level2 && level2.components) {
             const caseDescriptionField =
               level2.components.length > 1 ? level2.components[1] : null
@@ -363,6 +363,173 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       .finally(() => {
         setLoading(false) // Stop loading after the process finishes
       })
+  }
+
+  const onAnalysisSave = () => {
+    setLoading(true)
+    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
+    const missingFields = requiredFields.filter(
+      (field) => !formData.data.container[field],
+    )
+    if (missingFields.length > 0) {
+      setSnackbarMessages(['Please fill in all required fields.'])
+      setSnackbarOpen(true)
+      setLoading(false)
+      return
+    }
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }))
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        caseNo: aCase.caseNo,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
+        },
+        attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
+      }),
+    )
+      .then((data) => {
+        const businessKey = data.businessKey
+
+        return CaseService.saveAnalysis(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            isDraft: 'n',
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          }),
+        )
+      })
+      .then((data) => {
+        setLastCreatedCase(data)
+        setSnackOpen(true)
+        setTimeout(() => {
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
+      })
+      .catch((err) => {
+        console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
+      })
+  }
+
+  const onSubmitRecommendation = (event) => {
+    console.log('event onSubmitRecommendation', event)
+    let updatedFormData = JSON.parse(JSON.stringify(formData))
+    setFormData(updatedFormData)
+
+    const {
+      recommendationReviewer,
+      recommendationAssignedTo2,
+      recommendationHeadline,
+      recommendationTargetCompletionDate1,
+      recommendationDescription1,
+      equipmentFunctionLocation,
+      RecommendationConfirmSAP3,
+    } = event.data
+
+    const missingFields = []
+    if (!recommendationReviewer) 
+      missingFields.push('Recommendation Reviewer')
+    if (!recommendationAssignedTo2)
+      missingFields.push('Recommendation Assigned To')
+    if (!recommendationHeadline) 
+      missingFields.push('Recommendation Headline')
+    if (!recommendationTargetCompletionDate1)
+      missingFields.push('Target Completion Date')
+    // if (!equipmentFunctionLocation)
+    //   missingFields.push('Equipment Function Location')
+
+    if (missingFields.length > 0) {
+      setSnackbarMessages(missingFields)
+      setSnackbarOpen(true)
+      setTimeout(() => {
+        setSnackbarOpen(false)
+      }, 2000)
+      return
+    }
+
+    setSnackbarMessages([])
+
+    const apiBodyData = {
+      recommendationHeadline,
+      recommendationDescription1,
+      recommendationAssignedTo2,
+      equipmentFunctionLocation,
+      recommendationTargetCompletionDate1,
+      recommendationReviewer,
+      RecommendationConfirmSAP3,
+      deleteRowButton4: false,
+      RecommendationSubmit3: false,
+      caseNo: aCase?.caseNo,
+      createdBy: keycloak.idTokenParsed.sub,
+    }
+    setApiBody(apiBodyData)
+    setIsConfirmationOpen(true)
+  }
+
+  const submitRecommendation = async () => {
+    try {
+      const response = await CaseService.savePIRecommendation(keycloak, apiBody)
+      if(response.status !== 500){
+      console.log('Recommendation submitted successfully:', response)
+      setSnackbarMessages(['Recommendation submitted successfully'])
+      setSnackbarOpen(true)
+      setIsConfirmationOpen(false)
+      setTimeout(() => {
+        window.location.href = response.caseUrl;
+        // window.location.reload()
+      }, 1000)
+      }else{
+        setIsConfirmationOpen(false)
+        console.error('Error submitting recommendation:', response)
+        console.error('Error submitting recommendation:', JSON.stringify(response.body))
+        setSnackbarMessages(['Error submitting recommendation'])
+        setSnackbarOpen(true)
+      }
+      // getCaseInfo(aCase)
+    } catch (error) {
+      console.error('Error submitting recommendation:', error)
+      setSnackbarMessages(['Error submitting recommendation'])
+      setSnackbarOpen(true)
+    }
   }
 
   const onSubmitForm = () => {
@@ -669,12 +836,14 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
             ${uploadedFiles
               .map(
                 (file, index) => `
-                  <li style="margin-bottom: 16px;">
-                    <img 
-                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                  <li style="margin-bottom: 8px; cursor: pointer; color: #007bff; text-decoration: underline;">
+                    <a 
+                      href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
                       alt="${file.name}"
-                      style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 4px;"
+                      target="_blank"
                     />
+                     ${file.name}
+                    </a>
                   </li>
                 `
               )
@@ -917,13 +1086,50 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                           console.log('Form event:', event)
                           if (event.component.key === 'saveAsDraft') {
                             onSubmitForm()
+                          } else if (
+                            event.component.key === 'RecommendationSubmit3'
+                          ) {
+                            onSubmitRecommendation(event)
                           } else if (event.component.key === 'onSave') {
-                            // onSubmitRecommendation()
                             onSave()
+                          } else if (event.component.key === 'analysisSubmit') {
+                            onAnalysisSave()
                           }
                         }}
                       />
                     )}
+                    <Dialog
+                      open={isConfirmationOpen}
+                      onClose={() => setIsConfirmationOpen(false)}
+                    >
+                      <DialogTitle>Confirm Submission</DialogTitle>
+                      <DialogContent>
+                        <DialogContentText>
+                          Are you sure you want to submit this recommendation?
+                        </DialogContentText>
+                        {apiBody &&
+                          apiBody?.RecommendationConfirmSAP3 == 'n' && (
+                            <DialogContentText sx={{ color: 'red' }}>
+                              Note: Create SAP Request is not selected
+                            </DialogContentText>
+                          )}
+                      </DialogContent>
+                      <DialogActions>
+                        <Button
+                          onClick={() => setIsConfirmationOpen(false)}
+                          color='primary'
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={submitRecommendation}
+                          color='primary'
+                          autoFocus
+                        >
+                          Submit
+                        </Button>
+                      </DialogActions>
+                    </Dialog>                    
                     <Snackbar
                       open={snackbarOpen}
                       autoHideDuration={2000}

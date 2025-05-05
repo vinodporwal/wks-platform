@@ -44,6 +44,10 @@ export const MainRoutes = (
         element: <NewPICaseFormPage />,
       },
       {
+        path: 'cms',
+        element: <NewPICaseFormPage />,
+      },
+      {
         path: 'case-list',
         children: [
           {

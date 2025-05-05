@@ -9,10 +9,10 @@ export const buildCreateUrl = (url, caseDefId = 'create') => {
     'create?assetName',
     'case-list/create?assetName',
     );
-    } else if (caseDefId === 'picreate'){
+    } else if (caseDefId === 'cms'){
       newUrl = cleanedUrl.replace(
-        'picreate',
-        'case-list/picreate',
+        'cms',
+        'case-list/cms',
         );
     }
 

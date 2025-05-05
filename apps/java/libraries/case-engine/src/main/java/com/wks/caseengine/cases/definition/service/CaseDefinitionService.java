@@ -83,4 +83,6 @@ public interface CaseDefinitionService {
 	Case savePICase(Case caseData);
 	
 	List<Case> getPICases(String caseDefinitionId);
+
+	Case savePICaseRecommendation(Recommendations recommendations);
 }

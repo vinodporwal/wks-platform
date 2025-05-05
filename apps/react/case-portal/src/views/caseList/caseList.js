@@ -818,7 +818,7 @@ export const CaseList = ({ status, caseDefId }) => {
           keycloak={keycloak}
         />
       )}
-      {openCaseForm && caseDefId === 'picreate' && (
+      {openCaseForm && caseDefId === 'cms' && (
         <PICaseForm
           aCase={aCase}
           handleClose={handleCloseCaseForm}

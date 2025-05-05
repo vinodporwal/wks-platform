@@ -1439,7 +1439,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                           } else if (event.component.key === 'onSave') {
                             // onSubmitRecommendation()
                             onSave()
-                          }  else if (event.component.key === 'analysisSubmit') {
+                          } else if (event.component.key === 'analysisSubmit') {
                             onAnalysisSave()
                           }
                         }}

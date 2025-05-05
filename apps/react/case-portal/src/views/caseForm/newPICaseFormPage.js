@@ -23,7 +23,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
 })
 
-export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
+export const NewPICaseFormPage = ({ open = true, caseDefId = 'cms' }) => {
   const [caseDef, setCaseDef] = useState([])
   const [form, setForm] = useState([])
   const [formData, setFormData] = useState(null)
@@ -56,7 +56,7 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 3 ? level1.components[3] : null
+            level1.components.length > 5 ? level1.components[5] : null
           if (level2 && level2.components) {
             if (level7 && level7.columns) {
               const saveAsDraft =
@@ -105,7 +105,7 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
     const params =
       currentParams.length > 0 ? currentParams : window.location.search
     console.log('currentParams', params)
-    navigate(`/case-list/picreate${params}`)
+    navigate(`/case-list/cms${params}`)
   }
 
   const onSave = () => {
@@ -267,7 +267,7 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'picreate' }) => {
         color='primary'
         size='small'
         onClick={() => {
-          navigate(`/case-list/picreate${currentParams}`)
+          navigate(`/case-list/cms${currentParams}`)
           handleCloseSnack()
         }}
       >
