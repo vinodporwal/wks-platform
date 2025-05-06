@@ -502,7 +502,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onAnalysisSave = () => {
     setLoading(true)
-    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
+    const requiredFields = ['caseCauseCategory', 'caseCauseDescription', 'analysisDesc', 'diagnosis']
     const missingFields = requiredFields.filter(
       (field) => !formData.data.container[field],
     )
@@ -1163,11 +1163,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           .map(
             (file, index) => `
                   <li style="margin-bottom: 16px;">
-                    <img 
-                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                    <a 
+                      href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
                       alt="${file.name}"
-                      style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 4px;"
-                    />
+                      target="_blank"
+                    >${file.name}</a>
               </li>
                 `
           )
