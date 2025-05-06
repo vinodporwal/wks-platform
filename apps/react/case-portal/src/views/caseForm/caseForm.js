@@ -1106,6 +1106,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
           <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
           <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
+          <p><strong>${getLabel('diagnosis')}</strong>: ${containerData.diagnosis}</p>
         </div>`
     if (files.length > 0) {
       content += `
