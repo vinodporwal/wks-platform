@@ -18,4 +18,7 @@ public interface CaseRepository extends JpaRepository<Case, Long> {
 
 	@Query(value =" select * from cases where case_no =:case_no", nativeQuery = true)
 	Case getByCaseNo(@Param(value="case_no") String case_no);
+	
+	@Query(value =" select * from cases where case_no in (:caseNos) ORDER BY case_no DESC", nativeQuery = true)
+	List<Case> findAllByCaseNos(@Param(value="caseNos") List<String> caseNos);
 }

@@ -13,6 +13,7 @@ package com.wks.caseengine.cases.definition.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -85,4 +86,10 @@ public interface CaseDefinitionService {
 	List<Case> getPICases(String caseDefinitionId);
 
 	Case savePICaseRecommendation(Recommendations recommendations);
+
+	Case savePICaseSiteRecommendation(Recommendations recommendations);
+
+	Map<String, Object> getCaseByCaseNo(String caseNo);
+
+	Map<String, Object> fetchCaseStatus(List<String> caseNos);
 }

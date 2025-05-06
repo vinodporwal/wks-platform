@@ -532,6 +532,72 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     }
   }
 
+  const onSubmitSiteRecommendation = async (event) => {
+    console.log('event onSubmitSiteRecommendation', event)
+    let updatedFormData = JSON.parse(JSON.stringify(formData))
+    setFormData(updatedFormData)
+
+    const {
+      siteRecommendationAssignedTo,
+      siteRecommendationHeadline,
+      siteRecommendationTargetCompletionDate,
+      siteRecommendationDescription,
+    } = event.data
+
+    const missingFields = []
+    if (!siteRecommendationAssignedTo)
+      missingFields.push('Recommendation Assigned To')
+    if (!siteRecommendationHeadline) 
+      missingFields.push('Recommendation Headline')
+    if (!siteRecommendationTargetCompletionDate)
+      missingFields.push('Target Completion Date')
+
+    if (missingFields.length > 0) {
+      setSnackbarMessages(missingFields)
+      setSnackbarOpen(true)
+      setTimeout(() => {
+        setSnackbarOpen(false)
+      }, 2000)
+      return
+    }
+
+    setSnackbarMessages([])
+
+    const apiBodyData = {
+      recommendationHeadline: siteRecommendationHeadline,
+      recommendationDescription1: siteRecommendationDescription,
+      recommendationAssignedTo2: siteRecommendationAssignedTo,
+      recommendationTargetCompletionDate1: siteRecommendationTargetCompletionDate,
+      deleteRowButton4: false,
+      RecommendationSubmit3: false,
+      caseNo: aCase?.caseNo,
+      createdBy: keycloak.idTokenParsed.sub,
+    }
+
+    try {
+      const response = await CaseService.saveSiteRecommendation(keycloak, apiBodyData)
+      if(response.status !== 500){
+      console.log('Site Recommendation submitted successfully:', response)
+      setSnackbarMessages(['Site Recommendation submitted successfully'])
+      setSnackbarOpen(true)
+      setTimeout(() => {
+        window.location.href = response.caseUrl;
+        // window.location.reload()
+      }, 1000)
+      }else{
+        console.error('Error submitting recommendation:', response)
+        console.error('Error submitting recommendation:', JSON.stringify(response.body))
+        setSnackbarMessages(['Error submitting recommendation'])
+        setSnackbarOpen(true)
+      }
+      // getCaseInfo(aCase)
+    } catch (error) {
+      console.error('Error submitting recommendation:', error)
+      setSnackbarMessages(['Error submitting recommendation'])
+      setSnackbarOpen(true)
+    }
+  }
+
   const onSubmitForm = () => {
     setLoading(true)
 
@@ -1094,6 +1160,8 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                             onSave()
                           } else if (event.component.key === 'analysisSubmit') {
                             onAnalysisSave()
+                          } else if(event.component.key === 'siteRecommendationSubmit'){
+                            onSubmitSiteRecommendation(event)
                           }
                         }}
                       />

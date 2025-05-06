@@ -284,4 +284,23 @@ public class CaseDefinitionController {
         Case savedCase = caseDefinitionService.savePICaseRecommendation(recommendations);
         return ResponseEntity.ok(savedCase);
     }
+	
+	@PostMapping("/pi/site/save-recommendation")
+    public ResponseEntity<Case> savePICaseSiteRecommendation(@RequestBody Recommendations recommendations) {
+        Case savedCase = caseDefinitionService.savePICaseSiteRecommendation(recommendations);
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	@GetMapping(value = "/status/{caseNo}")
+	public ResponseEntity<Map<String, Object>> getCaseStatus(@PathVariable String caseNo) {
+		Map<String, Object> caseDetails = caseDefinitionService.getCaseByCaseNo(caseNo);
+		return ResponseEntity.ok(caseDetails);
+	}
+	
+	@PostMapping(value = "/status")
+	public ResponseEntity<Map<String, Object>> fetchCaseStatus(@RequestBody Map<String,List<String>> payload) {
+		List<String> caseNos = payload.get("caseNos");
+		Map<String, Object> caseDetails = caseDefinitionService.fetchCaseStatus(caseNos);
+		return ResponseEntity.ok(caseDetails);
+	}
 }

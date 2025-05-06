@@ -21,7 +21,8 @@ export const CaseService = {
   saveRecommendation,
   saveAnalysis,
   savePICase,
-  savePIRecommendation
+  savePIRecommendation,
+  saveSiteRecommendation
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -454,6 +455,26 @@ async function savePIRecommendation(keycloak, body) {
     return json(keycloak, resp)
   } catch (err) {
     console.error('Error in saveRecommendation API:', err);
+    throw err;
+  }
+}
+
+async function saveSiteRecommendation(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/pi/site/save-recommendation`;
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    return json(keycloak, resp)
+  } catch (err) {
+    console.error('Error in save Site Recommendation API:', err);
     throw err;
   }
 }

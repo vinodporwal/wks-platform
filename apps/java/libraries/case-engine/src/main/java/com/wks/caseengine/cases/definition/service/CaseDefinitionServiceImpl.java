@@ -89,7 +89,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	private final JavaMailSender mailSender;
 
-	@Autowired
 	public CaseDefinitionServiceImpl(JavaMailSender mailSender) {
 		this.mailSender = mailSender;
 	}
@@ -1199,7 +1198,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				JsonNode rootNode = objectMapper.readTree(attributeValue);
 
 				// Navigate to the "dataGrid1" array
-				JsonNode recommendationNode = rootNode.path("recommendations");
+				JsonNode recommendationNode = rootNode.path("dataGrid1");
 				if (recommendationNode.isArray()) {
 					ArrayNode dataGridArray = (ArrayNode) recommendationNode; // Cast to ArrayNode for appending new
 																				// elements
@@ -1280,6 +1279,104 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		recommendationStatusAndId[1] = status;
 
 		return recommendationStatusAndId;
+	}
+	
+	@Override
+	public Case savePICaseSiteRecommendation(Recommendations recommendation) {
+		String caseNo = recommendation.getCaseNo();
+		Case caseDetails = caseRepository.getByCaseNo(caseNo);
+		for (Attribute attribute : caseDetails.getAttributes()) {
+			String attributeValue = attribute.getValue();
+			String updatedAttributeValue = savePICaseSiteRecommendations(attributeValue, caseNo, recommendation);
+			updatedAttributeValue = removeUnwantedSiteRecommendations(updatedAttributeValue);
+			attribute.setValue(updatedAttributeValue);
+		}
+		System.out.println("After processing everything...");
+		System.out.println("..." + caseDetails.getAttributes().get(0).getValue());
+		caseDetails = caseRepository.save(caseDetails);
+		return caseDetails;
+	}
+	
+	private String savePICaseSiteRecommendations(String attributeValue, String caseNo, Recommendations newRecommendation) {
+		attributeValue = attributeValue.replace("\\\"", "\"");
+
+	    System.out.println("Attribute Value: " + attributeValue);
+
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			JsonNode rootNode = objectMapper.readTree(attributeValue);
+
+			// Navigate to the "dataGrid1" array
+			JsonNode recommendationNode = rootNode.path("siteRecommendations");
+			if (recommendationNode.isArray()) {
+				ArrayNode dataGridArray = (ArrayNode) recommendationNode; // Cast to ArrayNode for appending new
+																			// elements
+
+				// Convert the new recommendation object to a JSON node
+				ObjectNode newRecommendationNode = objectMapper.createObjectNode();
+				newRecommendationNode.put("siteRecommendationHeadline", newRecommendation.getRecommendationHeadline());
+				newRecommendationNode.put("siteRecommendationDescription",
+						newRecommendation.getRecommendationDescription1());
+				newRecommendationNode.put("siteRecommendationAssignedTo",
+						newRecommendation.getRecommendationAssignedTo2());
+				newRecommendationNode.put("siteRecommendationStatus", newRecommendation.getRecommendationStatus());
+				newRecommendationNode.put("siteRecommendationTargetCompletionDate",
+						newRecommendation.getRecommendationTargetCompletionDate1());
+				newRecommendationNode.put("siteRecommendationNo", newRecommendation.getRecommendationNo1());
+				newRecommendationNode.put("RecommendationSubmit", newRecommendation.getRecommendationSubmit());
+				newRecommendationNode.put("siteRecommendationSubmit", newRecommendation.isRecommendationSubmit3());
+				newRecommendationNode.put("createdBy", newRecommendation.getCreatedBy());
+
+				// Append the new recommendation node to the dataGrid1 array
+
+				String[] recommendationStatusAndId = savePICaseRecommendationMapping(newRecommendationNode, caseNo,
+						newRecommendation.getRecommendationAssignedTo2(),
+						newRecommendation.getRecommendationReviewer());
+
+				newRecommendationNode.put("siteRecommendationNo", recommendationStatusAndId[0]);
+				newRecommendationNode.put("siteRecommendationStatus", recommendationStatusAndId[1]);
+				dataGridArray.add(newRecommendationNode);
+				// Convert the updated root node back to a string
+				String updatedAttributeValue = objectMapper.writeValueAsString(rootNode);
+				System.out.println("Updated Attribute Value: " + updatedAttributeValue);
+				return updatedAttributeValue;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	private String removeUnwantedSiteRecommendations(String attribute) {
+		attribute = attribute.replace("\\\"", "\"");
+
+		System.out.println("Attribute Value: " + attribute);
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			JsonNode rootNode = objectMapper.readTree(attribute);
+
+			// Navigate to the "dataGrid1" array
+			JsonNode recommendationNode = rootNode.path("siteRecommendations");
+			if (recommendationNode.isArray()) {
+				ArrayNode arrayNode = (ArrayNode) recommendationNode;
+
+				for (int i = arrayNode.size() - 1; i >= 0; i--) {
+					JsonNode dataGridEntry = arrayNode.get(i);
+					String recNumber = dataGridEntry.path("siteRecommendationNo").asText();
+
+					// Remove the entry if recommendationNo1 is empty or null
+					if (recNumber == null || recNumber.isEmpty()) {
+						arrayNode.remove(i);
+					}
+				}
+				String updatedAttributeValue = objectMapper.writeValueAsString(rootNode);
+				System.out.println("After Saving Recommendation" + updatedAttributeValue);
+				return updatedAttributeValue;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	private String getGEAPMRecommendationStatusAndUpdateRecommendationStatus(String geAPMAcsessToken,
@@ -1389,4 +1486,82 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	private String getString(Map<String, Object> map, String key) {
 		return map.getOrDefault(key, "").toString();
 	}
+
+	@Override
+	public Map<String, Object> getCaseByCaseNo(String caseNo) {
+		Map<String, Object> result = new HashMap<String, Object>();
+		Case caseDetails = caseRepository.getByCaseNo(caseNo);
+		if(caseDetails != null) {
+			Map<String, Object> data = new HashMap<String, Object>();
+			data.put("caseNo", caseDetails.getCaseNo());
+			data.put("status", caseDetails.getStatus());
+						
+			for (Attribute attribute : caseDetails.getAttributes()) {
+				String attributeValue = attribute.getValue();
+				attributeValue = attributeValue.replace("\\\"", "\"");
+
+				System.out.println("Attribute Value: " + attributeValue);
+				try {
+					ObjectMapper objectMapper = new ObjectMapper();
+					JsonNode rootNode = objectMapper.readTree(attributeValue);
+
+					String caseTitle = rootNode.path("caseTitle").asText();
+					String caseDescription = rootNode.path("caseDescription").asText();
+					
+					data.put("caseTitle", caseTitle);
+					data.put("caseDescription", caseDescription);
+					
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			
+			result.put("message", "Case Details.");
+			result.put("data", data);			
+		} else {
+			result.put("message", "No case found with given case number.");
+			result.put("data", null);			
+		}
+		return result;
+	}
+
+	@Override
+	public Map<String, Object> fetchCaseStatus(List<String> caseNos) {
+		List<Case> cases = caseRepository.findAllByCaseNos(caseNos);
+		Map<String, Object> result = new HashMap<String, Object>();
+		
+		Map<String, Object> casesStatus = new HashMap<String, Object>();
+		for (Case caseDetails : cases) {
+				Map<String, Object> data = new HashMap<String, Object>();
+				data.put("caseNo", caseDetails.getCaseNo());
+				data.put("status", caseDetails.getStatus());
+							
+				for (Attribute attribute : caseDetails.getAttributes()) {
+					String attributeValue = attribute.getValue();
+					attributeValue = attributeValue.replace("\\\"", "\"");
+
+					try {
+						ObjectMapper objectMapper = new ObjectMapper();
+						JsonNode rootNode = objectMapper.readTree(attributeValue);
+
+						String caseTitle = rootNode.path("caseTitle").asText();
+						String caseDescription = rootNode.path("caseDescription").asText();
+						
+						data.put("caseTitle", caseTitle);
+						data.put("caseDescription", caseDescription);
+						
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+					
+				casesStatus.put(caseDetails.getCaseNo(), data);
+		}
+		
+		result.put("message", "Cases status details.");
+		result.put("data", casesStatus);
+		return result;
+	}
+
 }
