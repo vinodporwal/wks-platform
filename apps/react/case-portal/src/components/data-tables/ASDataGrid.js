@@ -375,11 +375,13 @@ const DataGridTable = ({
   const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
   // console.log(showDeleteAll)
 
+  const lastColumnField = columns[columns.length - 1]?.field
+
+
   return (
     <Box
       sx={{
         height: `${boxHeight ?? (permissions.customHeight2 ? '50vh' : '80vh')}`,
-
         width: '100%',
         padding: '0px 0px',
         margin: '0px 0px 0px',
@@ -421,6 +423,7 @@ const DataGridTable = ({
               />
             )}
           </Box>
+
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {permissions?.showTitle && (
               <Typography component='div' className='grid-title'>
@@ -602,6 +605,16 @@ const DataGridTable = ({
           checkboxSelection={permissions?.showCheckBox}
           columns={columns.map((col) => ({
             ...col,
+            editable: (params) => {
+              if (
+                permissions?.remarksEditable &&
+                params.row.isEditable === false &&
+                col.field !== lastColumnField
+              ) {
+                return false
+              }
+              return col.field === lastColumnField
+            },
             cellClassName: (params) => {
               if (col.isDisabled) {
                 if (params.row.Particulars) {
@@ -609,6 +622,13 @@ const DataGridTable = ({
                 } else {
                   return 'disabled-cell'
                 }
+              }
+              if (
+                permissions?.remarksEditable &&
+                params.row.isEditable === false &&
+                col.field !== lastColumnField
+              ) {
+                return 'odd-cell'
               }
               return undefined
             },
@@ -650,14 +670,19 @@ const DataGridTable = ({
           }}
           getRowClassName={(params) => {
             const classes = []
+
             if (permissions?.isOldYear == 1) {
               classes.push('odd-row-disabled')
             }
+
             if (params.row.Particulars || params.row.Particulars2) {
               classes.push('no-border-row')
             }
 
-            if (params.row.isEditable === false) {
+            if (
+              params.row.isEditable === false &&
+              !permissions?.remarksEditable
+            ) {
               return [
                 ...classes,
                 permissions?.noColor === true ? 'even-row' : 'odd-row',
@@ -669,6 +694,7 @@ const DataGridTable = ({
           // columnGroupingModel={columnGroupingModel}
         />
       </Box>
+
       {(permissions?.allAction ?? true) && (
         <Box
           sx={{
@@ -748,6 +774,7 @@ const DataGridTable = ({
           )}
         </Box>
       )}
+
       {(permissions?.allAction ?? true) && (
         <Notification
           open={snackbarOpen}
@@ -756,6 +783,7 @@ const DataGridTable = ({
           onClose={() => setSnackbarOpen(false)}
         />
       )}
+
       <Dialog
         open={openDeleteDialogeBox}
         onClose={closeDeleteDialogeBox}

@@ -38,6 +38,7 @@ import './jio-grid-style.css'
 import ProductionAopView from 'components/data-tables-views/DataTable-production-aop'
 import PlantsProductionSummary from '../Reports/PlantsProductionData'
 import MonthwiseProduction from '../Reports/MonthwiseProduction'
+import MonthwiseRawMaterial from '../Reports/MonthwiseRawMaterial'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -182,7 +183,6 @@ const WorkFlowMerge = () => {
     try {
       const cases = await DataService.getCaseId(keycloak)
       // setCaseId(cases?.workflowMasterDTO?.casedefId || '')
-      console.log(cases?.workflowList?.length === 0)
       // console.log(isEdit)
       // console.log(showCreateCasebutton)
       if (cases?.workflowList?.length !== 0) return
@@ -247,7 +247,7 @@ const WorkFlowMerge = () => {
   const fetchData = async () => {
     try {
       const data = await DataService.getWorkflowData(keycloak, plantId)
-      const formatted = data.results.map((row, idx) => {
+      var formatted = data.results.map((row, idx) => {
         const out = { id: idx }
         Object.entries(row).forEach(([k, v]) => {
           out[k] = !isNaN(v) && v !== '' ? Number(v).toFixed(2) : v
@@ -255,6 +255,12 @@ const WorkFlowMerge = () => {
         return out
       })
       // console.log(formatted)
+
+      formatted = formatted?.map((item) => ({
+        ...item,
+        isEditable: false,
+      }))
+
       setRows(formatted)
       setColumns(generateColumns(data))
     } catch (err) {
@@ -515,6 +521,13 @@ const WorkFlowMerge = () => {
               borderBottom: '1px solid',
             }}
           />
+          <Tab
+            label='Month Wise Raw Data'
+            sx={{
+              border: tabIndex === 3 ? '1px solid ' : 'none',
+              borderBottom: '1px solid',
+            }}
+          />
           {/* <Tab
               label='Other Losses'
               sx={{
@@ -585,6 +598,7 @@ const WorkFlowMerge = () => {
                   customHeight: defaultCustomHeight,
                   // saveBtn: true,
                   showCalculate: true,
+                  remarksEditable: true,
                   // approveBtn: false,
                 }}
               />
@@ -662,6 +676,7 @@ const WorkFlowMerge = () => {
         {tabIndex === 1 && <PlantsProductionSummary />}
 
         {tabIndex === 2 && <MonthwiseProduction />}
+        {tabIndex === 3 && <MonthwiseRawMaterial />}
       </Box>
     </div>
   )

@@ -4,18 +4,33 @@ import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
 import {
   Backdrop,
   CircularProgress,
+  Tooltip,
   Typography,
 } from '../../../../node_modules/@mui/material/index'
 import ProductionNorms from '../ProductionNorms'
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import { truncateRemarks } from 'utils/remarksUtils'
 
 const MonthwiseProduction = () => {
   const keycloak = useSession()
 
   const thisYear = localStorage.getItem('year')
-
+  // 1. Remark dialog state
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const unsavedChangesRef = React.useRef({
+    unsavedRows: {},
+    rowsBeforeChange: {},
+  })
+  const handleRemarkCellClick = (row) => {
+    console.log(row)
+    setCurrentRemark(row.Remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
   let oldYear = ''
   if (thisYear && thisYear.includes('-')) {
     const [start, end] = thisYear.split('-').map(Number)
@@ -24,7 +39,7 @@ const MonthwiseProduction = () => {
   const columns = [
     {
       field: 'RowNo',
-      headerName: 'Sl. No.',
+      headerName: 'SL.No',
       flex: 1,
       headerAlign: 'left',
       align: 'left',
@@ -40,16 +55,16 @@ const MonthwiseProduction = () => {
     {
       field: 'EOEProdBudget', // was eoeBudgetCY
       headerName: 'Budget',
-      flex: 1,
+      flex: 2,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
     {
       field: 'EOEProdActual', // was eoeActualCY
       headerName: 'Actual',
       flex: 1,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
 
     // Current Year → Operating Hours
@@ -58,14 +73,14 @@ const MonthwiseProduction = () => {
       headerName: 'Budget',
       flex: 1,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
     {
       field: 'OpHrsActual', // was opActualCY
       headerName: 'Actual',
       flex: 1,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
 
     // Current Year → Throughput
@@ -74,14 +89,14 @@ const MonthwiseProduction = () => {
       headerName: 'Budget',
       flex: 1,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
     {
       field: 'ThroughputActual', // was thrActualCY
       headerName: 'Actual',
       flex: 1,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
 
     // Budget Year single values
@@ -90,44 +105,65 @@ const MonthwiseProduction = () => {
       headerName: 'Operating Hours',
       flex: 2,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
     {
       field: 'MEGThroughput', // was megTPH
       headerName: 'MEG Throughput, TPH',
       flex: 2,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
     {
       field: 'EOThroughput', // was eoTPH
       headerName: 'EO Throughput, TPH',
       flex: 2,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
     {
       field: 'EOEThroughput', // was eoeTPH
       headerName: 'EOE Throughput, TPH',
       flex: 2,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
     {
       field: 'TotalEOE', // was totalEoeMT
       headerName: 'Total EOE, MT',
       flex: 2,
       headerAlign: 'left',
-      align: 'left',
+      align: 'right',
     },
 
     // (Optional) you can keep Remarks if you plan to add that later
     {
-      field: 'remarks',
-      headerName: 'Remarks',
-      flex: 2,
-      // minWidth: 200,
-      headerAlign: 'left',
+      field: 'Remark',
+      headerName: 'Remark',
+      minWidth: 250,
+      editable: false,
+      renderCell: (params) => {
+        const displayText = truncateRemarks(params.value)
+        const isEditable = !params.row.Particulars
+
+        return (
+          <Tooltip title={params.value || ''} arrow>
+            <div
+              style={{
+                cursor: 'pointer',
+                color: params.value ? 'inherit' : 'gray',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: 140,
+              }}
+              onClick={() => handleRemarkCellClick(params.row)}
+            >
+              {displayText || (isEditable ? 'Click to add remark' : '')}
+            </div>
+          </Tooltip>
+        )
+      },
     },
   ]
 
@@ -174,11 +210,14 @@ const MonthwiseProduction = () => {
       ],
     },
   ]
+  const [rows, setRows] = useState()
 
-  const defaultCustomHeight = { mainBox: '35vh', otherBox: '110%' }
+  const defaultCustomHeight = {
+    mainBox: `${15 + (rows?.length || 0) * 5}vh`,
+    otherBox: `${100 + (rows?.length || 0) * 5}%`,
+  }
 
   //api call
-  const [row, setRow] = useState()
   const [loading, setLoading] = useState(false)
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
@@ -193,11 +232,12 @@ const MonthwiseProduction = () => {
           res = res?.data?.data.map((item, index) => ({
             ...item,
             id: index,
+            isEditable: false,
           }))
 
-          setRow(res)
+          setRows(res)
         } else {
-          setRow([])
+          setRows([])
         }
       } catch (err) {
         console.log(err)
@@ -207,7 +247,22 @@ const MonthwiseProduction = () => {
     }
     fetchData()
   }, [year, plantId])
+  const processRowUpdate = React.useCallback((newRow, oldRow) => {
+    const rowId = newRow.id
 
+    unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
+    if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
+      unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
+    }
+
+    setRows((prevRows) =>
+      prevRows.map((row) =>
+        row.id === newRow.id ? { ...newRow, isNew: false } : row,
+      ),
+    )
+
+    return newRow
+  }, [])
   return (
     <Box sx={{ height: 500, width: '100%' }}>
       <Backdrop
@@ -217,7 +272,8 @@ const MonthwiseProduction = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <ReportDataGrid
-        rows={row}
+        rows={rows}
+        setRows={setRows}
         title='Monthwise Production Summary'
         columns={columns}
         permissions={{
@@ -225,11 +281,18 @@ const MonthwiseProduction = () => {
           textAlignment: 'center',
         }}
         treeData
-        getTreeDataPath={(row) => row.path}
+        getTreeDataPath={(rows) => rows.path}
         defaultGroupingExpansionDepth={1} // expand only first level by default
         disableSelectionOnClick
         columnGroupingModel={columnGroupingModel}
-        experimentalFeatures
+        processRowUpdate={processRowUpdate}
+        remarkDialogOpen={remarkDialogOpen}
+        unsavedChangesRef={unsavedChangesRef}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={setCurrentRowId}
       />
       <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
         Main Products - Production for the budget year{' '}
