@@ -184,19 +184,14 @@ const PlantsProductionSummary = () => {
             id: index,
             isEditable: false,
 
-            // Round to 1 decimal and keep % symbol
             VarBudgetPer:
               Particulates.VarBudgetPer != null
-                ? parseFloat(
-                    Particulates.VarBudgetPer.replace('%', ''),
-                  ).toFixed(1) + '%'
+                ? Number(Number(Particulates.VarBudgetPer).toFixed(1))
                 : '',
 
             VarActualPer:
               Particulates.VarActualPer != null
-                ? parseFloat(
-                    Particulates.VarActualPer.replace('%', ''),
-                  ).toFixed(1) + '%'
+                ? Number(Number(Particulates.VarActualPer).toFixed(1))
                 : '',
 
             // Round to nearest whole number
