@@ -16,6 +16,7 @@ import './jio-grid-style.css'
 // import { useSelector } from 'react-redux'
 import Layout from 'layout/FooterLayout/index'
 import { useSelector } from 'react-redux'
+import useMenuItems from 'menu/index'
 // import useMenuItems from 'menu/index'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
@@ -81,15 +82,14 @@ const App = () => {
     }
   }
 
-  // useEffect(() => {
-  //   console.log(keycloak)
-  // }, [])
   useEffect(() => {
     if (keycloak && verticalChange) {
       buildMenuItems(keycloak)
     }
     // console.log(verticalChange)
   }, [verticalChange, keycloak])
+  // const plan = usePlanMenu()
+  // console.log(plan)
 
   async function buildMenuItems(keycloak) {
     let rawAllowedVerticals = []
@@ -121,6 +121,7 @@ const App = () => {
     const menu = {
       items: [...menuItemsDefs.items],
     }
+    // console.log(menu)
 
     menu.items = menu.items.map((item) => {
       if (item.id === 'utilities') {
@@ -157,14 +158,10 @@ const App = () => {
 
     return setMenu(menu)
   }
+
   // async function buildMenuItems(keycloak) {
   //   // console.log(menuItems)
-  //   // const menu = { items: [...menuItems] }
-  //   const menu = {
-  //     items: [...menuItemsDefs.items],
-  //   }
-  //   // …filter by roles, inject dynamic screens, etc…
-  //   // console.log(menu)
+  //   const menu = { items: [...menuItems] }
 
   //   const isManagerUser =
   //     typeof keycloak.hasRealmRole === 'function'
@@ -175,7 +172,6 @@ const App = () => {
   //     delete menu.items[3]
   //   }
 
-  //   //   return setMenu(menu)
   //   setMenu(menu)
   // }
 
@@ -190,6 +186,7 @@ const App = () => {
                 <ThemeRoutes
                   keycloak={keycloak}
                   authenticated={authenticated}
+
                   // recordsTypes={recordsTypes}
                   // casesDefinitions={casesDefinitions}
                 />

@@ -47,7 +47,7 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
   backgroundColor: '#F2F3F8',
 }))
 
-const AnnualAopCost = () => {
+const AnnualAopCost = ({ permissions }) => {
   const keycloak = useSession()
   const [rowsProduction, setRowsProduction] = useState([])
   const [rowsPrice, setRowsPrice] = useState([])

@@ -16,7 +16,7 @@ import {
   Tooltip,
   Typography,
 } from '../../../../node_modules/@mui/material/index'
-
+import moment from 'moment'
 const AuditTrail = ({ keycloak, businessKey }) => {
   // const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
@@ -33,7 +33,17 @@ const AuditTrail = ({ keycloak, businessKey }) => {
     { field: 'userName', headerName: 'Username', width: 150 },
     { field: 'role', headerName: 'User Role', width: 150 },
     { field: 'status', headerName: 'Status', width: 150 },
-    { field: 'createdAt', headerName: 'Date And Time', width: 150 },
+    {
+      field: 'createdAt',
+      headerName: 'Date And Time',
+      width: 180,
+      valueFormatter: (params) => {
+        // assume backend sends ISO or UTC string
+        const utc = moment.utc(params.value)
+        const local = utc.local() // convert to user’s local timezone
+        return local.format('LL, h:mm:ss A') // or whatever format you like
+      },
+    },
     {
       field: 'body',
       headerName: 'Remark',
@@ -58,16 +68,12 @@ const AuditTrail = ({ keycloak, businessKey }) => {
         )
       },
     },
+    // { field: 'body', headerName: 'Remark', width: 150 },
   ]
-  // const [columns, setColumns] = useState([])
   const handleAddPlantSite = () => {
-    // Navigate to our dedicated form screen.
     // navigate('/user-form', {
-    //   state: row,
-    // })
     console.log('handleAdd')
   }
-
   const defaultCustomHeight = { mainBox: '72vh', otherBox: '118%' }
   const fetchData = async () => {
     setLoading(true)
@@ -134,7 +140,6 @@ const AuditTrail = ({ keycloak, businessKey }) => {
             variant='outlined'
             sx={{ width: '100%', minWidth: '600px' }}
             value={currentRemark || ''}
-            // value={remark}
             onChange={(e) => setCurrentRemark(e.target.value)}
             multiline
             rows={8}
@@ -144,7 +149,6 @@ const AuditTrail = ({ keycloak, businessKey }) => {
           <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
           {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
           {/* <Button onClick={handleRemarkSave} disabled={!currentRemark?.trim()}>
-                  Add
                 </Button> */}
         </DialogActions>
       </Dialog>

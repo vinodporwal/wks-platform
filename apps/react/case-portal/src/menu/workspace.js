@@ -114,6 +114,30 @@ const workspace = {
           icon: icons.IconFile,
           breadcrumbs: true,
         },
+        {
+          id: 'production-volume-basis',
+          title: i18n.t('menu.productionVolumeDataBasis'),
+          type: 'item',
+          url: '/reports/production-volume-basis',
+          icon: icons.IconFile,
+          breadcrumbs: true,
+        },
+        // {
+        //   id: 'plants-production',
+        //   title: i18n.t('menu.plantsProduction'),
+        //   type: 'item',
+        //   url: '/reports/plants-production',
+        //   icon: icons.IconFileCheck,
+        //   breadcrumbs: true,
+        // },
+        // {
+        //   id: 'monthwise-production',
+        //   title: i18n.t('menu.monthwise'),
+        //   type: 'item',
+        //   url: '/reports/monthwise-production',
+        //   icon: icons.IconFileText,
+        //   breadcrumbs: true,
+        // },
         //     {
         //       id: 'previous-fy-aop-result',
         //       title: i18n.t('menu.previousFYAOPResult'),
@@ -140,14 +164,14 @@ const workspace = {
       icon: icons?.IconSettingsAutomation,
       breadcrumbs: true,
     },
-    // {
-    //   id: 'user-management',
-    //   title: i18n.t('menu.userManage'),
-    //   type: 'item',
-    //   url: '/user-management',
-    //   icon: icons?.IconUserCog,
-    //   breadcrumbs: true,
-    // },
+    {
+      id: 'user-management',
+      title: i18n.t('menu.userManage'),
+      type: 'item',
+      url: '/user-management',
+      icon: icons?.IconUserCog,
+      breadcrumbs: true,
+    },
   ],
 }
 

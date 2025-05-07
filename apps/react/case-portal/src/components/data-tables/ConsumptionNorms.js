@@ -359,6 +359,7 @@ const NormalOpNormsScreen = () => {
           // originalRemark: item.aopRemarks,
           originalRemark: item.aopRemarks?.trim() || null,
           id: groupId++,
+          isEditable: false,
         }
 
         groups.get(groupKey).push(formattedItem)
@@ -447,7 +448,7 @@ const NormalOpNormsScreen = () => {
       )
 
       if (data || data == 0) {
-        dispatch(setIsBlocked(true))
+        // dispatch(setIsBlocked(true))
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
@@ -583,7 +584,7 @@ const NormalOpNormsScreen = () => {
       saveBtn: false,
       showCalculate: true,
       showRefresh: false,
-      noColor: true,
+      noColor: false,
       ShowSummary: true,
       // customHeight2: true,
       customHeight: defaultCustomHeight,
