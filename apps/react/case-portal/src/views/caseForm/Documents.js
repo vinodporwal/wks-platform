@@ -128,13 +128,10 @@ function Documents({ aCase, initialValue }) {
             onChange={handleChange}
             onError={handleError}
             multiple
-            clickable={isDraft} // Prevents clicking when disabled
-            disabled={!isDraft} // Disable the component if aCase.isDraft is true
             minFileSize={1024} // 1KB 
             maxFileSize={20000000} // 20MB
-            accepts={['image/png', 'image/jpeg', 'image/jpg', 'image/gif']} // Allow only image types
           >
-            <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: isDraft ? 1 : 0.5 }}>
+            <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: 1 }}>
               Drop files here or click to upload
             </Typography>
           </Files>
