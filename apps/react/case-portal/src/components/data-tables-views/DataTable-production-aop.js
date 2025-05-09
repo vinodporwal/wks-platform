@@ -78,7 +78,7 @@ const ProductionAopView = () => {
   return (
     <Box
       sx={{
-        height: '80px',
+        height: 'auto',
         width: '100%',
         padding: '0px 0px',
         margin: '0px 0px 0px',
@@ -100,15 +100,7 @@ const ProductionAopView = () => {
         columns={columns.map((col) => ({
           ...col,
           filterable: true,
-          editable: (params) => {
-            if (
-              params.row.isEditable === false &&
-              col.field !== lastColumnField
-            ) {
-              return false
-            }
-            return col.field === lastColumnField
-          },
+
           cellClassName: (params) => {
             if (
               params.row.isEditable === false &&
@@ -144,6 +136,13 @@ const ProductionAopView = () => {
             variant: 'linear-progress',
             norowsvariant: 'skeleton',
           },
+        }}
+        getRowClassName={(params) => {
+          return params.row.Particulars || params.row.Particulars2
+            ? 'no-border-row'
+            : params.indexRelativeToCurrentPage % 2 === 0
+              ? 'even-row'
+              : 'even-row'
         }}
       />
     </Box>

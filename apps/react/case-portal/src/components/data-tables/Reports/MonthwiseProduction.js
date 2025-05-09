@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 // import DataGridTable from '../ASDataGrid'
-import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
+import ReportDataGrid from 'components/data-tables-views/ReportDataGrid2'
 import {
   Backdrop,
   CircularProgress,
@@ -212,7 +212,11 @@ const MonthwiseProduction = () => {
   ]
   const [rows, setRows] = useState()
 
-  const defaultCustomHeight = {
+  const defaultCustomHeightGrid1 = {
+    mainBox: `${15 + (rows?.length || 0) * 5}vh`,
+    otherBox: `${100 + (rows?.length || 0) * 5}%`,
+  }
+  const defaultCustomHeightGrid2 = {
     mainBox: `${15 + (rows?.length || 0) * 5}vh`,
     otherBox: `${100 + (rows?.length || 0) * 5}%`,
   }
@@ -277,7 +281,7 @@ const MonthwiseProduction = () => {
         title='Monthwise Production Summary'
         columns={columns}
         permissions={{
-          customHeight: defaultCustomHeight,
+          customHeight: defaultCustomHeightGrid1,
           textAlignment: 'center',
         }}
         treeData
@@ -307,7 +311,8 @@ const MonthwiseProduction = () => {
           saveWithRemark: false,
           saveBtn: false,
           showCalculate: false,
-          customHeight: defaultCustomHeight,
+          // customHeight: defaultCustomHeight,
+          dynamicGridHeight: true,
           needTotal: true,
         }}
       />

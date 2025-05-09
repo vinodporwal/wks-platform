@@ -30,6 +30,7 @@ import {
   FileUpload,
 } from '../../../node_modules/@mui/icons-material/index'
 import Typography from 'themes/overrides/Typography'
+import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 
 const jioColors = {
   primaryBlue: '#387ec3',
@@ -89,6 +90,8 @@ const DataGridTable = ({
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeDeleteDialogeBox = () => setOpenDeleteDialogeBox(false)
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  const localApiRef = useGridApiRef()
+  const finalExternalApiRef = apiRef ?? localApiRef
   const handleSearchChange = (event) => {
     setSearchText(event.target.value)
   }
@@ -377,11 +380,11 @@ const DataGridTable = ({
 
   const lastColumnField = columns[columns.length - 1]?.field
 
-
   return (
     <Box
       sx={{
-        height: `${boxHeight ?? (permissions.customHeight2 ? '50vh' : '80vh')}`,
+        // height: `${boxHeight ?? (permissions.customHeight2 ? '50vh' : '80vh')}`,
+        height: 'auto',
         width: '100%',
         padding: '0px 0px',
         margin: '0px 0px 0px',
@@ -598,23 +601,23 @@ const DataGridTable = ({
         <DataGrid
           loading={loading}
           className='custom-data-grid'
-          apiRef={apiRef}
+          apiRef={finalExternalApiRef}
           rows={filteredRows}
           sortingOrder={[]}
           disableSelectionOnClick
           checkboxSelection={permissions?.showCheckBox}
           columns={columns.map((col) => ({
             ...col,
-            editable: (params) => {
-              if (
-                permissions?.remarksEditable &&
-                params.row.isEditable === false &&
-                col.field !== lastColumnField
-              ) {
-                return false
-              }
-              return col.field === lastColumnField
-            },
+            // editable: (params) => {
+            //   if (
+            //     permissions?.remarksEditable &&
+            //     params.row.isEditable === false &&
+            //     col.field !== lastColumnField
+            //   ) {
+            //     return false
+            //   }
+            //   return col.field === lastColumnField
+            // },
             cellClassName: (params) => {
               if (col.isDisabled) {
                 if (params.row.Particulars) {
@@ -720,8 +723,9 @@ const DataGridTable = ({
               className='btn-save'
               onClick={saveModalOpen}
               disabled={isButtonDisabled}
-              loading={loading}
-              loadingposition='start'
+              // loading={loading}
+              // loadingposition='start'
+              {...(loading ? {} : {})}
             >
               Save
             </Button>

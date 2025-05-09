@@ -365,7 +365,7 @@ const ProductionNorms = ({ permissions }) => {
         }
 
         const finalData = [...formattedData, totalRows]
-
+     // console.log(finalData)
         if (lowerVertName == 'pe') {
           setRows(finalData)
         }
@@ -588,11 +588,6 @@ const ProductionNorms = ({ permissions }) => {
   }
   const isCellEditable = (params) => params.row.id !== 'total'
 
-  const defaultCustomHeight = {
-    mainBox: `${15 + (rows?.length || 0) * 5}vh`,
-    otherBox: `${100 + (rows?.length || 0) * 5}%`,
-  }
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -620,7 +615,7 @@ const ProductionNorms = ({ permissions }) => {
       showCalculate: permissions?.showCalculate ?? true,
       saveBtn: permissions?.saveBtn ?? false,
       units: ['MT', 'KT'],
-      customHeight: defaultCustomHeight,
+      customHeight: permissions?.customHeight,
     },
     isOldYear,
   )

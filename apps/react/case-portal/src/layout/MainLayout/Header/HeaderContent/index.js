@@ -25,7 +25,7 @@ import MobileSection from './MobileSection'
 // import Logo from '../../../assets/images/ril-logo2.png'
 import Logo from 'assets/images/ril-logo2.png'
 
-// Utility to parse the Keycloak �allowed� JSON
+// Utility to parse the Keycloak ?allowed? JSON
 function parseAllowed(raw) {
   const map = {}
   raw.forEach((vObj) => {
@@ -105,7 +105,7 @@ export default function HeaderContent({ keycloak }) {
         'selectedVertical',
         JSON.stringify({ id: defV.id, name: defV.name }),
       )
-      console.log(defV.name)
+      // console.log(defV.name)
       // dispatch Redux
       dispatch(
         setVerticalChange({
@@ -177,7 +177,7 @@ export default function HeaderContent({ keycloak }) {
       try {
         var resp = await DataService.getAopyears(keycloak)
 
-        // resp1 = [
+        // resp = [
         //   {
         //     AOPDisplayYear: '2024-25',
         //     AOPYear: '2024-25',
@@ -186,12 +186,12 @@ export default function HeaderContent({ keycloak }) {
         //   {
         //     AOPDisplayYear: '2025-26',
         //     AOPYear: '2025-26',
-        //     currentYear: '1',
+        //     currentYear: '0',
         //   },
         //   {
         //     AOPDisplayYear: '2026-27',
         //     AOPYear: '2026-27',
-        //     currentYear: '0',
+        //     currentYear: '1',
         //   },
         //   {
         //     AOPDisplayYear: '2028-29',

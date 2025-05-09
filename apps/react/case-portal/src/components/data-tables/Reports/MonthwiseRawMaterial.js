@@ -23,7 +23,7 @@ const MonthwiseRawMaterial = () => {
       field: 'Particulars',
       headerName: 'Type',
       groupable: true,
-      flex: 3,
+      flex: 2,
       renderCell: (params) => <strong>{params.value}</strong>,
     },
     { field: 'particulars', headerName: 'Particulars', flex: 3 },
@@ -32,8 +32,8 @@ const MonthwiseRawMaterial = () => {
       headerName: 'Unit',
       editable: false,
       align: 'left',
-
       headerAlign: 'left',
+      flex: 1,
     },
     {
       field: 'spec',
@@ -41,12 +41,14 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       align: 'left',
       headerAlign: 'left',
+      flex: 1,
     },
     {
       field: 'april',
       headerName: 'Apr-25',
       align: 'right',
       headerAlign: 'left',
+      flex: 1,
       valueFormatter: formatValueToThreeDecimals,
     },
     {
@@ -55,6 +57,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'june',
@@ -62,6 +65,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'july',
@@ -69,6 +73,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'august',
@@ -76,6 +81,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'september',
@@ -83,6 +89,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'october',
@@ -90,6 +97,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'november',
@@ -97,6 +105,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'december',
@@ -104,6 +113,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'january',
@@ -111,6 +121,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'february',
@@ -118,6 +129,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'march',
@@ -125,19 +137,17 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
     {
       field: 'total',
       headerName: 'Total',
       align: 'right',
       valueFormatter: formatValueToThreeDecimals,
+      flex: 1,
     },
   ]
 
-  const defaultCustomHeight = { mainBox: '32vh', otherBox: '100%' }
-  const defaultCustomHeightGrid2 = { mainBox: '40vh', otherBox: '100%' }
-
-  //api call
   const [row, setRow] = useState()
   const [row2, setRow2] = useState()
   const [loading, setLoading] = useState(false)
@@ -147,15 +157,18 @@ const MonthwiseRawMaterial = () => {
     const fetchData = async () => {
       try {
         setLoading(true)
+
+        const label = `FY ${year} AOP`
+
         var res = await DataService.getAnnualCostAopReport(
           keycloak,
           'quantity',
-          'FY 2025-26 AOP',
+          label,
         )
         var res2 = await DataService.getMonthwiseRawData(keycloak)
 
         // FY%202025-26%20AOP
-        console.log(res)
+        // console.log(res)
         if (res2?.code == 200) {
           res2 = res2?.data?.consumptionSummary.map((item, index) => ({
             ...item,
@@ -196,7 +209,7 @@ const MonthwiseRawMaterial = () => {
             groupedRows.push(formattedItem)
           })
 
-          console.log(groupedRows)
+          // console.log(groupedRows)
           setRow(groupedRows)
 
           // setRow(res)
@@ -385,7 +398,7 @@ const MonthwiseRawMaterial = () => {
   } = dummyAPI1
 
   return (
-    <Box sx={{ height: 500, width: '100%' }}>
+    <Box sx={{ height: 'auto', width: '100%' }}>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
@@ -393,13 +406,7 @@ const MonthwiseRawMaterial = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <ReportDataGrid
-        rows={row2}
-        columns={columns}
-        permissions={{
-          customHeight: defaultCustomHeight,
-        }}
-      />
+      <ReportDataGrid rows={row2} columns={columns} />
       <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
         {' '}
       </Typography>
@@ -408,7 +415,6 @@ const MonthwiseRawMaterial = () => {
         title='Monthwise Production Summary'
         columns={columnDefs}
         permissions={{
-          customHeight: defaultCustomHeightGrid2,
           textAlignment: 'center',
         }}
       />
