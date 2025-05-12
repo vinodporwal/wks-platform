@@ -31,6 +31,7 @@ const SlowDown = ({ permissions }) => {
 
   // const [slowDownData, setSlowDownData] = useState([])
   const [rowModesModel, setRowModesModel] = useState({})
+  const [modifiedCells, setModifiedCells] = React.useState({})
 
   const [allProducts, setAllProducts] = useState([])
   const apiRef = useGridApiRef()
@@ -67,8 +68,20 @@ const SlowDown = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
+    const updatedFields = []
+
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
+
     const durationChanged = newRow.durationInHrs !== oldRow.durationInHrs
     if (durationChanged) {
       newRow.maintEndDateTime = null
@@ -109,6 +122,13 @@ const SlowDown = ({ permissions }) => {
         row.id === updatedRow.id ? { ...updatedRow, isNew: false } : row,
       ),
     )
+
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
 
     return updatedRow
   }, [])
@@ -181,6 +201,8 @@ const SlowDown = ({ permissions }) => {
         message: 'Slowdown data Saved Successfully!',
         severity: 'success',
       })
+      setModifiedCells({})
+
       unsavedChangesRef.current = {
         unsavedRows: {},
         rowsBeforeChange: {},
@@ -524,7 +546,7 @@ const SlowDown = ({ permissions }) => {
       editable: true,
       minWidth: 100,
       renderEditCell: TimeInputCell,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       // valueGetter: (params) => params?.durationInHrs || 0,
       valueGetter: findDuration,
@@ -536,7 +558,7 @@ const SlowDown = ({ permissions }) => {
       editable: true,
       minWidth: 75,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
 
@@ -648,6 +670,7 @@ const SlowDown = ({ permissions }) => {
       </Backdrop>
 
       <ASDataGrid
+        modifiedCells={modifiedCells}
         setRows={setRows}
         columns={colDefs}
         rows={rows}

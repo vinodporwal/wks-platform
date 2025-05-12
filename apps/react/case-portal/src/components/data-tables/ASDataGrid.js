@@ -66,6 +66,7 @@ const DataGridTable = ({
   handleCalculate = () => {},
   setRows = () => {},
   rows = [],
+  modifiedCells = [],
   loading = false,
   remarkDialogOpen = false,
   onRowModesModelChange = () => {},
@@ -619,6 +620,10 @@ const DataGridTable = ({
             //   return col.field === lastColumnField
             // },
             cellClassName: (params) => {
+              if (modifiedCells[params.row.id]?.includes(params.field)) {
+                return 'red-first-cell '
+              }
+
               if (col.isDisabled) {
                 if (params.row.Particulars) {
                   return undefined

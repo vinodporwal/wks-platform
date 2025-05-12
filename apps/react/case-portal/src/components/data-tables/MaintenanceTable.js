@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
+
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
@@ -12,6 +13,8 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
 const MaintenanceTable = () => {
+  const [modifiedCells, setModifiedCells] = React.useState({})
+
   const keycloak = useSession()
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
@@ -99,6 +102,10 @@ const MaintenanceTable = () => {
     }
   }
 
+  const formatValueToThreeDecimals = (params) => {
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
+  }
+
   useEffect(() => {
     fetchData()
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
@@ -114,86 +121,100 @@ const MaintenanceTable = () => {
     {
       field: 'April',
       headerName: headerMap[4],
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
+      valueFormatter: formatValueToThreeDecimals,
+
       // valueGetter: convertUnits,
     },
 
     {
       field: 'May',
       headerName: headerMap[5],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'June',
       headerName: headerMap[6],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'July',
       headerName: headerMap[7],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'Aug',
       headerName: headerMap[8],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'Sep',
       headerName: headerMap[9],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'Oct',
       headerName: headerMap[10],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
 
     {
       field: 'Nov',
       headerName: headerMap[11],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'Dec',
       headerName: headerMap[12],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'Jan',
       headerName: headerMap[1],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'Feb',
       headerName: headerMap[2],
+      valueFormatter: formatValueToThreeDecimals,
 
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
     },
     {
       field: 'Mar',
       headerName: headerMap[3],
-      align: 'left',
+      valueFormatter: formatValueToThreeDecimals,
+
+      align: 'right',
       headerAlign: 'left',
     },
     {
@@ -240,6 +261,7 @@ const MaintenanceTable = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <ASDataGrid
+        modifiedCells={modifiedCells}
         columns={productionColumns}
         rows={rows}
         setRows={setRows}

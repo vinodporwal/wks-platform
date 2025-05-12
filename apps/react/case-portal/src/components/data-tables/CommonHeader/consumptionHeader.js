@@ -140,12 +140,23 @@ const getEnhancedColDefs = ({
         headerName: headerMap[col.headerName],
         renderEditCell: NumericInputOnly,
         valueFormatter: formatValueToThreeDecimals,
+        align: 'right',
       }
     }
     if (col.field === 'Particulars') {
       return {
         ...col,
-        renderCell: (params) => <strong>{params.value}</strong>,
+        renderCell: (params) => (
+          <div
+            style={{
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              lineHeight: 1.4,
+            }}
+          >
+            <strong>{params.value}</strong>
+          </div>
+        ),
       }
     }
     return col

@@ -140,7 +140,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Remark',
       headerName: 'Remark',
-      minWidth: 250,
+      minWidth: 150,
       editable: false,
       renderCell: (params) => {
         const displayText = truncateRemarks(params.value)
@@ -253,6 +253,15 @@ const MonthwiseProduction = () => {
   }, [year, plantId])
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
+    const updatedFields = []
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
 
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
@@ -264,11 +273,19 @@ const MonthwiseProduction = () => {
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
 
     return newRow
   }, [])
+  const defaultCustomHeight = { mainBox: '34vh', otherBox: '112%' }
+
   return (
-    <Box sx={{ height: 500, width: '100%' }}>
+    <Box>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
@@ -311,8 +328,8 @@ const MonthwiseProduction = () => {
           saveWithRemark: false,
           saveBtn: false,
           showCalculate: false,
-          // customHeight: defaultCustomHeight,
-          dynamicGridHeight: true,
+          customHeight: defaultCustomHeight,
+          // dynamicGridHeight: true,
           needTotal: true,
         }}
       />

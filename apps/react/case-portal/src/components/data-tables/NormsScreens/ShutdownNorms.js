@@ -19,6 +19,8 @@ import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 
 const ShutdownNorms = () => {
+  const [modifiedCells, setModifiedCells] = React.useState({})
+
   const [loading, setLoading] = useState(false)
   const menu = useSelector((state) => state.dataGridStore)
   const [allProducts, setAllProducts] = useState([])
@@ -103,10 +105,6 @@ const ShutdownNorms = () => {
           }
 
           saveShutDownNormsData(data)
-          unsavedChangesRef.current = {
-            unsavedRows: {},
-            rowsBeforeChange: {},
-          }
         } catch (error) {
           /* empty */
           setLoading(false)
@@ -219,15 +217,25 @@ const ShutdownNorms = () => {
     {
       field: 'Particulars',
       headerName: 'Type',
-      minWidth: 140,
+      minWidth: 100,
       groupable: true,
-      renderCell: (params) => <strong>{params.value}</strong>,
+      renderCell: (params) => (
+        <div
+          style={{
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>{params.value}</strong>
+        </div>
+      ),
     },
 
     {
       field: 'materialFkId',
       headerName: 'Particulars',
-      minWidth: 160,
+      minWidth: 145,
       editable: false,
       valueGetter: (params) => params || '',
       valueFormatter: (params) => {
@@ -310,7 +318,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[4],
       editable: shutdownMonths?.includes(4),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(4),
@@ -322,7 +330,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[5],
       editable: shutdownMonths?.includes(5),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(5),
@@ -334,7 +342,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[6],
       editable: shutdownMonths?.includes(6),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(6),
@@ -344,7 +352,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[7],
       editable: shutdownMonths?.includes(7),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(7),
@@ -355,7 +363,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[8],
       editable: shutdownMonths?.includes(8),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(8),
@@ -365,7 +373,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[9],
       editable: shutdownMonths?.includes(9),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(9),
@@ -375,7 +383,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[10],
       editable: shutdownMonths?.includes(10),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(10),
@@ -385,7 +393,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[11],
       editable: shutdownMonths?.includes(11),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(11),
@@ -395,7 +403,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[12],
       editable: shutdownMonths?.includes(12),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(12),
@@ -405,7 +413,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[1],
       editable: shutdownMonths?.includes(1),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(1),
@@ -415,7 +423,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[2],
       editable: shutdownMonths?.includes(2),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(2),
@@ -425,7 +433,7 @@ const ShutdownNorms = () => {
       headerName: headerMap[3],
       editable: shutdownMonths?.includes(3),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !shutdownMonths?.includes(3),
@@ -435,7 +443,7 @@ const ShutdownNorms = () => {
     {
       field: 'remarks',
       headerName: 'Remark',
-      minWidth: 150,
+      minWidth: 125,
       editable: false,
       renderCell: (params) => {
         const displayText = truncateRemarks(params.value)
@@ -478,6 +486,16 @@ const ShutdownNorms = () => {
 
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
+    const updatedFields = []
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
+
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
@@ -489,6 +507,13 @@ const ShutdownNorms = () => {
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
+
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
 
     return newRow
   }, [])
@@ -550,6 +575,13 @@ const ShutdownNorms = () => {
           message: `Shutdown Norms Saved Successfully!`,
           severity: 'success',
         })
+        setModifiedCells({})
+
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+
         setLoading(false)
         setCalculatebtnClicked(false)
 
@@ -794,6 +826,7 @@ const ShutdownNorms = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <DataGridTable
+        modifiedCells={modifiedCells}
         isCellEditable={isCellEditable}
         title='Shutdown Norms'
         columns={colDefs}

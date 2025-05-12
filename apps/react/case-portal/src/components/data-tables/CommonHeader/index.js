@@ -157,13 +157,24 @@ const getEnhancedColDefs = ({
         ...col,
         renderEditCell: NumericInputOnly,
         headerName: headerMap[col.headerName],
+        align: 'right',
       }
     }
     if (col.field === 'Particulars') {
       return {
         ...col,
         filterable: false,
-        renderCell: (params) => <strong>{params.value}</strong>,
+        renderCell: (params) => (
+          <div
+            style={{
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              lineHeight: 1.4,
+            }}
+          >
+            <strong>{params.value}</strong>
+          </div>
+        ),
       }
     }
     return col

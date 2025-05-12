@@ -39,6 +39,7 @@ import ProductionAopView from 'components/data-tables-views/DataTable-production
 import PlantsProductionSummary from '../Reports/PlantsProductionData'
 import MonthwiseProduction from '../Reports/MonthwiseProduction'
 import MonthwiseRawMaterial from '../Reports/MonthwiseRawMaterial'
+import TurnaroundReport from '../Reports/TurnaroundReport'
 import AnnualProductionPlan from '../Reports/AnnualProductionPlan'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -199,8 +200,15 @@ const WorkFlowMerge = () => {
 
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
-    console.log(newRow)
-    console.log(oldRow)
+    const updatedFields = []
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
 
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
@@ -212,6 +220,12 @@ const WorkFlowMerge = () => {
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
 
     return newRow
   }, [])
@@ -232,38 +246,60 @@ const WorkFlowMerge = () => {
   // const screens = useScreens()
   // console.log(screens)
   // generate columns including remark column
-  const generateColumns = (data) => {
-    const cols = data.headers.map((header, i) => ({
-      field: data.keys[i],
-      headerName: header,
-      minWidth: i === 0 ? 300 : 150,
-      ...(i === 0 && { renderHeader: (p) => <div>{p.colDef.headerName}</div> }),
-    }))
+  const generateColumns = (data, numericKeys) => {
+    const cols = data.headers.map((header, i) => {
+      const key = data.keys[i]
+      return {
+        field: key,
+        headerName: header,
+        minWidth: i === 0 ? 300 : 150,
+        ...(i === 0 && {
+          renderHeader: (p) => <div>{p.colDef.headerName}</div>,
+        }),
+        ...(numericKeys.includes(key) && { align: 'right' }),
+      }
+    })
+
     const remarkIdx = cols.findIndex((col) => col.field === 'remark')
     if (remarkIdx !== -1) cols[remarkIdx] = remarkColumn(handleRemarkCellClick)
+
     return cols
   }
 
-  // fetch workflow data for grid
+  function getNumericKeysInAllRows(data) {
+    if (!Array.isArray(data) || data.length === 0) return []
+
+    const keys = Object.keys(data[0])
+
+    return keys.filter((key) =>
+      data.every((row) => {
+        const value = row[key]
+        // The column is considered numeric if:
+        // - It's a valid number (including empty values)
+        return value === '' || !isNaN(Number(value))
+      }),
+    )
+  }
+
   const fetchData = async () => {
     try {
       const data = await DataService.getWorkflowData(keycloak, plantId)
-      var formatted = data.results.map((row, idx) => {
+      const numericKeys = getNumericKeysInAllRows(data?.results)
+      let formatted = data.results.map((row, idx) => {
         const out = { id: idx }
         Object.entries(row).forEach(([k, v]) => {
           out[k] = !isNaN(v) && v !== '' ? Number(v).toFixed(2) : v
         })
         return out
       })
-      // console.log(formatted)
 
-      formatted = formatted?.map((item) => ({
+      formatted = formatted.map((item) => ({
         ...item,
         isEditable: false,
       }))
 
       setRows(formatted)
-      setColumns(generateColumns(data))
+      setColumns(generateColumns(data, numericKeys)) // pass numericKeys
     } catch (err) {
       console.error('Error fetching grid', err)
       setRows([])
@@ -271,24 +307,19 @@ const WorkFlowMerge = () => {
       setLoading(false)
     }
   }
-  // console.log(columns, 'columns')
-  // fetch case, steps, and determine active step
+
   const getCaseId = async () => {
     try {
       const cases = await DataService.getCaseId(keycloak)
       setCaseId(cases?.workflowMasterDTO?.casedefId || '')
-      // console.log(cases?.workflowList?.length === 0)
       setShowCreateCasebutton(cases?.workflowList?.length === 0)
       setTaskId(cases?.taskId || '')
       setStatus(cases?.status || '')
       setRole(cases?.role || '')
-      // if (!cases?.taskId) setActionDisabled(true)
       setWorkFlowDto(cases?.workflowList[0])
       if (cases?.workflowList.length > 0) {
-        // console.log('businessky in getcaseId ' + cases?.workflowList[0].caseId)
         setBusinessKey(cases?.workflowList[0].caseId)
       }
-      // console.log(cases)
       const master = cases?.workflowMasterDTO
 
       setMasterSteps(master?.steps)
@@ -463,80 +494,72 @@ const WorkFlowMerge = () => {
             </Step>
           ))}
         </Stepper>
+
         <Stack
           direction='row'
-          spacing={1}
-          justifyContent='flex-end'
-          sx={{ mt: 0, mb: 0 }}
+          alignItems='center'
+          justifyContent='space-between' // push children to extremes
+          sx={{ mt: 0, mb: '-5px' }}
         >
-          {taskId && (
-            <Button
-              variant='contained'
-              className='btn-save'
-              onClick={handleRejectClick}
-              disabled={actionDisabled}
-            >
-              Accept
-            </Button>
-          )}
-          <Button
-            variant='outlined'
-            className='btn-save2'
-            sx={{ color: '#0100cb', border: '1px solid ' }}
-            onClick={handleAuditOpen}
-            // disabled={actionDisabled}
+          {/* LEFT: Tabs */}
+          <Tabs
+            value={tabIndex}
+            onChange={(e, newIndex) => setTabIndex(newIndex)}
+            variant='scrollable' 
+            scrollButtons='auto' 
+            sx={{
+              borderBottom: 0,
+              '.MuiTabs-indicator': { display: 'none' },
+              maxWidth: '100%', 
+            }}
+            textColor='primary'
+            indicatorColor='primary'
           >
-            Audit Trail
-          </Button>
-        </Stack>
+            {[
+              'Annual AOP Cost',
+              'Plant Production Summary',
+              'Month Wise Production Plan',
+              'Month Wise Raw Data',
+              'Turnaround Report',
+              'Annual Production Plan',
+            ].map((label, idx) => (
+              <Tab
+                key={idx}
+                label={label}
+                sx={{
+                  border: tabIndex === idx ? '1px solid' : 'none',
+                  borderBottom: '1px solid',
+                  mr: 0.5, 
+                  minWidth: 'auto', 
+                  paddingX: 1, 
+                  fontSize: '0.75rem', 
+                }}
+              />
+            ))}
+          </Tabs>
 
-        <Tabs
-          value={tabIndex}
-          onChange={(event, newIndex) => setTabIndex(newIndex)}
-          sx={{
-            borderBottom: '0px solid #ccc',
-            '.MuiTabs-indicator': { display: 'none' },
-            margin: '-35px 0px 0px 0%',
-          }}
-          textColor='primary'
-          indicatorColor='primary'
-        >
-          <Tab
-            label='Annual AOP Cost'
-            sx={{
-              border: tabIndex === 0 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-          <Tab
-            label='Plant Production Summary'
-            sx={{
-              border: tabIndex === 1 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-          <Tab
-            label='Month Wise Production Plan'
-            sx={{
-              border: tabIndex === 2 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-          <Tab
-            label='Month Wise Raw Data'
-            sx={{
-              border: tabIndex === 3 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-          <Tab
-            label='Annual Production Plan'
-            sx={{
-              border: tabIndex === 4 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-        </Tabs>
+          {/* RIGHT: Buttons */}
+          <Stack direction='row' spacing={1}>
+            {taskId && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleRejectClick}
+                disabled={actionDisabled}
+              >
+                Accept
+              </Button>
+            )}
+            {/* <Button
+              variant='outlined'
+              className='btn-save2'
+              sx={{ color: '#0100cb', border: '1px solid' }}
+              onClick={handleAuditOpen}
+            >
+              Audit Trail
+            </Button> */}
+          </Stack>
+        </Stack>
 
         {tabIndex === 0 && (
           <div>
@@ -664,8 +687,8 @@ const WorkFlowMerge = () => {
 
         {tabIndex === 2 && <MonthwiseProduction />}
         {tabIndex === 3 && <MonthwiseRawMaterial />}
-
-        {tabIndex === 4 && <AnnualProductionPlan />}
+        {tabIndex === 4 && <TurnaroundReport />}
+        {tabIndex === 5 && <AnnualProductionPlan />}
       </Box>
     </div>
   )

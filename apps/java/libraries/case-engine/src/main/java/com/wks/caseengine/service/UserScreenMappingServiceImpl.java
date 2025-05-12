@@ -90,41 +90,55 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 	        verticalData.put("id", verticalCode.toLowerCase().replace(" ", "-")); // Example: "Production Norms Plan" -> "production-norms-plan"
 	        verticalData.put("title", verticalTitle);
 	        verticalData.put("type", "group");
-	        verticalData.put("children", children);
 
 	        Map<UUID, Map<String, Object>> groupWiseScreens = new HashMap<>();
 
 	        finalResult.forEach(mapping -> {
-	            Map<String, Object> screenItem = new HashMap<>();
-	            screenItem.put("id", mapping.getScreenCode());
-	            screenItem.put("title", mapping.getScreenDisplayName());
-	            screenItem.put("type", "item");
-	            screenItem.put("url", mapping.getRoute());
-	            screenItem.put("icon", mapping.getIcon());
-	            screenItem.put("breadcrumbs", mapping.getBreadCrumbs());
-
-	            if (mapping.getGroupId() != null) {
-	                GroupMaster group = groupMap.get(mapping.getGroupId());
-	                if (group != null) {
-	                    UUID groupId = group.getId();
-	                    if (!groupWiseScreens.containsKey(groupId)) {
-	                        Map<String, Object> groupData = new HashMap<>();
-	                        groupData.put("id", group.getGroupCode());
-	                        groupData.put("title", group.getGroupName());
-	                        groupData.put("type", "collapse");
-	                        groupData.put("icon", group.getIcon()); // Assuming GroupMaster has an icon field
-	                        groupData.put("children", new ArrayList<>());
-	                        groupWiseScreens.put(groupId, groupData);
-	                        children.add(groupData);
-	                    }
-	                    ((List<Map<String, Object>>) groupWiseScreens.get(groupId).get("children")).add(screenItem);
-	                } else {
-	                    children.add(screenItem); // If no group, add directly to the vertical's children
-	                }
+	            if ("collapse".equals(mapping.getType())) {
+	                // Treat as a parent group directly under the vertical
+	                Map<String, Object> parentGroup = new HashMap<>();
+	                parentGroup.put("id", mapping.getScreenCode()); // Assuming ScreenCode can act as a unique ID
+	                parentGroup.put("title", mapping.getScreenDisplayName());
+	                parentGroup.put("type",mapping.getType());
+	                parentGroup.put("icon", mapping.getIcon());
+	                parentGroup.put("children", new ArrayList<>());
+	                children.add(parentGroup); // Add directly to the vertical's children
 	            } else {
-	                children.add(screenItem); // If no group ID, add directly to the vertical's children
+	                // Treat as a regular screen item
+	                Map<String, Object> screenItem = new HashMap<>();
+	                screenItem.put("id", mapping.getScreenCode());
+	                screenItem.put("title", mapping.getScreenDisplayName());
+	                screenItem.put("type", mapping.getType());
+	                screenItem.put("url", mapping.getRoute());
+	                screenItem.put("icon", mapping.getIcon());
+	                screenItem.put("breadcrumbs", mapping.getBreadCrumbs());
+
+	                if (mapping.getGroupId() != null) {
+	                    GroupMaster group = groupMap.get(mapping.getGroupId());
+	                    if (group != null) {
+	                        UUID groupId = group.getId();
+	                        if (!groupWiseScreens.containsKey(groupId)) {
+	                            Map<String, Object> groupData = new HashMap<>();
+	                            groupData.put("id", group.getGroupCode());
+	                            groupData.put("title", group.getGroupName());
+	                            groupData.put("type", "collapse");
+	                            groupData.put("icon", group.getIcon());
+	                            groupData.put("children", new ArrayList<>());
+	                            groupWiseScreens.put(groupId, groupData);
+	                            children.add(groupData);
+	                        }
+	                        ((List<Map<String, Object>>) groupWiseScreens.get(groupId).get("children")).add(screenItem);
+	                    } else {
+	                        children.add(screenItem); // If no group, add directly to the vertical's children
+	                    }
+	                } else {
+	                    children.add(screenItem); // If no group ID, add directly to the vertical's children
+	                }
 	            }
 	        });
+	        if (!children.isEmpty()) {
+	            verticalData.put("children", children);
+	        }
 
 	        result.put("status", 200);
 	        result.put("message", "Screens list by verticalId " + verticalId + ".");

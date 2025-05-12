@@ -17,6 +17,7 @@ import { setIsBlocked } from 'store/reducers/dataGridStore'
 import TextField from '@mui/material/TextField'
 
 const NormalOpNormsScreen = () => {
+  const [modifiedCells, setModifiedCells] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
   // const [bdData, setBDData] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -128,15 +129,25 @@ const NormalOpNormsScreen = () => {
     {
       field: 'Particulars',
       headerName: 'Type',
-      minWidth: 140,
+      minWidth: 110,
       groupable: true,
-      renderCell: (params) => <strong>{params.value}</strong>,
+      renderCell: (params) => (
+        <div
+          style={{
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>{params.value}</strong>
+        </div>
+      ),
     },
     {
       field: 'materialFkId',
       // headerName: 'Particulars',
       headerName: lowerVertName === 'meg' ? 'Particulars' : 'Particulars',
-      minWidth: 160,
+      minWidth: 120,
       valueGetter: (params) => params || '',
       valueFormatter: (params) => {
         const product = allProducts.find((p) => p.id === params)
@@ -214,7 +225,7 @@ const NormalOpNormsScreen = () => {
     {
       field: 'UOM',
       headerName: 'UOM / MT',
-      width: 100,
+      minWidth: 80,
       editable: false,
     },
 
@@ -223,7 +234,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[4],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -232,7 +243,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[5],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -241,7 +252,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[6],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -250,7 +261,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[7],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -260,7 +271,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[8],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -269,7 +280,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[9],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -278,7 +289,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[10],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -287,7 +298,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[11],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -296,7 +307,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[12],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -305,7 +316,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[1],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -314,7 +325,7 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[2],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
@@ -323,14 +334,14 @@ const NormalOpNormsScreen = () => {
       headerName: headerMap[3],
       editable: true,
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'remarks',
       headerName: 'Remark',
-      minWidth: 150,
+      minWidth: 125,
       editable: false,
       renderCell: (params) => {
         const displayText = truncateRemarks(params.value)
@@ -374,6 +385,16 @@ const NormalOpNormsScreen = () => {
 
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
+    const updatedFields = []
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
+
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
@@ -385,6 +406,13 @@ const NormalOpNormsScreen = () => {
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
+
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
 
     return newRow
   }, [])
@@ -479,6 +507,8 @@ const NormalOpNormsScreen = () => {
             message: `Normal Operations Norms Saved Successfully!`,
             severity: 'success',
           })
+          setModifiedCells({})
+
           unsavedChangesRef.current = {
             unsavedRows: {},
             rowsBeforeChange: {},

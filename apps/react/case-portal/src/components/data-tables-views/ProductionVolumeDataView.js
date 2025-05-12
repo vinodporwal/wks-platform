@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 
-const SimpleDataTable = () => {
+const ProductionVolumeDataView = () => {
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -138,7 +138,6 @@ const SimpleDataTable = () => {
       sx={{
         height: 'auto',
         width: '100%',
-        padding: '0px 0px',
         margin: '0px 0px 0px',
         backgroundColor: '#F2F3F8',
         borderRadius: 0,
@@ -199,4 +198,4 @@ const SimpleDataTable = () => {
   )
 }
 
-export default SimpleDataTable
+export default ProductionVolumeDataView

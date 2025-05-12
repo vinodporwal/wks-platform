@@ -423,9 +423,18 @@ const PlantsProductionSummary = () => {
     rowsBeforeChange: {},
   })
 
-  const defaultCustomHeight = { mainBox: '64vh', otherBox: '90%' }
+  const defaultCustomHeight = { mainBox: 'fit-content', otherBox: '90%' }
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
+    const updatedFields = []
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
 
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
@@ -437,12 +446,17 @@ const PlantsProductionSummary = () => {
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
-
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
     return newRow
   }, [])
 
   return (
-    <Box sx={{ height: 'auto', width: '100%' }}>
+    <Box>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}

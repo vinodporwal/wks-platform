@@ -31,6 +31,10 @@ const getConfigByType = (configType) => {
   }
 }
 
+const formatValueToThreeDecimals = (params) => {
+  return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
+}
+
 const getEnhancedAOPColDefs = ({
   allGradesReciepes,
   allProducts,
@@ -193,6 +197,9 @@ const getEnhancedAOPColDefs = ({
         ...col,
         renderEditCell: NumericInputOnly,
         headerName: headerMap[col.headerName],
+        valueFormatter: formatValueToThreeDecimals,
+
+        align: 'right',
       }
     }
 
@@ -200,6 +207,7 @@ const getEnhancedAOPColDefs = ({
       return {
         ...col,
         renderEditCell: NumericInputOnly,
+        valueFormatter: formatValueToThreeDecimals,
       }
     }
 
@@ -213,7 +221,17 @@ const getEnhancedAOPColDefs = ({
     if (col.field === 'Particulars' || col.field === 'Particulars2') {
       return {
         ...col,
-        renderCell: (params) => <strong>{params?.value}</strong>,
+        renderCell: (params) => (
+          <div
+            style={{
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              lineHeight: 1.4,
+            }}
+          >
+            <strong>{params.value}</strong>
+          </div>
+        ),
         filterable: false,
       }
     }

@@ -17,6 +17,7 @@ export const DataService = {
   getProductionNormsData,
   getConsumptionNormsData,
   getMaintenanceData,
+  getTurnaroundReportData,
 
   getAllCatalyst,
 
@@ -88,6 +89,7 @@ export const DataService = {
   getWorkflowData,
   getWorkflowDataProduction,
   getAnnualCostAopReport,
+  getProductionVolDataBasis,
   getAnnualProductionPlanReportData,
   getPlantProductionSummary,
   getMonthwiseRawData,
@@ -766,6 +768,26 @@ async function getAnnualCostAopReport(
   } else {
     url = `${Config.CaseEngineUrl}/task/report/annual-aop?plantId=${plantId}&year=${year}&reportType=${reportType}&aopYearFilter=${aopYearFilter1}`
   }
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getProductionVolDataBasis(keycloak, reportType) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+
+  const url = `${Config.CaseEngineUrl}/task/report/production-volume-aop?plantId=${plantId}&year=${year}&reportType=${reportType}`
 
   const headers = {
     Accept: 'application/json',
@@ -2097,4 +2119,24 @@ async function completeTask(keycloak, payload) {
   // 5. If 2xx with a body, parse it
   const data = await resp.json()
   return Boolean(data)
+}
+
+async function getTurnaroundReportData(keycloak, type) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+
+  const url = `${Config.CaseEngineUrl}/task/report/turn-around?plantId=${plantId}&year=${year}&reportType=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
 }

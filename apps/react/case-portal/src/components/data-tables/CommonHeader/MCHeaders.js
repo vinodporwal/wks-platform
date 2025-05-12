@@ -1,5 +1,5 @@
 import NumericInputOnly from 'utils/NumericInputOnly'
-const getEnhancedAnnualAopCostReport = ({
+const getEnhancedProductionVolDataBasis = ({
   headerMap,
   type,
   headers2 = [],
@@ -16,21 +16,19 @@ const getEnhancedAnnualAopCostReport = ({
 
   let annual_aop_cost_report
   switch (type) {
-    case 'Production':
-      annual_aop_cost_report = require('../../../assets/annual_aop_cost_report_production.json')
+    case 'MC':
+      annual_aop_cost_report = require('../../../assets/production_volume_data_basis_MC.json')
       break
-    case 'Price':
-      annual_aop_cost_report = require('../../../assets/annual_aop_cost_report_price.json')
+    case 'MC Yearwise':
+      annual_aop_cost_report = require('../../../assets/production_volume_data_basis_MC_Yearwise.json')
       break
-    case 'Norm':
-      annual_aop_cost_report = require('../../../assets/annual_aop_cost_report_norm.json')
+    case 'Calculated Data':
+      annual_aop_cost_report = require('../../../assets/production_volume_data_basis_Calculated_Data.json')
       break
-    case 'Quantity':
-      annual_aop_cost_report = require('../../../assets/annual_aop_cost_report_quantity.json')
+    case 'RowData':
+      annual_aop_cost_report = require('../../../assets/production_volume_data_basis_Row_Data.json')
       break
-    case 'NormCost':
-      annual_aop_cost_report = require('../../../assets/annual_aop_cost_report_norm_cost.json')
-      break
+
     default:
       throw new Error('Invalid type provided')
   }
@@ -109,4 +107,4 @@ const getEnhancedAnnualAopCostReport = ({
   })
 }
 
-export default getEnhancedAnnualAopCostReport
+export default getEnhancedProductionVolDataBasis

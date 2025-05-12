@@ -19,6 +19,7 @@ import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 
 const SlowdownNorms = () => {
+  const [modifiedCells, setModifiedCells] = React.useState({})
   const [loading, setLoading] = useState(false)
   const menu = useSelector((state) => state.dataGridStore)
   const [allProducts, setAllProducts] = useState([])
@@ -104,10 +105,6 @@ const SlowdownNorms = () => {
           }
 
           saveSlowdownNormsData(data)
-          unsavedChangesRef.current = {
-            unsavedRows: {},
-            rowsBeforeChange: {},
-          }
         } catch (error) {
           /* empty */
           setLoading(false)
@@ -219,15 +216,25 @@ const SlowdownNorms = () => {
     {
       field: 'Particulars',
       headerName: 'Type',
-      minWidth: 140,
+      minWidth: 100,
       groupable: true,
-      renderCell: (params) => <strong>{params.value}</strong>,
+      renderCell: (params) => (
+        <div
+          style={{
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>{params.value}</strong>
+        </div>
+      ),
     },
 
     {
       field: 'materialFkId',
       headerName: 'Particulars',
-      minWidth: 160,
+      minWidth: 150,
       editable: false,
       valueGetter: (params) => params || '',
       valueFormatter: (params) => {
@@ -310,7 +317,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[4],
       editable: slowdownMonths?.includes(4),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(4),
@@ -322,7 +329,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[5],
       editable: slowdownMonths?.includes(5),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(5),
@@ -334,7 +341,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[6],
       editable: slowdownMonths?.includes(6),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(6),
@@ -344,7 +351,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[7],
       editable: slowdownMonths?.includes(7),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(7),
@@ -355,7 +362,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[8],
       editable: slowdownMonths?.includes(8),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(8),
@@ -365,7 +372,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[9],
       editable: slowdownMonths?.includes(9),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(9),
@@ -375,7 +382,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[10],
       editable: slowdownMonths?.includes(10),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(10),
@@ -385,7 +392,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[11],
       editable: slowdownMonths?.includes(11),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(11),
@@ -395,7 +402,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[12],
       editable: slowdownMonths?.includes(12),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(12),
@@ -405,7 +412,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[1],
       editable: slowdownMonths?.includes(1),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(1),
@@ -415,7 +422,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[2],
       editable: slowdownMonths?.includes(2),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(2),
@@ -425,7 +432,7 @@ const SlowdownNorms = () => {
       headerName: headerMap[3],
       editable: slowdownMonths?.includes(3),
       renderEditCell: NumericInputOnly,
-      align: 'left',
+      align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToThreeDecimals,
       isDisabled: !slowdownMonths?.includes(3),
@@ -435,7 +442,7 @@ const SlowdownNorms = () => {
     {
       field: 'remarks',
       headerName: 'Remark',
-      minWidth: 150,
+      minWidth: 125,
       editable: false,
       renderCell: (params) => {
         const displayText = truncateRemarks(params.value)
@@ -478,6 +485,16 @@ const SlowdownNorms = () => {
 
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
+    const updatedFields = []
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
+
     unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
 
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
@@ -489,6 +506,13 @@ const SlowdownNorms = () => {
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
+
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
 
     return newRow
   }, [])
@@ -550,6 +574,12 @@ const SlowdownNorms = () => {
           message: `Shutdown Norms Saved Successfully!`,
           severity: 'success',
         })
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+        setModifiedCells({})
+
         setLoading(false)
         setCalculatebtnClicked(false)
 
@@ -795,6 +825,7 @@ const SlowdownNorms = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <DataGridTable
+        modifiedCells={modifiedCells}
         isCellEditable={isCellEditable}
         title='Shutdown Norms'
         columns={colDefs}

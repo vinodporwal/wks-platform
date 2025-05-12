@@ -33,7 +33,6 @@ const UserManagementTable = ({ keycloak }) => {
   const location = useLocation()
   const data = location.state || ''
   // console.log(data)
-
   useEffect(() => {
     // if (data?.includes('')) return
     if (data?.includes('success')) {
@@ -65,6 +64,16 @@ const UserManagementTable = ({ keycloak }) => {
 
   const processRowUpdate = useCallback((newRow, oldRow) => {
     const rowId = newRow.id
+    const updatedFields = []
+    for (const key in newRow) {
+      if (
+        Object.prototype.hasOwnProperty.call(newRow, key) &&
+        newRow[key] !== oldRow[key]
+      ) {
+        updatedFields.push(key)
+      }
+    }
+
     unsavedChangesRef.current.unsavedRows[rowId] = newRow
     if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
       unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
@@ -74,6 +83,12 @@ const UserManagementTable = ({ keycloak }) => {
         row.id === newRow.id ? { ...newRow, isNew: false } : row,
       ),
     )
+    if (updatedFields.length > 0) {
+      setModifiedCells((prevModifiedCells) => ({
+        ...prevModifiedCells,
+        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
+      }))
+    }
     return newRow
   }, [])
 
@@ -96,6 +111,28 @@ const UserManagementTable = ({ keycloak }) => {
     getPlantAndSite()
   }, [keycloak])
 
+  // Trigger search API for users.
+  // const handleSearchChange = async (event, inputValue) => {
+  //   if (inputValue.length > 2) {
+  //     setLoading(true)
+  //     try {
+  //       const res = await DataService.getUserBySearch(keycloak, inputValue)
+  //       // Assume res.data is an array of user objects.
+  //       const extendedOptions =
+  //         res.data.length > 0
+  //           ? [...res.data, { id: 'confirm', username: 'Confirm Selection' }]
+  //           : []
+  //       setSearchOptions(extendedOptions)
+  //       // setSearchOptions(res.data)
+  //     } catch (error) {
+  //       console.error('Error searching users:', error)
+  //     } finally {
+  //       setLoading(false)
+  //     }
+  //   } else {
+  //     setSearchOptions([])
+  //   }
+  // }
   const handleSearchChange = async (value) => {
     if (value.length > 2) {
       setLoading(true)
