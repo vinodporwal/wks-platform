@@ -92,4 +92,6 @@ public interface CaseDefinitionService {
 	Map<String, Object> getCaseByCaseNo(String caseNo);
 
 	Map<String, Object> fetchCaseStatus(List<String> caseNos);
+
+	Case saveCMSAnalysis(Case caseData);
 }

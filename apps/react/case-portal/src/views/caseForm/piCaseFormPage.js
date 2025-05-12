@@ -201,7 +201,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 5 ? level1.components[5] : null
+            level1.components.length > 6 ? level1.components[6] : null
           if (level2 && level2.components) {
             const caseDescriptionField =
               level2.components.length > 1 ? level2.components[1] : null
@@ -345,7 +345,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+            assignedTo: {emailId: formData.data.container.caseCreatedBy}
           }),
         )
       })
@@ -412,7 +412,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       .then((data) => {
         const businessKey = data.businessKey
 
-        return CaseService.saveAnalysis(
+        return CaseService.saveCMSAnalysis(
           keycloak,
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
@@ -430,7 +430,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+            assignedTo: {emailId: formData.data.container.caseCreatedBy}
           }),
         )
       })
@@ -532,25 +532,27 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     }
   }
 
-  const onSubmitSiteRecommendation = async (event) => {
-    console.log('event onSubmitSiteRecommendation', event)
+  const onSubmitCMSRecommendation = async (event) => {
+    console.log('event onSubmitCMSRecommendation', event)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
     setFormData(updatedFormData)
 
     const {
-      siteRecommendationAssignedTo,
-      siteRecommendationHeadline,
-      siteRecommendationTargetCompletionDate,
-      siteRecommendationDescription,
+      recommendationAssignedTo,
+      recommendationCategory,
+      recommendationTargetDate,
+      recommendationDescription,
     } = event.data
 
     const missingFields = []
-    if (!siteRecommendationAssignedTo)
+    if (!recommendationAssignedTo)
       missingFields.push('Recommendation Assigned To')
-    if (!siteRecommendationHeadline) 
-      missingFields.push('Recommendation Headline')
-    if (!siteRecommendationTargetCompletionDate)
-      missingFields.push('Target Completion Date')
+    if (!recommendationCategory) 
+      missingFields.push('Recommendation Category')
+    if (!recommendationTargetDate)
+      missingFields.push('Target Date')
+    if (!recommendationDescription)
+      missingFields.push('Recommended Actions')
 
     if (missingFields.length > 0) {
       setSnackbarMessages(missingFields)
@@ -564,12 +566,12 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     setSnackbarMessages([])
 
     const apiBodyData = {
-      recommendationHeadline: siteRecommendationHeadline,
-      recommendationDescription1: siteRecommendationDescription,
-      recommendationAssignedTo2: siteRecommendationAssignedTo,
-      recommendationTargetCompletionDate1: siteRecommendationTargetCompletionDate,
+      recommendationCategory: recommendationCategory,
+      recommendationDescription: recommendationDescription,
+      recommendationAssignedTo2: recommendationAssignedTo,
+      recommendationTargetCompletionDate1: recommendationTargetDate,
       deleteRowButton4: false,
-      RecommendationSubmit3: false,
+      recommendationSubmit: false,
       caseNo: aCase?.caseNo,
       createdBy: keycloak.idTokenParsed.sub,
     }
@@ -577,8 +579,8 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     try {
       const response = await CaseService.saveSiteRecommendation(keycloak, apiBodyData)
       if(response.status !== 500){
-      console.log('Site Recommendation submitted successfully:', response)
-      setSnackbarMessages(['Site Recommendation submitted successfully'])
+      console.log('CMS Recommendation submitted successfully:', response)
+      setSnackbarMessages(['CMS Recommendation submitted successfully'])
       setSnackbarOpen(true)
       setTimeout(() => {
         window.location.href = response.caseUrl;
@@ -633,7 +635,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey, // Include businessKey in the payload
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+            assignedTo: {emailId: formData.data.container.caseCreatedBy}
           }),
         )
       })
@@ -1153,9 +1155,9 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                           if (event.component.key === 'saveAsDraft') {
                             onSubmitForm()
                           } else if (
-                            event.component.key === 'RecommendationSubmit3'
+                            event.component.key === 'recommendationSubmit'
                           ) {
-                            onSubmitRecommendation(event)
+                            onSubmitCMSRecommendation(event)
                           } else if (event.component.key === 'onSave') {
                             onSave()
                           } else if (event.component.key === 'analysisSubmit') {

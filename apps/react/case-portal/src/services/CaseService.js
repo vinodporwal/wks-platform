@@ -22,7 +22,8 @@ export const CaseService = {
   saveAnalysis,
   savePICase,
   savePIRecommendation,
-  saveSiteRecommendation
+  saveSiteRecommendation,
+  saveCMSAnalysis
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -476,5 +477,25 @@ async function saveSiteRecommendation(keycloak, body) {
   } catch (err) {
     console.error('Error in save Site Recommendation API:', err);
     throw err;
+  }
+}
+
+async function saveCMSAnalysis(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/cms/analysis`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
   }
 }

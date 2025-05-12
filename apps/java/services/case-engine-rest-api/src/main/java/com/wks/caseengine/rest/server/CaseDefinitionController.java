@@ -303,4 +303,10 @@ public class CaseDefinitionController {
 		Map<String, Object> caseDetails = caseDefinitionService.fetchCaseStatus(caseNos);
 		return ResponseEntity.ok(caseDetails);
 	}
+	
+	@PostMapping("/cms/analysis")
+    public ResponseEntity<Case> saveCMSAnalysis(@RequestBody Case caseData) {
+        Case savedCase = caseDefinitionService.saveCMSAnalysis(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
 }
