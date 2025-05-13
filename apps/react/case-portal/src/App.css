@@ -3,8 +3,14 @@ legend {
 }
 
 .card-header {
-  background-color: #1A1A1A !important;
-  color: #fff !important;
+  /* background-color: #1A1A1A !important;
+  color: #fff !important; */
+  background-color: #039ed9 !important;
+  color: #000 !important;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 24px;
 }
 
 .text-muted {
