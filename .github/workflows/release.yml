@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  REPOSITORY_OWNER: wkspower
+  REPOSITORY_OWNER: vinodporwal
   KEYCLOAK_URL: http://localhost:8082
   WKS_API_URL: http://localhost:8081
   WKS_STORAGE_API_URL: http://localhost:8085
@@ -41,7 +41,7 @@ jobs:
           maven-version: 3.8.2
 
       - name: Build all for backend api
-        run: mvn -B package --file apps/java/pom.xml
+        run: mvn -B package -DskipTests --file apps/java/pom.xml
 
       - name: Install dependencies for case-portal
         run: yarn --cwd apps/react/case-portal install
@@ -63,10 +63,21 @@ jobs:
 
       - name: Extract tag name
         id: extract_tag
-        run: echo "::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})"
+        # run: echo "::set-output name=tag::$(echo ${GITHUB_REF#refs/tags/})"
+        run: |
+            if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+              # Extract tag name from GITHUB_REF for tag pushes
+              TAG_NAME=${GITHUB_REF#refs/tags/}
+            else
+              # For branch pushes, extract the branch name (without refs/heads/)
+              TAG_NAME=${GITHUB_REF#refs/heads/}
+            fi
+            echo "Tag name is: $TAG_NAME"
+            echo "TAG=$TAG_NAME" >> $GITHUB_ENV
 
       - name: Log in to the Container registry
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        # uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -85,7 +96,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/storage-api/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/storage-api:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/storage-api:${{ steps.extract_tag.outputs.tag  }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/storage-api:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for opa
         uses: docker/build-push-action@v2
@@ -94,7 +106,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: opa/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/opa:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/opa:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/opa:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for c7-external-tasks
         uses: docker/build-push-action@v2
@@ -103,7 +116,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/c7-external-tasks/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c7-external-tasks:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c7-external-tasks:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c7-external-tasks:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for c8-external-tasks
         uses: docker/build-push-action@v2
@@ -112,7 +126,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/c8-external-tasks/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c8-external-tasks:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c8-external-tasks:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/c8-external-tasks:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for case-engine-rest-api
         uses: docker/build-push-action@v2
@@ -121,7 +136,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/case-engine-rest-api/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-engine-rest-api:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-engine-rest-api:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-engine-rest-api:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for demo-data-loader
         uses: docker/build-push-action@v2
@@ -130,7 +146,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/java/services/demo-data-loader/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/demo-data-loader:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/demo-data-loader:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/demo-data-loader:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for case-portal
         uses: docker/build-push-action@v2
@@ -139,7 +156,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/react/case-portal/deployments/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-portal:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-portal:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/case-portal:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for websocket-publisher
         uses: docker/build-push-action@v2
@@ -148,7 +166,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/node/websocket-publisher/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/websocket-publisher:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/websocket-publisher:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/websocket-publisher:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for novu-publisher
         uses: docker/build-push-action@v2
@@ -157,7 +176,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/node/novu-publisher/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/novu-publisher:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/novu-publisher:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/novu-publisher:${{ env.TAG  }}-${{ github.run_number }}"
 
       - name: Build and push Docker image for email-sender
         uses: docker/build-push-action@v2
@@ -166,4 +186,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: apps/node/email-sender/Dockerfile
           push: true
-          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/email-sender:${{ steps.extract_tag.outputs.tag }}"
+          # tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/email-sender:${{ steps.extract_tag.outputs.tag }}"
+          tags: "${{ env.REGISTRY }}/${{ env.REPOSITORY_OWNER }}/email-sender:${{ env.TAG  }}-${{ github.run_number }}"
