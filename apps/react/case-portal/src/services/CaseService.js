@@ -23,7 +23,10 @@ export const CaseService = {
   savePICase,
   savePIRecommendation,
   saveSiteRecommendation,
-  saveCMSAnalysis
+  saveCMSAnalysis,
+  saveCMSCaseAssignedTo,
+  submitCaseAction,
+  submitCaseClosure
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -482,6 +485,66 @@ async function saveSiteRecommendation(keycloak, body) {
 
 async function saveCMSAnalysis(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/cms/analysis`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+
+async function saveCMSCaseAssignedTo(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/cms/assignment`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+
+async function submitCaseAction(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/cms/action`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+
+async function submitCaseClosure(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/cms/closure`
 
   try {
     const resp = await fetch(url, {

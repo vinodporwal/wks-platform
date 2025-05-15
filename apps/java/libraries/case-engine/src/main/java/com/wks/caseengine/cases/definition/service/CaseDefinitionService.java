@@ -81,17 +81,7 @@ public interface CaseDefinitionService {
 
 	List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName);
 
-	Case savePICase(Case caseData);
-	
-	List<Case> getPICases(String caseDefinitionId);
-
-	Case savePICaseRecommendation(Recommendations recommendations);
-
-	Case savePICaseSiteRecommendation(Recommendations recommendations);
-
 	Map<String, Object> getCaseByCaseNo(String caseNo);
 
 	Map<String, Object> fetchCaseStatus(List<String> caseNos);
-
-	Case saveCMSAnalysis(Case caseData);
 }

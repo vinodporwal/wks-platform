@@ -23,7 +23,9 @@ legend {
 }
 
 .css-1arz8k-MuiPaper-root-MuiAppBar-root {
-  background-color: #1A1A1A !important;
+  /* background-color: #1A1A1A !important; */
+  background-color: #039ed9 !important;
+  color: #000 !important;
 }
 
 .input-group-text {

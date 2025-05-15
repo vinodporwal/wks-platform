@@ -246,7 +246,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                   ? level7.columns[2].components[0]
                   : null
               if (saveAsDraft) {
-                saveAsDraft.hidden = isDraft ? false : true;
+                saveAsDraft.hidden = true;
               }
               
               const createButton =
@@ -262,7 +262,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                   ? level7.columns[3].components[0]
                   : null
               if (saveButton) {
-                  saveButton.hidden =  isDraft ? false : true;
+                  saveButton.hidden = true;
               }
             }
           }
@@ -367,7 +367,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
   const onAnalysisSave = () => {
     setLoading(true)
-    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory','caseCauseCategory', 'caseCauseDescription', 'analysisDesc']
+    const requiredFields = ['caseCauseCategory', 'analysisDesc']
     const missingFields = requiredFields.filter(
       (field) => !formData.data.container[field],
     )
@@ -377,14 +377,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       setLoading(false)
       return
     }
-    const currentParams = window.location.search
-    setCurrentParams(currentParams)
-    const urlParams = new URLSearchParams(window.location.search)
-    const assetName = urlParams.get('assetName') || 'default'
-    const hierarchyName = urlParams.get('hierarchyName') || 'default'
-    const eventIdsParam = urlParams.get('eventIds')
-    const sourceSystem = urlParams.get('sourceSystem') || 'default'
-    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
+    
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
       value:
@@ -416,11 +409,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
           keycloak,
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
-            assetName: assetName,
-            isDraft: 'n',
-            hierarchyName: hierarchyName,
-            sourceSystem: sourceSystem,
-            eventIds: eventIds,
+            isDraft: aCase.isDraft,
             businessKey: businessKey,
             owner: {
               id: keycloak.subject || '',
@@ -567,7 +556,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
     const apiBodyData = {
       recommendationCategory: recommendationCategory,
-      recommendationDescription: recommendationDescription,
+      recommendationDescription1: recommendationDescription,
       recommendationAssignedTo2: recommendationAssignedTo,
       recommendationTargetCompletionDate1: recommendationTargetDate,
       deleteRowButton4: false,
@@ -577,7 +566,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     }
 
     try {
-      const response = await CaseService.saveSiteRecommendation(keycloak, apiBodyData)
+      const response = await CaseService.savePIRecommendation(keycloak, apiBodyData)
       if(response.status !== 500){
       console.log('CMS Recommendation submitted successfully:', response)
       setSnackbarMessages(['CMS Recommendation submitted successfully'])
@@ -652,6 +641,227 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       })
       .finally(() => {
         setLoading(false)
+      })
+  }
+
+  const onCaseAssignedToSubmit = async (event) => {
+    setLoading(true)
+    
+    const caseAssignedTo = formData.data.container.caseAssignedTo;
+    if (caseAssignedTo.length === 0) {
+      setSnackbarMessages(['Please assign user to case.'])
+      setSnackbarOpen(true)
+      setLoading(false)
+      return
+    }
+
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }))
+
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        caseNo: aCase.caseNo,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
+        },
+        attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
+      }),
+    )
+      .then((data) => {
+        const businessKey = data.businessKey
+
+        return CaseService.saveCMSCaseAssignedTo(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            isDraft: aCase.isDraft,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseCreatedBy}
+          }),
+        )
+      })
+      .then((data) => {
+        setLastCreatedCase(data)
+        setSnackOpen(true)
+        setTimeout(() => {
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
+      })
+      .catch((err) => {
+        console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
+      })
+  }
+
+  const onActionSubmit = async (event) => {
+    setLoading(true)
+    
+    const actionDetails = formData.data.container.actionDetails;
+    if (actionDetails === "" || actionDetails === null) {
+      setSnackbarMessages(['Please fill action details.'])
+      setSnackbarOpen(true)
+      setLoading(false)
+      return
+    }
+
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }))
+
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        caseNo: aCase.caseNo,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
+        },
+        attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
+      }),
+    )
+      .then((data) => {
+        const businessKey = data.businessKey
+
+        return CaseService.submitCaseAction(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            isDraft: aCase.isDraft,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseCreatedBy}
+          }),
+        )
+      })
+      .then((data) => {
+        setLastCreatedCase(data)
+        setSnackOpen(true)
+        setTimeout(() => {
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
+      })
+      .catch((err) => {
+        console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
+      })
+  }
+
+  const onCaseClosureSubmit = async (event) => {
+    setLoading(true)
+    const requiredFields = ['actionsCompleted', 'notes']
+    const missingFields = requiredFields.filter(
+      (field) => !formData.data.container[field],
+    )
+    if (missingFields.length > 0) {
+      setSnackbarMessages(['Please fill in all required fields.'])
+      setSnackbarOpen(true)
+      setLoading(false)
+      return
+    }
+
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }))
+
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        caseNo: aCase.caseNo,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
+        },
+        attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
+      }),
+    )
+      .then((data) => {
+        const businessKey = data.businessKey
+
+        return CaseService.submitCaseClosure(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            isDraft: aCase.isDraft,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseCreatedBy}
+          }),
+        )
+      })
+      .then((data) => {
+        setLastCreatedCase(data)
+        setSnackOpen(true)
+        setTimeout(() => {
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
+      })
+      .catch((err) => {
+        console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
       })
   }
 
@@ -816,6 +1026,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       'deleteRowButton4',
       'RecommendationSubmit3',
       'deleteRowButton5',
+      'siteRecommendationSubmit'
     ] // Add any keys you want to skip here
 
     return dataGrid
@@ -868,6 +1079,9 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
           <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
           <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
           <p><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
+          <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
+          <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
+          <p><strong>${getLabel('endDate')}</strong>: ${containerData?.endDate || 'N/A'}</p>
         </div>
       </div>
 
@@ -880,48 +1094,93 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
           <p><strong>${getLabel('timeVariant')}</strong>: ${containerData.timeVariant}</p>
           <p><strong>${getLabel('kpiDescription')}</strong>: ${containerData.kpiDescription}</p>
         </div>
-      </div>
+      </div>`
 
 
-       <!-- Case Details -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Details</h3>
-        <div style="padding: 10px;">
-          <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
-          <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
-          <p><strong>${getLabel('endDate')}</strong>: ${containerData?.endDate || 'N/A'}</p>
-          <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
-          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
-        </div>
-      </div>
-  `
-
-    if (uploadedFiles.length > 0) {
+    // Conditional display based on RecommendationsRadio value
+    // if (containerData.RecommendationsRadio === 'no') {
+      const caseCauseCategoryLabel = getCategoryLabel(
+        containerData.caseCauseCategory,
+      )
+      const caseCauseDescriptionLabel = getCaseCauseDescriptionLabel(
+        containerData.caseCauseDescription,
+        containerData.caseCauseCategory,
+      )
+      const files = containerData.file;
       content += `
-        <div style="border: 1px solid #333; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-          <h3 style="margin-bottom: 10px;">Uploaded Files</h3>
-          <ul style="list-style: none; padding: 0; margin: 0;">
-            ${uploadedFiles
-              .map(
-                (file, index) => `
-                  <li style="margin-bottom: 8px; cursor: pointer; color: #007bff; text-decoration: underline;">
-                    <a 
-                      href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
-                      alt="${file.name}"
-                      target="_blank"
-                    />
-                     ${file.name}
-                    </a>
-                  </li>
-                `
-              )
-              .join('')}
-          </ul>
+      <!-- Analysis -->
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
+        <div style="padding: 10px;">
+          <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
+          <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
+          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
+          <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
+          <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
+        </div>`
+      if (files.length > 0) {
+        content += `
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              ${files
+                .map(
+                  (file, index) => `
+                    <li style="margin-bottom: 16px;">
+                      <img 
+                        src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                        alt="${file.name}"
+                        style="max-width: 100%; height: auto;"
+                      />
+                    </li>
+      `
+                )
+                .join('')}
+            </ul>
+        `;
+      }
+      content +=`</div>`      
+
+      content += `
+        <!-- GE APM Recommendations -->
+        <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
+          <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
+          ${formatDataGrid(containerData.dataGrid1, getLabel)}
         </div>
-      `;
-    } else {
-      content += `<p>No files uploaded.</p>`;
-    }
+        `
+    
+      content += `
+        <!-- Site Recommendations -->
+        <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
+          <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('siteRecommendations')}</h3>
+          ${formatDataGrid(containerData.siteRecommendations, getLabel)}
+        </div>
+        `
+
+      if (uploadedFiles.length > 0) {
+        content += `
+          <div style="border: 1px solid #333; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+            <h3 style="margin-bottom: 10px;">Uploaded Files</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              ${uploadedFiles
+                .map(
+                  (file, index) => `
+                    <li style="margin-bottom: 8px; cursor: pointer; color: #007bff; text-decoration: underline;">
+                      <a 
+                        href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                        alt="${file.name}"
+                        target="_blank"
+                      />
+                      ${file.name}
+                      </a>
+                    </li>
+                  `
+                )
+                .join('')}
+            </ul>
+          </div>
+        `;
+      } else {
+        content += `<p>No files uploaded.</p>`;
+      }
   
     return content
   }
@@ -1164,6 +1423,12 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                             onAnalysisSave()
                           } else if(event.component.key === 'siteRecommendationSubmit'){
                             onSubmitSiteRecommendation(event)
+                          } else if(event.component.key === 'caseAssignedToSubmit'){
+                            onCaseAssignedToSubmit(event)
+                          } else if(event.component.key === 'actionsSubmit'){
+                            onActionSubmit(event)
+                          } else if(event.component.key === 'caseClosureSubmit'){
+                            onCaseClosureSubmit(event)
                           }
                         }}
                       />

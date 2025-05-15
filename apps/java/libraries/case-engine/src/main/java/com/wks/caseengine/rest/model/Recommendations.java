@@ -30,6 +30,10 @@ public class Recommendations {
     private String caseNo;
 
     private String createdBy;
+    
+	private String recommendationCategory;
+
+	
 	public String getRecommendationHeadline() {
 		return recommendationHeadline;
 	}
@@ -146,5 +150,13 @@ public class Recommendations {
 	}
 	public void setCreatedBy(String createdBy) {
 		this.createdBy = createdBy;
+	}
+
+	public String getRecommendationCategory() {
+		return recommendationCategory;
+	}
+
+	public void setRecommendationCategory(String recommendationCategory) {
+		this.recommendationCategory = recommendationCategory;
 	}
 }

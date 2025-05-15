@@ -2240,7 +2240,7 @@
                                     "custom": "",
                                     "customPrivate": false,
                                     "strictDateValidation": false,
-                                    "multiple": false,
+                                    "multiple": true,
                                     "unique": false,
                                     "onlyAvailableItems": false
                                 },
@@ -2272,7 +2272,7 @@
                                 "autofocus": false,
                                 "dbIndex": false,
                                 "customDefaultValue": "",
-                                "calculateValue": "",
+                                "calculateValue": "const callUserApi \u003d async () \u003d\u003e {\r\n  // Check if options exist in localStorage\r\n  const cachedOptions \u003d localStorage.getItem(\u0027caseAssignedOptions\u0027);\r\n  if (cachedOptions) {\r\n    component.data.values \u003d JSON.parse(cachedOptions); // Use cached options\r\n    console.log(\u0027Using cached caseAssignedOptions\u0027);\r\n    return JSON.parse(cachedOptions);\r\n  }\r\n  \r\n  const token \u003d localStorage.getItem(\u0027keycloakToken\u0027);\r\n\r\n  if (!token) {\r\n    console.error(\u0027Token not found in localStorage\u0027);\r\n    return;\r\n  }\r\n  \r\n    const baseUrl \u003d window.location.hostname.includes(\u0027localhost\u0027)\r\n    ? \u0027http://localhost:8081\u0027\r\n    : localStorage.getItem(\u0027baseUrl\u0027) || \u0027\u0027;\r\n\r\n  try {\r\n    const response \u003d await fetch(`${baseUrl}/case-definition/users`, {\r\n      method: \u0027GET\u0027,\r\n      headers: {\r\n        \u0027Content-Type\u0027: \u0027application/json\u0027,\r\n        \u0027Authorization\u0027: `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n\r\n    const data \u003d await response.json();\r\n    const userOptions \u003d data.map(user \u003d\u003e ({\r\n      label: user.userId, // Use userId as the display label\r\n      value: user.emailId, // Use userId as the unique value\r\n    }));\r\n\r\n    return userOptions;\r\n  } catch (error) {\r\n    console.error(\u0027Error calling the User API:\u0027, error);\r\n  }\r\n};\r\n\r\n// Example of using the callUserApi function\r\ncallUserApi().then(userOptions \u003d\u003e {\r\n  if (userOptions) {\r\n    component.data.values \u003d userOptions; // Assign the fetched options to component\u0027s data\r\n  }\r\n});\r\n",
                                 "calculateServer": false,
                                 "attributes": {},
                                 "validateOn": "change",
@@ -2323,7 +2323,7 @@
                             },
                             {
                                 "input": true,
-                                "key": "submit2",
+                                "key": "caseAssignedToSubmit",
                                 "tableView": false,
                                 "label": "Submit",
                                 "type": "button",
@@ -2388,7 +2388,7 @@
                                 "leftIcon": "",
                                 "rightIcon": "",
                                 "block": false,
-                                "action": "submit",
+                                "action": "event",
                                 "disableOnInvalid": false,
                                 "theme": "primary"
                             }
@@ -2835,7 +2835,7 @@
                                 "id": "edsp6nl",
                                 "placeholder": "",
                                 "prefix": "",
-                                "customClass": "",
+                                "customClass": "mt-1",
                                 "suffix": "",
                                 "multiple": false,
                                 "protected": false,
@@ -4257,7 +4257,7 @@
                                 "allowCalculateOverride": false,
                                 "validateOn": "change",
                                 "validate": {
-                                    "required": false,
+                                    "required": true,
                                     "pattern": "",
                                     "customMessage": "",
                                     "custom": "",
@@ -4309,7 +4309,7 @@
                             },
                             {
                                 "input": true,
-                                "key": "submit3",
+                                "key": "actionsSubmit",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "mt-1",
@@ -4373,7 +4373,7 @@
                                 "leftIcon": "",
                                 "rightIcon": "",
                                 "block": false,
-                                "action": "submit",
+                                "action": "event",
                                 "disableOnInvalid": false,
                                 "theme": "primary",
                                 "id": "enyl2go"
@@ -4573,7 +4573,7 @@
                                                 "allowCalculateOverride": false,
                                                 "validateOn": "change",
                                                 "validate": {
-                                                    "required": false,
+                                                    "required": true,
                                                     "onlyAvailableItems": false,
                                                     "customMessage": "",
                                                     "custom": "",
@@ -4697,7 +4697,7 @@
                                 "allowCalculateOverride": false,
                                 "validateOn": "change",
                                 "validate": {
-                                    "required": false,
+                                    "required": true,
                                     "pattern": "",
                                     "customMessage": "",
                                     "custom": "",
@@ -4749,7 +4749,7 @@
                             },
                             {
                                 "input": true,
-                                "key": "submit4",
+                                "key": "caseClosureSubmit",
                                 "placeholder": "",
                                 "prefix": "",
                                 "customClass": "mt-1",
@@ -4813,7 +4813,7 @@
                                 "leftIcon": "",
                                 "rightIcon": "",
                                 "block": false,
-                                "action": "submit",
+                                "action": "event",
                                 "disableOnInvalid": false,
                                 "theme": "primary",
                                 "id": "e1g4i1"

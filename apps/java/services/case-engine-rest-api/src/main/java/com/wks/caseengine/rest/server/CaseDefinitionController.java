@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
+import com.wks.caseengine.cases.definition.service.CMSCaseDefinitionService;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
 import com.wks.caseengine.cases.instance.CaseOwner;
 import com.wks.caseengine.rest.db2.entity.Case;
@@ -59,6 +60,9 @@ public class CaseDefinitionController {
 
 	@Autowired
 	private CaseDefinitionService caseDefinitionService;
+	
+	@Autowired
+	private CMSCaseDefinitionService cmsCaseDefinitionService;
 
 	@GetMapping
 	public ResponseEntity<List<CaseDefinition>> find(@RequestParam(required = false) Boolean deployed) {
@@ -130,42 +134,17 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/save-case")
     public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
-		
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		
-		if (authentication instanceof JwtAuthenticationToken) {
-		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
-		    Jwt jwt = jwtAuth.getToken();
+		caseData = setOwner(caseData);
 
-		    OwnerDetails owner = new OwnerDetails();
-			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
-			owner.setName(jwt.getClaimAsString("name"));
-			owner.setEmail(jwt.getClaimAsString("email"));
-
-			caseData.setOwner(owner);
-		}
         Case savedCase = caseDefinitionService.saveCase(caseData);
         return ResponseEntity.ok(savedCase);
     }
 	
 	@PostMapping("/pi")
     public ResponseEntity<Case> createPICase(@RequestBody Case caseData) {
+		caseData = setOwner(caseData);
 		
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		
-		if (authentication instanceof JwtAuthenticationToken) {
-		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
-		    Jwt jwt = jwtAuth.getToken();
-
-		    OwnerDetails owner = new OwnerDetails();
-			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
-			owner.setName(jwt.getClaimAsString("name"));
-			owner.setEmail(jwt.getClaimAsString("email"));
-
-			caseData.setOwner(owner);
-		}
-		
-        Case savedCase = caseDefinitionService.savePICase(caseData);
+        Case savedCase = cmsCaseDefinitionService.saveCMSCase(caseData);
         
         return ResponseEntity.ok(savedCase);
     }
@@ -194,7 +173,7 @@ public class CaseDefinitionController {
 
 	@GetMapping("/cases/pi/{caseDefinitionId}")
 	public ResponseEntity<List<Case>> getPICases(@PathVariable("caseDefinitionId") String caseDefinitionId) {
-		List<Case> cases = caseDefinitionService.getPICases(caseDefinitionId);
+		List<Case> cases = cmsCaseDefinitionService.getCMSCases(caseDefinitionId);
 		return ResponseEntity.ok(cases);
 	}
 	
@@ -281,13 +260,13 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/pi/save-recommendation")
     public ResponseEntity<Case> savePICaseRecommendation(@RequestBody Recommendations recommendations) {
-        Case savedCase = caseDefinitionService.savePICaseRecommendation(recommendations);
+        Case savedCase = cmsCaseDefinitionService.saveCMSCaseRecommendation(recommendations);
         return ResponseEntity.ok(savedCase);
     }
 	
 	@PostMapping("/pi/site/save-recommendation")
     public ResponseEntity<Case> savePICaseSiteRecommendation(@RequestBody Recommendations recommendations) {
-        Case savedCase = caseDefinitionService.savePICaseSiteRecommendation(recommendations);
+        Case savedCase = cmsCaseDefinitionService.saveCMSCaseSiteRecommendation(recommendations);
         return ResponseEntity.ok(savedCase);
     }
 	
@@ -306,7 +285,53 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/cms/analysis")
     public ResponseEntity<Case> saveCMSAnalysis(@RequestBody Case caseData) {
-        Case savedCase = caseDefinitionService.saveCMSAnalysis(caseData);
+        Case savedCase = cmsCaseDefinitionService.saveCMSAnalysis(caseData);
         return ResponseEntity.ok(savedCase);
     }
+	
+	@PostMapping("/cms/assignment")
+    public ResponseEntity<Case> cmsCaseAssignment(@RequestBody Case caseData) {
+		caseData = setOwner(caseData);
+		
+        Case savedCase = cmsCaseDefinitionService.cmsCaseAssignment(caseData);
+        
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	@PostMapping("/cms/action")
+    public ResponseEntity<Case> cmsActionSubmit(@RequestBody Case caseData) {
+		caseData = setOwner(caseData);
+		
+        Case savedCase = cmsCaseDefinitionService.cmsActionSubmit(caseData);
+        
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	@PostMapping("/cms/closure")
+    public ResponseEntity<Case> cmsCaseClosure(@RequestBody Case caseData) {
+		caseData = setOwner(caseData);
+		
+        Case savedCase = cmsCaseDefinitionService.cmsCaseClosure(caseData);
+        
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	
+	private Case setOwner(Case caseData) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (authentication instanceof JwtAuthenticationToken) {
+		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+		    Jwt jwt = jwtAuth.getToken();
+
+		    OwnerDetails owner = new OwnerDetails();
+			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
+			owner.setName(jwt.getClaimAsString("name"));
+			owner.setEmail(jwt.getClaimAsString("email"));
+
+			caseData.setOwner(owner);
+		}
+		
+		return caseData;
+	}
 }
