@@ -571,61 +571,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     }
   }
 
-  const onSubmitForm = () => {
-    setLoading(true)
-
-    const caseAttributes = Object.keys(formData.data).map((key) => ({
-      name: key,
-      value:
-        typeof formData.data[key] !== 'object'
-          ? formData.data[key]
-          : JSON.stringify(formData.data[key]),
-      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    }))
-
-    // First API call to createCase to get the businessKey
-    CaseService.createCase(
-      keycloak,
-      JSON.stringify({
-        caseDefinitionId: aCase.caseDefinitionId,
-        caseNo: aCase.caseNo,
-        attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-        businessKey: aCase.businessKey,
-      }),
-    )
-      .then((data) => {
-        const businessKey = data.businessKey // Extract businessKey from the response
-
-        // Second API call to saveCase with the businessKey
-        return CaseService.savePICase(
-          keycloak,
-          JSON.stringify({
-            caseDefinitionId: aCase.caseDefinitionId,
-            isDraft: 'y',
-            businessKey: businessKey, // Include businessKey in the payload
-            attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href, aCase.caseDefinitionId),
-            assignedTo: {emailId: formData.data.container.caseCreatedBy}
-          }),
-        )
-      })
-      .then((data) => {
-        setLastCreatedCase(data)
-        setSnackOpen(true) // Show success notification
-        setTimeout(() => {
-          window.location.href = data.caseUrl;
-          // handleClose()
-        }, 1000)
-      })
-      .catch((err) => {
-        console.error(err.message)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }
-
   const onCaseAssignedToSubmit = async (event) => {
     setLoading(true)
     
@@ -1393,9 +1338,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
   
                         onCustomEvent={(event) => {
                           console.log('Form event:', event)
-                          if (event.component.key === 'saveAsDraft') {
-                            onSubmitForm()
-                          } else if (
+                          if (
                             event.component.key === 'recommendationSubmit'
                           ) {
                             onSubmitCMSRecommendation(event)
