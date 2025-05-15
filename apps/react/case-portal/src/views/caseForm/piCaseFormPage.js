@@ -179,23 +179,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
               component.disabled = true;
             }
           });
-        
-          // const caseDetails0 = caseDetails?.components?.[0];
-          // if (caseDetails0) {
-          //   caseDetails0.disabled = true;
-          // }
-        
-          // const caseDetails1 = caseDetails?.components?.[1];
-          // const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
-        
-          // // Disable all components inside columns of caseDetails1, except caseStatus
-          // caseDetails1?.columns?.forEach((column) => {
-          //   column?.components?.forEach((component) => {
-          //     if (component.id !== caseStatus?.id) {
-          //       component.disabled = true;
-          //     }
-          //   });
-          // });
         }        
 
         if (level1 && level1.components) {
@@ -354,7 +337,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         setSnackOpen(true)
         setTimeout(() => {
           window.location.href = data.caseUrl;
-          // handleClose()
         }, 1000)
       })
       .catch((err) => {
