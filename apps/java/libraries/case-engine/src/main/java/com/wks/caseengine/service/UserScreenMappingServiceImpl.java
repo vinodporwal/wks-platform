@@ -37,36 +37,36 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 	
 	@Override
 	public Map<String, Object> getUserScreenMapping(String verticalId, String plantId, String userId) throws Exception {
-		Map<String, Object> result = new HashMap<String, Object>();
 
-		List<String> userScreens = userScreenMappingRepository.findByVerticalFKIdAndPlantFKIdandUserId(verticalId, plantId, userId);
-		
+	    Map<String, Object> result = new HashMap<String, Object>();
+	    List<String> userScreens = userScreenMappingRepository.findByVerticalFKIdAndPlantFKIdandUserId(verticalId, plantId, userId);
+
 	    Map<String, Object> verticalData = new HashMap<>();
 	    List<Map<String, Object>> children = new ArrayList<>();
 
 	    try {
-	    	List<VerticalScreenMapping> screenMappingsWithDuplicates =
-	    	        verticalScreenMappingRepository.findByScreenDisplayNameInOrderBySequence(userScreens);
+	        List<VerticalScreenMapping> screenMappingsWithDuplicates =
+	                verticalScreenMappingRepository.findByScreenDisplayNameInOrderBySequence(userScreens);
 
-	    	// Step 1: Remove duplicates by screenCode
-	    	Map<String, VerticalScreenMapping> screenCodeMap = new LinkedHashMap<>();
-	    	for (VerticalScreenMapping mapping : screenMappingsWithDuplicates) {
-	    	    screenCodeMap.putIfAbsent(mapping.getScreenCode(), mapping);
-	    	}
-	    	List<VerticalScreenMapping> uniqueByScreenCode = new ArrayList<>(screenCodeMap.values());
+	        // Step 1: Remove duplicates by screenCode
+	        Map<String, VerticalScreenMapping> screenCodeMap = new LinkedHashMap<>();
+	        for (VerticalScreenMapping mapping : screenMappingsWithDuplicates) {
+	            screenCodeMap.putIfAbsent(mapping.getScreenCode(), mapping);
+	        }
+	        List<VerticalScreenMapping> uniqueByScreenCode = new ArrayList<>(screenCodeMap.values());
 
-	    	// Step 2: Sort by sequence
-	    	uniqueByScreenCode.sort(Comparator.comparing(VerticalScreenMapping::getSequence, Comparator.nullsLast(Integer::compareTo)));
+	        // Step 2: Sort by sequence
+	        uniqueByScreenCode.sort(Comparator.comparing(VerticalScreenMapping::getSequence, Comparator.nullsLast(Integer::compareTo)));
 
-	    	// Step 3: Enforce uniqueness again by URL after sorting
-	    	Map<String, VerticalScreenMapping> urlMap = new LinkedHashMap<>();
-	    	for (VerticalScreenMapping mapping : uniqueByScreenCode) {
-	    	    String url = mapping.getRoute();
-	    	    if (!urlMap.containsKey(url)) {
-	    	        urlMap.put(url, mapping);
-	    	    }
-	    	}
-	    	List<VerticalScreenMapping> finalResult = new ArrayList<>(urlMap.values());
+	        // Step 3: Enforce uniqueness again by URL after sorting
+	        Map<String, VerticalScreenMapping> urlMap = new LinkedHashMap<>();
+	        for (VerticalScreenMapping mapping : uniqueByScreenCode) {
+	            String url = mapping.getRoute();
+	            if (!urlMap.containsKey(url)) {
+	                urlMap.put(url, mapping);
+	            }
+	        }
+	        List<VerticalScreenMapping> finalResult = new ArrayList<>(urlMap.values());
 
 
 	        // Extract all unique group IDs to fetch in batch
@@ -101,7 +101,9 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 	                parentGroup.put("title", mapping.getScreenDisplayName());
 	                parentGroup.put("type",mapping.getType());
 	                parentGroup.put("icon", mapping.getIcon());
-	                parentGroup.put("children", new ArrayList<>());
+					  parentGroup.put("url", mapping.getRoute());
+					    parentGroup.put("breadcrumbs", mapping.getBreadCrumbs());
+	                // parentGroup.put("children", new ArrayList<>());
 	                children.add(parentGroup); // Add directly to the vertical's children
 	            } else {
 	                // Treat as a regular screen item
@@ -150,5 +152,4 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 	    return result;
 
 	}
-
 }

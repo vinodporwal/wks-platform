@@ -20,7 +20,7 @@ const ReportDataGrid = ({
   rows,
   setRows,
   columns,
-  height,
+  modifiedCells = {},
   treeData,
   getTreeDataPath,
   defaultGroupingExpansionDepth,
@@ -90,11 +90,11 @@ const ReportDataGrid = ({
       setIsButtonDisabled(false)
     }, 500)
   }
-
+  const lastColumnField = columns[columns.length - 1]?.field
+  // console.log(lastColumnField)
   return (
     <Box
       sx={{
-        // height: height || permissions?.customHeight?.mainBox || '240px',
         height: 'auto',
         width: '100%',
         padding: '0px 0px',
@@ -131,24 +131,22 @@ const ReportDataGrid = ({
         autoHeight={true}
         rows={rows || []}
         className='custom-data-grid'
-        columns={columns?.map((col) => ({
+        columns={columns.map((col) => ({
           ...col,
-          filterable: true,
-          editable: (params) => {
-            if (
-              params.row.isEditable === false &&
-              col.field !== 'Remark' &&
-              col.field !== 'remarks'
-            ) {
-              return false
-            }
-            return true
-          },
           cellClassName: (params) => {
+            const modsForRow = modifiedCells[params.row.id] || []
+            if (modsForRow.includes(params.field)) {
+              return 'red-first-cell'
+            }
+
+            if (col.isDisabled && !params.row.Particulars) {
+              return 'disabled-cell'
+            }
+
             if (
+              permissions?.remarksEditable &&
               params.row.isEditable === false &&
-              col.field !== 'Remark' &&
-              col.field !== 'remarks'
+              col.field !== lastColumnField
             ) {
               return 'odd-cell'
             }
@@ -176,14 +174,27 @@ const ReportDataGrid = ({
         }}
         rowHeight={35}
         getRowClassName={(params) => {
-          if (params.row.isTotal) {
-            return 'pinned-row'
-          }
-          if (params.row.isEditable === false) {
-            return permissions?.noColor === true ? 'even-row' : 'odd-row'
+          const classes = []
+
+          if (permissions?.isOldYear == 1) {
+            classes.push('odd-row-disabled')
           }
 
-          return 'even-row'
+          if (params.row.Particulars || params.row.Particulars2) {
+            classes.push('no-border-row')
+          }
+
+          if (
+            params.row.isEditable === false &&
+            !permissions?.remarksEditable
+          ) {
+            return [
+              ...classes,
+              permissions?.noColor === true ? 'even-row' : 'odd-row',
+            ].join(' ')
+          }
+
+          return [...classes, 'even-row'].join(' ')
         }}
         experimentalFeatures={{ newEditingApi: true, columnGrouping: true }}
         columnGroupingModel={columnGroupingModel}

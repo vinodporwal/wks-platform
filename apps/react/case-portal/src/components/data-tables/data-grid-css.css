@@ -138,7 +138,7 @@
 }
 
 .custom-data-grid .MuiDataGrid-row {
-  border-bottom: 1px solid #d0d0d0;
+  border-bottom: 2px solid #bbbbbb;
 }
 
 .custom-data-grid .even-row {
@@ -157,21 +157,19 @@
 .custom-data-grid .odd-row {
   pointer-events: none; /* Disables any interaction */
   background-color: #ebebeb; /* Light background instead of grey */
-  color: rgba(0, 0, 0, 0.4); /* Slightly faded text color */
+  color: rgba(255, 0, 0, 0.4); /* Slightly faded text color */
   border: 1px solid rgba(0, 0, 0, 0.2); /* Softer border */
-
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1); /* Adds a soft inner shadow for a disabled feel */
-
   transition: all 0.3s ease; /* Smooth transition for all changes */
 }
 
-.custom-data-grid .odd-row-disabled {
+/* .custom-data-grid .odd-row-disabled {
   pointer-events: none;
-}
+} */
 
-.custom-data-grid .odd-row-disabled :hover {
+/* .custom-data-grid .odd-row-disabled :hover {
   pointer-events: none;
-}
+} */
 
 .custom-data-grid .MuiDataGrid-toolbarContainer {
   display: flex;
@@ -235,4 +233,15 @@
 /* Preserve even row background when selected */
 .custom-data-grid .MuiDataGrid-row.even-row.Mui-selected {
   background-color: #ffffff !important;
+}
+
+.odd-cell {
+  /* opacity: 0.6; */
+  /* pointer-events: none; */
+  background-color: #ebebeb;
+  color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border-bottom: 2px solid #bbbbbb;
 }

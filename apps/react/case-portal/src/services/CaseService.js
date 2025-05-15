@@ -37,21 +37,6 @@ async function getAllByStatus(keycloak, status, limit) {
   }
 }
 
-// async function getCaseDefinitions(keycloak) {
-//   const url = `${Config.CaseEngineUrl}/case-definition?deployed=true`
-
-//   const headers = {
-//     Authorization: `Bearer ${keycloak.token}`,
-//   }
-
-//   try {
-//     const resp = await fetch(url, { headers })
-//     return json(keycloak, resp)
-//   } catch (e) {
-//     console.log(e)
-//     return await Promise.reject(e)
-//   }
-// }
 async function getCaseDefinitions(keycloak) {
   const url = `${Config.CaseEngineUrl}/case-definition?deployed=true`
 
@@ -193,7 +178,7 @@ async function addDocuments(keycloak, businessKey, document) {
 }
 
 async function addComment(keycloak, text, parentId, businessKey, role, status) {
-  console.log(businessKey)
+  // console.log(businessKey)
   const url = `${Config.CaseEngineUrl}/case/${businessKey}/comment`
 
   const comment = {

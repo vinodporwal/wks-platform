@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 // import DataGridTable from '../ASDataGrid'
-import ReportDataGrid from 'components/data-tables-views/ReportDataGrid2'
+import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
 import {
   Backdrop,
   CircularProgress,
@@ -21,12 +21,14 @@ const MonthwiseProduction = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [modifiedCells, setModifiedCells] = React.useState({})
+
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
   const handleRemarkCellClick = (row) => {
-    console.log(row)
+    // console.log(row)
     setCurrentRemark(row.Remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
@@ -36,6 +38,11 @@ const MonthwiseProduction = () => {
     const [start, end] = thisYear.split('-').map(Number)
     oldYear = `${start - 1}-${(end - 1).toString().slice(-2)}`
   }
+
+  const formatValueToThreeDecimals = (params) => {
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
+  }
+
   const columns = [
     {
       field: 'RowNo',
@@ -49,6 +56,7 @@ const MonthwiseProduction = () => {
       headerName: 'Month',
       flex: 1,
       headerAlign: 'left',
+      // valueFormatter: formatValueToThreeDecimals,
     },
 
     // Current Year → EOE Production
@@ -58,6 +66,7 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'EOEProdActual', // was eoeActualCY
@@ -65,6 +74,7 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
 
     // Current Year → Operating Hours
@@ -74,6 +84,7 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'OpHrsActual', // was opActualCY
@@ -81,6 +92,7 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
 
     // Current Year → Throughput
@@ -90,6 +102,7 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'ThroughputActual', // was thrActualCY
@@ -97,6 +110,7 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
 
     // Budget Year single values
@@ -106,6 +120,7 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'MEGThroughput', // was megTPH
@@ -113,6 +128,7 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'EOThroughput', // was eoTPH
@@ -120,6 +136,7 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'EOEThroughput', // was eoeTPH
@@ -127,6 +144,7 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
     {
       field: 'TotalEOE', // was totalEoeMT
@@ -134,6 +152,7 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
+      valueFormatter: formatValueToThreeDecimals,
     },
 
     // (Optional) you can keep Remarks if you plan to add that later
@@ -177,7 +196,7 @@ const MonthwiseProduction = () => {
           headerName: 'EOE Production, MT',
           children: [
             { field: 'EOEProdBudget' }, // was eoeBudgetCY
-            { field: 'productionActual' }, // was eoeActualCY
+            { field: 'EOEProdActual' }, // was eoeActualCY
           ],
         },
         {
@@ -216,10 +235,10 @@ const MonthwiseProduction = () => {
     mainBox: `${15 + (rows?.length || 0) * 5}vh`,
     otherBox: `${100 + (rows?.length || 0) * 5}%`,
   }
-  const defaultCustomHeightGrid2 = {
-    mainBox: `${15 + (rows?.length || 0) * 5}vh`,
-    otherBox: `${100 + (rows?.length || 0) * 5}%`,
-  }
+  // const defaultCustomHeightGrid2 = {
+  //   mainBox: `${15 + (rows?.length || 0) * 5}vh`,
+  //   otherBox: `${100 + (rows?.length || 0) * 5}%`,
+  // }
 
   //api call
   const [loading, setLoading] = useState(false)
@@ -231,7 +250,7 @@ const MonthwiseProduction = () => {
         setLoading(true)
         var res = await DataService.getMonthWiseSummary(keycloak)
 
-        console.log(res)
+        // console.log(res)
         if (res?.code == 200) {
           res = res?.data?.data.map((item, index) => ({
             ...item,
@@ -300,6 +319,7 @@ const MonthwiseProduction = () => {
         permissions={{
           customHeight: defaultCustomHeightGrid1,
           textAlignment: 'center',
+          remarksEditable: true,
         }}
         treeData
         getTreeDataPath={(rows) => rows.path}
@@ -314,6 +334,7 @@ const MonthwiseProduction = () => {
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
+        modifiedCells={modifiedCells}
       />
       <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
         Main Products - Production for the budget year{' '}

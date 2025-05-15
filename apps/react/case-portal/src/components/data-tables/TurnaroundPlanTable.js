@@ -122,7 +122,7 @@ const TurnaroundPlanTable = () => {
         turnAroundDetails,
         keycloak,
       )
-      console.log(response)
+      // console.log(response)
       // if (response.ok && response.length < 0) {
       //   const errorData = await response.json() // Get the actual error message
       //   throw new Error(errorData.errorMessage || 'Failed to save data')
@@ -258,6 +258,18 @@ const TurnaroundPlanTable = () => {
       headerName: 'Activities',
       minWidth: 300,
       editable: true,
+      renderCell: (params) => (
+        <div
+          title={params.value}
+          style={{
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            lineHeight: 1.4,
+          }}
+        >
+          {params.value}
+        </div>
+      ),
     },
 
     {

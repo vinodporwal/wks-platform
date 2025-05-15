@@ -40,7 +40,7 @@ const AuditTrail = ({ keycloak, businessKey }) => {
       valueFormatter: (params) => {
         // assume backend sends ISO or UTC string
         const utc = moment.utc(params.value)
-        const local = utc.local() // convert to user’s local timezone
+        const local = utc.local() // convert to userï¿½s local timezone
         return local.format('LL, h:mm:ss A') // or whatever format you like
       },
     },
@@ -72,7 +72,7 @@ const AuditTrail = ({ keycloak, businessKey }) => {
   ]
   const handleAddPlantSite = () => {
     // navigate('/user-form', {
-    console.log('handleAdd')
+    // console.log('handleAdd')
   }
   const defaultCustomHeight = { mainBox: '72vh', otherBox: '118%' }
   const fetchData = async () => {
@@ -96,7 +96,7 @@ const AuditTrail = ({ keycloak, businessKey }) => {
     fetchData()
   }, [])
   return (
-    <Box sx={{ height: 600, width: '100%', p: 0 }}>
+    <Box sx={{ height: 'auto', width: '100%', p: 0 }}>
       {/* <Button onClick={handleAdd} variant='contained' sx={{ mb: 2 }}>
         Add
       </Button> */}

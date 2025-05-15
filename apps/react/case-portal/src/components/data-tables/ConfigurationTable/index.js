@@ -1,17 +1,20 @@
-import { useState } from 'react'
-import { Tabs, Tab, Box } from '@mui/material'
-import SelectivityData from '../SelectivityData'
+import { Box, Tab, Tabs } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-import { useSelector } from 'react-redux'
+import SelectivityData from '../SelectivityData'
 
 const ConfigurationTable = () => {
   const keycloak = useSession()
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange, yearChanged, oldYear } =
+    dataGridStore
+  const isOldYear = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -19,28 +22,25 @@ const ConfigurationTable = () => {
   const [otherLossRows, setOtherLossRows] = useState([])
   const [shutdownNormsRows, setShutdownRows] = useState([])
   const [productionRows, setProductionRows] = useState([])
-  const [consumptionRows, setConsumptionRows] = useState([])
-  const [consumptionRows2, setConsumptionRows2] = useState([])
   const [gradeData, setGradeData] = useState([])
+  const [continiousGradeData, setContiniousGradeData] = useState([])
+  const [discontiniousGradeData, setDiscontiniousGradeData] = useState([])
+  const [tabs, setTabs] = useState([])
+  const [availableTabs, setAvailableTabs] = useState([])
 
   const fetchData = async () => {
     setRows([])
     setProductionRows([])
-
     setLoading(true)
     try {
       var data = await DataService.getCatalystSelectivityData(keycloak)
 
-      if (lowerVertName === 'meg') {
+      if (tabs.length == 0) {
         setLoading(true)
-
         data = data.sort((a, b) => b.normType.localeCompare(a.normType))
-
         const groupedRows = []
         const groups = new Map()
         let groupId = 0
-        // let formattedItem = []
-
         data.forEach((item, index) => {
           const formattedItem = {
             ...item,
@@ -49,10 +49,7 @@ const ConfigurationTable = () => {
             originalRemark: item.remarks,
             srNo: index + 1,
           }
-
-          // if (lowerVertName !== 'pe') {
           const groupKey = item.normType
-
           if (!groups.has(groupKey)) {
             groups.set(groupKey, [])
             groupedRows.push({
@@ -61,51 +58,13 @@ const ConfigurationTable = () => {
               isGroupHeader: true,
             })
           }
-
           groups.get(groupKey).push(formattedItem)
-          // }
-
           groupedRows.push(formattedItem)
           setProductionRows(groupedRows)
-          setRows(groupedRows) // Optional: if you still need all rows
+          setRows(groupedRows)
         })
-
-        // const formattedItem = data.map((item, index) => ({
-        //   ...item,
-        //   idFromApi: item.id,
-        //   id: index,
-        //   originalRemark: item.remarks,
-        // }))
-
-        // const productionData = formattedItem
-        //   .filter((item) => item.normType === 'Production')
-        //   .map((item, index) => ({
-        //     ...item,
-        //     srNo: index + 1, // Production srNo starts from 1
-        //   }))
-
-        // const consumptionData = formattedItem
-        //   .filter((item) => item.normType === 'Consumption')
-        //   .map((item, index) => ({
-        //     ...item,
-        //     srNo: index + 1, // Consumption srNo starts from 1
-        //   }))
-
-        // const consumptionData2 = formattedItem
-        //   .filter((item) => item.normType === 'Calculated Intermediate Values')
-        //   .map((item, index) => ({
-        //     ...item,
-        //     srNo: index + 1,
-        //   }))
-
-        // setProductionRows(productionData)
-        // setProductionRows(formattedItem)
-        // setConsumptionRows(consumptionData)
-        // setConsumptionRows2(consumptionData2)
-        // setRows(formattedItem) // Optional: if you still need all rows
       } else {
         const groups = new Map()
-
         data.forEach((item) => {
           const ConfigTypeName = item.ConfigTypeName
           const TypeName = item.TypeDisplayName
@@ -118,16 +77,14 @@ const ConfigurationTable = () => {
           }
           normGroup.get(TypeName).push(item)
         })
-
         let groupId = 0
         let shutdownRows = []
         let startUpRows = []
         let otherLossRows = []
-
-        // Build the final grouped arrays.
+        let continiousGradeRows = []
+        let discontiniousGradeRows = []
         groups.forEach((normGroup, ConfigTypeName) => {
           let rowsForThisCategory = []
-          // For shutdown norms, include the ConfigTypeName header.
           if (ConfigTypeName === 'ShutdownNorms') {
             rowsForThisCategory.push({
               id: groupId++,
@@ -135,10 +92,7 @@ const ConfigurationTable = () => {
               isGroupHeader: true,
             })
           }
-          // For each TypeName group within this ConfigTypeName:
           normGroup.forEach((items, TypeName) => {
-            // For shutdown norms, add a sub-group header.
-            // For others, use TypeName as the main header (since we don't want the ConfigTypeName header).
             if (ConfigTypeName === 'ShutdownNorms') {
               rowsForThisCategory.push({
                 id: groupId++,
@@ -152,8 +106,6 @@ const ConfigurationTable = () => {
                 isGroupHeader: true,
               })
             }
-
-            // Append each item.
             items.forEach((item) => {
               rowsForThisCategory.push({
                 ...item,
@@ -162,61 +114,89 @@ const ConfigurationTable = () => {
               })
             })
           })
-
-          // Separate arrays based on ConfigTypeName (case-insensitive)
           if (ConfigTypeName == 'ShutdownNorms') {
             shutdownRows = rowsForThisCategory
           } else if (ConfigTypeName == 'StartupLosses') {
             startUpRows = rowsForThisCategory
           } else if (ConfigTypeName == 'Otherlosses') {
             otherLossRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'ContineGradeChange') {
+            continiousGradeRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'DisContineGradeChange') {
+            discontiniousGradeRows = rowsForThisCategory
           }
         })
         setShutdownRows(shutdownRows)
         setStartUpRows(startUpRows)
         setOtherLossRows(otherLossRows)
+        setContiniousGradeData(continiousGradeRows)
+        setDiscontiniousGradeData(discontiniousGradeRows)
       }
-
       setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
       setLoading(false)
     }
   }
-  const fetchDataIV = async () => {
+
+  const getConfigurationTabsMatrix = async () => {
     setLoading(true)
     try {
-      const data = await DataService.getCatalystSelectivityDataIV(keycloak)
+      var response = await DataService.getConfigurationTabsMatrix(keycloak)
+      if (response?.code == 200) {
+        const parsedData = JSON.parse(response?.data)
 
-      if (lowerVertName === 'meg') {
-        const formattedData = data?.data.map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.remarks,
-        }))
-
-        const consumptionData2 = formattedData.map((item, index) => ({
-          ...item,
-          srNo: index + 1,
-        }))
-
-        // setProductionRows(productionData)
-        // setConsumptionRows(consumptionData)
-        setConsumptionRows2(consumptionData2)
-        // setRows(formattedData) // Optional: if you still need all rows
+        setTabs(parsedData)
+      } else {
+        // setTabs([
+        //   'StartupLosses',
+        //   'OtherLosses',
+        //   'ShutdownNorms',
+        //   'Receipes',
+        //   'ContineGradeChange',
+        //   'DisContineGradeChange',
+        // ])
+        setTabs([])
       }
-
       setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
+      setTabs([])
       setLoading(false)
     }
   }
 
-  const defaultCustomHeight = { mainBox: '64vh', otherBox: '125%' }
+  const getConfigurationAvailableTabs = async () => {
+    setLoading(true)
+    try {
+      var response = await DataService.getConfigurationAvailableTabs(keycloak)
 
-  if (lowerVertName === 'meg') {
+      if (response?.code == 200) {
+        setAvailableTabs(response?.data?.configurationTypeList)
+      } else {
+        setAvailableTabs([])
+      }
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setAvailableTabs([])
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    getConfigurationTabsMatrix()
+    getConfigurationAvailableTabs()
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
+
+ 
+
+  const getTheId = (name) => {
+    const tab = availableTabs.find((tab) => tab.name === name)
+    return tab ? tab.id : null
+  }
+
+  if (tabs.length == 0) {
     return (
       <div
         style={{
@@ -226,71 +206,14 @@ const ConfigurationTable = () => {
           marginTop: '20px',
         }}
       >
-        {/* <Tabs
-          value={tabIndex}
-          onChange={(event, newIndex) => setTabIndex(newIndex)}
-          sx={{
-            borderBottom: '0px solid #ccc',
-            '.MuiTabs-indicator': { display: 'none' },
-            margin: '-35px 0px -15px 0%',
-          }}
-          textColor='primary'
-          indicatorColor='primary'
-        >
-          <Tab
-            label='Production'
-            sx={{
-              border: tabIndex === 0 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-          <Tab
-            label='Consumption'
-            sx={{
-              border: tabIndex === 1 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-          <Tab
-            label='Calculated Intermediate Values'
-            sx={{
-              border: tabIndex === 2 ? '1px solid ' : 'none',
-              borderBottom: '1px solid',
-            }}
-          />
-        </Tabs> */}
-
         <Box>
-          {/* {tabIndex === 0 && ( */}
           <SelectivityData
             rows={productionRows}
             loading={loading}
             fetchData={fetchData}
             setRows={setProductionRows}
-            defaultCustomHeight={defaultCustomHeight}
             configType={'production'}
           />
-          {/* )} */}
-          {/* {tabIndex === 1 && (
-            <SelectivityData
-              rows={consumptionRows}
-              loading={loading}
-              fetchData={fetchData}
-              setRows={setConsumptionRows}
-              defaultCustomHeight={defaultCustomHeight}
-              configType={'consumption'}
-            />
-          )}
-          {tabIndex === 2 && (
-            <SelectivityData
-              rows={consumptionRows2}
-              loading={loading}
-              fetchData={fetchDataIV}
-              setRows={setConsumptionRows2}
-              defaultCustomHeight={defaultCustomHeight}
-              configType={'Calculated Intermediate Values'}
-            />
-          )} */}
         </Box>
       </div>
     )
@@ -306,88 +229,101 @@ const ConfigurationTable = () => {
       }}
     >
       <Tabs
-        value={tabIndex}
-        onChange={(event, newIndex) => setTabIndex(newIndex)}
         sx={{
           borderBottom: '0px solid #ccc',
           '.MuiTabs-indicator': { display: 'none' },
-          margin: '-35px 0px -15px 0%',
+          margin: '-35px 0px -8px 0%',
         }}
         textColor='primary'
         indicatorColor='primary'
+        value={tabIndex}
+        onChange={(e, newIndex) => setTabIndex(newIndex)}
       >
-        <Tab
-          label='Startup Losses'
-          sx={{
-            border: tabIndex === 0 ? '1px solid ' : 'none',
-            borderBottom: '1px solid',
-          }}
-        />
-        <Tab
-          label='Other Losses'
-          sx={{
-            border: tabIndex === 1 ? '1px solid ' : 'none',
-            borderBottom: '1px solid',
-          }}
-        />
-        <Tab
-          label='Constants'
-          sx={{
-            border: tabIndex === 2 ? '1px solid ' : 'none',
-            borderBottom: '1px solid',
-          }}
-        />
-        <Tab
-          label='Receipes'
-          sx={{
-            border: tabIndex === 3 ? '1px solid ' : 'none',
-            borderBottom: '1px solid',
-          }}
-        />
+        {tabs.map((tabId, index) => {
+          const tabInfo = availableTabs.find(
+            (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+          )
+          return (
+            <Tab
+              key={tabId}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+              }}
+              label={tabInfo?.displayName || 'N/A'}
+            />
+          )
+        })}
       </Tabs>
 
       <Box>
-        {tabIndex === 0 && (
-          <SelectivityData
-            rows={startUpRows}
-            loading={loading}
-            fetchData={fetchData}
-            setRows={setStartUpRows}
-            defaultCustomHeight={defaultCustomHeight}
-            configType={'StartupLosses'}
-          />
-        )}
-        {tabIndex === 1 && (
-          <SelectivityData
-            rows={otherLossRows}
-            loading={loading}
-            fetchData={fetchData}
-            setRows={setOtherLossRows}
-            defaultCustomHeight={defaultCustomHeight}
-            configType={'Otherlosses'}
-          />
-        )}
-        {tabIndex === 2 && (
-          <SelectivityData
-            rows={shutdownNormsRows}
-            loading={loading}
-            setRows={setShutdownRows}
-            fetchData={fetchData}
-            defaultCustomHeight={defaultCustomHeight}
-            tabIndex={2}
-            configType={'ShutdownNorms'}
-          />
-        )}
-        {tabIndex === 3 && (
-          <SelectivityData
-            rows={gradeData}
-            loading={loading}
-            setRows={setGradeData}
-            defaultCustomHeight={defaultCustomHeight}
-            tabIndex={3}
-            configType={'grades'}
-          />
-        )}
+        {(() => {
+          const currentTabId = tabs[tabIndex]?.toLowerCase()
+          switch (currentTabId) {
+            // case 'ac3c9ad7-82b5-4550-b04d-fed0f1fb4908': // StartupLosses
+            case getTheId('StartupLosses'):
+              return (
+                <SelectivityData
+                  rows={startUpRows}
+                  loading={loading}
+                  fetchData={fetchData}
+                  setRows={setStartUpRows}
+                  configType='StartupLosses'
+                />
+              )
+            case getTheId('Otherlosses'): // Otherlosses
+              return (
+                <SelectivityData
+                  rows={otherLossRows}
+                  loading={loading}
+                  fetchData={fetchData}
+                  setRows={setOtherLossRows}
+                  configType='Otherlosses'
+                />
+              )
+            case getTheId('ShutdownNorms'): // ShutdownNorms
+              return (
+                <SelectivityData
+                  rows={shutdownNormsRows}
+                  loading={loading}
+                  setRows={setShutdownRows}
+                  fetchData={fetchData}
+                  configType='ShutdownNorms'
+                />
+              )
+            case getTheId('Receipe'): // Receipe
+              return (
+                <SelectivityData
+                  rows={gradeData}
+                  loading={loading}
+                  setRows={setGradeData}
+                  configType='grades'
+                />
+              )
+            case getTheId('ContineGradeChange'): // ContineGradeChange
+              return (
+                <SelectivityData
+                  rows={continiousGradeData}
+                  loading={loading}
+                  setRows={setContiniousGradeData}
+                  fetchData={fetchData}
+                  configType='ContineGradeChange'
+                />
+              )
+            case getTheId('DisContineGradeChange'): // DisContineGradeChange
+              return (
+                <SelectivityData
+                  rows={discontiniousGradeData}
+                  loading={loading}
+                  setRows={setDiscontiniousGradeData}
+                  fetchData={fetchData}
+                  configType='DisContineGradeChange'
+                />
+              )
+            default:
+              return null
+          }
+        })()}
       </Box>
     </div>
   )

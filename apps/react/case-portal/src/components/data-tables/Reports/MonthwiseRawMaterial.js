@@ -6,39 +6,45 @@ import {
   CircularProgress,
   Typography,
 } from '../../../../node_modules/@mui/material/index'
-import ProductionNorms from '../ProductionNorms'
 import { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { renderTwoLineEllipsis } from 'components/Utilities/twoLineEllipsisRenderer'
 
 const MonthwiseRawMaterial = () => {
   const keycloak = useSession()
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
+  const [normRows, setNormRows] = useState({})
 
   const formatValueToThreeDecimals = (params) => {
     return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
   }
   const columnDefs = [
     { field: 'id', headerName: 'ID' },
+    // {
+    //   field: 'Particulars',
+    //   headerName: 'Type',
+    //   groupable: true,
+    //   flex: 2,
+    //   renderCell: (params) => (
+    //     <div
+    //       style={{
+    //         whiteSpace: 'normal',
+    //         wordBreak: 'break-word',
+    //         lineHeight: 1.4,
+    //       }}
+    //     >
+    //       <strong>{params.value}</strong>
+    //     </div>
+    //   ),
+    // },
     {
-      field: 'Particulars',
-      headerName: 'Type',
-      groupable: true,
+      field: 'particulars',
+      headerName: 'Particulars',
       flex: 2,
-      renderCell: (params) => (
-        <div
-          style={{
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-            lineHeight: 1.4,
-          }}
-        >
-          <strong>{params.value}</strong>
-        </div>
-      ),
+      renderCell: renderTwoLineEllipsis,
     },
-    { field: 'particulars', headerName: 'Particulars', flex: 3 },
     {
       field: 'unit',
       headerName: 'Unit',
@@ -200,6 +206,7 @@ const MonthwiseRawMaterial = () => {
           res2 = res2?.data?.consumptionSummary.map((item, index) => ({
             ...item,
             id: index,
+            isEditable: false,
           }))
 
           setRow2(res2)
@@ -208,36 +215,74 @@ const MonthwiseRawMaterial = () => {
           res = res?.data?.map((item, index) => ({
             ...item,
             id: index,
+            isEditable: false,
           }))
 
-          const groupedRows = []
-          const groups = new Map()
-          let groupId = 0
+          const formattedItems = res.map((item, index) => ({
+            ...item,
+            idFromApi: item.id,
+            id: index,
+          }))
 
-          res.forEach((item) => {
-            const groupKey = item.norm
+          setRow(formattedItems)
 
-            if (!groups.has(groupKey)) {
-              groups.set(groupKey, [])
-              groupedRows.push({
-                id: groupId++,
-                Particulars: groupKey,
-                isGroupHeader: true,
-              })
+          // Step 2: Group by `norms`
+          const groupedByNorms = formattedItems.reduce((acc, item) => {
+            const key = item?.norm
+            if (!acc[key]) {
+              acc[key] = []
             }
-            const formattedItem = {
-              ...item,
-              idFromApi: item.id,
-              // originalRemark: item.remarks,
-              id: groupId++,
+            acc[key].push(item)
+            return acc
+          }, {})
+
+          // Add total row per group
+          const groupedWithTotals = {}
+
+          for (const [norm, items] of Object.entries(groupedByNorms)) {
+            const totalRow = { particulars: 'Total', norm }
+
+            for (const item of items) {
+              for (const [key, value] of Object.entries(item)) {
+                if (
+                  key !== 'particulars' &&
+                  key !== 'norm'
+                  // &&
+                  // typeof value === 'number'
+                ) {
+                  totalRow[key] = (totalRow[key] || 0) + value
+                }
+              }
             }
 
-            groups.get(groupKey).push(formattedItem)
-            groupedRows.push(formattedItem)
-          })
+            groupedWithTotals[norm] = [...items, totalRow]
+          }
+
+          // Set dynamic state
+          setNormRows(groupedWithTotals)
+
+          // const groupedRows = []
+          // const groups = new Map()
+          // let groupId = 0
+
+          // res.forEach((item) => {
+          //   const groupKey = item.norm
+
+          // if (!groups.has(groupKey)) {
+          //   groups.set(groupKey, [])
+          //   groupedRows.push({
+          //     id: groupId++,
+          //     Particulars: groupKey,
+          //     isGroupHeader: true,
+          //   })
+          // }
+
+          // groups.get(groupKey).push(formattedItem)
+          // groupedRows.push(formattedItem)
+          // })
 
           // console.log(groupedRows)
-          setRow(groupedRows)
+          // setRow(groupedRows)
 
           // setRow(res)
           // setRow(res)
@@ -254,188 +299,111 @@ const MonthwiseRawMaterial = () => {
     fetchData()
   }, [year, plantId])
 
-  const dummyAPI1 = {
-    status: 200,
-    message: 'OK',
-    data: {
-      columns: [
-        { field: 'id', headerName: 'ID' },
-        {
-          field: 'parameter',
-          headerName: 'Parameters',
-          editable: false,
-          flex: 2,
-          filterOperators: [{ label: 'contains', value: 'contains' }],
-        },
-        {
-          field: 'april',
-          headerName: headerMap[4],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'may',
-          headerName: headerMap[5],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'june',
-          headerName: headerMap[6],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'july',
-          headerName: headerMap[7],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'aug',
-          headerName: headerMap[8],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'sep',
-          headerName: headerMap[9],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'oct',
-          headerName: headerMap[10],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'nov',
-          headerName: headerMap[11],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'dec',
-          headerName: headerMap[12],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'jan',
-          headerName: headerMap[1],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'feb',
-          headerName: headerMap[2],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-        {
-          field: 'march',
-          headerName: headerMap[3],
-          editable: false,
-          align: 'right',
-          headerAlign: 'left',
-          flex: 1,
-        },
-      ],
-      rows: [
-        {
-          id: '1',
-          parameters: 'Budgeted Selectivity for current year',
-          april: 92,
-          may: 95,
-          june: 94,
-          july: 93,
-          aug: 91,
-          sep: 96,
-          oct: 94,
-          nov: 92,
-          dec: 95,
-          jan: 93,
-          feb: 94,
-          march: 96,
-        },
-        {
-          id: '2',
-          parameters: 'Actual selectivity for current year',
-          april: 88,
-          may: 90,
-          june: 89,
-          july: 87,
-          aug: 91,
-          sep: 90,
-          oct: 89,
-          nov: 88,
-          dec: 90,
-          jan: 89,
-          feb: 90,
-          march: 92,
-        },
-        {
-          id: '3',
-          parameters: 'Guaranteed Selectivity for budget year',
-          april: 85,
-          may: 87,
-          june: 86,
-          july: 84,
-          aug: 88,
-          sep: 87,
-          oct: 86,
-          nov: 85,
-          dec: 87,
-          jan: 86,
-          feb: 87,
-          march: 89,
-        },
-        {
-          id: '4',
-          parameters: 'Predicted Selectivity for budget year',
-          april: 90,
-          may: 92,
-          june: 91,
-          july: 89,
-          aug: 93,
-          sep: 92,
-          oct: 91,
-          nov: 90,
-          dec: 92,
-          jan: 91,
-          feb: 92,
-          march: 94,
-        },
-      ],
+  const columns = [
+    { field: 'id', headerName: 'ID' },
+    {
+      field: 'parameter',
+      headerName: 'Parameters',
+      editable: false,
+      flex: 2,
     },
-  }
-  const {
-    data: { columns, rows },
-  } = dummyAPI1
-
+    {
+      field: 'april',
+      headerName: headerMap[4],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'may',
+      headerName: headerMap[5],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'june',
+      headerName: headerMap[6],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'july',
+      headerName: headerMap[7],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'aug',
+      headerName: headerMap[8],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'sep',
+      headerName: headerMap[9],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'oct',
+      headerName: headerMap[10],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'nov',
+      headerName: headerMap[11],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'dec',
+      headerName: headerMap[12],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'jan',
+      headerName: headerMap[1],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'feb',
+      headerName: headerMap[2],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+    {
+      field: 'march',
+      headerName: headerMap[3],
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+      flex: 1,
+    },
+  ]
   return (
     <Box>
       <Backdrop
@@ -452,18 +420,19 @@ const MonthwiseRawMaterial = () => {
           customHeight: defaultCustomHeight,
         }}
       />
-      <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
-        {' '}
-      </Typography>
-      <ReportDataGrid
-        rows={row}
-        title='Monthwise Production Summary'
-        columns={columnDefs}
-        permissions={{
-          customHeight: defaultCustomHeightGrid2,
-          // textAlignment: 'center',
-        }}
-      />
+
+      {Object.entries(normRows).map(([normName, rows]) => (
+        <div key={normName}>
+          <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
+            {normName}
+          </Typography>
+          <ReportDataGrid
+            rows={rows}
+            title='Monthwise Production Summary'
+            columns={columnDefs}
+          />
+        </div>
+      ))}
     </Box>
   )
 }
