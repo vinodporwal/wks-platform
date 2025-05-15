@@ -505,6 +505,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
   const onSubmitCMSRecommendation = async (event) => {
     console.log('event onSubmitCMSRecommendation', event)
+    setLoading(true)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
     setFormData(updatedFormData)
 
@@ -550,21 +551,22 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     try {
       const response = await CaseService.savePIRecommendation(keycloak, apiBodyData)
       if(response.status !== 500){
-      console.log('CMS Recommendation submitted successfully:', response)
-      setSnackbarMessages(['CMS Recommendation submitted successfully'])
-      setSnackbarOpen(true)
-      setTimeout(() => {
-        window.location.href = response.caseUrl;
-        // window.location.reload()
-      }, 1000)
+        setLoading(false)
+        console.log('CMS Recommendation submitted successfully:', response)
+        setSnackbarMessages(['CMS Recommendation submitted successfully'])
+        setSnackbarOpen(true)
+        setTimeout(() => {
+          window.location.href = response.caseUrl;
+        }, 1000)
       }else{
+        setLoading(false)
         console.error('Error submitting recommendation:', response)
         console.error('Error submitting recommendation:', JSON.stringify(response.body))
         setSnackbarMessages(['Error submitting recommendation'])
         setSnackbarOpen(true)
       }
-      // getCaseInfo(aCase)
     } catch (error) {
+      setLoading(false)
       console.error('Error submitting recommendation:', error)
       setSnackbarMessages(['Error submitting recommendation'])
       setSnackbarOpen(true)

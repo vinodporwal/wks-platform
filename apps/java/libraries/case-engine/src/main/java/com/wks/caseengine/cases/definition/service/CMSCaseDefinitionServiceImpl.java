@@ -270,6 +270,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 		for (Attribute attribute : caseDetails.getAttributes()) {
 			String attributeValue = attribute.getValue();
 			String updatedAttributeValue = saveCMSCaseRecommendations(attributeValue, caseNo, recommendation);
+			sendMailToAssignedPerson(caseDetails);
 			updatedAttributeValue = removeUnwantedCMSRecommendations(updatedAttributeValue);
 			attribute.setValue(updatedAttributeValue);
 		}
@@ -673,17 +674,41 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 	}
 	
 	
-//	public void sendMailToAssignedPerson(String assignedTo ) {
-//		Map<String, Object> data = new HashMap<>();
-//		data.put("caseTitle", "This is to inform you, the new case has been assined to you");
-//		data.put("caseNumber", caseNumber);
-//		data.put("status", caseStatusValue);
-//		data.put("caseName", caseTitle);
-//		data.put("caseUrl", caseDetails.getCaseUrl());
-//		data.put("environment", "");
-//		caseTitle = "CASE MANAGEMENT :" + caseTitle;
-//			
-//		caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
-//
-//	}
+	private void sendMailToAssignedPerson(Case caseDetails) {
+		List<Attribute> attributes = caseDetails.getAttributes();
+		Attribute attribute = attributes.get(0);
+		String attributeValue = attribute.getValue();
+
+		attributeValue = attributeValue.replace("\\\"", "\"");
+
+		try {
+
+			ObjectMapper objectMapper = new ObjectMapper();
+			JsonNode rootNode = objectMapper.readTree(attributeValue);
+			String assignedTo = rootNode.path("caseCreatedBy").asText();
+			String caseNumber = caseDetails.getCaseNo();
+			String caseTitle = rootNode.path("caseTitle").asText();
+			Long caseStatusNo = rootNode.path("caseStatus").asLong();
+			Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
+					.filter(status -> status.getId().equals(caseStatusNo)).findFirst();
+			String caseStatusValue = caseStatus.get().getName();
+			
+			String[] reviewers = new String[0];
+			Map<String, Object> data = new HashMap<>();
+			data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+			data.put("caseNumber", caseNumber);
+			data.put("status", caseStatusValue);
+			data.put("caseName", caseTitle);
+			data.put("caseUrl", caseDetails.getCaseUrl());
+			data.put("environment", "");
+			caseTitle = "CASE MANAGEMENT :" + caseTitle;
+				
+			caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+			
+
+
+	}
 }
