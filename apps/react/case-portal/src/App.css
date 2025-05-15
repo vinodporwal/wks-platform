@@ -28,6 +28,12 @@ legend {
   color: #000 !important;
 }
 
+.MuiPaper-root-MuiAppBar-root {
+  background-color: #039ed9 !important;
+  color: #000 !important;
+}
+
+
 .input-group-text {
   display: flex;
   align-items: center;
