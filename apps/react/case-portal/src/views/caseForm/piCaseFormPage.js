@@ -128,8 +128,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
   const getCaseInfo = async (aCase) => {
     await loadOptions(keycloak);
-    console.log('Fetching PI case data of ', aCase)
-    // setLoading(true)
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {
         setCaseDef(data)
@@ -141,7 +139,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         setFormStructure(formData)
         let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
-          console.log('Form data -> ', formData)
           updatedFormStructure = { ...formData }
         } else {
           console.error('Form structure or components are undefined.')
@@ -278,7 +275,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         setActiveStage(caseData.stage)
       })
       .catch((err) => {
-        console.log(err.message)
+        console.error(err.message)
       })
   }
 
@@ -349,7 +346,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
   const onAnalysisSave = () => {
     setLoading(true)
-    const requiredFields = ['caseCauseCategory', 'analysisDesc']
+    const requiredFields = ['analysisDesc']
     const missingFields = requiredFields.filter(
       (field) => !formData.data.container[field],
     )
@@ -359,6 +356,10 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       setLoading(false)
       return
     }
+
+    const actionAssignedId = getcaseStatusValue('Under Analysis');
+
+    formData.data.container.caseStatus = actionAssignedId;
     
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
@@ -422,7 +423,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const onSubmitRecommendation = (event) => {
-    console.log('event onSubmitRecommendation', event)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
     setFormData(updatedFormData)
 
@@ -480,7 +480,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     try {
       const response = await CaseService.savePIRecommendation(keycloak, apiBody)
       if(response.status !== 500){
-      console.log('Recommendation submitted successfully:', response)
       setSnackbarMessages(['Recommendation submitted successfully'])
       setSnackbarOpen(true)
       setIsConfirmationOpen(false)
@@ -504,7 +503,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const onSubmitCMSRecommendation = async (event) => {
-    console.log('event onSubmitCMSRecommendation', event)
     setLoading(true)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
     setFormData(updatedFormData)
@@ -527,6 +525,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       missingFields.push('Recommended Actions')
 
     if (missingFields.length > 0) {
+      setLoading(false)
       setSnackbarMessages(missingFields)
       setSnackbarOpen(true)
       setTimeout(() => {
@@ -552,7 +551,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       const response = await CaseService.savePIRecommendation(keycloak, apiBodyData)
       if(response.status !== 500){
         setLoading(false)
-        console.log('CMS Recommendation submitted successfully:', response)
         setSnackbarMessages(['CMS Recommendation submitted successfully'])
         setSnackbarOpen(true)
         setTimeout(() => {
@@ -583,6 +581,10 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       setLoading(false)
       return
     }
+
+    const actionAssignedId = getcaseStatusValue('Assigned');
+
+    formData.data.container.caseStatus = actionAssignedId;
 
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
@@ -648,7 +650,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 
   const onActionSubmit = async (event) => {
     setLoading(true)
-    
+
     const actionDetails = formData.data.container.actionDetails;
     if (actionDetails === "" || actionDetails === null) {
       setSnackbarMessages(['Please fill action details.'])
@@ -656,6 +658,10 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       setLoading(false)
       return
     }
+
+    const actionAssignedId = getcaseStatusValue('Action Completed');
+
+    formData.data.container.caseStatus = actionAssignedId;
 
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
@@ -731,6 +737,11 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       setLoading(false)
       return
     }
+
+
+    const actionAssignedId = getcaseStatusValue('Closed');
+
+    formData.data.container.caseStatus = actionAssignedId;
 
     const caseAttributes = Object.keys(formData.data).map((key) => ({
       name: key,
@@ -818,7 +829,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         handleClose()
       })
       .catch((err) => {
-        console.log(err.message)
+        console.error(err.message)
       })
   }
 
@@ -879,6 +890,15 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     // Find the option with the matching value and return its label
     const matchingOption = options.find((option) => option.value === value)
     return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
+  }
+
+  const getcaseStatusValue = (label) => {
+    // Retrieve options from localStorage
+    const options = JSON.parse(localStorage.getItem('caseStatusOptions')) || []
+
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.label === label)
+    return matchingOption ? matchingOption.value : label // Fallback to value if no match is found
   }
 
   const getEquipmentFunctionLocationLabel = (id) => {
@@ -987,7 +1007,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
       aCase.attributes.find((attr) => attr.name === 'container').value,
     )
     const labelMap = createLabelMapFromStructure(structure)
-    console.log('labelMap', labelMap)
     const getLabel = (key) => labelMap[key] || key || ''
 
     const uploadedFiles = aCase.documents || []
@@ -1005,8 +1024,8 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
           <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
-          <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseAssignedTo}</p>
-          <p><strong>${getLabel('faultCategory')}</strong>: ${getFaultCategoryLabel(containerData.faultCategory)}</p>
+          <p><strong>${getLabel('caseAssignedTo')}</strong>: ${containerData.caseCreatedBy}</p>
+          <p><strong>${getLabel('faultCategory')}</strong>: ${containerData.caseCategory?.toUpperCase()}</p>
           <p><strong>${getLabel('caseDescription')}</strong>: ${containerData.caseDescription}</p>
           <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
           <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
@@ -1043,7 +1062,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
           <p><strong>${getLabel('caseCauseDescription')}</strong>: ${caseCauseDescriptionLabel}</p>
-          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam.join(', ')}</p>
+          <p><strong>${getLabel('analysisTeam')}</strong>: ${containerData.analysisTeam?.join(', ')}</p>
           <p><strong>${getLabel('caseStatus')}</strong>: ${getcaseStatusLabel(containerData.caseStatus)}</p>
           <p><strong>${getLabel('analysisDesc')}</strong>: ${containerData.analysisDesc}</p>
         </div>`
@@ -1339,7 +1358,6 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                         }}
   
                         onCustomEvent={(event) => {
-                          console.log('Form event:', event)
                           if (
                             event.component.key === 'recommendationSubmit'
                           ) {
@@ -1522,20 +1540,19 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
 const fetchAndCacheOptions = async (serviceMethod, cacheKey, mapCallback) => {
   const cachedOptions = JSON.parse(localStorage.getItem(cacheKey)) || [];
   if (cachedOptions.length > 0) {
-    console.log(`Using cached options for ${cacheKey}`);
     return cachedOptions;
   }
   try {
     const data = await serviceMethod();
     const options = data.map(mapCallback);
     localStorage.setItem(cacheKey, JSON.stringify(options));
-    console.log(`Fetched and cached options for ${cacheKey}`);
     return options;
   } catch (error) {
     console.error(`Error fetching options for ${cacheKey}:`, error);
     return [];
   }
 };
+
 const loadOptions = async (keycloak) => {
   const faultCategoryOptions = await fetchAndCacheOptions(
     () => FormService.getFaultCategoriesOptions(keycloak),
@@ -1558,11 +1575,6 @@ const loadOptions = async (keycloak) => {
     'categoryOptions',
     (item) => ({ label: item.name, value: item.id })
   );
-  // const caseDefinitionGEAPMUsers = await fetchAndCacheOptions(
-  //   () => CaseDefService.getCaseDefinitionGEAPMUsers(keycloak),
-  //   'geAPMUsers',
-  //   (item) => ({ label: item.userId, value: item.emailId })
-  // );
 };
 
 function a11yProps(index) {

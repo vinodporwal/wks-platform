@@ -25,7 +25,7 @@
 </head>
 <body>
     <div class="header">
-        <h2>New case has been assigned to you</h2>
+        <h2 th:text="'' + ${subject} + ''">New case has been assigned to you</h2>
     </div>
 
     <div class="content">
@@ -41,8 +41,9 @@
 <!--            <p><span class="label">Description:</span> <span th:text="${description}">Description</span></p>
             <p><span class="label">Category:</span> <span th:text="${caseCategory}">Category</span></p>  -->
             <p><span class="label">URL:</span> <span th:text="${caseUrl}">URL</span></p>
-        </div>
-
+			<p th:if="${recommendedAction != null}"><span class="label"> Recommended Action:</span> <span th:text="${recommendedAction}">Recommended Action</span></p> 
+			<p th:if="${actionDetails != null}"><span class="label"> Action Details:</span> <span th:text="${actionDetails}">Action Details</span></p>               
+		</div>
 <!--        <div>
             <h3>Next Steps:</h3>
             <p>See the updated case <a th:href="${caseUrl}" th:text="${caseUrl}">here</a></p>

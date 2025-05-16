@@ -76,25 +76,13 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 
 	@Value("${spring.mail.fromEmail}")
 	private String from;
+	
 	@PersistenceContext(unitName = "db2")
 	private EntityManager entityManager;
 
-	@Value("${spring.datasource.db1.name}")
-	private String db1Name;
-	@Value("${ge.authentication.datasource}")
-	private String geAuthenticationDatasource;
-	@Value("${ge.authentication.id}")
-	private String geAuthenticationId;
-	@Value("${ge.authentication.password}")
-	private String geAuthenticationPassword;
-	@Value("${ge.authentication.api}")
-	private String geAuthenticationAPI;
-	@Value("${ge.users.api}")
-	private String geUsersAPI;
-	@Value("${ge.create_case.api}")
-	private String geCreateCaseAPI;
-	@Value("${ge.case_status.api}")
-	private String geCaseStatusAPI;
+	private final String GE_MERIDUM = "geMeridium";
+	
+	private final String ACTION_ASSIGNED = "Action Assigned";
 
 	@Override
 	public String CaseNoGenerator() {
@@ -270,7 +258,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 		for (Attribute attribute : caseDetails.getAttributes()) {
 			String attributeValue = attribute.getValue();
 			String updatedAttributeValue = saveCMSCaseRecommendations(attributeValue, caseNo, recommendation);
-			sendMailToAssignedPerson(caseDetails);
+			sendMailToAssignedPerson(caseDetails, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationDescription1());
 			updatedAttributeValue = removeUnwantedCMSRecommendations(updatedAttributeValue);
 			attribute.setValue(updatedAttributeValue);
 		}
@@ -288,7 +276,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode rootNode = objectMapper.readTree(attributeValue);
-
+	        
 			// Navigate to the "dataGrid1" array
 			JsonNode recommendationNode = rootNode.path("dataGrid1");
 			if (recommendationNode.isArray()) {
@@ -312,11 +300,24 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 
 				String[] recommendationStatusAndId = saveCMSCaseRecommendationMapping(newRecommendationNode, caseNo,
 						newRecommendation.getRecommendationAssignedTo2(),
-						newRecommendation.getRecommendationReviewer());
+						newRecommendation.getRecommendationReviewer(), newRecommendation.getRecommendationCategory());
 
 				newRecommendationNode.put("recommendationNo", recommendationStatusAndId[0]);
 				newRecommendationNode.put("recommendationStatus", recommendationStatusAndId[1]);
 				dataGridArray.add(newRecommendationNode);
+				
+				// Update status to Action Assigned			
+				
+				Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
+						.filter(status -> status.getName().equals(ACTION_ASSIGNED)).findFirst();
+				Long caseStatusId = caseStatus.get().getId();
+				
+				// Ensure rootNode is an ObjectNode before updating it
+		        if (rootNode.isObject()) {
+		            ObjectNode objectNode = (ObjectNode) rootNode;
+		            objectNode.put("caseStatus", caseStatusId.toString());
+		        }
+		        
 				// Convert the updated root node back to a string
 				String updatedAttributeValue = objectMapper.writeValueAsString(rootNode);
 				System.out.println("Updated Attribute Value: " + updatedAttributeValue);
@@ -329,9 +330,9 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 	}
 
 	private String[] saveCMSCaseRecommendationMapping(JsonNode dataGridEntry, String caseNo, String assignedUserId,
-			String reviewerUserId) throws Exception {
+			String reviewerUserId, String recommendationCategory) throws Exception {
 		String[] recommendationStatusAndId = saveCMSCaseRecommendationAPI(dataGridEntry, caseNo, assignedUserId,
-				reviewerUserId);
+				reviewerUserId, recommendationCategory);
 		CaseAndRecommendationsMapping caseRecommendationMapping = new CaseAndRecommendationsMapping();
 		caseRecommendationMapping.setCaseNo(caseNo);
 		caseRecommendationMapping.setRecId(recommendationStatusAndId[0]);
@@ -342,19 +343,23 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 	}
 
 	private String[] saveCMSCaseRecommendationAPI(JsonNode dataGridEntry, String caseNo, String assignedUserId,
-			String reviewerUserId) throws Exception {
+			String reviewerUserId, String recommendationCategory) throws Exception {
 //		sendMailToAssignedPerson(assignedUserId);
 //		sendMailToReviewerPerson(reviewerUserId);
 
-		String prefix = "REC-";
-		// Generate a random number between 1 and 999999
-		int randomNumber = ThreadLocalRandom.current().nextInt(1, 1000000);
+		String id = "NA";
+		if(GE_MERIDUM.equals(recommendationCategory)) {
+			String prefix = "REC-";
+			// Generate a random number between 1 and 999999
+			int randomNumber = ThreadLocalRandom.current().nextInt(1, 1000000);
 
-		// Format the random number as a 6-digit string with leading zeros
-		String formattedId = String.format("%06d", randomNumber);
+			// Format the random number as a 6-digit string with leading zeros
+			String formattedId = String.format("%06d", randomNumber);
 
-		// Return the generated ID with the prefix
-		String id = prefix + formattedId;
+			// Return the generated ID with the prefix
+			id = prefix + formattedId;
+		}
+		
 		String status = "Assigned";
 
 		String[] recommendationStatusAndId = new String[2];
@@ -416,7 +421,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 
 				String[] recommendationStatusAndId = saveCMSCaseRecommendationMapping(newRecommendationNode, caseNo,
 						newRecommendation.getRecommendationAssignedTo2(),
-						newRecommendation.getRecommendationReviewer());
+						newRecommendation.getRecommendationReviewer(), null);
 
 				newRecommendationNode.put("siteRecommendationNo", recommendationStatusAndId[0]);
 				newRecommendationNode.put("siteRecommendationStatus", recommendationStatusAndId[1]);
@@ -499,15 +504,16 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			System.out.println("Calling mail send method...");
 			String[] ccUsers = new String[0];
 			Map<String, Object> data = new HashMap<>();
-			data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+			String subject = "New CMS case "+ caseNumber +" assigned";
+			data.put("subject", subject);
+			data.put("caseTitle", "This is to inform you, the new case "+ caseNumber +" has been assigned to you");
 			data.put("caseNumber", caseNumber);
 			data.put("status", caseStatusValue);
 			data.put("caseName", caseTitle);
 			data.put("caseUrl", caseDetails.getCaseUrl());
 			data.put("environment", "");
-			caseTitle = "CASE MANAGEMENT :" + caseTitle;
 			for(String reviewer: reviewers){
-				caseEmailService.send(from, reviewer, caseTitle, ccUsers, null, null, "email-template", data);
+				caseEmailService.send(from, reviewer, subject, ccUsers, null, null, "email-template", data);
 			}
 
 			caseData.setAttributes(attributes);
@@ -536,7 +542,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			String assignedTo = rootNode.path("caseCreatedBy").asText();
 			String caseNumber = caseData.getCaseNo();
 			String caseTitle = rootNode.path("caseTitle").asText();
-			System.out.println(rootNode.path("caseAssignedTo").asText());
+			String actionDetails = rootNode.path("actionDetails").asText();
 			Long caseStatusNo = rootNode.path("caseStatus").asLong();
 			Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
 					.filter(status -> status.getId().equals(caseStatusNo)).findFirst();
@@ -555,17 +561,17 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			System.out.println("Calling mail send method...");
 			String[] ccUsers = new String[0];
 			Map<String, Object> data = new HashMap<>();
-			data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+			String subject = "CMS case "+ caseNumber +" action completed.";
+			data.put("subject", subject);
+			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" action completed.");
 			data.put("caseNumber", caseNumber);
 			data.put("status", caseStatusValue);
 			data.put("caseName", caseTitle);
 			data.put("caseUrl", caseDetails.getCaseUrl());
-			data.put("environment", "");
-			caseTitle = "CASE MANAGEMENT :" + caseTitle;
+			data.put("actionDetails", actionDetails);
 				
-			caseEmailService.send(from, assignedTo, caseTitle, ccUsers, null, null, "email-template", data);
+			caseEmailService.send(from, assignedTo, subject, ccUsers, null, null, "email-template", data);
 			
-
 			caseData.setAttributes(attributes);
 			caseDetails = caseRepository.save(caseData);
 			return caseDetails;
@@ -578,6 +584,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 
 	@Override
 	public Case cmsCaseClosure(Case caseData) {
+		System.out.println("Calling method - case closure ...");
 		Case caseDetails = updateCMSCase(caseData);
 		List<Attribute> attributes = caseDetails.getAttributes();
 		Attribute attribute = attributes.get(0);
@@ -597,28 +604,53 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
 					.filter(status -> status.getId().equals(caseStatusNo)).findFirst();
 			String caseStatusValue = caseStatus.get().getName();
-			JsonNode analysisTeam = rootNode.path("caseAssignedTo");
-			String[] reviewers = new String[analysisTeam.size()];
-			if (analysisTeam.isArray()) {
-				int counter = 0;
-				for (JsonNode dataGridEntry : analysisTeam) {
-					reviewers[counter] = dataGridEntry.asText();
-					counter++;
-				}
+			// Fetch JSON nodes
+	        JsonNode analysisTeam = rootNode.path("caseAssignedTo");
+	        JsonNode recommendationAssignedTeam = rootNode.path("dataGrid1");
 
-			}
+	        // Calculate total size for reviewers array
+	        int totalSize = (analysisTeam.isArray() ? analysisTeam.size() : 0) 
+	                        + (recommendationAssignedTeam.isArray() ? recommendationAssignedTeam.size() : 0);
 
-			System.out.println("Calling mail send method...");
+	        String[] reviewers = new String[totalSize];
+
+	        int counter = 0;
+
+	        // Populate reviewers array from analysisTeam
+	        if (analysisTeam.isArray()) {
+	            for (JsonNode analystNode : analysisTeam) {
+	                reviewers[counter] = analystNode.asText();
+	                counter++;
+	            }
+	        }
+
+	        // Populate reviewers array from recommendationAssignedTeam
+	        if (recommendationAssignedTeam.isArray()) {
+	            for (JsonNode elementNode : recommendationAssignedTeam) {
+	                JsonNode assignedToNode = elementNode.path("recommendationAssignedTo");
+	                if (!assignedToNode.isMissingNode()) {
+	                    reviewers[counter] = assignedToNode.asText();
+	                    counter++;
+	                }
+	            }
+	        }
+
+	        // Print the reviewers array
+	        for (String reviewer : reviewers) {
+	            System.out.println("Reviewer: " + reviewer);
+	        }
+			System.out.println("Calling mail send method in case closure ...");
 			Map<String, Object> data = new HashMap<>();
-			data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+			String subject = "CMS case "+ caseNumber +" closed.";
+			data.put("subject", subject);
+			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" closed.");
 			data.put("caseNumber", caseNumber);
 			data.put("status", caseStatusValue);
 			data.put("caseName", caseTitle);
 			data.put("caseUrl", caseDetails.getCaseUrl());
 			data.put("environment", "");
-			caseTitle = "CASE MANAGEMENT :" + caseTitle;
 				
-			caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
+			caseEmailService.send(from, assignedTo, subject, reviewers, null, null, "email-template", data);
 			
 
 			caseData.setAttributes(attributes);
@@ -674,7 +706,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 	}
 	
 	
-	private void sendMailToAssignedPerson(Case caseDetails) {
+	private void sendMailToAssignedPerson(Case caseDetails, String assignedTo, String recommendedActions) {
 		List<Attribute> attributes = caseDetails.getAttributes();
 		Attribute attribute = attributes.get(0);
 		String attributeValue = attribute.getValue();
@@ -685,7 +717,6 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode rootNode = objectMapper.readTree(attributeValue);
-			String assignedTo = rootNode.path("caseCreatedBy").asText();
 			String caseNumber = caseDetails.getCaseNo();
 			String caseTitle = rootNode.path("caseTitle").asText();
 			Long caseStatusNo = rootNode.path("caseStatus").asLong();
@@ -695,15 +726,17 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			
 			String[] reviewers = new String[0];
 			Map<String, Object> data = new HashMap<>();
-			data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+			
+			String subject = "CMS case "+ caseNumber +" recommendation added.";
+			data.put("subject", subject);
+			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" recommendation added.");
 			data.put("caseNumber", caseNumber);
 			data.put("status", caseStatusValue);
 			data.put("caseName", caseTitle);
 			data.put("caseUrl", caseDetails.getCaseUrl());
-			data.put("environment", "");
-			caseTitle = "CASE MANAGEMENT :" + caseTitle;
+			data.put("recommendedAction", recommendedActions);
 				
-			caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
+			caseEmailService.send(from, assignedTo, subject, reviewers, null, null, "email-template", data);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
