@@ -204,3 +204,18 @@ input[disabled][id*="TextFaultEndTimeDate"].form-control {
   --bs-alert-border-color: #f5c2c7; */
   display: none;
 }
+
+.piHome {
+    background-color: transparent !important;
+    border: none;
+    color: #0d6efd;
+    text-decoration: underline;
+}
+
+.piHome:hover {
+    background-color: transparent !important;
+    border: none;
+    color: #0d6efd !important;
+    text-decoration: underline;
+}
+

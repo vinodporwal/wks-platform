@@ -504,7 +504,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			System.out.println("Calling mail send method...");
 			String[] ccUsers = new String[0];
 			Map<String, Object> data = new HashMap<>();
-			String subject = "New CMS case "+ caseNumber +" assigned";
+			String subject = "New CMS Case "+ caseNumber +" Assigned";
 			data.put("subject", subject);
 			data.put("caseTitle", "This is to inform you, the new case "+ caseNumber +" has been assigned to you");
 			data.put("caseNumber", caseNumber);
@@ -561,7 +561,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			System.out.println("Calling mail send method...");
 			String[] ccUsers = new String[0];
 			Map<String, Object> data = new HashMap<>();
-			String subject = "CMS case "+ caseNumber +" action completed.";
+			String subject = "CMS Case "+ caseNumber +" Action Completed.";
 			data.put("subject", subject);
 			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" action completed.");
 			data.put("caseNumber", caseNumber);
@@ -641,7 +641,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 	        }
 			System.out.println("Calling mail send method in case closure ...");
 			Map<String, Object> data = new HashMap<>();
-			String subject = "CMS case "+ caseNumber +" closed.";
+			String subject = "CMS Case "+ caseNumber +" Closed.";
 			data.put("subject", subject);
 			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" closed.");
 			data.put("caseNumber", caseNumber);
@@ -727,7 +727,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			String[] reviewers = new String[0];
 			Map<String, Object> data = new HashMap<>();
 			
-			String subject = "CMS case "+ caseNumber +" recommendation added.";
+			String subject = "CMS Case "+ caseNumber +" Recommendation Added.";
 			data.put("subject", subject);
 			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" recommendation added.");
 			data.put("caseNumber", caseNumber);
