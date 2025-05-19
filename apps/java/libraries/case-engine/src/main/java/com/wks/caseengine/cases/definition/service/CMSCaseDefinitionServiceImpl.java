@@ -258,7 +258,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 		for (Attribute attribute : caseDetails.getAttributes()) {
 			String attributeValue = attribute.getValue();
 			String updatedAttributeValue = saveCMSCaseRecommendations(attributeValue, caseNo, recommendation);
-			sendMailToAssignedPerson(caseDetails, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationDescription1());
+			sendMailToAssignedPerson(caseDetails, updatedAttributeValue, recommendation.getRecommendationAssignedTo2(), recommendation.getRecommendationDescription1());
 			updatedAttributeValue = removeUnwantedCMSRecommendations(updatedAttributeValue);
 			attribute.setValue(updatedAttributeValue);
 		}
@@ -600,6 +600,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			String caseNumber = caseData.getCaseNo();
 			String caseTitle = rootNode.path("caseTitle").asText();
 			System.out.println(rootNode.path("caseAssignedTo").asText());
+			String notes = rootNode.path("notes").asText();
 			Long caseStatusNo = rootNode.path("caseStatus").asLong();
 			Optional<CaseStatus> caseStatus = getAllCaseStatus().stream()
 					.filter(status -> status.getId().equals(caseStatusNo)).findFirst();
@@ -648,7 +649,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			data.put("status", caseStatusValue);
 			data.put("caseName", caseTitle);
 			data.put("caseUrl", caseDetails.getCaseUrl());
-			data.put("environment", "");
+			data.put("notes", notes);
 				
 			caseEmailService.send(from, assignedTo, subject, reviewers, null, null, "email-template", data);
 			
@@ -706,11 +707,7 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 	}
 	
 	
-	private void sendMailToAssignedPerson(Case caseDetails, String assignedTo, String recommendedActions) {
-		List<Attribute> attributes = caseDetails.getAttributes();
-		Attribute attribute = attributes.get(0);
-		String attributeValue = attribute.getValue();
-
+	private void sendMailToAssignedPerson(Case caseDetails, String attributeValue, String assignedTo, String recommendedActions) {
 		attributeValue = attributeValue.replace("\\\"", "\"");
 
 		try {

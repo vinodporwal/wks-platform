@@ -42,7 +42,8 @@
             <p><span class="label">Category:</span> <span th:text="${caseCategory}">Category</span></p>  -->
             <p><span class="label">URL:</span> <span th:text="${caseUrl}">URL</span></p>
 			<p th:if="${recommendedAction != null}"><span class="label"> Recommended Action:</span> <span th:text="${recommendedAction}">Recommended Action</span></p> 
-			<p th:if="${actionDetails != null}"><span class="label"> Action Details:</span> <span th:text="${actionDetails}">Action Details</span></p>               
+			<p th:if="${actionDetails != null}"><span class="label"> Action Details:</span> <span th:text="${actionDetails}">Action Details</span></p>
+			<p th:if="${notes != null}"><span class="label"> Notes:</span> <span th:text="${notes}">Notes</span></p>                              
 		</div>
 <!--        <div>
             <h3>Next Steps:</h3>
