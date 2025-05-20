@@ -297,6 +297,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						}
 
 						commands.add(attributeValue.toString());
+
 						// Float attributeValueHP =
 						// getAttributeValueByPythonScriptFromSP(attributeValue);
 						// System.out.println("attributeHP " + attributeValueHP + " " + i);
@@ -357,6 +358,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	private Float getAttributeValueByPythonScript(List<String> commands) {
 		try {
 			// Command to run the Python script with an argument
+			// System.out.println("commands");
+
+			String joinedCommand = String.join(" ", commands); // convert list to string
+			System.out.println("joinedCommand" + joinedCommand);
+
 			ProcessBuilder processBuilder = new ProcessBuilder(commands);
 			processBuilder.redirectErrorStream(true);
 			Process process = processBuilder.start();
@@ -366,7 +372,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			StringBuilder output = new StringBuilder();
 			String line;
 			while ((line = reader.readLine()) != null) {
-				output.append(line).append("\n");
+				output.append(line);
+				break;
 			}
 			return Float.parseFloat(output.toString());
 

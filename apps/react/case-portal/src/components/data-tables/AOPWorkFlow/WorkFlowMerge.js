@@ -107,6 +107,9 @@ const WorkFlowMerge = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
+
+  const isOldYear = oldYear?.oldYear
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [businessKey, setBusinessKey] = useState('')
