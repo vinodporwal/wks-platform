@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Box } from '@mui/material'
 import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
 import {
@@ -8,6 +8,7 @@ import {
 import { truncateRemarks } from 'utils/remarksUtils'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import Notification from 'components/Utilities/Notification'
 
 const TurnaroundReport = () => {
   const unsavedChangesRef = React.useRef({
@@ -17,12 +18,37 @@ const TurnaroundReport = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [remarkDialogOpen2, setRemarkDialogOpen2] = useState(false)
+  const [currentRemark2, setCurrentRemark2] = useState('')
+  const [currentRowId2, setCurrentRowId2] = useState(null)
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [modifiedCells2, setModifiedCells2] = React.useState({})
+
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  const [rows, setRows] = useState()
+  const [rows2, setRows2] = useState()
+
+  const [loading, setLoading] = useState(false)
+  const keycloak = useSession()
+
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
 
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
+  }
+  const handleRemarkCellClick2 = (row) => {
+    setCurrentRemark2(row.remarks || '')
+    setCurrentRowId2(row.id)
+    setRemarkDialogOpen2(true)
   }
 
   const formatValueToThreeDecimals = (params) => {
@@ -61,6 +87,7 @@ const TurnaroundReport = () => {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              width: ' 100%',
             }}
             onClick={() => handleRemarkCellClick(params.row)}
           >
@@ -104,8 +131,9 @@ const TurnaroundReport = () => {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              width: ' 100%',
             }}
-            onClick={() => handleRemarkCellClick(params.row)}
+            onClick={() => handleRemarkCellClick2(params.row)}
           >
             {truncateRemarks(params.value) || 'Click to add remark'}
           </div>
@@ -122,141 +150,61 @@ const TurnaroundReport = () => {
     },
   ]
 
-  const [rows, setRows] = useState()
-  const [rows2, setRows2] = useState()
+  const mapData = (data, tag) =>
+    (data?.data?.plantTurnAroundReportData || []).map((item, i) => ({
+      ...item,
+      id: `${tag}-${i}`,
+      isEditable: false,
+    }))
 
-  // const processRowUpdate = useCallback((newRow, oldRow) => {
-  //   const rowId = newRow.id
-
-  //   const updatedFields = []
-  //   for (const key in newRow) {
-  //     if (
-  //       Object.prototype.hasOwnProperty.call(newRow, key) &&
-  //       newRow[key] !== oldRow[key]
-  //     ) {
-  //       updatedFields.push(key)
-  //     }
-  //   }
-
-  //   unsavedChangesRef.current = true
-  //   setRows((prev) => prev.map((r) => (r.id === newRow.id ? newRow : r)))
-
-  //   if (updatedFields.length > 0) {
-  //     setModifiedCells((prevModifiedCells) => ({
-  //       ...prevModifiedCells,
-  //       [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
-  //     }))
-  //   }
-  //   return newRow
-  // }, [])
-  // const processRowUpdate2 = useCallback((newRow) => {
-  //   unsavedChangesRef.current = true
-  //   setRows2((prev) => prev.map((r) => (r.id === newRow.id ? newRow : r)))
-  //   return newRow
-  // }, [])
-  const [loading, setLoading] = useState(false)
-  const keycloak = useSession()
-
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const year = localStorage.getItem('year')
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       setLoading(true)
-  //       // let type =
-  //       var res = await DataService.getTurnaroundReportData(
-  //         keycloak,
-  //         'currentYear',
-  //       )
-  //       var res2 = await DataService.getTurnaroundReportData(
-  //         keycloak,
-  //         'previousYear',
-  //       )
-
-  //       // console.log(res)
-  //       if (res?.code == 200) {
-  //         res = res?.data?.plantTurnAroundReportData.map((item, index) => ({
-  //           ...item,
-  //           id: index,
-  //           isEditable: false,
-  //         }))
-
-  //         setRows(res)
-  //       }
-  //       if (res2?.code == 200) {
-  //         res2 = res2?.data?.plantTurnAroundReportData.map((item, index) => ({
-  //           ...item,
-  //           id: index,
-  //           isEditable: false,
-  //         }))
-
-  //         setRows2(res2)
-  //       }
-  //     } catch (err) {
-  //       console.log(err)
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
-  //   fetchData()
-  // }, [year, plantId])
-  useEffect(() => {
-    const mapData = (data, tag) =>
-      (data?.data?.plantTurnAroundReportData || []).map((item, i) => ({
-        ...item,
-        id: `${tag}-${i}`,
-        isEditable: false,
-      }))
-
-    const fetchCurrentYear = async () => {
-      setLoading(true)
-      try {
-        const res = await DataService.getTurnaroundReportData(
-          keycloak,
-          'currentYear',
-        )
-        if (res?.code === 200) {
-          setRows(mapData(res, 'CY'))
-        } else {
-          setRows([])
-        }
-      } catch (e) {
-        console.error('Error loading current year:', e)
-      } finally {
-        setLoading(false)
+  const fetchCurrentYear = async () => {
+    setLoading(true)
+    try {
+      const res = await DataService.getTurnaroundReportData(
+        keycloak,
+        'currentYear',
+      )
+      if (res?.code === 200) {
+        setRows(mapData(res, 'CY'))
+      } else {
+        setRows([])
       }
+    } catch (e) {
+      console.error('Error loading current year:', e)
+    } finally {
+      setLoading(false)
     }
+  }
+  const mapData2 = (data, tag) =>
+    (data?.data?.plantTurnAroundReportData || []).map((item, i) => ({
+      ...item,
+      id: `${tag}-${i}`,
+      isEditable: false,
+    }))
+  const fetchPreviousYear = async () => {
+    setLoading(true)
+    try {
+      const res = await DataService.getTurnaroundReportData(
+        keycloak,
+        'previousYear',
+      )
+      if (res?.code === 200) {
+        setRows2(mapData2(res, 'PY'))
+      } else {
+        setRows2([])
+      }
+    } catch (e) {
+      console.error('Error loading previous year:', e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  useEffect(() => {
     fetchCurrentYear()
   }, [keycloak, year, plantId])
 
   useEffect(() => {
-    const mapData = (data, tag) =>
-      (data?.data?.plantTurnAroundReportData || []).map((item, i) => ({
-        ...item,
-        id: `${tag}-${i}`,
-        isEditable: false,
-      }))
-
-    const fetchPreviousYear = async () => {
-      setLoading(true)
-      try {
-        const res = await DataService.getTurnaroundReportData(
-          keycloak,
-          'previousYear',
-        )
-        if (res?.code === 200) {
-          setRows2(mapData(res, 'PY'))
-        } else {
-          setRows2([])
-        }
-      } catch (e) {
-        console.error('Error loading previous year:', e)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchPreviousYear()
   }, [keycloak, year, plantId])
 
@@ -291,6 +239,7 @@ const TurnaroundReport = () => {
 
     return newRow
   }, [])
+
   const processRowUpdate2 = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
     const updatedFields = []
@@ -314,7 +263,7 @@ const TurnaroundReport = () => {
       ),
     )
     if (updatedFields.length > 0) {
-      setModifiedCells((prevModifiedCells) => ({
+      setModifiedCells2((prevModifiedCells) => ({
         ...prevModifiedCells,
         [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
       }))
@@ -322,6 +271,102 @@ const TurnaroundReport = () => {
 
     return newRow
   }, [])
+
+  const saveRemarkData = async () => {
+    try {
+      var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      const rowsToUpdate = data.map((row) => ({
+        id: row.Id,
+        remark: row.remarks,
+      }))
+      const res = await DataService.saveTurnaroundReport(
+        keycloak,
+        rowsToUpdate,
+        plantId,
+      )
+
+      // console.log(res)
+
+      if (res?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (err) {
+      console.error('Error while save', err)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: err.message, severity: 'error' })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+  const handleCalculate = () => {
+    handleCalculateMonthwiseAndTurnaround()
+  }
+  const handleCalculateMonthwiseAndTurnaround = async () => {
+    try {
+      const storedPlant = localStorage.getItem('selectedPlant')
+      const year = localStorage.getItem('year')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      var plantId = plantId
+      const res = await DataService.calculateTurnAroundPlanReportData(
+        plantId,
+        year,
+        keycloak,
+      )
+
+      if (res?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refreshed Successfully!',
+          severity: 'success',
+        })
+        fetchCurrentYear()
+        fetchPreviousYear()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refreshed Faild!',
+          severity: 'error',
+        })
+      }
+
+      return res
+    } catch (error) {
+      // setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: error.message || 'An error occurred',
+      //   severity: 'error',
+      // })
+      console.error('Error!', error)
+    }
+  }
   return (
     <Box>
       <ReportDataGrid
@@ -341,17 +386,27 @@ const TurnaroundReport = () => {
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         loading={loading}
+        title='Turn Around Report'
         permissions={{
           customHeight: { mainBox: '32vh', otherBox: '100%' },
           textAlignment: 'center',
           remarksEditable: true,
+          showCalculate: true,
+          saveBtnForRemark: true,
+          saveBtn: true,
+          showWorkFlowBtns: true,
+          showTitle: true,
         }}
+        saveRemarkData={saveRemarkData}
+        handleCalculate={handleCalculate}
       />
+
       <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
-        II. Turnaround details for the previous years since commissioning{' '}
+        Turnaround details for the previous years since commissioning{' '}
       </Typography>
+
       <ReportDataGrid
-        modifiedCells={modifiedCells}
+        modifiedCells={modifiedCells2}
         rows={rows2}
         setRows={setRows2}
         columns={columnsGrid2}
@@ -359,19 +414,28 @@ const TurnaroundReport = () => {
         processRowUpdate={processRowUpdate2}
         disableSelectionOnClick
         defaultGroupingExpansionDepth={1}
-        remarkDialogOpen={remarkDialogOpen}
+        remarkDialogOpen={remarkDialogOpen2}
         unsavedChangesRef={unsavedChangesRef}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
+        setRemarkDialogOpen={setRemarkDialogOpen2}
+        currentRemark={currentRemark2}
+        setCurrentRemark={setCurrentRemark2}
+        currentRowId={currentRowId2}
+        setCurrentRowId={setCurrentRowId2}
+        saveRemarkData={saveRemarkData}
         loading={loading}
         permissions={{
           customHeight: { mainBox: '32vh', otherBox: '100%' },
           textAlignment: 'center',
           remarksEditable: true,
+          saveBtn: true,
+          saveBtnForRemark: true,
         }}
+      />
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+        onClose={() => setSnackbarOpen(false)}
       />
     </Box>
   )

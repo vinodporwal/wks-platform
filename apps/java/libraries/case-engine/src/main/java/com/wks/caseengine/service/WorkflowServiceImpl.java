@@ -25,6 +25,7 @@ import com.wks.caseengine.entity.Workflow;
 import com.wks.caseengine.entity.WorkflowMaster;
 import com.wks.caseengine.entity.WorkflowStepsMaster;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.process.instance.ProcessInstanceService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,13 +89,12 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	@Autowired
 	private DataSource dataSource;
-	
-	 @Autowired
-	 private AnnualAOPCostRepository annualAOPCostRepository;
+
+	@Autowired
+	private AnnualAOPCostRepository annualAOPCostRepository;
 
 	@Autowired
 	private ProcessInstanceService processInstanceService;
-	
 
 	@Autowired
 	private TaskService taskService;
@@ -102,6 +102,9 @@ public class WorkflowServiceImpl implements WorkflowService {
 	private PlantsRepository plantsRepository;
 	@Autowired
 	private VerticalsRepository verticalRepository;
+
+	@Autowired
+	private SiteRepository siteRepository;
 
 	@Override
 	public WorkflowPageDTO getCaseId(String year, String plantId, String siteId, String verticalId) {
@@ -259,6 +262,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 				dto.setFyActual(row[3] != null ? row[3].toString() : null);
 				dto.setSyAop(row[4] != null ? row[4].toString() : null);
 				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setAopYear(year);
 				workflowList.add(dto);
 			}
 			List<String> headers = getHeaders(plantId, year);
@@ -292,7 +296,8 @@ public class WorkflowServiceImpl implements WorkflowService {
 				dto.setFyAop(row[2] != null ? row[2].toString() : null);
 				dto.setFyActual(row[3] != null ? row[3].toString() : null);
 				dto.setSyAop(row[4] != null ? row[4].toString() : null);
-				dto.setRemark(row[5] != null ? row[5].toString() : null);
+				dto.setRemark(row[5] != null ? row[5].toString() : "");
+				dto.setAopYear(year);
 				workflowList.add(dto);
 			}
 			List<String> headers = getProductionWorkflowHeaders(plantId, year);
@@ -447,7 +452,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 	@Transactional
 	@Override
 	public WorkflowDTO submitWorkflow(WorkflowSubmitDTO workflowSubmitDTO) {
-		saveWorkflowData(workflowSubmitDTO.getWorkflowDTO().getPlantFkId(),workflowSubmitDTO.getWorkflowYearDTO());
+		// saveWorkflowData(workflowSubmitDTO.getWorkflowDTO().getPlantFkId(),workflowSubmitDTO.getWorkflowYearDTO());
 		CaseInstance caseInstance = caseInstanceService.startWithValues(workflowSubmitDTO.getCaseInstance());
 		System.out.println("case created " + caseInstance.getBusinessKey());
 
@@ -502,53 +507,82 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 		return Collections.emptyList(); // Return empty list if roles not found
 	}
-	
+
 	@Override
-	public WorkflowYearDTO saveWorkflowData(String plantId, List<WorkflowYearDTO> workflowYearDTOList) {
+	public AOPMessageVM saveAnnualAOPData(String plantId, List<WorkflowYearDTO> workflowYearDTOList) {
 		try {
 			for (WorkflowYearDTO workflowYearDTO : workflowYearDTOList) {
-				System.out.println("workflowYearDTO.getParticulates()"+workflowYearDTO.getParticulates());
-				System.out.println("workflowYearDTO.getFyAop()"+workflowYearDTO.getFyAop());
-				List<UUID> ids = annualAOPCostRepository.findIdByParticulatesAndPlantFkId(
-						workflowYearDTO.getParticulates(),
-						 UUID.fromString(plantId));
-				for(UUID id:ids) {
-					System.out.println("id:"+id);
-						Optional<AnnualAOPCost> AnnualAOPCostOp = annualAOPCostRepository.findById(id);
-						if (AnnualAOPCostOp != null) {
-							AnnualAOPCost annualAOPCost = AnnualAOPCostOp.get();
-							if(workflowYearDTO.getRemark()!=null && workflowYearDTO.getRemark().isBlank()){
-                                annualAOPCost.setRemark(null);
-							}else{
-								annualAOPCost.setRemark(workflowYearDTO.getRemark());
-							}
-							
-							annualAOPCostRepository.save(annualAOPCost);
+				System.out.println("workflowYearDTO.getParticulates()" + workflowYearDTO.getParticulates());
+				System.out.println("workflowYearDTO.getFyAop()" + workflowYearDTO.getFyAop());
+				List<AnnualAOPCost> list = annualAOPCostRepository
+						.findAllByAopYearAndPlantFkIdAndParticulatesAndAopType(
+								workflowYearDTO.getAopYear(),
+								UUID.fromString(plantId),
+								workflowYearDTO.getParticulates(),
+								"Remark");
+				if (list.isEmpty()) {
+					if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
+						// annualAOPCost.setRemark(null);
+					} else {
+						AnnualAOPCost annualAOPCost = new AnnualAOPCost();
+						annualAOPCost.setParticulates(workflowYearDTO.getParticulates());
+						annualAOPCost.setAopYear(workflowYearDTO.getAopYear());
+						annualAOPCost.setAopType("Remark");
+						annualAOPCost.setRemark(workflowYearDTO.getRemark());
+						annualAOPCost.setPlantFkId(UUID.fromString(plantId));
+
+						annualAOPCostRepository.save(annualAOPCost);
+					}
+				} else {
+					for (AnnualAOPCost annualAOPCost : list) {
+						// System.out.println("id:"+id);
+						// Optional<AnnualAOPCost> AnnualAOPCostOp =
+						// annualAOPCostRepository.findById(id);
+						// if (AnnualAOPCostOp != null) {
+						// AnnualAOPCost annualAOPCost = AnnualAOPCostOp.get();
+						if (workflowYearDTO.getRemark() == null || workflowYearDTO.getRemark().isBlank()) {
+							annualAOPCost.setRemark(null);
+						} else {
+							annualAOPCost.setRemark(workflowYearDTO.getRemark());
 						}
+
+						annualAOPCostRepository.save(annualAOPCost);
+					}
 				}
-				
-				 
 			}
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setMessage("Remarks updated successfully.");
+			return response;
+
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to save data", ex);
 		}
-		// TODO Auto-generated method stub
-		return null;
+
 	}
 
 	@Override
 	@Transactional
 	public int calculateExpressionWorkFlow(String year, String plantId) {
+		int totalUpdates = 0;
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			String storedProcedure = vertical.getName() + "_HMD_LoadAnnualAOPCost";
-			System.out.println(storedProcedure);
-			return executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			// First SP _LoadAnnualAOPCost
+			String LoadAnnualAOPCost = vertical.getName() + "_LoadAnnualAOPCost";
+			totalUpdates += executeDynamicUpdateProcedure(LoadAnnualAOPCost, plantId, year);
+
+			// Second SP _LoadAnnualAOPCost_MIISContribution
+			String LoadAnnualAOPCost_MIISContribution = vertical.getName()
+					+ "_LoadAnnualAOPCost_MIISContribution";
+			totalUpdates += executeDynamicUpdateProcedure(LoadAnnualAOPCost_MIISContribution, plantId, year);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return 0;
+		return totalUpdates;
 	}
 
 	@Transactional

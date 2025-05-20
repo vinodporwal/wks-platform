@@ -20,12 +20,19 @@ export const DataService = {
   getConsumptionNormsData,
   getMaintenanceData,
   getTurnaroundReportData,
+  getAopSummary,
 
   getAllCatalyst,
 
   saveShutdownData,
+  saveAnnualWorkFlowData,
+  saveRemarkData,
+  savePlantProductionData,
+  saveMonthwiseProduction,
+  saveTurnaroundReport,
   saveText,
   saveAOPConsumptionNorm,
+  saveSummaryAOPConsumptionNorm,
   saveSlowdownData,
   saveTurnAroundData,
 
@@ -61,6 +68,15 @@ export const DataService = {
   handleCalculateonsumptionNorms,
   handleCalculateProductionVolData,
   handleCalculateProductionVolData2,
+  handleCalculateMonthwiseAndTurnaround,
+  handleCalculatePlantProductionData,
+  handleCalculateMonthwiseProduction,
+  handleCalculatePlantConsumptionData,
+  calculateTurnAroundPlanReportData,
+  calculateAnnualProductionPlanData,
+
+  calculatePlantContributionReportData,
+
   handleCalculateMaintenance,
   getNormalOperationNormsData,
   getShutdownNormsData,
@@ -387,6 +403,191 @@ async function handleCalculateProductionVolData2(plantId, year, keycloak) {
     return Promise.reject(e)
   }
 }
+async function handleCalculateMonthwiseAndTurnaround(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/monthwise-turnaround?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+async function handleCalculatePlantProductionData(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/plant-production-summary?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function handleCalculateMonthwiseProduction(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/monthwise-production-data?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+async function handleCalculatePlantConsumptionData(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/plant-consumption-data?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+async function calculateTurnAroundPlanReportData(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/turnarounf-plan-data?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+async function calculateAnnualProductionPlanData(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/annual-production-data?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function calculatePlantContributionReportData(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/handle/calculate/plan-contribution-data?year=${year1}&plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+
 async function handleCalculateMaintenance(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/handleCalculateMaintenance?year=${year1}&plantId=${plantId}`
@@ -1161,6 +1362,34 @@ async function getConfigurationTabsMatrix(keycloak) {
     return await Promise.reject(e)
   }
 }
+
+async function getAopSummary(keycloak) {
+  let plantId = ''
+
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+
+  let aopYear = localStorage.getItem('year')
+
+  const url = `${Config.CaseEngineUrl}/task/aop-summary?plantId=${plantId}&aopYear=${aopYear}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 async function getConfigurationAvailableTabs(keycloak) {
   const url = `${Config.CaseEngineUrl}/task/configuration-type-data`
   const headers = {
@@ -1288,6 +1517,120 @@ async function saveShutdownData(plantId, shutdownDetails, keycloak) {
     return await Promise.reject(e)
   }
 }
+async function saveAnnualWorkFlowData(keycloak, workFlowData) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const url = `${Config.CaseEngineUrl}/task/annual-aop-data?plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(workFlowData),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveRemarkData(keycloak, workFlowData) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const url = `${Config.CaseEngineUrl}/task/annual-aop-remark?plantId=${plantId}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(workFlowData),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function savePlantProductionData(keycloak, dataList) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage?.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/plant-production-data?plantId=${plantId}&year=${year}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dataList),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveMonthwiseProduction(keycloak, dataList) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage?.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/monthwise-production-data?plantId=${plantId}&year=${year}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dataList),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveTurnaroundReport(keycloak, dataList) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage?.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/turnaround-data?plantId=${plantId}&year=${year}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dataList),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 async function saveText(submitedText, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/saveText`
 
@@ -1405,6 +1748,32 @@ async function saveAOPConsumptionNorm(plantId, shutdownDetails, keycloak) {
       method: 'POST',
       headers,
       body: JSON.stringify(shutdownDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveSummaryAOPConsumptionNorm(
+  plantId,
+  aopYear,
+  summary,
+  keycloak,
+) {
+  const url = `${Config.CaseEngineUrl}/task/aop-summary?plantId=${plantId}&aopYear=${aopYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ summary }), // <-- send JSON object with summary key
     })
     return json(keycloak, resp)
   } catch (e) {
@@ -1604,7 +1973,7 @@ async function saveTurnAroundData(plantId, turnAroundDetails, keycloak) {
 
 async function saveCatalystData(plantId, turnAroundDetails, keycloak) {
   var year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/saveConfigurationData?year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/saveConfigurationData?year=${year}&plantFKId=${plantId}`
 
   const headers = {
     Accept: 'application/json',

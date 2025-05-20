@@ -17,7 +17,6 @@ import { validateFields } from 'utils/validationUtils'
 import TextField from '@mui/material/TextField'
 import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
-import { renderTwoLineEllipsis } from 'components/Utilities/twoLineEllipsisRenderer'
 
 const SlowdownNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -458,7 +457,7 @@ const SlowdownNorms = () => {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                maxWidth: 140,
+                width: ' 100%',
               }}
               onClick={() => handleRemarkCellClick(params.row)}
             >
@@ -813,6 +812,7 @@ const SlowdownNorms = () => {
       saveBtn: true,
       showCalculate: lowerVertName == 'meg' ? false : false,
       noColor: true,
+      allAction: false,
     },
     isOldYear,
   )

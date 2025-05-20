@@ -20,6 +20,9 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import { GridActionsCellItem, GridRowModes } from '@mui/x-data-grid'
 import Notification from 'components/Utilities/Notification'
+//import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined'
+//import Tooltip from '@mui/material/Tooltip'
+
 //import './data-grid-css.css'
 //import './extra-css.css'
 
@@ -29,7 +32,6 @@ import {
   FileDownload,
   FileUpload,
 } from '../../../node_modules/@mui/icons-material/index'
-import Typography from 'themes/overrides/Typography'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 
 const jioColors = {
@@ -47,7 +49,6 @@ const jioColors = {
 
 const DataGridTable = ({
   columns: initialColumns = [],
-  // title = '',
   onAddRow = () => {},
   // onDeleteRow = () => {},
   permissions = {},
@@ -56,6 +57,8 @@ const DataGridTable = ({
   saveChanges = () => {},
   apiRef = null,
   rowModesModel: rowModesModel,
+  handleCancelClick: handleCancelClick,
+  focusFirstField: focusFirstField,
   // setRowModesModel,
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
@@ -79,7 +82,11 @@ const DataGridTable = ({
   handleAddPlantSite = () => {},
   selectedUsers = [],
   setSelectedUsers = () => {},
+  // createCase = () => {},
+  // isCreatingCase = false,
+  // showCreateCasebutton = false,
   // columnGroupingModel,
+  // saveWorkflowData = () => {},
 }) => {
   const [resizedColumns, setResizedColumns] = useState({})
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -125,18 +132,6 @@ const DataGridTable = ({
     //   ...prev,
     //   [id]: { mode: GridRowModes.View },
     // }))
-  }
-
-  const handleCancelClick = (id) => () => {
-    // setRowModesModel({
-    //   ...rowModesModel,
-    //   [id]: { mode: GridRowModes.View, ignoreModifications: true },
-    // })
-
-    const editedRow = rows.find((row) => row.id === id)
-    if (editedRow.isNew) {
-      setRows(rows.filter((row) => row.id !== id))
-    }
   }
 
   // const handleRowModesModelChange = (newRowModesModel) => {
@@ -202,6 +197,7 @@ const DataGridTable = ({
     //   ...oldModel,
     //   [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
     // }))
+    focusFirstField()
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
@@ -368,7 +364,7 @@ const DataGridTable = ({
       setIsButtonDisabled(false)
     }, 500)
   }
-  const boxHeight = permissions?.customHeight?.mainBox
+  // const boxHeight = permissions?.customHeight?.mainBox
   const otherHeight = permissions?.customHeight?.otherBox
   // console.log(boxHeight)
   const handleDeleteAll = () => {
@@ -418,7 +414,16 @@ const DataGridTable = ({
       {/* )} */}
       {(permissions?.allAction ?? true) && (
         <Box className='action-box'>
-          <Box className='action-inner'>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              width: '100%', // make sure container is full width
+              p: 1,
+              gap: 1,
+            }}
+          >
             {permissions?.UnitToShow && (
               <Chip
                 label={permissions.UnitToShow}
@@ -426,14 +431,29 @@ const DataGridTable = ({
                 className='unit-chip'
               />
             )}
-          </Box>
+            {/* {permissions?.showCalculate && (
+              <Tooltip title='Calculate'>
+                <span>
+                  <Button
+                    variant='contained'
+                    onClick={handleCalculateBtn}
+                    disabled={isButtonDisabled}
+                    sx={{
+                      minWidth: '40px',
+                      padding: '8px',
+                      backgroundColor: '#0100cb',
+                      '&:hover': {
+                        backgroundColor: '#0100cb',
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    <CalculateOutlinedIcon sx={{ color: '#fff' }} />
+                  </Button>
+                </span>
+              </Tooltip>
+            )} */}
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {permissions?.showTitle && (
-              <Typography component='div' className='grid-title'>
-                Annual AOP Cost
-              </Typography>
-            )}
             {permissions?.showCalculate && (
               <Button
                 variant='contained'
@@ -563,6 +583,7 @@ const DataGridTable = ({
                 </span>
               </IconButton>
             )}
+            {/* </Box> */}
           </Box>
         </Box>
       )}
@@ -658,6 +679,10 @@ const DataGridTable = ({
             period: false,
           }}
           disableColumnSelector
+          paginationModel={{ pageSize: 100, page: 0 }}
+          pageSizeOptions={[]}
+          pagination
+          hideFooter={rows.length <= 100}
           disableColumnSorting
           rowHeight={35}
           processRowUpdate={processRowUpdate}
@@ -667,9 +692,11 @@ const DataGridTable = ({
           experimentalFeatures={{ newEditingApi: true }}
           editMode='row'
           rowModesModel={rowModesModel}
+          handleCancelClick={handleCancelClick}
           onRowModesModelChange={onRowModesModelChange}
           handleCalculate={handleCalculate}
           deleteRowData={deleteRowData}
+          focusFirstField={focusFirstField}
           slotProps={{
             toolbar: { setRows, GridToolbar },
             // loadingOverlay: {
@@ -704,7 +731,7 @@ const DataGridTable = ({
         />
       </Box>
 
-      {(permissions?.allAction ?? true) && (
+      {(permissions?.allActionOfBottomBtns ?? true) && (
         <Box
           sx={{
             marginTop: 2,
@@ -736,6 +763,17 @@ const DataGridTable = ({
               Save
             </Button>
           )}
+          {/* {permissions?.showCreateCasebutton && (
+            <Button
+              variant='contained'
+              onClick={createCase}
+              disabled={isCreatingCase || !showCreateCasebutton}
+              className='btn-save'
+            >
+              {isCreatingCase ? 'Submitting…' : 'Submit'}
+            </Button>
+          )} */}
+
           {permissions?.approveBtn && (
             <Button
               variant='contained'
@@ -785,7 +823,7 @@ const DataGridTable = ({
         </Box>
       )}
 
-      {(permissions?.allAction ?? true) && (
+      {(permissions?.allActionOfBottomBtns ?? true) && (
         <Notification
           open={snackbarOpen}
           message={snackbarData?.message || ''}

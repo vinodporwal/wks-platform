@@ -9,6 +9,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedAOPColDefs from './CommonHeader/ConfigHeader'
+import { Box } from '../../../node_modules/@mui/material/index'
 
 const SelectivityData = (props) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -97,18 +98,22 @@ const SelectivityData = (props) => {
     setTimeout(() => {
       try {
         var data = Object.values(unsavedChangesRef.current.unsavedRows)
+
         if (data.length === 0) {
           setSnackbarOpen(true)
           setSnackbarData({
             message: 'No Records to Save!',
             severity: 'info',
           })
+          setSnackbarOpen(true)
           return
         }
+
         // console.log(props?.configType)
         if (props?.configType !== 'grades') {
           const requiredFields = ['remarks']
           const validationMessage = validateFields(data, requiredFields)
+
           if (validationMessage) {
             setSnackbarOpen(true)
             setSnackbarData({
@@ -122,7 +127,7 @@ const SelectivityData = (props) => {
           handleUpdate(data)
         }
       } catch (error) {
-        // Handle error if necessary
+        console.log('Error saving changes:', error)
       }
     }, 400)
   }, [apiRef, rowModesModel])
@@ -271,7 +276,7 @@ const SelectivityData = (props) => {
     }
 
     getAllProducts()
-    getAllGrades()
+    if (verticalChange?.selectedVertical === 'PE') getAllGrades()
 
     // getAllCatalyst()
     if (props?.configType !== 'grades') {
@@ -331,6 +336,7 @@ const SelectivityData = (props) => {
       saveWithRemark: false,
       saveBtn: false,
       isOldYear: isOldYear,
+      allAction: false,
     }
   }
 
@@ -343,12 +349,13 @@ const SelectivityData = (props) => {
       showUnit: false,
       saveWithRemark: true,
       saveBtn: true,
+      allAction: false,
     },
     isOldYear,
   )
 
   return (
-    <div>
+    <Box>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
@@ -399,7 +406,7 @@ const SelectivityData = (props) => {
         //     lowerVertName === 'meg' ? undefined : props.defaultCustomHeight,
         // }}
       />
-    </div>
+    </Box>
   )
 }
 

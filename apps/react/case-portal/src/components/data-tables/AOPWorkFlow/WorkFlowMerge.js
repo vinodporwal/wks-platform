@@ -42,6 +42,7 @@ import MonthwiseRawMaterial from '../Reports/MonthwiseRawMaterial'
 import TurnaroundReport from '../Reports/TurnaroundReport'
 import AnnualProductionPlan from '../Reports/AnnualProductionPlan'
 import PlantContribution from '../Reports/PlantContribution'
+import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -253,7 +254,8 @@ const WorkFlowMerge = () => {
       return {
         field: key,
         headerName: header,
-        minWidth: i === 0 ? 300 : 150,
+        // minWidth: i === 0 ? 300 : 150,
+        flex: 1,
         ...(i === 0 && {
           renderHeader: (p) => <div>{p.colDef.headerName}</div>,
         }),
@@ -341,17 +343,6 @@ const WorkFlowMerge = () => {
       setLoading(false)
     }
   }
-  // useEffect(() => {
-  //   if (showCreateCasebutton) {
-  //     setIsEdit(true)
-  //   } else {
-  //     setIsEdit(false)
-  //   }
-  // }, [showCreateCasebutton])
-
-  // console.log(activeStep, 'activeStep')
-  // console.log(masterSteps, 'masterSteps')
-  // console.log(rows)
 
   const createCase = async () => {
     // 1. Prevent double‐submit
@@ -389,6 +380,9 @@ const WorkFlowMerge = () => {
       }
       const result = await DataService.submitWorkFlow(payload, keycloak)
       // console.log(result)
+      if (result) {
+        console.log('Workflow instance created successfully')
+      }
       setSnackbarData({
         message: 'Workflow instance created successfully',
         severity: 'success',
@@ -454,6 +448,26 @@ const WorkFlowMerge = () => {
       getCaseId()
     } catch (err) {
       console.error('Error submitting', err)
+      setSnackbarData({ message: err.message, severity: 'error' })
+      setActionDisabled(false)
+    } finally {
+      setSnackbarOpen(true)
+      setOpenRejectDialog(false)
+      setText('')
+    }
+  }
+  const saveWorkflowData = async () => {
+    try {
+      // console.log(rows, 'workflowDto')
+      await DataService.saveAnnualWorkFlowData(keycloak, rows, plantId)
+      setSnackbarData({
+        message: 'Data Saved Successfully!',
+        severity: 'success',
+      })
+      setActionDisabled(true)
+      // getCaseId()
+    } catch (err) {
+      console.error('Error while save', err)
       setSnackbarData({ message: err.message, severity: 'error' })
       setActionDisabled(false)
     } finally {
@@ -541,13 +555,14 @@ const WorkFlowMerge = () => {
           </Tabs>
 
           {/* RIGHT: Buttons */}
-          <Stack direction='row' spacing={1}>
+          <Stack direction='row' spacing={1} alignItems='center'>
             {taskId && (
               <Button
                 variant='contained'
                 className='btn-save'
                 onClick={handleRejectClick}
                 disabled={actionDisabled}
+                sx={{ height: 'auto' }}
               >
                 Accept
               </Button>
@@ -555,7 +570,12 @@ const WorkFlowMerge = () => {
             <Button
               variant='outlined'
               className='btn-save2'
-              sx={{ color: '#0100cb', border: '1px solid' }}
+              sx={{
+                color: '#0100cb',
+                border: '1px solid',
+                height: 'auto',
+                width: 'fit-content',
+              }}
               onClick={handleAuditOpen}
             >
               Audit Trail
@@ -565,118 +585,62 @@ const WorkFlowMerge = () => {
 
         {tabIndex === 0 && (
           <div>
-            <div>
-              <CustomAccordion defaultExpanded disableGutters>
-                <CustomAccordionSummary
-                  aria-controls='meg-grid-content'
-                  id='meg-grid-header'
-                >
-                  <Typography component='span' className='grid-title'>
-                    Production Data
-                  </Typography>
-                </CustomAccordionSummary>
-                <CustomAccordionDetails>
-                  <Box>
-                    <ProductionAopView />
-                  </Box>
-                </CustomAccordionDetails>
-              </CustomAccordion>
-            </div>
-            <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
+            <ProductionAopView
+              handleCalculate={handleCalculate}
+              fetchSecondGridData={fetchData}
+            />
+
+            {/* <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
               Annual AOP Cost
-            </Typography>
-            <div style={{ minHeight: 'fit-content', maxHeight: 'max-content' }}>
-              <DataGridTable
-                modifiedCells={modifiedCells}
-                autoHeight={true}
-                rows={rows}
-                setRows={setRows}
-                onRowUpdate={(updatedRow) =>
-                  console.log('Row Updated:', updatedRow)
-                }
-                columns={columns}
-                className='jio-data-grid'
-                loading={loading}
-                processRowUpdate={processRowUpdate}
-                remarkDialogOpen={remarkDialogOpen}
-                unsavedChangesRef={unsavedChangesRef}
-                setRemarkDialogOpen={setRemarkDialogOpen}
-                currentRemark={currentRemark}
-                setCurrentRemark={setCurrentRemark}
-                currentRowId={currentRowId}
-                setCurrentRowId={setCurrentRowId}
-                rowModesModel={rowModesModel}
-                onRowModesModelChange={onRowModesModelChange}
-                handleCalculate={handleCalculate}
-                permissions={{
-                  customHeight: defaultCustomHeight,
-                  // saveBtn: true,
-                  showCalculate: true,
-                  remarksEditable: true,
-                  // approveBtn: false,
-                }}
-              />
-            </div>
-
-            {showCreateCasebutton && (
-              <Button
-                variant='contained'
-                onClick={createCase}
-                disabled={isCreatingCase || !showCreateCasebutton}
-                className='btn-save'
-              >
-                {isCreatingCase ? 'Submitting…' : 'Submit'}
-              </Button>
-            )}
-
-            {/* Reject Dialog (Comments) */}
-            <Dialog open={openRejectDialog} onClose={handleRejectCancel}>
-              <DialogTitle>Please provide remarks on the changes?</DialogTitle>
-              <DialogContent>
-                <TextField
-                  autoFocus
-                  margin='dense'
-                  label='Remark'
-                  type='text'
-                  fullWidth
-                  multiline
-                  rows={8}
-                  sx={{ width: '100%', minWidth: '600px' }}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  variant='outlined'
-                />
-              </DialogContent>
-              <DialogActions sx={{ justifyContent: 'flex-end' }}>
-                <Button onClick={handleRejectCancel} color='primary'>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  color='primary'
-                  variant='contained'
-                  disabled={!text?.trim()}
-                >
-                  Submit
-                </Button>
-              </DialogActions>
-            </Dialog>
-
-            {/* Audit Trail Dialog */}
-            <Dialog
-              open={openAuditPopup}
-              onClose={handleAuditClose}
-              maxWidth='lg'
-              fullWidth
-            >
-              <DialogTitle>Audit Trail</DialogTitle>
-              <DialogContent dividers>
-                <AuditTrail keycloak={keycloak} businessKey={businessKey} />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleAuditClose}>Close</Button>
-              </DialogActions>
-            </Dialog>
+            </Typography> */}
+            {/* <div style={{ minHeight: 'fit-content', maxHeight: 'max-content' }}> */}
+            <ReportDataGrid
+              title='Annual AOP Cost'
+              modifiedCells={modifiedCells}
+              autoHeight={true}
+              rows={rows}
+              setRows={setRows}
+              onRowUpdate={(updatedRow) =>
+                console.log('Row Updated:', updatedRow)
+              }
+              columns={columns}
+              loading={loading}
+              processRowUpdate={processRowUpdate}
+              remarkDialogOpen={remarkDialogOpen}
+              unsavedChangesRef={unsavedChangesRef}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              setCurrentRowId={setCurrentRowId}
+              rowModesModel={rowModesModel}
+              onRowModesModelChange={onRowModesModelChange}
+              handleCalculate={handleCalculate}
+              isCreatingCase={isCreatingCase}
+              createCase={createCase}
+              saveWorkflowData={saveWorkflowData}
+              showCreateCasebutton={showCreateCasebutton}
+              permissions={{
+                saveBtn: true,
+                saveBtnForWorkflow: true,
+                remarksEditable: true,
+                showCreateCasebutton: showCreateCasebutton,
+                showTitle: true,
+                // showCalculate: true,
+                showWorkFlowBtns: true,
+              }}
+              openAuditPopup={openAuditPopup}
+              handleAuditOpen={handleAuditOpen}
+              handleAuditClose={handleAuditClose}
+              handleRejectClick={handleRejectClick}
+              openRejectDialog={openRejectDialog}
+              handleRejectCancel={handleRejectCancel}
+              handleSubmit={handleSubmit}
+              taskId={taskId}
+              text={text}
+              setText={setText}
+            />
+            {/* </div> */}
 
             <Notification
               open={snackbarOpen}

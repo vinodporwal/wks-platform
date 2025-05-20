@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
 import { useGridApiRef } from '@mui/x-data-grid'
-import NumericInputOnly from 'utils/NumericInputOnly'
+// import NumericInputOnly from 'utils/NumericInputOnly'
 import { StartDateTimeEditCell } from 'utils/StartDateTimeEditCell'
 import { EndDateTimeEditCell } from 'utils/EndDateTimeEditCell'
 
@@ -16,6 +16,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 import TimeInputCell from 'utils/TimeInputCell'
 import { renderTwoLineEllipsis } from 'components/Utilities/twoLineEllipsisRenderer'
+import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/gridEditRowModel'
 
 const ShutDown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -283,6 +284,16 @@ const ShutDown = ({ permissions }) => {
     }
   }
 
+  const focusFirstField = async () => {
+    const newRowId = rows.length
+      ? Math.max(...rows.map((row) => row.id)) + 1
+      : 1
+    setRowModesModel((oldModel) => ({
+      ...oldModel,
+      [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
+    }))
+  }
+
   useEffect(() => {
     fetchData()
   }, [
@@ -294,40 +305,40 @@ const ShutDown = ({ permissions }) => {
     lowerVertName,
   ])
 
-  const findDuration1 = (value, row) => {
-    if (row && row.maintStartDateTime && row.maintEndDateTime) {
-      const start = new Date(row.maintStartDateTime)
-      const end = new Date(row.maintEndDateTime)
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        const durationInMs = end - start
-        const durationInMinutes = durationInMs / (1000 * 60)
-        const hours = Math.floor(durationInMinutes / 60)
-        const minutes = durationInMinutes % 60
-        const formattedMinutes = minutes.toString().padStart(2, '0')
-        const formattedDuration = `${hours}.${formattedMinutes}`
-        return formattedDuration
-      }
-    }
-    return ''
-  }
+  // const findDuration1 = (value, row) => {
+  //   if (row && row.maintStartDateTime && row.maintEndDateTime) {
+  //     const start = new Date(row.maintStartDateTime)
+  //     const end = new Date(row.maintEndDateTime)
+  //     if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+  //       const durationInMs = end - start
+  //       const durationInMinutes = durationInMs / (1000 * 60)
+  //       const hours = Math.floor(durationInMinutes / 60)
+  //       const minutes = durationInMinutes % 60
+  //       const formattedMinutes = minutes.toString().padStart(2, '0')
+  //       const formattedDuration = `${hours}.${formattedMinutes}`
+  //       return formattedDuration
+  //     }
+  //   }
+  //   return ''
+  // }
 
-  const findDuration2 = (value, row) => {
-    const { maintStartDateTime, maintEndDateTime, durationInHrs } = row
+  // const findDuration2 = (value, row) => {
+  //   const { maintStartDateTime, maintEndDateTime, durationInHrs } = row
 
-    if (maintStartDateTime && maintEndDateTime) {
-      const start = new Date(maintStartDateTime)
-      const end = new Date(maintEndDateTime)
-      if (!isNaN(start) && !isNaN(end)) {
-        const durationInMs = end - start
-        const durationInMinutes = durationInMs / (1000 * 60)
-        const hours = Math.floor(durationInMinutes / 60)
-        const minutes = Math.round(durationInMinutes % 60)
-        return `${hours}.${minutes.toString().padStart(2, '0')}`
-      }
-    }
+  //   if (maintStartDateTime && maintEndDateTime) {
+  //     const start = new Date(maintStartDateTime)
+  //     const end = new Date(maintEndDateTime)
+  //     if (!isNaN(start) && !isNaN(end)) {
+  //       const durationInMs = end - start
+  //       const durationInMinutes = durationInMs / (1000 * 60)
+  //       const hours = Math.floor(durationInMinutes / 60)
+  //       const minutes = Math.round(durationInMinutes % 60)
+  //       return `${hours}.${minutes.toString().padStart(2, '0')}`
+  //     }
+  //   }
 
-    return durationInHrs || ''
-  }
+  //   return durationInHrs || ''
+  // }
   const findDuration = (v, row) => {
     if (row.durationInHrs) return row.durationInHrs
 
@@ -345,6 +356,26 @@ const ShutDown = ({ permissions }) => {
     }
 
     return ''
+  }
+
+  const handleCancelClick = () => () => {
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
+
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
+
+    // setRowModesModel({
+    //   ...rowModesModel,
+    //   [id]: { mode: GridRowModes.View, ignoreModifications: true },
+    // })
+
+    // const editedRow = rows.find((row) => row.id === id)
+    // if (editedRow.isNew) {
+    //   setRows(rows.filter((row) => row.id !== id))
+    // }
   }
 
   const colDefs = [
@@ -480,7 +511,7 @@ const ShutDown = ({ permissions }) => {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                maxWidth: 140,
+                width: ' 100%',
               }}
               onClick={() => handleRemarkCellClick(params.row)}
             >
@@ -543,6 +574,7 @@ const ShutDown = ({ permissions }) => {
       saveWithRemark: false,
       saveBtn: false,
       isOldYear: isOldYear,
+      allAction: false,
     }
   }
 
@@ -556,6 +588,7 @@ const ShutDown = ({ permissions }) => {
       saveWithRemark: permissions?.saveWithRemark ?? true,
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
+      allAction: false,
     },
     isOldYear,
   )
@@ -606,6 +639,8 @@ const ShutDown = ({ permissions }) => {
         unsavedChangesRef={unsavedChangesRef}
         deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
+        handleCancelClick={handleCancelClick}
+        focusFirstField={focusFirstField}
 
         // permissions={{
         //   showAction: permissions?.showAction ?? true,

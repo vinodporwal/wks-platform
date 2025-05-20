@@ -12,11 +12,17 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  DialogContentText,
   DialogTitle,
+  Stack,
   TextField,
+  Typography,
 } from '../../../node_modules/@mui/material/index'
+import AuditTrail from 'components/data-tables/AOPWorkFlow/AuditTrail'
+// import Notification from 'components/Utilities/Notification'
 
 const ReportDataGrid = ({
+  title = '',
   rows,
   setRows,
   columns,
@@ -37,6 +43,23 @@ const ReportDataGrid = ({
   loading,
   rowModesModel: rowModesModel,
   onRowModesModelChange = () => {},
+  saveWorkflowData = () => {},
+  saveRemarkData = () => {},
+  createCase = () => {},
+  isCreatingCase = false,
+  showCreateCasebutton = false,
+  openAuditPopup = false,
+  handleAuditOpen = () => {},
+  handleAuditClose = () => {},
+  handleRejectClick = () => {},
+  openRejectDialog = false,
+  handleRejectCancel = () => {},
+  handleSubmit = () => {},
+  taskId = '',
+  // role = '',
+  businessKey = '',
+  text = '',
+  setText = () => {},
 }) => {
   const keycloak = useSession()
   // const [allProducts, setAllProducts] = useState([])
@@ -44,16 +67,20 @@ const ReportDataGrid = ({
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+  const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   // const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    // fetchData1()
-  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
+  useEffect(() => {}, [
+    sitePlantChange,
+    oldYear,
+    yearChanged,
+    keycloak,
+    lowerVertName,
+  ])
   const handleRemarkSave = () => {
-    // console.log(currentRemark)
     setRows((prevRows) => {
       let updatedRow = null
 
@@ -90,8 +117,23 @@ const ReportDataGrid = ({
       setIsButtonDisabled(false)
     }, 500)
   }
+  const saveModalOpen = async () => {
+    setIsButtonDisabled(true)
+    setOpenSaveDialogeBox(true)
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+  const saveConfirmation = async () => {
+    permissions?.saveBtnForRemark ? saveRemarkData() : saveWorkflowData()
+    setOpenSaveDialogeBox(false)
+  }
+
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 100,
+  })
   const lastColumnField = columns[columns.length - 1]?.field
-  // console.log(lastColumnField)
   return (
     <Box
       sx={{
@@ -110,8 +152,35 @@ const ReportDataGrid = ({
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
       {(permissions?.allAction ?? true) && (
-        <Box className='action-box'>
+        <Box
+          className='action-box2'
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%', // make sure container is full width
+            p: 1,
+          }}
+        >
+          {/* LEFT: Title � this flexGrow:1 makes it push buttons right */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexGrow: 1, // ? key to take up all left space
+            }}
+          >
+            {permissions?.showTitle && (
+              <Typography component='div' className='grid-title'>
+                {title}
+              </Typography>
+            )}
+          </Box>
+
+          {/* RIGHT: Buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {permissions?.showCalculate && (
               <Button
@@ -123,6 +192,23 @@ const ReportDataGrid = ({
                 Calculate
               </Button>
             )}
+
+            {/* {permissions?.showWorkFlowBtns && (
+              <Stack direction='row' spacing={1} alignItems='center'>
+                {taskId && (
+                  <Button
+                    variant='contained'
+                    onClick={handleRejectClick}
+                    disabled={isButtonDisabled}
+                  >
+                    Accept
+                  </Button>
+                )}
+                <Button variant='outlined' onClick={handleAuditOpen}>
+                  Audit Trail
+                </Button>
+              </Stack>
+            )} */}
           </Box>
         </Box>
       )}
@@ -203,7 +289,13 @@ const ReportDataGrid = ({
         defaultGroupingExpansionDepth={defaultGroupingExpansionDepth}
         rowModesModel={rowModesModel}
         onRowModesModelChange={onRowModesModelChange}
-        handleCalculate={handleCalculate}
+        // paginationModel={{ pageSize: 100, page: 0 }}
+        pageSizeOptions={[]}
+        paginationModel={paginationModel}
+        onPaginationModelChange={(model) => setPaginationModel(model)}
+        pagination
+        hideFooter={rows.length <= 100}
+        // handleCalculate={handleCalculate}
         sx={{
           '& .pinned-row': {
             position: 'sticky',
@@ -239,6 +331,110 @@ const ReportDataGrid = ({
           // },
         }}
       />
+      <Box
+        sx={{
+          marginTop: 2,
+          display: 'flex',
+          gap: 2,
+        }}
+      >
+        {permissions?.saveBtn && (
+          <Button
+            variant='contained'
+            className='btn-save'
+            onClick={saveModalOpen}
+            disabled={isButtonDisabled}
+            // loading={loading}
+            // loadingposition='start'
+            {...(loading ? {} : {})}
+          >
+            Save
+          </Button>
+        )}
+        {permissions?.showCreateCasebutton && (
+          <Button
+            variant='contained'
+            onClick={createCase}
+            disabled={isCreatingCase || !showCreateCasebutton}
+            className='btn-save'
+          >
+            {isCreatingCase ? 'Submitting…' : 'Submit'}
+          </Button>
+        )}
+      </Box>
+      {/* Reject Dialog (Comments) */}
+      <Dialog open={openRejectDialog} onClose={handleRejectCancel}>
+        <DialogTitle>Please provide remarks on the changes?</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin='dense'
+            label='Remark'
+            type='text'
+            fullWidth
+            multiline
+            rows={8}
+            sx={{ width: '100%', minWidth: '600px' }}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            variant='outlined'
+          />
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'flex-end' }}>
+          <Button onClick={handleRejectCancel} color='primary'>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            color='primary'
+            variant='contained'
+            disabled={!text?.trim()}
+          >
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Audit Trail Dialog */}
+      <Dialog
+        open={openAuditPopup}
+        onClose={handleAuditClose}
+        maxWidth='lg'
+        fullWidth
+      >
+        {/* <Notification
+              open={snackbarOpen}
+              message={snackbarData.message}
+              severity={snackbarData.severity}
+              onClose={() => setSnackbarOpen(false)}
+            /> */}
+        <DialogTitle>Audit Trail</DialogTitle>
+        <DialogContent dividers>
+          <AuditTrail keycloak={keycloak} businessKey={businessKey} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleAuditClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openSaveDialogeBox}
+        onClose={() => setOpenSaveDialogeBox(false)}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+      >
+        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+            Are you sure you want to save these changes?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenSaveDialogeBox(false)}>Cancel</Button>
+          <Button onClick={saveConfirmation} autoFocus>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}

@@ -17,8 +17,9 @@
   text-transform: none;
   font-size: 0.875rem;
   font-weight: 500;
-  min-width: 100px;
+  width: 7rem;
   cursor: pointer;
+  /* height: 2rem; */
 }
 
 .btn-save:hover {
@@ -32,21 +33,12 @@
   opacity: 0.7;
   cursor: not-allowed;
 }
-
-/* .action-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0px;
-  margin-bottom: 1px;
-} */
-
 .action-box {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-top: 0px;
-  margin-bottom: 1px;
+  gap: 8px;
+  flex-wrap: wrap; /* optional: allows wrap on small screens */
 }
 
 .action-inner {

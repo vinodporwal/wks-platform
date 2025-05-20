@@ -6,14 +6,16 @@ import { useSession } from 'SessionStoreContext'
 // import DataGridTable from 'components/data-tables/ASDataGrid'
 // import { DataGrid } from '@mui/x-data-grid'
 import {
-  Backdrop,
+  // Backdrop,
   Box,
-  CircularProgress,
+  Typography,
+  // CircularProgress,
 } from '../../../node_modules/@mui/material/index'
 import { remarkColumn } from 'components/Utilities/remarkColumn'
 import ReportDataGrid from './ReportDataGrid'
+import Notification from 'components/Utilities/Notification'
 
-const ProductionAopView = () => {
+const ProductionAopView = ({ handleCalculate, fetchSecondGridData }) => {
   const keycloak = useSession()
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -31,6 +33,11 @@ const ProductionAopView = () => {
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
+  })
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
   })
   const [modifiedCells, setModifiedCells] = React.useState({})
 
@@ -165,41 +172,72 @@ const ProductionAopView = () => {
       setLoading(false)
     }
   }
+  const handlecalcualteWithRefreshAll = () => {
+    handleCalculate()
+
+    fetchSecondGridData()
+    fetchData()
+  }
 
   useEffect(() => {
     fetchData()
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   // const lastColumnField = columns[columns.length - 1]?.field
-
+  const saveWorkflowData = async () => {
+    try {
+      // console.log(rows, 'workflowDto')
+      await DataService.saveAnnualWorkFlowData(keycloak, rows, plantId)
+      // console.log(response, 'response')
+      setSnackbarData({
+        message: 'Data Saved Successfully!',
+        severity: 'success',
+      })
+      // setActionDisabled(true)
+      // getCaseId()
+    } catch (err) {
+      console.error('Error while save', err)
+      setSnackbarData({ message: err.message, severity: 'error' })
+      // setActionDisabled(false)
+    } finally {
+      setSnackbarOpen(true)
+      // setOpenRejectDialog(false)
+      // setText('')
+    }
+  }
   return (
     <Box
-      sx={{
-        height: 'auto',
-        width: '100%',
-        padding: '0px 0px',
-        margin: '0px 0px 0px',
-        backgroundColor: '#F2F3F8',
-        borderRadius: 0,
-        borderBottom: 'none',
-      }}
+    // sx={{
+    //   height: 'auto',
+    //   width: '100%',
+    //   padding: '0px 0px',
+    //   margin: '0px 0px 0px',
+    //   backgroundColor: '#F2F3F8',
+    //   borderRadius: 0,
+    //   borderBottom: 'none',
+    // }}
     >
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      {/* <Typography component='span' className='grid-title'>
+        Production Data
+      </Typography> */}
 
+      {/* <Box> */}
       <ReportDataGrid
         rows={rows}
+        loading={loading}
         setRows={setRows}
-        title='Monthwise Production Summary'
+        title='Production Data'
         columns={columns}
+        saveWorkflowData={saveWorkflowData}
         permissions={{
           // customHeight: defaultCustomHeightGrid1,
           textAlignment: 'center',
           remarksEditable: true,
+          saveBtn: true,
+          allAction: true,
+          showCalculate: true,
+          showTitle: true,
+          // showWorkFlowBtns: true,
         }}
         treeData
         getTreeDataPath={(rows) => rows.path}
@@ -215,6 +253,15 @@ const ProductionAopView = () => {
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         modifiedCells={modifiedCells}
+        handleCalculate={handlecalcualteWithRefreshAll}
+      />
+      {/* </Box> */}
+
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+        onClose={() => setSnackbarOpen(false)}
       />
     </Box>
   )
