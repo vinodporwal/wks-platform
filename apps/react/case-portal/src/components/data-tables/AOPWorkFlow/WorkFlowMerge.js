@@ -107,9 +107,6 @@ const WorkFlowMerge = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
-
-  const isOldYear = oldYear?.oldYear
-
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [businessKey, setBusinessKey] = useState('')
@@ -146,6 +143,7 @@ const WorkFlowMerge = () => {
   const year = localStorage.getItem('year')
   const handleCalculateMeg = async () => {
     try {
+      setLoading(true)
       const storedPlant = localStorage.getItem('selectedPlant')
       const year = localStorage.getItem('year')
       if (storedPlant) {
@@ -184,6 +182,8 @@ const WorkFlowMerge = () => {
         severity: 'error',
       })
       console.error('Error!', error)
+    } finally {
+      setLoading(false)
     }
   }
 

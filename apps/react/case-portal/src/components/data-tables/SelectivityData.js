@@ -113,7 +113,6 @@ const SelectivityData = (props) => {
         if (props?.configType !== 'grades') {
           const requiredFields = ['remarks']
           const validationMessage = validateFields(data, requiredFields)
-
           if (validationMessage) {
             setSnackbarOpen(true)
             setSnackbarData({
@@ -127,7 +126,7 @@ const SelectivityData = (props) => {
           handleUpdate(data)
         }
       } catch (error) {
-        console.log('Error saving changes:', error)
+        // Handle error if necessary
       }
     }, 400)
   }, [apiRef, rowModesModel])

@@ -325,6 +325,8 @@ const PlantsProductionSummary = () => {
   }
   const handleCalculatePlantProductionData = async () => {
     try {
+      setLoading(true)
+
       const storedPlant = localStorage.getItem('selectedPlant')
       const year = localStorage.getItem('year')
       if (storedPlant) {
@@ -364,6 +366,8 @@ const PlantsProductionSummary = () => {
       //   severity: 'error',
       // })
       console.error('Error!', error)
+    } finally {
+      setLoading(false)
     }
   }
 

@@ -40,30 +40,38 @@ export default function StepperNav() {
     // guard: need auth + vertical
     if (!keycloak?.token || !verticalId) return
 
-    DataService.getScreenbyPlant(keycloak, verticalId, plantId)
-      .then((res) => {
-        // map API -> menu items
-        const dynamic = Array.isArray(res.data) ? res.data.map(mapScreen) : []
-        // choose dynamic if present, else static
-        const sourceMenu = dynamic.length ? dynamic : staticMenu
+    const sourceMenu = staticMenu
+    const newSteps = buildSteps(sourceMenu)
+    setSteps(newSteps)
+    if (newSteps.length) {
+      navigate(newSteps[0].url, { replace: true })
+    }
 
-        // build steps and set state
-        const newSteps = buildSteps(sourceMenu)
-        setSteps(newSteps)
+    // DataService.getScreenbyPlant(keycloak, verticalId, plantId)
+    //   .then((res) => {
+    //     // map API -> menu items
+    //     const dynamic = Array.isArray(res.data) ? res.data.map(mapScreen) : []
+    //     // choose dynamic if present, else static
+    //     // const sourceMenu = dynamic.length ? dynamic : staticMenu
+    //     const sourceMenu = staticMenu
 
-        // navigate to first step whenever verticalId changes
-        if (newSteps.length) {
-          navigate(newSteps[0].url, { replace: true })
-        }
-      })
-      .catch((err) => {
-        console.error('Menu API failed, fallback to static', err)
-        const newSteps = buildSteps(staticMenu)
-        setSteps(newSteps)
-        if (newSteps.length) {
-          navigate(newSteps[0].url, { replace: true })
-        }
-      })
+    //     // build steps and set state
+    //     const newSteps = buildSteps(sourceMenu)
+    //     setSteps(newSteps)
+
+    //     // navigate to first step whenever verticalId changes
+    //     if (newSteps.length) {
+    //       navigate(newSteps[0].url, { replace: true })
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     console.error('Menu API failed, fallback to static', err)
+    //     const newSteps = buildSteps(staticMenu)
+    //     setSteps(newSteps)
+    //     if (newSteps.length) {
+    //       navigate(newSteps[0].url, { replace: true })
+    //     }
+    //   })
     // IMPORTANT: include verticalId so this re-runs on vertical change
   }, [keycloak, verticalId, plantId])
 
@@ -88,8 +96,12 @@ export default function StepperNav() {
       }}
     >
       {steps.map((step) => (
-        <Step key={step.key} onClick={() => navigate(step.url)}>
-          <StepLabel>{step.label}</StepLabel>
+        <Step
+          sx={{ cursor: 'pointer' }}
+          key={step.key}
+          onClick={() => navigate(step.url)}
+        >
+          <StepLabel sx={{ cursor: 'pointer' }}>{step.label}</StepLabel>
         </Step>
       ))}
     </Stepper>
