@@ -6,6 +6,7 @@ import plan from './plan'
 import workspace from './workspace'
 import { icons, mapScreen } from 'components/Utilities/menuRefractoring'
 import i18n from 'i18n/index'
+const USE_STATIC_MENU = true
 
 const MenuContext = createContext()
 
@@ -17,6 +18,7 @@ export function MenuProvider({ children }) {
   const { verticalChange } = useSelector((s) => s.dataGridStore)
   const verticalId = localStorage.getItem('verticalId')
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+
   // const userMgmtItem = {
   //   id: 'user-management',
   //   title: i18n.t('menu.userManage'),
@@ -43,7 +45,7 @@ export function MenuProvider({ children }) {
   //             (Array.isArray(item.children) && containsUserMgmt(item.children)),
   //         )
 
-  //       // If API returned items
+  //       // If API returned items�
   //       if (dynamic.length) {
   //         // Inject user-management if missing
   //         if (!containsUserMgmt(dynamic)) {
@@ -68,31 +70,30 @@ export function MenuProvider({ children }) {
   //       }
   //       setMenuItems(base)
   //     })
-  // }, [keycloak, verticalChange, verticalId, plantId])
+  // }, [keycloak, plantId])
 
   useEffect(() => {
-    setMenuItems(staticMenu)
+    if (USE_STATIC_MENU) {
+      setMenuItems(staticMenu)
+      return
+    }
+    if (!keycloak?.token || !verticalId) return
+    DataService.getScreenbyPlant(keycloak, verticalId, plantId)
+      .then((res) => {
+        const dynamic = Array.isArray(res.data) ? res.data.map(mapScreen) : []
 
-    // if (!keycloak?.token || !verticalId) return
-
-    // DataService.getScreenbyPlant(keycloak, verticalId, plantId)
-    //   .then((res) => {
-
-    //     const dynamic = Array.isArray(res.data) ? res.data.map(mapScreen) : []
-
-    //     if (dynamic.length) {
-    //       setMenuItems(dynamic)
-    //       // setMenuItems(staticMenu)
-    //     }
-    //   })
-    //   .catch((err) => {
-    //     console.error('Menu API failed, using static menu', err)
-    //     setMenuItems(staticMenu)
-    //   })
-  }, [keycloak, verticalChange, verticalId, plantId])
+        if (dynamic.length) {
+          setMenuItems(dynamic)
+          // setMenuItems(staticMenu)
+        }
+      })
+      .catch((err) => {
+        console.error('Menu API failed, using static menu', err)
+        setMenuItems(staticMenu)
+      })
+  }, [keycloak, plantId, verticalId, verticalChange])
 
   const menuValue = useMemo(() => ({ items: menuItems }), [menuItems])
-
   return (
     <MenuContext.Provider value={menuValue}>{children}</MenuContext.Provider>
   )

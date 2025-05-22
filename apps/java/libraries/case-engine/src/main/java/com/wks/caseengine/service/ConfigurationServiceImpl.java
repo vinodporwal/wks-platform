@@ -299,12 +299,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 						commands.add(attributeValue.toString());
 
-						// Float attributeValueHP =
-						// getAttributeValueByPythonScriptFromSP(attributeValue);
+						Float attributeValueHP = runPythonScriptFromJava();
 						// System.out.println("attributeHP " + attributeValueHP + " " + i);
-						Float attributeValueHP = getAttributeValueByPythonScript(commands);
+						// Float attributeValueHP = getAttributeValueByPythonScript(commands);
 
-						saveData(optionNormParametersHP.get().getId(), i, year, attributeValueHP, configurationDTO);
+						// saveData(optionNormParametersHP.get().getId(), i, year, attributeValueHP,
+						// configurationDTO);
 					}
 
 				}
@@ -315,45 +315,59 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 	}
 
-	private Float getAttributeValueByPythonScriptFromSP(Float attributeValue) {
+	private Float runPythonScriptFromJava() {
+		String pythonPath = "py"; // Or "python" depending on your system
+		String scriptPath = "E:\\HwlWrkDir\\Py\\test.py";
+		String arg1 = "101325";
+		String arg2 = "270.4";
 
 		try {
-			// Command to run the Python script with an argument
-			try {
-				String sql = "EXEC " + "Test_Configuration_Update"
-						+ " @value = :attributeValue";
+			System.out.println("Starting Python script execution from Java...");
 
-				Query query = entityManager.createNativeQuery(sql);
-				query.setParameter("attributeValue", attributeValue);
-				System.out.println("query results" + query.getResultList());
-				List<Object> list = query.getResultList();
-				for (Object row : list) {
+			ProcessBuilder processBuilder = new ProcessBuilder(pythonPath, scriptPath, arg1, arg2);
+			processBuilder.redirectErrorStream(true);
 
-					if ((row != null && !row.toString().trim().isEmpty())) {
-						BigDecimal decimalValue = new BigDecimal(row.toString());
+			Process process = processBuilder.start();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-						double doubleValue = decimalValue.doubleValue(); // OK, may lose precision
-						Float floatValue = decimalValue.floatValue();
-						System.out.println("fvalue " + floatValue);
-						System.out.println("dvalue " + doubleValue);
-						System.out.println("decimalvalue " + decimalValue);
-						System.out.println("query result " + row.toString());
-						return floatValue;
-					}
+			String line;
+			Float result = null;
+
+			System.out.println("Output from Python script:");
+			while ((line = reader.readLine()) != null) {
+				System.out.println(">> " + line);
+				try {
+					// Attempt to parse the first numeric value from output
+					result = Float.parseFloat(line.trim());
+				} catch (NumberFormatException e) {
+					System.out.println("Not a number, skipping: " + line);
 				}
-
-			} catch (IllegalArgumentException e) {
-				throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
-			} catch (Exception ex) {
-				throw new RuntimeException("Failed to fetch data", ex);
 			}
-		} catch (Exception e) {
+
+			int exitCode = process.waitFor();
+			System.out.println("Python script exited with code: " + exitCode);
+
+			if (result == null) {
+				System.err.println("No valid float value returned by Python script.");
+			}
+
+			return result;
+
+		} catch (IOException e) {
+			System.err.println("IO Exception while running Python script:");
 			e.printStackTrace();
-			// TODO: handle exception
+		} catch (InterruptedException e) {
+			System.err.println("Python script was interrupted:");
+			e.printStackTrace();
+			Thread.currentThread().interrupt();
+		} catch (Exception e) {
+			System.err.println("Unexpected error:");
+			e.printStackTrace();
+		} finally {
+			System.out.println("Finished executing Python script from Java.");
 		}
 
 		return null;
-
 	}
 
 	private Float getAttributeValueByPythonScript(List<String> commands) {

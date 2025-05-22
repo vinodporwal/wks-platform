@@ -15,6 +15,10 @@ const TurnaroundReport = () => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const unsavedChangesRefGrid2 = React.useRef({
+    unsavedRows: {},
+    rowsBeforeChange: {},
+  })
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -155,6 +159,7 @@ const TurnaroundReport = () => {
       ...item,
       id: `${tag}-${i}`,
       isEditable: false,
+      remarks: item?.remarks ?? '',
     }))
 
   const fetchCurrentYear = async () => {
@@ -175,12 +180,7 @@ const TurnaroundReport = () => {
       setLoading(false)
     }
   }
-  const mapData2 = (data, tag) =>
-    (data?.data?.plantTurnAroundReportData || []).map((item, i) => ({
-      ...item,
-      id: `${tag}-${i}`,
-      isEditable: false,
-    }))
+
   const fetchPreviousYear = async () => {
     setLoading(true)
     try {
@@ -189,7 +189,7 @@ const TurnaroundReport = () => {
         'previousYear',
       )
       if (res?.code === 200) {
-        setRows2(mapData2(res, 'PY'))
+        setRows2(mapData(res, 'PY'))
       } else {
         setRows2([])
       }
@@ -252,9 +252,9 @@ const TurnaroundReport = () => {
       }
     }
 
-    unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
-    if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
-      unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
+    unsavedChangesRefGrid2.current.unsavedRows[rowId || 0] = newRow
+    if (!unsavedChangesRefGrid2.current.rowsBeforeChange[rowId]) {
+      unsavedChangesRefGrid2.current.rowsBeforeChange[rowId] = oldRow
     }
 
     setRows2((prevRows) =>
@@ -304,6 +304,56 @@ const TurnaroundReport = () => {
           severity: 'success',
         })
         unsavedChangesRef.current = {
+          unsavedRows: {},
+          rowsBeforeChange: {},
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (err) {
+      console.error('Error while save', err)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: err.message, severity: 'error' })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+  const saveRemarkDataForGrid2 = async () => {
+    try {
+      var data = Object.values(unsavedChangesRefGrid2.current.unsavedRows)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      const rowsToUpdate = data.map((row) => ({
+        id: row.Id,
+        remark: row.remarks,
+      }))
+      const res = await DataService.saveTurnaroundReport(
+        keycloak,
+        rowsToUpdate,
+        plantId,
+      )
+
+      // console.log(res)
+
+      if (res?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        unsavedChangesRefGrid2.current = {
           unsavedRows: {},
           rowsBeforeChange: {},
         }
@@ -418,13 +468,13 @@ const TurnaroundReport = () => {
         disableSelectionOnClick
         defaultGroupingExpansionDepth={1}
         remarkDialogOpen={remarkDialogOpen2}
-        unsavedChangesRef={unsavedChangesRef}
+        unsavedChangesRef={unsavedChangesRefGrid2}
         setRemarkDialogOpen={setRemarkDialogOpen2}
         currentRemark={currentRemark2}
         setCurrentRemark={setCurrentRemark2}
         currentRowId={currentRowId2}
         setCurrentRowId={setCurrentRowId2}
-        saveRemarkData={saveRemarkData}
+        saveRemarkData={saveRemarkDataForGrid2}
         loading={loading}
         permissions={{
           customHeight: { mainBox: '32vh', otherBox: '100%' },
