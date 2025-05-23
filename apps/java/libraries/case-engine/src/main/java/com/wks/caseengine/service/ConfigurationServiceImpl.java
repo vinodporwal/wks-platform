@@ -299,12 +299,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 						commands.add(attributeValue.toString());
 
-						Float attributeValueHP = runPythonScriptFromJava();
+						Float attributeValueHP = getAttributeValueByPythonScriptFromSP(attributeValue);
 						// System.out.println("attributeHP " + attributeValueHP + " " + i);
 						// Float attributeValueHP = getAttributeValueByPythonScript(commands);
 
-						// saveData(optionNormParametersHP.get().getId(), i, year, attributeValueHP,
-						// configurationDTO);
+						saveData(optionNormParametersHP.get().getId(), i, year, attributeValueHP, configurationDTO);
 					}
 
 				}
@@ -315,59 +314,48 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 	}
 
-	private Float runPythonScriptFromJava() {
-		String pythonPath = "py"; // Or "python" depending on your system
-		String scriptPath = "E:\\HwlWrkDir\\Py\\test.py";
-		String arg1 = "101325";
-		String arg2 = "270.4";
+	private Float getAttributeValueByPythonScriptFromSP(Float attributeValue) {
 
 		try {
-			System.out.println("Starting Python script execution from Java...");
+			// Command to run the Python script with an argument
+			try {
+				String sql = "EXEC " + "LatentHeatCalculation"
+						+ " @pressure = 0"
+						+ " @tempretureInCel = :attributeValue";
 
-			ProcessBuilder processBuilder = new ProcessBuilder(pythonPath, scriptPath, arg1, arg2);
-			processBuilder.redirectErrorStream(true);
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter("attributeValue", attributeValue);
+				System.out.println("query results" + query.getResultList());
+				List<Object> list = query.getResultList();
+				// log for the getResultSet
+				System.out.println("getResultSet list " + list.toString());
+				for (Object row : list) {
 
-			Process process = processBuilder.start();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+					if ((row != null && !row.toString().trim().isEmpty())) {
+						BigDecimal decimalValue = new BigDecimal(row.toString());
 
-			String line;
-			Float result = null;
-
-			System.out.println("Output from Python script:");
-			while ((line = reader.readLine()) != null) {
-				System.out.println(">> " + line);
-				try {
-					// Attempt to parse the first numeric value from output
-					result = Float.parseFloat(line.trim());
-				} catch (NumberFormatException e) {
-					System.out.println("Not a number, skipping: " + line);
+						double doubleValue = decimalValue.doubleValue(); // OK, may lose precision
+						Float floatValue = decimalValue.floatValue();
+						System.out.println("fvalue " + floatValue);
+						System.out.println("dvalue " + doubleValue);
+						System.out.println("decimalvalue " + decimalValue);
+						System.out.println("query result " + row.toString());
+						return floatValue;
+					}
 				}
+
+			} catch (IllegalArgumentException e) {
+				throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+			} catch (Exception ex) {
+				throw new RuntimeException("Failed to fetch data", ex);
 			}
-
-			int exitCode = process.waitFor();
-			System.out.println("Python script exited with code: " + exitCode);
-
-			if (result == null) {
-				System.err.println("No valid float value returned by Python script.");
-			}
-
-			return result;
-
-		} catch (IOException e) {
-			System.err.println("IO Exception while running Python script:");
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			System.err.println("Python script was interrupted:");
-			e.printStackTrace();
-			Thread.currentThread().interrupt();
 		} catch (Exception e) {
-			System.err.println("Unexpected error:");
 			e.printStackTrace();
-		} finally {
-			System.out.println("Finished executing Python script from Java.");
+			// TODO: handle exception
 		}
 
 		return null;
+
 	}
 
 	private Float getAttributeValueByPythonScript(List<String> commands) {
@@ -732,6 +720,67 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM getConfigurationIntermediateValuesData(String year, String plantId) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Map<String, Object>> configurationIntermediateValues = new ArrayList<>();
+			List<Object[]> obj = findConfigurationIntermediateValues(plantId, year);
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("NormParameterFKId", row[0]);
+				map.put("Jan", row[1]);
+				map.put("Feb", row[2]);
+				map.put("Mar", row[3]);
+				map.put("Apr", row[4]);
+				map.put("May", row[5]);
+				map.put("Jun", row[6]);
+				map.put("Jul", row[7]);
+				map.put("Aug", row[8]);
+				map.put("Sep", row[9]);
+				map.put("Oct", row[10]);
+				map.put("Nov", row[11]);
+				map.put("Dec", row[12]);
+				map.put("Remarks", row[13]);
+				map.put("AuditYear", row[14]);
+				map.put("UOM", row[15]);
+				map.put("NormTypeName", row[16]);
+				map.put("isEditable", row[17]);
+				configurationIntermediateValues.add(map); 
+				
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(configurationIntermediateValues);
+			return aopMessageVM;
+		}catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<Object[]> findConfigurationIntermediateValues(String plantId, String aopYear) {
+	    try {
+	    	Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+	    	Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+	        String procedureName = vertical.getName()+"_GetConfigurationIntermediateValues";
+	        String sql = "EXEC " + procedureName +
+	                     " @plantId = :plantId, @aopYear = :aopYear";
+
+	        Query query = entityManager.createNativeQuery(sql);
+
+	        query.setParameter("plantId", plantId);
+	        query.setParameter("aopYear", aopYear);
+
+	        return query.getResultList();
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
 	}
 
 }
