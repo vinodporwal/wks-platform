@@ -7,17 +7,19 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
-import AopCostReportView from 'components/data-tables-views/ReportDataGrid'
+// import AopCostReportView from 'components/data-tables-views/ReportDataGrid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-import {
-  MenuItem,
-  TextField,
-} from '../../../../node_modules/@mui/material/index'
-import getEnhancedAnnualAopCostReport from '../CommonHeader/AopCostReportHeader'
+// import {
+//   MenuItem,
+//   TextField,
+// } from '../../../../node_modules/@mui/material/index'
+// import getKendoColumns from '../CommonHeader/AopCostReportHeader'
+import KendoDataGrid from 'components/Kendo-DataGrid/index'
+import getKendoColumns from 'components/data-tables/CommonHeader/kendoHeader'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -54,17 +56,15 @@ const AnnualAopCost = () => {
   const [rowsNorm, setRowsNorm] = useState([])
   const [rowsQuantity, setRowsQuantity] = useState([])
   const [rowsNormCost, setRowsNormCost] = useState([])
-
   const [headers2, setHeaders2] = useState([])
   const [keys2, setKeys2] = useState([])
-
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
-  const [unit, setUnit] = useState([])
+  // const [unit, setUnit] = useState([])
   // const [selectedUnit, setSelectedUnit] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -81,7 +81,7 @@ const AnnualAopCost = () => {
   const fetchData = async (reportType, setState, selectedDropdown) => {
     try {
       selectedDropdown = localStorage.getItem('year')
-      setLoading(true)
+
       var data = []
 
       data = await DataService.getAnnualCostAopReport(
@@ -96,7 +96,6 @@ const AnnualAopCost = () => {
           id: index,
           isEditable: false,
         }))
-        setLoading(false)
 
         // if (reportType == 'aopYearFilter') {
         //   setUnit(data?.data)
@@ -105,8 +104,11 @@ const AnnualAopCost = () => {
 
         if (reportType == 'price') {
           const headers2 = data?.data[0]?.headers
+          // console.log('headers2', headers2)
           setHeaders2(headers2)
           const keys2 = data?.data[0]?.keys
+          // console.log('keys2', keys2)
+
           setKeys2(keys2)
           const rowsWithId2 = data?.data[0]?.results?.map((item, index) => ({
             ...item,
@@ -117,6 +119,7 @@ const AnnualAopCost = () => {
         } else {
           setState(rowsWithId)
         }
+
         // setLoading(false)
       } else {
         console.error(`Error fetching ${reportType} data`)
@@ -139,34 +142,34 @@ const AnnualAopCost = () => {
   //   return parts.length > 1 ? parts[1] : ''
   // }
 
-  const colsProduction = getEnhancedAnnualAopCostReport({
+  const colsProduction = getKendoColumns({
     headerMap,
     type: 'Production',
   })
 
-  // const colsPrice = getEnhancedAnnualAopCostReport({
+  // const colsPrice = getKendoColumns({
   //   headerMap,
   //   type: 'Price',
   // })
 
-  const colsPrice = getEnhancedAnnualAopCostReport({
+  const colsPrice = getKendoColumns({
     headerMap,
     type: 'Price',
     headers2,
     keys2,
   })
 
-  const colsNorm = getEnhancedAnnualAopCostReport({
+  const colsNorm = getKendoColumns({
     headerMap,
     type: 'Norm',
   })
 
-  const colsQuantity = getEnhancedAnnualAopCostReport({
+  const colsQuantity = getKendoColumns({
     headerMap,
     type: 'Quantity',
   })
 
-  const colsNormCost = getEnhancedAnnualAopCostReport({
+  const colsNormCost = getKendoColumns({
     headerMap,
     type: 'NormCost',
   })
@@ -176,21 +179,23 @@ const AnnualAopCost = () => {
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   useEffect(() => {
-    // if (selectedUnit) {
-    fetchData('production', setRowsProduction)
-    fetchData('price', setRowsPrice)
-    fetchData('norm', setRowsNorm)
-    fetchData('quantity', setRowsQuantity)
-    fetchData('normCost', setRowsNormCost)
-    // }
-  }, [
-    // selectedUnit,
-    sitePlantChange,
-    oldYear,
-    yearChanged,
-    keycloak,
-    lowerVertName,
-  ])
+    const fetchAllData = async () => {
+      setLoading(true)
+
+      const allFetches = [
+        fetchData('production', setRowsProduction),
+        fetchData('price', setRowsPrice),
+        fetchData('norm', setRowsNorm),
+        fetchData('quantity', setRowsQuantity),
+        fetchData('normCost', setRowsNormCost),
+      ]
+
+      await Promise.all(allFetches)
+      setLoading(false)
+    }
+
+    fetchAllData()
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   return (
     <div>
@@ -202,31 +207,6 @@ const AnnualAopCost = () => {
       </Backdrop>
 
       <Box display='flex' flexDirection='column' gap={2}>
-        {/* <Box display='flex' justifyContent='flex-end'>
-          <TextField
-            select
-            value={selectedUnit}
-            onChange={(e) => {
-              const value = e.target.value
-              setSelectedUnit(value)
-              handleUnitChange(value)
-            }}
-            sx={{ width: '200px', backgroundColor: '#FFFFFF' }}
-            variant='outlined'
-            label='Select AOP Year'
-          >
-            <MenuItem value='' disabled>
-              Select AOP Year
-            </MenuItem>
-
-            {unit?.map((unit) => (
-              <MenuItem key={unit?.name} value={unit?.name}>
-                {unit?.displayName}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Box> */}
-
         <div>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
@@ -239,10 +219,10 @@ const AnnualAopCost = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <AopCostReportView
+                <KendoDataGrid
                   rows={rowsProduction}
                   columns={colsProduction}
-                  height='93px'
+                  permissions={{ allAction: false }}
                 />
               </Box>
             </CustomAccordionDetails>
@@ -260,10 +240,10 @@ const AnnualAopCost = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <AopCostReportView
+                <KendoDataGrid
                   rows={rowsPrice}
                   columns={colsPrice}
-                  height='340px'
+                  permissions={{ allAction: false }}
                 />
               </Box>
             </CustomAccordionDetails>
@@ -281,10 +261,10 @@ const AnnualAopCost = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <AopCostReportView
+                <KendoDataGrid
                   rows={rowsNorm}
                   columns={colsNorm}
-                  height='340px'
+                  disableColor={true}
                 />
               </Box>
             </CustomAccordionDetails>
@@ -302,10 +282,10 @@ const AnnualAopCost = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <AopCostReportView
+                <KendoDataGrid
                   rows={rowsQuantity}
                   columns={colsQuantity}
-                  height='340px'
+                  permissions={{ allAction: false }}
                 />
               </Box>
             </CustomAccordionDetails>
@@ -323,10 +303,10 @@ const AnnualAopCost = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <AopCostReportView
+                <KendoDataGrid
                   rows={rowsNormCost}
                   columns={colsNormCost}
-                  height='340px'
+                  permissions={{ allAction: false }}
                 />
               </Box>
             </CustomAccordionDetails>

@@ -16,10 +16,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.MCUNormsValueDTO;
 import com.wks.caseengine.entity.AOPSummary;
 import com.wks.caseengine.entity.MCUNormsValue;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.NormsTransactions;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
@@ -27,9 +30,12 @@ import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.NormalOperationNormsRepository;
+import com.wks.caseengine.repository.NormsTransactionRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import java.lang.reflect.Method;
+import java.util.*;
 
 @Service
 public class NormalOperationNormsServiceImpl implements NormalOperationNormsService {
@@ -45,6 +51,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	SiteRepository siteRepository;
 	@Autowired
 	VerticalsRepository verticalRepository;
+	@Autowired
+	private NormsTransactionRepository normsTransactionRepository;
 
 	@Override
 	public List<MCUNormsValueDTO> getNormalOperationNormsData(String year, String plantId) {
@@ -60,18 +68,18 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				mCUNormsValueDTO.setVerticalFkId(row[3].toString());
 				mCUNormsValueDTO.setMaterialFkId(row[4].toString());
 
-				mCUNormsValueDTO.setApril(row[5] != null ? Float.parseFloat(row[5].toString()) : null);
-				mCUNormsValueDTO.setMay(row[6] != null ? Float.parseFloat(row[6].toString()) : null);
-				mCUNormsValueDTO.setJune(row[7] != null ? Float.parseFloat(row[7].toString()) : null);
-				mCUNormsValueDTO.setJuly(row[8] != null ? Float.parseFloat(row[8].toString()) : null);
-				mCUNormsValueDTO.setAugust(row[9] != null ? Float.parseFloat(row[9].toString()) : null);
-				mCUNormsValueDTO.setSeptember(row[10] != null ? Float.parseFloat(row[10].toString()) : null);
-				mCUNormsValueDTO.setOctober(row[11] != null ? Float.parseFloat(row[11].toString()) : null);
-				mCUNormsValueDTO.setNovember(row[12] != null ? Float.parseFloat(row[12].toString()) : null);
-				mCUNormsValueDTO.setDecember(row[13] != null ? Float.parseFloat(row[13].toString()) : null);
-				mCUNormsValueDTO.setJanuary(row[14] != null ? Float.parseFloat(row[14].toString()) : null);
-				mCUNormsValueDTO.setFebruary(row[15] != null ? Float.parseFloat(row[15].toString()) : null);
-				mCUNormsValueDTO.setMarch(row[16] != null ? Float.parseFloat(row[16].toString()) : null);
+				mCUNormsValueDTO.setApril(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+				mCUNormsValueDTO.setMay(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+				mCUNormsValueDTO.setJune(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+				mCUNormsValueDTO.setJuly(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+				mCUNormsValueDTO.setAugust(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+				mCUNormsValueDTO.setSeptember(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+				mCUNormsValueDTO.setOctober(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+				mCUNormsValueDTO.setNovember(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+				mCUNormsValueDTO.setDecember(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
+				mCUNormsValueDTO.setJanuary(row[14] != null ? Double.parseDouble(row[14].toString()) : null);
+				mCUNormsValueDTO.setFebruary(row[15] != null ? Double.parseDouble(row[15].toString()) : null);
+				mCUNormsValueDTO.setMarch(row[16] != null ? Double.parseDouble(row[16].toString()) : null);
 
 				mCUNormsValueDTO.setFinancialYear(row[17].toString());
 				mCUNormsValueDTO.setRemarks(row[18] != null ? row[18].toString() : " ");
@@ -97,7 +105,47 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	@Override
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData(List<MCUNormsValueDTO> mCUNormsValueDTOList) {
+
 		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			String userId = authentication.getName();
+			List<NormsTransactions> transactionsToSave = new ArrayList<>();
+
+			for (MCUNormsValueDTO dto : mCUNormsValueDTOList) {
+				Optional<MCUNormsValue> optionalValue = normalOperationNormsRepository
+						.findById(UUID.fromString(dto.getId()));
+
+				if (optionalValue.isEmpty()) {
+					continue; // or handle accordingly
+				}
+
+				MCUNormsValue value = optionalValue.get();
+
+				for (int month = 1; month <= 12; month++) {
+					Double oldVal = getMonthlyValue(value, month);
+					Double newVal = getMonthlyValue(dto, month);
+
+					if (newVal != null && !Objects.equals(oldVal, newVal)) {
+						NormsTransactions normsTransactions = new NormsTransactions();
+						normsTransactions.setAopMonth(month);
+						normsTransactions.setAopYear(value.getFinancialYear());
+						normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
+						normsTransactions.setNormParameterFkId(value.getMaterialFkId());
+						normsTransactions.setPlantFkId(value.getPlantFkId());
+						normsTransactions.setRemark(dto.getRemarks());
+						normsTransactions.setVersion(1);
+						normsTransactions.setCreatedDateTime(new Date());
+
+						normsTransactions.setCreatedBy(userId);
+						normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
+
+						transactionsToSave.add(normsTransactions);
+					}
+				}
+			}
+
+			normsTransactionRepository.saveAll(transactionsToSave);
+
 			for (MCUNormsValueDTO mCUNormsValueDTO : mCUNormsValueDTOList) {
 				MCUNormsValue mCUNormsValue = new MCUNormsValue();
 				if (mCUNormsValueDTO.getId() != null || !mCUNormsValueDTO.getId().isEmpty()) {
@@ -106,18 +154,18 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				} else {
 					mCUNormsValue.setCreatedOn(new Date());
 				}
-				mCUNormsValue.setApril(Optional.ofNullable(mCUNormsValueDTO.getApril()).orElse(0.0f));
-				mCUNormsValue.setMay(Optional.ofNullable(mCUNormsValueDTO.getMay()).orElse(0.0f));
-				mCUNormsValue.setJune(Optional.ofNullable(mCUNormsValueDTO.getJune()).orElse(0.0f));
-				mCUNormsValue.setJuly(Optional.ofNullable(mCUNormsValueDTO.getJuly()).orElse(0.0f));
-				mCUNormsValue.setAugust(Optional.ofNullable(mCUNormsValueDTO.getAugust()).orElse(0.0f));
-				mCUNormsValue.setSeptember(Optional.ofNullable(mCUNormsValueDTO.getSeptember()).orElse(0.0f));
-				mCUNormsValue.setOctober(Optional.ofNullable(mCUNormsValueDTO.getOctober()).orElse(0.0f));
-				mCUNormsValue.setNovember(Optional.ofNullable(mCUNormsValueDTO.getNovember()).orElse(0.0f));
-				mCUNormsValue.setDecember(Optional.ofNullable(mCUNormsValueDTO.getDecember()).orElse(0.0f));
-				mCUNormsValue.setJanuary(Optional.ofNullable(mCUNormsValueDTO.getJanuary()).orElse(0.0f));
-				mCUNormsValue.setFebruary(Optional.ofNullable(mCUNormsValueDTO.getFebruary()).orElse(0.0f));
-				mCUNormsValue.setMarch(Optional.ofNullable(mCUNormsValueDTO.getMarch()).orElse(0.0f));
+				mCUNormsValue.setApril(Optional.ofNullable(mCUNormsValueDTO.getApril()).orElse(0.0));
+				mCUNormsValue.setMay(Optional.ofNullable(mCUNormsValueDTO.getMay()).orElse(0.0));
+				mCUNormsValue.setJune(Optional.ofNullable(mCUNormsValueDTO.getJune()).orElse(0.0));
+				mCUNormsValue.setJuly(Optional.ofNullable(mCUNormsValueDTO.getJuly()).orElse(0.0));
+				mCUNormsValue.setAugust(Optional.ofNullable(mCUNormsValueDTO.getAugust()).orElse(0.0));
+				mCUNormsValue.setSeptember(Optional.ofNullable(mCUNormsValueDTO.getSeptember()).orElse(0.0));
+				mCUNormsValue.setOctober(Optional.ofNullable(mCUNormsValueDTO.getOctober()).orElse(0.0));
+				mCUNormsValue.setNovember(Optional.ofNullable(mCUNormsValueDTO.getNovember()).orElse(0.0));
+				mCUNormsValue.setDecember(Optional.ofNullable(mCUNormsValueDTO.getDecember()).orElse(0.0));
+				mCUNormsValue.setJanuary(Optional.ofNullable(mCUNormsValueDTO.getJanuary()).orElse(0.0));
+				mCUNormsValue.setFebruary(Optional.ofNullable(mCUNormsValueDTO.getFebruary()).orElse(0.0));
+				mCUNormsValue.setMarch(Optional.ofNullable(mCUNormsValueDTO.getMarch()).orElse(0.0));
 				if (mCUNormsValueDTO.getSiteFkId() != null) {
 					mCUNormsValue.setSiteFkId(UUID.fromString(mCUNormsValueDTO.getSiteFkId()));
 				}
@@ -137,7 +185,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				mCUNormsValue.setFinancialYear(mCUNormsValueDTO.getFinancialYear());
 				mCUNormsValue.setRemarks(mCUNormsValueDTO.getRemarks());
 				mCUNormsValue.setMcuVersion("V1");
-				mCUNormsValue.setUpdatedBy("System");
+				mCUNormsValue.setUpdatedBy(userId);
 
 				System.out.println("Data Saved Succussfully");
 				normalOperationNormsRepository.save(mCUNormsValue);
@@ -216,16 +264,18 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		try {
 			UUID plantUUID = UUID.fromString(plantId);
 
-			List<NormsTransactions> transactions = normalOperationNormsRepository
-					.findTransactionsByPlantAndYear(plantUUID, aopYear);
+			List<Object[]> transactions = normsTransactionRepository
+					.findDistinctTransactionsByMonthAndParameter(plantUUID, aopYear);
 
-			List<Map<String, Object>> normsTransactions = transactions.stream().map(tx -> {
-				Map<String, Object> cell = new HashMap<>();
-				cell.put("normParameterFKId", tx.getNormParameterFkId().toString());
-				cell.put("month", tx.getAopMonth());
-				cell.put("value", tx.getAttributeValue());
-				return cell;
-			}).collect(Collectors.toList());
+			List<Map<String, Object>> normsTransactions = transactions.stream()
+					.map(tx -> {
+						Map<String, Object> cell = new HashMap<>();
+						cell.put("month", tx[0]); // AOPMonth
+						cell.put("normParameterFKId", tx[1].toString()); // NormParameter_FK_Id
+						cell.put("value", tx[2]); // AttributeValue
+						return cell;
+					})
+					.collect(Collectors.toList());
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
@@ -236,6 +286,31 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 		} catch (Exception ex) {
 			throw new RestInvalidArgumentException("normsTransaction", ex);
+		}
+	}
+
+	private Double getMonthlyValue(Object obj, int month) {
+		try {
+			String methodName = switch (month) {
+				case 1 -> "getJanuary";
+				case 2 -> "getFebruary";
+				case 3 -> "getMarch";
+				case 4 -> "getApril";
+				case 5 -> "getMay";
+				case 6 -> "getJune";
+				case 7 -> "getJuly";
+				case 8 -> "getAugust";
+				case 9 -> "getSeptember";
+				case 10 -> "getOctober";
+				case 11 -> "getNovember";
+				case 12 -> "getDecember";
+				default -> throw new IllegalArgumentException("Invalid month: " + month);
+			};
+			Method method = obj.getClass().getMethod(methodName);
+			return (Double) method.invoke(obj);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
 		}
 	}
 
