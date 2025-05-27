@@ -7,15 +7,14 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
-// import AopCostReportView from 'components/data-tables-views/ReportDataGrid'
+import AopCostReportView from 'components/data-tables-views/ReportDataGrid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 
-import KendoDataGrid from 'components/Kendo-DataGrid/index'
-import getKendoProductionColumns from '../CommonHeader/KendoProdVolBHeader'
+import getEnhancedProductionVolDataBasis from '../CommonHeader/MCHeaders'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -88,22 +87,22 @@ const ProductionVolumeDataBasis = () => {
   const year = localStorage.getItem('year')
   const headerMap = generateHeaderNames(year)
 
-  const colsMC = getKendoProductionColumns({
+  const colsMC = getEnhancedProductionVolDataBasis({
     headerMap,
     type: 'MC',
   })
 
-  const colsMCYearwise = getKendoProductionColumns({
+  const colsMCYearwise = getEnhancedProductionVolDataBasis({
     headerMap,
     type: 'MC Yearwise',
   })
 
-  const colsCalculatedData = getKendoProductionColumns({
+  const colsCalculatedData = getEnhancedProductionVolDataBasis({
     headerMap,
     type: 'Calculated Data',
   })
 
-  const colsRowData = getKendoProductionColumns({
+  const colsRowData = getEnhancedProductionVolDataBasis({
     headerMap,
     type: 'RowData',
   })
@@ -137,10 +136,10 @@ const ProductionVolumeDataBasis = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
+                <AopCostReportView
                   rows={rowsMC}
                   columns={colsMC}
-                  permissions={{ allAction: false }}
+                  height='93px'
                 />
               </Box>
             </CustomAccordionDetails>
@@ -159,10 +158,10 @@ const ProductionVolumeDataBasis = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
+                <AopCostReportView
                   rows={rowsMCYearWise}
                   columns={colsMCYearwise}
-                  permissions={{ allAction: false }}
+                  height='340px'
                 />
               </Box>
             </CustomAccordionDetails>
@@ -181,10 +180,10 @@ const ProductionVolumeDataBasis = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
+                <AopCostReportView
                   rows={rowsCalculatedData}
                   columns={colsCalculatedData}
-                  permissions={{ allAction: false }}
+                  height='340px'
                 />
               </Box>
             </CustomAccordionDetails>
@@ -203,10 +202,10 @@ const ProductionVolumeDataBasis = () => {
             </CustomAccordionSummary>
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
+                <AopCostReportView
                   rows={rowsRawData}
                   columns={colsRowData}
-                  permissions={{ allAction: false }}
+                  height='340px'
                 />
               </Box>
             </CustomAccordionDetails>
