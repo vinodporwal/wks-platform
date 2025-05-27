@@ -47,14 +47,14 @@ const MonthwiseRawMaterial = () => {
     //   ),
     // },
     {
-      field: 'material',
+      field: 'particulars',
       headerName: 'Particulars',
       flex: 2,
       renderCell: renderTwoLineEllipsis,
     },
     {
-      field: 'UOM',
-      headerName: 'UOM',
+      field: 'unit',
+      headerName: 'Unit',
       editable: false,
       align: 'left',
       headerAlign: 'left',
@@ -104,7 +104,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
     },
     {
-      field: 'aug',
+      field: 'august',
       headerName: headerMap[8],
 
       align: 'right',
@@ -113,7 +113,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
     },
     {
-      field: 'sep',
+      field: 'september',
       headerName: headerMap[9],
 
       align: 'right',
@@ -122,7 +122,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
     },
     {
-      field: 'oct',
+      field: 'october',
       headerName: headerMap[10],
 
       align: 'right',
@@ -131,7 +131,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
     },
     {
-      field: 'nov',
+      field: 'november',
       headerName: headerMap[11],
 
       align: 'right',
@@ -140,7 +140,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
     },
     {
-      field: 'dec',
+      field: 'december',
       headerName: headerMap[12],
 
       align: 'right',
@@ -149,7 +149,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
     },
     {
-      field: 'jan',
+      field: 'january',
       headerName: headerMap[1],
 
       align: 'right',
@@ -158,7 +158,7 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
     },
     {
-      field: 'feb',
+      field: 'february',
       headerName: headerMap[2],
 
       align: 'right',
@@ -193,28 +193,32 @@ const MonthwiseRawMaterial = () => {
   const [loading, setLoading] = useState(false)
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
-
   const fetchData = async () => {
     try {
       setLoading(true)
-      // const label = `FY ${year} AOP`
-      var res = await DataService.getMonthwiseRawData(keycloak, 'NormQuantity')
-      var res2 = await DataService.getMonthwiseRawData(keycloak, 'Selectivity')
+
+      const label = `FY ${year} AOP`
+
+      var res = await DataService.getAnnualCostAopReport(
+        keycloak,
+        'quantity',
+        label,
+      )
+      var res2 = await DataService.getMonthwiseRawData(keycloak)
 
       // FY%202025-26%20AOP
       // console.log(res)
-
       if (res2?.code == 200) {
         res2 = res2?.data?.consumptionSummary.map((item, index) => ({
           ...item,
           id: index,
           isEditable: false,
         }))
+
         setRow2(res2)
       }
-
       if (res?.code == 200) {
-        res = res?.data?.consumptionSummary.map((item, index) => ({
+        res = res?.data?.map((item, index) => ({
           ...item,
           id: index,
           isEditable: false,
@@ -228,9 +232,9 @@ const MonthwiseRawMaterial = () => {
 
         setRow(formattedItems)
 
-        // Group by normType and add Total row to each group
+        // Step 2: Group by `norms`
         const groupedByNorms = formattedItems.reduce((acc, item) => {
-          const key = item?.normType
+          const key = item?.norm
           if (!acc[key]) {
             acc[key] = []
           }
@@ -238,49 +242,56 @@ const MonthwiseRawMaterial = () => {
           return acc
         }, {})
 
-        // Add Total row per group
-        Object.keys(groupedByNorms).forEach((key) => {
-          const group = groupedByNorms[key]
+        // Add total row per group
+        const groupedWithTotals = {}
 
-          // List of columns to total
-          const monthColumns = [
-            'april',
-            'may',
-            'june',
-            'july',
-            'aug',
-            'sep',
-            'oct',
-            'nov',
-            'dec',
-            'jan',
-            'feb',
-            'march',
-            'total',
-          ]
+        for (const [norm, items] of Object.entries(groupedByNorms)) {
+          const totalRow = { particulars: 'Total', norm }
 
-          const totalRow = {
-            id: `total-${key}`,
-            material: 'Total',
-            normType: key,
-            spec: '',
-            UOM: '',
-            isEditable: false,
+          for (const item of items) {
+            for (const [key, value] of Object.entries(item)) {
+              if (
+                key !== 'particulars' &&
+                key !== 'norm'
+                // &&
+                // typeof value === 'number'
+              ) {
+                totalRow[key] = (totalRow[key] || 0) + value
+              }
+            }
           }
 
-          // Sum values for each month column
-          monthColumns.forEach((col) => {
-            totalRow[col] = group.reduce(
-              (sum, item) => sum + (Number(item[col]) || 0),
-              0,
-            )
-          })
+          groupedWithTotals[norm] = [...items, totalRow]
+        }
 
-          // Add to group
-          group.push(totalRow)
-        })
+        // Set dynamic state
+        setNormRows(groupedWithTotals)
 
-        setNormRows(groupedByNorms)
+        // const groupedRows = []
+        // const groups = new Map()
+        // let groupId = 0
+
+        // res.forEach((item) => {
+        //   const groupKey = item.norm
+
+        // if (!groups.has(groupKey)) {
+        //   groups.set(groupKey, [])
+        //   groupedRows.push({
+        //     id: groupId++,
+        //     Particulars: groupKey,
+        //     isGroupHeader: true,
+        //   })
+        // }
+
+        // groups.get(groupKey).push(formattedItem)
+        // groupedRows.push(formattedItem)
+        // })
+
+        // console.log(groupedRows)
+        // setRow(groupedRows)
+
+        // setRow(res)
+        // setRow(res)
       } else {
         setRow([])
       }
@@ -297,7 +308,7 @@ const MonthwiseRawMaterial = () => {
   const columns = [
     { field: 'id', headerName: 'ID' },
     {
-      field: 'material',
+      field: 'parameter',
       headerName: 'Parameters',
       editable: false,
       flex: 2,
