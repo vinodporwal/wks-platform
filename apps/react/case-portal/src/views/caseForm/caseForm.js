@@ -1053,12 +1053,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">EED Case Management System</h2>
+        <h2 style="text-align: center; margin: 0;">XOM Case Management System</h2>
       </div>
 
       <!-- Case Information Panel -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Information</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Information</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseNo')}</strong>: ${aCase.caseNo}</p>
           <p><strong>${getLabel('caseTitle')}</strong>: ${containerData.caseTitle}</p>
@@ -1070,7 +1070,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
       <!-- Case Details -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Case Details</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Case Details</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('createdOn')}</strong>: ${new Date(containerData.createdOn).toLocaleDateString()}</p>
           <p><strong>${getLabel('dueDate')}</strong>: ${containerData?.dueDate || 'N/A'}</p>
@@ -1082,7 +1082,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
       <!-- Associated Faults -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
-        <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Associated Faults</h3>
+        <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Associated Faults</h3>
         <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
         ${formatDataGrid(containerData.dataGrid2, getLabel)}
       </div>
@@ -1100,7 +1100,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       const files = containerData.file;
       content += `
       <!-- Analysis -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
@@ -1130,7 +1130,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     if (containerData.RecommendationsRadio === 'yes') {
       content += `
       <!-- Data Grid 1 -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
         ${formatDataGrid(containerData.dataGrid1, getLabel)}
       </div>
@@ -1140,7 +1140,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     // Value Realization section
     content += `
       <!-- Value Realization -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
+      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
