@@ -56,7 +56,6 @@ services:
         - "5432:5432"
         volumes:
             - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-            - postgres_data:/var/lib/postgresql/data
 
     keycloak:
         image: quay.io/keycloak/keycloak:20.0.3
@@ -108,6 +107,6 @@ volumes:
     postgres:
         driver: local
     minio:
-        driver: local                
-    keycloak:
         driver: local
+    keycloak:
+        driver: local                

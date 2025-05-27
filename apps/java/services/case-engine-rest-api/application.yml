@@ -13,6 +13,10 @@ logging:
       org.springframework.security: INFO
       org.apache.http: INFO
       httpclient.wire: INFO
+      org.hibernate.SQL: DEBUG
+      org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+      org.springframework.mail: DEBUG
+
 
 spring.mvc.converters.preferred-json-mapper: gson
 
@@ -40,6 +44,9 @@ spring.data.mongodb.database.max-connection-life-time: 3000
 
 opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
 keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
+keycloak.admin: ${KEYCLOAK_ADMIN:admin}
+keycloak.admin.password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+keycloak.realm.name: {KEYCLOAK_REALM_NAME: localhost}
 
 management.health.mongo.enabled: false
 management.health.reds.enabled: false
@@ -50,13 +57,14 @@ spring:
       #url: jdbc:sqlserver://216.48.180.83;databaseName=AOP;trustServerCertificate=true
       #username: sa
       #password: "#Qwer123"
-      url: ${SQL_SERVER_1_URL}
-      username: ${SQL_SERVER_1_USERNAME}
-      password: ${SQL_SERVER_1_PASSWORD}
+      url: ${SQL_SERVER_4_URL}
+      username: ${SQL_SERVER_4_USERNAME}
+      password: ${SQL_SERVER_4_PASSWORD}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
         maximum-pool-size: 10
         minimum-idle: 5
+
     # Configuration for Database 2
     db2:
       # url: jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true
@@ -67,6 +75,7 @@ spring:
       hikari:
         maximum-pool-size: 10
         minimum-idle: 5
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -75,6 +84,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.SQLServerDialect
         format_sql: true
+
+
 management.endpoints.web.exposure.include: health,info, metrics,db
 management.endpoint.health.show-details: never
 
