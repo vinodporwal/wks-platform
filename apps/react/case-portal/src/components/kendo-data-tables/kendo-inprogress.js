@@ -32,13 +32,13 @@ const KendoDataTables = ({
   selectedUsers = [],
   allRedCell = [],
   permissions = {},
-  selectedUnit = '', // Add selectedUnit prop
-  setSelectedUnit = () => {}, // Add setSelectedUnit prop
+  // selectedUnit = '', // Add selectedUnit prop
+  // setSelectedUnit = () => {}, // Add setSelectedUnit prop
   jioColors = { background: '#ffffff' }, // Add jioColors prop with default
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-
+const [selectedUnit, setSelectedUnit] = useState()
   // ✅ Snackbar state
   const [localSnackbarOpen, setLocalSnackbarOpen] = useState(false)
   const [localSnackbarData, setLocalSnackbarData] = useState({
@@ -204,42 +204,5 @@ const KendoDataTables = ({
   )
 }
 
-KendoDataTables.propTypes = {
-  rows: PropTypes.array.isRequired,
-  setRows: PropTypes.func.isRequired,
-  columns: PropTypes.arrayOf(
-    PropTypes.shape({
-      field: PropTypes.string.isRequired,
-      title: PropTypes.string,
-      width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      cell: PropTypes.func,
-      filterable: PropTypes.bool,
-    }),
-  ).isRequired,
-  loading: PropTypes.bool,
-  pageSizes: PropTypes.arrayOf(PropTypes.number),
-  onRowChange: PropTypes.func,
-  disableColor: PropTypes.bool,
-  setSnackbarOpen: PropTypes.func,
-  snackbarData: PropTypes.object,
-  snackbarOpen: PropTypes.bool,
-  unsavedChangesRef: PropTypes.object,
-  setRemarkDialogOpen: PropTypes.func,
-  currentRemark: PropTypes.string,
-  setCurrentRemark: PropTypes.func,
-  currentRowId: PropTypes.any,
-  remarkDialogOpen: PropTypes.bool,
-  handleCalculate: PropTypes.func,
-  fetchData: PropTypes.func,
-  handleUnitChange: PropTypes.func,
-  deleteRowData: PropTypes.func,
-  handleAddPlantSite: PropTypes.func,
-  selectedUsers: PropTypes.array,
-  allRedCell: PropTypes.array,
-  permissions: PropTypes.object,
-  selectedUnit: PropTypes.string, // Add selectedUnit PropType
-  setSelectedUnit: PropTypes.func, // Add setSelectedUnit PropType
-  jioColors: PropTypes.object, // Add jioColors PropType
-}
 
 export default KendoDataTables

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import ASDataGrid from './ASDataGrid'
+//import ASDataGrid from './ASDataGrid'
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -12,10 +12,11 @@ import { useSelector } from 'react-redux'
 // import NumericCellEditor from 'utils/NumericCellEditor'
 // import NumericInputOnly from 'utils/NumericInputOnly'
 import { validateFields } from 'utils/validationUtils'
-import getEnhancedColDefs from './CommonHeader/ProductionAopHeader'
+import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopHeader'
 import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
-
+//import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import KendoDataTables from './kendo-inprogress'
 const ProductionNorms = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
 
@@ -421,7 +422,7 @@ const ProductionNorms = ({ permissions }) => {
   const fetchData = async () => {
     try {
       setLoading(true)
-
+      
       const data1 = await DataService.getAOPData(keycloak)
 
       var data = data1
@@ -434,6 +435,8 @@ const ProductionNorms = ({ permissions }) => {
           ...(product.materialFKId !== undefined
             ? { materialFKId: undefined }
             : {}),
+            
+
         }))
         .map(({ materialFKId, ...rest }) => rest)
 
@@ -515,6 +518,7 @@ const ProductionNorms = ({ permissions }) => {
       'oct',
       'nov',
       'dec',
+       'total', 
     ]
 
     // Calculate totals for each month column
@@ -551,11 +555,10 @@ const ProductionNorms = ({ permissions }) => {
       'march',
     ]
 
-    const values = months.map((month) => Number(row[month]) || 0)
-    const sum = values.reduce((acc, val) => acc + val, 0)
+   const values = months.map((month) => Number(row[month]) || 0)
+  const sum = values.reduce((acc, val) => acc + val, 0)
 
-    const total = sum.toFixed(2)
-    return total === '0.00' ? null : total
+  return sum === 0 ? null : Number(sum.toFixed(2))
   }
 
   useEffect(() => {
@@ -587,6 +590,7 @@ const ProductionNorms = ({ permissions }) => {
     keycloak,
     selectedUnit,
     lowerVertName,
+    
   ])
 
   const productionColumns = getEnhancedColDefs({
@@ -650,7 +654,7 @@ const ProductionNorms = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <ASDataGrid
+      <KendoDataTables 
         modifiedCells={modifiedCells}
         columns={productionColumns}
         rows={rows}
