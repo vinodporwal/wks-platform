@@ -3,7 +3,7 @@ import Loadable from 'components/Loadable'
 import MainLayout from 'layout/MainLayout'
 import TurnaroundPlanTable from 'components/data-tables/TurnaroundPlanTable'
 // import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
-import ProductionvolumeData from 'components/data-tables/ProductionVoluemData'
+import ProductionvolumeData from 'components/kendo-data-tables/ProductionVoluemData'
 import BusinessDemand from 'components/data-tables/BusinessDemand'
 import ShutDown from 'components/data-tables/ShutDown'
 import SlowDown from 'components/data-tables/Slowdown'
@@ -22,7 +22,7 @@ import NormalOpNormsScreen from 'components/data-tables/NormsScreens/NormalOpNor
 import ShutdownNorms from 'components/data-tables/NormsScreens/ShutdownNorms'
 import MaintenanceTable from 'components/data-tables/MaintenanceTable'
 import ConsumptionNorms from 'components/data-tables/ConsumptionNorms'
-import ProductionNorms from 'components/data-tables/ProductionNorms'
+import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
 // import SelectivityData from 'components/data-tables/SelectivityData'
 // import FiveTables from 'components/data-tables/AOPWorkFlow/ProductMixTable'
 import ConfigurationTable from 'components/data-tables/ConfigurationTable/index'
@@ -172,6 +172,10 @@ export const MainRoutes = (
             path: 'maintenance-details',
             element: <MaintenanceTable />,
           },
+          // {
+          //   path: 'maintenance-details',
+          //   element: <MaintenanceTable />,
+          // },
           {
             path: 'consumption-aop',
             element: <ConsumptionNorms />,
@@ -180,6 +184,10 @@ export const MainRoutes = (
             path: 'production-aop',
             element: <ProductionNorms />,
           },
+          // {
+          //   path: 'production-aop',
+          //   element: <ProductionNorms />,
+          // },
           {
             path: 'normal-op-norms',
             element: <NormalOpNormsScreen />,
