@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-import ASDataGrid from './ASDataGrid'
+//import ASDataGrid from './ASDataGrid'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { useSelector } from 'react-redux'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import getEnhancedProductionColDefs from './CommonHeader/ProductionVolumeHeader'
+import getEnhancedProductionColDefs from '../data-tables/CommonHeader/Kendo_ProductionVolumeHeader'
+
 
 import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { Typography } from '../../../node_modules/@mui/material/index'
+import KendoDataTables from './kendo-inprogress'
 
 const ProductionvolumeData = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -472,7 +474,7 @@ const ProductionvolumeData = ({ permissions }) => {
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Data Refresh Falied!',
+          message: 'Data Refresh Failed!',
           severity: 'error',
         })
       }
@@ -527,100 +529,98 @@ const ProductionvolumeData = ({ permissions }) => {
   )
 
   return (
-    <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
-      <ASDataGrid
-        modifiedCells={modifiedCells}
-        setRows={setRows}
-        columns={productionColumns}
-        rows={rows}
-        title='Production Volume Data'
-        onAddRow={(newRow) => console.log('New Row Added:', newRow)}
-        onDeleteRow={(id) => console.log('Row Deleted:', id)}
-        onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
-        paginationOptions={[100, 200, 300]}
-        processRowUpdate={processRowUpdate}
-        rowModesModel={rowModesModel}
-        onRowModesModelChange={onRowModesModelChange}
-        saveChanges={saveChanges}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        apiRef={apiRef}
-        // deleteId={deleteId}
-        // setDeleteId={setDeleteId}
-        // setOpen1={setOpen1}
-        // open1={open1}
-        // handleDeleteClick={handleDeleteClick}
-        fetchData={fetchData}
-        // onRowEditStop={handleRowEditStop}
-        onProcessRowUpdateError={onProcessRowUpdateError}
-        handleUnitChange={handleUnitChange}
-        experimentalFeatures={{ newEditingApi: true }}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        unsavedChangesRef={unsavedChangesRef}
-        handleCalculate={handleCalculate}
-        permissions={adjustedPermissions}
-      />
-
-      {!permissions?.hideSummary && (
-        <>
-          <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
-            Percentage Summary
-          </Typography>
-          <ASDataGrid
-            setRows={setRows2}
-            columns={productionColumns}
-            rows={rows2}
-            title='Production Volume Data'
-            onAddRow={(newRow) => console.log('New Row Added:', newRow)}
-            onDeleteRow={(id) => console.log('Row Deleted:', id)}
-            onRowUpdate={(updatedRow) =>
-              console.log('Row Updated:', updatedRow)
-            }
-            paginationOptions={[100, 200, 300]}
-            processRowUpdate={processRowUpdate}
-            rowModesModel={rowModesModel}
-            onRowModesModelChange={onRowModesModelChange}
-            saveChanges={saveChanges}
-            snackbarData={snackbarData}
-            snackbarOpen={snackbarOpen}
-            setSnackbarOpen={setSnackbarOpen}
-            setSnackbarData={setSnackbarData}
-            apiRef={apiRef}
-            // deleteId={deleteId}
-            // setDeleteId={setDeleteId}
-            // setOpen1={setOpen1}
-            // open1={open1}
-            // handleDeleteClick={handleDeleteClick}
-            fetchData={fetchData}
-            // onRowEditStop={handleRowEditStop}
-            onProcessRowUpdateError={onProcessRowUpdateError}
-            handleUnitChange={handleUnitChange}
-            experimentalFeatures={{ newEditingApi: true }}
-            remarkDialogOpen={remarkDialogOpen}
-            setRemarkDialogOpen={setRemarkDialogOpen}
-            currentRemark={currentRemark}
-            setCurrentRemark={setCurrentRemark}
-            currentRowId={currentRowId}
-            unsavedChangesRef={unsavedChangesRef}
-            handleCalculate={handleCalculate}
-            permissions={{ customHeight: defaultCustomHeight }}
-          />
-        </>
-      )}
-    </div>
-  )
+  <div>
+    <Backdrop
+      sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      open={!!loading}
+    >
+      <CircularProgress color='inherit' />
+    </Backdrop>
+    <KendoDataTables
+      modifiedCells={modifiedCells}
+      setRows={setRows}
+      columns={productionColumns}
+      rows={rows}
+      title='Production Volume Data'
+      onAddRow={(newRow) => console.log('New Row Added:', newRow)}
+      onDeleteRow={(id) => console.log('Row Deleted:', id)}
+      onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+      paginationOptions={[100, 200, 300]}
+      processRowUpdate={processRowUpdate}
+      rowModesModel={rowModesModel}
+      onRowModesModelChange={onRowModesModelChange}
+      saveChanges={saveChanges}
+      snackbarData={snackbarData}
+      snackbarOpen={snackbarOpen}
+      setSnackbarOpen={setSnackbarOpen}
+      setSnackbarData={setSnackbarData}
+      apiRef={apiRef}
+      fetchData={fetchData}
+      onProcessRowUpdateError={onProcessRowUpdateError}
+      handleUnitChange={handleUnitChange}
+      experimentalFeatures={{ newEditingApi: true }}
+      remarkDialogOpen={remarkDialogOpen}
+      setRemarkDialogOpen={setRemarkDialogOpen}
+      currentRemark={currentRemark}
+      setCurrentRemark={setCurrentRemark}
+      currentRowId={currentRowId}
+      unsavedChangesRef={unsavedChangesRef}
+      handleCalculate={handleCalculate}
+      permissions={{...adjustedPermissions, showCalculate: true}}
+      // Add these new props for unit selection
+      selectedUnit={selectedUnit}
+      setSelectedUnit={setSelectedUnit}
+    />
+    
+    {!permissions?.hideSummary && (
+      <>
+        <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
+          Percentage Summary
+        </Typography>
+        <KendoDataTables
+          setRows={setRows2}
+          columns={productionColumns}
+          rows={rows2}
+          title='Production Volume Data'
+          onAddRow={(newRow) => console.log('New Row Added:', newRow)}
+          onDeleteRow={(id) => console.log('Row Deleted:', id)}
+          onRowUpdate={(updatedRow) =>
+            console.log('Row Updated:', updatedRow)
+          }
+          paginationOptions={[100, 200, 300]}
+          processRowUpdate={processRowUpdate}
+          rowModesModel={rowModesModel}
+          onRowModesModelChange={onRowModesModelChange}
+          saveChanges={saveChanges}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRef}
+          fetchData={fetchData}
+          onProcessRowUpdateError={onProcessRowUpdateError}
+          handleUnitChange={handleUnitChange}
+          experimentalFeatures={{ newEditingApi: true }}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          unsavedChangesRef={unsavedChangesRef}
+          handleCalculate={handleCalculate}
+          permissions={{ 
+            customHeight: defaultCustomHeight, 
+            showCalculate: false,
+            showUnit: false // Set to false for summary table
+          }}
+          // Add these props for the second table too
+          selectedUnit={selectedUnit}
+          setSelectedUnit={setSelectedUnit}
+        />
+      </>
+    )}
+  </div>
+)
 }
 
 export default ProductionvolumeData

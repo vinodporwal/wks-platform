@@ -37,83 +37,72 @@ const getEnhancedProductionColDefs = ({
     }
 
     // Enhance the Product column with custom functions
-    if (col.field === 'normParametersFKId') {
-      updatedCol = {
-        ...updatedCol,
-        valueGetter: (params) => params || '',
-        valueFormatter: (params) => {
-          const product = allProducts.find((p) => p.id === params)
-          return product ? product.displayName : ''
-        },
+   if (col.field === 'normParametersFKId') {
+  updatedCol = {
+    ...updatedCol,
+    title: headerMap?.[col.headerName] || col.headerName,
+    field: 'normParametersFKId',
 
-        filterOperators: [
-          {
-            label: 'contains',
-            value: 'contains',
-            getApplyFilterFn: (filterItem) => {
-              if (!filterItem?.value) {
-                return
-              }
-              return (rowId) => {
-                const filterValue = filterItem.value.toLowerCase()
-                if (filterValue) {
-                  const productName = getProductDisplayName(rowId)
-                  if (productName) {
-                    return productName.toLowerCase().includes(filterValue)
-                  }
-                }
-                return true
-              }
-            },
-            InputComponent: ({ item, applyValue, focusElementRef }) => (
-              <TextField
-                autoFocus
-                inputRef={focusElementRef}
-                size='small'
-                label='Contains'
-                value={item.value || ''}
-                onChange={(event) =>
-                  applyValue({ ...item, value: event.target.value })
-                }
-                style={{ marginTop: '8px' }}
-              />
-            ),
-          },
-        ],
+    // Display displayName instead of id
+    cell: (props) => {
+      const product = allProducts.find((p) => p.id === props.dataItem.normParametersFKId);
+      return <td>{product ? product.displayName : ''}</td>;
+    },
 
-        renderEditCell: (params) => {
-          const { value, id, api } = params
-          return (
-            <select
-              value={value || ''}
-              onChange={(event) => {
-                api.setEditCellValue({
-                  id,
-                  field: 'normParametersFKId',
-                  value: event.target.value,
-                })
-              }}
-              style={{
-                width: '100%',
-                padding: '5px',
-                border: 'none',
-                outline: 'none',
-                background: 'transparent',
-              }}
-            >
-              <option value='' disabled>
-                Select
+    // Custom filterCell for "contains" logic
+    filterCell: (props) => {
+      const handleChange = (e) => {
+        props.onChange({
+          value: e.target.value,
+          operator: 'contains',
+          syntheticEvent: e,
+        });
+      };
+
+      return (
+        <td>
+          <TextField
+            size="small"
+            label="Contains"
+            value={props.filter?.value || ''}
+            onChange={handleChange}
+            fullWidth
+          />
+        </td>
+      );
+    },
+
+    // Custom cell editor with dropdown
+    editCell: (props) => {
+      const handleChange = (e) => {
+        props.onChange({
+          dataItem: props.dataItem,
+          field: 'normParametersFKId',
+          value: e.target.value,
+        });
+      };
+
+      return (
+        <td>
+          <select
+            value={props.dataItem.normParametersFKId || ''}
+            onChange={handleChange}
+            style={{ width: '100%', padding: '5px' }}
+          >
+            <option value="" disabled>
+              Select
+            </option>
+            {allProducts.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.displayName}
               </option>
-              {allProducts.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.displayName}
-                </option>
-              ))}
-            </select>
-          )
-        },
-      }
-    }
+            ))}
+          </select>
+        </td>
+      );
+    },
+  };
+}
 
     if (col.field === 'avgTph') {
       updatedCol.valueGetter = findAvg
