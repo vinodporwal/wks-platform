@@ -208,6 +208,14 @@ const KendoBusinessDemand = ({ permissions }) => {
   //   return defs
   // }, [allProducts, headerMap, handleRemarkCellClick])
 
+  const NormParameterIdCell = (props) => {
+    const productId = props.dataItem.normParameterId
+    const product = allProducts.find((p) => p.id === productId)
+    const displayName = product?.displayName || ''
+    console.log(displayName)
+    return <td>{displayName}</td>
+  }
+
   const saveChanges = React.useCallback(async () => {
     // setLoading(true)
     // const rowsInEditMode = Object.keys(rowModesModel).filter(
@@ -461,6 +469,7 @@ const KendoBusinessDemand = ({ permissions }) => {
         setDeleteId={setDeleteId}
         setOpen1={setOpen1}
         open1={open1}
+        NormParameterIdCell={NormParameterIdCell}
         fetchData={fetchData}
         onProcessRowUpdateError={onProcessRowUpdateError}
         remarkDialogOpen={remarkDialogOpen}
