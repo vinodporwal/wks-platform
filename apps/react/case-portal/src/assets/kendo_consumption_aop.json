@@ -1,34 +1,36 @@
 [
   {
-    "field": "idFromApi",
-    "title": "ID"
+    "field": "Particulars",
+    "title": "Type",
+    "width": 120,
+    "groupable": true
   },
   {
-    "field": "aopCaseId",
-    "title": "Case ID",
-    "width": 120,
+    "field": "NormParametersId",
+    "title": "Particulars",
+    "width": 175,
     "editable": false
   },
   {
-    "field": "normParametersFKId",
-    "title": "Particulars",
-    "editable": false,
-    "width": 175
+    "field": "UOM",
+    "title": "UOM / MT",
+    "width": 90,
+    "editable": false
   },
   {
     "field": "april",
     "title": "Apr",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
     "field": "may",
-    "title":"May",
+    "title": "May",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
@@ -37,7 +39,7 @@
     "field": "june",
     "title": "Jun",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
@@ -46,70 +48,70 @@
     "field": "july",
     "title": "Jul",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "august",
+    "field": "aug",
     "title": "Aug",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "september",
+    "field": "sep",
     "title": "Sep",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "october",
+    "field": "oct",
     "title": "Oct",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "november",
+    "field": "nov",
     "title": "Nov",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "december",
+    "field": "dec",
     "title": "Dec",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "january",
+    "field": "jan",
     "title": "Jan",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
   },
   {
-    "field": "february",
+    "field": "feb",
     "title": "Feb",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
@@ -118,16 +120,10 @@
     "field": "march",
     "title": "Mar",
     "editable": false,
-    "width":120,
+    "width": 120,
 
     "align": "left",
     "headerAlign": "left"
-  },
-  {
-    "field": "avgTph",
-    "title": "AVG",
-    "minWidth": 150,
-    "editable": false
   },
   {
     "field": "isEditable",

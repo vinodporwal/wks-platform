@@ -1,4 +1,4 @@
-import production_coldefs_pe from '../../../assets/production_coldefs_pe.json' // adjust the path as needed
+import production_coldefs_pe from '../../../assets/kendo_production_coldefs_pe.json' // adjust the path as needed
 import production_coldefs_meg from '../../../assets/kendo_production_coldefs_meg.json' // adjust the path as needed
 import { useSelector } from 'react-redux'
 import Tooltip from '@mui/material/Tooltip'
