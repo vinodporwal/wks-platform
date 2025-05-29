@@ -59,8 +59,8 @@ jobs:
         run: yarn --cwd apps/react/case-portal install
 
       - name: Activate kendo license
-        run: yarn run kendo-ui-license activate
-        
+        run: yarn --cwd apps/react/case-portal run kendo-ui-license activate
+
       - name: Build for case-portal
         env:
           NODE_OPTIONS: "--max_old_space_size=4096"
