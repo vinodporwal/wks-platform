@@ -239,7 +239,6 @@ const KendoBusinessDemand = ({ permissions }) => {
         }
         // console.log('modifiedCells', modifiedCells)
         let newRows = modifiedCells.filter((row) => row.isGroupHeader !== true)
-        console.log(newRows)
         var data = Object.values(newRows)
         // var data = Object.values(unsavedChangesRef.current.unsavedRows)
         if (data.length == 0) {

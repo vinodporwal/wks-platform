@@ -62,7 +62,7 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
   backgroundColor: '#F2F3F8',
 }))
 
-const NormalOpNormsScreen = () => {
+const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [summary, setSummary] = useState('')
 
@@ -444,7 +444,7 @@ const NormalOpNormsScreen = () => {
       setCalculatebtnClicked(false)
     }
   }
-  
+
   const getAopSummary = async () => {
     setLoading(true)
     try {
@@ -848,4 +848,4 @@ const NormalOpNormsScreen = () => {
   )
 }
 
-export default NormalOpNormsScreen
+export default ConsumptionNorms
