@@ -50,7 +50,7 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
   backgroundColor: '#F2F3F8',
 }))
 
-const KendoNormalOpsScreens = () => {
+const NormalOpNormsScreen = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
   const [allRedCell, setAllRedCell] = useState([])
@@ -490,12 +490,6 @@ const KendoNormalOpsScreens = () => {
       title: 'isEditable',
     },
   ]
-  const getFilteredColumns = (excludeFields = []) => {
-  return colDefs.filter(col => !excludeFields.includes(col.field));
-  };
-
-// Usage
-  const gridColumns = getFilteredColumns(['Particulars', 'idFromApi', 'isEditable']);
 
   const colDefsIntermediateValues = [
     {
@@ -715,12 +709,6 @@ const KendoNormalOpsScreens = () => {
       title: 'isEditable',
     },
   ]
-  const getFilteredIntermediateColumns = (excludeFields = []) => {
-  return colDefsIntermediateValues.filter(col => !excludeFields.includes(col.field));
-  };
-
-// Usage
-  const gridIntermediateColumns = getFilteredIntermediateColumns([ 'idFromApi', 'isEditable']);
 
   const handleRemarkCellClick = (row) => {
     if (!row?.isEditable) return
@@ -1023,7 +1011,7 @@ const KendoNormalOpsScreens = () => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         title='Normal Operations Norms'
-        columns={gridColumns}
+        columns={colDefs}
         setRows={setRows}
         rows={rows}
         onAddRow={(newRow) => console.log('New Row Added:', newRow)}
@@ -1071,7 +1059,7 @@ const KendoNormalOpsScreens = () => {
               <Box sx={{ width: '100%', margin: 0 }}>
                 <KendoDataTables
                   title='Intermediate Values'
-                  columns={gridIntermediateColumns}
+                  columns={colDefsIntermediateValues}
                   setRows={setRowsIntermediateValues}
                   rows={rowsIntermediateValues}
                   paginationOptions={[100, 200, 300]}
@@ -1086,4 +1074,4 @@ const KendoNormalOpsScreens = () => {
   )
 }
 
-export default KendoNormalOpsScreens
+export default NormalOpNormsScreen
