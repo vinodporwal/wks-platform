@@ -22,6 +22,7 @@ import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { Box, Typography } from '../../../../node_modules/@mui/material/index'
 import { styled } from '@mui/material/styles'
+import FormattedNumberTooltip from 'components/Utilities/FormattedNumberTooltip'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -347,6 +348,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'june',
@@ -356,6 +365,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'july',
@@ -365,6 +382,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
 
     {
@@ -375,6 +400,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'september',
@@ -384,6 +417,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'october',
@@ -393,6 +434,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'november',
@@ -402,6 +451,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'december',
@@ -411,6 +468,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'january',
@@ -420,6 +485,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'february',
@@ -429,6 +502,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'march',
@@ -438,6 +519,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'remarks',
@@ -573,6 +662,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
 
     {
@@ -583,6 +680,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Jun',
@@ -592,6 +697,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Jul',
@@ -601,6 +714,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
 
     {
@@ -611,6 +732,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Sep',
@@ -620,6 +749,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Oct',
@@ -629,6 +766,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Nov',
@@ -638,6 +783,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Dec',
@@ -647,6 +800,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Jan',
@@ -656,6 +817,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Feb',
@@ -665,6 +834,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'Mar',
@@ -674,6 +851,14 @@ const NormalOpNormsScreen = () => {
       align: 'right',
       headerAlign: 'left',
       valueFormatter: formatValueToFiveDecimals,
+      renderCell: (params) => (
+        <Tooltip
+          title={params.value != null ? params.value.toString() : ''}
+          arrow
+        >
+          <span>{formatValueToFiveDecimals(params.value)}</span>
+        </Tooltip>
+      ),
     },
     {
       field: 'idFromApi',
