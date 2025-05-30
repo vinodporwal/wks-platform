@@ -295,7 +295,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        // Set Fault History Data
 			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
 	        faultEvent.setEventEnrichment(new EventEnrichmentModel());
-			if(!eventEnrichmentPkIdStr.isEmpty() && eventEnrichmentPkIdStr != null) {
+			if(!eventEnrichmentPkIdStr.isEmpty() && eventEnrichmentPkIdStr != "NULL" && eventEnrichmentPkIdStr != null) {
 	            EventEnrichmentModel eventEnrichment = fetchRecords.getEventEnrichment(eventEnrichmentPkIdStr);
 	            faultEvent.setEventEnrichment(eventEnrichment);
 		        List<EventsModel> events = fetchRecords.findEventsByEventId(eventEnrichment.getEventPkId());
@@ -306,7 +306,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	            EquipmentModel equipment = equipments.get(0);
 	            faultEvent.setAssetName(equipment.getName());
 	            faultEvent.setAssetDisplayName(equipment.getDisplayName());
-				}
+			}
 	        List<EventCategoryModel> eventCategories = fetchRecords.getCategoryByCategoryId(faultHistory.getEventCategoryPkId());
 	        faultEvent.setEventCategory(!eventCategories.isEmpty() ? eventCategories.get(0) : new EventCategoryModel());
 	        faultEventsList.add(faultEvent);
