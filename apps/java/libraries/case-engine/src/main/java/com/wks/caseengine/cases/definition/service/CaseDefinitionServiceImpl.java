@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -295,18 +296,18 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        // Set Fault History Data
 			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
 	        faultEvent.setEventEnrichment(new EventEnrichmentModel());
-			if(!eventEnrichmentPkIdStr.isEmpty()) {
+			if(!Objects.isNull(eventEnrichmentPkIdStr) && !eventEnrichmentPkIdStr.isEmpty()) {
 	            EventEnrichmentModel eventEnrichment = fetchRecords.getEventEnrichment(eventEnrichmentPkIdStr);
 	            faultEvent.setEventEnrichment(eventEnrichment);
 		        List<EventsModel> events = fetchRecords.findEventsByEventId(eventEnrichment.getEventPkId());
 		        faultEvent.setEvents(!events.isEmpty() ? events.get(0) : new EventsModel());
 			}
 	        List<EquipmentModel> equipments = fetchRecords.getEquipmentName(faultHistory.getEquipmentPkId());
-	        if (!equipments.isEmpty()) {
+	        if (!Objects.isNull(equipments) && !equipments.isEmpty()) {
 	            EquipmentModel equipment = equipments.get(0);
 	            faultEvent.setAssetName(equipment.getName());
 	            faultEvent.setAssetDisplayName(equipment.getDisplayName());
-		}
+			}
 	        List<EventCategoryModel> eventCategories = fetchRecords.getCategoryByCategoryId(faultHistory.getEventCategoryPkId());
 	        faultEvent.setEventCategory(!eventCategories.isEmpty() ? eventCategories.get(0) : new EventCategoryModel());
 	        faultEventsList.add(faultEvent);
