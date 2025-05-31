@@ -191,7 +191,7 @@ const KendoBusinessDemand = ({ permissions }) => {
     const productId = props.dataItem.normParameterId
     const product = allProducts.find((p) => p.id === productId)
     const displayName = product?.displayName || ''
-    console.log(displayName)
+    // console.log(displayName)
     return <td>{displayName}</td>
   }
 
@@ -217,8 +217,8 @@ const KendoBusinessDemand = ({ permissions }) => {
           return
         }
         // console.log('modifiedCells', modifiedCells)
-        let newRows = modifiedCells.filter((row) => row.isGroupHeader !== true)
-        var data = Object.values(newRows)
+        var rawData = Object.values(modifiedCells)
+        const data = rawData.filter((row) => row.inEdit)
         // var data = Object.values(unsavedChangesRef.current.unsavedRows)
         if (data.length == 0) {
           setSnackbarOpen(true)
@@ -248,7 +248,7 @@ const KendoBusinessDemand = ({ permissions }) => {
         console.log('Error saving changes:', error)
       }
     }, 400)
-  }, [apiRef, rowModesModel, modifiedCells])
+  }, [modifiedCells])
 
   const saveBusinessDemandData = async (newRows) => {
     try {
@@ -289,6 +289,7 @@ const KendoBusinessDemand = ({ permissions }) => {
         verticalFKId: verticalId,
         normParameterId: row.normParameterId,
         id: row.idFromApi || null,
+        inEdit: row.inEdit || false,
       }))
 
       const response = await DataService.saveBusinessDemandData(
@@ -315,14 +316,6 @@ const KendoBusinessDemand = ({ permissions }) => {
     } finally {
       // fetchData()
     }
-  }
-
-  const onProcessRowUpdateError = React.useCallback((error) => {
-    console.log(error)
-  }, [])
-
-  const onRowModesModelChange = (newRowModesModel) => {
-    setRowModesModel(newRowModesModel)
   }
 
   const deleteRowData = async (paramsForDelete) => {
@@ -449,7 +442,6 @@ const KendoBusinessDemand = ({ permissions }) => {
         open1={open1}
         NormParameterIdCell={NormParameterIdCell}
         fetchData={fetchData}
-        onProcessRowUpdateError={onProcessRowUpdateError}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

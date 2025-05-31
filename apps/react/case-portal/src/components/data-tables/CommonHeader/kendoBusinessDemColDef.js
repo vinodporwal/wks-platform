@@ -33,63 +33,63 @@ const getEnhancedColDefs = ({
     lowerVertName === 'meg'
       ? vertical_meg_coldefs_bd
       : vertical_pe_coldefs_bd.map((col) => {
-    if (col.field === 'remark') {
-      return {
-        ...col,
-        cell: ({ dataItem, field, ...tdProps }) => {
-          const text = truncateRemarks(dataItem[field])
-          const editable = Boolean(dataItem.isEditable)
+          if (col.field === 'remark') {
+            return {
+              ...col,
+              cells: ({ dataItem, field, ...tdProps }) => {
+                const text = truncateRemarks(dataItem[field])
+                const editable = Boolean(dataItem.isEditable)
 
-          return (
-            <td
-              {...tdProps}
-              style={{
-                cursor: editable ? 'pointer' : 'not-allowed',
-                color: dataItem[field] ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-              onClick={() => {
-                console.log(editable)
-                editable && handleRemarkCellClick(dataItem)
-              }}
-            >
-              {text || (editable ? 'Click to add remark' : '')}
-            </td>
-          )
-        },
-      }
-    }
+                return (
+                  <td
+                    {...tdProps}
+                    style={{
+                      cursor: editable ? 'pointer' : 'not-allowed',
+                      color: dataItem[field] ? 'inherit' : 'gray',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                    onClick={() => {
+                      console.log(editable)
+                      editable && handleRemarkCellClick(dataItem)
+                    }}
+                  >
+                    {text || (editable ? 'Click to add remark' : '')}
+                  </td>
+                )
+              },
+            }
+          }
 
-    if (headerMap && headerMap[col.title]) {
-      return {
-        ...col,
-        cell: NumericInputOnly,
-        title: headerMap[col.title],
-        align: 'right',
-        valueFormatter: formatValueToThreeDecimals,
-      }
-    }
-    if (col.field === 'Particulars') {
-      return {
-        ...col,
-        filterable: false,
-        cell: (params) => (
-          <div
-            style={{
-              whiteSpace: 'normal',
-              wordBreak: 'break-word',
-              lineHeight: 1.4,
-            }}
-          >
-            <strong>{params.value}</strong>
-          </div>
-        ),
-      }
-    }
-    return col
-  })
+          if (headerMap && headerMap[col.title]) {
+            return {
+              ...col,
+              cell: NumericInputOnly,
+              title: headerMap[col.title],
+              align: 'right',
+              valueFormatter: formatValueToThreeDecimals,
+            }
+          }
+          if (col.field === 'Particulars') {
+            return {
+              ...col,
+              filterable: false,
+              cell: (params) => (
+                <div
+                  style={{
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  <strong>{params.value}</strong>
+                </div>
+              ),
+            }
+          }
+          return col
+        })
   return enhancedColDefs
 }
 

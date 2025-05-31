@@ -2,6 +2,11 @@ import React, { useState } from 'react'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { filterBy } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
+import '@progress/kendo-font-icons/dist/index.css'
+import { filterIcon } from '@progress/kendo-svg-icons'
+import { ColumnMenu } from 'components/data-tables/Reports/columnMenu'
+import { EditDescriptor } from '@progress/kendo-react-data-tools'
+
 // import PropTypes from 'prop-types'
 import '../../kendo-data-grid.css'
 import {
@@ -17,6 +22,11 @@ import {
   TextField,
 } from '../../../node_modules/@mui/material/index'
 import Notification from 'components/Utilities/Notification'
+// import DeleteCell from './Utilities-Kendo/DefaultColumn'
+import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
+import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
+import { DateTimePicker } from '@progress/kendo-react-dateinputs'
+import { truncateRemarks } from 'utils/remarksUtils'
 
 const KendoDataTables = ({
   // setUpdatedRows = () => {},
@@ -25,7 +35,7 @@ const KendoDataTables = ({
   setRows,
   columns,
   loading = false,
-  pageSizes = [10, 20, 50],
+  // pageSizes = [10, 20, 50],
   // onRowChange,
   // disableColor = false,
   permissions = {},
@@ -40,11 +50,12 @@ const KendoDataTables = ({
   currentRowId = null,
   // modifiedCells = [],
   NormParameterIdCell = () => {},
+
   setModifiedCells = () => {},
   remarkDialogOpen = false,
   handleDeleteSelected = () => {},
   saveChanges = () => {},
-  // deleteRowData = () => {},
+  deleteRowData = () => {},
   handleAddPlantSite = () => {},
   handleCalculate = () => {},
   fetchData = () => {},
@@ -57,11 +68,13 @@ const KendoDataTables = ({
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   // const [resizedColumns, setResizedColumns] = useState({})
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+  const [edit, setEdit] = React.useState({})
+
   // const [searchText, setSearchText] = useState('')
   // const isFilterActive = false
   const [selectedUnit, setSelectedUnit] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
-  // const [paramsForDelete, setParamsForDelete] = useState([])
+  const [paramsForDelete, setParamsForDelete] = useState([])
   // const closeDeleteDialogeBox = () => setOpenDeleteDialogeBox(false)
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
   // const localApiRef = useGridApiRef()
@@ -69,7 +82,11 @@ const KendoDataTables = ({
   // const handleSearchChange = (event) => {
   //   setSearchText(event.target.value)
   // }
-  // console.log(columns)
+  // // console.log(columns)
+  const handleEditChange = (e) => {
+    console.log(e)
+    setEdit(e.edit)
+  }
   const rowRender = (trElement, props) => {
     if (!props.dataItem.isEditable) {
       return React.cloneElement(trElement, {
@@ -104,13 +121,14 @@ const KendoDataTables = ({
   // };
   // cell update
   const itemChange = (e) => {
-    // console.log(rows)
-    const updated = rows.map((r) =>
+    // console.log(e)
+    let updated = rows.map((r) =>
       r.id === e.dataItem.id ? { ...r, [e.field]: e.value } : r,
     )
-    console.log(updated)
-    setModifiedCells(updated)
     setRows(updated)
+
+    setModifiedCells((updated = updated.filter((row) => row.inEdit == true)))
+    console.log(updated)
 
     // onRowChange(e.dataItem, e.field, e.value)
   }
@@ -128,23 +146,28 @@ const KendoDataTables = ({
   const handleRemarkSave = () => {
     setRows((prevRows) => {
       let updatedRow = null
-
+      let keyToUpdate = ''
       const updatedRows = prevRows.map((row) => {
+        // console.log(currentRowId, row.id)
         if (row.id === currentRowId) {
           const keysToUpdate = ['aopRemarks', 'remarks', 'remark'].filter(
             (key) => key in row,
           )
           //          console.log(keysToUpdate)
-          const keyToUpdate = keysToUpdate[0] || 'remark'
+          keyToUpdate = keysToUpdate[0] || 'remark'
           //          console.log([keyToUpdate])
-          updatedRow = { ...row, [keyToUpdate]: currentRemark }
+          updatedRow = { ...row, [keyToUpdate]: currentRemark, inEdit: true }
           return updatedRow
         }
         return row
       })
+      // console.log(updatedRow)
 
       if (updatedRow) {
-        unsavedChangesRef.current.unsavedRows[currentRowId] = updatedRow
+        setModifiedCells((prev) => ({
+          ...prev,
+          [updatedRow.id]: updatedRow,
+        }))
       }
 
       return updatedRows
@@ -182,13 +205,24 @@ const KendoDataTables = ({
     saveChanges()
     setOpenSaveDialogeBox(false)
   }
-  // const handleDeleteClick = async (id, params) => {
-  //   setParamsForDelete(params)
-  //   setOpenDeleteDialogeBox(true)
-  // }
+  const handleDeleteClick = async (params) => {
+    setParamsForDelete(params)
+    setOpenDeleteDialogeBox(true)
+  }
   const deleteTheRecord = async () => {
-    // deleteRowData(paramsForDelete)
+    deleteRowData(paramsForDelete)
     setOpenDeleteDialogeBox(false)
+  }
+  const ActionsCell = ({ dataItem }) => {
+    return (
+      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+        <SvgIcon
+          onClick={() => handleDeleteClick(dataItem)}
+          icon={trashIcon}
+          themeColor='dark'
+        />
+      </td>
+    )
   }
   const saveModalOpen = async () => {
     setIsButtonDisabled(true)
@@ -225,6 +259,75 @@ const KendoDataTables = ({
     }
   }
   const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
+  // const DateTimePickerCell = (props) => {
+  //   const { dataItem, field } = props
+  //   const value = dataItem[field] ? new Date(dataItem[field]) : null
+
+  //   return (
+  //     <td>
+  //       <DateTimePicker
+  //         value={value}
+  //         onChange={(e) => props.onChange({ ...props, value: e.value })}
+  //         format='dd/MM/yyyy hh:mm tt'
+  //       />
+  //     </td>
+  //   )
+  // }
+  const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
+    const value = dataItem[field] ? new Date(dataItem[field]) : null
+    return (
+      <td>
+        <DateTimePicker
+          value={value}
+          onChange={(e) =>
+            onChange({
+              dataItem,
+              field,
+              value: e.value,
+              syntheticEvent: e.syntheticEvent,
+            })
+          }
+          format='dd/MM/yyyy hh:mm tt'
+        />
+      </td>
+    )
+  }
+
+  const particulars = [
+    'normParameterId',
+    'normParametersFKId',
+    'NormParameterFKId',
+    'materialFkId',
+    'normParameterFKId',
+  ]
+  const RemarkCell = (props) => {
+    const { dataItem, field, onRemarkClick, ...tdProps } = props
+
+    // Compute: the truncated display text (or placeholder)
+    const rawValue = dataItem[field]
+    const displayText = truncateRemarks(rawValue)
+    const editable = Boolean(dataItem.isEditable)
+
+    return (
+      <td
+        {...tdProps}
+        style={{
+          cursor: editable ? 'pointer' : 'not-allowed',
+          color: rawValue ? 'inherit' : 'gray',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        onClick={() => {
+          if (editable) {
+            onRemarkClick(dataItem)
+          }
+        }}
+      >
+        {displayText || (editable ? 'Click to add remark' : '')}
+      </td>
+    )
+  }
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -341,49 +444,137 @@ const KendoDataTables = ({
           data={filterBy(rows, filter)}
           sortable
           dataItemKey='id'
-          pageable={{ pageSizes, buttonCount: 5 }}
           editField='inEdit'
-          editable='incell'
-          onRowClick={handleRowClick}
+          editable={{ mode: 'incell' }}
+          // onRowClick={(e) => {
+          //   const id = e.dataItem.id
+          //   setRows(rows.map((r) => (r.id === id ? { ...r, inEdit: true } : r)))
+          // }}
+          onEditChange={handleEditChange}
+          autoProcessData={true}
+          edit={edit}
+          scrollable='scrollable'
           filter={filter}
-          filterable={true}
+          // filterable={true}
           onFilterChange={(e) => setFilter(e.filter)}
           onItemChange={itemChange}
           rowRender={rowRender}
-          cellClick={(e) => {
-            console.log('Cell clicked:', e)
-            if (e.field === 'remark') {
-              handleRemarkCellClick(e.dataItem)
-            }
-          }}
-          // onCellClick={(e) => {
-          //   if (e.field === 'remark') handleRemarkCellClick(e.dataItem)
-          // }}
           resizable={true}
+          defaultSkip={0}
+          defaultTake={100}
+          columnMenuIcon={filterIcon}
+          contextMenu={true}
+          pageable={
+            rows?.length > 100
+              ? {
+                  buttonCount: 4,
+                  pageSizes: [10, 50, 100],
+                }
+              : false
+          }
+          onBlur={() => {
+            // whenever the Grid loses focus, clear every row’s inEdit flag
+            // setRows(rows.map((r) => ({ ...r, inEdit: false })))
+            setEdit({})
+          }}
+          // cellClick={(e) => {
+          //   console.log('Cell clicked:', e)
+          //   if (e.field === 'remark') {
+          //     handleRemarkCellClick(e.dataItem)
+          //   }
+          // }}
+          // onRowClick={handleRowClick}
         >
           {columns
             .filter((col) => !hiddenFields.includes(col.field))
-            .map((col) =>
-              col.field === 'normParameterId' ||
-              col.field === 'normParametersFKId' ? (
+            .map((col) => {
+              if (
+                col.field === 'maintStartDateTime' ||
+                col.field === 'maintEndDateTime'
+              ) {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    width={col.width}
+                    filter='date'
+                    format='{0:dd/MM/yyyy hh:mm tt}'
+                    cells={{
+                      // data: DateTimePickerCell,
+                      edit: {
+                        date: DateTimePickerEditor,
+                      },
+                    }}
+                    columnMenu={ColumnMenu}
+                    editor='date'
+                  />
+                )
+              }
+              if (col.field === 'remark' || col.field === 'remarks') {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    width={col.width}
+                    editor={true}
+                    cells={{
+                      data: (cellProps) => (
+                        <RemarkCell
+                          {...cellProps}
+                          onRemarkClick={handleRemarkCellClick}
+                        />
+                      ),
+                    }}
+                    columnMenu={ColumnMenu}
+                    // editor='date'
+                  />
+                )
+              }
+
+              if (particulars.includes(col.field)) {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    width={col.width}
+                    editable={false}
+                    filterable={true}
+                    cells={{
+                      data: NormParameterIdCell,
+                    }}
+                    columnMenu={ColumnMenu}
+                  />
+                )
+              }
+
+              return (
                 <GridColumn
                   key={col.field}
                   field={col.field}
                   title={col.title || col.headerName}
                   width={col.width}
-                  cells={{
-                    data: NormParameterIdCell,
-                  }}
+                  columnMenu={ColumnMenu}
                 />
-              ) : (
-                <GridColumn
-                  key={col.field}
-                  field={col.field}
-                  title={col.title || col.headerName}
-                  width={col.width}
-                />
-              ),
-            )}
+              )
+            })}
+
+          {permissions?.deleteButton && (
+            <GridColumn
+              key='actions'
+              field='actions'
+              title='Action'
+              width={80}
+              className='k-text-center'
+              filterable={false}
+              editable={false}
+              cells={{
+                data: ActionsCell,
+              }}
+            />
+          )}
         </Grid>
       </div>
       {(permissions?.allActionOfBottomBtns ?? true) && (
@@ -425,7 +616,7 @@ const KendoDataTables = ({
               disabled={isCreatingCase || !showCreateCasebutton}
               className='btn-save'
             >
-              {isCreatingCase ? 'Submitting�' : 'Submit'}
+              {isCreatingCase ? 'Submitting…' : 'Submit'}
             </Button>
           )} */}
 

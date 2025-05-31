@@ -20,6 +20,7 @@
     "@progress/kendo-date-math": "^1.5.14",
     "@progress/kendo-dateinputs-common": "^0.4.5",
     "@progress/kendo-drawing": "^1.21.2",
+    "@progress/kendo-font-icons": "^4.3.0",
     "@progress/kendo-inputs-common": "^3.1.1",
     "@progress/kendo-intl": "^3.1.2",
     "@progress/kendo-licensing": "^1.6.0",
@@ -80,7 +81,7 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-"start": "echo 'Starting development server...' && webpack serve --mode=development --port 3001",
+    "start": "echo 'Starting development server...' && webpack serve --mode=development --port 3001",
     "build": "echo 'Running ESLint...' && eslint . --ignore-pattern '.min.js' && echo 'Checking code formatting...' && prettier --check \"/.{js,jsx,json,css,scss,md}\" && echo 'Building for production...' && webpack --mode=production",
     "lint:fix": "echo 'Fixing linting issues...' && eslint --fix .",
     "lint:check": "echo 'Checking for linting issues...' && eslint .",
