@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
-import { Grid, GridColumn as Column } from '@progress/kendo-react-grid'
+import React, { useState, useEffect, useMemo } from 'react'
+import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { filterBy } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
-import PropTypes from 'prop-types'
+// import PropTypes from 'prop-types'
 import '../../kendo-data-grid.css'
 import {
   Box,
@@ -17,7 +17,7 @@ import {
   TextField,
 } from '../../../node_modules/@mui/material/index'
 import Notification from 'components/Utilities/Notification'
-import { GridColumn } from '../../../node_modules/@progress/kendo-react-grid/index'
+import { process } from '@progress/kendo-data-query';
 
 const KendoDataTables = ({
   // setUpdatedRows = () => {},
@@ -28,7 +28,7 @@ const KendoDataTables = ({
   loading = false,
   pageSizes = [10, 20, 50],
   // onRowChange,
-  disableColor = false,
+  // disableColor = false,
   permissions = {},
   setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info' },
@@ -36,7 +36,7 @@ const KendoDataTables = ({
   unsavedChangesRef = { current: { unsavedRows: {}, rowsBeforeChange: {} } },
   setRemarkDialogOpen = () => {},
   currentRemark = '',
-  editedRows = [],
+  // editedRows = [],
   setCurrentRemark = () => {},
   currentRowId = null,
   // modifiedCells = [],
@@ -52,6 +52,7 @@ const KendoDataTables = ({
   handleUnitChange = () => {},
   handleRemarkCellClick = () => {},
   selectedUsers = [],
+  groupBy = null,
   // allRedCell = [],
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
@@ -155,30 +156,30 @@ const KendoDataTables = ({
   }
   // console.log(rows)
   // console.log(columns)
-  // const handleAddRow = () => {
-  //   if (isButtonDisabled) return
-  //   setIsButtonDisabled(true)
-  //   const newRowId = rows.length
-  //     ? Math.max(...rows.map((row) => row.id)) + 1
-  //     : 1
-  //   const newRow = {
-  //     id: newRowId,
-  //     isNew: true,
-  //     ...Object.fromEntries(initialColumns.map((col) => [col.field, ''])),
-  //   }
+  const handleAddRow = () => {
+    if (isButtonDisabled) return
+    setIsButtonDisabled(true)
+    const newRowId = rows.length
+      ? Math.max(...rows.map((row) => row.id)) + 1
+      : 1
+    const newRow = {
+      id: newRowId,
+      isNew: true,
+      ...Object.fromEntries(columns.map((col) => [col.field, ''])),
+    }
 
-  //   setRows((prevRows) => [newRow, ...prevRows])
-  //   onAddRow?.(newRow)
-  //   // setProduct('')
-  //   // setRowModesModel((oldModel) => ({
-  //   //   ...oldModel,
-  //   //   [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
-  //   // }))
-  //   focusFirstField()
-  //   setTimeout(() => {
-  //     setIsButtonDisabled(false)
-  //   }, 500)
-  // }
+    setRows((prevRows) => [newRow, ...prevRows])
+    // onAddRow?.(newRow)
+    // setProduct('')
+    // setRowModesModel((oldModel) => ({
+    //   ...oldModel,
+    //   [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
+    // }))
+    // focusFirstField()
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
   const saveConfirmation = async () => {
     saveChanges()
     setOpenSaveDialogeBox(false)
@@ -226,6 +227,48 @@ const KendoDataTables = ({
     }
   }
   const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
+  const [group, setGroup] = useState([]);
+
+  useEffect(() => {
+    if (rows && rows.length > 0 && groupBy) {
+      setGroup([{ field: groupBy }]);
+      
+      const initialExpandedState = {};
+      const uniqueValues = [...new Set(rows.map(row => row[groupBy]))];
+      uniqueValues.forEach(value => {
+        initialExpandedState[`${groupBy}_${value}`] = true;
+      });
+      setExpandedState(initialExpandedState);
+    }
+  }, [rows, groupBy]);
+  const [expandedState, setExpandedState] = useState({});
+
+  const processedData = useMemo(() => {
+    if (!rows || rows.length === 0) return [];
+
+    if (group.length > 0) {
+      const result = process(rows, { group });
+    
+      // Apply expanded state to the processed data
+      const applyExpandedState = (items) => {
+        return items.map(item => {
+          console.log("Inspecting item:", item);
+          if (item.items) {
+            // This is a group item
+            const key = item.field + '_' + item.value;
+            console.log("Using key:", key);
+            item.expanded = expandedState[key] !== false; // Default to expanded
+            item.items = applyExpandedState(item.items);
+          }
+          return item;
+        });
+      };
+    
+      return applyExpandedState(result.data);
+    }
+  
+  return rows;
+ }, [rows, group, expandedState]);
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -339,18 +382,36 @@ const KendoDataTables = ({
       )}
       <div className='kendo-data-grid'>
         <Grid
-          data={filterBy(rows, filter)}
+          data={filterBy(processedData, filter)}
           sortable
           dataItemKey='id'
           pageable={{ pageSizes, buttonCount: 5 }}
           editField='inEdit'
           editable='incell'
-          // onRowClick={handleRowClick}
+          onRowClick={handleRowClick}
           filter={filter}
           filterable={true}
+          //groupable = {true}
           onFilterChange={(e) => setFilter(e.filter)}
           onItemChange={itemChange}
           rowRender={rowRender}
+          group={group}
+          expandField="expanded"
+          onGroupChange={(e) => setGroup(e.group)}
+          onExpandChange={(e) => {
+            const key = item.field || item.value; // Use appropriate unique identifier
+            setExpandedState({ 
+              ...expandedState, 
+              [key]: item.expanded 
+            });
+          }}
+          groupHeaderRender={(e) => (
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ marginRight: 6 }}>{item.expanded ? '▼' : '▶'}</span>
+              <strong>{e.value}</strong>
+              <span style={{ marginLeft: 6 }}>({item.aggregates?.count || 0})</span>
+            </div>
+          )}
           cellClick={(e) => {
             console.log('Cell clicked:', e)
             if (e.field === 'remark') {
@@ -365,9 +426,10 @@ const KendoDataTables = ({
           {columns
             .filter((col) => !hiddenFields.includes(col.field))
             .map((col) =>
+              col.field === 'NormParameterFKId' ||
+              col.field === 'materialFkId' ||
               col.field === 'normParameterId' ||
-              col.field === 'NormParametersId' ||
-              col.field === 'normParametersFKId' ? (
+              col.field === 'normParametersFKId'  ?  (
                 <GridColumn
                   key={col.field}
                   field={col.field}
@@ -400,7 +462,7 @@ const KendoDataTables = ({
             <Button
               variant='contained'
               className='btn-save'
-              // onClick={handleAddRow}
+              onClick={handleAddRow}
               disabled={isButtonDisabled}
             >
               Add Item

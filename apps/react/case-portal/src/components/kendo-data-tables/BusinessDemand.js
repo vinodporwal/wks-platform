@@ -91,46 +91,25 @@ const KendoBusinessDemand = ({ permissions }) => {
 
       // console.log(sortedData)
 
-      const groupedRows = []
-      const groups = new Map()
-      let groupId = 0
+    const formattedData = data.map((item, index) => ({
+      ...item,
+      idFromApi: item.id,
+      id: index,
+      originalRemark: item.remark,
+      inEdit: false,
+      Particulars: item.normParameterTypeDisplayName,
+      expanded: false,
+    }));
 
-      // console.log('lowerVertName', lowerVertName)
-
-      data.forEach((item) => {
-        const formattedItem = {
-          ...item,
-          idFromApi: item.id,
-          id: groupId++,
-          originalRemark: item.remark,
-          inEdit: false,
-        }
-
-        // if (lowerVertName !== 'pe') {
-        const groupKey = item.normParameterTypeDisplayName
-
-        if (!groups.has(groupKey)) {
-          groups.set(groupKey, [])
-          groupedRows.push({
-            id: groupId++,
-            Particulars: groupKey,
-            isGroupHeader: true,
-          })
-        }
-
-        groups.get(groupKey).push(formattedItem)
-        // }
-
-        groupedRows.push(formattedItem)
-      })
-
-      setRows(groupedRows)
-      setLoading(false) // Hide loading
-    } catch (error) {
-      console.error('Error fetching Business Demand data:', error)
-      setLoading(false) // Hide loading
-    }
+    setRows(formattedData);
+    console.log('formattedData:' ,formattedData);
+    setLoading(false)
+  } catch (error) {
+    console.error('Error fetching Business Demand data:', error)
+    setLoading(false)
   }
+}
+
 
   // console.log(verticalChange)
   useEffect(() => {
@@ -480,6 +459,7 @@ const KendoBusinessDemand = ({ permissions }) => {
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
+        groupBy = "Particulars"
       />
     </div>
   )
