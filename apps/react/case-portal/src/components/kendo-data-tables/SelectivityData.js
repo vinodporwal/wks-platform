@@ -11,7 +11,7 @@ import { validateFields } from 'utils/validationUtils'
 // import getEnhancedAOPColDefs from './CommonHeader/ConfigHeader'
 import { Box } from '../../../node_modules/@mui/material/index'
 import KendoDataTables from './index'
-import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/ConfigHeader'
+import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 
 const SelectivityData = (props) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -42,7 +42,7 @@ const SelectivityData = (props) => {
 
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
 
-  const [rowModesModel, setRowModesModel] = useState({})
+  // const [rowModesModel, setRowModesModel] = useState({})
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -81,16 +81,16 @@ const SelectivityData = (props) => {
 
         // console.log(props?.configType)
         if (props?.configType !== 'grades') {
-          // const requiredFields = ['remarks']
-          // const validationMessage = validateFields(data, requiredFields)
-          // if (validationMessage) {
-          //   setSnackbarOpen(true)
-          //   setSnackbarData({
-          //     message: validationMessage,
-          //     severity: 'error',
-          //   })
-          //   return
-          // }
+          const requiredFields = ['remarks']
+          const validationMessage = validateFields(data, requiredFields)
+          if (validationMessage) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: validationMessage,
+              severity: 'error',
+            })
+            return
+          }
           saveCatalystData(data)
         } else {
           handleUpdate(data)
@@ -99,7 +99,7 @@ const SelectivityData = (props) => {
         // Handle error if necessary
       }
     }, 400)
-  }, [apiRef, rowModesModel])
+  }, [modifiedCells])
 
   const saveCatalystData = async (newRow) => {
     setLoading(true)
@@ -268,7 +268,7 @@ const SelectivityData = (props) => {
     props?.configType,
   ])
 
-  const [columnConfig, setColumnConfig] = useState([])
+  // const [columnConfig, setColumnConfig] = useState([])
 
   // setColumnConfig()
 
@@ -297,7 +297,7 @@ const SelectivityData = (props) => {
     headerMap,
     handleRemarkCellClick,
     configType: props?.configType,
-    columnConfig,
+    // columnConfig,
   })
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -329,7 +329,13 @@ const SelectivityData = (props) => {
     },
     isOldYear,
   )
-
+  const NormParameterIdCell = (props) => {
+    const productId = props.dataItem.normParameterFKId
+    const product = allProducts.find((p) => p.id === productId)
+    const displayName = product?.displayName || ''
+    // console.log(displayName)
+    return <td>{displayName}</td>
+  }
   return (
     <Box>
       <Backdrop
@@ -339,6 +345,8 @@ const SelectivityData = (props) => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <KendoDataTables
+        handleRemarkCellClick={handleRemarkCellClick}
+        NormParameterIdCell={NormParameterIdCell}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         columns={productionColumns}

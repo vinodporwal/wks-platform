@@ -11,13 +11,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.ShutdownNormsValueDTO;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.MCUNormsValue;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.ShutdownNormsValue;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.ShutdownNormsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -41,6 +45,15 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	SiteRepository siteRepository;
 	@Autowired
 	VerticalsRepository verticalRepository;
+	
+	@Autowired
+	private ScreenMappingRepository screenMappingRepository;
+	
+	@Autowired
+	private AopCalculationRepository aopCalculationRepository;
+	
+	
+
 
 	@Override
 	public List<ShutdownNormsValueDTO> getShutdownNormsData(String year, String plantId) {
@@ -66,18 +79,18 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				shutdownNormsValueDTO.setPlantFkId(row[2] != null ? row[2].toString() : null);
 				shutdownNormsValueDTO.setVerticalFkId(row[3] != null ? row[3].toString() : null);
 				shutdownNormsValueDTO.setMaterialFkId(row[4] != null ? row[4].toString() : null);
-				shutdownNormsValueDTO.setApril(row[5] != null ? Float.parseFloat(row[5].toString()) : null);
-				shutdownNormsValueDTO.setMay(row[6] != null ? Float.parseFloat(row[6].toString()) : null);
-				shutdownNormsValueDTO.setJune(row[7] != null ? Float.parseFloat(row[7].toString()) : null);
-				shutdownNormsValueDTO.setJuly(row[8] != null ? Float.parseFloat(row[8].toString()) : null);
-				shutdownNormsValueDTO.setAugust(row[9] != null ? Float.parseFloat(row[9].toString()) : null);
-				shutdownNormsValueDTO.setSeptember(row[10] != null ? Float.parseFloat(row[10].toString()) : null);
-				shutdownNormsValueDTO.setOctober(row[11] != null ? Float.parseFloat(row[11].toString()) : null);
-				shutdownNormsValueDTO.setNovember(row[12] != null ? Float.parseFloat(row[12].toString()) : null);
-				shutdownNormsValueDTO.setDecember(row[13] != null ? Float.parseFloat(row[13].toString()) : null);
-				shutdownNormsValueDTO.setJanuary(row[14] != null ? Float.parseFloat(row[14].toString()) : null);
-				shutdownNormsValueDTO.setFebruary(row[15] != null ? Float.parseFloat(row[15].toString()) : null);
-				shutdownNormsValueDTO.setMarch(row[16] != null ? Float.parseFloat(row[16].toString()) : null);
+				shutdownNormsValueDTO.setApril(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+				shutdownNormsValueDTO.setMay(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+				shutdownNormsValueDTO.setJune(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+				shutdownNormsValueDTO.setJuly(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+				shutdownNormsValueDTO.setAugust(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+				shutdownNormsValueDTO.setSeptember(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+				shutdownNormsValueDTO.setOctober(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+				shutdownNormsValueDTO.setNovember(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+				shutdownNormsValueDTO.setDecember(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
+				shutdownNormsValueDTO.setJanuary(row[14] != null ? Double.parseDouble(row[14].toString()) : null);
+				shutdownNormsValueDTO.setFebruary(row[15] != null ? Double.parseDouble(row[15].toString()) : null);
+				shutdownNormsValueDTO.setMarch(row[16] != null ? Double.parseDouble(row[16].toString()) : null);
 
 				shutdownNormsValueDTO.setFinancialYear(row[17] != null ? row[17].toString() : null);
 				shutdownNormsValueDTO.setRemarks(row[18] != null ? row[18].toString() : " ");
@@ -104,14 +117,17 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 	@Override
 	public List<ShutdownNormsValueDTO> saveShutdownNormsData(List<ShutdownNormsValueDTO> shutdownNormsValueDTOList) {
+		String year=null;
+		UUID plantId=null;
 		try {
 			for (ShutdownNormsValueDTO shutdownNormsValueDTO : shutdownNormsValueDTOList) {
+				year=shutdownNormsValueDTO.getFinancialYear();
+				plantId=UUID.fromString(shutdownNormsValueDTO.getPlantFkId());
 				ShutdownNormsValue shutdownNormsValue = new ShutdownNormsValue();
 				if (shutdownNormsValueDTO.getId() != null && !shutdownNormsValueDTO.getId().isEmpty()) {
 					shutdownNormsValue.setId(UUID.fromString(shutdownNormsValueDTO.getId()));
 					shutdownNormsValue.setModifiedOn(new Date());
 				} else {
-					UUID plantId = null;
 					UUID siteId = null;
 					UUID verticalId = null;
 					UUID materialId = null;
@@ -135,18 +151,18 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 					shutdownNormsValue.setCreatedOn(new Date());
 				}
-				shutdownNormsValue.setApril(Optional.ofNullable(shutdownNormsValueDTO.getApril()).orElse(0.0f));
-				shutdownNormsValue.setMay(Optional.ofNullable(shutdownNormsValueDTO.getMay()).orElse(0.0f));
-				shutdownNormsValue.setJune(Optional.ofNullable(shutdownNormsValueDTO.getJune()).orElse(0.0f));
-				shutdownNormsValue.setJuly(Optional.ofNullable(shutdownNormsValueDTO.getJuly()).orElse(0.0f));
-				shutdownNormsValue.setAugust(Optional.ofNullable(shutdownNormsValueDTO.getAugust()).orElse(0.0f));
-				shutdownNormsValue.setSeptember(Optional.ofNullable(shutdownNormsValueDTO.getSeptember()).orElse(0.0f));
-				shutdownNormsValue.setOctober(Optional.ofNullable(shutdownNormsValueDTO.getOctober()).orElse(0.0f));
-				shutdownNormsValue.setNovember(Optional.ofNullable(shutdownNormsValueDTO.getNovember()).orElse(0.0f));
-				shutdownNormsValue.setDecember(Optional.ofNullable(shutdownNormsValueDTO.getDecember()).orElse(0.0f));
-				shutdownNormsValue.setJanuary(Optional.ofNullable(shutdownNormsValueDTO.getJanuary()).orElse(0.0f));
-				shutdownNormsValue.setFebruary(Optional.ofNullable(shutdownNormsValueDTO.getFebruary()).orElse(0.0f));
-				shutdownNormsValue.setMarch(Optional.ofNullable(shutdownNormsValueDTO.getMarch()).orElse(0.0f));
+				shutdownNormsValue.setApril(Optional.ofNullable(shutdownNormsValueDTO.getApril()).orElse(0.0));
+				shutdownNormsValue.setMay(Optional.ofNullable(shutdownNormsValueDTO.getMay()).orElse(0.0));
+				shutdownNormsValue.setJune(Optional.ofNullable(shutdownNormsValueDTO.getJune()).orElse(0.0));
+				shutdownNormsValue.setJuly(Optional.ofNullable(shutdownNormsValueDTO.getJuly()).orElse(0.0));
+				shutdownNormsValue.setAugust(Optional.ofNullable(shutdownNormsValueDTO.getAugust()).orElse(0.0));
+				shutdownNormsValue.setSeptember(Optional.ofNullable(shutdownNormsValueDTO.getSeptember()).orElse(0.0));
+				shutdownNormsValue.setOctober(Optional.ofNullable(shutdownNormsValueDTO.getOctober()).orElse(0.0));
+				shutdownNormsValue.setNovember(Optional.ofNullable(shutdownNormsValueDTO.getNovember()).orElse(0.0));
+				shutdownNormsValue.setDecember(Optional.ofNullable(shutdownNormsValueDTO.getDecember()).orElse(0.0));
+				shutdownNormsValue.setJanuary(Optional.ofNullable(shutdownNormsValueDTO.getJanuary()).orElse(0.0));
+				shutdownNormsValue.setFebruary(Optional.ofNullable(shutdownNormsValueDTO.getFebruary()).orElse(0.0));
+				shutdownNormsValue.setMarch(Optional.ofNullable(shutdownNormsValueDTO.getMarch()).orElse(0.0));
 				if (shutdownNormsValueDTO.getSiteFkId() != null) {
 					shutdownNormsValue.setSiteFkId(UUID.fromString(shutdownNormsValueDTO.getSiteFkId()));
 				}
@@ -171,6 +187,17 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 				System.out.println("Data Saved Succussfully");
 				shutdownNormsRepository.save(shutdownNormsValue);
+			}
+			
+			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("shutdown-norms");
+			for(ScreenMapping screenMapping:screenMappingList) {
+				AopCalculation aopCalculation=new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
 			}
 			// TODO Auto-generated method stub
 			return shutdownNormsValueDTOList;
@@ -200,18 +227,18 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				shutdownNormsValueDTO.setAOPStatus(row[5] != null ? row[5].toString() : null);
 				shutdownNormsValueDTO.setRemarks(row[6] != null ? row[6].toString() : "");
 				shutdownNormsValueDTO.setMaterialFkId(row[7] != null ? row[7].toString() : null);
-				shutdownNormsValueDTO.setJanuary(row[8] != null ? Float.parseFloat(row[8].toString()) : null);
-				shutdownNormsValueDTO.setFebruary(row[9] != null ? Float.parseFloat(row[9].toString()) : null);
-				shutdownNormsValueDTO.setMarch(row[10] != null ? Float.parseFloat(row[10].toString()) : null);
-				shutdownNormsValueDTO.setApril(row[11] != null ? Float.parseFloat(row[11].toString()) : null);
-				shutdownNormsValueDTO.setMay(row[12] != null ? Float.parseFloat(row[12].toString()) : null);
-				shutdownNormsValueDTO.setJune(row[13] != null ? Float.parseFloat(row[13].toString()) : null);
-				shutdownNormsValueDTO.setJuly(row[14] != null ? Float.parseFloat(row[14].toString()) : null);
-				shutdownNormsValueDTO.setAugust(row[15] != null ? Float.parseFloat(row[15].toString()) : null);
-				shutdownNormsValueDTO.setSeptember(row[16] != null ? Float.parseFloat(row[16].toString()) : null);
-				shutdownNormsValueDTO.setOctober(row[17] != null ? Float.parseFloat(row[17].toString()) : null);
-				shutdownNormsValueDTO.setNovember(row[18] != null ? Float.parseFloat(row[18].toString()) : null);
-				shutdownNormsValueDTO.setDecember(row[19] != null ? Float.parseFloat(row[19].toString()) : null);
+				shutdownNormsValueDTO.setJanuary(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+				shutdownNormsValueDTO.setFebruary(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+				shutdownNormsValueDTO.setMarch(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+				shutdownNormsValueDTO.setApril(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+				shutdownNormsValueDTO.setMay(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+				shutdownNormsValueDTO.setJune(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
+				shutdownNormsValueDTO.setJuly(row[14] != null ? Double.parseDouble(row[14].toString()) : null);
+				shutdownNormsValueDTO.setAugust(row[15] != null ? Double.parseDouble(row[15].toString()) : null);
+				shutdownNormsValueDTO.setSeptember(row[16] != null ? Double.parseDouble(row[16].toString()) : null);
+				shutdownNormsValueDTO.setOctober(row[17] != null ? Double.parseDouble(row[17].toString()) : null);
+				shutdownNormsValueDTO.setNovember(row[18] != null ? Double.parseDouble(row[18].toString()) : null);
+				shutdownNormsValueDTO.setDecember(row[19] != null ? Double.parseDouble(row[19].toString()) : null);
 				shutdownNormsValueDTO.setFinancialYear(row[20] != null ? row[20].toString() : null);
 				shutdownNormsValueDTO.setPlantFkId(row[21] != null ? row[21].toString() : null);
 				shutdownNormsValueDTOList.add(shutdownNormsValueDTO);

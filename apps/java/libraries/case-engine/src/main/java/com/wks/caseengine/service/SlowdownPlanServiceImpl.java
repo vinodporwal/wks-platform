@@ -11,11 +11,15 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.ShutDownPlanDTO;
 import com.wks.caseengine.dto.SlowDownPlanDTO;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantMaintenanceRepository;
 import com.wks.caseengine.repository.PlantMaintenanceTransactionRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SlowdownPlanRepository;
 
 @Service
@@ -32,7 +36,14 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 	@Autowired
 	private PlantMaintenanceTransactionRepository plantMaintenanceTransactionRepository;
+	
+	@Autowired
+	private ScreenMappingRepository screenMappingRepository;
+	
+	@Autowired
+	private AopCalculationRepository aopCalculationRepository;
 
+	
 	@Override
 	public List<ShutDownPlanDTO> findSlowdownDetailsByPlantIdAndType(UUID plantId, String maintenanceTypeName,
 			String year) {
@@ -85,6 +96,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 	@Override
 	public List<ShutDownPlanDTO> saveShutdownData(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
+		String year=null;
 		try {
 			UUID plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Slowdown");
 			if (plantMaintenanceId == null) {
@@ -98,6 +110,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Slowdown");
 			}
 			for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+				year=shutDownPlanDTO.getAudityear();
 
 				if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
 					PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
@@ -185,6 +198,16 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					slowdownPlanRepository.save(plantMaintenanceTransaction);
 
 				}
+			}
+			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("slowdown-plan");
+			for(ScreenMapping screenMapping:screenMappingList) {
+				AopCalculation aopCalculation=new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(plantId);
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
 			}
 			return shutDownPlanDTOList;
 		} catch (Exception ex) {

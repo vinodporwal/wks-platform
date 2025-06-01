@@ -17,6 +17,7 @@ import TimeInputCell from 'utils/TimeInputCell'
 import { renderTwoLineEllipsis } from 'components/Utilities/twoLineEllipsisRenderer'
 import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/gridEditRowModel'
 import KendoDataTables from './index'
+import { DateTimePicker } from '@progress/kendo-react-dateinputs'
 
 const ShutDown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -55,13 +56,13 @@ const ShutDown = ({ permissions }) => {
 
   const keycloak = useSession()
   const handleRemarkCellClick = (row) => {
-    const rowsInEditMode = Object.keys(rowModesModel).filter(
-      (id) => rowModesModel[id]?.mode === 'edit',
-    )
+    // const rowsInEditMode = Object.keys(rowModesModel).filter(
+    //   (id) => rowModesModel[id]?.mode === 'edit',
+    // )
 
-    rowsInEditMode.forEach((id) => {
-      apiRef.current.stopRowEditMode({ id })
-    })
+    // rowsInEditMode.forEach((id) => {
+    //   apiRef.current.stopRowEditMode({ id })
+    // })
 
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -91,21 +92,21 @@ const ShutDown = ({ permissions }) => {
           return
         }
 
-        // const requiredFields = [
-        //   'maintStartDateTime',
-        //   'maintEndDateTime',
-        //   'discription',
-        //   'remark',
-        // ]
-        // const validationMessage = validateFields(data, requiredFields)
-        // if (validationMessage) {
-        //   setSnackbarOpen(true)
-        //   setSnackbarData({
-        //     message: validationMessage,
-        //     severity: 'error',
-        //   })
-        //   return
-        // }
+        const requiredFields = [
+          'maintStartDateTime',
+          'maintEndDateTime',
+          'discription',
+          'remark',
+        ]
+        const validationMessage = validateFields(data, requiredFields)
+        if (validationMessage) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: validationMessage,
+            severity: 'error',
+          })
+          return
+        }
 
         saveShutdownData(data)
       } catch (error) {
@@ -215,6 +216,7 @@ const ShutDown = ({ permissions }) => {
         idFromApi: item?.id,
         id: index,
         originalRemark: item.remark,
+        inEdit: false,
       }))
       setRows(formattedData)
       setLoading(false)
@@ -252,7 +254,7 @@ const ShutDown = ({ permissions }) => {
       const start = new Date(row.maintStartDateTime)
       const end = new Date(row.maintEndDateTime)
 
-      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+      if (!isNaN(start?.getTime()) && !isNaN(end?.getTime())) {
         const durationInMs = end - start
         const durationInMinutes = durationInMs / (1000 * 60)
         const hours = Math.floor(durationInMinutes / 60)
@@ -284,105 +286,52 @@ const ShutDown = ({ permissions }) => {
     // }
   }
 
+  // 5) Column definitions for KendoReact Grid
   const colDefs = [
     {
       field: 'discription',
       title: 'Shutdown Desc',
-      //width: 125,
+      width: 250,
       editable: true,
-      flex: 3,
-      renderCell: renderTwoLineEllipsis,
+      // cell: TwoLineEllipsisCell,
     },
     {
       field: 'maintenanceId',
-      title: 'maintenanceId',
+      title: 'Maintenance ID',
       editable: false,
-      hide: true,
+      hidden: true,
     },
-
     {
       field: 'maintStartDateTime',
-      title: 'SD- From',
-      type: 'dateTime',
-      //width: 200,
+      title: 'SD - From',
       editable: true,
-      // renderEditCell: (params) => <StartDateTimeEditCell {...params} />,
-      renderEditCell: (params) => (
-        <StartDateTimeEditCell {...params} apiRef={apiRef} />
-      ),
-
-      valueFormatter: (params) => {
-        const value = params
-        return value && dayjs(value).isValid()
-          ? dayjs(value).format('DD/MM/YYYY, h:mm:ss A')
-          : ''
-      },
     },
-
     {
       field: 'maintEndDateTime',
-      title: 'SD- To',
-      type: 'dateTime',
-      //width: 200,
+      title: 'SD - To',
       editable: true,
-      // renderEditCell: (params) => <EndDateTimeEditCell {...params} />,
-      // renderEditCell: (params) => <StartDateTimeEditCell {...params} apiRef={apiRef} />,
-      renderEditCell: (params) => (
-        <EndDateTimeEditCell {...params} apiRef={apiRef} />
-      ),
-      valueFormatter: (params) => {
-        const value = params
-        return value && dayjs(value).isValid()
-          ? dayjs(value).format('DD/MM/YYYY, h:mm:ss A')
-          : ''
-      },
     },
     {
       field: 'durationInHrs',
       title: 'Duration (hrs)',
-      editable: true,
-      //width: 100,
-      renderEditCell: TimeInputCell,
-      align: 'right',
-      headerAlign: 'left',
-      // valueGetter: (params) => params?.durationInHrs || 0,
-      valueGetter: findDuration,
+      editable: false,
+      // cell: DurationCell,
     },
     {
       field: 'remark',
       title: 'Remark',
-      //width: 250,
-      editable: false,
-      renderCell: (params) => {
-        const displayText = truncateRemarks(params.value)
-        const isEditable = !params.row.Particulars
-
-        return (
-          <Tooltip title={params.value || ''} arrow>
-            <div
-              style={{
-                cursor: 'pointer',
-                color: params.value ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                width: ' 100%',
-              }}
-              onClick={() => handleRemarkCellClick(params.row)}
-            >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
-            </div>
-          </Tooltip>
-        )
-      },
+      editable: true,
     },
   ]
 
   const deleteRowData = async (paramsForDelete) => {
+    console.log(paramsForDelete)
+    // console.log(idFromApi)
     try {
-      const { idFromApi, id } = paramsForDelete.row
+      const { idFromApi, id } = paramsForDelete
       const deleteId = id
-
+      console.log(paramsForDelete)
+      console.log(idFromApi)
       if (!idFromApi) {
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
       }
@@ -460,7 +409,7 @@ const ShutDown = ({ permissions }) => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        // handleDeleteClick={handleDeleteClick}
+        handleRemarkCellClick={handleRemarkCellClick}
         fetchData={fetchData}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}

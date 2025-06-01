@@ -8,7 +8,7 @@ import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import NumericInputOnly from 'utils/NumericInputOnly'
 //import DataGridTable from '../ASDataGrid'
-import KendoDataTables from './kendo-inprogress'
+import KendoDataTables from './index'
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -57,6 +57,8 @@ const NormalOpNormsScreen = () => {
   // const [bdData, setBDData] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
+  const [calculationObject, setCalculationObject] = useState([])
+
   // const { sitePlantChange } = menu
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
@@ -99,14 +101,28 @@ const NormalOpNormsScreen = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      var data = []
-      data = await DataService.getNormalOperationNormsData(keycloak)
+      var response = []
+      response = await DataService.getNormalOperationNormsData(keycloak)
+
+      if (response?.code != 200) {
+        setRows([])
+        setLoading(false)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Error fetching data. Please try again.',
+          severity: 'error',
+        })
+
+        return
+      }
+
+      setCalculationObject(response?.data?.aopCalculation)
 
       const groupedRows = []
       const groups = new Map()
       let groupId = 0
 
-      data.forEach((item) => {
+      response?.data?.mcuNormsValueDTOList.forEach((item) => {
         const groupKey = item.normParameterTypeDisplayName
 
         if (!groups.has(groupKey)) {
@@ -240,7 +256,7 @@ const NormalOpNormsScreen = () => {
     {
       field: 'materialFkId',
       // headerName: 'Particulars',
-      title : lowerVertName === 'meg' ? 'Particulars' : 'Particulars',
+      title: 'Particulars',
       width: 120,
       valueGetter: (params) => params || '',
       valueFormatter: (params) => {
@@ -963,7 +979,11 @@ const NormalOpNormsScreen = () => {
       showUnit: false,
       saveWithRemark: true,
       saveBtn: true,
-      showCalculate: lowerVertName == 'meg' ? true : false,
+      showCalculate:
+        lowerVertName === 'meg' &&
+        Object.keys(calculationObject || {}).length > 0
+          ? true
+          : false,
     },
     isOldYear,
   )
@@ -997,7 +1017,20 @@ const NormalOpNormsScreen = () => {
     },
     isOldYear,
   )
-
+  const NormParameterIdCell = (props) => {
+    const productId = props.dataItem.materialFkId
+    const product = allProducts.find((p) => p.id === productId)
+    const displayName = product?.displayName || ''
+    // console.log(displayName)
+    return <td>{displayName}</td>
+  }
+  const NormParameterIdCellForImmidiate = (props) => {
+    const productId = props.dataItem.NormParameterFKId
+    const product = allProducts.find((p) => p.id === productId)
+    const displayName = product?.displayName || ''
+    console.log(displayName)
+    return <td>{displayName}</td>
+  }
   return (
     <div>
       <Backdrop
@@ -1008,6 +1041,7 @@ const NormalOpNormsScreen = () => {
       </Backdrop>
 
       <KendoDataTables
+        NormParameterIdCell={NormParameterIdCell}
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         title='Normal Operations Norms'
@@ -1058,6 +1092,9 @@ const NormalOpNormsScreen = () => {
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
                 <KendoDataTables
+                  NormParameterIdCellForImmidiate={
+                    NormParameterIdCellForImmidiate
+                  }
                   title='Intermediate Values'
                   columns={colDefsIntermediateValues}
                   setRows={setRowsIntermediateValues}

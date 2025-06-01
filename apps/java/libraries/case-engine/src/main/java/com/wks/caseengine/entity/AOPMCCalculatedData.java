@@ -26,6 +26,7 @@ public class AOPMCCalculatedData {
     
     @Column(name = "Plant_FK_ID")
     private UUID plantFKId;
+
     @Column(name = "Vertical_FK_ID")
     private UUID verticalFKId;
     
@@ -33,45 +34,47 @@ public class AOPMCCalculatedData {
     private UUID materialFKId;
     
     @Column(name = "April")
-    private Float april;
+    private Double april;
     
     @Column(name = "May")
-    private Float may;
+    private Double may;
     
     @Column(name = "June")
-    private Float june;
+    private Double june;
     
     @Column(name = "July")
-    private Float july;
+    private Double july;
     
     @Column(name = "August")
-    private Float august;
+    private Double august;
     
     @Column(name = "September")
-    private Float september;
+    private Double september;
     
     @Column(name = "October")
-    private Float october;
+    private Double october;
     
     @Column(name = "November")
-    private Float november;
+    private Double november;
     
     @Column(name = "December")
-    private Float december;
+    private Double december;
     
     @Column(name = "January")
-    private Float january;
+    private Double january;
     
     @Column(name = "February")
-    private Float february;
+    private Double february;
     
     @Column(name = "March")
-    private Float march;
+    private Double march;
+
     @Column(name="FinancialYear")
     private String financialYear;
     
     @Column(name="Remarks")
     private String remarks;
+
     @Column(name="CreatedOn")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdOn;
@@ -79,10 +82,10 @@ public class AOPMCCalculatedData {
     @Column(name="ModifiedOn")
     @Temporal(TemporalType.TIMESTAMP)
     private Date modifiedOn;
-    
+
     @Column(name="MCUVersion")
     private String mcuVersion;
-    
+
     @Column(name="UpdatedBy")
     private String updatedBy;
 }

@@ -29,6 +29,7 @@ const PlantsProductionSummary = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const handleRemarkCellClick = (row) => {
+    // console.log(row)
     setCurrentRemark(row.Remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
@@ -383,7 +384,7 @@ const PlantsProductionSummary = () => {
       <ReportDataGrid
         rows={rows}
         setRows={setRows}
-        title='Plants Production Summary'
+        title='Plant Production Summary (T-14)'
         columns={columns}
         permissions={{
           customHeight: defaultCustomHeight,

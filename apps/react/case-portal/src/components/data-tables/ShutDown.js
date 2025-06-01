@@ -197,13 +197,14 @@ const ShutDown = ({ permissions }) => {
         productId: row.product,
         discription: row.discription,
         // durationInHrs: parseFloat(findDuration('1', row)),
+
         durationInHrs: (() => {
           const v = findDuration('1', row)
-          return v
-            ? `${v.split('.')[0]}.${v.split('.')[1]?.padStart(2, '0') || '00'}` *
-                1
-            : null
+          if (!v) return null
+          const [h = '00', m = '00'] = String(v).split('.')
+          return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
         })(),
+
         maintEndDateTime: addTimeOffset(row.maintEndDateTime),
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
         audityear: localStorage.getItem('year'),
