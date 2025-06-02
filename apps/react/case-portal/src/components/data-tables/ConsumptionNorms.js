@@ -689,8 +689,10 @@ const NormalOpNormsScreen = () => {
       units: ['TPH', 'TPD'],
       saveWithRemark: true,
       saveBtn: false,
-      // showCalculate: true,
-      showCalculate: Object.keys(calculationObject).length > 0 ? true : false,
+      showCalculate: true,
+      showCalculateVisibility:
+        Object.keys(calculationObject).length > 0 ? true : false,
+
       showRefresh: false,
       noColor: false,
       ShowSummary: true,

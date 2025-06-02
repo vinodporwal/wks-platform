@@ -492,7 +492,9 @@ const DataGridTable = ({
               <Button
                 variant='contained'
                 onClick={handleCalculateBtn}
-                disabled={isButtonDisabled}
+                disabled={
+                  isButtonDisabled || !permissions?.showCalculateVisibility
+                }
                 className='btn-save'
               >
                 Calculate

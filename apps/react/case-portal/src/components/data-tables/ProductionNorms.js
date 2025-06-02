@@ -650,7 +650,8 @@ const ProductionNorms = ({ permissions }) => {
       editButton: permissions?.editButton ?? false,
       showUnit: permissions?.showUnit ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      showCalculate:
+      showCalculate: permissions?.showCalculate ?? true,
+      showCalculateVisibility:
         Object.keys(calculationObject).length > 0
           ? permissions?.showCalculate ?? true
           : false,
