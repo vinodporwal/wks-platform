@@ -283,6 +283,9 @@ const ShutDown = ({ permissions }) => {
         idFromApi: item?.id,
         id: index,
         originalRemark: item.remark,
+        durationInHrs: item.durationInHrs?.toFixed
+          ? Number(item.durationInHrs).toFixed(2)
+          : item.durationInHrs,
       }))
       setRows(formattedData)
       setLoading(false)
