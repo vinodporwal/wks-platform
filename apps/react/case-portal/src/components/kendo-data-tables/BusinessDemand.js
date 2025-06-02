@@ -14,10 +14,10 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
-import getEnhancedColDefs from '../data-tables/CommonHeader/index'
 import ProductionvolumeData from './ProductionVoluemData'
 import KendoDataTables from './index'
 import kendoGetEnhancedColDefs from 'components/data-tables/CommonHeader/kendoBusinessDemColDef'
+// import KendoDataTables from './kendo-inprogress'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -47,7 +47,6 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
 const KendoBusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
 
-  const [rowModesModel, setRowModesModel] = useState({})
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
   const [open1, setOpen1] = useState(false)
@@ -91,25 +90,24 @@ const KendoBusinessDemand = ({ permissions }) => {
 
       // console.log(sortedData)
 
-    const formattedData = data.map((item, index) => ({
-      ...item,
-      idFromApi: item.id,
-      id: index,
-      originalRemark: item.remark,
-      inEdit: false,
-      Particulars: item.normParameterTypeDisplayName,
-      expanded: false,
-    }));
+      const formattedData = data.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.remark,
+        inEdit: false,
+        Particulars: item.normParameterTypeDisplayName,
+        expanded: false,
+      }))
 
-    setRows(formattedData);
-    console.log('formattedData:' ,formattedData);
-    setLoading(false)
-  } catch (error) {
-    console.error('Error fetching Business Demand data:', error)
-    setLoading(false)
+      setRows(formattedData)
+      console.log('formattedData:', formattedData)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching Business Demand data:', error)
+      setLoading(false)
+    }
   }
-}
-
 
   // console.log(verticalChange)
   useEffect(() => {
@@ -162,7 +160,6 @@ const KendoBusinessDemand = ({ permissions }) => {
 
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return
-    console.log('hiiiiiiii')
     setCurrentRemark(dataItem.remark || '')
     setCurrentRowId(dataItem.id)
     setRemarkDialogOpen(true)
@@ -173,9 +170,9 @@ const KendoBusinessDemand = ({ permissions }) => {
   }
 
   const colDefs = kendoGetEnhancedColDefs({
-    allProducts,
+    // allProducts,
     headerMap,
-    handleRemarkCellClick,
+    // handleRemarkCellClick,
   })
   // const colDefs = React.useMemo(() => {
   //   const defs = getEnhancedColDefs({
@@ -196,7 +193,7 @@ const KendoBusinessDemand = ({ permissions }) => {
   }
 
   const saveChanges = React.useCallback(async () => {
-    // setLoading(true)
+    setLoading(true)
     // const rowsInEditMode = Object.keys(rowModesModel).filter(
     //   (id) => rowModesModel[id]?.mode === 'edit',
     // )
@@ -205,49 +202,49 @@ const KendoBusinessDemand = ({ permissions }) => {
     //   apiRef.current.stopRowEditMode({ id })
     // })
 
-    setTimeout(() => {
-      try {
-        if (Object.keys(modifiedCells).length === 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          setLoading(false)
-          return
-        }
-        // console.log('modifiedCells', modifiedCells)
-        var rawData = Object.values(modifiedCells)
-        const data = rawData.filter((row) => row.inEdit)
-        // var data = Object.values(unsavedChangesRef.current.unsavedRows)
-        if (data.length == 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          setLoading(false)
-          return
-        }
-
-        // const requiredFields = ['normParameterId', 'remark']
-
-        // const validationMessage = validateFields(data, requiredFields)
-
-        // if (validationMessage) {
-        //   setSnackbarOpen(true)
-        //   setSnackbarData({
-        //     message: validationMessage,
-        //     severity: 'error',
-        //   })
-        //   setLoading(false)
-        //   return
-        // }
-        saveBusinessDemandData(data)
-      } catch (error) {
-        console.log('Error saving changes:', error)
+    // setTimeout(() => {
+    try {
+      console.log('modifiedCells', modifiedCells)
+      if (Object.keys(modifiedCells).length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
       }
-    }, 400)
+      var rawData = Object.values(modifiedCells)
+      const data = rawData.filter((row) => row.inEdit)
+      // var data = Object.values(unsavedChangesRef.current.unsavedRows)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      const requiredFields = ['normParameterId', 'remark']
+
+      const validationMessage = validateFields(data, requiredFields)
+
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+      saveBusinessDemandData(data)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    }
+    // }, 400)
   }, [modifiedCells])
 
   const saveBusinessDemandData = async (newRows) => {
@@ -451,7 +448,7 @@ const KendoBusinessDemand = ({ permissions }) => {
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
-        groupBy = "Particulars"
+        groupBy='Particulars'
       />
     </div>
   )

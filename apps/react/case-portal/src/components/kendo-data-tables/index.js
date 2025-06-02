@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { filterBy } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import '@progress/kendo-font-icons/dist/index.css'
 import { filterIcon } from '@progress/kendo-svg-icons'
 import { ColumnMenu } from 'components/data-tables/Reports/columnMenu'
-import { EditDescriptor } from '@progress/kendo-react-data-tools'
+// import { EditDescriptor } from '@progress/kendo-react-data-tools'
 
 // import PropTypes from 'prop-types'
 import '../../kendo-data-grid.css'
@@ -22,11 +22,13 @@ import {
   TextField,
 } from '../../../node_modules/@mui/material/index'
 import Notification from 'components/Utilities/Notification'
-// import DeleteCell from './Utilities-Kendo/DefaultColumn'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
-import { DateTimePicker } from '@progress/kendo-react-dateinputs'
 import { truncateRemarks } from 'utils/remarksUtils'
+import { process } from '@progress/kendo-data-query'
+import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
+import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
+import ProductDropDownEditor from './Utilities-Kendo/DropdownProducts'
 
 const KendoDataTables = ({
   // setUpdatedRows = () => {},
@@ -42,7 +44,6 @@ const KendoDataTables = ({
   setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
-  unsavedChangesRef = { current: { unsavedRows: {}, rowsBeforeChange: {} } },
   setRemarkDialogOpen = () => {},
   currentRemark = '',
   // editedRows = [],
@@ -62,43 +63,36 @@ const KendoDataTables = ({
   handleUnitChange = () => {},
   handleRemarkCellClick = () => {},
   selectedUsers = [],
+  groupBy = null,
+  allProducts = [],
   // allRedCell = [],
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
-  // const [resizedColumns, setResizedColumns] = useState({})
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-  const [edit, setEdit] = React.useState({})
-
-  // const [searchText, setSearchText] = useState('')
-  // const isFilterActive = false
+  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
+  const [group, setGroup] = useState([])
+  const [expandedState, setExpandedState] = useState({})
   const [selectedUnit, setSelectedUnit] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
-  // const closeDeleteDialogeBox = () => setOpenDeleteDialogeBox(false)
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  // const closeDeleteDialogeBox = () => setOpenDeleteDialogeBox(false)
+  // const [resizedColumns, setResizedColumns] = useState({})
+  // const [edit, setEdit] = React.useState({})
+  // const [searchText, setSearchText] = useState('')
+  // const isFilterActive = false
   // const localApiRef = useGridApiRef()
   // const finalExternalApiRef = apiRef ?? localApiRef
   // const handleSearchChange = (event) => {
   //   setSearchText(event.target.value)
   // }
   // // console.log(columns)
-  const handleEditChange = (e) => {
-    console.log(e)
-    setEdit(e.edit)
-  }
-  const rowRender = (trElement, props) => {
-    if (!props.dataItem.isEditable) {
-      return React.cloneElement(trElement, {
-        ...trElement.props,
-        className: (trElement.props.className || '')
-          .split(' ')
-          .concat('disabled-row')
-          .join(' '),
-      })
-    }
-    return trElement
-  }
+  // const handleEditChange = (e) => {
+  //   console.log(e)
+  //   setEdit(e.edit)
+  // }
+
   const hiddenFields = [
     'maintenanceId',
     'id',
@@ -113,35 +107,46 @@ const KendoDataTables = ({
     'isEditable',
     'period',
   ]
-  // //  const toggleColumn = field => {
-  // //   setColumnVisibility(vis => ({
-  //     ...vis,
-  //     [field]: !vis[field],
-  //   }));
-  // };
-  // cell update
-  const itemChange = (e) => {
-    // console.log(e)
-    let updated = rows.map((r) =>
-      r.id === e.dataItem.id ? { ...r, [e.field]: e.value } : r,
-    )
-    setRows(updated)
 
-    setModifiedCells((updated = updated.filter((row) => row.inEdit == true)))
-    console.log(updated)
+  // const itemChange = (e) => {
+  //   let updated = rows.map((r) =>
+  //     r.id === e.dataItem.id ? { ...r, [e.field]: e.value } : r,
+  //   )
+  //   setRows(updated)
+  //   setModifiedCells((updated = updated.filter((row) => row.inEdit == true)))
 
-    // onRowChange(e.dataItem, e.field, e.value)
+  // }
+  const itemChange = useCallback(
+    (e) => {
+      const { dataItem, field, value } = e
+
+      setRows((prev) =>
+        prev.map((r) =>
+          r.id === dataItem.id ? updateRowWithDuration(r, field, value) : r,
+        ),
+      )
+
+      setModifiedCells((prev) => {
+        const updatedRow = updateRowWithDuration(dataItem, field, value)
+        return { ...prev, [dataItem.id]: updatedRow }
+      })
+    },
+    [setRows, setModifiedCells],
+  )
+
+  const rowRender = (trElement, props) => {
+    console.log(props.dataItem)
+    if (!props.dataItem.isEditable) {
+      return React.cloneElement(trElement, {
+        ...trElement.props,
+        className: (trElement.props.className || '')
+          .split(' ')
+          .concat('disabled-row')
+          .join(' '),
+      })
+    }
+    return trElement
   }
-  // console.log(unsavedChangesRef)
-  // const rowRender = disableColor
-  //   ? (trElement, props) => {
-  //       const shouldDisable = props.dataItem.status === 'inactive'
-  //       return React.cloneElement(trElement, {
-  //         ...trElement.props,
-  //         className: `${trElement.props.className || ''} ${shouldDisable ? 'disabled-row' : ''}`,
-  //       })
-  //     }
-  //   : undefined
 
   const handleRemarkSave = () => {
     setRows((prevRows) => {
@@ -246,52 +251,36 @@ const KendoDataTables = ({
     }
   }
   const handleRowClick = (e) => {
-    console.log('22', e)
+    // console.log('22', e.dataItem.isEditable)
+    if (!e.dataItem?.isEditable) return
 
-    // setRows(
-    //   rows.map((r) => ({
-    //     ...r,
-    //     inEdit: r.id === e.dataItem.id, // only that row goes into edit mode
-    //   })),
-    // )
-    if (columns.some((col) => col.field === 'remark')) {
-      handleRemarkCellClick(e.dataItem)
-    }
+    setRows(
+      rows.map((r) => ({
+        ...r,
+        inEdit: r.id === e.dataItem.id, // only that row goes into edit mode
+      })),
+    )
   }
-  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
-  // const DateTimePickerCell = (props) => {
-  //   const { dataItem, field } = props
-  //   const value = dataItem[field] ? new Date(dataItem[field]) : null
 
+  // const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
+  //   const value = dataItem[field] ? new Date(dataItem[field]) : null
   //   return (
   //     <td>
   //       <DateTimePicker
   //         value={value}
-  //         onChange={(e) => props.onChange({ ...props, value: e.value })}
+  //         onChange={(e) =>
+  //           onChange({
+  //             dataItem,
+  //             field,
+  //             value: e.value,
+  //             syntheticEvent: e.syntheticEvent,
+  //           })
+  //         }
   //         format='dd/MM/yyyy hh:mm tt'
   //       />
   //     </td>
   //   )
   // }
-  const DateTimePickerEditor = ({ dataItem, field, onChange }) => {
-    const value = dataItem[field] ? new Date(dataItem[field]) : null
-    return (
-      <td>
-        <DateTimePicker
-          value={value}
-          onChange={(e) =>
-            onChange({
-              dataItem,
-              field,
-              value: e.value,
-              syntheticEvent: e.syntheticEvent,
-            })
-          }
-          format='dd/MM/yyyy hh:mm tt'
-        />
-      </td>
-    )
-  }
 
   const particulars = [
     'normParameterId',
@@ -306,28 +295,68 @@ const KendoDataTables = ({
     // Compute: the truncated display text (or placeholder)
     const rawValue = dataItem[field]
     const displayText = truncateRemarks(rawValue)
-    const editable = Boolean(dataItem.isEditable)
+    // const editable = Boolean(dataItem.isEditable)
 
     return (
       <td
         {...tdProps}
         style={{
-          cursor: editable ? 'pointer' : 'not-allowed',
+          cursor: 'pointer',
           color: rawValue ? 'inherit' : 'gray',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
         }}
         onClick={() => {
-          if (editable) {
-            onRemarkClick(dataItem)
-          }
+          onRemarkClick(dataItem)
         }}
       >
-        {displayText || (editable ? 'Click to add remark' : '')}
+        {displayText || 'Click to add remark'}
       </td>
     )
   }
+
+  useEffect(() => {
+    if (rows && rows.length > 0 && groupBy) {
+      setGroup([{ field: groupBy }])
+
+      const initialExpandedState = {}
+      const uniqueValues = [...new Set(rows.map((row) => row[groupBy]))]
+      uniqueValues.forEach((value) => {
+        initialExpandedState[`${groupBy}_${value}`] = true
+      })
+      setExpandedState(initialExpandedState)
+    }
+    // console.log(rows, groupBy, group)
+  }, [rows, groupBy])
+
+  const processedData = useMemo(() => {
+    if (!rows || rows.length === 0) return []
+
+    if (group.length > 0) {
+      const result = process(rows, { group })
+
+      // Apply expanded state to the processed data
+      const applyExpandedState = (items) => {
+        return items.map((item) => {
+          // console.log('Inspecting item:', item)
+          if (item.items) {
+            // This is a group item
+            const key = item.field + '_' + item.value
+            // console.log('Using key:', key)
+            item.expanded = expandedState[key] !== false // Default to expanded
+            item.items = applyExpandedState(item.items)
+          }
+          return item
+        })
+      }
+
+      return applyExpandedState(result.data)
+    }
+    // console.log(rows)
+    return rows
+  }, [rows, group, expandedState])
+  // console.log(processedData)
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -441,19 +470,20 @@ const KendoDataTables = ({
       )}
       <div className='kendo-data-grid'>
         <Grid
-          data={filterBy(rows, filter)}
+          data={filterBy(processedData, filter)}
           sortable
           dataItemKey='id'
           editField='inEdit'
-          editable={{ mode: 'incell' }}
+          // editable={{ mode: 'incell' }}
+          editable='incell'
           // onRowClick={(e) => {
           //   const id = e.dataItem.id
           //   setRows(rows.map((r) => (r.id === id ? { ...r, inEdit: true } : r)))
           // }}
-          onEditChange={handleEditChange}
-          autoProcessData={true}
-          edit={edit}
-          scrollable='scrollable'
+          // onEditChange={handleEditChange}
+          // autoProcessData={true}
+          // edit={edit}
+          // scrollable='scrollable'
           filter={filter}
           // filterable={true}
           onFilterChange={(e) => setFilter(e.filter)}
@@ -472,25 +502,38 @@ const KendoDataTables = ({
                 }
               : false
           }
-          onBlur={() => {
-            // whenever the Grid loses focus, clear every row’s inEdit flag
-            // setRows(rows.map((r) => ({ ...r, inEdit: false })))
-            setEdit({})
-          }}
-          // cellClick={(e) => {
-          //   console.log('Cell clicked:', e)
-          //   if (e.field === 'remark') {
-          //     handleRemarkCellClick(e.dataItem)
-          //   }
+          // onBlur={() => {
+          //   // whenever the Grid loses focus, clear every row’s inEdit flag
+          //   // setRows(rows.map((r) => ({ ...r, inEdit: false })))
+          //   setEdit({})
           // }}
-          // onRowClick={handleRowClick}
+          group={group}
+          expandField='expanded'
+          onGroupChange={(e) => setGroup(e.group)}
+          onExpandChange={(e) => {
+            const key = e.field || e.value // Use appropriate unique identifier
+            setExpandedState({
+              ...expandedState,
+              [key]: e.expanded,
+            })
+          }}
+          groupHeaderRender={(e) => (
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ marginRight: 6 }}>{e.expanded ? '▼' : '▶'}</span>
+              <strong>{e.value}</strong>
+              <span style={{ marginLeft: 6 }}>
+                ({e.aggregates?.count || 0})
+              </span>
+            </div>
+          )}
+          onRowClick={handleRowClick}
         >
           {columns
             .filter((col) => !hiddenFields.includes(col.field))
             .map((col) => {
+              // console.log(col.editable)
               if (
-                col.field === 'maintStartDateTime' ||
-                col.field === 'maintEndDateTime'
+                ['maintStartDateTime', 'maintEndDateTime'].includes(col.field)
               ) {
                 return (
                   <GridColumn
@@ -501,7 +544,6 @@ const KendoDataTables = ({
                     filter='date'
                     format='{0:dd/MM/yyyy hh:mm tt}'
                     cells={{
-                      // data: DateTimePickerCell,
                       edit: {
                         date: DateTimePickerEditor,
                       },
@@ -511,7 +553,37 @@ const KendoDataTables = ({
                   />
                 )
               }
-              if (col.field === 'remark' || col.field === 'remarks') {
+              if (col?.field === 'product') {
+                return (
+                  <GridColumn
+                    key='product'
+                    field='product'
+                    title={col.title || col.headerName || 'Particulars'}
+                    width={210}
+                    editable={col.editable || true}
+                    editor={(props) => (
+                      <ProductDropDownEditor
+                        {...props}
+                        allProducts={allProducts}
+                        rows={rows}
+                      />
+                    )}
+                    cells={{
+                      data: (props) => (
+                        <ProductDropDownEditor
+                          {...props}
+                          allProducts={allProducts}
+                          rows={rows}
+                        />
+                      ),
+                    }}
+                    columnMenu={ColumnMenu}
+                    // editable is true by default, so no need to set editable={true}
+                  />
+                )
+              }
+
+              if (['aopRemarks', 'remarks', 'remark'].includes(col.field)) {
                 return (
                   <GridColumn
                     key={col.field}
@@ -519,6 +591,8 @@ const KendoDataTables = ({
                     title={col.title || col.headerName}
                     width={col.width}
                     editor={true}
+                    // editable={col.editable || true}
+                    editable={{ mode: 'popup' }}
                     cells={{
                       data: (cellProps) => (
                         <RemarkCell
@@ -532,7 +606,20 @@ const KendoDataTables = ({
                   />
                 )
               }
-
+              if (col.field === 'durationInHrs') {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    width={col.width}
+                    editable={col.editable || false} // make it read‑only
+                    columnMenu={ColumnMenu} // if you want columnMenu
+                    // optionally format with 2 decimals
+                    format='{0:n2}'
+                  />
+                )
+              }
               if (particulars.includes(col.field)) {
                 return (
                   <GridColumn
@@ -556,6 +643,7 @@ const KendoDataTables = ({
                   field={col.field}
                   title={col.title || col.headerName}
                   width={col.width}
+                  editable={true}
                   columnMenu={ColumnMenu}
                 />
               )

@@ -17,7 +17,7 @@ import {
   TextField,
 } from '../../../node_modules/@mui/material/index'
 import Notification from 'components/Utilities/Notification'
-import { process } from '@progress/kendo-data-query';
+import { process } from '@progress/kendo-data-query'
 
 const KendoDataTables = ({
   // setUpdatedRows = () => {},
@@ -222,53 +222,50 @@ const KendoDataTables = ({
     //     inEdit: r.id === e.dataItem.id, // only that row goes into edit mode
     //   })),
     // )
-    if (columns.some((col) => col.field === 'remark')) {
-      handleRemarkCellClick(e.dataItem)
-    }
   }
   const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
-  const [group, setGroup] = useState([]);
+  const [group, setGroup] = useState([])
 
   useEffect(() => {
     if (rows && rows.length > 0 && groupBy) {
-      setGroup([{ field: groupBy }]);
-      
-      const initialExpandedState = {};
-      const uniqueValues = [...new Set(rows.map(row => row[groupBy]))];
-      uniqueValues.forEach(value => {
-        initialExpandedState[`${groupBy}_${value}`] = true;
-      });
-      setExpandedState(initialExpandedState);
+      setGroup([{ field: groupBy }])
+
+      const initialExpandedState = {}
+      const uniqueValues = [...new Set(rows.map((row) => row[groupBy]))]
+      uniqueValues.forEach((value) => {
+        initialExpandedState[`${groupBy}_${value}`] = true
+      })
+      setExpandedState(initialExpandedState)
     }
-  }, [rows, groupBy]);
-  const [expandedState, setExpandedState] = useState({});
+  }, [rows, groupBy])
+  const [expandedState, setExpandedState] = useState({})
 
   const processedData = useMemo(() => {
-    if (!rows || rows.length === 0) return [];
+    if (!rows || rows.length === 0) return []
 
     if (group.length > 0) {
-      const result = process(rows, { group });
-    
+      const result = process(rows, { group })
+
       // Apply expanded state to the processed data
       const applyExpandedState = (items) => {
-        return items.map(item => {
-          console.log("Inspecting item:", item);
+        return items.map((item) => {
+          console.log('Inspecting item:', item)
           if (item.items) {
             // This is a group item
-            const key = item.field + '_' + item.value;
-            console.log("Using key:", key);
-            item.expanded = expandedState[key] !== false; // Default to expanded
-            item.items = applyExpandedState(item.items);
+            const key = item.field + '_' + item.value
+            console.log('Using key:', key)
+            item.expanded = expandedState[key] !== false // Default to expanded
+            item.items = applyExpandedState(item.items)
           }
-          return item;
-        });
-      };
-    
-      return applyExpandedState(result.data);
+          return item
+        })
+      }
+
+      return applyExpandedState(result.data)
     }
-  
-  return rows;
- }, [rows, group, expandedState]);
+
+    return rows
+  }, [rows, group, expandedState])
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -396,20 +393,22 @@ const KendoDataTables = ({
           onItemChange={itemChange}
           rowRender={rowRender}
           group={group}
-          expandField="expanded"
+          expandField='expanded'
           onGroupChange={(e) => setGroup(e.group)}
-          onExpandChange={(e) => {
-            const key = item.field || item.value; // Use appropriate unique identifier
-            setExpandedState({ 
-              ...expandedState, 
-              [key]: item.expanded 
-            });
+          onExpandChange={(item) => {
+            const key = item.field || item.value // Use appropriate unique identifier
+            setExpandedState({
+              ...expandedState,
+              [key]: item.expanded,
+            })
           }}
           groupHeaderRender={(e) => (
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ marginRight: 6 }}>{item.expanded ? '▼' : '▶'}</span>
+              <span style={{ marginRight: 6 }}>{e.expanded ? '▼' : '▶'}</span>
               <strong>{e.value}</strong>
-              <span style={{ marginLeft: 6 }}>({item.aggregates?.count || 0})</span>
+              <span style={{ marginLeft: 6 }}>
+                ({e.aggregates?.count || 0})
+              </span>
             </div>
           )}
           cellClick={(e) => {
@@ -429,7 +428,7 @@ const KendoDataTables = ({
               col.field === 'NormParameterFKId' ||
               col.field === 'materialFkId' ||
               col.field === 'normParameterId' ||
-              col.field === 'normParametersFKId'  ?  (
+              col.field === 'normParametersFKId' ? (
                 <GridColumn
                   key={col.field}
                   field={col.field}
