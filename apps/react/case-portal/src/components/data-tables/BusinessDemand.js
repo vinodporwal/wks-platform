@@ -447,6 +447,7 @@ const BusinessDemand = ({ permissions }) => {
                   showCalculate: false,
                   saveBtn: false,
                   hideSummary: true,
+                  viewGrid: true,
                 }}
               />
             </Box>
