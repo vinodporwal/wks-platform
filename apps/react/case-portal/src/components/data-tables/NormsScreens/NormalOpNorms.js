@@ -52,6 +52,7 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
 
 const NormalOpNormsScreen = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const [allProducts, setAllProducts] = useState([])
   const [allRedCell, setAllRedCell] = useState([])
   // const [bdData, setBDData] = useState([])
@@ -563,7 +564,7 @@ const NormalOpNormsScreen = () => {
                 whiteSpace: 'nowrap',
                 width: ' 100%',
               }}
-              onClick={() => handleRemarkCellClick(params.row)}
+              onDoubleClick={() => handleRemarkCellClick(params.row)}
             >
               {displayText || (isEditable ? 'Click to add remark' : '')}
             </div>
@@ -886,6 +887,13 @@ const NormalOpNormsScreen = () => {
   ]
 
   const handleRemarkCellClick = (row) => {
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
+
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
     if (!row?.isEditable) return
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
@@ -966,6 +974,7 @@ const NormalOpNormsScreen = () => {
   }, [apiRef, rowModesModel])
 
   const saveNormalOperationNormsData = async (newRows) => {
+    setLoading(true)
     try {
       let plantId = ''
       const storedPlant = localStorage.getItem('selectedPlant')
@@ -1021,13 +1030,16 @@ const NormalOpNormsScreen = () => {
             unsavedRows: {},
             rowsBeforeChange: {},
           }
+          setLoading(false)
           fetchData()
+          fetchDataIntermediateValues()
         } else {
           setSnackbarOpen(true)
           setSnackbarData({
             message: `Normal Operations Norms not saved!`,
             severity: 'error',
           })
+          setLoading(false)
         }
         return response
       }
@@ -1045,6 +1057,7 @@ const NormalOpNormsScreen = () => {
 
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
+    setEnableSaveAddBtn(true)
   }
 
   const isCellEditable = (params) => {
@@ -1075,8 +1088,9 @@ const NormalOpNormsScreen = () => {
           severity: 'success',
         })
         fetchData()
-        fetchDataIntermediateValues()
         getNormTransactions()
+        fetchDataIntermediateValues()
+
         setLoading(false)
       } else {
         setSnackbarOpen(true)
@@ -1176,6 +1190,7 @@ const NormalOpNormsScreen = () => {
 
       <DataGridTable
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         title='Normal Operations Norms'
         columns={colDefs}
         setRows={setRows}

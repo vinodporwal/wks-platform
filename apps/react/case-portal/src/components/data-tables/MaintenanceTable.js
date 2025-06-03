@@ -16,6 +16,7 @@ import { Tooltip } from '../../../node_modules/@mui/material/index'
 
 const MaintenanceTable = () => {
   // const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
 
   const keycloak = useSession()
   const [loading, setLoading] = useState(false)

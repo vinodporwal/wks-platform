@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import SelectivityData from './SelectivityData'
-// import SelectivityData from '../SelectivityData'
+import CrackerConfig from './KendoConfigCracker'
 
 const ConfigurationTable = () => {
   const keycloak = useSession()
@@ -194,30 +194,26 @@ const ConfigurationTable = () => {
     const tab = availableTabs.find((tab) => tab.name === name)
     return tab ? tab.id : null
   }
-
-  if (tabs.length == 0) {
+  // and want to paste that new crakcer component here
+  if (tabs.length === 0 && lowerVertName !== 'cracker') {
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '5px',
-          marginTop: '20px',
-        }}
-      >
-        <Box>
-          <SelectivityData
-            rows={productionRows}
-            loading={loading}
-            fetchData={fetchData}
-            setRows={setProductionRows}
-            configType={'production'}
-          />
-        </Box>
-      </div>
+      <Box sx={{ marginTop: '20px' }}>
+        <SelectivityData
+          rows={productionRows}
+          loading={loading}
+          fetchData={fetchData}
+          setRows={setProductionRows}
+          configType='production'
+        />
+      </Box>
+    )
+  } else if (lowerVertName === 'cracker') {
+    return (
+      <Box sx={{ marginTop: '20px' }}>
+        <CrackerConfig />
+      </Box>
     )
   }
-
   return (
     <div
       style={{
