@@ -7,14 +7,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-public interface AopCalculationRepository extends JpaRepository<AopCalculation,UUID>{
+public interface AopCalculationRepository extends JpaRepository<AOPCalculation,UUID>{
 	
-	 @Query(value = "SELECT * FROM AopCalculation WHERE plantId = :plantId AND aopYear = :aopYear AND calculationScreen = :calculationScreen", nativeQuery = true)
-	    List<AopCalculation> findByPlantIdAndAopYearAndCalculationScreen(
+	 @Query(value = "SELECT * FROM AOPCalculation WHERE plantId = :plantId AND aopYear = :aopYear AND calculationScreen = :calculationScreen", nativeQuery = true)
+	    List<AOPCalculation> findByPlantIdAndAopYearAndCalculationScreen(
 	        @Param("plantId") UUID plantId,
 	        @Param("aopYear") String aopYear,
 	        @Param("calculationScreen") String calculationScreen
@@ -22,7 +22,7 @@ public interface AopCalculationRepository extends JpaRepository<AopCalculation,U
 
 	 	@Modifying
 	    @Transactional
-	    @Query(value = "DELETE FROM AopCalculation WHERE plantId = :plantId AND aopYear = :aopYear AND calculationScreen = :calculationScreen", nativeQuery = true)
+	    @Query(value = "DELETE FROM AOPCalculation WHERE plantId = :plantId AND aopYear = :aopYear AND calculationScreen = :calculationScreen", nativeQuery = true)
 	    int deleteByPlantIdAndAopYearAndCalculationScreen(
 	        @Param("plantId") UUID plantId,
 	        @Param("aopYear") String aopYear,

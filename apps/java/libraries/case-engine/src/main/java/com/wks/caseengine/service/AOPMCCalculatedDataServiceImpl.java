@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import com.wks.caseengine.repository.PlantsRepository;
-import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import jakarta.persistence.EntityManager;
@@ -17,9 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.entity.AOPMCCalculatedData;
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import com.wks.caseengine.entity.Plants;
-import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
@@ -54,11 +52,6 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
-	
-	@Autowired
-	private ScreenMappingRepository screenMappingRepository;
-	
-	
 	
 	// Inject or set your DataSource (e.g., via constructor or setter)
 		public AOPMCCalculatedDataServiceImpl(DataSource dataSource) {
@@ -97,7 +90,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			}
 			Map<String, Object> map = new HashMap<>(); 
 			
-			List<AopCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"production-volume-data");
+			List<AOPCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"production-volume-data");
 			map.put("aopMCCalculatedDataDTOList", aOPMCCalculatedDataDTOList);
 			map.put("aopCalculation", aopCalculation);
 			aopMessageVM.setCode(200);
@@ -184,18 +177,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                connection.commit();
 	            }
 	            
-	            
 	            aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),finYear,"production-volume-data");
-	            List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("production-volume-data");
-				for(ScreenMapping screenMapping:screenMappingList) {
-					AopCalculation aopCalculation=new AopCalculation();
-					aopCalculation.setAopYear(finYear);
-					aopCalculation.setIsChanged(true);
-					aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
-					aopCalculation.setPlantId(UUID.fromString(plantId));
-					aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
-					aopCalculationRepository.save(aopCalculation);
-				}
 	            aopMessageVM.setCode(200);
 		        aopMessageVM.setMessage("SP Executed successfully");
 		        aopMessageVM.setData(rowsAffected);

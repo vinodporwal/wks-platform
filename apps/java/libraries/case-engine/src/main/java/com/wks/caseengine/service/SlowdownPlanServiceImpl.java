@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.ShutDownPlanDTO;
 import com.wks.caseengine.dto.SlowDownPlanDTO;
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 import com.wks.caseengine.entity.ScreenMapping;
@@ -201,7 +201,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			}
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("slowdown-plan");
 			for(ScreenMapping screenMapping:screenMappingList) {
-				AopCalculation aopCalculation=new AopCalculation();
+				AOPCalculation aopCalculation=new AOPCalculation();
 				aopCalculation.setAopYear(year);
 				aopCalculation.setIsChanged(true);
 				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());

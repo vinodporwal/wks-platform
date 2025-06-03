@@ -7,9 +7,9 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.GenericGenerator;
 
 @Entity
-@Table(name = "AopCalculation")
+@Table(name = "AOPCalculation")
 @Data
-public class AopCalculation {
+public class AOPCalculation {
 	
 	@Id
     @GeneratedValue(generator = "UUID")

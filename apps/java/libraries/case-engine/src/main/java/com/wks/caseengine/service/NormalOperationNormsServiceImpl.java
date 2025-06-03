@@ -21,7 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.MCUNormsValueDTO;
 import com.wks.caseengine.entity.AOPSummary;
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import com.wks.caseengine.entity.MCUNormsValue;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.NormsTransactions;
@@ -120,7 +120,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			}
 			Map<String, Object> map = new HashMap<>(); 
 			
-			List<AopCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"normal-op-norms");
+			List<AOPCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"normal-op-norms");
 			map.put("mcuNormsValueDTOList", mCUNormsValueDTOList);
 			map.put("aopCalculation", aopCalculation);
 			aopMessageVM.setCode(200);
@@ -223,7 +223,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			}
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("normal-op-norms");
 			for(ScreenMapping screenMapping:screenMappingList) {
-				AopCalculation aopCalculation=new AopCalculation();
+				AOPCalculation aopCalculation=new AOPCalculation();
 				aopCalculation.setAopYear(year);
 				aopCalculation.setIsChanged(true);
 				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
@@ -250,19 +250,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		int result= executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 				vertical.getId().toString(), year);
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"normal-op-norms");
-		List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("normal-op-norms");
-		for(ScreenMapping screenMapping:screenMappingList) {
-			if(!screenMapping.getCalculationScreen().equalsIgnoreCase(screenMapping.getDependentScreen())) {
-				AopCalculation aopCalculation=new AopCalculation();
-				aopCalculation.setAopYear(year);
-				aopCalculation.setIsChanged(true);
-				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
-				aopCalculation.setPlantId(UUID.fromString(plantId));
-				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
-				aopCalculationRepository.save(aopCalculation);
-			}
-		}
-		aopMessageVM.setCode(200);
+        aopMessageVM.setCode(200);
         aopMessageVM.setMessage("SP Executed successfully");
         aopMessageVM.setData(result);
         return aopMessageVM;
