@@ -276,6 +276,7 @@ const ProductionvolumeData = ({ permissions }) => {
         } else {
           editAOPMCCalculatedData(data)
         }
+        setEnableSaveAddBtn(false)
         setModifiedCells({})
 
         unsavedChangesRef.current = {

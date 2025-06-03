@@ -334,6 +334,7 @@ const BusinessDemand = ({ permissions }) => {
         message: 'Business Demand data Saved Successfully!',
         severity: 'success',
       })
+      setEnableSaveAddBtn(false)
       setModifiedCells({})
 
       unsavedChangesRef.current = {

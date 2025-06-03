@@ -293,6 +293,7 @@ const ProductionNorms = ({ permissions }) => {
 
         setCalculatebtnClicked(false)
         setLoading(false)
+        setEnableSaveAddBtn(false)
         setModifiedCells({})
 
         unsavedChangesRef.current = {

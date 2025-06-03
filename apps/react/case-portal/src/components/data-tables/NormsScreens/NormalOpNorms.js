@@ -1025,6 +1025,7 @@ const NormalOpNormsScreen = () => {
             message: `Normal Operations Norms Saved Successfully!`,
             severity: 'success',
           })
+          setEnableSaveAddBtn(false)
           setModifiedCells({})
           unsavedChangesRef.current = {
             unsavedRows: {},
