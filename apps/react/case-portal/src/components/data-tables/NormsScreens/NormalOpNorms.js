@@ -1033,6 +1033,7 @@ const NormalOpNormsScreen = () => {
           setLoading(false)
           fetchData()
           fetchDataIntermediateValues()
+          getNormTransactions()
         } else {
           setSnackbarOpen(true)
           setSnackbarData({
