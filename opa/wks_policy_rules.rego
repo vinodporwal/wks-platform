@@ -22,139 +22,139 @@ has_email_to_case_role := {
 
 allow {
     input.path == "case"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION"]
-	check_origin_request
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
+    check_origin_request
     is_user_profile
 }
 
 allow {
     input.path = "case-definition"
-    input.method in ["GET", "OPTION"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "record-type"
-    input.method in ["GET", "OPTION"]
+    input.method in ["GET", "OPTIONS"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "record"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "task"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "form"
-    input.method in ["GET", "OPTION"]
+    input.method in ["GET", "OPTIONS"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "variable"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "process-instance"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "process-definition"
-    input.method in ["POST", "OPTION", "HEAD"]
+    input.method in ["POST", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "queue"
-    input.method in ["GET", "OPTION"]
+    input.method in ["GET", "OPTIONS"]
 	check_origin_request    
     is_user_profile
 }
 
 allow {
     input.path = "case-email"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
     check_origin_request
     is_user_profile
 }
 
 allow {
     input.path = "case-email"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
     is_email_to_case_profile
 }
 
 allow {
     input.path = "record-type"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_manager_profile
 }
 
 allow {
     input.path = "form"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_manager_profile
 }
 
 allow {
     input.path = "process-definition"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_manager_profile
 }
 
 allow {
     input.path = "deployment"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_manager_profile
 }
 
 allow {
     input.path = "case-definition"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_manager_profile
 }
 
 allow {
     input.path = "message"
-    input.method in ["POST", "OPTION", "HEAD"]
+    input.method in ["POST", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_manager_profile
 }
 
 allow {
     input.path = "queue"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS", "HEAD"]
 	check_origin_request    
     is_manager_profile
 }
 
 allow {
     input.path = "storage"
-    input.method in ["GET", "POST", "OPTION", "HEAD"]
+    input.method in ["GET", "POST", "OPTIONS", "HEAD"]
 }
 
 check_origin_request if {
