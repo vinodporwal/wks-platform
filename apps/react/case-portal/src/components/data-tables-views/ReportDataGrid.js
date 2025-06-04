@@ -228,7 +228,7 @@ const ReportDataGrid = ({
                 // disabled={isButtonDisabled}
                 className='btn-save'
               >
-                Submit Work
+                Submit
               </Button>
             )}
 
