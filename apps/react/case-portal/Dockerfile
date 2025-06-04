@@ -31,7 +31,7 @@ COPY ./public/css /usr/share/nginx/html/css
 COPY ./public/js /usr/share/nginx/html/js
 COPY ./public/libs /usr/share/nginx/html/libs
 COPY ./public/fonts /usr/share/nginx/html/fonts
-
+COPY ./public/files /usr/share/nginx/html/files
 COPY --from=build /app/nginx.conf /etc/nginx/nginx.conf
 
 # Expose port

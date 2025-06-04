@@ -88,12 +88,5 @@
     "editable": false,
     "align": "left",
     "headerAlign": "left"
-  },
-  {
-    "field": "total",
-    "headerName": "Total",
-    "editable": false,
-    "align": "left",
-    "headerAlign": "left"
   }
 ]

@@ -115,38 +115,38 @@ const PlantsProductionSummary = () => {
 
           VarBudgetPer:
             Particulates.VarBudgetPer != null
-              ? Number(Number(Particulates.VarBudgetPer).toFixed(1))
+              ? Number(Particulates.VarBudgetPer.toFixed(1))
               : '',
 
           VarActualPer:
             Particulates.VarActualPer != null
-              ? Number(Number(Particulates.VarActualPer).toFixed(1))
+              ? Number(Particulates.VarActualPer.toFixed(1))
               : '',
 
           // Round to nearest whole number
           VarBudgetMT:
             Particulates.VarBudgetMT != null
-              ? Math.round(Number(Particulates.VarBudgetMT))
+              ? Number(Particulates.VarBudgetMT.toFixed(0))
               : '',
 
           VarActualMT:
             Particulates.VarActualMT != null
-              ? Math.round(Number(Particulates.VarActualMT))
+              ? Number(Particulates.VarActualMT.toFixed(0))
               : '',
 
           BudgetPrevYear:
             Particulates.BudgetPrevYear != null
-              ? Math.round(Number(Particulates.BudgetPrevYear))
+              ? Number(Particulates.BudgetPrevYear.toFixed(0))
               : '',
 
           BudgetCurrentYear:
             Particulates.BudgetCurrentYear != null
-              ? Math.round(Number(Particulates.BudgetCurrentYear))
+              ? Number(Particulates.BudgetCurrentYear.toFixed(0))
               : '',
 
           ActualPrevYear:
             Particulates.ActualPrevYear != null
-              ? Math.round(Number(Particulates.ActualPrevYear))
+              ? Number(Particulates.ActualPrevYear.toFixed(0))
               : '',
         }))
 
@@ -391,7 +391,7 @@ const PlantsProductionSummary = () => {
           saveBtn: true,
           textAlignment: 'center',
           remarksEditable: true,
-          showCalculate: true,
+          showCalculate: false,
           showTitle: true,
 
           // showCalculate: false,

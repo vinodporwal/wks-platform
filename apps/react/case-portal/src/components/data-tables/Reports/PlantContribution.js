@@ -144,7 +144,7 @@ export default function PlantContribution() {
               title={title}
               permissions={{
                 textAlignment: 'center',
-                showCalculate: canCalculate,
+                showCalculate: false,
                 showTitle: true,
               }}
             />

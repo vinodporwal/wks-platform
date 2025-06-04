@@ -51,7 +51,7 @@ const AnnualProductionPlan = () => {
 
   const formatValueToThreeDecimals = (params) => {
     const dateRegex =
-      /^(\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}|\d{1,2} [a-zA-Z]+ \d{4})$/
+      /^(\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}|\d{1,2} [a-zA-Z]+ \d{4}|\d{1,2}-[a-zA-Z]{3}-\d{2,4})$/
 
     if (params === 0) return 0
 
@@ -60,7 +60,34 @@ const AnnualProductionPlan = () => {
     }
 
     const num = parseFloat(params)
-    return isNaN(num) ? '' : num.toFixed(3)
+    return isNaN(num) ? '' : num.toFixed(1)
+  }
+  const formatValueToThreeDecimalsTwo = (params) => {
+    const dateRegex =
+      /^(\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}|\d{1,2} [a-zA-Z]+ \d{4}|\d{1,2}-[a-zA-Z]{3}-\d{2,4})$/
+
+    if (params === 0) return 0
+
+    if (typeof params === 'string' && dateRegex.test(params.trim())) {
+      return params
+    }
+
+    const num = parseFloat(params)
+    return isNaN(num) ? '' : num.toFixed(2)
+  }
+
+  const formatValueToThreeDecimalsZero = (params) => {
+    const dateRegex =
+      /^(\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}|\d{1,2} [a-zA-Z]+ \d{4}|\d{1,2}-[a-zA-Z]{3}-\d{2,4})$/
+
+    if (params === 0) return 0
+
+    if (typeof params === 'string' && dateRegex.test(params.trim())) {
+      return params
+    }
+
+    const num = parseFloat(params)
+    return isNaN(num) ? '' : num.toFixed(0)
   }
 
   const columnsAssumptions = [
@@ -132,13 +159,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -171,13 +198,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -187,13 +214,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -222,13 +249,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -238,13 +265,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -255,13 +282,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -271,13 +298,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -288,13 +315,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -304,13 +331,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -321,13 +348,13 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsTwo,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -490,7 +517,7 @@ const AnnualProductionPlan = () => {
         title='Plant Production Plan (T-15)\nAssumptions & remarks'
         permissions={{
           showWorkFlowBtns: true,
-          showCalculate: true,
+          showCalculate: false,
           showTitle: true,
         }}
       />
