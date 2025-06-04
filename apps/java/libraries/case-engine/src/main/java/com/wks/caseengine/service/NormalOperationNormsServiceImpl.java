@@ -250,7 +250,20 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		int result= executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
 				vertical.getId().toString(), year);
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"normal-op-norms");
-        aopMessageVM.setCode(200);
+        List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("normal-op-norms");
+		for(ScreenMapping screenMapping:screenMappingList) {
+			if(!screenMapping.getCalculationScreen().equalsIgnoreCase(screenMapping.getDependentScreen())) {
+				AOPCalculation aopCalculation=new AOPCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+		}
+		aopMessageVM.setCode(200);
+		aopMessageVM.setCode(200);
         aopMessageVM.setMessage("SP Executed successfully");
         aopMessageVM.setData(result);
         return aopMessageVM;
