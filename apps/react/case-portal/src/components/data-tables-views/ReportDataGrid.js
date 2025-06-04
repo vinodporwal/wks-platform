@@ -221,6 +221,16 @@ const ReportDataGrid = ({
                 Export
               </Button>
             )}
+            {permissions?.showFinalSubmit && (
+              <Button
+                variant='contained'
+                // onClick={handleExport}
+                // disabled={isButtonDisabled}
+                className='btn-save'
+              >
+                Submit Work
+              </Button>
+            )}
 
             {/* {permissions?.showWorkFlowBtns && (
               <Stack direction='row' spacing={1} alignItems='center'>

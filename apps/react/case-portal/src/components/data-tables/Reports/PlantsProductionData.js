@@ -135,19 +135,22 @@ const PlantsProductionSummary = () => {
               : '',
 
           BudgetPrevYear:
-            Particulates.BudgetPrevYear != null
+            Particulates.BudgetPrevYear != null &&
+            Particulates.Particulates !== 'ProductionRate'
               ? Number(Particulates.BudgetPrevYear.toFixed(0))
-              : '',
+              : Number(Particulates.BudgetPrevYear.toFixed(2)),
 
           BudgetCurrentYear:
-            Particulates.BudgetCurrentYear != null
+            Particulates.BudgetCurrentYear != null &&
+            Particulates.Particulates !== 'ProductionRate'
               ? Number(Particulates.BudgetCurrentYear.toFixed(0))
-              : '',
+              : Number(Particulates.BudgetPrevYear.toFixed(2)),
 
           ActualPrevYear:
-            Particulates.ActualPrevYear != null
+            Particulates.ActualPrevYear != null &&
+            Particulates.Particulates !== 'ProductionRate'
               ? Number(Particulates.ActualPrevYear.toFixed(0))
-              : '',
+              : Number(Particulates.BudgetPrevYear.toFixed(2)),
         }))
 
         setRows(res)

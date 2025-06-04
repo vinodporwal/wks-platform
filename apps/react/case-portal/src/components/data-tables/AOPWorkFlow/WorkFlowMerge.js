@@ -164,8 +164,8 @@ const WorkFlowMerge = () => {
         throw new Error('Plant ID or year not found in localStorage')
       }
 
-      // Run all API calls in parallel
-      const [data, res1, res2, res3, res4, res] = await Promise.all([
+      // Wait for all API calls to complete
+      const [data, res1, res2, res3, res4, res5, res6] = await Promise.all([
         DataService.handleCalculateProductionVolData2(plantId, year, keycloak),
         DataService.handleCalculatePlantProductionData(plantId, year, keycloak),
         DataService.handleCalculateMonthwiseProduction(plantId, year, keycloak),
@@ -176,9 +176,18 @@ const WorkFlowMerge = () => {
           year,
           keycloak,
         ),
+        DataService.calculatePlantContributionReportData(
+          plantId,
+          year,
+          keycloak,
+        ),
       ])
 
-      if (data || data === 0) {
+      const allSuccess = [data, res1, res2, res3, res4, res5, res6].every(
+        (res) => res !== null && res !== undefined,
+      )
+
+      if (allSuccess) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
@@ -205,6 +214,7 @@ const WorkFlowMerge = () => {
       setLoading(false)
     }
   }
+
   const handleExportAll = async () => {
     try {
       setLoading(true)

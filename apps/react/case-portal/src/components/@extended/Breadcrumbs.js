@@ -115,7 +115,13 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   }
 
   async function handleOpenPdfTemp(title) {
-    const url = `${window.location.origin}/files/Business Demand.pdf`
+    // console.log('titletitle', title)
+    var url = ''
+    if (title != 'production-norms')
+      url = `${window.location.origin}/files/DTC.xlsx`
+    else {
+      url = `${window.location.origin}/files/Blue Print.docx`
+    }
 
     try {
       const resp = await fetch(url, {

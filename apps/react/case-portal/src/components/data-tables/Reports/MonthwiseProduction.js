@@ -540,6 +540,7 @@ const MonthwiseProduction = () => {
           customHeight: defaultCustomHeight,
           // dynamicGridHeight: true,
           needTotal: true,
+          roundOffDecimals: true,
         }}
       />
       <Notification

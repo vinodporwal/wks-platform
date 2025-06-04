@@ -76,6 +76,17 @@ const AnnualProductionPlan = () => {
     return isNaN(num) ? '' : num.toFixed(2)
   }
 
+  const formatValueToThreeDecimalsTwoProductionPerformance = (params, row) => {
+    const rowsWithPercentage =
+      row?.Item?.includes('Operating') || row?.Item?.includes('EOE')
+
+    if (rowsWithPercentage) {
+      return params === 0 ? 0 : params ? parseFloat(params).toFixed(0) : ''
+    } else {
+      return params === 0 ? 0 : params ? parseFloat(params).toFixed(2) : ''
+    }
+  }
+
   const formatValueToThreeDecimalsZero = (params) => {
     const dateRegex =
       /^(\d{1,2}[-/ ]\d{1,2}[-/ ]\d{2,4}|\d{1,2} [a-zA-Z]+ \d{4}|\d{1,2}-[a-zA-Z]{3}-\d{2,4})$/
@@ -249,13 +260,18 @@ const AnnualProductionPlan = () => {
       editable: false,
       flex: 1,
       align: 'right',
-      valueFormatter: formatValueToThreeDecimalsTwo,
+      valueFormatter: formatValueToThreeDecimalsTwoProductionPerformance,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+          <span>
+            {formatValueToThreeDecimalsTwoProductionPerformance(
+              params.value,
+              params.row,
+            )}
+          </span>
         </Tooltip>
       ),
     },
@@ -271,7 +287,12 @@ const AnnualProductionPlan = () => {
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+          <span>
+            {formatValueToThreeDecimalsTwoProductionPerformance(
+              params.value,
+              params.row,
+            )}
+          </span>
         </Tooltip>
       ),
     },
@@ -288,7 +309,12 @@ const AnnualProductionPlan = () => {
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+          <span>
+            {formatValueToThreeDecimalsTwoProductionPerformance(
+              params.value,
+              params.row,
+            )}
+          </span>
         </Tooltip>
       ),
     },
@@ -304,7 +330,12 @@ const AnnualProductionPlan = () => {
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+          <span>
+            {formatValueToThreeDecimalsTwoProductionPerformance(
+              params.value,
+              params.row,
+            )}
+          </span>
         </Tooltip>
       ),
     },
@@ -321,7 +352,12 @@ const AnnualProductionPlan = () => {
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+          <span>
+            {formatValueToThreeDecimalsTwoProductionPerformance(
+              params.value,
+              params.row,
+            )}
+          </span>
         </Tooltip>
       ),
     },
@@ -337,7 +373,12 @@ const AnnualProductionPlan = () => {
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+          <span>
+            {formatValueToThreeDecimalsTwoProductionPerformance(
+              params.value,
+              params.row,
+            )}
+          </span>
         </Tooltip>
       ),
     },
@@ -354,7 +395,12 @@ const AnnualProductionPlan = () => {
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+          <span>
+            {formatValueToThreeDecimalsTwoProductionPerformance(
+              params.value,
+              params.row,
+            )}
+          </span>
         </Tooltip>
       ),
     },
