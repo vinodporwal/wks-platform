@@ -11,6 +11,7 @@ export const validateFields = (data, requiredFields) => {
     normParametersFKId: 'Particular',
     aopRemarks: 'Remark',
     remarks: 'Remark',
+    ThroughputActual: 'Actual Throughput',
   }
 
   const invalidRows = data.filter((row) => {

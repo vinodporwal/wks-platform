@@ -511,6 +511,8 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			Optional<MonthWiseProductionPlan> optional = monthWiseProductionPlanRepository
 					.findById(UUID.fromString(dto.getId()));
 			optional.get().setRemark(dto.getRemark());
+			optional.get().setThroughputActual(dto.getThroughputActual());
+
 			monthWiseProductionPlanRepository.save(optional.get());
 		}
 		AOPMessageVM response = new AOPMessageVM();

@@ -26,20 +26,31 @@
   },
   {
     "field": "normValue",
-    "headerName": "Norm Value",
+    "headerName": "Value",
     "flex": 2,
     "editable": false
   },
   {
     "field": "actualQuantity",
-    "headerName": "Production Value",
+    "headerName": "Actual Quantity",
     "flex": 2,
     "editable": false
   },
-
+  {
+    "field": "normDateTime",
+    "headerName": "Norm Date Time",
+    "flex": 2,
+    "editable": false
+  },
   {
     "field": "dateTime",
     "headerName": "Date Time",
+    "flex": 2,
+    "editable": false
+  },
+  {
+    "field": "normsUom",
+    "headerName": "UOM",
     "flex": 2,
     "editable": false
   }
