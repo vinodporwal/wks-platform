@@ -26,42 +26,47 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RestController
 @RequestMapping("task")
 public class SlowdownPlanController {
-	
+
 	@Autowired
 	private SlowdownPlanService slowdownPlanService;
-	
+
 	@Autowired
 	private ShutDownPlanService shutDownPlanService;
-	
+
 	@GetMapping(value = "/getSlowDownPlanData")
-    public ResponseEntity<List<ShutDownPlanDTO>> findSlowdownDetailsByPlantIdAndType(@RequestParam UUID plantId,@RequestParam String maintenanceTypeName, @RequestParam String year) {
-		List<ShutDownPlanDTO> listOfSite=null;
+	public ResponseEntity<List<ShutDownPlanDTO>> findSlowdownDetailsByPlantIdAndType(@RequestParam UUID plantId,
+			@RequestParam String maintenanceTypeName, @RequestParam String year) {
+		List<ShutDownPlanDTO> listOfSite = null;
 		try {
-			listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantId,maintenanceTypeName,year);
-		}catch(Exception e) {
+			listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantId, maintenanceTypeName, year);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-        return ResponseEntity.ok(listOfSite);
-    }
-	
-	@PostMapping(value="/saveSlowdownData/{plantId}")
-	public ResponseEntity<List<ShutDownPlanDTO>> saveShutdownData(@PathVariable UUID plantId,@RequestBody List<ShutDownPlanDTO> shutDownPlanDTOList){
-		slowdownPlanService.saveShutdownData(plantId,shutDownPlanDTOList);
-				return ResponseEntity.ok(shutDownPlanDTOList); 
+		return ResponseEntity.ok(listOfSite);
 	}
-	
+
+	@PostMapping(value = "/saveSlowdownData/{plantId}")
+	public ResponseEntity<List<ShutDownPlanDTO>> saveShutdownData(@PathVariable UUID plantId,
+			@RequestBody List<ShutDownPlanDTO> shutDownPlanDTOList) {
+		slowdownPlanService.saveShutdownData(plantId, shutDownPlanDTOList);
+		return ResponseEntity.ok(shutDownPlanDTOList);
+	}
+
 	@PutMapping(value = "/editSlowdownData/{plantMaintenanceTransactionId}")
-    public ResponseEntity<List<ShutDownPlanDTO>> editShutdownData(@PathVariable UUID plantMaintenanceTransactionId, @RequestBody List<ShutDownPlanDTO> shutDownPlanDTOList) {
-        
-		slowdownPlanService.editShutdownData(plantMaintenanceTransactionId,shutDownPlanDTOList);
-		          
-        return ResponseEntity.ok(shutDownPlanDTOList);
-    }
-	
-	@DeleteMapping("/deleteSlowdownData/{plantMaintenanceTransactionId}")
-    public ResponseEntity<String> deletePlant(@PathVariable UUID plantMaintenanceTransactionId,@PathVariable UUID plantId) {
-	  	shutDownPlanService.deletePlanData(plantMaintenanceTransactionId,plantId);
-        return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
-    }
-	
+	public ResponseEntity<List<ShutDownPlanDTO>> editShutdownData(@PathVariable UUID plantMaintenanceTransactionId,
+			@RequestBody List<ShutDownPlanDTO> shutDownPlanDTOList) {
+
+		slowdownPlanService.editShutdownData(plantMaintenanceTransactionId, shutDownPlanDTOList);
+
+		return ResponseEntity.ok(shutDownPlanDTOList);
+	}
+
+	@DeleteMapping("/deleteSlowdownData/{plantMaintenanceTransactionId}/{plantId}")
+
+	public ResponseEntity<String> deletePlant(@PathVariable UUID plantMaintenanceTransactionId,
+			@PathVariable UUID plantId) {
+		shutDownPlanService.deletePlanData(plantMaintenanceTransactionId, plantId);
+		return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
+	}
+
 }

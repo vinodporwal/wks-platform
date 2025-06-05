@@ -433,18 +433,18 @@ const MonthwiseProduction = () => {
       //   return
       // }
 
-      const requiredFields = ['remarks', 'ThroughputActual']
+      // const requiredFields = ['remarks', 'ThroughputActual']
 
-      const validationMessage = validateFields(data, requiredFields)
-      if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
+      // const validationMessage = validateFields(data, requiredFields)
+      // if (validationMessage) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: validationMessage,
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
 
       const res = await DataService.saveMonthwiseProduction(
         keycloak,
