@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.CalculatedConsumptionNormsDTO;
 import com.wks.caseengine.dto.AOPConsumptionNormDTO;
 import com.wks.caseengine.entity.AOPConsumptionNorm;
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
@@ -60,7 +60,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 	
 	@Autowired
 	private ScreenMappingRepository screenMappingRepository;
-	
+
 	// Inject or set your DataSource (e.g., via constructor or setter)
 		public AOPConsumptionNormServiceImpl(DataSource dataSource) {
 			this.dataSource = dataSource;
@@ -104,7 +104,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			}
 			Map<String, Object> map = new HashMap<>(); 
 			
-			List<AopCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"consumption-aop");
+			List<AOPCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"consumption-aop");
 			map.put("aopConsumptionNormDTOList", aOPConsumptionNormDTOList);
 			map.put("aopCalculation", aopCalculation);
 			aopMessageVM.setCode(200);
@@ -214,7 +214,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"consumption-aop");
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("consumption-aop");
 			for(ScreenMapping screenMapping:screenMappingList) {
-				AopCalculation aopCalculation=new AopCalculation();
+				AOPCalculation aopCalculation=new AOPCalculation();
 				aopCalculation.setAopYear(year);
 				aopCalculation.setIsChanged(true);
 				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());

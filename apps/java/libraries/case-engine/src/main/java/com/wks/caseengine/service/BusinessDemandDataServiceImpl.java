@@ -7,7 +7,7 @@ import jakarta.persistence.Query;
 import java.util.List;
 import java.util.UUID;
 
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import com.wks.caseengine.entity.BusinessDemand;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
@@ -143,7 +143,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			} // TODO Auto-generated method stub
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("business-demand");
 			for(ScreenMapping screenMapping:screenMappingList) {
-				AopCalculation aopCalculation=new AopCalculation();
+				AOPCalculation aopCalculation=new AOPCalculation();
 				aopCalculation.setAopYear(year);
 				aopCalculation.setIsChanged(true);
 				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());

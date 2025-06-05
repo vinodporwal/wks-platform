@@ -9,7 +9,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.SlowdownNormsValueDTO;
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.ShutdownNormsValue;
@@ -217,7 +217,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			}
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("slowdown-norms");
 			for(ScreenMapping screenMapping:screenMappingList) {
-				AopCalculation aopCalculation=new AopCalculation();
+				AOPCalculation aopCalculation=new AOPCalculation();
 				aopCalculation.setAopYear(year);
 				aopCalculation.setIsChanged(true);
 				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());

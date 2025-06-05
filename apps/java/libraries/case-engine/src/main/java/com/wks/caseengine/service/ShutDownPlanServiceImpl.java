@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.MonthWiseDataDTO;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
-import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.AOPCalculation;
 import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 import com.wks.caseengine.entity.ScreenMapping;
@@ -303,7 +303,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			}
 			List<ScreenMapping> screenMappingList= screenMappingRepository.findByDependentScreen("shutdown-plan");
 			for(ScreenMapping screenMapping:screenMappingList) {
-				AopCalculation aopCalculation=new AopCalculation();
+				AOPCalculation aopCalculation=new AOPCalculation();
 				aopCalculation.setAopYear(year);
 				aopCalculation.setIsChanged(true);
 				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
