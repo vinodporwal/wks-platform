@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import jakarta.persistence.EntityManager;
@@ -18,6 +19,7 @@ import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.entity.AOPMCCalculatedData;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
@@ -28,7 +30,6 @@ import com.wks.caseengine.repository.AopCalculationRepository;
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.sql.Connection;
-
 
 @Service
 public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataService {
@@ -47,20 +48,23 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 	@PersistenceContext
 	private EntityManager entityManager;
-	
+
 	private DataSource dataSource;
-	
+
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
-	
+
+	@Autowired
+	private ScreenMappingRepository screenMappingRepository;
+
 	// Inject or set your DataSource (e.g., via constructor or setter)
-		public AOPMCCalculatedDataServiceImpl(DataSource dataSource) {
-			this.dataSource = dataSource;
-		}
+	public AOPMCCalculatedDataServiceImpl(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
 
 	@Override
 	public AOPMessageVM getAOPMCCalculatedData(String plantId, String year) {
-		AOPMessageVM aopMessageVM=new AOPMessageVM();
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
 			List<Object[]> obj = aOPMCCalculatedDataRepository.getDataMCUValuesAllData(year, plantId);
 			List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
@@ -88,9 +92,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				aOPMCCalculatedDataDTO.setVerticalFKId(row[22] != null ? row[22].toString() : null);
 				aOPMCCalculatedDataDTOList.add(aOPMCCalculatedDataDTO);
 			}
-			Map<String, Object> map = new HashMap<>(); 
-			
-			List<AopCalculation> aopCalculation=aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),year,"production-volume-data");
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(
+					UUID.fromString(plantId), year, "production-volume-data");
 			map.put("aopMCCalculatedDataDTOList", aOPMCCalculatedDataDTOList);
 			map.put("aopCalculation", aopCalculation);
 			aopMessageVM.setCode(200);
@@ -108,6 +113,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public List<AOPMCCalculatedDataDTO> editAOPMCCalculatedData(
 			List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList) {
 		try {
+			String finYear = "";
+			UUID plantId = null;
+
 			for (AOPMCCalculatedDataDTO aOPMCCalculatedDataDTO : aOPMCCalculatedDataDTOList) {
 				AOPMCCalculatedData aOPMCCalculatedData = new AOPMCCalculatedData();
 				if (aOPMCCalculatedDataDTO.getId() == null || aOPMCCalculatedDataDTO.getId().contains("#")) {
@@ -116,6 +124,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 					aOPMCCalculatedData.setId(UUID.fromString(aOPMCCalculatedDataDTO.getId()));
 				}
 				aOPMCCalculatedData.setPlantFKId(UUID.fromString(aOPMCCalculatedDataDTO.getPlantFKId()));
+
+				plantId = UUID.fromString(aOPMCCalculatedDataDTO.getPlantFKId());
+
 				aOPMCCalculatedData.setSiteFKId(UUID.fromString(aOPMCCalculatedDataDTO.getSiteFKId()));
 				aOPMCCalculatedData.setVerticalFKId(UUID.fromString(aOPMCCalculatedDataDTO.getVerticalFKId()));
 				aOPMCCalculatedData.setMaterialFKId(UUID.fromString(aOPMCCalculatedDataDTO.getMaterialFKId()));
@@ -134,10 +145,24 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 				aOPMCCalculatedData.setJanuary(aOPMCCalculatedDataDTO.getJanuary());
 
 				aOPMCCalculatedData.setFinancialYear(aOPMCCalculatedDataDTO.getFinancialYear());
+				finYear = aOPMCCalculatedDataDTO.getFinancialYear();
 				aOPMCCalculatedData.setRemarks(aOPMCCalculatedDataDTO.getRemarks());
 
 				aOPMCCalculatedDataRepository.save(aOPMCCalculatedData);
 			}
+
+			List<ScreenMapping> screenMappingList = screenMappingRepository
+					.findByDependentScreen("production-volume-data");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(finYear);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId((plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+
 			// TODO Auto-generated method stub
 			return aOPMCCalculatedDataDTOList;
 		} catch (Exception ex) {
@@ -145,54 +170,72 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 		}
 	}
 
-	
 	@Override
 	public AOPMessageVM getAOPMCCalculatedDataSP(String plantId, String finYear) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-	    try {
-	        Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-	        Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 
-	        UUID siteId = site.getId();
-	        UUID verticalId = vertical.getId();
-	        String storedProcedure = vertical.getName() + "_LoadMCValues";
+			UUID siteId = site.getId();
+			UUID verticalId = vertical.getId();
+			String storedProcedure = vertical.getName() + "_LoadMCValues";
 
-	        String callSql = "{call " + storedProcedure + "(?, ?, ?, ?)}";
+			String callSql = "{call " + storedProcedure + "(?, ?, ?, ?)}";
 
-	        try (Connection connection = dataSource.getConnection();
-	             CallableStatement stmt = connection.prepareCall(callSql)) {
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
 
-	            // Set parameters in the correct order
-	            stmt.setString(1, finYear); // @finYear
-	            stmt.setString(2, plantId); // @plantId
-	            stmt.setString(3, verticalId.toString()); // @verticalId
-	            stmt.setString(4, siteId.toString()); // @siteId
+				// Set parameters in the correct order
+				stmt.setString(1, finYear); // @finYear
+				stmt.setString(2, plantId); // @plantId
+				stmt.setString(3, verticalId.toString()); // @verticalId
+				stmt.setString(4, siteId.toString()); // @siteId
 
-	            // Execute the stored procedure
-	            int rowsAffected = stmt.executeUpdate();
+				// Execute the stored procedure
+				int rowsAffected = stmt.executeUpdate();
 
-	            // Optional: commit if auto-commit is off
-	            if (!connection.getAutoCommit()) {
-	                connection.commit();
-	            }
-	            
-	            aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),finYear,"production-volume-data");
-	            aopMessageVM.setCode(200);
-		        aopMessageVM.setMessage("SP Executed successfully");
-		        aopMessageVM.setData(rowsAffected);
-		        return aopMessageVM;
+				// Optional: commit if auto-commit is off
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
 
+				aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),
+						finYear, "production-volume-data");
 
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	            return aopMessageVM;
-	        }
+				List<ScreenMapping> screenMappingList = screenMappingRepository
+						.findByDependentScreen("production-volume-data");
+				for (ScreenMapping screenMapping : screenMappingList) {
+					if (!screenMapping.getCalculationScreen().equalsIgnoreCase(screenMapping.getDependentScreen())) {
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return aopMessageVM;
-	    }
+						AopCalculation aopCalculation = new AopCalculation();
+						aopCalculation.setAopYear(finYear);
+						aopCalculation.setIsChanged(true);
+						aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+						aopCalculation.setPlantId(UUID.fromString(plantId));
+						aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+						aopCalculationRepository.save(aopCalculation);
+					}
+				}
+
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("SP Executed successfully");
+				aopMessageVM.setData(rowsAffected);
+				return aopMessageVM;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return aopMessageVM;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return aopMessageVM;
+		}
 	}
 
 }

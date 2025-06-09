@@ -13,6 +13,7 @@ import { Box } from '../../../node_modules/@mui/material/index'
 
 const SelectivityData = (props) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
     dataGridStore
@@ -49,9 +50,17 @@ const SelectivityData = (props) => {
 
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
+    setEnableSaveAddBtn(true)
   }
 
   const handleRemarkCellClick = (row) => {
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
+
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
     // if (!row?.isEditable) return
 
     setCurrentRemark(row.remarks || '')
@@ -173,6 +182,7 @@ const SelectivityData = (props) => {
           message: 'Configuration data Saved Successfully!',
           severity: 'success',
         })
+        setEnableSaveAddBtn(false)
         setModifiedCells({})
 
         unsavedChangesRef.current = {
@@ -372,6 +382,7 @@ const SelectivityData = (props) => {
       </Backdrop>
       <ASDataGrid
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         columns={productionColumns}
         rows={props?.rows}
         setRows={props?.setRows}

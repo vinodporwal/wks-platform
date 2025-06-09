@@ -45,7 +45,7 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
 
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
-
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const [rowModesModel, setRowModesModel] = useState({})
   const keycloak = useSession()
   const [allProducts, setAllProducts] = useState([])
@@ -59,6 +59,7 @@ const BusinessDemand = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
+
   const [rows2, setRows2] = useState()
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
   const [snackbarData, setSnackbarData] = useState({
@@ -177,6 +178,13 @@ const BusinessDemand = ({ permissions }) => {
   // })
 
   const handleRemarkCellClick = (row) => {
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
+
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
     // console.log(row, newRow)
     if (!row?.isEditable) return
     setCurrentRemark(row.remark || '')
@@ -326,6 +334,7 @@ const BusinessDemand = ({ permissions }) => {
         message: 'Business Demand data Saved Successfully!',
         severity: 'success',
       })
+      setEnableSaveAddBtn(false)
       setModifiedCells({})
 
       unsavedChangesRef.current = {
@@ -347,6 +356,7 @@ const BusinessDemand = ({ permissions }) => {
 
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
+    setEnableSaveAddBtn(true)
   }
 
   const deleteRowData = async (paramsForDelete) => {
@@ -420,8 +430,8 @@ const BusinessDemand = ({ permissions }) => {
             id='meg-grid-header'
           >
             <Typography component='span' className='grid-title'>
-              Production Volume Data (MT) (For reference to enter Business
-              Demand Value )
+              Production Volume Data (MT) (This is a reference for entering the
+              Business Demand value)
             </Typography>
           </CustomAccordionSummary>
           <CustomAccordionDetails>
@@ -438,6 +448,7 @@ const BusinessDemand = ({ permissions }) => {
                   showCalculate: false,
                   saveBtn: false,
                   hideSummary: true,
+                  viewGrid: true,
                 }}
               />
             </Box>
@@ -451,6 +462,7 @@ const BusinessDemand = ({ permissions }) => {
 
       <ASDataGrid
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         setRows={setRows}
         columns={colDefs}
         rows={rows || []}

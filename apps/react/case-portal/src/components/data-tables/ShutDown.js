@@ -20,6 +20,7 @@ import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/grid
 
 const ShutDown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
@@ -223,10 +224,13 @@ const ShutDown = ({ permissions }) => {
         message: 'Shutdown data Saved Successfully!',
         severity: 'success',
       })
+      const maintenanceResponse = await DataService.getMaintenanceData(keycloak)
+
       unsavedChangesRef.current = {
         unsavedRows: {},
         rowsBeforeChange: {},
       }
+      setEnableSaveAddBtn(false)
       setModifiedCells({})
 
       setLoading(false)
@@ -283,6 +287,9 @@ const ShutDown = ({ permissions }) => {
         idFromApi: item?.id,
         id: index,
         originalRemark: item.remark,
+        durationInHrs: item.durationInHrs?.toFixed
+          ? Number(item.durationInHrs).toFixed(2)
+          : item.durationInHrs,
       }))
       setRows(formattedData)
       setLoading(false)
@@ -529,7 +536,7 @@ const ShutDown = ({ permissions }) => {
                 whiteSpace: 'nowrap',
                 width: ' 100%',
               }}
-              onClick={() => handleRemarkCellClick(params.row)}
+              onDoubleClick={() => handleRemarkCellClick(params.row)}
             >
               {displayText || (isEditable ? 'Click to add remark' : '')}
             </div>
@@ -552,6 +559,7 @@ const ShutDown = ({ permissions }) => {
 
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
+    setEnableSaveAddBtn(true)
   }
 
   const deleteRowData = async (paramsForDelete) => {
@@ -620,6 +628,7 @@ const ShutDown = ({ permissions }) => {
 
       <ASDataGrid
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         setRows={setRows}
         columns={colDefs}
         rows={rows}

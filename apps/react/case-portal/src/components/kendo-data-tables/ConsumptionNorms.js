@@ -13,9 +13,6 @@ import TextField from '@mui/material/TextField'
 import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 
-import Accordion from '@mui/material/Accordion'
-import AccordionSummary from '@mui/material/AccordionSummary'
-import AccordionDetails from '@mui/material/AccordionDetails'
 import Typography from '@mui/material/Typography'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { Box } from '@mui/material'
@@ -24,12 +21,10 @@ import { Button } from '@mui/material'
 //import './extra-css.css'
 
 import { styled } from '@mui/material/styles'
-import MuiAccordion, { AccordionProps } from '@mui/material/Accordion'
-import MuiAccordionSummary, {
-  AccordionSummaryProps,
-} from '@mui/material/AccordionSummary'
+import MuiAccordion from '@mui/material/Accordion'
+import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
-import KendoDataTables from './kendo-inprogress'
+import KendoDataTables from './index'
 
 // Customized Accordion
 const CustomAccordion = styled((props) => (
@@ -406,51 +401,19 @@ const ConsumptionNorms = () => {
 
       setCalculationObject(response?.data?.aopCalculation)
 
-      // const customOrder = [
-      //   'Raw Material',
-      //   'By Products',
-      //   'Cat Chem',
-      //   'Utility Consumption',
-      //   'Configuration',
-      // ]
+      const formattedData = response?.data?.aopConsumptionNormDTOList?.map(
+        (item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        NormParametersId: item.materialFkId.toLowerCase(),
+        originalRemark: item.aopRemarks?.trim() || null,
+        id: index,
+        isEditable: false,
+        Particulars: item.normParameterTypeDisplayName,
+        }),
+      )
 
-      // const data = data1.sort(
-      //   (a, b) =>
-      //     customOrder.indexOf(a.normParameterTypeDisplayName) -
-      //     customOrder.indexOf(b.normParameterTypeDisplayName),
-      // )
-
-      const groupedRows = []
-      const groups = new Map()
-      let groupId = 0
-
-      response?.data?.aopConsumptionNormDTOList?.forEach((item) => {
-        const groupKey = item.normParameterTypeDisplayName
-
-        if (!groups.has(groupKey)) {
-          groups.set(groupKey, [])
-          groupedRows.push({
-            id: groupId++,
-            Particulars: groupKey,
-            isGroupHeader: true,
-          })
-        }
-        const formattedItem = {
-          ...item,
-          idFromApi: item.id,
-          NormParametersId: item.materialFkId.toLowerCase(),
-          // originalRemark: item.aopRemarks,
-          originalRemark: item.aopRemarks?.trim() || null,
-          id: groupId++,
-          isEditable: false,
-        }
-
-        groups.get(groupKey).push(formattedItem)
-        groupedRows.push(formattedItem)
-      })
-
-      // setBDData(groupedRows)
-      setRows(groupedRows)
+      setRows(formattedData)
 
       setLoading(false)
       setCalculatebtnClicked(false)
@@ -787,6 +750,7 @@ const ConsumptionNorms = () => {
                   currentRowId={currentRowId}
                   unsavedChangesRef={unsavedChangesRef}
                   permissions={adjustedPermissions}
+                  groupBy='Particulars'
 
                   // permissions={{
                   //   showAction: false,

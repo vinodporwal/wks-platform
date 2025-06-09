@@ -65,41 +65,6 @@ const ProductionNorms = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  // const processRowUpdate = React.useCallback((newRow, oldRow) => {
-  //   const rowId = newRow.id
-  //   const updatedFields = []
-  //   for (const key in newRow) {
-  //     if (
-  //       Object.prototype.hasOwnProperty.call(newRow, key) &&
-  //       newRow[key] !== oldRow[key]
-  //     ) {
-  //       updatedFields.push(key)
-  //     }
-  //   }
-
-  //   if (newRow.id === 'total') {
-  //     return newRow
-  //   }
-  //   unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
-  //   if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
-  //     unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
-  //   }
-
-  //   setRows((prevRows) =>
-  //     prevRows.map((row) =>
-  //       row.id === newRow.id ? { ...newRow, isNew: false } : row,
-  //     ),
-  //   )
-
-  //   if (updatedFields.length > 0) {
-  //     setModifiedCells((prevModifiedCells) => ({
-  //       ...prevModifiedCells,
-  //       [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
-  //     }))
-  //   }
-
-  //   return newRow
-  // }, [])
 
   const saveChanges = React.useCallback(async () => {
     const rowsInEditMode = Object.keys(rowModesModel).filter(
@@ -614,14 +579,6 @@ const ProductionNorms = ({ permissions }) => {
     findSum,
   })
 
-  const onProcessRowUpdateError = React.useCallback((error) => {
-    console.log(error)
-  }, [])
-
-  const onRowModesModelChange = (newRowModesModel) => {
-    setRowModesModel(newRowModesModel)
-  }
-
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
   }
@@ -661,12 +618,63 @@ const ProductionNorms = ({ permissions }) => {
     },
     isOldYear,
   )
+  const rowData = [
+    {
+      idFromApi: null,
+      aopCaseId: null,
+      aopType: null,
+      aopYear: null,
+      plantFkId: null,
+      normParametersFKId: 'Ethyelene',
+      uom: 'MT/Month',
+      april: 13420,
+      may: 12875,
+      june: 14210,
+      july: 13750,
+      aug: 12995,
+      sep: 14130,
+      oct: 13580,
+      nov: 13045,
+      dec: 13670,
+      jan: 13920,
+      feb: 13105,
+      march: 13840,
+      averageTPH: '',
+      isEditable: false,
+      aopStatus: '',
+    },
+    {
+      idFromApi: null,
+      aopCaseId: null,
+      aopType: null,
+      aopYear: null,
+      plantFkId: null,
+      normParametersFKId: 'Propylene',
+      uom: 'MT/Month',
+      april: 9450,
+      may: 10235,
+      june: 11090,
+      july: 10720,
+      aug: 11560,
+      sep: 10985,
+      oct: 11340,
+      nov: 10575,
+      dec: 11120,
+      jan: 11280,
+      feb: 10850,
+      march: 11430,
+      averageTPH: '',
+      isEditable: false,
+      aopStatus: '',
+    },
+  ]
   const NormParameterIdCell = (props) => {
     const productId = props.dataItem.normParametersFKId
     const product = allProducts.find((p) => p.id === productId)
     const displayName = product?.displayName || ''
-    // console.log(displayName)
-    return <td>{displayName}</td>
+    return (
+      <td>{displayName ? displayName : props.dataItem.normParametersFKId}</td>
+    )
   }
   return (
     <div>
@@ -680,7 +688,7 @@ const ProductionNorms = ({ permissions }) => {
       <KendoDataTables
         modifiedCells={modifiedCells}
         columns={productionColumns}
-        rows={rows}
+        rows={lowerVertName === 'cracker' ? rowData : rows}
         setRows={setRows}
         NormParameterIdCell={NormParameterIdCell}
         title={'Production AOP'}
@@ -694,7 +702,7 @@ const ProductionNorms = ({ permissions }) => {
         // processRowUpdate={processRowUpdate}
 
         rowModesModel={rowModesModel}
-        onRowModesModelChange={onRowModesModelChange}
+        // onRowModesModelChange={onRowModesModelChange}
         // onRowEditStop={handleRowEditStop}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
@@ -704,7 +712,7 @@ const ProductionNorms = ({ permissions }) => {
         handleCalculate={handleCalculate}
         apiRef={apiRef}
         fetchData={fetchData}
-        onProcessRowUpdateError={onProcessRowUpdateError}
+        // onProcessRowUpdateError={onProcessRowUpdateError}
         handleUnitChange={handleUnitChange}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}

@@ -26,6 +26,7 @@ const TurnaroundReport = () => {
   const [currentRemark2, setCurrentRemark2] = useState('')
   const [currentRowId2, setCurrentRowId2] = useState(null)
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const [modifiedCells2, setModifiedCells2] = React.useState({})
 
   const [snackbarData, setSnackbarData] = useState({
@@ -58,6 +59,9 @@ const TurnaroundReport = () => {
   const formatValueToThreeDecimals = (params) => {
     return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
   }
+  const formatValueToThreeDecimalsZero = (params) => {
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(0) : ''
+  }
 
   const columns = [
     { field: 'sno', headerName: 'SL.No', flex: 1 },
@@ -69,7 +73,7 @@ const TurnaroundReport = () => {
       headerName: 'Duration, hrs',
       align: 'right',
       headerAlign: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       flex: 2,
     },
     // {
@@ -93,7 +97,7 @@ const TurnaroundReport = () => {
               whiteSpace: 'nowrap',
               width: ' 100%',
             }}
-            onClick={() => handleRemarkCellClick(params.row)}
+            onDoubleClick={() => handleRemarkCellClick(params.row)}
           >
             {truncateRemarks(params.value) || 'Click to add remark'}
           </div>
@@ -112,7 +116,7 @@ const TurnaroundReport = () => {
       headerName: 'Duration, hrs',
       align: 'right',
       headerAlign: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       flex: 1,
     },
     {
@@ -121,7 +125,7 @@ const TurnaroundReport = () => {
       flex: 1,
       align: 'right',
       headerAlign: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
     },
     {
       field: 'remarks',
@@ -424,6 +428,7 @@ const TurnaroundReport = () => {
     <Box>
       <ReportDataGrid
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         rows={rows}
         setRows={setRows}
         columns={columns}
@@ -444,7 +449,7 @@ const TurnaroundReport = () => {
           customHeight: { mainBox: '32vh', otherBox: '100%' },
           textAlignment: 'center',
           remarksEditable: true,
-          showCalculate: true,
+          showCalculate: false,
           saveBtnForRemark: true,
           saveBtn: true,
           showWorkFlowBtns: true,

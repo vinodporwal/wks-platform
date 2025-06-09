@@ -1,23 +1,13 @@
 import { DataService } from 'services/DataService'
-import dayjs from 'dayjs'
 import React, { useState, useEffect } from 'react'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import { useSelector } from 'react-redux'
-import NumericInputOnly from 'utils/NumericInputOnly'
-import { StartDateTimeEditCell } from 'utils/StartDateTimeEditCell'
-import { EndDateTimeEditCell } from 'utils/EndDateTimeEditCell'
-import Tooltip from '@mui/material/Tooltip'
 
-import Autocomplete from '@mui/material/Autocomplete'
-import TextField from '@mui/material/TextField'
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
-import { truncateRemarks } from 'utils/remarksUtils'
-import { validateFields } from 'utils/validationUtils'
-import TimeInputCell from 'utils/TimeInputCell'
-import { renderTwoLineEllipsis } from 'components/Utilities/twoLineEllipsisRenderer'
+
 import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/gridEditRowModel'
 import KendoDataTables from './index'
 
@@ -73,13 +63,13 @@ const SlowDown = ({ permissions }) => {
   }
 
   const handleRemarkCellClick = (row) => {
-    const rowsInEditMode = Object.keys(rowModesModel).filter(
-      (id) => rowModesModel[id]?.mode === 'edit',
-    )
+    // const rowsInEditMode = Object.keys(rowModesModel).filter(
+    //   (id) => rowModesModel[id]?.mode === 'edit',
+    // )
 
-    rowsInEditMode.forEach((id) => {
-      apiRef.current.stopRowEditMode({ id })
-    })
+    // rowsInEditMode.forEach((id) => {
+    //   apiRef.current.stopRowEditMode({ id })
+    // })
 
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
@@ -274,11 +264,6 @@ const SlowDown = ({ permissions }) => {
     }
   }
 
-  const getProductDisplayName = (id) => {
-    if (!id) return
-    const product = allProducts.find((p) => p.id === id)
-    return product ? product.displayName : ''
-  }
 
   useEffect(() => {
     const getAllProducts = async () => {
@@ -336,7 +321,6 @@ const SlowDown = ({ permissions }) => {
       //width: 180,
       editable: true,
       flex: 3,
-      renderCell: renderTwoLineEllipsis,
     },
 
     {
@@ -350,97 +334,6 @@ const SlowDown = ({ permissions }) => {
       field: 'product',
       title: 'Particulars',
       editable: true,
-      //width: 150,
-      // renderEditCell: (params) => {
-      //   const { value, id, api } = params
-
-      //   const allProductOptions = allProducts.map((product) => ({
-      //     value: product.id,
-      //     label: product.displayName,
-      //   }))
-
-      //   const existingValues = new Set(
-      //     [...api.getRowModels().values()]
-      //       .filter((row) => row.id !== id)
-      //       .map((row) => row.product),
-      //   )
-
-      //   const filteredOptions = allProductOptions.filter(
-      //     (option) =>
-      //       option.value === value || !existingValues.has(option.value),
-      //   )
-
-      //   return (
-      //     <Autocomplete
-      //       value={
-      //         allProductOptions.find((option) => option.value === value) ||
-      //         (params.row.product &&
-      //           allProductOptions.find(
-      //             (opt) => opt.value === params.row.product,
-      //           )) ||
-      //         null
-      //       }
-      //       disableClearable
-      //       options={allProductOptions}
-      //       getOptionLabel={(option) => option?.label || ''}
-      //       onChange={(event, newValue) => {
-      //         params.api.setEditCellValue({
-      //           id: params.id,
-      //           field: 'product',
-      //           value: newValue?.value || '',
-      //         })
-      //       }}
-      //       renderInput={(params) => (
-      //         <TextField
-      //           {...params}
-      //           variant='outlined'
-      //           size='small'
-      //           fullWidth
-      //           style={{ width: '210px' }}
-      //         />
-      //       )}
-      //     />
-      //   )
-      // },
-      // valueGetter: (params) => params || '',
-      // valueFormatter: (params) => {
-      //   const product = allProducts.find((p) => p.id === params)
-      //   return product ? product.displayName : ''
-      // },
-      filterOperators: [
-        {
-          label: 'contains',
-          value: 'contains',
-          getApplyFilterFn: (filterItem) => {
-            if (!filterItem?.value) {
-              return
-            }
-            return (rowId) => {
-              const filterValue = filterItem.value.toLowerCase()
-              if (filterValue) {
-                const productName = getProductDisplayName(rowId)
-                if (productName) {
-                  return productName.toLowerCase().includes(filterValue)
-                }
-              }
-              return true
-            }
-          },
-          InputComponent: ({ item, applyValue, focusElementRef }) => (
-            <TextField
-              autoFocus
-              inputRef={focusElementRef}
-              size='small'
-              label='Contains'
-              value={item.value || ''}
-              onChange={(event) =>
-                applyValue({ ...item, value: event.target.value })
-              }
-              style={{ marginTop: '8px' }}
-            />
-          ),
-        },
-      ],
     },
 
     {
@@ -476,7 +369,7 @@ const SlowDown = ({ permissions }) => {
     {
       field: 'remark',
       title: 'Remarks',
-      editable: false,
+      editable: true,
       //width: 180,
     },
   ]
@@ -564,6 +457,7 @@ const SlowDown = ({ permissions }) => {
         setOpen1={setOpen1}
         open1={open1}
         fetchData={fetchData}
+        handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

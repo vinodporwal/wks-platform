@@ -18,6 +18,7 @@ import { setIsBlocked } from 'store/reducers/dataGridStore'
 
 const ProductionNorms = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
 
   const keycloak = useSession()
   // const [csData, setCsData] = useState([])
@@ -60,6 +61,13 @@ const ProductionNorms = ({ permissions }) => {
   // const isBlocked = useSelector((state) => state.isBlocked) // Get block flag from Redux
 
   const handleRemarkCellClick = (row) => {
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
+
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
     setCurrentRemark(row.remark || row.aopRemarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
@@ -285,6 +293,7 @@ const ProductionNorms = ({ permissions }) => {
 
         setCalculatebtnClicked(false)
         setLoading(false)
+        setEnableSaveAddBtn(false)
         setModifiedCells({})
 
         unsavedChangesRef.current = {
@@ -487,7 +496,7 @@ const ProductionNorms = ({ permissions }) => {
       if (formattedData.length > 0) {
         totalRows = totalRow(formattedData)
       }
-      const finalData = [...formattedData, totalRows]
+      const finalData = [...formattedData]
 
       if (lowerVertName == 'pe') {
         setRows(finalData)
@@ -606,11 +615,14 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName,
   ])
 
+  const roundOffDecimals = permissions?.roundOffDecimals
+
   const productionColumns = getEnhancedColDefs({
     allProducts,
     headerMap,
     handleRemarkCellClick,
     findSum,
+    roundOffDecimals,
   })
 
   const onProcessRowUpdateError = React.useCallback((error) => {
@@ -619,6 +631,7 @@ const ProductionNorms = ({ permissions }) => {
 
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
+    setEnableSaveAddBtn(true)
   }
 
   const handleUnitChange = (unit) => {
@@ -650,7 +663,8 @@ const ProductionNorms = ({ permissions }) => {
       editButton: permissions?.editButton ?? false,
       showUnit: permissions?.showUnit ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      showCalculate:
+      showCalculate: permissions?.showCalculate ?? true,
+      showCalculateVisibility:
         Object.keys(calculationObject).length > 0
           ? permissions?.showCalculate ?? true
           : false,
@@ -673,6 +687,7 @@ const ProductionNorms = ({ permissions }) => {
 
       <ASDataGrid
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         columns={productionColumns}
         rows={rows}
         setRows={setRows}

@@ -10,7 +10,7 @@ import Notification from 'components/Utilities/Notification'
 const categories = [
   {
     key: 'ProductMixAndProduction',
-    title: 'Plant Contribution (T-21)- MEG - Product mix and Production',
+    title: 'Plant Contribution (T-21)- MEG\nProduct mix and Production',
   },
   { key: 'ByProducts', title: 'By products' },
   { key: 'RawMaterial', title: 'Raw material' },
@@ -130,7 +130,7 @@ export default function PlantContribution() {
 
       {categories.map(({ key, title }, idx) => {
         const rpt = reports[key] || {}
-        const canCalculate = idx === 0
+        const showFinalSubmit = idx === 0
         return (
           <Box key={key} sx={{ mt: 0 }}>
             {/* <Typography component='div' className='grid-title' sx={{ mt: 1 }}>
@@ -144,7 +144,8 @@ export default function PlantContribution() {
               title={title}
               permissions={{
                 textAlignment: 'center',
-                showCalculate: canCalculate,
+                showCalculate: false,
+                showFinalSubmit: idx == 0 ? true : false,
                 showTitle: true,
               }}
             />

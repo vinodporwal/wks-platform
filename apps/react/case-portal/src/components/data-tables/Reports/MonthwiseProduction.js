@@ -5,6 +5,8 @@ import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { truncateRemarks } from 'utils/remarksUtils'
+import { validateFields } from 'utils/validationUtils'
+
 import {
   Backdrop,
   CircularProgress,
@@ -12,6 +14,7 @@ import {
   Typography,
 } from '../../../../node_modules/@mui/material/index'
 import ProductionNorms from '../ProductionNorms'
+import NumericInputOnly from 'utils/NumericInputOnly'
 
 const MonthwiseProduction = () => {
   const keycloak = useSession()
@@ -20,6 +23,7 @@ const MonthwiseProduction = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
 
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -45,7 +49,10 @@ const MonthwiseProduction = () => {
   }
 
   const formatValueToThreeDecimals = (params) => {
-    return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(2) : ''
+  }
+  const formatValueToThreeDecimalsZero = (params) => {
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(0) : ''
   }
 
   const columns = [
@@ -69,13 +76,13 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -85,13 +92,13 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -103,13 +110,13 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -119,13 +126,13 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -153,6 +160,8 @@ const MonthwiseProduction = () => {
       flex: 1,
       headerAlign: 'left',
       align: 'right',
+      editable: true,
+      renderEditCell: NumericInputOnly,
       valueFormatter: formatValueToThreeDecimals,
       renderCell: (params) => (
         <Tooltip
@@ -171,13 +180,13 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -235,13 +244,13 @@ const MonthwiseProduction = () => {
       flex: 2,
       headerAlign: 'left',
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      valueFormatter: formatValueToThreeDecimalsZero,
       renderCell: (params) => (
         <Tooltip
           title={params.value != null ? params.value.toString() : ''}
           arrow
         >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
+          <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
     },
@@ -267,7 +276,7 @@ const MonthwiseProduction = () => {
                 whiteSpace: 'nowrap',
                 width: ' 100%',
               }}
-              onClick={() => handleRemarkCellClick(params.row)}
+              onDoubleClick={() => handleRemarkCellClick(params.row)}
             >
               {displayText || (isEditable ? 'Click to add remark' : '')}
             </div>
@@ -339,6 +348,7 @@ const MonthwiseProduction = () => {
           ...item,
           id: index,
           isEditable: false,
+          originalRemark: item.Remark,
         }))
 
         setRows(res)
@@ -403,7 +413,39 @@ const MonthwiseProduction = () => {
       const rowsToUpdate = data.map((row) => ({
         id: row.Id,
         remark: row.Remark,
+        ThroughputActual: row?.ThroughputActual,
       }))
+
+      // const hasEmptyThroughput = rowsToUpdate?.some(
+      //   (row) =>
+      //     row.ThroughputActual === null ||
+      //     row.ThroughputActual === undefined ||
+      //     row.ThroughputActual === '',
+      // )
+
+      // if (hasEmptyThroughput) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: 'Please fill in Actual Throughput before saving.',
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
+
+      // const requiredFields = ['remarks', 'ThroughputActual']
+
+      // const validationMessage = validateFields(data, requiredFields)
+      // if (validationMessage) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: validationMessage,
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
+
       const res = await DataService.saveMonthwiseProduction(
         keycloak,
         rowsToUpdate,
@@ -493,7 +535,7 @@ const MonthwiseProduction = () => {
           customHeight: defaultCustomHeightGrid1,
           textAlignment: 'center',
           remarksEditable: true,
-          showCalculate: true,
+          showCalculate: false,
           saveBtnForRemark: true,
           saveBtn: true,
           showWorkFlowBtns: true,
@@ -513,6 +555,7 @@ const MonthwiseProduction = () => {
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         saveRemarkData={saveRemarkData}
         handleCalculate={handleCalculate}
 
@@ -535,6 +578,7 @@ const MonthwiseProduction = () => {
           customHeight: defaultCustomHeight,
           // dynamicGridHeight: true,
           needTotal: true,
+          roundOffDecimals: true,
         }}
       />
       <Notification

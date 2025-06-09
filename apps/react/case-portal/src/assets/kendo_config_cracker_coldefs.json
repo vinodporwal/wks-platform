@@ -1,0 +1,110 @@
+[
+  {
+    "field": "Particulars",
+    "title": "Particulars",
+    "editable": false,
+    "width": 150
+  },
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "width": 120
+  },
+  {
+    "field": "Apr",
+    "title": 4,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "May",
+    "title": 5,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Jun",
+    "title": 6,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Jul",
+    "title": 7,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Aug",
+    "title": 8,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Sep",
+    "title": 9,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Oct",
+    "title": 10,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Nov",
+    "title": 11,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Dec",
+    "title": 12,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Jan",
+    "title": 1,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Feb",
+    "title": 2,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Mar",
+    "title": 3,
+    "editable": true,
+    "width": 120,
+    "type": "number"
+  },
+  {
+    "field": "Remarks",
+    "title": "Remark",
+    "editable": false,
+    "width": 180,
+    "type": "string"
+  },
+  {
+    "field": "NormParameterFKID",
+    "title": "NormParameterFKID",
+    "filterable": false
+  }
+]
