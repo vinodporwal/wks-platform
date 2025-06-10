@@ -3,17 +3,27 @@ import { DataService } from 'services/DataService'
 import { useSession } from '../SessionStoreContext'
 import { useSelector } from 'react-redux'
 import plan from './plan'
+
 import workspace from './workspace'
 import { icons, mapScreen } from 'components/Utilities/menuRefractoring'
 import i18n from 'i18n/index'
+import planCracker from './planCracker'
 // import { useNavigate } from '../../node_modules/react-router-dom/dist/index'
 
 const MenuContext = createContext()
 const USE_STATIC_MENU = true
 
 export function MenuProvider({ children }) {
+  const verticalName = JSON.parse(
+    localStorage.getItem('selectedVertical'),
+  )?.name
+
   const staticMenu = [plan, workspace]
-  const [menuItems, setMenuItems] = useState(staticMenu)
+  const staticMenuCracker = [planCracker]
+
+  const menu2 = verticalName == 'Cracker' ? staticMenuCracker : staticMenu
+
+  const [menuItems, setMenuItems] = useState(menu2)
   // const navigate = useNavigate()
 
   const keycloak = useSession()
@@ -30,7 +40,7 @@ export function MenuProvider({ children }) {
   }
   useEffect(() => {
     if (USE_STATIC_MENU) {
-      setMenuItems(staticMenu)
+      setMenuItems(menu2)
       return
     }
 
@@ -59,7 +69,7 @@ export function MenuProvider({ children }) {
               (Array.isArray(item.children) && containsUserMgmt(item.children)),
           )
 
-        // If API returned items…
+        // If API returned items�
         if (dynamic.length) {
           // Inject user-management if missing
           if (!containsUserMgmt(dynamic)) {
@@ -67,7 +77,7 @@ export function MenuProvider({ children }) {
           }
           setMenuItems(dynamic)
         } else {
-          const base = [...staticMenu]
+          const base = [...menu2]
           // if (!containsUserMgmt(base)) {
           //   base.push(userMgmtItem)
           // }
@@ -77,7 +87,7 @@ export function MenuProvider({ children }) {
       .catch((err) => {
         console.error('Menu API failed, using static menu', err)
         // Fallback with hardcoded if missing
-        const base = [...staticMenu]
+        const base = [...menu2]
         if (!base.some((m) => m.id === 'user-management')) {
           base.push(userMgmtItem)
         }

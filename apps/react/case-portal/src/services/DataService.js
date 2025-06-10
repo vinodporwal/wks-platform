@@ -40,6 +40,7 @@ export const DataService = {
   saveCatalystData,
 
   saveBusinessDemandData,
+  saveSpyroInput,
   saveNormalOperationNormsData,
   saveShutDownNormsData,
   saveSlowdownNormsData,
@@ -2098,6 +2099,25 @@ async function saveBusinessDemandData(plantId, turnAroundDetails, keycloak) {
     return await Promise.reject(e)
   }
 }
+async function saveSpyroInput(payload, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-input`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 
 async function saveNormalOperationNormsData(
   plantId,
@@ -2312,11 +2332,13 @@ async function getAllProducts(keycloak) {
 }
 
 async function getShutdownMonths(keycloak) {
+  var year = localStorage.getItem('year')
+
   const storedPlant = localStorage.getItem('selectedPlant')
   const parsedPlant = JSON.parse(storedPlant)
   // const url = `${Config.CaseEngineUrl}/task/getAllProducts?normParameterTypeName=${type}&plantId=${parsedPlant.id}`
   // http://localhost:8080/task/shutdown-months?plantId=AACDBE12-C5F6-4B79-9C88-751169815B42&MaintenanceName=Shutdown
-  const url = `${Config.CaseEngineUrl}/task/shutdown-months?plantId=${parsedPlant.id}&maintenanceName=Shutdown`
+  const url = `${Config.CaseEngineUrl}/task/shutdown-months?plantId=${parsedPlant.id}&maintenanceName=Shutdown&year=${year}`
 
   const headers = {
     Accept: 'application/json',
@@ -2335,8 +2357,10 @@ async function getShutdownMonths(keycloak) {
 
 async function getSlowdownMonths(keycloak) {
   const storedPlant = localStorage.getItem('selectedPlant')
+  var year = localStorage.getItem('year')
+
   const parsedPlant = JSON.parse(storedPlant)
-  const url = `${Config.CaseEngineUrl}/task/slowdown-months?plantId=${parsedPlant.id}&maintenanceName=Slowdown`
+  const url = `${Config.CaseEngineUrl}/task/slowdown-months?plantId=${parsedPlant.id}&maintenanceName=Slowdown&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2506,7 +2530,7 @@ async function getSpyroInputData(keycloak, mode) {
     plantId = parsedPlant.id
   }
 
-  const url = `${Config.CaseEngineUrl}/task/spyro-input?year=${year}&plantId=${plantId}&Mode=${mode}`
+  const url = `${Config.CaseEngineUrl}/task/spyro-input?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&Mode=${encodeURIComponent(mode)}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

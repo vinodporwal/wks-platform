@@ -643,12 +643,23 @@ const ShutdownNorms = () => {
           originalRemark: item?.remarks?.trim(),
           materialFkId: item?.materialFkId?.toLowerCase(),
           Particulars: item.normParameterTypeDisplayName || 'By Products',
+          isEditable: true,
         }
 
         if (isTPD) {
           const months = [
-            'april', 'may', 'june', 'july', 'august', 'september',
-            'october', 'november', 'december', 'january', 'february', 'march',
+            'april',
+            'may',
+            'june',
+            'july',
+            'august',
+            'september',
+            'october',
+            'november',
+            'december',
+            'january',
+            'february',
+            'march',
           ]
 
           months.forEach((month) => {
@@ -839,7 +850,7 @@ const ShutdownNorms = () => {
         unsavedChangesRef={unsavedChangesRef}
         handleRemarkCellClick={handleRemarkCellClick}
         handleCalculate={handleCalculate}
-        groupBy= 'Particulars'
+        groupBy='Particulars'
         // permissions={{
         //   showAction: false,
         //   addButton: false,

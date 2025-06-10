@@ -204,7 +204,6 @@ const KendoBusinessDemand = ({ permissions }) => {
 
     // setTimeout(() => {
     try {
-      console.log('modifiedCells', modifiedCells)
       if (Object.keys(modifiedCells).length === 0) {
         setSnackbarOpen(true)
         setSnackbarData({

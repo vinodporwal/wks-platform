@@ -638,12 +638,23 @@ const SlowdownNorms = () => {
           originalRemark: item?.remarks?.trim(),
           materialFkId: item?.materialFkId?.toLowerCase(),
           Particulars: item.normParameterTypeDisplayName || 'By Products',
+          isEditable: true,
         }
 
         if (isTPD) {
           const months = [
-            'april', 'may', 'june', 'july', 'august', 'september',
-            'october', 'november', 'december', 'january', 'february', 'march',
+            'april',
+            'may',
+            'june',
+            'july',
+            'august',
+            'september',
+            'october',
+            'november',
+            'december',
+            'january',
+            'february',
+            'march',
           ]
 
           months.forEach((month) => {
@@ -662,7 +673,6 @@ const SlowdownNorms = () => {
       setLoading(false)
     }
   }
-
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
