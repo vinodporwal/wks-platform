@@ -38,13 +38,14 @@ import './jio-grid-style.css'
 // import { useScreens } from 'menu/userscreen'
 // import { Box } from '../../../../node_modules/@mui/material/index'
 import ProductionAopView from 'components/data-tables-views/DataTable-production-aop'
-import PlantsProductionSummary from '../Reports/PlantsProductionData'
-import MonthwiseProduction from '../Reports/MonthwiseProduction'
-import MonthwiseRawMaterial from '../Reports/MonthwiseRawMaterial'
-import TurnaroundReport from '../Reports/TurnaroundReport'
-import AnnualProductionPlan from '../Reports/AnnualProductionPlan'
-import PlantContribution from '../Reports/PlantContribution'
+
 import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
+import PlantsProductionSummary from '../Reports-kendo/kendo-PlantsProductionData'
+import MonthwiseProduction from '../Reports-kendo/kendo-MonthwiseProduction'
+import MonthwiseRawMaterial from '../Reports-kendo/kendo-MonthwiseRawMaterial'
+import TurnaroundReport from '../Reports-kendo/kendo-TurnaroundReport'
+import AnnualProductionPlan from '../Reports-kendo/AnnualProductionPlan'
+import PlantContribution from '../Reports-kendo/kendo-PlantContribution'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -730,7 +731,6 @@ const WorkFlowMerge = () => {
         )}
 
         {tabIndex === 1 && <PlantsProductionSummary />}
-
         {tabIndex === 2 && <MonthwiseProduction />}
         {tabIndex === 3 && <MonthwiseRawMaterial />}
         {tabIndex === 4 && <TurnaroundReport />}

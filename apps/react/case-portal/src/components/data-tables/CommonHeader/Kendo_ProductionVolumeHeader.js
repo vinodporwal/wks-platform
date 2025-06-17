@@ -18,7 +18,9 @@ const getEnhancedProductionColDefs = ({ headerMap }) => {
       updatedCol = {
         ...updatedCol,
         title: headerMap[col.title],
-        align: 'right',
+        type: 'number',
+        format: '{0:#.###}',
+        width: 150,
       }
     }
 

@@ -4,7 +4,6 @@ import MuiAccordion from '@mui/material/Accordion'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import { styled } from '@mui/material/styles'
-import Typography from '@mui/material/Typography'
 import Notification from 'components/Utilities/Notification'
 import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -16,37 +15,26 @@ import postmanData from '../../../assets/postmandata.json'
 
 import {
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Stack,
   Tab,
   Tabs,
-  TextField,
 } from '../../../../node_modules/@mui/material/index'
-import AuditTrail from './AuditTrail'
-import DataGridTable from '../ASDataGrid'
 // import '../data-tables/data-grid-css.css'
 // import { CaseService } from 'services/CaseService'
 // import { TaskService } from 'services/TaskService'
 // import { useSession } from 'SessionStoreContext'
 import { remarkColumn } from 'components/Utilities/remarkColumn'
-// import Notification from 'components/Utilities/Notification'
+
 import './jio-grid-style.css'
-// import { usePlan } from 'menu/new-plan'
-// import { useScreens } from 'menu/userscreen'
-// import { Box } from '../../../../node_modules/@mui/material/index'
-import ProductionAopView from 'components/data-tables-views/DataTable-production-aop'
-import PlantsProductionSummary from '../Reports/PlantsProductionData'
-import MonthwiseProduction from '../Reports/MonthwiseProduction'
-import MonthwiseRawMaterial from '../Reports/MonthwiseRawMaterial'
-import TurnaroundReport from '../Reports/TurnaroundReport'
-import AnnualProductionPlan from '../Reports/AnnualProductionPlan'
-import PlantContribution from '../Reports/PlantContribution'
-import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
-import KendoDataTables from 'components/kendo-data-tables/index'
+
+import ProductionAopView from 'components/data-tables-views/kendo-DataTable-production-aop'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
+import PlantsProductionSummary from '../Reports-kendo/kendo-PlantsProductionData'
+import MonthwiseProduction from '../Reports-kendo/kendo-MonthwiseProduction'
+import MonthwiseRawMaterial from '../Reports-kendo/kendo-MonthwiseRawMaterial'
+import TurnaroundReport from '../Reports-kendo/kendo-TurnaroundReport'
+import AnnualProductionPlan from '../Reports-kendo/AnnualProductionPlan'
+import PlantContribution from '../Reports-kendo/kendo-PlantContribution'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -730,7 +718,6 @@ const WorkFlowMerge = () => {
         )}
 
         {tabIndex === 1 && <PlantsProductionSummary />}
-
         {tabIndex === 2 && <MonthwiseProduction />}
         {tabIndex === 3 && <MonthwiseRawMaterial />}
         {tabIndex === 4 && <TurnaroundReport />}

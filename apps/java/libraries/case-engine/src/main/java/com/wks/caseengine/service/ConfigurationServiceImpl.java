@@ -1,31 +1,44 @@
 package com.wks.caseengine.service;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import jakarta.persistence.Query;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
-
+import javax.sql.DataSource;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.regex.Matcher;
 
@@ -37,8 +50,10 @@ import jakarta.persistence.PersistenceContext;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationDataDTO;
+import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -89,10 +104,158 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
+	
+	private DataSource dataSource;
+	
+	public ConfigurationServiceImpl(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
+
+
+	public byte[] createExcel(String year, UUID plantFKId) {
+		try {
+			List<ConfigurationDTO> dtoList = getConfigurationData(year, plantFKId);
+			Workbook workbook = new XSSFWorkbook();
+			CellStyle borderStyle = createBorderedStyle(workbook);
+			CellStyle boldStyle = createBoldStyle(workbook);
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+			// List<List<Object>> rows = new ArrayList<>();
+
+			List<List<Object>> rows = new ArrayList<>();
+			// Data rows
+			for (ConfigurationDTO dto : dtoList) {
+				if (dto.getIsEditable()) {
+					Double sum = 0.0;
+					List<Object> list = new ArrayList<>();
+					list.add(dto.getNormType());
+					list.add(dto.getProductName());
+					list.add(dto.getApr());
+					list.add(dto.getMay());
+					list.add(dto.getJun());
+					list.add(dto.getJul());
+					list.add(dto.getAug());
+					list.add(dto.getSep());
+					list.add(dto.getOct());
+					list.add(dto.getNov());
+					list.add(dto.getDec());
+					list.add(dto.getJan());
+					list.add(dto.getFeb());
+					list.add(dto.getMar());
+					list.add(dto.getRemarks());
+					list.add(dto.getNormParameterFKId());
+					rows.add(list);
+				}
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Type");
+			innerHeaders.add("Particulars");
+			List<String> monthsList = getAcademicYearMonths(year);
+			innerHeaders.addAll(monthsList);
+			innerHeaders.add("Remarks");
+			innerHeaders.add("NormParameterId");
+
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(createBoldBorderedStyle(workbook));
+				}
+			}
+			for (List<Object> rowData : rows) {
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+
+				}
+			}
+			sheet.setColumnHidden(15, true);
+			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+
+	private static String formatMonthYear(int month, int year) {
+		LocalDate date = LocalDate.of(year, month, 1);
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", Locale.ENGLISH);
+		return date.format(formatter);
+	}
+
+	public static List<String> getAcademicYearMonths(String year) {
+		List<String> months = new ArrayList<>();
+		int startYear = Integer.parseInt(year.substring(0, 4));
+		int nextYear = startYear + 1;
+
+		// Apr to Dec of startYear
+		for (int month = 4; month <= 12; month++) {
+			String label = formatMonthYear(month, startYear);
+			months.add(label);
+		}
+
+		// Jan to Mar of nextYear
+		for (int month = 1; month <= 3; month++) {
+			String label = formatMonthYear(month, nextYear);
+			months.add(label);
+		}
+
+		return months;
+	}
+
+	private CellStyle createBorderedStyle(Workbook wb) {
+		CellStyle style = wb.createCellStyle();
+		style.setBorderBottom(BorderStyle.THIN);
+		style.setBorderTop(BorderStyle.THIN);
+		style.setBorderLeft(BorderStyle.THIN);
+		style.setBorderRight(BorderStyle.THIN);
+		return style;
+	}
+
+	private CellStyle createBoldStyle(Workbook wb) {
+		Font font = wb.createFont();
+		font.setBold(true);
+		CellStyle style = wb.createCellStyle();
+		style.setFont(font);
+		return style;
+	}
+
+	private CellStyle createBoldBorderedStyle(Workbook workbook) {
+		CellStyle style = createBorderedStyle(workbook);
+		Font font = workbook.createFont();
+		font.setBold(true);
+		style.setFont(font);
+		return style;
+	}
 
 	public List<ConfigurationDTO> getConfigurationData(String year, UUID plantFKId) {
 		try {
-
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			String viewName = "vwScrn" + verticalName + "GetConfigTypes";
 			List<Object[]> obj = new ArrayList<>();
@@ -107,6 +270,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			for (Object[] row : obj) {
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+				// System.out.println("normparameterid" +
+				// UUID.fromString(configurationDTO.getNormParameterFKId()));
+				// System.out.println(normParametersRepository
+				// .findById(UUID.fromString(configurationDTO.getNormParameterFKId())).get());
+				// System.out.println(normParametersRepository
+				// .findById(UUID.fromString(configurationDTO.getNormParameterFKId())).get().getDisplayName());
+
+				// configurationDTO.setNormParameterDisplayName(normParametersRepository
+				// .findById(UUID.fromString(configurationDTO.getNormParameterFKId())).get().getDisplayName());
+
 				configurationDTO.setJan(
 						(row[1] != null && !row[1].toString().trim().isEmpty()) ? Double.parseDouble(row[1].toString())
 								: null);
@@ -134,18 +307,15 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				configurationDTO.setSep(
 						(row[9] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString())
 								: null);
-				configurationDTO.setOct(
-						(row[10] != null && !row[10].toString().trim().isEmpty())
-								? Double.parseDouble(row[10].toString())
-								: null);
-				configurationDTO.setNov(
-						(row[11] != null && !row[11].toString().trim().isEmpty())
-								? Double.parseDouble(row[11].toString())
-								: null);
-				configurationDTO.setDec(
-						(row[12] != null && !row[12].toString().trim().isEmpty())
-								? Double.parseDouble(row[12].toString())
-								: null);
+				configurationDTO.setOct((row[10] != null && !row[10].toString().trim().isEmpty())
+						? Double.parseDouble(row[10].toString())
+						: null);
+				configurationDTO.setNov((row[11] != null && !row[11].toString().trim().isEmpty())
+						? Double.parseDouble(row[11].toString())
+						: null);
+				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
+						? Double.parseDouble(row[12].toString())
+						: null);
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")) {
@@ -158,6 +328,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					configurationDTO.setTypeDisplayName(row[18] != null ? row[18].toString() : "");
 					configurationDTO.setConfigTypeName(row[19] != null ? row[19].toString() : "");
 					configurationDTO.setTypeName(row[20] != null ? row[20].toString() : "");
+					configurationDTO.setProductName(row[21] != null ? row[21].toString() : "");
 
 				}
 
@@ -166,10 +337,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
 					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
-					configurationDTO.setIsEditable(
-							row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
-					;
+					configurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
+					configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
 				}
+
+				// configurationDTO.setNormParameterDisplayName(configurationDTO.getProductName());
 
 				configurationDTOList.add(configurationDTO);
 				if (row[14] == null) {
@@ -179,6 +351,143 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 
 			return configurationDTOList;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public AOPMessageVM getConfigurationExecution( String year, String plantId) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Object[]> rows = normAttributeTransactionsRepository
+				    .findByPlantIdAndYear(
+				        UUID.fromString(plantId),  // convert incoming String to UUID
+				        year                        // String, matching your signature
+				    );
+
+	        List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
+	        for (Object[] row : rows) {
+	            Map<String, Object> map = new HashMap<>();
+
+	            map.put("Id",        row[0]);
+	            map.put("AttributeValue", row[1]);
+	            map.put("AOPMonth",          row[2]);
+	            map.put("AuditYear",         row[3]);
+	            map.put("Remarks",           row[4]);
+	            map.put("CreatedOn",       row[5]);
+	            map.put("ModifiedOn",           row[6]);
+	            map.put("AttributeValueVersion", row[7]);
+	            map.put("User",             row[8]);
+	            map.put("NormParameter_FK_Id",   row[9]);
+	            map.put("plantId",  row[10]);
+	            map.put("IsMonthwise", row[11]);
+
+	            configurationConstantsList.add(map);
+	        }
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(configurationConstantsList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public AOPMessageVM saveConfigurationExecution(List<ExecutionDetailDto> executionDetailDtoList) {
+		
+		for(ExecutionDetailDto executionDetailDto:executionDetailDtoList) {
+			NormAttributeTransactions normAttributeTransactions=new NormAttributeTransactions();
+			normAttributeTransactions.setNormParameterFKId(executionDetailDto.getNormParameterFKId());
+			normAttributeTransactions.setAttributeValue(executionDetailDto.getApr());
+			normAttributeTransactions.setRemarks(executionDetailDto.getRemarks());
+			normAttributeTransactions.setAopMonth(4);
+			normAttributeTransactions.setAuditYear(executionDetailDto.getAuditYear());
+			normAttributeTransactionsRepository.save(normAttributeTransactions);
+		}
+		ExecutionDetailDto executionDetailDto1 =executionDetailDtoList.get(0);
+		String periodFrom=executionDetailDto1.getApr();
+		ExecutionDetailDto executionDetailDto2 =executionDetailDtoList.get(1);
+		String periodTo=executionDetailDto2.getApr();
+		String plantId=executionDetailDto2.getPlantId();
+		String finYear=executionDetailDto2.getAuditYear();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+		String procedureName=vertical.getName()+"_"+site.getName()+"_GetValuesforConsecutiveDays";
+		executeDynamicUpdateProcedure( procedureName,  plantId,  finYear,  periodFrom,
+				 periodTo);
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data saved successfully");
+			aopMessageVM.setData(executionDetailDtoList);
+			return aopMessageVM;
+		}catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public void executeDynamicUpdateProcedure(String procedureName, String plantId, String finYear, String periodFrom,
+			String periodTo) {
+		String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+
+		try (Connection connection = dataSource.getConnection();
+				CallableStatement stmt = connection.prepareCall(callSql)) {
+
+			// Set parameters
+			stmt.setString(1, plantId);
+			stmt.setString(2, finYear);
+			stmt.setString(3, periodFrom);
+			stmt.setString(4, periodTo);
+
+			// Execute the stored procedure
+			int rowsAffected = stmt.executeUpdate();
+
+			// Optional: commit if auto-commit is off
+			if (!connection.getAutoCommit()) {
+				connection.commit();
+			}
+
+			
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	public AOPMessageVM getConfigurationConstants(String year, String plantFKId) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			String procedureName = verticalName + "_GetConfiguration_Constant";
+			List<Object[]> obj = new ArrayList<>();
+			if (verticalName.equalsIgnoreCase("MEG")) {
+				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+			}
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
+				map.put("NormTypeName", row[0]);
+				map.put("NormParameter_FK_Id", row[1]);
+				map.put("Name", row[2]);
+				map.put("DisplayName", row[3]);
+				map.put("UOM", row[4]);
+				map.put("ConstantValue", row[5]);
+				map.put("AuditYear", row[6]);
+				map.put("Remarks", row[7]);
+				int editableFlag = (Integer) row[8]; // or use getInt(), depending on your data source
+				boolean isEditable = (editableFlag == 1);
+				map.put("isEditable", isEditable);
+				configurationConstantsList.add(map); // Add the map to the list here
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(configurationConstantsList);
+			return aopMessageVM;
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
@@ -225,22 +534,18 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				configurationDTO.setAug(
 						(row[8] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString())
 								: null);
-				configurationDTO.setSep(
-						(row[9] != null && !row[10].toString().trim().isEmpty())
-								? Double.parseDouble(row[10].toString())
-								: null);
-				configurationDTO.setOct(
-						(row[10] != null && !row[11].toString().trim().isEmpty())
-								? Double.parseDouble(row[11].toString())
-								: null);
-				configurationDTO.setNov(
-						(row[11] != null && !row[12].toString().trim().isEmpty())
-								? Double.parseDouble(row[12].toString())
-								: null);
-				configurationDTO.setDec(
-						(row[12] != null && !row[13].toString().trim().isEmpty())
-								? Double.parseDouble(row[13].toString())
-								: null);
+				configurationDTO.setSep((row[9] != null && !row[10].toString().trim().isEmpty())
+						? Double.parseDouble(row[10].toString())
+						: null);
+				configurationDTO.setOct((row[10] != null && !row[11].toString().trim().isEmpty())
+						? Double.parseDouble(row[11].toString())
+						: null);
+				configurationDTO.setNov((row[11] != null && !row[12].toString().trim().isEmpty())
+						? Double.parseDouble(row[12].toString())
+						: null);
+				configurationDTO.setDec((row[12] != null && !row[13].toString().trim().isEmpty())
+						? Double.parseDouble(row[13].toString())
+						: null);
 				configurationDTO.setRemarks((row[14] != null ? row[14].toString() : ""));
 				// configurationDTO.setId(row[14] != null ? row[14].toString() : i + "#");
 				configurationDTO.setAuditYear(row[15] != null ? row[15].toString() : "");
@@ -507,8 +812,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			normAttributeTransactions.setAuditYear(year);
 		}
 
-		normAttributeTransactions
-				.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+		normAttributeTransactions.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
 		normAttributeTransactions.setRemarks(configurationDTO.getRemarks());
 
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
@@ -689,42 +993,30 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 	public List<Object[]> findByYearAndPlantFkId(String year, UUID plantFKId, String viewName) {
 		try {
-			String sql = "SELECT " +
-					"    NP.NormParameter_FK_Id AS NormParameter_FK_Id, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '1' THEN NAT.AttributeValue ELSE NULL END) AS Jan, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '2' THEN NAT.AttributeValue ELSE NULL END) AS Feb, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '3' THEN NAT.AttributeValue ELSE NULL END) AS Mar, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '4' THEN NAT.AttributeValue ELSE NULL END) AS Apr, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '5' THEN NAT.AttributeValue ELSE NULL END) AS May, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '6' THEN NAT.AttributeValue ELSE NULL END) AS Jun, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '7' THEN NAT.AttributeValue ELSE NULL END) AS Jul, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '8' THEN NAT.AttributeValue ELSE NULL END) AS Aug, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '9' THEN NAT.AttributeValue ELSE NULL END) AS Sep, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '10' THEN NAT.AttributeValue ELSE NULL END) AS Oct, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '11' THEN NAT.AttributeValue ELSE NULL END) AS Nov, " +
-					"    MAX(CASE WHEN NAT.AOPMonth = '12' THEN NAT.AttributeValue ELSE NULL END) AS Dec, " +
-					"    MAX(NAT.Remarks) AS Remarks, " +
-					"    MAX(NAT.Id) AS NormAttributeTransaction_Id, " +
-					"    MAX(NAT.AuditYear) AS AuditYear, " +
-					"    MAX(NP.UOM) AS UOM, " +
-					"    NP.ConfigTypeDisplayName AS ConfigTypeDisplayName, " +
-					"    NP.TypeDisplayName AS TypeDisplayName, " +
-					"    NP.ConfigTypeName AS ConfigTypeName, " +
-					"    NP.TypeName AS TypeName " +
-					"FROM " + viewName + " NP " +
-					"JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id " +
-					"LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.NormParameter_FK_Id " +
-					"    AND NAT.AuditYear = :year " +
-					"WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant') " +
-					"  AND NP.Plant_FK_Id = :plantFKId " +
-					"GROUP BY " +
-					"    NP.NormParameter_FK_Id, " +
-					"    NP.TypeDisplayName, " +
-					"    NP.TypeDisplayOrder, " +
-					"    NP.ConfigTypeDisplayName, " +
-					"    NP.ConfigTypeName, " +
-					"    NP.TypeName " +
-					"ORDER BY NP.TypeDisplayOrder";
+			String sql = "SELECT " + "    NP.NormParameter_FK_Id AS NormParameter_FK_Id, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '1' THEN NAT.AttributeValue ELSE NULL END) AS Jan, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '2' THEN NAT.AttributeValue ELSE NULL END) AS Feb, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '3' THEN NAT.AttributeValue ELSE NULL END) AS Mar, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '4' THEN NAT.AttributeValue ELSE NULL END) AS Apr, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '5' THEN NAT.AttributeValue ELSE NULL END) AS May, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '6' THEN NAT.AttributeValue ELSE NULL END) AS Jun, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '7' THEN NAT.AttributeValue ELSE NULL END) AS Jul, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '8' THEN NAT.AttributeValue ELSE NULL END) AS Aug, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '9' THEN NAT.AttributeValue ELSE NULL END) AS Sep, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '10' THEN NAT.AttributeValue ELSE NULL END) AS Oct, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '11' THEN NAT.AttributeValue ELSE NULL END) AS Nov, "
+					+ "    MAX(CASE WHEN NAT.AOPMonth = '12' THEN NAT.AttributeValue ELSE NULL END) AS Dec, "
+					+ "    MAX(NAT.Remarks) AS Remarks, " + "    MAX(NAT.Id) AS NormAttributeTransaction_Id, "
+					+ "    MAX(NAT.AuditYear) AS AuditYear, " + "    MAX(NP.UOM) AS UOM, "
+					+ "    NP.ConfigTypeDisplayName AS ConfigTypeDisplayName, "
+					+ "    NP.TypeDisplayName AS TypeDisplayName, " + "    NP.ConfigTypeName AS ConfigTypeName, "
+					+ "    NP.TypeName AS TypeName, MAX(NP.DisplayName) " + "FROM " + viewName + " NP "
+					+ "JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id "
+					+ "LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.NormParameter_FK_Id "
+					+ "    AND NAT.AuditYear = :year " + "WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant') "
+					+ "  AND NP.Plant_FK_Id = :plantFKId " + "GROUP BY " + "    NP.NormParameter_FK_Id, "
+					+ "    NP.TypeDisplayName, " + "    NP.TypeDisplayOrder, " + "    NP.ConfigTypeDisplayName, "
+					+ "    NP.ConfigTypeName, " + "    NP.TypeName " + "ORDER BY NP.TypeDisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("year", year);
@@ -766,6 +1058,22 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 	}
 
+	public List<Object[]> findConstantsByYearAndPlantFkId(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	@Override
 	public AOPMessageVM getConfigurationIntermediateValuesData(String year, String plantId) {
 		try {
@@ -792,6 +1100,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				map.put("UOM", row[15]);
 				map.put("NormTypeName", row[16]);
 				map.put("isEditable", row[17]);
+				map.put("ProductName", row[18]);
 				configurationIntermediateValues.add(map);
 
 			}
@@ -811,8 +1120,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			String procedureName = vertical.getName() + "_GetConfigurationIntermediateValues";
-			String sql = "EXEC " + procedureName +
-					" @plantId = :plantId, @aopYear = :aopYear";
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -825,6 +1133,94 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM importExcel(String year, UUID plantFKId, MultipartFile file) {
+		// TODO Auto-generated method stub
+		try {
+			List<ConfigurationDTO> data = readConfigurations(file.getInputStream(), plantFKId, year);
+
+			saveConfigurationData(year, plantFKId.toString(), data);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(data);
+			return aopMessageVM;
+			// return ResponseEntity.ok(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// return ResponseEntity.internalServerError().build();
+		}
+		return null;
+	}
+
+	public List<ConfigurationDTO> readConfigurations(InputStream inputStream, UUID plantFKId, String year) {
+		List<ConfigurationDTO> configList = new ArrayList<>();
+
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); // Skip header
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				ConfigurationDTO dto = new ConfigurationDTO();
+
+				dto.setNormType(getStringCellValue(row.getCell(0)));
+				dto.setProductName(getStringCellValue(row.getCell(1)));
+				// System.out.println("normparamter displayName "+dto.getProductName());
+				// UUID normparameterId =
+				// normParametersRepository.findByDisplayNameAndPlantFkId(dto.getProductName(),plantFKId).get().getId();
+				// System.out.println("normparamter displayName "+normparameterId);
+				// dto.setNormParameterFKId(normparameterId.toString());
+				dto.setAuditYear(year);
+				dto.setApr(getNumericCellValue(row.getCell(2)));
+				dto.setMay(getNumericCellValue(row.getCell(3)));
+				dto.setJun(getNumericCellValue(row.getCell(4)));
+				dto.setJul(getNumericCellValue(row.getCell(5)));
+				dto.setAug(getNumericCellValue(row.getCell(6)));
+				dto.setSep(getNumericCellValue(row.getCell(7)));
+				dto.setOct(getNumericCellValue(row.getCell(8)));
+				dto.setNov(getNumericCellValue(row.getCell(9)));
+				dto.setDec(getNumericCellValue(row.getCell(10)));
+				dto.setJan(getNumericCellValue(row.getCell(11)));
+				dto.setFeb(getNumericCellValue(row.getCell(12)));
+				dto.setMar(getNumericCellValue(row.getCell(13)));
+				dto.setRemarks(getStringCellValue(row.getCell(14)));
+				dto.setNormParameterFKId(getStringCellValue(row.getCell(15)));
+				configList.add(dto);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return configList;
+	}
+
+	private static String getStringCellValue(Cell cell) {
+		if (cell == null)
+			return null;
+		cell.setCellType(CellType.STRING);
+		return cell.getStringCellValue().trim();
+	}
+
+	private static Double getNumericCellValue(Cell cell) {
+		if (cell == null)
+			return null;
+		if (cell.getCellType() == CellType.NUMERIC) {
+			return cell.getNumericCellValue();
+		} else if (cell.getCellType() == CellType.STRING) {
+			try {
+				return Double.parseDouble(cell.getStringCellValue().trim());
+			} catch (NumberFormatException e) {
+				return null;
+			}
+		}
+		return null;
 	}
 
 }

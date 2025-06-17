@@ -22,48 +22,54 @@ import UserForm from 'components/user-management/UserForm'
 import UserManagementTable from 'components/user-management/UserManagementTable'
 import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
 import TextSubmitComponent from 'components/user-management/TextSubmitComponent'
-import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/WorkFlowMerge'
-import AnnualAopCost from 'components/data-tables/Reports/AnnualAopCost'
-import PlantsProductionSummary from 'components/data-tables/Reports/PlantsProductionData'
-// import MonthwiseProduction from 'components/data-tables/Reports/MonthWiseProduction'
-import ProductionVolumeDataBasis from 'components/data-tables/Reports/ProductionVolumeDataBasis'
-import MonthwiseProduction from 'components/data-tables/Reports/MonthwiseProduction'
-import MonthwiseRawMaterial from 'components/data-tables/Reports/MonthwiseRawMaterial'
-// import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
 
-const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
-const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
+import AnnualAopCost from 'components/data-tables/Reports/AnnualAopCost'
+
+// import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
 
 import FeedStockAvailability from 'components/data-tables/FeedStockavailability'
 
-import BusinessDemand from 'components/data-tables/BusinessDemand'
-import ConfigurationTable from 'components/data-tables/ConfigurationTable/index'
-import ShutDown from 'components/data-tables/ShutDown'
-import SlowDown from 'components/data-tables/Slowdown'
-import ProductionvolumeData from 'components/data-tables/ProductionVoluemData'
-import NormalOpNormsScreen from 'components/data-tables/NormsScreens/NormalOpNorms'
-import ShutdownNorms from 'components/data-tables/NormsScreens/ShutdownNorms'
-import MaintenanceTable from 'components/data-tables/MaintenanceTable'
-import ConsumptionNorms from 'components/data-tables/ConsumptionNorms'
-import ProductionNorms from 'components/data-tables/ProductionNorms'
-import SlowdownNorms from 'components/data-tables/NormsScreens/SlowdownNorms'
+// import BusinessDemand from 'components/data-tables/BusinessDemand'
+// import ConfigurationTable from 'components/data-tables/ConfigurationTable/index'
+// import ShutDown from 'components/data-tables/ShutDown'
+// import SlowDown from 'components/data-tables/Slowdown'
+// import ProductionvolumeData from 'components/data-tables/ProductionVoluemData'
+// import NormalOpNormsScreen from 'components/data-tables/NormsScreens/NormalOpNorms'
+// import ShutdownNorms from 'components/data-tables/NormsScreens/ShutdownNorms'
+// import MaintenanceTable from 'components/data-tables/MaintenanceTable'
+// import ConsumptionNorms from 'components/data-tables/ConsumptionNorms'
+// import ProductionNorms from 'components/data-tables/ProductionNorms'
+// import SlowdownNorms from 'components/data-tables/NormsScreens/SlowdownNorms'
+// import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/WorkFlowMerge'
+// import PlantsProductionSummary from 'components/data-tables/Reports/PlantsProductionData'
+// import ProductionVolumeDataBasis from 'components/data-tables/Reports/ProductionVolumeDataBasis'
+// import MonthwiseProduction from 'components/data-tables/Reports/MonthwiseProduction'
+// import MonthwiseRawMaterial from 'components/data-tables/Reports/MonthwiseRawMaterial'
 
-import KendoBusinessDemand from 'components/kendo-data-tables/BusinessDemand'
-// import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
-// import ProductionvolumeData from 'components/kendo-data-tables/ProductionVoluemData'
-// import MaintenanceTable from 'components/kendo-data-tables/MaintenanceTable'
-// import ConsumptionNorms from 'components/kendo-data-tables/ConsumptionNorms'
-// import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
-// import NormalOpNormsScreen from 'components/kendo-data-tables/NormalOpNorms'
-// import ShutdownNorms from 'components/kendo-data-tables/ShutdownNorms'
-// import SlowdownNorms from 'components/kendo-data-tables/SlowdownNorms'
-// import ShutDown from 'components/kendo-data-tables/ShutDown'
-// import SlowDown from 'components/kendo-data-tables/Slowdown'
+import BusinessDemand from 'components/kendo-data-tables/BusinessDemand'
+import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
+import ProductionvolumeData from 'components/kendo-data-tables/ProductionVoluemData'
+import MaintenanceTable from 'components/kendo-data-tables/MaintenanceTable'
+import ConsumptionNorms from 'components/kendo-data-tables/ConsumptionNorms'
+import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
+import NormalOpNormsScreen from 'components/kendo-data-tables/NormalOpNorms'
+import ShutdownNorms from 'components/kendo-data-tables/ShutdownNorms'
+import SlowdownNorms from 'components/kendo-data-tables/SlowdownNorms'
+import ShutDown from 'components/kendo-data-tables/ShutDown'
+import SlowDown from 'components/kendo-data-tables/Slowdown'
+import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/kendo-WorkFlowMerge'
+import PlantsProductionSummary from 'components/data-tables/Reports-kendo/kendo-PlantsProductionData'
+import ProductionVolumeDataBasis from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasis'
+import MonthwiseProduction from 'components/data-tables/Reports-kendo/kendo-MonthwiseProduction'
+import MonthwiseRawMaterial from 'components/data-tables/Reports-kendo/kendo-MonthwiseRawMaterial'
 
 import CrackerConfig from 'components/kendo-data-tables/KendoConfigCrackerInput'
 import DecokingConfig from 'components/kendo-data-tables/KendoConfigCrackerActivities'
 import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCrackerOutput'
 import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
+
+const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
+const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
 export const MainRoutes = (
   keycloak,
@@ -76,7 +82,7 @@ export const MainRoutes = (
   )?.name
 
   const defPage =
-    verticalName == 'Cracker' ? <KendoBusinessDemand /> : <BusinessDemand />
+    verticalName == 'Cracker' ? <BusinessDemand /> : <BusinessDemand />
 
   let routes = {
     path: '/',

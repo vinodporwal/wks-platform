@@ -21,7 +21,7 @@ const DecokingConfig = () => {
   const [currentRowId2, setCurrentRowId2] = useState(null)
   const handleRemarkCellClick2 = (row) => {
     // if (!row?.isEditable) return
-    console.log(row)
+    // console.log(row)
     setCurrentRemark2(row.remarks || '')
     setCurrentRowId2(row.id)
     setRemarkDialogOpen2(true)
@@ -98,7 +98,7 @@ const DecokingConfig = () => {
       endDateSD: '2026-01-17 06:00 PM',
       startDateTA: '2026-01-18 07:45 AM',
       endDateTA: '2026-01-19 04:00 PM',
-      remarks: 'IBR-1�=�BBD',
+      remarks: 'IBR-1?=?BBD',
     },
     {
       id: 3,
@@ -112,7 +112,7 @@ const DecokingConfig = () => {
       endDateSD: '2026-01-22 05:45 PM',
       startDateTA: '2026-01-23 08:00 AM',
       endDateTA: '2026-01-24 03:30 PM',
-      remarks: 'BBD-2�=�SAD',
+      remarks: 'BBD-2?=?SAD',
     },
     {
       id: 4,

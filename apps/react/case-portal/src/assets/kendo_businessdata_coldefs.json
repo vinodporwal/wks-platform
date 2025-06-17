@@ -5,10 +5,18 @@
     "width": 100,
     "groupable": true,
     "headerClass": "bold-header",
-    "filterable": "false"
+    "filterable": "false",
+    "editable": false
   },
   {
     "field": "normParameterId",
+    "title": "Particulars",
+    "editable": false,
+    "width": 150,
+    "hidden": true
+  },
+  {
+    "field": "displayName",
     "title": "Particulars",
     "editable": false,
     "width": 150
@@ -138,6 +146,7 @@
   {
     "field": "idFromApi",
     "title": "idFromApi",
-    "filterable": "false"
+    "filterable": "false",
+    "hidden": true
   }
 ]

@@ -1,4 +1,3 @@
-// ProductCellEditor.js
 import { useMemo } from 'react'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
 
@@ -17,11 +16,10 @@ const ProductCellEditor = (props) => {
 
   if (typeof onChange === 'function') {
     const handleChange = (e) => {
-      console.log(e, 'test---->')
       onChange({
         dataItem,
         field,
-        value: e.value?.value, 
+        value: e.value?.value,
       })
     }
 
@@ -32,7 +30,7 @@ const ProductCellEditor = (props) => {
         dataItemKey='value'
         value={currentValueObj}
         onChange={handleChange}
-        style={{ width: '100%' }} // fill the cell
+        style={{ width: '100%' }}
       />
     )
   }
@@ -56,22 +54,3 @@ const ProductCellEditor = (props) => {
 }
 
 export default ProductCellEditor
-
-// import { useMemo } from 'react'
-
-// const ProductCell = ({ dataItem, field, allProducts, ...tdProps }) => {
-//   const productObj = useMemo(
-//     () => allProducts.find((p) => p.id === dataItem[field]),
-//     [allProducts, dataItem, field],
-//   )
-
-//   const displayLabel = productObj ? productObj.displayName : ''
-
-//   return (
-//     <td {...tdProps} style={{ padding: '0.5rem 1rem' }}>
-//       {displayLabel || '—'}
-//     </td>
-//   )
-// }
-
-// export default ProductCell

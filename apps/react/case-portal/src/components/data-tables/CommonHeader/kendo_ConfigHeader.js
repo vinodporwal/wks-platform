@@ -1,4 +1,5 @@
 import productionColumns from '../../../assets/kendo_config_meg.json'
+import productionColumnsConstants from '../../../assets/kendo_config_meg constants.json'
 import productionColumnsPE1 from '../../../assets/kendo_config_pe1.json'
 import productionColumnsPE2 from '../../../assets/kendo_config_pe2.json'
 import productionColumnsPE3 from '../../../assets/kendo_config_pe3.json'
@@ -10,6 +11,8 @@ const getConfigByType = (configType) => {
   switch (configType) {
     case 'meg':
       return productionColumns
+    case 'megConstants':
+      return productionColumnsConstants
     case 'StartupLosses':
       return productionColumnsPE1
     case 'Otherlosses':
@@ -42,20 +45,18 @@ const getEnhancedAOPColDefs = ({
       {
         field: 'ReceipeName',
         title: 'Receipe',
-        width: 120,
         editable: false,
-        flex: 1,
+        width: 120,
+        type: 'non-number',
       },
     ]
     allGradesReciepes?.forEach((field) => {
       config.push({
         field: field?.id?.toUpperCase(),
-        title: field?.id,
+        title: field?.displayName,
         editable: true,
-        align: 'left',
-        headerAlign: 'left',
         width: 120,
-        isGradeHeader: 'true',
+        type: 'number',
       })
     })
   } else {
@@ -68,6 +69,7 @@ const getEnhancedAOPColDefs = ({
         ...col,
         title: headerMap[col.title],
         align: 'right',
+        type: 'number',
       }
     }
 

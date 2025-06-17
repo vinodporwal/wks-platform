@@ -98,6 +98,8 @@ const KendoDataTablesReports = ({
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
   const [edit, setEdit] = useState({})
   const [sort, setSort] = useState([]) // or
+  const [issRowEdited, setIsRowEdited] = useState(false)
+
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
     // }
@@ -118,6 +120,8 @@ const KendoDataTablesReports = ({
   }
   const itemChange = useCallback(
     (e) => {
+      setIsRowEdited(true)
+
       const { dataItem, field, value } = e
 
       setRows((prev) =>
@@ -364,8 +368,7 @@ const KendoDataTablesReports = ({
       }
 
       const isEditable = col.editable === true
-      const isActive = isColumnActive(col.field, filter, sort) // ✅ Use col.field
-      // console.log('title', title)
+      const isActive = isColumnActive(col.field, filter, sort)
 
       if (['aopRemarks', 'remarks', 'remark', 'Remark'].includes(col.field)) {
         return (
@@ -396,9 +399,9 @@ const KendoDataTablesReports = ({
           title={col.title || col.headerName}
           editable={col.editable}
           format={col.format || '{0:#.###}'}
-          editor={{
-            data: (props) => <FullValueEditor {...props} />,
-          }}
+          // editor={{
+          //   data: (props) => <FullValueEditor {...props} />,
+          // }}
           className={!isEditable ? 'non-editable-cell' : ''}
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
@@ -455,7 +458,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 className='btn-save'
                 onClick={saveModalOpen}
-                disabled={isButtonDisabled}
+                disabled={isButtonDisabled || !issRowEdited}
                 // loading={loading}
                 // loadingposition='start'
                 {...(loading ? {} : {})}
@@ -519,7 +522,9 @@ const KendoDataTablesReports = ({
         <Grid
           data={filterBy(processedData, filter)}
           rows={{ data: CustomRow }}
-          sortable
+          sortable={{
+            mode: 'multiple',
+          }}
           dataItemKey='id'
           editField='inEdit'
           editable={{ mode: 'incell' }}
