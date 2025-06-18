@@ -13,10 +13,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wks.caseengine.dto.MonthWiseConsumptionSummaryDTO;
 import com.wks.caseengine.dto.MonthWiseProductionPlanDTO;
+import com.wks.caseengine.dto.PlantProductionDTO;
 import com.wks.caseengine.dto.PlantProductionDataDTO;
 import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
+import com.wks.caseengine.entity.AnnualAOPCost;
 import com.wks.caseengine.entity.MonthWiseProductionPlan;
+import com.wks.caseengine.entity.MonthwiseConsumptionReport;
 import com.wks.caseengine.entity.PlantProductionSummary;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
@@ -24,7 +28,9 @@ import com.wks.caseengine.entity.TurnAroundPlan;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AnnualAOPCostRepository;
 import com.wks.caseengine.repository.MonthWiseProductionPlanRepository;
+import com.wks.caseengine.repository.MonthwiseConsumptionReportRepository;
 import com.wks.caseengine.repository.PlantProductionSummaryRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
@@ -60,8 +66,14 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 
 	@Autowired
 	private MonthWiseProductionPlanRepository monthWiseProductionPlanRepository;
+	
+	@Autowired
+	private MonthwiseConsumptionReportRepository monthwiseConsumptionReportRepository;
 
 	private DataSource dataSource;
+	
+	@Autowired
+	private AnnualAOPCostRepository annualAOPCostRepository;
 
 	// Inject or set your DataSource (e.g., via constructor or setter)
 	public ProductionVolumeDataReportServiceImpl(DataSource dataSource) {
@@ -208,6 +220,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 					map.put("feb", row[11]);
 					map.put("march", row[12]);
 					map.put("id", row[13]);
+					map.put("Remark", row[14]);
 					summaryData.add(map);
 				} else if (reportType.equalsIgnoreCase("NormQuantity")) {
 					map.put("normType", row[0]);
@@ -228,6 +241,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 					map.put("march", row[15]);
 					map.put("total", row[16]);
 					map.put("id", row[17]);
+					map.put("Remark", row[18]);
 					summaryData.add(map);
 
 				}
@@ -329,6 +343,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 					map.put("Budget3", row[6]);
 					map.put("Actual3", row[7]);
 					map.put("Budget4", row[8]);
+					map.put("Remark", row[9]);
 					plantProductionData.add(map);
 				}
 			}
@@ -475,17 +490,26 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	@Override
 	@Transactional
 	public AOPMessageVM savePlantProductionData(String plantId, String year, List<PlantProductionDataDTO> dataList) {
-		for (PlantProductionDataDTO dto : dataList) {
-			Optional<PlantProductionSummary> optional = plantProductionSummaryRepository
-					.findById(UUID.fromString(dto.getId()));
+		try {
+			for (PlantProductionDataDTO dto : dataList) {
+				Optional<PlantProductionSummary> optional = plantProductionSummaryRepository
+						.findById(UUID.fromString(dto.getId()));
 
-			optional.get().setRemark(dto.getRemark());
-			plantProductionSummaryRepository.save(optional.get());
+				optional.get().setRemark(dto.getRemark());
+				if(dto.getActualPrevYear()!=null) {
+					optional.get().setActualPrevYear(dto.getActualPrevYear());
+				}
+				plantProductionSummaryRepository.save(optional.get());
+			}
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setMessage("Remarks updated successfully.");
+			return response;
 		}
-		AOPMessageVM response = new AOPMessageVM();
-		response.setCode(200);
-		response.setMessage("Remarks updated successfully.");
-		return response;
+		
+	 catch (Exception ex) {
+		throw new RuntimeException("Failed to update data", ex);
+	}
 	}
 
 	@Override
@@ -505,14 +529,70 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 
 	@Override
 	@Transactional
+	public AOPMessageVM updateReportForMonthWiseConsumptionSummaryData(String plantId, String year,
+			List<MonthWiseConsumptionSummaryDTO> dataList) {
+		for (MonthWiseConsumptionSummaryDTO dto : dataList) {
+			Optional<MonthwiseConsumptionReport> optional = monthwiseConsumptionReportRepository
+					.findById(UUID.fromString(dto.getId()));
+			//optional.get().setRemark(dto.getRemark());
+			if(dto.getApril()!=null) {
+				optional.get().setApril(dto.getApril());
+			}
+			if(dto.getMay()!=null) {
+				optional.get().setMay(dto.getMay());
+			}
+			if(dto.getJune()!=null) {
+				optional.get().setJune(dto.getJune());
+			}
+			if(dto.getJuly()!=null) {
+				optional.get().setJuly(dto.getJuly());
+			}
+			if(dto.getAug()!=null) {
+				optional.get().setAugust(dto.getAug());
+			}
+			if(dto.getSep()!=null) {
+				optional.get().setSeptember(dto.getSep());
+			}
+			if(dto.getOct()!=null) {
+				optional.get().setOctober(dto.getOct());
+			}
+			if(dto.getNov()!=null) {
+				optional.get().setNovember(dto.getNov());
+			}
+			if(dto.getDec()!=null) {
+				optional.get().setDecember(dto.getDec());
+			}
+			if(dto.getDec()!=null) {
+				optional.get().setDecember(dto.getDec());
+			}
+			if(dto.getJan()!=null) {
+				optional.get().setJanuary(dto.getJan());
+			}
+			if(dto.getFeb()!=null) {
+				optional.get().setFebruary(dto.getFeb());
+			}
+			if(dto.getMarch()!=null) {
+				optional.get().setMarch(dto.getMarch());
+			}
+			monthwiseConsumptionReportRepository.save(optional.get());
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Remarks updated successfully.");
+		return response;
+	}
+	
+	@Override
+	@Transactional
 	public AOPMessageVM saveMonthWiseProductionPlanData(String plantId, String year,
 			List<MonthWiseProductionPlanDTO> dataList) {
 		for (MonthWiseProductionPlanDTO dto : dataList) {
 			Optional<MonthWiseProductionPlan> optional = monthWiseProductionPlanRepository
 					.findById(UUID.fromString(dto.getId()));
 			optional.get().setRemark(dto.getRemark());
-			optional.get().setThroughputActual(dto.getThroughputActual());
-
+			if(dto.getOpHrsActual()!=null) {
+				optional.get().setOpHrsActual(dto.getOpHrsActual());
+			}
 			monthWiseProductionPlanRepository.save(optional.get());
 		}
 		AOPMessageVM response = new AOPMessageVM();
@@ -685,5 +765,36 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			e.printStackTrace();
 		}
 		return 0;
+	}
+
+	@Override
+	public AOPMessageVM updateReportForPlantProductionPlanData(String plantId, String year,
+			List<PlantProductionDTO> dataList) {
+		for (PlantProductionDTO dto : dataList) {
+			Optional<AnnualAOPCost> optional = annualAOPCostRepository
+					.findById(UUID.fromString(dto.getId()));
+			//optional.get().setRemark(dto.getRemark());
+			/*
+			 * if(dto.getActual1()!=null) { optional.get().set(dto.getActual1()); }
+			 * if(dto.getMay()!=null) { optional.get().setMay(dto.getMay()); }
+			 * if(dto.getJune()!=null) { optional.get().setJune(dto.getJune()); }
+			 * if(dto.getJuly()!=null) { optional.get().setJuly(dto.getJuly()); }
+			 * if(dto.getAug()!=null) { optional.get().setAugust(dto.getAug()); }
+			 * if(dto.getSep()!=null) { optional.get().setSeptember(dto.getSep()); }
+			 * if(dto.getOct()!=null) { optional.get().setOctober(dto.getOct()); }
+			 * if(dto.getNov()!=null) { optional.get().setNovember(dto.getNov()); }
+			 * if(dto.getDec()!=null) { optional.get().setDecember(dto.getDec()); }
+			 * if(dto.getDec()!=null) { optional.get().setDecember(dto.getDec()); }
+			 * if(dto.getJan()!=null) { optional.get().setJanuary(dto.getJan()); }
+			 * if(dto.getFeb()!=null) { optional.get().setFebruary(dto.getFeb()); }
+			 * if(dto.getMarch()!=null) { optional.get().setMarch(dto.getMarch()); }
+			 * monthwiseConsumptionReportRepository.save(optional.get());
+			 */
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Remarks updated successfully.");
+		return response;
+		// TODO Auto-generated method stub
 	}
 }

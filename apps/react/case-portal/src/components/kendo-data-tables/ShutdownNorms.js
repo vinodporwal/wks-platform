@@ -8,15 +8,15 @@ import { useSelector } from 'react-redux'
 // import { GridRowModes } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { DataService } from 'services/DataService'
-import NumericInputOnly from 'utils/NumericInputOnly'
+// import NumericInputOnly from 'utils/NumericInputOnly'
 import { truncateRemarks } from 'utils/remarksUtils'
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
-import TextField from '@mui/material/TextField'
-import { useDispatch } from 'react-redux'
-import { setIsBlocked } from 'store/reducers/dataGridStore'
+// import TextField from '@mui/material/TextField'
+// import { useDispatch } from 'react-redux'
+// import { setIsBlocked } from 'store/reducers/dataGridStore'
 import KendoDataTables from './index'
 
 const ShutdownNorms = () => {
@@ -33,7 +33,7 @@ const ShutdownNorms = () => {
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
-  const dispatch = useDispatch()
+  // const dispatch = useDispatch()
   const [rows, setRows] = useState([])
 
   // const [productNormData, setProductNormData] = useState([])
@@ -63,11 +63,11 @@ const ShutdownNorms = () => {
     rowsBeforeChange: {},
   })
 
-  const getProductDisplayName = (id) => {
-    if (!id) return
-    const product = allProducts.find((p) => p.id === id)
-    return product ? product.displayName : ''
-  }
+  // const getProductDisplayName = (id) => {
+  //   if (!id) return
+  //   const product = allProducts.find((p) => p.id === id)
+  //   return product ? product.displayName : ''
+  // }
 
   const keycloak = useSession()
 
@@ -83,11 +83,8 @@ const ShutdownNorms = () => {
     setTimeout(() => {
       if (lowerVertName == 'meg') {
         try {
-          let newRows = modifiedCells.filter(
-            (row) => row.isGroupHeader !== true,
-          )
-          console.log(newRows)
-          var data = Object.values(newRows)
+          // console.log(modifiedCells)
+          var data = Object.values(modifiedCells)
           // var data = Object.values(unsavedChangesRef.current.unsavedRows)
           if (data.length == 0) {
             setSnackbarOpen(true)
@@ -99,17 +96,17 @@ const ShutdownNorms = () => {
             return
           }
 
-          // const requiredFields = ['remarks']
-          // const validationMessage = validateFields(data, requiredFields)
-          // if (validationMessage) {
-          //   setSnackbarOpen(true)
-          //   setSnackbarData({
-          //     message: validationMessage,
-          //     severity: 'error',
-          //   })
-          //   setLoading(false)
-          //   return
-          // }
+          const requiredFields = ['remarks']
+          const validationMessage = validateFields(data, requiredFields)
+          if (validationMessage) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: validationMessage,
+              severity: 'error',
+            })
+            setLoading(false)
+            return
+          }
 
           saveShutDownNormsData(data)
         } catch (error) {
@@ -117,62 +114,62 @@ const ShutdownNorms = () => {
           setLoading(false)
         }
       }
-      // if (lowerVertName == 'pe') {
-      //   try {
-      //     var editedData = Object.values(unsavedChangesRef.current.unsavedRows)
-      //     var allRows = Array.from(apiRef.current.getRowModels().values())
-      //     allRows = allRows.filter((row) => !row.isGroupHeader)
+      if (lowerVertName == 'pe') {
+        try {
+          var editedData = Object.values(modifiedCells)
+          // var allRows = Array.from(apiRef.current.getRowModels().values())
+          // allRows = allRows.filter((row) => !row.isGroupHeader)
 
-      //     const updatedRows = allRows.map(
-      //       (row) => unsavedChangesRef.current.unsavedRows[row.id] || row,
-      //     )
+          // const updatedRows = modifiedCells.map(
+          //   (row) => unsavedChangesRef.current.unsavedRows[row.id] || row,
+          // )
 
-      //     if (updatedRows.length === 0) {
-      //       setSnackbarOpen(true)
-      //       setSnackbarData({
-      //         message: 'No Records to Save!',
-      //         severity: 'info',
-      //       })
-      //       return
-      //     }
+          if (editedData.length === 0) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: 'No Records to Save!',
+              severity: 'info',
+            })
+            return
+          }
 
-      //     const requiredFields = ['remarks']
+          const requiredFields = ['remarks']
 
-      //     const validationMessage = validateFields(editedData, requiredFields)
-      //     if (validationMessage) {
-      //       setSnackbarOpen(true)
-      //       setSnackbarData({
-      //         message: validationMessage,
-      //         severity: 'error',
-      //       })
-      //       setLoading(false)
-      //       return
-      //     }
+          const validationMessage = validateFields(editedData, requiredFields)
+          if (validationMessage) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: validationMessage,
+              severity: 'error',
+            })
+            setLoading(false)
+            return
+          }
 
-      //     if (calculatebtnClicked == false) {
-      //       if (editedData.length === 0) {
-      //         setSnackbarOpen(true)
-      //         setSnackbarData({
-      //           message: 'No Records to Save!',
-      //           severity: 'info',
-      //         })
-      //         setCalculatebtnClicked(false)
-      //         return
-      //       }
+          if (calculatebtnClicked == false) {
+            if (editedData.length === 0) {
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: 'No Records to Save!',
+                severity: 'info',
+              })
+              setCalculatebtnClicked(false)
+              return
+            }
 
-      //       saveShutDownNormsData(editedData)
-      //     } else {
-      //       saveShutDownNormsData(updatedRows)
-      //     }
-      //   } catch (error) {
-      //     console.log('Error saving changes:', error)
-      //     setLoading(false)
-      //     setCalculatebtnClicked(false)
-      //   }
-      // }
+            saveShutDownNormsData(editedData)
+          } else {
+            saveShutDownNormsData(editedData)
+          }
+        } catch (error) {
+          console.log('Error saving changes:', error)
+          setLoading(false)
+          setCalculatebtnClicked(false)
+        }
+      }
     }, 400)
-  }, [apiRef, selectedUnit, calculatebtnClicked, rowModesModel, modifiedCells])
-  console.log(rows)
+  }, [apiRef, selectedUnit, calculatebtnClicked, modifiedCells])
+  // console.log(rows)
   useEffect(() => {
     const getAllProducts = async () => {
       try {
@@ -211,8 +208,8 @@ const ShutdownNorms = () => {
     lowerVertName,
   ])
 
-  const formatValueToFiveDecimals = (params) =>
-    params ? parseFloat(params).toFixed(5) : ''
+  // const formatValueToFiveDecimals = (params) =>
+  //   params ? parseFloat(params).toFixed(5) : ''
 
   const isCellEditable = (params) => {
     return params.row.isEditable
@@ -223,278 +220,135 @@ const ShutdownNorms = () => {
   const colDefs = [
     {
       field: 'Particulars',
-      title: 'Type',
-      width: 150,
-      groupable: true,
-      renderCell: (params) => (
-        <div
-          style={{
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-            lineHeight: 1.4,
-          }}
-        >
-          <strong>{params.value}</strong>
-        </div>
-      ),
+      headerName: 'Type',
     },
 
     {
       field: 'materialFkId',
-      title: 'Particulars',
-      width: 145,
+      headerName: 'Particulars',
+      minWidth: 150,
       editable: false,
-      valueGetter: (params) => params || '',
-      valueFormatter: (params) => {
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : ''
-      },
-
-      filterOperators: [
-        {
-          label: 'contains',
-          value: 'contains',
-          getApplyFilterFn: (filterItem) => {
-            if (!filterItem?.value) {
-              return
-            }
-            return (rowId) => {
-              const filterValue = filterItem.value.toLowerCase()
-              if (filterValue) {
-                const productName = getProductDisplayName(rowId)
-                if (productName) {
-                  return productName.toLowerCase().includes(filterValue)
-                }
-              }
-              return true
-            }
-          },
-          InputComponent: ({ item, applyValue, focusElementRef }) => (
-            <TextField
-              autoFocus
-              inputRef={focusElementRef}
-              size='small'
-              label='Contains'
-              value={item.value || ''}
-              onChange={(event) =>
-                applyValue({ ...item, value: event.target.value })
-              }
-              style={{ marginTop: '8px' }}
-            />
-          ),
-        },
-      ],
-
-      renderEditCell: (params) => {
-        const { value, id, api } = params
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              api.setEditCellValue({
-                id,
-                field: 'materialFkId',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-            }}
-          >
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.displayName}
-              </option>
-            ))}
-          </select>
-        )
-      },
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      headerName: 'Particulars',
+      minWidth: 150,
+      editable: false,
     },
 
-    { field: 'UOM', title: 'UOM', width: 100, editable: false },
+    { field: 'UOM', headerName: 'UOM', width: 100, editable: false },
 
     {
       field: 'april',
-      title: headerMap[4],
+      headerName: headerMap[4],
       editable: shutdownMonths?.includes(4),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(4),
-      columnClassName: 'first-column',
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
 
     {
       field: 'may',
-      title: headerMap[5],
+      headerName: headerMap[5],
       editable: shutdownMonths?.includes(5),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(5),
-      columnClassName: 'first-column',
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
 
     {
       field: 'june',
-      title: headerMap[6],
+      headerName: headerMap[6],
       editable: shutdownMonths?.includes(6),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(6),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'july',
-      title: headerMap[7],
+      headerName: headerMap[7],
       editable: shutdownMonths?.includes(7),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(7),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
 
     {
       field: 'august',
-      title: headerMap[8],
+      headerName: headerMap[8],
       editable: shutdownMonths?.includes(8),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(8),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'september',
-      title: headerMap[9],
+      headerName: headerMap[9],
       editable: shutdownMonths?.includes(9),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(9),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'october',
-      title: headerMap[10],
+      headerName: headerMap[10],
       editable: shutdownMonths?.includes(10),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(10),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'november',
-      title: headerMap[11],
+      headerName: headerMap[11],
       editable: shutdownMonths?.includes(11),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(11),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'december',
-      title: headerMap[12],
+      headerName: headerMap[12],
       editable: shutdownMonths?.includes(12),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(12),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'january',
-      title: headerMap[1],
+      headerName: headerMap[1],
       editable: shutdownMonths?.includes(1),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(1),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'february',
-      title: headerMap[2],
+      headerName: headerMap[2],
       editable: shutdownMonths?.includes(2),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(2),
-      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
     },
     {
       field: 'march',
-      title: headerMap[3],
+      headerName: headerMap[3],
       editable: shutdownMonths?.includes(3),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !shutdownMonths?.includes(3),
-      width: 120,
+      type: 'number',
     },
 
-    // remarks
     {
       field: 'remarks',
-      title: 'Remark',
-      width: 180,
+      headerName: 'Remark',
+      minWidth: 125,
       editable: false,
-      renderCell: (params) => {
-        const displayText = truncateRemarks(params.value)
-        const isEditable = !params.row.Particulars
-
-        return (
-          <Tooltip title={params.value || ''} arrow>
-            <div
-              style={{
-                cursor: 'pointer',
-                color: params.value ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                width: ' 100%',
-              }}
-              onDoubleClick={() => handleRemarkCellClick(params.row)}
-            >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
-            </div>
-          </Tooltip>
-        )
-      },
     },
     {
       field: 'idFromApi',
       headerName: 'idFromApi',
+      hidden: true,
     },
-    // {
-    //   field: 'isEditable',
-    //   headerName: 'isEditable',
-    // },
   ]
 
   const handleRemarkCellClick = (row) => {
@@ -643,12 +497,23 @@ const ShutdownNorms = () => {
           originalRemark: item?.remarks?.trim(),
           materialFkId: item?.materialFkId?.toLowerCase(),
           Particulars: item.normParameterTypeDisplayName || 'By Products',
+          isEditable: true,
         }
 
         if (isTPD) {
           const months = [
-            'april', 'may', 'june', 'july', 'august', 'september',
-            'october', 'november', 'december', 'january', 'february', 'march',
+            'april',
+            'may',
+            'june',
+            'july',
+            'august',
+            'september',
+            'october',
+            'november',
+            'december',
+            'january',
+            'february',
+            'march',
           ]
 
           months.forEach((month) => {
@@ -769,7 +634,7 @@ const ShutdownNorms = () => {
       isOldYear: isOldYear,
       showCalculate: false,
       // noColor: true,
-      allAction: false,
+      allAction: true,
     }
   }
 
@@ -785,7 +650,7 @@ const ShutdownNorms = () => {
       saveBtn: true,
       showCalculate: lowerVertName == 'meg' ? false : true,
       // noColor: true,
-      allAction: false,
+      allAction: true,
     },
     isOldYear,
   )
@@ -839,7 +704,7 @@ const ShutdownNorms = () => {
         unsavedChangesRef={unsavedChangesRef}
         handleRemarkCellClick={handleRemarkCellClick}
         handleCalculate={handleCalculate}
-        groupBy= 'Particulars'
+        groupBy='Particulars'
         // permissions={{
         //   showAction: false,
         //   addButton: false,

@@ -23,6 +23,7 @@ const ConfigurationTable = () => {
   const [otherLossRows, setOtherLossRows] = useState([])
   const [shutdownNormsRows, setShutdownRows] = useState([])
   const [productionRows, setProductionRows] = useState([])
+  const [productionRowsConstants, setProductionRowsConstants] = useState([])
   const [gradeData, setGradeData] = useState([])
   const [continiousGradeData, setContiniousGradeData] = useState([])
   const [discontiniousGradeData, setDiscontiniousGradeData] = useState([])
@@ -32,14 +33,15 @@ const ConfigurationTable = () => {
   const fetchData = async () => {
     // setRows([])
     setProductionRows([])
+    setProductionRowsConstants([])
     setLoading(true)
     try {
       var data = await DataService.getCatalystSelectivityData(keycloak)
 
-      if (tabs.length == 0) {
+      if (lowerVertName == 'meg') {
         setLoading(true)
         // data = data.sort((a, b) => b.normType.localeCompare(a.normType))
-        
+
         const formattedData = data.map((item, index) => ({
           ...item,
           idFromApi: item.id,
@@ -48,8 +50,10 @@ const ConfigurationTable = () => {
           srNo: index + 1,
           Particulars: item.normType,
         }))
-        
+        // console.log(formattedData)
+
         setProductionRows(formattedData)
+
         // setRows(formattedData)
       } else {
         const groups = new Map()
@@ -100,6 +104,44 @@ const ConfigurationTable = () => {
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
       }
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  const fetchDataConstants = async () => {
+    // setRows([])
+
+    setProductionRowsConstants([])
+    setLoading(true)
+    try {
+      var constantsRes =
+        await DataService.getCatalystSelectivityDataConstants(keycloak)
+
+      if (constantsRes?.code != 200) {
+        setProductionRowsConstants([])
+        setLoading(false)
+        return
+      }
+
+      var data = constantsRes?.data
+
+      setLoading(true)
+
+      const formattedData = data.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.Remarks,
+        srNo: index + 1,
+        Particulars: item.NormTypeName,
+        remarks: item.Remarks,
+      }))
+
+      setProductionRowsConstants(formattedData)
+
       setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -161,20 +203,69 @@ const ConfigurationTable = () => {
     const tab = availableTabs.find((tab) => tab.name === name)
     return tab ? tab.id : null
   }
+
   // and want to paste that new crakcer component here
-  if (tabs.length === 0 && lowerVertName !== 'cracker') {
+  if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
+    const megTabs = ['Configuration', 'Constants']
+
     return (
-      <Box sx={{ marginTop: '20px' }}>
-        <SelectivityData
-          rows={productionRows}
-          loading={loading}
-          fetchData={fetchData}
-          setRows={setProductionRows}
-          configType='production'
-        />
+      <Box>
+        <Tabs
+          value={tabIndex}
+          onChange={(e, newIndex) => setTabIndex(newIndex)}
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 10px 0px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+        >
+          {megTabs.map((tab) => (
+            <Tab
+              key={tab}
+              label={tab}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+              }}
+            />
+          ))}
+        </Tabs>
+
+        {(() => {
+          const currentTab = megTabs[tabIndex]?.toLowerCase()
+          switch (currentTab) {
+            case 'configuration':
+              return (
+                <SelectivityData
+                  rows={productionRows}
+                  loading={loading}
+                  fetchData={fetchData}
+                  setRows={setProductionRows}
+                  configType='meg'
+                  groupBy='Particulars'
+                />
+              )
+            case 'constants':
+              return (
+                <SelectivityData
+                  rows={productionRowsConstants}
+                  loading={loading}
+                  fetchData={fetchDataConstants}
+                  setRows={setProductionRowsConstants}
+                  configType='megConstants'
+                  groupBy='Particulars'
+                />
+              )
+            default:
+              return null
+          }
+        })()}
       </Box>
     )
   }
+
   return (
     <div
       style={{
@@ -225,6 +316,7 @@ const ConfigurationTable = () => {
                   fetchData={fetchData}
                   setRows={setStartUpRows}
                   configType='StartupLosses'
+                  groupBy='TypeDisplayName'
                 />
               )
             case getTheId('Otherlosses'): // Otherlosses
@@ -235,6 +327,7 @@ const ConfigurationTable = () => {
                   fetchData={fetchData}
                   setRows={setOtherLossRows}
                   configType='Otherlosses'
+                  groupBy='TypeDisplayName'
                 />
               )
             case getTheId('ShutdownNorms'): // ShutdownNorms
@@ -245,6 +338,8 @@ const ConfigurationTable = () => {
                   setRows={setShutdownRows}
                   fetchData={fetchData}
                   configType='ShutdownNorms'
+                  groupBy='TypeDisplayName'
+                  // groupBy2='ConfigTypeDisplayName'
                 />
               )
             case getTheId('Receipe'): // Receipe

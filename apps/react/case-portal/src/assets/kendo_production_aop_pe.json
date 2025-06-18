@@ -1,27 +1,39 @@
 [
-  { "field": "idFromApi", "title": "ID" },
+  { "field": "idFromApi", "title": "ID", "hidden": true },
   {
     "field": "aopCaseId",
     "title": "Case ID",
     "width": 120,
-    "editable": false
+    "editable": false,
+    "hidden": true
   },
-  { "field": "aopType", "title": "Type", "width": 80 },
-  { "field": "aopYear", "title": "Year", "width": 80 },
-  { "field": "plantFkId", "title": "Plant ID", "width": 80 },
+  { "field": "aopType", "title": "Type", "width": 80, "hidden": true },
+  { "field": "aopYear", "title": "Year", "width": 80, "hidden": true },
+  { "field": "plantFkId", "title": "Plant ID", "width": 80, "hidden": true },
   {
     "field": "normParametersFKId",
     "title": "Particulars/Grade",
     "editable": false,
+    "width": 125,
+    "hidden": true
+  },
+
+  {
+    "field": "normParameterName",
+    "title": "Particulars/Grade",
+    "editable": false,
     "width": 125
   },
+
   {
     "field": "april",
     "title": "4",
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "may",
@@ -29,7 +41,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "june",
@@ -37,7 +51,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "july",
@@ -45,7 +61,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "aug",
@@ -53,7 +71,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "sep",
@@ -61,7 +81,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "oct",
@@ -69,7 +91,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "nov",
@@ -77,7 +101,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "dec",
@@ -85,7 +111,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "jan",
@@ -93,7 +121,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "feb",
@@ -101,7 +131,9 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
   {
     "field": "march",
@@ -109,13 +141,21 @@
     "editable": false,
     "width": 120,
     "align": "left",
-    "headerAlign": "left"
+    "headerAlign": "left",
+    "type": "number",
+    "format": "{0:n2}"
   },
 
   {
     "field": "isEditable",
-    "title": "isEditable"
+    "title": "isEditable",
+    "hidden": true
   },
 
-  { "field": "aopStatus", "title": "aopStatus", "editable": false }
+  {
+    "field": "aopStatus",
+    "title": "aopStatus",
+    "editable": false,
+    "hidden": true
+  }
 ]

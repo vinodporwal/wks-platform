@@ -589,23 +589,7 @@ const KendoDataTables = ({
                       // },
                     }}
                     columnMenu={ColumnMenu}
-                  />
-                )
-              }
-              //----------------
-              if (col.field === 'june') {
-                return (
-                  <GridColumn
-                    key={col.field}
-                    field={col.field}
-                    title={col.title || col.headerName}
-                    width={col.width}
-                    editable={false}   // <-- Make June column non-editable here
-                    align={col.align}
-                    headerAlign={col.headerAlign}
-                    valueFormatter={col.valuesFormatter}
-                    columnMenu={ColumnMenu}
-                   className="june-cell"
+                    // editable is true by default, so no need to set editable={true}
                   />
                 )
               }

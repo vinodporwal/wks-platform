@@ -21,42 +21,18 @@ import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
 import { Button } from '../../../../node_modules/@mui/material/index'
 import { ColumnDefaultProps } from '../../../../node_modules/@progress/kendo-react-data-tools/index'
-import { Grid } from '../../../../node_modules/@progress/kendo-react-grid/index'
-
-const CustomAccordion = styled((props) => (
-  <MuiAccordion disableGutters elevation={0} square {...props} />
-))(() => ({
-  position: 'unset',
-  border: 'none',
-  boxShadow: 'none',
-  margin: '0px',
-  '&:before': {
-    display: 'none',
-  },
-}))
-
-const CustomAccordionSummary = styled((props) => (
-  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
-))(() => ({
-  backgroundColor: '#fff',
-  padding: '0px 12px',
-  minHeight: '40px',
-  '& .MuiAccordionSummary-content': {
-    margin: '8px 0',
-  },
-}))
-
-const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
-  padding: '0px 0px 12px',
-  backgroundColor: '#F2F3F8',
-}))
+import {
+  Grid,
+  GridColumn,
+  isColumnMenuFilterActive,
+  isColumnMenuSortActive,
+} from '../../../../node_modules/@progress/kendo-react-grid/index'
+import { getColumnMenu1, getColumnMenuCheckboxFilter } from './ColumnMenu1'
 
 const NormsHistorianBasis1 = () => {
   const keycloak = useSession()
 
   const [rowsHistorianValues, setHistorianValues] = useState([])
-  const [rowsMcuAndNormGrid, setMcuAndNormGrid] = useState([])
-  const [rowsProductionVolumeData, setProductionVolumeData] = useState([])
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { sitePlantChange, verticalChange, yearChanged, oldYear } =
@@ -95,63 +71,95 @@ const NormsHistorianBasis1 = () => {
   const year = localStorage.getItem('year')
   const headerMap = generateHeaderNames(year)
 
-  const colsHistorianValues = getKendoNormsHistorianColumns({
+  const colsHistorianValues1 = getKendoNormsHistorianColumns({
     headerMap,
     type: 'HistorianValues',
   })
 
-  const colsMcuAndNormGrid = getKendoNormsHistorianColumns({
-    headerMap,
-    type: 'McuAndNormGrid',
-  })
-
-  const colsProductionVolumeData = getKendoNormsHistorianColumns({
-    headerMap,
-    type: 'ProductionVolumeData',
-  })
+  const colsHistorianValues = [
+    {
+      field: 'name',
+      title: 'Type',
+    },
+    {
+      field: 'particulars',
+      title: 'Particulars',
+    },
+    {
+      field: 'april',
+      title: 'Particulars',
+    },
+    {
+      field: 'may',
+      title: 5,
+    },
+    {
+      field: 'june',
+      title: 6,
+    },
+    {
+      field: 'july',
+      title: 7,
+    },
+    {
+      field: 'august',
+      title: 8,
+    },
+    {
+      field: 'september',
+      title: 9,
+    },
+    {
+      field: 'october',
+      title: 10,
+    },
+    {
+      field: 'november',
+      title: 11,
+    },
+    {
+      field: 'december',
+      title: 12,
+    },
+    {
+      field: 'january',
+      title: 1,
+    },
+    {
+      field: 'february',
+      title: 2,
+    },
+    {
+      field: 'march',
+      title: 3,
+    },
+  ]
 
   useEffect(() => {
     fetchData('HistorianValues', setHistorianValues)
-    fetchData('McuAndNormGrid', setMcuAndNormGrid)
-    fetchData('ProductionVolumeData', setProductionVolumeData)
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
-  const exportRef1 = useRef(null)
-  const exportRef2 = useRef(null)
-  const exportRef3 = useRef(null)
-
-  const exportAllGrids = () => {
-    const options1 = exportRef1.current.workbookOptions()
-    const options2 = exportRef2.current.workbookOptions()
-    const options3 = exportRef3.current.workbookOptions()
-
-    options1.sheets[1] = options2.sheets[0]
-    options1.sheets[2] = options3.sheets[0]
-
-    options1.sheets[0].title = 'Production Volume'
-    options1.sheets[1].title = 'MCU & Norm'
-    options1.sheets[2].title = 'Historian Values'
-
-    exportRef1.current.save(options1)
-  }
-
-  const currentDateTime = new Date()
-    .toISOString()
-    .replace(/T/, ' ')
-    .replace(/:/g, '-')
-    .split('.')[0]
-  const fileName = `Norms Historian Basis ${currentDateTime}.xlsx`
-
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
+  const [sort, setSort] = useState([])
 
   const handleItemChange = (e) => {
-    const updated = [...rows]
+    const updated = [...rowsHistorianValues]
     const index = updated.findIndex((r) => r.id === e.dataItem.id)
 
     if (index !== -1) {
       updated[index] = { ...updated[index], [e.field]: e.value }
       onRowChange?.(updated, e)
     }
+  }
+
+  const ColumnMenuCheckboxFilter =
+    getColumnMenuCheckboxFilter(rowsHistorianValues)
+
+  const isColumnActive = (field, filter, sort) => {
+    return (
+      isColumnMenuFilterActive(field, filter) ||
+      isColumnMenuSortActive(field, sort)
+    )
   }
 
   return (
@@ -163,100 +171,50 @@ const NormsHistorianBasis1 = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {/* Export hidden ExcelExport instances */}
-      <div style={{ display: 'none' }}>
-        <ExcelExport
-          data={rowsProductionVolumeData}
-          ref={exportRef1}
-          fileName={fileName}
-        >
-          {colsProductionVolumeData.map((col) => (
-            <ExcelExportColumn
-              key={col.field}
-              field={col.field}
-              title={col.title}
-            />
-          ))}
-        </ExcelExport>
-
-        <ExcelExport data={rowsMcuAndNormGrid} ref={exportRef2}>
-          {colsMcuAndNormGrid.map((col) => (
-            <ExcelExportColumn
-              key={col.field}
-              field={col.field}
-              title={col.title}
-            />
-          ))}
-        </ExcelExport>
-
-        <ExcelExport data={rowsHistorianValues} ref={exportRef3}>
-          {colsHistorianValues.map((col) => (
-            <ExcelExportColumn
-              key={col.field}
-              field={col.field}
-              title={col.title}
-            />
-          ))}
-        </ExcelExport>
-      </div>
-
       <Box display='flex' flexDirection='column' gap={2}>
-        <CustomAccordion defaultExpanded disableGutters>
-          <CustomAccordionSummary>
-            <Typography className='grid-title'>Historian Values</Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box sx={{ width: '100%' }}>
-              <div className='kendo-data-grid'>
-                <Grid
-                  style={{ flex: 1, overflow: 'auto' }}
-                  data={rowsHistorianValues}
-                  dataItemKey='id'
-                  autoProcessData={true}
-                  sortable={true}
-                  scrollable='scrollable'
-                  filter={filter}
-                  onFilterChange={(e) => setFilter(e.filter)}
-                  onItemChange={handleItemChange}
-                  resizable={true}
-                  defaultSkip={0}
-                  defaultTake={100}
-                  columnMenuIcon={filterIcon}
-                  contextMenu={true}
-                  pageable={
-                    rows?.length > 100
-                      ? {
-                          buttonCount: 4,
-                          pageSizes: [10, 50, 100],
-                        }
-                      : false
+        <Box sx={{ width: '100%' }}>
+          <div className='kendo-data-grid'>
+            <Grid
+              style={{ flex: 1, overflow: 'auto' }}
+              data={rowsHistorianValues}
+              dataItemKey='id'
+              autoProcessData={true}
+              sortable={{
+                mode: 'multiple',
+              }}
+              scrollable='scrollable'
+              filter={filter}
+              onFilterChange={(e) => setFilter(e.filter)}
+              onItemChange={handleItemChange}
+              resizable={true}
+              defaultSkip={0}
+              defaultTake={100}
+              contextMenu={true}
+              pageable={
+                rowsHistorianValues?.length > 100
+                  ? {
+                      buttonCount: 4,
+                      pageSizes: [10, 50, 100],
+                    }
+                  : false
+              }
+              sort={sort}
+              onSortChange={(e) => setSort(e.sort)}
+            >
+              {colsHistorianValues.map(({ field, title }) => (
+                <GridColumn
+                  key={field}
+                  field={field}
+                  title={title}
+                  columnMenu={ColumnMenuCheckboxFilter}
+                  headerClassName={
+                    isColumnActive(field, filter, sort) ? 'active-column' : ''
                   }
-                >
-                  {colsHistorianValues.map(
-                    ({
-                      field,
-                      title,
-                      width,
-                      cell,
-                      format,
-                      filterType = 'text',
-                    }) => (
-                      <ColumnDefaultProps
-                        key={field}
-                        columnMenu={ColumnMenu}
-                        field={field}
-                        title={title}
-                        // width={width}
-                        cell={cell}
-                        format={format}
-                      />
-                    ),
-                  )}
-                </Grid>
-              </div>
-            </Box>
-          </CustomAccordionDetails>
-        </CustomAccordion>
+                />
+              ))}
+            </Grid>
+          </div>
+        </Box>
       </Box>
     </div>
   )

@@ -397,7 +397,7 @@ const MonthwiseRawMaterial = () => {
           })
 
           // Add to group
-          group.push(totalRow)
+          // group.push(totalRow)
         })
 
         setNormRows(groupedByNorms)
