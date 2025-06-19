@@ -111,6 +111,7 @@ const Comment = ({
                 updateComment={updateComment}
                 deleteComment={deleteComment}
                 addComment={addComment}
+                formatName={formatName}
                 parentId={comment.id}
                 replies={[]}
                 currentUserId={currentUserId}

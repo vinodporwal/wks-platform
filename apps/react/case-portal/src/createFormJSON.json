@@ -2728,7 +2728,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Analysis",
+                                                "label": "Observations",
                                                 "applyMaskOn": "change",
                                                 "autoExpand": false,
                                                 "tableView": true,
@@ -2995,7 +2995,7 @@
                                                 "fileKey": ""
                                             },
                                             {
-                                                "label": "Submit",
+                                                "label": "Save",
                                                 "action": "event",
                                                 "showValidations": false,
                                                 "theme": "primary",
@@ -4014,7 +4014,7 @@
                                                         "customOptions": {}
                                                     },
                                                     {
-                                                        "label": "Recommendation Reviewer",
+                                                        "label": "Recommendation Approver",
                                                         "labelPosition": "top",
                                                         "widget": "choicesjs",
                                                         "placeholder": "",
