@@ -13,6 +13,7 @@ const Comment = ({
   activeComment,
   updateComment,
   deleteComment,
+  formatName,
   addComment,
   parentId = null,
   currentUserId,
@@ -46,7 +47,7 @@ const Comment = ({
         <div className='comment-content'>
           <Box sx={{ display: 'flex', flexDirection: 'row', m: 1 }}>
             <Typography sx={{ p: 0.5 }} variant='h5'>
-              {comment.userName}
+              {formatName(comment.userId)}
             </Typography>
             <Typography sx={{ p: 0.5 }}>{createdAt}</Typography>
           </Box>

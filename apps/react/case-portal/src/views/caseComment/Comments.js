@@ -73,6 +73,19 @@ export const Comments = ({ comments, aCase, getCaseInfo }) => {
     // }
   }
 
+  const formatName = (username) => {
+    if (!username || typeof username !== 'string' || username.trim() === '') {
+        return ''
+    }
+
+    return username
+        .split('.')                         
+        .map(part => 
+            part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        )
+        .join(' ');                          
+  }
+
   useEffect(() => {
     setBackendComments(comments)
   })
@@ -98,6 +111,7 @@ export const Comments = ({ comments, aCase, getCaseInfo }) => {
           addComment={addComment}
           deleteComment={deleteComment}
           updateComment={updateComment}
+          formatName={formatName}
           currentUserId={keycloak.tokenParsed.preferred_username}
         />
       ))}
