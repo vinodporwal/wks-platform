@@ -1,13 +1,53 @@
 import { Box, Tab, Tabs } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import MuiAccordion from '@mui/material/Accordion'
+import MuiAccordionSummary from '@mui/material/AccordionSummary'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import MuiAccordionDetails from '@mui/material/AccordionDetails'
+
+import { styled } from '@mui/material/styles'
+
 import {
   Backdrop,
+  Button,
   CircularProgress,
+  TextField,
+  Typography,
 } from '../../../node_modules/@mui/material/index'
 import SelectivityData from './SelectivityData'
+import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
+import Notification from 'components/Utilities/Notification'
+
+const CustomAccordion = styled((props) => (
+  <MuiAccordion disableGutters elevation={0} square {...props} />
+))(() => ({
+  position: 'unset',
+  border: 'none',
+  boxShadow: 'none',
+  margin: '0px',
+  '&:before': {
+    display: 'none',
+  },
+}))
+
+const CustomAccordionSummary = styled((props) => (
+  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
+))(() => ({
+  backgroundColor: '#fff',
+  padding: '0px 12px',
+  minHeight: '40px',
+  '& .MuiAccordionSummary-content': {
+    margin: '8px 0',
+  },
+}))
+const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
+  padding: '0px 0px 12px',
+  backgroundColor: '#F2F3F8',
+}))
+
 // import CrackerConfig from './KendoConfigCracker'
 
 const ConfigurationTable = () => {
@@ -28,17 +68,27 @@ const ConfigurationTable = () => {
   const [shutdownNormsRows, setShutdownRows] = useState([])
   const [productionRows, setProductionRows] = useState([])
   const [productionRowsConstants, setProductionRowsConstants] = useState([])
+  const [
+    productionRowsConstantsMannualEntry,
+    setProductionRowsConstantsMannualEntry,
+  ] = useState([])
   const [gradeData, setGradeData] = useState([])
   const [continiousGradeData, setContiniousGradeData] = useState([])
   const [discontiniousGradeData, setDiscontiniousGradeData] = useState([])
   const [tabs, setTabs] = useState([])
   const [availableTabs, setAvailableTabs] = useState([])
   const [summary, setSummary] = useState('')
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
 
   const fetchData = async () => {
     // setRows([])
     setProductionRows([])
     setProductionRowsConstants([])
+    setProductionRowsConstantsMannualEntry([])
     setLoading(true)
     try {
       setLoading(true)
@@ -46,6 +96,8 @@ const ConfigurationTable = () => {
 
       if (lowerVertName == 'meg') {
         // data = data.sort((a, b) => b.normType.localeCompare(a.normType))
+
+        data = data.filter((item) => item.normType !== 'Report Manual Entry')
 
         const formattedData = data.map((item, index) => ({
           ...item,
@@ -150,6 +202,47 @@ const ConfigurationTable = () => {
     }
   }
 
+  const fetchDataConstantsMnnualEntry = async () => {
+    setProductionRowsConstantsMannualEntry([])
+    try {
+      var constantsRes = await DataService.getCatalystSelectivityData(keycloak)
+
+      const formattedData = constantsRes.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.remarks,
+        srNo: index + 1,
+        Particulars: item.normType,
+      }))
+
+      var data = formattedData?.filter(
+        (item) => item?.Particulars == 'Report Manual Entry',
+      )
+
+      setProductionRowsConstantsMannualEntry(data)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
+
+  const fetchGradeData = async () => {
+    setLoading(true)
+    try {
+      var data = await DataService.getPeConfigData(keycloak)
+      const formattedData = data.map((item, index) => ({
+        ...item,
+        id: index,
+      }))
+      setGradeData(formattedData)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching grade data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getConfigurationTabsMatrix = async () => {
     setLoading(true)
     try {
@@ -158,6 +251,7 @@ const ConfigurationTable = () => {
         const parsedData = JSON.parse(response?.data)
 
         setTabs(parsedData)
+        setLoading(false)
       } else {
         // setTabs([
         //   'StartupLosses',
@@ -168,10 +262,12 @@ const ConfigurationTable = () => {
         //   'DisContineGradeChange',
         // ])
         setTabs([])
+        setLoading(false)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
       setTabs([])
+      setLoading(false)
     }
   }
 
@@ -182,18 +278,26 @@ const ConfigurationTable = () => {
 
       if (response?.code == 200) {
         setAvailableTabs(response?.data?.configurationTypeList)
+        setLoading(false)
       } else {
         setAvailableTabs([])
+        setLoading(false)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
       setAvailableTabs([])
+      setLoading(false)
     }
   }
 
   useEffect(() => {
     getConfigurationTabsMatrix()
     getConfigurationAvailableTabs()
+    getAopSummary()
+    getConfigurationExecutionDetails()
+    if (lowerVertName === 'pe') {
+      fetchGradeData()
+    }
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   const getTheId = (name) => {
@@ -201,9 +305,196 @@ const ConfigurationTable = () => {
     return tab ? tab.id : null
   }
 
+  const [startDateObj, setStartDateObj] = useState([])
+  const [endDateObj, setEndDateObj] = useState([])
+
+  const onLoad = async () => {
+    setLoading(true)
+    try {
+      var plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      const formatDate = (date) => {
+        if (!date) return null
+
+        const d = new Date(date)
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0') // Months are 0-indexed
+        const day = String(d.getDate()).padStart(2, '0')
+
+        return `${year}-${month}-${day}`
+      }
+
+      setStartDateObj(configurationExecutionDetails[0])
+      setEndDateObj(configurationExecutionDetails[1])
+
+      var startDate1 = startDateObj?.AttributeValue
+      var startDate2 = endDateObj?.AttributeValue
+      var timeToShow = endDateObj?.CreatedOn
+
+      const payload = [
+        {
+          apr: formatDate(startDate),
+          UOM: '',
+          auditYear: startDate1?.AuditYear,
+          normParameterFKId: startDate1?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: null,
+          plantId: plantId,
+        },
+        {
+          apr: formatDate(endDate),
+          UOM: '',
+          auditYear: startDate2?.AuditYear,
+          normParameterFKId: startDate2?.NormParameter_FK_Id,
+          remarks: 'Initiated',
+          id: null,
+          plantId: plantId,
+        },
+      ]
+      setLoading(false)
+
+      // console.log('payload', payload)
+      // setLoading(false)
+      // return
+
+      const response = await DataService.executeConfiguration(payload, keycloak)
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Started Successfully!',
+          severity: 'success',
+        })
+        // setIsLoadEnabled(false)
+        setLoading(false)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Execution Falied!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Execution Falied!', error)
+      setLoading(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getAopSummary = async () => {
+    try {
+      var res = await DataService.getAopSummary(keycloak)
+
+      if (res?.code == 200) {
+        setSummary(res?.data?.summary)
+      } else {
+        setSummary('')
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
+
+  const saveSummary = async () => {
+    setLoading(true)
+    try {
+      let plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+      let year = localStorage.getItem('year')
+      const response = await DataService.saveSummaryAOPConsumptionNorm(
+        plantId,
+        year,
+        summary,
+        keycloak,
+      )
+
+      if (response?.code == 200) {
+        setSnackbarData({
+          message: 'Summary Saved Successfully!',
+          severity: 'success',
+        })
+        setLoading(false)
+        setSnackbarOpen(true)
+        setIsEdited(false)
+      } else {
+        setSnackbarData({
+          message: 'Summary Saved Failed!',
+          severity: 'error',
+        })
+        setLoading(false)
+        setSnackbarOpen(true)
+      }
+
+      //
+
+      setLoading(false)
+      return response
+    } catch (error) {
+      console.error('Error saving Summary!', error)
+    } finally {
+      //
+      setLoading(false)
+    }
+  }
+
+  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
+    useState([])
+
+  const getConfigurationExecutionDetails = async () => {
+    try {
+      const data = await DataService.getConfigurationExecutionDetails(keycloak)
+
+      var data1 = data?.data
+
+      setConfigurationExecutionDetails(data1)
+    } catch (error) {
+      console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // handleMenuClose();
+    }
+  }
+
+  const [isEdited, setIsEdited] = useState(false)
+
+  const [isLoadEnabled, setIsLoadEnabled] = useState(false)
+
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
+
+  const yearString = localStorage.getItem('year') // "2024-25"
+  const yearStart = yearString ? parseInt(yearString.split('-')[0]) : 2024
+
+  // const isDateInitialized = useRef(false)
+
+  useEffect(() => {
+    // if (!isDateInitialized.current) {
+    const storedYear = localStorage.getItem('year')
+    const startYear = storedYear ? parseInt(storedYear.split('-')[0]) : 2024
+
+    const defaultEndDate = new Date(`${startYear}-03-31`)
+    const defaultStartDate = new Date(`${startYear - 5 + 1}-04-01`)
+
+    setStartDate(defaultStartDate)
+    setEndDate(defaultEndDate)
+
+    // isDateInitialized.current = true
+    // }
+  }, [])
+
   // and want to paste that new crakcer component here
   if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
-    const megTabs = ['Configuration', 'Constants']
+    const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
 
     return (
       <div>
@@ -213,6 +504,126 @@ const ConfigurationTable = () => {
         >
           <CircularProgress color='inherit' />
         </Backdrop>
+
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography className='grid-title'>
+              Historian Period / Budget Summary
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                mt: 0,
+              }}
+            >
+              {/* Left Side: Start Date, End Date, Load */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {/* Start Date */}
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <label htmlFor='start-date'>Start Date</label>
+                  <DatePicker
+                    id='start-date'
+                    format='dd-MM-yyyy'
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.value)}
+                    placeholder='Select Start Date'
+                    style={{ width: '180px' }}
+                    min={startDate}
+                    max={new Date(`${yearStart}-03-31`)}
+                  />
+                </Box>
+
+                {/* End Date */}
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <label htmlFor='end-date'>End Date</label>
+                  <DatePicker
+                    id='end-date'
+                    format='dd-MM-yyyy'
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.value)}
+                    placeholder='Select End Date'
+                    style={{ width: '180px' }}
+                    min={new Date(`${yearStart - 4}-04-01`)}
+                    max={endDate}
+                  />
+                </Box>
+
+                {/* Load Button */}
+                <Button
+                  variant='contained'
+                  onClick={onLoad}
+                  className='btn-save'
+                  // disabled={!isLoadEnabled}
+                  sx={{ alignSelf: 'flex-end' }}
+                >
+                  Load
+                </Button>
+              </Box>
+
+              {/* Right Side: Save Button */}
+              <Button
+                variant='contained'
+                onClick={saveSummary}
+                className='btn-save'
+                disabled={!isEdited}
+              >
+                Save
+              </Button>
+            </Box>
+
+            <TextField
+              label='Summary'
+              multiline
+              // minRows={isAccordionExpanded ? 4 : 20}
+              minRows={4}
+              fullWidth
+              margin='normal'
+              variant='outlined'
+              disabled={isOldYear == 1}
+              value={summary}
+              onChange={(e) => {
+                setSummary(e.target.value)
+                setIsEdited(true)
+              }}
+              sx={{
+                '& .MuiInputBase-root': {
+                  backgroundColor: '#ffffff',
+                  borderRadius: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  padding: '8px',
+                },
+                '& label': {
+                  fontSize: '1rem',
+                  color: '#666',
+                  lineHeight: '1.2',
+                  transform: 'translate(14px, 12px) scale(1)',
+                },
+                '& .MuiInputLabel-shrink': {
+                  transform: 'translate(14px, -6px) scale(0.75)',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#ccc',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#999',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1976d2',
+                },
+                '& .MuiInputBase-input': {
+                  resize: 'vertical',
+                },
+              }}
+            />
+          </CustomAccordionDetails>
+        </CustomAccordion>
 
         <Box>
           <Tabs
@@ -263,10 +674,27 @@ const ConfigurationTable = () => {
                     groupBy='Particulars'
                   />
                 )
+              case 'report manual entry':
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstantsMannualEntry}
+                    loading={loading}
+                    fetchData={fetchDataConstantsMnnualEntry}
+                    setRows={setProductionRowsConstantsMannualEntry}
+                    configType='megConstantsMannualEntry'
+                    groupBy='Particulars'
+                  />
+                )
               default:
                 return null
             }
           })()}
+          <Notification
+            open={snackbarOpen}
+            message={snackbarData?.message || ''}
+            severity={snackbarData?.severity || 'info'}
+            onClose={() => setSnackbarOpen(false)}
+          />
         </Box>
       </div>
     )
@@ -356,11 +784,12 @@ const ConfigurationTable = () => {
                     // groupBy2='ConfigTypeDisplayName'
                   />
                 )
-              case getTheId('Receipe'): // Receipe
+              case getTheId('Receipe'): // Receipe - Fixed to use gradeFetchData
                 return (
                   <SelectivityData
                     rows={gradeData}
                     loading={loading}
+                    fetchData={fetchGradeData}
                     setRows={setGradeData}
                     configType='grades'
                   />

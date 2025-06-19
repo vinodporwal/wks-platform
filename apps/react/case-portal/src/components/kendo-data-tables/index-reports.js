@@ -458,7 +458,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 className='btn-save'
                 onClick={saveModalOpen}
-                disabled={isButtonDisabled || !issRowEdited}
+                disabled={isButtonDisabled}
                 // loading={loading}
                 // loadingposition='start'
                 {...(loading ? {} : {})}

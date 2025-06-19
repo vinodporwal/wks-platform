@@ -130,8 +130,6 @@ const KendoDataTables = ({
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   const initialGroup = groupBy ? [{ field: groupBy }] : []
   const fileInputRef = useRef(null)
-  const [startDate, setStartDate] = useState(null)
-  const [endDate, setEndDate] = useState(null)
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
@@ -517,8 +515,6 @@ const KendoDataTables = ({
     return <NoSpinnerNumericEditor {...props} />
   }
 
-  const [isLoadEnabled, setIsLoadEnabled] = useState(false)
-
   const handleLoadClick = () => {
     if (onLoad && startDate && endDate) {
       onLoad(startDate, endDate)
@@ -534,6 +530,7 @@ const KendoDataTables = ({
           <div className='k-loading-color' />
         </div>
       )}
+
       {(permissions?.allAction ?? false) && (
         <Box className='action-box'>
           <Box
@@ -541,7 +538,7 @@ const KendoDataTables = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
-              width: '100%', // make sure container is full width
+              width: '100%',
               p: 1,
               gap: 1,
             }}
@@ -553,28 +550,7 @@ const KendoDataTables = ({
                 className='unit-chip'
               />
             )}
-            {/* {permissions?.showCalculate && (
-              <Tooltip title='Calculate'>
-                <span>
-                  <Button
-                    variant='contained'
-                    onClick={handleCalculateBtn}
-                    disabled={isButtonDisabled}
-                    sx={{
-                      minWidth: '40px',
-                      padding: '8px',
-                      backgroundColor: '#0100cb',
-                      '&:hover': {
-                        backgroundColor: '#0100cb',
-                        opacity: 0.9,
-                      },
-                    }}
-                  >
-                    <CalculateOutlinedIcon sx={{ color: '#fff' }} />
-                  </Button>
-                </span>
-              </Tooltip>
-            )} */}
+
             {permissions?.addButton && (
               <Button
                 variant='contained'
@@ -584,53 +560,6 @@ const KendoDataTables = ({
               >
                 Add Item
               </Button>
-            )}
-            {permissions?.showLoad && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                {/* Start Date */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <label htmlFor='start-date'>Start Date</label>
-                  <DatePicker
-                    id='start-date'
-                    format='dd-MM-yyyy'
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.value)
-                      setIsLoadEnabled(true)
-                    }}
-                    placeholder='Select Start Date'
-                    style={{ width: '180px' }}
-                  />
-                </Box>
-
-                {/* End Date */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <label htmlFor='end-date'>End Date</label>
-                  <DatePicker
-                    id='end-date'
-                    format='dd-MM-yyyy'
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.value)
-                      setIsLoadEnabled(true)
-                    }}
-                    placeholder='Select End Date'
-                    style={{ width: '180px' }}
-                  />
-                </Box>
-
-                {/* Load Button */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
-                  <Button
-                    variant='contained'
-                    onClick={handleLoadClick}
-                    className='btn-save'
-                    disabled={!isLoadEnabled}
-                  >
-                    Load
-                  </Button>
-                </Box>
-              </Box>
             )}
 
             {permissions?.downloadExcelBtn && (
@@ -681,6 +610,7 @@ const KendoDataTables = ({
                 Save
               </Button>
             )}
+
             {permissions?.showCalculate && (
               <Button
                 variant='contained'
@@ -741,6 +671,7 @@ const KendoDataTables = ({
                 ))}
               </TextField>
             )}
+
             {permissions?.showModes && (
               <TextField
                 select
@@ -765,11 +696,10 @@ const KendoDataTables = ({
                 ))}
               </TextField>
             )}
-
-            {/* </Box> */}
           </Box>
         </Box>
       )}
+
       <div className='kendo-data-grid'>
         <Tooltip openDelay={50} position='default' anchorElement='target'>
           <Grid
@@ -795,6 +725,7 @@ const KendoDataTables = ({
               mode: 'multiple',
             }}
             allRedCell={allRedCell}
+            size='small'
             pageable={
               rows?.length > 100
                 ? {
@@ -805,6 +736,8 @@ const KendoDataTables = ({
             }
           >
             {columns.map((col) => {
+              const isActive = isColumnActive(col?.field, filter, sort)
+
               if (
                 [
                   'maintStartDateTime',
@@ -822,7 +755,7 @@ const KendoDataTables = ({
                     key={col.field}
                     field={col.field}
                     title={col.title || col.headerName}
-                    width={col.width}
+                    // width={col.width}
                     cells={{
                       edit: { date: DateTimePickerEditor },
                       data: toolTipRenderer,
@@ -840,7 +773,7 @@ const KendoDataTables = ({
                     key='product'
                     field='product'
                     title={col.title || col.headerName || 'Particulars'}
-                    width={210}
+                    // width={210}
                     editable={col.editable || true}
                     hidden={col.hidden}
                     cells={{
@@ -858,7 +791,7 @@ const KendoDataTables = ({
                     key={col?.field}
                     field={col?.field}
                     title={col.title || col.headerName || 'Description'}
-                    width={col.width}
+                    // width={col.width}
                     editable={true}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
@@ -875,7 +808,7 @@ const KendoDataTables = ({
                     key='UOM'
                     field='UOM'
                     title={col.title || col.headerName || 'UOM'}
-                    width={col?.width}
+                    // width={col?.width}
                     editable={false}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
@@ -885,13 +818,54 @@ const KendoDataTables = ({
                   />
                 )
               }
+              if (col?.field === 'ReceipeName') {
+                return (
+                  <GridColumn
+                    key='ReceipeName'
+                    field='ReceipeName'
+                    title={col.title || col.headerName}
+                    width={col.width1}
+                    editable={false}
+                    columnMenu={ColumnMenuCheckboxFilter}
+                    hidden={col.hidden}
+                    cells={{
+                      data: toolTipRenderer,
+                    }}
+                  />
+                )
+              }
+              if (col.type === 'Receipe') {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    width={col.width1}
+                    hidden={col.hidden}
+                    className={
+                      col?.isDisabled
+                        ? 'k-number-right-disabled'
+                        : 'k-number-right'
+                    }
+                    editable={col?.editable ? true : false}
+                    headerClassName={isActive ? 'active-column' : ''}
+                    cells={{
+                      edit: { text: NoSpinnerNumericEditor },
+                      data: toolTipRenderer,
+                    }}
+                    columnMenu={ColumnMenuCheckboxFilter}
+                    filter='numeric'
+                    format={col.format}
+                  />
+                )
+              }
               if (col?.field === 'DisplayName') {
                 return (
                   <GridColumn
                     key='DisplayName'
                     field={col?.field}
                     title={col.title || col.headerName}
-                    width={col?.width}
+                    // width={col?.width}
                     editable={false}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
@@ -908,7 +882,6 @@ const KendoDataTables = ({
               //     isColumnMenuSortActive(field, sort)
               //   )
               // }
-              const isActive = isColumnActive(col?.field, filter, sort)
 
               if (
                 ['aopRemarks', 'remarks', 'remark', 'Remarks'].includes(
@@ -920,7 +893,7 @@ const KendoDataTables = ({
                     key={col.field}
                     field={col.field}
                     title={col.title || col.headerName}
-                    width={col.width}
+                    // width={col.width}
                     editor={true}
                     // editable={col.editable || true}
                     editable={{ mode: 'popup' }}
@@ -945,7 +918,7 @@ const KendoDataTables = ({
                     key={col.field}
                     field={col.field}
                     title={col.title || col.headerName}
-                    width={col.width}
+                    // width={col.width}
                     editable={true}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
@@ -964,6 +937,31 @@ const KendoDataTables = ({
               }
 
               if (col.type === 'number') {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    // width={col.width}
+                    hidden={col.hidden}
+                    className={
+                      col?.isDisabled
+                        ? 'k-number-right-disabled'
+                        : 'k-number-right'
+                    }
+                    editable={col?.editable ? true : false}
+                    headerClassName={isActive ? 'active-column' : ''}
+                    cells={{
+                      edit: { text: NoSpinnerNumericEditor },
+                      data: toolTipRenderer,
+                    }}
+                    columnMenu={ColumnMenuCheckboxFilter}
+                    filter='numeric'
+                    format={col.format}
+                  />
+                )
+              }
+              if (col.type === 'numberWidth') {
                 return (
                   <GridColumn
                     key={col.field}
@@ -995,7 +993,7 @@ const KendoDataTables = ({
                     key={col.field}
                     field={col.field}
                     title={col.title || col.headerName}
-                    width={col.width}
+                    // width={col.width}
                     hidden={col.hidden}
                     editable={!!col?.editable}
                     headerClassName={isActive ? 'active-column' : ''}
@@ -1013,7 +1011,7 @@ const KendoDataTables = ({
                   key={col.field}
                   field={col.field}
                   title={col.title || col.headerName}
-                  width={col.width}
+                  // width={col.width}
                   hidden={col.hidden}
                   editable={col?.editable ? true : false}
                   headerClassName={isActive ? 'active-column' : ''}
@@ -1043,6 +1041,7 @@ const KendoDataTables = ({
           </Grid>
         </Tooltip>
       </div>
+
       {/* {(permissions?.allActionOfBottomBtns ?? true) && ( */}
       <Box
         sx={{

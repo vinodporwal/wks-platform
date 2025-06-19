@@ -189,6 +189,7 @@ const NormalOpNormsScreen = () => {
       width: 110,
       groupable: true,
       editable: false,
+      hidden: true,
     },
     {
       field: 'materialFkId',
@@ -351,6 +352,7 @@ const NormalOpNormsScreen = () => {
       width: 110,
       groupable: true,
       editable: false,
+      hidden: true,
     },
 
     {
@@ -483,10 +485,12 @@ const NormalOpNormsScreen = () => {
     {
       field: 'idFromApi',
       title: 'idFromApi',
+      hidden: true,
     },
     {
       field: 'isEditable',
       title: 'isEditable',
+      hidden: true,
     },
   ]
 
@@ -675,6 +679,8 @@ const NormalOpNormsScreen = () => {
     }
   }
 
+  console.log('calculationObject', calculationObject)
+
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: false,
@@ -685,12 +691,12 @@ const NormalOpNormsScreen = () => {
       showUnit: false,
       saveWithRemark: true,
       saveBtn: true,
-      showCalculate:
+      showCalculate: lowerVertName === 'meg' ? true : false,
+      showCalculateVisibility:
         lowerVertName === 'meg' &&
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
-
       downloadExcelBtn: lowerVertName == 'meg' ? true : false,
       uploadExcelBtn: lowerVertName == 'meg' ? true : false,
     },
