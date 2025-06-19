@@ -290,6 +290,9 @@ const ConfigurationTable = () => {
     }
   }
 
+  const [startDate, setStartDate] = useState()
+  const [endDate, setEndDate] = useState()
+
   useEffect(() => {
     getConfigurationTabsMatrix()
     getConfigurationAvailableTabs()
@@ -298,6 +301,12 @@ const ConfigurationTable = () => {
     if (lowerVertName === 'pe') {
       fetchGradeData()
     }
+
+    let year = localStorage.getItem('year')
+    const baseYear = parseInt(year.split('-')[0], 10)
+
+    setStartDate(new Date(`${baseYear - 5}-04-01`))
+    setEndDate(new Date(`${baseYear}-03-31`))
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   const getTheId = (name) => {
@@ -307,6 +316,16 @@ const ConfigurationTable = () => {
 
   const [startDateObj, setStartDateObj] = useState([])
   const [endDateObj, setEndDateObj] = useState([])
+
+  function formatDate(date) {
+    if (!date) return ''
+
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0') // months are 0-indexed
+    const day = String(date.getDate()).padStart(2, '0')
+
+    return `${year}-${month}-${day}`
+  }
 
   const onLoad = async () => {
     setLoading(true)
@@ -318,45 +337,39 @@ const ConfigurationTable = () => {
         plantId = parsedPlant.id
       }
 
-      const formatDate = (date) => {
-        if (!date) return null
+      const startDateObj = configurationExecutionDetails.find(
+        (item) => item.Name === 'StartDate',
+      )
+      const endDateObj = configurationExecutionDetails.find(
+        (item) => item.Name === 'EndDate',
+      )
 
-        const d = new Date(date)
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0') // Months are 0-indexed
-        const day = String(d.getDate()).padStart(2, '0')
-
-        return `${year}-${month}-${day}`
-      }
-
-      setStartDateObj(configurationExecutionDetails[0])
-      setEndDateObj(configurationExecutionDetails[1])
+      setStartDateObj(startDateObj)
+      setEndDateObj(endDateObj)
 
       var startDate1 = startDateObj?.AttributeValue
       var startDate2 = endDateObj?.AttributeValue
-      var timeToShow = endDateObj?.CreatedOn
 
       const payload = [
         {
           apr: formatDate(startDate),
           UOM: '',
-          auditYear: startDate1?.AuditYear,
-          normParameterFKId: startDate1?.NormParameter_FK_Id,
+          auditYear: localStorage.getItem('year'),
+          normParameterFKId: startDateObj?.NormParameter_FK_Id,
           remarks: 'Initiated',
-          id: null,
+          id: startDateObj?.Id || null,
           plantId: plantId,
         },
         {
           apr: formatDate(endDate),
           UOM: '',
-          auditYear: startDate2?.AuditYear,
-          normParameterFKId: startDate2?.NormParameter_FK_Id,
+          auditYear: localStorage.getItem('year'),
+          normParameterFKId: endDateObj?.NormParameter_FK_Id,
           remarks: 'Initiated',
-          id: null,
+          id: endDateObj?.Id || null,
           plantId: plantId,
         },
       ]
-      setLoading(false)
 
       // console.log('payload', payload)
       // setLoading(false)
@@ -370,6 +383,7 @@ const ConfigurationTable = () => {
           severity: 'success',
         })
         // setIsLoadEnabled(false)
+        getConfigurationExecutionDetails()
         setLoading(false)
       } else {
         setSnackbarOpen(true)
@@ -467,34 +481,15 @@ const ConfigurationTable = () => {
 
   const [isEdited, setIsEdited] = useState(false)
 
-  const [isLoadEnabled, setIsLoadEnabled] = useState(false)
-
-  const [startDate, setStartDate] = useState(null)
-  const [endDate, setEndDate] = useState(null)
-
-  const yearString = localStorage.getItem('year') // "2024-25"
-  const yearStart = yearString ? parseInt(yearString.split('-')[0]) : 2024
-
-  // const isDateInitialized = useRef(false)
-
-  useEffect(() => {
-    // if (!isDateInitialized.current) {
-    const storedYear = localStorage.getItem('year')
-    const startYear = storedYear ? parseInt(storedYear.split('-')[0]) : 2024
-
-    const defaultEndDate = new Date(`${startYear}-03-31`)
-    const defaultStartDate = new Date(`${startYear - 5 + 1}-04-01`)
-
-    setStartDate(defaultStartDate)
-    setEndDate(defaultEndDate)
-
-    // isDateInitialized.current = true
-    // }
-  }, [])
-
-  // and want to paste that new crakcer component here
   if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
+    const auditYear = localStorage.getItem('year')
+
+    let displayYear = ''
+    if (auditYear) {
+      const [start, end] = auditYear.split('-').map(Number)
+      displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
+    }
 
     return (
       <div>
@@ -505,125 +500,118 @@ const ConfigurationTable = () => {
           <CircularProgress color='inherit' />
         </Backdrop>
 
-        <CustomAccordion defaultExpanded disableGutters>
-          <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
-          >
-            <Typography className='grid-title'>
-              Historian Period / Budget Summary
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-                mt: 0,
-              }}
+        <Box sx={{ mb: '4px' }}>
+          <CustomAccordion disableGutters>
+            <CustomAccordionSummary
+              aria-controls='meg-grid-content'
+              id='meg-grid-header'
             >
-              {/* Left Side: Start Date, End Date, Load */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                {/* Start Date */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <label htmlFor='start-date'>Start Date</label>
-                  <DatePicker
-                    id='start-date'
-                    format='dd-MM-yyyy'
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.value)}
-                    placeholder='Select Start Date'
-                    style={{ width: '180px' }}
-                    min={startDate}
-                    max={new Date(`${yearStart}-03-31`)}
-                  />
+              <Typography className='grid-title'>
+                Historian Period / Budget Summary
+              </Typography>
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-end',
+                  mt: 0,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <label htmlFor='start-date'>Start Date</label>
+                    <DatePicker
+                      id='start-date'
+                      format='dd-MM-yyyy'
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.value)}
+                      style={{ width: '180px' }}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <label htmlFor='end-date'>End Date</label>
+                    <DatePicker
+                      id='end-date'
+                      format='dd-MM-yyyy'
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.value)}
+                      style={{ width: '180px' }}
+                    />
+                  </Box>
+
+                  {/* Load Button */}
+                  <Button
+                    variant='contained'
+                    onClick={onLoad}
+                    className='btn-load'
+                    // disabled={!isLoadEnabled}
+                    sx={{ alignSelf: 'flex-end' }}
+                  >
+                    Load
+                  </Button>
                 </Box>
 
-                {/* End Date */}
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  <label htmlFor='end-date'>End Date</label>
-                  <DatePicker
-                    id='end-date'
-                    format='dd-MM-yyyy'
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.value)}
-                    placeholder='Select End Date'
-                    style={{ width: '180px' }}
-                    min={new Date(`${yearStart - 4}-04-01`)}
-                    max={endDate}
-                  />
-                </Box>
-
-                {/* Load Button */}
-                <Button
+                {/* Right Side: Save Button */}
+                {/* <Button
                   variant='contained'
-                  onClick={onLoad}
+                  onClick={saveSummary}
                   className='btn-save'
-                  // disabled={!isLoadEnabled}
-                  sx={{ alignSelf: 'flex-end' }}
+                  disabled={!isEdited}
                 >
-                  Load
-                </Button>
+                  Save Summary
+                </Button> */}
               </Box>
 
-              {/* Right Side: Save Button */}
-              <Button
-                variant='contained'
-                onClick={saveSummary}
-                className='btn-save'
-                disabled={!isEdited}
-              >
-                Save
-              </Button>
-            </Box>
-
-            <TextField
-              label='Summary'
-              multiline
-              // minRows={isAccordionExpanded ? 4 : 20}
-              minRows={4}
-              fullWidth
-              margin='normal'
-              variant='outlined'
-              disabled={isOldYear == 1}
-              value={summary}
-              onChange={(e) => {
-                setSummary(e.target.value)
-                setIsEdited(true)
-              }}
-              sx={{
-                '& .MuiInputBase-root': {
-                  backgroundColor: '#ffffff',
-                  borderRadius: '8px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                  padding: '8px',
-                },
-                '& label': {
-                  fontSize: '1rem',
-                  color: '#666',
-                  lineHeight: '1.2',
-                  transform: 'translate(14px, 12px) scale(1)',
-                },
-                '& .MuiInputLabel-shrink': {
-                  transform: 'translate(14px, -6px) scale(0.75)',
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#ccc',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#999',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#1976d2',
-                },
-                '& .MuiInputBase-input': {
-                  resize: 'vertical',
-                },
-              }}
-            />
-          </CustomAccordionDetails>
-        </CustomAccordion>
+              <TextField
+                label='Summary'
+                multiline
+                // minRows={isAccordionExpanded ? 4 : 20}
+                minRows={2}
+                fullWidth
+                margin='normal'
+                variant='outlined'
+                disabled={isOldYear == 1}
+                value={summary}
+                onChange={(e) => {
+                  setSummary(e.target.value)
+                  setIsEdited(true)
+                }}
+                sx={{
+                  '& .MuiInputBase-root': {
+                    backgroundColor: '#ffffff',
+                    borderRadius: '8px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    padding: '8px',
+                  },
+                  '& label': {
+                    fontSize: '1rem',
+                    color: '#666',
+                    lineHeight: '1.2',
+                    transform: 'translate(14px, 12px) scale(1)',
+                  },
+                  '& .MuiInputLabel-shrink': {
+                    transform: 'translate(14px, -6px) scale(0.75)',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#ccc',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#999',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#1976d2',
+                  },
+                  '& .MuiInputBase-input': {
+                    resize: 'vertical',
+                  },
+                }}
+              />
+            </CustomAccordionDetails>
+          </CustomAccordion>
+        </Box>
 
         <Box>
           <Tabs
@@ -640,7 +628,9 @@ const ConfigurationTable = () => {
             {megTabs.map((tab) => (
               <Tab
                 key={tab}
-                label={tab}
+                label={
+                  tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab
+                }
                 sx={{
                   border: '1px solid #ADD8E6',
                   borderBottom: '1px solid #ADD8E6',
@@ -661,6 +651,7 @@ const ConfigurationTable = () => {
                     setRows={setProductionRows}
                     configType='meg'
                     groupBy='Particulars'
+                    summary={summary}
                   />
                 )
               case 'constants':
@@ -672,6 +663,7 @@ const ConfigurationTable = () => {
                     setRows={setProductionRowsConstants}
                     configType='megConstants'
                     groupBy='Particulars'
+                    summary={summary}
                   />
                 )
               case 'report manual entry':
@@ -683,6 +675,7 @@ const ConfigurationTable = () => {
                     setRows={setProductionRowsConstantsMannualEntry}
                     configType='megConstantsMannualEntry'
                     groupBy='Particulars'
+                    summary={summary}
                   />
                 )
               default:

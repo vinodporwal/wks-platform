@@ -45,7 +45,6 @@ const SelectivityData = (props) => {
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
   const [isEdited, setIsEdited] = useState(false)
 
-  const [summary, setSummary] = useState('')
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
@@ -87,7 +86,54 @@ const SelectivityData = (props) => {
     }, 400)
   }, [modifiedCells])
 
+  const saveSummary = async () => {
+    try {
+      let plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+      let year = localStorage.getItem('year')
+      const response = await DataService.saveSummaryAOPConsumptionNorm(
+        plantId,
+        year,
+        summary,
+        keycloak,
+      )
+
+      if (response?.code == 200) {
+        // setSnackbarData({
+        //   message: 'Summary Saved Successfully!',
+        //   severity: 'success',
+        // })
+        // setLoading(false)
+        // setSnackbarOpen(true)
+        // setIsEdited(false)
+      } else {
+        // setSnackbarData({
+        //   message: 'Summary Saved Failed!',
+        //   severity: 'error',
+        // })
+        // setLoading(false)
+        // setSnackbarOpen(true)
+      }
+
+      //
+
+      // setLoading(false)
+      return response
+    } catch (error) {
+      console.error('Error saving Summary!', error)
+    } finally {
+      //
+      setLoading(false)
+    }
+  }
+
   const saveCatalystData = async (newRow) => {
+    console.log(props?.summary)
+
     setLoading(true)
     try {
       var plantId = ''
@@ -151,6 +197,7 @@ const SelectivityData = (props) => {
           message: 'Configuration data Saved Successfully!',
           severity: 'success',
         })
+        saveSummary()
         setModifiedCells({})
         setLoading(false)
 

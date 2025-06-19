@@ -315,7 +315,7 @@ const KendoDataTablesReports = ({
   const CustomRow = useCallback(({ dataItem, className, ...rest }) => {
     const isDisabled =
       !dataItem.isEditable && dataItem?.isEditable !== undefined
-    const rowClassName = isDisabled ? `k-disabled` : className
+    const rowClassName = isDisabled ? `custom-disabled-row` : className
     return (
       <tr {...rest?.trProps} className={rowClassName}>
         {rest.children}
