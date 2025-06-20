@@ -204,3 +204,10 @@ main.MuiBox-root.css-vognfw {
 .custom-disabled-row {
   background-color: #f0f0f0 !important;
 }
+
+.text-note {
+  font-family: 'Roboto', sans-serif !important;
+  font-weight: bold;
+  white-space: nowrap;
+  font-size: 0.7rem;
+}

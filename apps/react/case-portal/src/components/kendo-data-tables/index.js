@@ -15,6 +15,7 @@ import {
   DialogTitle,
   MenuItem,
   TextField,
+  Typography,
 } from '../../../node_modules/@mui/material/index'
 import { GridEditCell } from '@progress/kendo-react-grid'
 
@@ -128,7 +129,17 @@ const KendoDataTables = ({
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
-  const initialGroup = groupBy ? [{ field: groupBy }] : []
+  // const initialGroup = groupBy ? [{ field: groupBy }] : []
+
+  const initialGroup = groupBy
+    ? [
+        {
+          field: groupBy,
+          dir: undefined,
+        },
+      ]
+    : []
+
   const fileInputRef = useRef(null)
 
   const handleEditChange = useCallback((e) => {
@@ -543,6 +554,11 @@ const KendoDataTables = ({
               gap: 1,
             }}
           >
+            {/* <Typography component='div' className='miis-note'>
+              * Prices - MIIS BPC table, Actual values - MIIS Contribution
+              (YTD).
+            </Typography> */}
+
             {permissions?.UnitToShow && (
               <Chip
                 label={permissions.UnitToShow}

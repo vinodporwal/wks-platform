@@ -86,7 +86,7 @@ const SelectivityData = (props) => {
     }, 400)
   }, [modifiedCells])
 
-  const saveSummary = async () => {
+  const saveSummary = async (summary) => {
     try {
       let plantId = ''
       const storedPlant = localStorage.getItem('selectedPlant')
@@ -132,7 +132,7 @@ const SelectivityData = (props) => {
   }
 
   const saveCatalystData = async (newRow) => {
-    console.log(props?.summary)
+    // console.log(props?.summary)
 
     setLoading(true)
     try {
@@ -144,6 +144,8 @@ const SelectivityData = (props) => {
       }
 
       var payload = []
+
+      const requiredFields = ['remark']
 
       if (props?.configType == 'megConstants') {
         payload = newRow.map((row) => ({
@@ -186,6 +188,7 @@ const SelectivityData = (props) => {
           id: row.idFromApi || null,
         }))
       }
+
       const response = await DataService.saveCatalystData(
         plantId,
         payload,
@@ -197,7 +200,7 @@ const SelectivityData = (props) => {
           message: 'Configuration data Saved Successfully!',
           severity: 'success',
         })
-        saveSummary()
+        saveSummary(props?.summary)
         setModifiedCells({})
         setLoading(false)
 
@@ -296,7 +299,7 @@ const SelectivityData = (props) => {
 
         setConfigurationExecutionDetails(data1)
 
-        console.log('data1', data1)
+        // console.log('data1', data1)
       } catch (error) {
         console.error('Error fetching getConfigurationExecutionDetails:', error)
       } finally {

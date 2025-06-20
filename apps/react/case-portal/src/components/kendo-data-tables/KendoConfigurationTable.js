@@ -294,11 +294,14 @@ const ConfigurationTable = () => {
   const [endDate, setEndDate] = useState()
 
   useEffect(() => {
-    getConfigurationTabsMatrix()
-    getConfigurationAvailableTabs()
     getAopSummary()
-    getConfigurationExecutionDetails()
+    if (lowerVertName === 'meg') {
+      getConfigurationExecutionDetails()
+    }
+
     if (lowerVertName === 'pe') {
+      getConfigurationTabsMatrix()
+      getConfigurationAvailableTabs()
       fetchGradeData()
     }
 
@@ -416,51 +419,51 @@ const ConfigurationTable = () => {
     }
   }
 
-  const saveSummary = async () => {
-    setLoading(true)
-    try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      let year = localStorage.getItem('year')
-      const response = await DataService.saveSummaryAOPConsumptionNorm(
-        plantId,
-        year,
-        summary,
-        keycloak,
-      )
+  // const saveSummary = async () => {
+  //   setLoading(true)
+  //   try {
+  //     let plantId = ''
+  //     const storedPlant = localStorage.getItem('selectedPlant')
+  //     if (storedPlant) {
+  //       const parsedPlant = JSON.parse(storedPlant)
+  //       plantId = parsedPlant.id
+  //     }
+  //     let year = localStorage.getItem('year')
+  //     const response = await DataService.saveSummaryAOPConsumptionNorm(
+  //       plantId,
+  //       year,
+  //       summary,
+  //       keycloak,
+  //     )
 
-      if (response?.code == 200) {
-        setSnackbarData({
-          message: 'Summary Saved Successfully!',
-          severity: 'success',
-        })
-        setLoading(false)
-        setSnackbarOpen(true)
-        setIsEdited(false)
-      } else {
-        setSnackbarData({
-          message: 'Summary Saved Failed!',
-          severity: 'error',
-        })
-        setLoading(false)
-        setSnackbarOpen(true)
-      }
+  //     if (response?.code == 200) {
+  //       setSnackbarData({
+  //         message: 'Summary Saved Successfully!',
+  //         severity: 'success',
+  //       })
+  //       setLoading(false)
+  //       setSnackbarOpen(true)
+  //       setIsEdited(false)
+  //     } else {
+  //       setSnackbarData({
+  //         message: 'Summary Saved Failed!',
+  //         severity: 'error',
+  //       })
+  //       setLoading(false)
+  //       setSnackbarOpen(true)
+  //     }
 
-      //
+  //     //
 
-      setLoading(false)
-      return response
-    } catch (error) {
-      console.error('Error saving Summary!', error)
-    } finally {
-      //
-      setLoading(false)
-    }
-  }
+  //     setLoading(false)
+  //     return response
+  //   } catch (error) {
+  //     console.error('Error saving Summary!', error)
+  //   } finally {
+  //     //
+  //     setLoading(false)
+  //   }
+  // }
 
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState([])
@@ -501,7 +504,7 @@ const ConfigurationTable = () => {
         </Backdrop>
 
         <Box sx={{ mb: '4px' }}>
-          <CustomAccordion disableGutters>
+          <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
               aria-controls='meg-grid-content'
               id='meg-grid-header'
