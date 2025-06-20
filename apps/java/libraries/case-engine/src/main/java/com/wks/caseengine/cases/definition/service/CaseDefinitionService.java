@@ -81,4 +81,6 @@ public interface CaseDefinitionService {
 	List<Case> getCasesByCaseDefinitionId(String caseDefinitionId, String assetName, String hierarchyName);
 
 	Case savePICase(Case caseData);
+	
+	Case saveValueRealization(Case caseData);
 }

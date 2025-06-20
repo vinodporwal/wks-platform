@@ -290,4 +290,10 @@ public class CaseDefinitionController {
         Case savedCase = caseDefinitionService.saveAnalysis(caseData);
         return ResponseEntity.ok(savedCase);
     }
+	
+	@PostMapping("/value-realization")
+    public ResponseEntity<Case> saveValueRealization(@RequestBody Case caseData) {
+        Case savedCase = caseDefinitionService.saveValueRealization(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
 }

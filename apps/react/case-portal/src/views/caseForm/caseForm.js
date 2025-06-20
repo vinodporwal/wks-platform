@@ -224,14 +224,19 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
           if(!isDraft){
+          const attributeValue = caseData.attributes[0].value;
+          const parsedAttributeValue = JSON.parse(attributeValue);
+          console.log('parsedAttributeValue', parsedAttributeValue);
           const analysis = level1.components?.[5] ?? null;
           const recommendation = level1.components?.[6] ?? null;
           const caseDetails = level1.components?.[3] ?? null;
+          const valueRealization = level1.components?.[7] ?? null;
           level1.components?.forEach((component) => {
             if (
               component.id !== recommendation?.id &&
               component.id !== caseDetails?.id && 
-              component.id !== analysis?.id
+              component.id !== analysis?.id && 
+              (component.id === valueRealization?.id && parsedAttributeValue.valueRealizationCategory !== '')
             ) {
               component.disabled = true;
             }
@@ -552,7 +557,92 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
-            isDraft: 'n',
+            isDraft: aCase.isDraft,
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey,
+            owner: {
+              id: keycloak.subject || '',
+              name: keycloak.idTokenParsed.name || '',
+              email: keycloak.idTokenParsed.email || '',
+              phone: keycloak.idTokenParsed.phone || '',
+            },
+            attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          }),
+        )
+      })
+      .then((data) => {
+        setLastCreatedCase(data)
+        setSnackOpen(true)
+        setTimeout(() => {
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
+      })
+      .catch((err) => {
+        console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
+      })
+  }
+
+  const onValueRealizationSubmit = () => {
+    setLoading(true)
+    // const requiredFields = ['caseCauseCategory', 'caseCauseDescription', 'analysisDesc', 'diagnosis']
+    // const missingFields = requiredFields.filter(
+    //   (field) => !formData.data.container[field],
+    // )
+    // if (missingFields.length > 0) {
+    //   setSnackbarMessages(['Please fill in all required fields.'])
+    //   setSnackbarOpen(true)
+    //   setLoading(false)
+    //   return
+    // }
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }))
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        caseNo: aCase.caseNo,
+        owner: {
+          id: keycloak.subject || '',
+          name: keycloak.idTokenParsed.name || '',
+          email: keycloak.idTokenParsed.email || '',
+          phone: keycloak.idTokenParsed.phone || '1234567890',
+        },
+        attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
+      }),
+    )
+      .then((data) => {
+        const businessKey = data.businessKey
+
+        return CaseService.saveValueRealization(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            isDraft: aCase.isDraft,
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
@@ -1440,8 +1530,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                           } else if (event.component.key === 'onSave') {
                             // onSubmitRecommendation()
                             onSave()
-                          }  else if (event.component.key === 'analysisSubmit') {
+                          } else if (event.component.key === 'analysisSubmit') {
                             onAnalysisSave()
+                          } else if (event.component.key === 'valueRealizationSubmit') {
+                            onValueRealizationSubmit()
                           }
                         }}
                       />
