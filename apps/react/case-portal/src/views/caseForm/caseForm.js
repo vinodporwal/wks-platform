@@ -408,26 +408,33 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onSave = () => {
     setLoading(true)
-    const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
+    const {
+      caseDescription,
+      dueDate,
+      faultCategory,
+      analysisTeam,
+    } = formData.data.container
 
-    // const faultCategoryValue = formData.data.container.faultCategory
-    // if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
-    //   requiredFields.push(
-    //     'caseCauseCategory',
-    //     'caseCauseDescription',
-    //     'analysisDesc',
-    //   )
-    // }
-    const missingFields = requiredFields.filter(
-      (field) => !formData.data.container[field],
-    )
+    const missingFields = []
+    if (!caseDescription) 
+      missingFields.push('Case Description')
+    if (!dueDate)
+      missingFields.push('Due Date')
+    if (!faultCategory) 
+      missingFields.push('Fault Category')
+    if (!analysisTeam || analysisTeam.length === 0)
+      missingFields.push('Analysis Team')
 
     if (missingFields.length > 0) {
-      setSnackbarMessages(['Please fill in all required fields.'])
+      setSnackbarMessages(missingFields)
       setSnackbarOpen(true)
+      setTimeout(() => {
+        setSnackbarOpen(false)
+      }, 2000)
       setLoading(false)
       return
     }
+
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
@@ -507,16 +514,33 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onAnalysisSave = () => {
     setLoading(true)
-    const requiredFields = ['caseCauseCategory', 'caseCauseDescription', 'analysisDesc', 'diagnosis']
-    const missingFields = requiredFields.filter(
-      (field) => !formData.data.container[field],
-    )
+    const {
+      caseCauseCategory,
+      caseCauseDescription,
+      analysisDesc,
+      diagnosis,
+    } = formData.data.container
+
+    const missingFields = []
+    if (!caseCauseCategory) 
+      missingFields.push('Case cause category.')
+    if (!caseCauseDescription || caseCauseDescription.length === 0)
+      missingFields.push('Case cause description.')
+    if (!analysisDesc) 
+      missingFields.push('Observations')
+    if (!diagnosis)
+      missingFields.push('Diagnosis')
+
     if (missingFields.length > 0) {
-      setSnackbarMessages(['Please fill in all required fields.'])
+      setSnackbarMessages(missingFields)
       setSnackbarOpen(true)
+      setTimeout(() => {
+        setSnackbarOpen(false)
+      }, 2000)
       setLoading(false)
       return
     }
+
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
@@ -777,6 +801,17 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     console.log('event onSubmitRecommendation', event)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
     setFormData(updatedFormData)
+
+    if (!formData.data.container.analysisDesc) {
+      setSnackbarMessages(['Please submit analysis before posting recommendation.'])
+      setSnackbarOpen(true)
+      setTimeout(() => {
+        setSnackbarOpen(false)
+      }, 2000)
+      return
+    }
+
+    setSnackbarMessages([])
 
     const {
       recommendationReviewer,
