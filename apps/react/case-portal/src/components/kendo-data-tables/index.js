@@ -18,6 +18,7 @@ import {
   Typography,
 } from '../../../node_modules/@mui/material/index'
 import { GridEditCell } from '@progress/kendo-react-grid'
+import { getDefaultColumnMenu } from '@progress/kendo-react-grid'
 
 import DownloadIcon from '@mui/icons-material/Download'
 import UploadIcon from '@mui/icons-material/Upload'
@@ -34,6 +35,7 @@ import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
 
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
 import {
+  GridColumnMenuFilter,
   isColumnMenuFilterActive,
   isColumnMenuSortActive,
 } from '../../../node_modules/@progress/kendo-react-grid/index'
@@ -84,6 +86,7 @@ const KendoDataTables = ({
   modifiedCells = [],
   setRows,
   columns,
+  summaryEdited,
   loading = false,
   typeRank = {},
   permissions = {},
@@ -108,6 +111,7 @@ const KendoDataTables = ({
   handleRemarkCellClick = () => {},
   selectedUsers = [],
   groupBy = null,
+  note = '',
   allProducts = [],
   selectMode,
   setSelectMode = () => {},
@@ -386,6 +390,10 @@ const KendoDataTables = ({
           onRemarkClick(dataItem)
           setEdit({})
         }}
+        onDoubleClick={() => {
+          onRemarkClick(dataItem)
+          setEdit({})
+        }}
       >
         {displayText || 'Click to add remark'}
       </td>
@@ -532,6 +540,26 @@ const KendoDataTables = ({
     }
   }
 
+  const SafeColumnMenu = (props) => {
+    return (
+      <GridColumnMenuFilter
+        {...props}
+        mobileMode={false} // ✅ This prevents the crash
+      />
+    )
+  }
+
+  const dateFields = [
+    'maintStartDateTime',
+    'maintEndDateTime',
+    'endDateTA',
+    'startDateTA',
+    'endDateSD',
+    'startDateSD',
+    'endDateIBR',
+    'startDateIBR',
+  ]
+
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -548,170 +576,178 @@ const KendoDataTables = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-end',
+              justifyContent: 'space-between',
               width: '100%',
               p: 1,
-              gap: 1,
             }}
           >
-            {/* <Typography component='div' className='miis-note'>
-              * Prices - MIIS BPC table, Actual values - MIIS Contribution
-              (YTD).
-            </Typography> */}
+            {/* Left side - Note */}
+            <Box>
+              {permissions?.showNote && (
+                <Typography component='div' className='text-note'>
+                  {note}
+                </Typography>
+              )}
+            </Box>
 
-            {permissions?.UnitToShow && (
-              <Chip
-                label={permissions.UnitToShow}
-                variant='outlined'
-                className='unit-chip'
-              />
-            )}
-
-            {permissions?.addButton && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={handleAddRow}
-                disabled={isButtonDisabled}
-              >
-                Add Item
-              </Button>
-            )}
-
-            {permissions?.downloadExcelBtn && (
-              <Tooltip title='Download'>
-                <Button
+            {/* Right side - All other actions */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {permissions?.UnitToShow && (
+                <Chip
+                  label={permissions.UnitToShow}
                   variant='outlined'
-                  size='large'
-                  onClick={downloadExcelForConfiguration}
+                  className='unit-chip'
+                />
+              )}
+
+              {permissions?.addButton && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  onClick={handleAddRow}
                   disabled={isButtonDisabled}
                 >
-                  <DownloadIcon fontSize='small' />
+                  Add Item
                 </Button>
-              </Tooltip>
-            )}
+              )}
 
-            {permissions?.uploadExcelBtn && (
-              <>
-                <Tooltip title='Upload Excel'>
+              {permissions?.downloadExcelBtn && (
+                <Tooltip title='Download'>
                   <Button
                     variant='outlined'
                     size='large'
-                    onClick={triggerFileUpload}
+                    onClick={downloadExcelForConfiguration}
                     disabled={isButtonDisabled}
                   >
-                    <UploadIcon fontSize='small' />
+                    <DownloadIcon fontSize='small' />
                   </Button>
                 </Tooltip>
-                <input
-                  type='file'
-                  accept='.xlsx,.xls'
-                  onChange={onFileChange}
-                  ref={fileInputRef}
-                  style={{ display: 'none' }}
-                />
-              </>
-            )}
+              )}
 
-            {permissions?.saveBtn && (
-              <Button
-                variant='contained'
-                className='btn-save'
-                onClick={saveModalOpen}
-                disabled={
-                  isButtonDisabled || Object.keys(modifiedCells).length === 0
-                }
-                {...(loading ? {} : {})}
-              >
-                Save
-              </Button>
-            )}
+              {permissions?.uploadExcelBtn && (
+                <>
+                  <Tooltip title='Upload Excel'>
+                    <Button
+                      variant='outlined'
+                      size='large'
+                      onClick={triggerFileUpload}
+                      disabled={isButtonDisabled}
+                    >
+                      <UploadIcon fontSize='small' />
+                    </Button>
+                  </Tooltip>
+                  <input
+                    type='file'
+                    accept='.xlsx,.xls'
+                    onChange={onFileChange}
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                  />
+                </>
+              )}
 
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleCalculateBtn}
-                disabled={
-                  rows?.length === 0
-                    ? false
-                    : isButtonDisabled || !permissions?.showCalculateVisibility
-                }
-                className='btn-save'
-              >
-                Calculate
-              </Button>
-            )}
+              {permissions?.saveBtn && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  onClick={saveModalOpen}
+                  disabled={
+                    isButtonDisabled ||
+                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                  }
+                  {...(loading ? {} : {})}
+                >
+                  Save
+                </Button>
+              )}
 
-            {permissions?.showRefresh && (
-              <Button
-                variant='contained'
-                onClick={handleCalculateBtn}
-                disabled={isButtonDisabled}
-                className='btn-save'
-              >
-                Refresh
-              </Button>
-            )}
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  onClick={handleCalculateBtn}
+                  disabled={
+                    rows?.length === 0
+                      ? false
+                      : isButtonDisabled ||
+                        !permissions?.showCalculateVisibility
+                  }
+                  className='btn-save'
+                >
+                  Calculate
+                </Button>
+              )}
 
-            {permissions?.showRefreshBtn && false && (
-              <Button
-                variant='contained'
-                onClick={handleRefresh}
-                className='btn-save'
-              >
-                Refresh
-              </Button>
-            )}
+              {permissions?.showRefresh && (
+                <Button
+                  variant='contained'
+                  onClick={handleCalculateBtn}
+                  disabled={isButtonDisabled}
+                  className='btn-save'
+                >
+                  Refresh
+                </Button>
+              )}
 
-            {permissions?.showUnit && (
-              <TextField
-                select
-                value={selectedUnit || permissions?.units?.[0]}
-                onChange={(e) => {
-                  setSelectedUnit(e.target.value)
-                  handleUnitChange(e.target.value)
-                }}
-                sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
-                variant='outlined'
-                label='Select UOM'
-              >
-                <MenuItem value='' disabled>
-                  Select UOM
-                </MenuItem>
+              {permissions?.showRefreshBtn && false && (
+                <Button
+                  variant='contained'
+                  onClick={handleRefresh}
+                  className='btn-save'
+                >
+                  Refresh
+                </Button>
+              )}
 
-                {/* Render the correct unit options dynamically */}
-                {permissions?.units.map((unit) => (
-                  <MenuItem key={unit} value={unit}>
-                    {unit}
+              {permissions?.showUnit && (
+                <TextField
+                  select
+                  value={selectedUnit || permissions?.units?.[0]}
+                  onChange={(e) => {
+                    setSelectedUnit(e.target.value)
+                    handleUnitChange(e.target.value)
+                  }}
+                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                  variant='outlined'
+                  label='Select UOM'
+                >
+                  <MenuItem value='' disabled>
+                    Select UOM
                   </MenuItem>
-                ))}
-              </TextField>
-            )}
 
-            {permissions?.showModes && (
-              <TextField
-                select
-                value={selectMode || permissions?.modes?.[0]}
-                onChange={(e) => {
-                  setSelectMode(e.target.value)
-                  // fetchData()
-                }}
-                sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
-                variant='outlined'
-                label='Select Modes'
-              >
-                <MenuItem value='' disabled>
-                  Select Modes
-                </MenuItem>
+                  {/* Render the correct unit options dynamically */}
+                  {permissions?.units.map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
 
-                {/* Render the correct unit options dynamically */}
-                {permissions?.modes.map((unit) => (
-                  <MenuItem key={unit} value={unit}>
-                    {unit}
+              {permissions?.showModes && (
+                <TextField
+                  select
+                  value={selectMode || permissions?.modes?.[0]}
+                  onChange={(e) => {
+                    setSelectMode(e.target.value)
+                    // fetchData()
+                  }}
+                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                  variant='outlined'
+                  label='Select Modes'
+                >
+                  <MenuItem value='' disabled>
+                    Select Modes
                   </MenuItem>
-                ))}
-              </TextField>
-            )}
+
+                  {/* Render the correct unit options dynamically */}
+                  {permissions?.modes.map((unit) => (
+                    <MenuItem key={unit} value={unit}>
+                      {unit}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            </Box>
           </Box>
         </Box>
       )}
@@ -740,6 +776,7 @@ const KendoDataTables = ({
             sortable={{
               mode: 'multiple',
             }}
+            // filterable={columns.some((col) => dateFields.includes(col.field))}
             allRedCell={allRedCell}
             size='small'
             pageable={
@@ -771,12 +808,17 @@ const KendoDataTables = ({
                     key={col.field}
                     field={col.field}
                     title={col.title || col.headerName}
-                    // width={col.width}
+                    filter='date'
+                    filterable={{
+                      cell: {
+                        operator: 'gte',
+                        showOperators: true,
+                      },
+                    }}
                     cells={{
                       edit: { date: DateTimePickerEditor },
                       data: toolTipRenderer,
                     }}
-                    columnMenu={ColumnMenuCheckboxFilter}
                     format='{0:dd-MM-yyyy hh:mm a}'
                     editor='date'
                     hidden={col.hidden}
@@ -909,9 +951,7 @@ const KendoDataTables = ({
                     key={col.field}
                     field={col.field}
                     title={col.title || col.headerName}
-                    // width={col.width}
                     editor={true}
-                    // editable={col.editable || true}
                     editable={{ mode: 'popup' }}
                     cells={{
                       data: (cellProps) => (
@@ -923,8 +963,6 @@ const KendoDataTables = ({
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
-
-                    // editor='date'
                   />
                 )
               }

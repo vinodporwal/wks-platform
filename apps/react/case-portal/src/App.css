@@ -199,10 +199,10 @@ main.MuiBox-root.css-vognfw {
 }
 
 .non-editable-cell {
-  background-color: #f0f0f0;
+  background-color: #e7e7e7;
 }
 .custom-disabled-row {
-  background-color: #f0f0f0 !important;
+  background-color: #e7e7e7 !important;
 }
 
 .text-note {
@@ -210,4 +210,11 @@ main.MuiBox-root.css-vognfw {
   font-weight: bold;
   white-space: nowrap;
   font-size: 0.7rem;
+}
+
+.summary-title {
+  font-family: 'Roboto', sans-serif !important;
+  margin-left: 5px;
+  color: green;
+  text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.1);
 }

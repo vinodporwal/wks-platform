@@ -258,8 +258,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			String viewName = "vwScrn" + verticalName + "GetConfigTypes";
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG")) {
-				obj = findByYearAndPlantFkIdMEG(year, plantFKId, viewName);
+			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")) {
+				
+				String procedureName=verticalName+"_GetConfiguration";
+				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
 			} else {
 				obj = findByYearAndPlantFkId(year, plantFKId, viewName);
 			}
@@ -280,41 +282,40 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				// .findById(UUID.fromString(configurationDTO.getNormParameterFKId())).get().getDisplayName());
 
 				configurationDTO.setJan(
-						(row[1] != null && !row[1].toString().trim().isEmpty()) ? Double.parseDouble(row[1].toString())
-								: null);
+					    (row[1] != null && !row[1].toString().trim().isEmpty())? Double.parseDouble(row[1].toString().trim()): 0.0);
 				configurationDTO.setFeb(
 						(row[2] != null && !row[2].toString().trim().isEmpty()) ? Double.parseDouble(row[2].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setMar(
 						(row[3] != null && !row[3].toString().trim().isEmpty()) ? Double.parseDouble(row[3].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setApr(
 						(row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setMay(
 						(row[5] != null && !row[5].toString().trim().isEmpty()) ? Double.parseDouble(row[5].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setJun(
 						(row[6] != null && !row[6].toString().trim().isEmpty()) ? Double.parseDouble(row[6].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setJul(
 						(row[7] != null && !row[7].toString().trim().isEmpty()) ? Double.parseDouble(row[7].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setAug(
 						(row[8] != null && !row[8].toString().trim().isEmpty()) ? Double.parseDouble(row[8].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setSep(
 						(row[9] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString())
-								: null);
+								: 0.0);
 				configurationDTO.setOct((row[10] != null && !row[10].toString().trim().isEmpty())
 						? Double.parseDouble(row[10].toString())
-						: null);
+						: 0.0);
 				configurationDTO.setNov((row[11] != null && !row[11].toString().trim().isEmpty())
 						? Double.parseDouble(row[11].toString())
-						: null);
+						: 0.0);
 				configurationDTO.setDec((row[12] != null && !row[12].toString().trim().isEmpty())
 						? Double.parseDouble(row[12].toString())
-						: null);
+						: 0.0);
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 
 				if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")) {
@@ -331,7 +332,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 				}
 
-				if (verticalName.equalsIgnoreCase("MEG")) {
+				if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")) {
 
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
@@ -475,7 +476,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
 			String procedureName = verticalName + "_GetConfiguration_Constant";
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG")) {
+			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER") ) {
 				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
 			}
 			for (Object[] row : obj) {
@@ -1058,13 +1059,15 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 	}
 
-	public List<Object[]> findByYearAndPlantFkIdMEG(String year, UUID plantFKId, String viewName) {
+	public List<Object[]> findByYearAndPlantFkIdMEG(String aopYear, UUID plantId, String procedureName) {
 		try {
-			String sql = "EXEC MEG_GetConfiguration :plantFKId, :year";
+			
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear";
 
 			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("plantFKId", plantFKId);
-			query.setParameter("year", year);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {

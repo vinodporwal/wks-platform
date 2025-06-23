@@ -62,11 +62,13 @@ const ConfigurationTable = () => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [summaryEdited, setSummaryEdited] = useState(false)
 
   const [startUpRows, setStartUpRows] = useState([])
   const [otherLossRows, setOtherLossRows] = useState([])
   const [shutdownNormsRows, setShutdownRows] = useState([])
   const [productionRows, setProductionRows] = useState([])
+  const [elastomerRows, setElastomerRows] = useState([])
   const [productionRowsConstants, setProductionRowsConstants] = useState([])
   const [
     productionRowsConstantsMannualEntry,
@@ -83,6 +85,13 @@ const ConfigurationTable = () => {
     message: '',
     severity: 'info',
   })
+  const [startDate, setStartDate] = useState()
+  const [endDate, setEndDate] = useState()
+  const [startDateObj, setStartDateObj] = useState([])
+  const [endDateObj, setEndDateObj] = useState([])
+  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
+    useState([])
+  const [isEdited, setIsEdited] = useState(false)
 
   const fetchData = async () => {
     // setRows([])
@@ -97,7 +106,7 @@ const ConfigurationTable = () => {
       if (lowerVertName == 'meg') {
         // data = data.sort((a, b) => b.normType.localeCompare(a.normType))
 
-        data = data.filter((item) => item.normType !== 'Report Manual Entry')
+        data = data?.filter((item) => item.normType !== 'Report Manual Entry')
 
         const formattedData = data.map((item, index) => ({
           ...item,
@@ -107,15 +116,22 @@ const ConfigurationTable = () => {
           srNo: index + 1,
           Particulars: item.normType,
         }))
-        // console.log(formattedData)
-
         setProductionRows(formattedData)
-
         if (data) {
           setLoading(false)
         }
 
         // setRows(formattedData)
+      } else if (lowerVertName == 'elastomer') {
+        const formattedData = data.map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remarks,
+          srNo: index + 1,
+          Particulars: item.normType,
+        }))
+        setElastomerRows(formattedData)
       } else {
         const groups = new Map()
         data.forEach((item) => {
@@ -177,15 +193,11 @@ const ConfigurationTable = () => {
     try {
       var constantsRes =
         await DataService.getCatalystSelectivityDataConstants(keycloak)
-
       if (constantsRes?.code != 200) {
         setProductionRowsConstants([])
-
         return
       }
-
       var data = constantsRes?.data
-
       const formattedData = data.map((item, index) => ({
         ...item,
         idFromApi: item.id,
@@ -290,15 +302,14 @@ const ConfigurationTable = () => {
     }
   }
 
-  const [startDate, setStartDate] = useState()
-  const [endDate, setEndDate] = useState()
+  // const [startDate, setStartDate] = useState()
+  // const [endDate, setEndDate] = useState()
 
   useEffect(() => {
+    getConfigurationTabsMatrix()
+    getConfigurationAvailableTabs()
     getAopSummary()
-    if (lowerVertName === 'meg') {
-      getConfigurationExecutionDetails()
-    }
-
+    getConfigurationExecutionDetails()
     if (lowerVertName === 'pe') {
       getConfigurationTabsMatrix()
       getConfigurationAvailableTabs()
@@ -317,20 +328,52 @@ const ConfigurationTable = () => {
     return tab ? tab.id : null
   }
 
-  const [startDateObj, setStartDateObj] = useState([])
-  const [endDateObj, setEndDateObj] = useState([])
-
   function formatDate(date) {
     if (!date) return ''
 
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0') // months are 0-indexed
+    const year = date?.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
 
     return `${year}-${month}-${day}`
   }
+  function formatDateForText(date, time = false) {
+    if (!date) return ''
+
+    const parsedDate = new Date(date)
+    if (isNaN(parsedDate)) return 'Invalid Date'
+
+    const day = String(parsedDate.getDate()).padStart(2, '0')
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
+    const year = parsedDate.getFullYear()
+
+    let formatted = `${day}-${month}-${year}`
+
+    if (time) {
+      let hours = parsedDate.getHours()
+      const minutes = String(parsedDate.getMinutes()).padStart(2, '0')
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+
+      hours = hours % 12
+      hours = hours ? hours : 12 // 0 becomes 12
+
+      const formattedTime = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`
+      formatted += ` ${formattedTime}`
+    }
+
+    return formatted
+  }
 
   const onLoad = async () => {
+    if (startDate && endDate && startDate > endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Please Choose Valid Dates!',
+        severity: 'warning',
+      })
+      return
+    }
+
     setLoading(true)
     try {
       var plantId = ''
@@ -373,10 +416,6 @@ const ConfigurationTable = () => {
           plantId: plantId,
         },
       ]
-
-      // console.log('payload', payload)
-      // setLoading(false)
-      // return
 
       const response = await DataService.executeConfiguration(payload, keycloak)
       if (response) {
@@ -465,9 +504,6 @@ const ConfigurationTable = () => {
   //   }
   // }
 
-  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
-    useState([])
-
   const getConfigurationExecutionDetails = async () => {
     try {
       const data = await DataService.getConfigurationExecutionDetails(keycloak)
@@ -482,7 +518,30 @@ const ConfigurationTable = () => {
     }
   }
 
-  const [isEdited, setIsEdited] = useState(false)
+  // const [isEdited, setIsEdited] = useState(false)
+  if (lowerVertName == 'elastomer') {
+    return (
+      <SelectivityData
+        rows={elastomerRows}
+        loading={loading}
+        fetchData={fetchData}
+        setRows={setElastomerRows}
+        configType='meg'
+        groupBy='Particulars'
+        summary={summary}
+      />
+    )
+  }
+
+  const one = configurationExecutionDetails.find(
+    (item) => item.Name === 'StartDate',
+  )
+  const two = configurationExecutionDetails.find(
+    (item) => item.Name === 'EndDate',
+  )
+
+  const startDate1 = new Date(one?.AttributeValue)
+  const endDate1 = new Date(two?.AttributeValue)
 
   if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
@@ -510,7 +569,7 @@ const ConfigurationTable = () => {
               id='meg-grid-header'
             >
               <Typography className='grid-title'>
-                Historian Period / Budget Summary
+                AOP Historical Period Basis
               </Typography>
             </CustomAccordionSummary>
             <CustomAccordionDetails>
@@ -522,29 +581,45 @@ const ConfigurationTable = () => {
                   mt: 0,
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <label htmlFor='start-date'>Start Date</label>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    marginTop: '10px',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography
+                      className='grid-title'
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Start Date
+                    </Typography>
                     <DatePicker
                       id='start-date'
                       format='dd-MM-yyyy'
                       value={startDate}
                       onChange={(e) => setStartDate(e.value)}
-                      style={{ width: '180px' }}
+                      style={{ height: '80px' }}
+                      size={'large'}
                     />
-                  </Box>
 
-                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <label htmlFor='end-date'>End Date</label>
+                    <Typography
+                      className='grid-title'
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      End Date
+                    </Typography>
                     <DatePicker
                       id='end-date'
                       format='dd-MM-yyyy'
                       value={endDate}
                       onChange={(e) => setEndDate(e.value)}
-                      style={{ width: '180px' }}
+                      style={{ height: '80px' }}
+                      size={'large'}
                     />
                   </Box>
-
                   {/* Load Button */}
                   <Button
                     variant='contained'
@@ -555,6 +630,21 @@ const ConfigurationTable = () => {
                   >
                     Load
                   </Button>
+                  {configurationExecutionDetails?.[0] ? (
+                    <Typography
+                      className='summary-title'
+                      sx={{ whiteSpace: 'normal' }}
+                    >
+                      {`(Last loaded data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDate1)} to ${formatDateForText(endDate1)})`}
+                    </Typography>
+                  ) : (
+                    <Typography
+                      className='summary-title'
+                      sx={{ whiteSpace: 'normal' }}
+                    >
+                      Loading...
+                    </Typography>
+                  )}
                 </Box>
 
                 {/* Right Side: Save Button */}
@@ -569,7 +659,7 @@ const ConfigurationTable = () => {
               </Box>
 
               <TextField
-                label='Summary'
+                label='AOP Design Basis'
                 multiline
                 // minRows={isAccordionExpanded ? 4 : 20}
                 minRows={2}
@@ -580,7 +670,7 @@ const ConfigurationTable = () => {
                 value={summary}
                 onChange={(e) => {
                   setSummary(e.target.value)
-                  setIsEdited(true)
+                  setSummaryEdited(true)
                 }}
                 sx={{
                   '& .MuiInputBase-root': {
@@ -655,6 +745,9 @@ const ConfigurationTable = () => {
                     configType='meg'
                     groupBy='Particulars'
                     summary={summary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='0'
                   />
                 )
               case 'constants':
@@ -666,7 +759,10 @@ const ConfigurationTable = () => {
                     setRows={setProductionRowsConstants}
                     configType='megConstants'
                     groupBy='Particulars'
+                    summaryEdited={summaryEdited}
                     summary={summary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='1'
                   />
                 )
               case 'report manual entry':
@@ -678,20 +774,25 @@ const ConfigurationTable = () => {
                     setRows={setProductionRowsConstantsMannualEntry}
                     configType='megConstantsMannualEntry'
                     groupBy='Particulars'
+                    summaryEdited={summaryEdited}
                     summary={summary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='2'
                   />
                 )
+
               default:
                 return null
             }
           })()}
-          <Notification
-            open={snackbarOpen}
-            message={snackbarData?.message || ''}
-            severity={snackbarData?.severity || 'info'}
-            onClose={() => setSnackbarOpen(false)}
-          />
         </Box>
+
+        <Notification
+          open={snackbarOpen}
+          message={snackbarData?.message || ''}
+          severity={snackbarData?.severity || 'info'}
+          onClose={() => setSnackbarOpen(false)}
+        />
       </div>
     )
   }

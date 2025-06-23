@@ -155,6 +155,16 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 
 	List<Object[]> getPythonScriptName();
 
+    @Query(value =
+            "SELECT * FROM [RIL.AOP].dbo.vwGetExecutionDetails " +
+            "WHERE PlantId = :plantId AND AuditYear = :year",
+            nativeQuery = true
+        )
+        List<Object[]> findByPlantIdAndYearForExecutionDetails(
+            @Param("plantId") UUID plantId,
+            @Param("year") String year
+        );
+		
 	@Query(value = "EXEC GetHistorianExecutionDetails @plantId = :plantId, @aopYear = :year", nativeQuery = true)
 	List<Object[]> findByPlantIdAndYear(
 			@Param("plantId") UUID plantId,
