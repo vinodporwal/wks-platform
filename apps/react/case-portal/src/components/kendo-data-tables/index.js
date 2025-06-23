@@ -42,6 +42,10 @@ import {
 } from './Utilities-Kendo/durationHelpers'
 import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
 import * as XLSX from 'xlsx'
+import DateTimePickerr from './Utilities-Kendo/DatePicker'
+import DateOnlyPicker from './Utilities-Kendo/DatePicker'
+import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
+import { getColumnMenu } from './Utilities-Kendo/ColumnMenuDate'
 
 export const particulars = [
   'normParametersFKId',
@@ -699,10 +703,12 @@ const KendoDataTables = ({
                       edit: { date: DateTimePickerEditor },
                       data: toolTipRenderer,
                     }}
-                    columnMenu={ColumnMenuCheckboxFilter}
-                    format='{0:dd-MM-yyyy hh:mm:ss a}'
+                    format='{0:dd-MM-yyyy hh:mm a}'
                     editor='date'
                     hidden={col.hidden}
+                    filterable = {true}
+                    filter = 'date'
+                    columnMenu = {getColumnMenu(col.field,rows)}
                   />
                 )
               }
