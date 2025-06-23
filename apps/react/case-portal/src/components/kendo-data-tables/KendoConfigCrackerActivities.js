@@ -27,7 +27,11 @@ const DecokingConfig = () => {
     setCurrentRowId2(row.id)
     setRemarkDialogOpen2(true)
   }
-
+  const [data, setData] = useState({
+    ibrPlan: [],
+    shutdownActivities: [],
+    runningDuration: [],
+  })
 
   // IBR Plan data
   const ibrPlanColumns = [
@@ -107,11 +111,34 @@ const DecokingConfig = () => {
     { field: 'total', title: 'Total', editable: false, type: 'number' },
   ]
 
-  const [ibrPlanRows, setIbrPlanRows] = useState([])
+const [ibrPlanRows, setIbrPlanRows] = useState([])
 const [shutdownActivities, setshutdownActivities] = useState([])
 const [runningDuration, setRunningDurationRows] = useState([])
 
-  const keycloak = useSession();
+  const fetchData = useCallback((tabName) => {
+    setTimeout(() => {
+      switch (tabName) {
+        case 'IBR Plan':
+          setData((prev) => ({ ...prev, ibrPlan: ibrPlanData }))
+          break
+        case 'Shutdown Activities':
+          setData((prev) => ({
+            ...prev,
+            shutdownActivities: shutdownActivitiesData,
+          }))
+          break
+        case 'Running Duration':
+          setData((prev) => ({ ...prev, runningDuration: runningDurationData }))
+          break
+        default:
+          break
+      }
+    }, 300)
+  }, [])
+
+
+
+const keycloak = useSession();
 
 useEffect(() => {
   const currentTab = tabs[activeTabIndex]

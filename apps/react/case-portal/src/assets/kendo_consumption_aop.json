@@ -2,21 +2,26 @@
   {
     "field": "Particulars",
     "title": "Type",
-    "editable": false
+    "editable": false,
+    "width": 200,
+    "hidden": true
   },
   {
     "field": "NormParametersId",
     "hidden": true
   },
-  {
-    "field": "UOM",
-    "title": "UOM / MT",
-    "editable": false
-  },
+
   {
     "field": "productName",
     "title": "Particulars",
-    "editable": false
+    "editable": false,
+    "width": 200
+  },
+  {
+    "field": "UOM",
+    "title": "UOM / MT",
+    "editable": false,
+    "width": 150
   },
   {
     "field": "april",

@@ -150,7 +150,8 @@ const NormalOpNormsScreen = () => {
           ...obj,
           normParameterFKId: obj.normParameterFKId.toUpperCase(),
         }))
-        setAllRedCell(normalized)
+        // setAllRedCell(normalized)
+        setAllRedCell([])
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -188,6 +189,7 @@ const NormalOpNormsScreen = () => {
       width: 110,
       groupable: true,
       editable: false,
+      hidden: true,
     },
     {
       field: 'materialFkId',
@@ -350,12 +352,19 @@ const NormalOpNormsScreen = () => {
       width: 110,
       groupable: true,
       editable: false,
+      hidden: true,
     },
 
     {
       field: 'NormParameterFKId',
       title: 'Particulars',
-      width: 160,
+      hidden: true,
+    },
+
+    {
+      field: 'ProductName',
+      title: 'Particulars',
+      width: 120,
     },
     {
       field: 'UOM',
@@ -476,10 +485,12 @@ const NormalOpNormsScreen = () => {
     {
       field: 'idFromApi',
       title: 'idFromApi',
+      hidden: true,
     },
     {
       field: 'isEditable',
       title: 'isEditable',
+      hidden: true,
     },
   ]
 
@@ -491,35 +502,33 @@ const NormalOpNormsScreen = () => {
   }
 
   const saveChanges = React.useCallback(async () => {
-    setTimeout(() => {
-      try {
-        var data = Object.values(modifiedCells)
-        if (data.length == 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
-
-        const requiredFields = ['materialFkId', 'remarks']
-        const validationMessage = validateFields(data, requiredFields)
-        if (validationMessage) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: validationMessage,
-            severity: 'error',
-          })
-          return
-        }
-
-        saveNormalOperationNormsData(data)
-      } catch (error) {
-        /* empty */
-        console.log(error)
+    try {
+      var data = Object.values(modifiedCells)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
       }
-    }, 400)
+
+      const requiredFields = ['materialFkId', 'remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+
+      saveNormalOperationNormsData(data)
+    } catch (error) {
+      /* empty */
+      console.log(error)
+    }
   }, [modifiedCells])
 
   const saveNormalOperationNormsData = async (newRows) => {
@@ -616,11 +625,26 @@ const NormalOpNormsScreen = () => {
         plantId = parsedPlant.id
       }
       var plantId = plantId
-      const data = await DataService.handleCalculateNormalOpsNorms34(
-        plantId,
-        year,
-        keycloak,
-      )
+      var data = null
+      let siteID =
+        JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
+      let verticalId = localStorage.getItem('verticalId')
+
+      if (lowerVertName == 'pe') {
+        data = await DataService.handleCalculateNormalOperationNormsPe(
+          plantId,
+          siteID,
+          verticalId,
+          year,
+          keycloak,
+        )
+      } else {
+        data = await DataService.handleCalculateNormalOperationNorms(
+          plantId,
+          year,
+          keycloak,
+        )
+      }
 
       if (data == 0 || data) {
         // dispatch(setIsBlocked(true))
@@ -670,6 +694,8 @@ const NormalOpNormsScreen = () => {
     }
   }
 
+  // console.log('calculationObject', calculationObject)
+
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: false,
@@ -680,11 +706,14 @@ const NormalOpNormsScreen = () => {
       showUnit: false,
       saveWithRemark: true,
       saveBtn: true,
-      showCalculate:
+      showCalculate: true,
+      showCalculateVisibility:
         lowerVertName === 'meg' &&
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
+      downloadExcelBtn: lowerVertName == 'meg' ? true : false,
+      uploadExcelBtn: lowerVertName == 'meg' ? true : false,
     },
     isOldYear,
   )
@@ -719,6 +748,77 @@ const NormalOpNormsScreen = () => {
     },
     isOldYear,
   )
+
+  const handleExcelUpload = (rawFile) => {
+    saveExcelFile(rawFile)
+  }
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await DataService.getNormalOpsNormsExcel(keycloak)
+
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error!', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      // optional cleanup or logging
+    }
+  }
+
+  const saveExcelFile = async (rawFile) => {
+    setLoading(true)
+    try {
+      var plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      const response = await DataService.saveNormalOpsNormsExcel(
+        rawFile,
+        keycloak,
+      )
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Configuration data Upload Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        setLoading(false)
+
+        fetchAllData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Falied!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error saving Configuration data:', error)
+      setLoading(false)
+    } finally {
+      // fetchData()
+      setLoading(false)
+    }
+  }
 
   return (
     <div>
@@ -761,6 +861,8 @@ const NormalOpNormsScreen = () => {
         permissions={adjustedPermissions}
         allRedCell={allRedCell}
         groupBy='Particulars'
+        handleExcelUpload={handleExcelUpload}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
       />
 
       {lowerVertName === 'meg' && (

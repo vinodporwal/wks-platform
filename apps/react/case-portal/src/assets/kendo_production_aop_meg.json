@@ -10,15 +10,35 @@
   { "field": "aopYear", "title": "Year", "width": 80, "hidden": true },
   { "field": "plantFkId", "title": "Plant ID", "width": 80, "hidden": true },
   {
-    "field": "normParametersFKId",
-    "title": "Particulars/Grade",
+    "field": "Particulars",
+    "title": "Type",
+    "width": 100,
+    "groupable": true,
+    "headerClass": "bold-header",
+    "filterable": "false",
     "editable": false,
-    "width": 125,
     "hidden": true
   },
   {
-    "field": "normParameterName",
-    "title": "Particulars/Grade",
+    "field": "normParameterId",
+    "title": "Particulars",
+    "editable": false,
+    "width": 150,
+    "hidden": true
+  },
+  {
+    "field": "materialFKId",
+    "editable": false,
+    "hidden": true
+  },
+  {
+    "field": "normParameterDisplayName",
+    "editable": false,
+    "hidden": true
+  },
+  {
+    "field": "displayName",
+    "title": "Products",
     "editable": false,
     "width": 125
   },
@@ -28,7 +48,7 @@
     "editable": false,
     "type": "number",
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "may",
@@ -37,7 +57,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "june",
@@ -46,7 +66,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "july",
@@ -55,7 +75,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "aug",
@@ -64,7 +84,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "sep",
@@ -73,7 +93,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "oct",
@@ -82,7 +102,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "nov",
@@ -91,7 +111,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "dec",
@@ -100,7 +120,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "jan",
@@ -109,7 +129,7 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "feb",
@@ -119,7 +139,7 @@
 
     "align": "left",
     "type": "number",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "march",
@@ -128,13 +148,14 @@
     "editable": false,
 
     "align": "left",
-    "format": "{0:n2}"
+    "format": "{0:#.##}"
   },
   {
     "field": "averageTPH",
     "title": "Total",
     "type": "number",
-    "editable": false
+    "editable": false,
+    "format": "{0:#.##}"
   },
 
   {

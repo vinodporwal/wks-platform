@@ -111,9 +111,7 @@ const BusinessDemand = ({ permissions }) => {
   }
 
   const colDefs = kendoGetEnhancedColDefs({
-    // allProducts,
     headerMap,
-    // handleRemarkCellClick,
   })
 
   const saveChanges = React.useCallback(async () => {
@@ -129,6 +127,7 @@ const BusinessDemand = ({ permissions }) => {
         setLoading(false)
         return
       }
+
       var rawData = Object.values(modifiedCells)
       const data = rawData.filter((row) => row.inEdit)
       // var data = Object.values(unsavedChangesRef.current.unsavedRows)
@@ -282,6 +281,7 @@ const BusinessDemand = ({ permissions }) => {
     },
     isOldYear,
   )
+
   return (
     <div>
       <Backdrop
@@ -306,16 +306,18 @@ const BusinessDemand = ({ permissions }) => {
             <Box sx={{ width: '100%', margin: 0 }}>
               <ProductionvolumeData
                 permissions={{
-                  allAction: false,
+                  allAction: true,
                   showAction: false,
                   addButton: false,
                   deleteButton: false,
                   editButton: false,
-                  showUnit: false,
+                  showUnit: true,
                   saveWithRemark: false,
                   showCalculate: false,
                   saveBtn: false,
                   hideSummary: true,
+                  hideUploadExcel: true,
+                  hideDownloadExcel: true,
                 }}
               />
             </Box>

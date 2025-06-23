@@ -31,6 +31,10 @@ import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/
 import '../../kendo-data-grid.css'
 import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
 import FullValueEditor from './Utilities-Kendo/FullValueEditor'
+import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
+import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
+import { recalcDuration, recalcEndDate } from './Utilities-Kendo/durationHelpers'
 
 export const particulars = [
   'normParameterId',
@@ -54,6 +58,7 @@ export const hiddenFields = [
   'period',
 ]
 const KendoDataTablesReports = ({
+  allRedCell = [],
   title = '',
   rows = [],
   setRows,
@@ -118,21 +123,64 @@ const KendoDataTablesReports = ({
       })),
     )
   }
-  const itemChange = useCallback(
+ const itemChange = useCallback(
     (e) => {
+      // const changedDataItem = e.dataItem
+      // const changedField = e.field
+      // const newValue = e.value
+
+      // const originalDataItem = rows.find(
+      //   (item) => item.id === changedDataItem.id,
+      // )
+      // const originalValue = originalDataItem
+      //   ? originalDataItem[changedField]
+      //   : undefined
+
       setIsRowEdited(true)
 
       const { dataItem, field, value } = e
-
+      const itemId = dataItem.id
+      console.log("dataitem", dataItem);
       setRows((prev) =>
-        prev.map((r) =>
-          r.id === dataItem.id ? updateRowWithDuration(r, field, value) : r,
-        ),
+        prev.map((r) => {
+          if (r.id !== itemId) return r
+          const updated = { ...r, [field]: value }
+
+          if (
+            'fromDate' in updated &&
+            'toDate' in updated &&
+            'durationInHrs' in updated
+          ) {
+            if (field === 'fromDate' || field === 'toDate') {
+              updated.durationInHrs = recalcDuration(
+                updated.fromDate,
+                updated.toDate,
+              )
+            } else if (field === 'durationInHrs') {
+              const newEnd = recalcEndDate(
+                updated.fromDate,
+                value, // string like “10.20”
+              )
+              if (newEnd) {
+                updated.toDate = newEnd
+              }
+            }
+          }
+          return updated
+        }),
       )
 
       setModifiedCells((prev) => {
-        const updatedRow = updateRowWithDuration(dataItem, field, value)
-        return { ...prev, [dataItem.id]: updatedRow }
+        const base = { ...dataItem, [field]: value ,id:dataItem.idFromApi}
+        if ('fromDate' in base && 'toDate' in base && 'durationInHrs' in base) {
+          if (field === 'fromDate' || field === 'toDate') {
+            base.durationInHrs = recalcDuration(base.fromDate, base.toDate)
+          } else if (field === 'durationInHrs') {
+            const newEnd = recalcEndDate(base.fromDate, value)
+            if (newEnd) base.toDate = newEnd.toISOString()
+          }
+        }
+        return { ...prev, [itemId]: base }
       })
     },
     [setRows, setModifiedCells],
@@ -257,6 +305,10 @@ const KendoDataTablesReports = ({
           onRemarkClick(dataItem)
           setEdit({})
         }}
+        onDoubleClick={() => {
+          onRemarkClick(dataItem)
+          setEdit({})
+        }}
       >
         {displayText || 'Click to add remark'}
       </td>
@@ -291,31 +343,31 @@ const KendoDataTablesReports = ({
     }
   }, [rows, groupBy])
 
-  const processedData = useMemo(() => {
-    if (!Array.isArray(rows) || rows.length === 0) return []
+  // const processedData = useMemo(() => {
+  //   if (!Array.isArray(rows) || rows.length === 0) return []
 
-    if (group.length > 0) {
-      const result = process(rows, { group })
-      const applyExpandedState = (items) => {
-        return items.map((item) => {
-          if (item.items) {
-            const key = `${item.field}_${item.value}`
-            item.expanded = expandedState[key] !== false // default to expanded
-            item.items = applyExpandedState(item.items)
-          }
-          return item
-        })
-      }
-      return applyExpandedState(result.data)
-    }
+  //   if (group.length > 0) {
+  //     const result = process(rows, { group })
+  //     const applyExpandedState = (items) => {
+  //       return items.map((item) => {
+  //         if (item.items) {
+  //           const key = `${item.field}_${item.value}`
+  //           item.expanded = expandedState[key] !== false // default to expanded
+  //           item.items = applyExpandedState(item.items)
+  //         }
+  //         return item
+  //       })
+  //     }
+  //     return applyExpandedState(result.data)
+  //   }
 
-    return rows
-  }, [rows, group, expandedState])
+  //   return rows
+  // }, [rows, group, expandedState])
 
   const CustomRow = useCallback(({ dataItem, className, ...rest }) => {
     const isDisabled =
       !dataItem.isEditable && dataItem?.isEditable !== undefined
-    const rowClassName = isDisabled ? `k-disabled` : className
+    const rowClassName = isDisabled ? `custom-disabled-row` : className
     return (
       <tr {...rest?.trProps} className={rowClassName}>
         {rest.children}
@@ -355,6 +407,21 @@ const KendoDataTablesReports = ({
       isColumnMenuFilterActive(field, filter) ||
       isColumnMenuSortActive(field, sort)
     )
+  }
+
+  const monthMap = {
+    january: 1,
+    february: 2,
+    march: 3,
+    april: 4,
+    may: 5,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    october: 10,
+    november: 11,
+    december: 12,
   }
 
   const renderColumns = (cols, filter, sort) =>
@@ -399,15 +466,58 @@ const KendoDataTablesReports = ({
           title={col.title || col.headerName}
           editable={col.editable}
           format={col.format || '{0:#.###}'}
-          // editor={{
-          //   data: (props) => <FullValueEditor {...props} />,
-          // }}
+          cells={{
+            edit: { text: NoSpinnerNumericEditor },
+            data: toolTipRenderer,
+          }}
           className={!isEditable ? 'non-editable-cell' : ''}
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
         />
       )
     })
+
+  const toolTipRenderer = (props) => {
+    const value = props.dataItem[props.field]
+    const month = monthMap[props.field?.toLowerCase()]
+    const normId = props.dataItem.materialFkId
+
+    const isRedFromAllRedCell = allRedCell.some(
+      (cell) =>
+        cell.month === month &&
+        cell.normParameterFKId?.toLowerCase() === normId?.toLowerCase(),
+    )
+
+    // const isRedFromEdit =
+    //   editedCellMap?.[rowId]?.[props.field] !== undefined &&
+    //   editedCellMap?.[rowId]?.[props.field]?.toString() === value?.toString()
+
+    // const isRed = isRedFromAllRedCell || isRedFromEdit
+    const isRed = isRedFromAllRedCell
+
+    return (
+      <td
+        {...props.tdProps}
+        title={value}
+        style={{
+          color: isRed ? 'orange' : undefined,
+        }}
+      >
+        {props.children}
+      </td>
+    )
+  }
+
+  const dateFields = [
+    'maintStartDateTime',
+    'maintEndDateTime',
+    'endDateTA',
+    'startDateTA',
+    'endDateSD',
+    'startDateSD',
+    'endDateIBR',
+    'startDateIBR',
+  ]
 
   return (
     <div style={{ position: 'relative' }}>
@@ -458,7 +568,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 className='btn-save'
                 onClick={saveModalOpen}
-                disabled={isButtonDisabled || !issRowEdited}
+                disabled={isButtonDisabled}
                 // loading={loading}
                 // loadingposition='start'
                 {...(loading ? {} : {})}
@@ -519,55 +629,60 @@ const KendoDataTablesReports = ({
       )}
 
       <div className='kendo-data-grid'>
-        <Grid
-          data={filterBy(processedData, filter)}
-          rows={{ data: CustomRow }}
-          sortable={{
-            mode: 'multiple',
-          }}
-          dataItemKey='id'
-          editField='inEdit'
-          editable={{ mode: 'incell' }}
-          onEditChange={handleEditChange}
-          edit={edit}
-          filter={filter}
-          onFilterChange={(e) => setFilter(e.filter)}
-          onItemChange={itemChange}
-          resizable={true}
-          defaultSkip={0}
-          defaultTake={100}
-          contextMenu={true}
-          pageable={
-            rows?.length > 100
-              ? {
-                  buttonCount: 4,
-                  pageSizes: [10, 50, 100],
-                }
-              : false
-          }
-          onRowClick={handleRowClick}
-        >
-          {renderColumns(
-            columns.filter((col) => !hiddenFields.includes(col.field)),
-            filter,
-            sort,
-          )}
+        <Tooltip openDelay={50} position='default' anchorElement='target'>
+          <Grid
+            data={rows}
+            rows={{ data: CustomRow }}
+            sortable={{
+              mode: 'multiple',
+            }}
+            autoProcessData={true}
+            dataItemKey='id'
+            editField='inEdit'
+            editable={{ mode: 'incell' }}
+            onEditChange={handleEditChange}
+            edit={edit}
+            filter={filter}
+            onFilterChange={(e) => setFilter(e.filter)}
+            onItemChange={itemChange}
+            resizable={true}
+            defaultSkip={0}
+            defaultTake={100}
+            contextMenu={true}
+            filterable={columns.some((col) => dateFields.includes(col.field))}
+            size='small'
+            pageable={
+              rows?.length > 100
+                ? {
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
+                : false
+            }
+            onRowClick={handleRowClick}
+          >
+            {renderColumns(
+              columns.filter((col) => !hiddenFields.includes(col.field)),
+              filter,
+              sort,
+            )}
 
-          {permissions?.deleteButton && (
-            <GridColumn
-              key='actions'
-              field='actions'
-              title='Action'
-              width={80}
-              className='k-text-center'
-              filterable={false}
-              editable={false}
-              cells={{
-                data: ActionsCell,
-              }}
-            />
-          )}
-        </Grid>
+            {permissions?.deleteButton && (
+              <GridColumn
+                key='actions'
+                field='actions'
+                title='Action'
+                width={80}
+                className='k-text-center'
+                filterable={false}
+                editable={false}
+                cells={{
+                  data: ActionsCell,
+                }}
+              />
+            )}
+          </Grid>
+        </Tooltip>
       </div>
 
       <Notification

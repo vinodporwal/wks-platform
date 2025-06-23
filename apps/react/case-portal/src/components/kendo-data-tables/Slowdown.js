@@ -94,9 +94,18 @@ const SlowDown = ({ permissions }) => {
       }
 
       const slowDownDetailsMEG = newRow.map((row) => ({
-        productId: row.product,
+        productId: (() => {
+          const matched = allProducts.find((p) => p.displayName === row.productName)
+          return matched?.realId || ''
+        })(),
+        productName: row.productName,
         discription: row.discription,
-        durationInHrs: parseFloat(findDuration('1', row)),
+        durationInHrs: (() => {
+          const v = findDuration('1', row)
+          if (!v) return null
+          const [h = '00', m = '00'] = String(v).split('.')
+          return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+        })(),
         maintEndDateTime: addTimeOffset(row.maintEndDateTime),
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
         remark: row.remark,
@@ -109,6 +118,10 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'meg' ? slowDownDetailsMEG : slowDownDetailsMEG,
         keycloak,
       )
+
+
+
+      const maintenanceResponse = await DataService.getMaintenanceData(keycloak)
 
       setSnackbarOpen(true)
 
@@ -153,7 +166,7 @@ const SlowDown = ({ permissions }) => {
           'remark',
           'rate',
           // 'durationInHrs',
-          'product',
+          'productName',
         ]
         const validationMessage = validateFields(data, requiredFields)
         if (validationMessage) {
@@ -214,6 +227,8 @@ const SlowDown = ({ permissions }) => {
 
       const formattedData = data.map((item, index) => ({
         ...item,
+        product: item.productId,              
+        productName: item.productName || '',  
         idFromApi: item?.maintenanceId || item?.id,
         id: index,
         originalRemark: item.remark,
@@ -243,13 +258,15 @@ const SlowDown = ({ permissions }) => {
           productList = data
             .filter((product) => ['EO', 'EOE'].includes(product.displayName))
             .map((product) => ({
-              id: product.id,
+              id: product.displayName,
               displayName: product.displayName,
+              realId: product.id, 
             }))
         } else {
           productList = data.map((product) => ({
-            id: product.id,
+            id: product.displayname,
             displayName: product.displayName,
+            realId: product.id, 
           }))
         }
 
@@ -291,7 +308,7 @@ const SlowDown = ({ permissions }) => {
     },
 
     {
-      field: 'product',
+      field: 'productName',
       title: 'Particulars',
       editable: true,
     },

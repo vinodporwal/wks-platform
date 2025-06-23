@@ -217,19 +217,21 @@ const SlowdownNorms = () => {
     {
       field: 'Particulars',
       headerName: 'Type',
+      width: 140,
+      hidden: true,
     },
 
     {
       field: 'materialFkId',
       headerName: 'Particulars',
-      minWidth: 150,
+      width: 150,
       editable: false,
       hidden: true,
     },
     {
       field: 'productName',
       headerName: 'Particulars',
-      minWidth: 150,
+      width: 130,
       editable: false,
     },
 
@@ -242,6 +244,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(4),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
 
     {
@@ -251,6 +254,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(5),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
 
     {
@@ -260,6 +264,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(6),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
     {
       field: 'july',
@@ -268,6 +273,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(7),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
 
     {
@@ -277,6 +283,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(8),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
     {
       field: 'september',
@@ -285,6 +292,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(9),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
     {
       field: 'october',
@@ -301,6 +309,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(11),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
     {
       field: 'december',
@@ -309,6 +318,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(12),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
     {
       field: 'january',
@@ -317,6 +327,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(1),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
     {
       field: 'february',
@@ -325,6 +336,7 @@ const SlowdownNorms = () => {
       isDisabled: !slowdownMonths?.includes(2),
       type: 'number',
       format: '{0:#.#####}',
+      width: 120,
     },
     {
       field: 'march',
@@ -332,6 +344,7 @@ const SlowdownNorms = () => {
       editable: slowdownMonths?.includes(3),
       isDisabled: !slowdownMonths?.includes(3),
       type: 'number',
+      width: 120,
     },
 
     {
@@ -339,6 +352,7 @@ const SlowdownNorms = () => {
       headerName: 'Remark',
       minWidth: 125,
       editable: false,
+      width: 120,
     },
     {
       field: 'idFromApi',

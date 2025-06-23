@@ -290,11 +290,11 @@ const ProductionvolumeData = ({ permissions }) => {
         setRows([])
         setLoading(false)
 
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Error fetching data. Please try again.',
-          severity: 'error',
-        })
+        // setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: 'Error fetching data. Please try again.',
+        //   severity: 'error',
+        // })
 
         return
       }
@@ -444,6 +444,7 @@ const ProductionvolumeData = ({ permissions }) => {
       align: 'left',
       headerAlign: 'left',
       format: '{0:#.###}',
+      type: 'number',
     },
     {
       field: 'may',
@@ -453,6 +454,7 @@ const ProductionvolumeData = ({ permissions }) => {
       align: 'left',
       headerAlign: 'left',
       format: '{0:#.###}',
+      type: 'number',
     },
     {
       field: 'june',
@@ -462,6 +464,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'july',
@@ -471,6 +474,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'august',
@@ -480,6 +484,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'september',
@@ -489,6 +494,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'october',
@@ -498,6 +504,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'november',
@@ -507,6 +514,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'december',
@@ -516,6 +524,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'january',
@@ -525,6 +534,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'february',
@@ -534,6 +544,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
     {
       field: 'march',
@@ -543,6 +554,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
+      type: 'number',
     },
 
     {
@@ -839,6 +851,16 @@ const ProductionvolumeData = ({ permissions }) => {
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
+      downloadExcelBtn: permissions?.hideDownloadExcel
+        ? false
+        : lowerVertName == 'meg'
+          ? true
+          : false,
+      uploadExcelBtn: permissions?.hideUploadExcel
+        ? false
+        : lowerVertName == 'meg'
+          ? true
+          : false,
     },
     isOldYear,
   )
@@ -856,6 +878,77 @@ const ProductionvolumeData = ({ permissions }) => {
   }
   var cols = permissions?.hideSummary ? colDefs1233 : productionColumns
   var rows1 = permissions?.hideSummary ? rows500 : rows
+
+  const handleExcelUpload = (rawFile) => {
+    saveExcelFile(rawFile)
+  }
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await DataService.getProductionVolExcel(keycloak)
+
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error!', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      // optional cleanup or logging
+    }
+  }
+
+  const saveExcelFile = async (rawFile) => {
+    setLoading(true)
+    try {
+      var plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      const response = await DataService.saveProductionVolDataExcel(
+        rawFile,
+        keycloak,
+      )
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Upload Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        setLoading(false)
+
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Falied!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setLoading(false)
+    } finally {
+      // fetchData()
+      setLoading(false)
+    }
+  }
 
   return (
     <div>
@@ -894,6 +987,8 @@ const ProductionvolumeData = ({ permissions }) => {
         permissions={adjustedPermissions}
         selectedUnit={selectedUnit}
         setSelectedUnit={setSelectedUnit}
+        handleExcelUpload={handleExcelUpload}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
       />
 
       {!permissions?.hideSummary && (

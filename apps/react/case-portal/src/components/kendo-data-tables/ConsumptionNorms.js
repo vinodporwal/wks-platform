@@ -179,49 +179,6 @@ const ConsumptionNorms = () => {
     }
   }
 
-  const saveSummary = async () => {
-    setLoading(true)
-    try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      let year = localStorage.getItem('year')
-      const response = await DataService.saveSummaryAOPConsumptionNorm(
-        plantId,
-        year,
-        summary,
-        keycloak,
-      )
-
-      if (response?.code == 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Summary Saved Successfully!',
-          severity: 'success',
-        })
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Summary Saved Failed!',
-          severity: 'error',
-        })
-      }
-
-      //
-
-      setLoading(false)
-      return response
-    } catch (error) {
-      console.error('Error saving Summary!', error)
-    } finally {
-      //
-      setLoading(false)
-    }
-  }
-
   const saveChanges = React.useCallback(async () => {
     setLoading(true)
 
@@ -359,29 +316,29 @@ const ConsumptionNorms = () => {
     }
   }
 
-  const getAopSummary = async () => {
-    setLoading(true)
-    try {
-      var res = await DataService.getAopSummary(keycloak)
+  // const getAopSummary = async () => {
+  //   setLoading(true)
+  //   try {
+  //     var res = await DataService.getAopSummary(keycloak)
 
-      if (res?.code == 200) {
-        setSummary(res?.data?.summary)
-      } else {
-        setSummary('')
-      }
+  //     if (res?.code == 200) {
+  //       setSummary(res?.data?.summary)
+  //     } else {
+  //       setSummary('')
+  //     }
 
-      setLoading(false)
-      setCalculatebtnClicked(false)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      setLoading(false)
-      setCalculatebtnClicked(false)
-    }
-  }
+  //     setLoading(false)
+  //     setCalculatebtnClicked(false)
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error)
+  //     setLoading(false)
+  //     setCalculatebtnClicked(false)
+  //   }
+  // }
 
   useEffect(() => {
     fetchData()
-    getAopSummary()
+    // getAopSummary()
   }, [
     sitePlantChange,
     oldYear,
@@ -532,11 +489,6 @@ const ConsumptionNorms = () => {
   }
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
-  const handleSave = () => {
-    // console.log('Summary:', summary)
-    saveSummary()
-  }
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -572,8 +524,7 @@ const ConsumptionNorms = () => {
           : false,
       showRefresh: false,
       noColor: false,
-      ShowSummary: true,
-      // customHeight2: true,
+
       customHeight: defaultCustomHeight,
     },
     isOldYear,
@@ -590,118 +541,65 @@ const ConsumptionNorms = () => {
 
       <div>
         {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
-          <CustomAccordion
-            defaultExpanded
-            disableGutters
-            onChange={handleAccordionChange}
+          // <CustomAccordion
+          //   defaultExpanded
+          //   disableGutters
+          //   onChange={handleAccordionChange}
+          // >
+          // <CustomAccordionSummary
+          //   aria-controls='meg-grid-content'
+          //   id='meg-grid-header'
+          // >
+          // <Typography component='span' className='grid-title'>
+          //   Consumption AOP
+          // </Typography>
+          // </CustomAccordionSummary>
+          // <CustomAccordionDetails>
+          <Box
+            sx={{
+              width: '100%',
+              padding: '0px ',
+              margin: '0px',
+              backgroundColor: '#F2F3F8',
+              borderRadius: 0,
+              borderBottom: 'none',
+            }}
           >
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                Consumption AOP
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box
-                sx={{
-                  width: '100%',
-                  padding: '0px ',
-                  margin: '0px',
-                  backgroundColor: '#F2F3F8',
-                  borderRadius: 0,
-                  borderBottom: 'none',
-                }}
-              >
-                <KendoDataTables
-                  autoHeight={true}
-                  modifiedCells={modifiedCells}
-                  setModifiedCells={setModifiedCells}
-                  columns={productionColumns}
-                  rows={rows}
-                  setRows={setRows}
-                  getRowId={(row) => row.id}
-                  title='Consumption AOP'
-                  paginationOptions={[100, 200, 300]}
-                  saveChanges={saveChanges}
-                  snackbarData={snackbarData}
-                  snackbarOpen={snackbarOpen}
-                  apiRef={apiRef}
-                  open1={open1}
-                  setOpen1={setOpen1}
-                  setSnackbarOpen={setSnackbarOpen}
-                  setSnackbarData={setSnackbarData}
-                  handleCalculate={handleCalculate}
-                  handleRemarkCellClick={handleRemarkCellClick}
-                  fetchData={fetchData}
-                  handleUnitChange={handleUnitChange}
-                  remarkDialogOpen={remarkDialogOpen}
-                  setRemarkDialogOpen={setRemarkDialogOpen}
-                  currentRemark={currentRemark}
-                  setCurrentRemark={setCurrentRemark}
-                  currentRowId={currentRowId}
-                  permissions={adjustedPermissions}
-                  groupBy='Particulars'
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
+            <KendoDataTables
+              autoHeight={true}
+              modifiedCells={modifiedCells}
+              setModifiedCells={setModifiedCells}
+              columns={productionColumns}
+              rows={rows}
+              setRows={setRows}
+              getRowId={(row) => row.id}
+              title='Consumption AOP'
+              paginationOptions={[100, 200, 300]}
+              saveChanges={saveChanges}
+              snackbarData={snackbarData}
+              snackbarOpen={snackbarOpen}
+              apiRef={apiRef}
+              open1={open1}
+              setOpen1={setOpen1}
+              setSnackbarOpen={setSnackbarOpen}
+              setSnackbarData={setSnackbarData}
+              handleCalculate={handleCalculate}
+              handleRemarkCellClick={handleRemarkCellClick}
+              fetchData={fetchData}
+              handleUnitChange={handleUnitChange}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              permissions={adjustedPermissions}
+              groupBy='Particulars'
+            />
+          </Box>
+          // </CustomAccordionDetails>
+          // </CustomAccordion>
         )}
       </div>
-      <Typography
-        component='div'
-        sx={{ fontWeight: 'bold', ml: '5px', mt: '25px' }}
-      >
-        Consumption AOP Summary
-      </Typography>
-
-      <TextField
-        label='Summary'
-        multiline
-        // minRows={isAccordionExpanded ? 4 : 20}
-        minRows={4}
-        fullWidth
-        margin='normal'
-        variant='outlined'
-        disabled={isOldYear == 1}
-        value={summary}
-        onChange={(e) => setSummary(e.target.value)}
-        sx={{
-          '& .MuiInputBase-root': {
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            padding: '8px',
-          },
-          '& label': {
-            fontSize: '1rem',
-            color: '#666',
-            lineHeight: '1.2',
-            transform: 'translate(14px, 12px) scale(1)',
-          },
-          '& .MuiInputLabel-shrink': {
-            transform: 'translate(14px, -6px) scale(0.75)',
-          },
-          '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#ccc',
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#999',
-          },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#1976d2',
-          },
-          '& .MuiInputBase-input': {
-            resize: 'vertical',
-          },
-        }}
-      />
-      {isOldYear !== 1 && (
-        <Button variant='contained' className='btn-save' onClick={handleSave}>
-          Save
-        </Button>
-      )}
     </div>
   )
 }

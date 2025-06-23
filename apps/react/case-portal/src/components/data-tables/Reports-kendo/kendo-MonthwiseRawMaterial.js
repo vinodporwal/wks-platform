@@ -7,7 +7,7 @@ import {
   Tooltip,
   Typography,
 } from '../../../../node_modules/@mui/material/index'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
@@ -44,7 +44,6 @@ const MonthwiseRawMaterial = () => {
       field: 'material',
       headerName: 'Particulars',
       flex: 2,
-      renderCell: renderTwoLineEllipsis,
       editable: false,
     },
     {
@@ -58,19 +57,10 @@ const MonthwiseRawMaterial = () => {
     {
       field: 'spec',
       headerName: 'Spec',
-
+      editable: false,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      valueFormatter: formatValueToThreeDecimals4,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals4(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'april',
@@ -79,65 +69,27 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      valueFormatter: formatValueToThreeDecimals,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'may',
       headerName: headerMap[5],
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'june',
       headerName: headerMap[6],
-
+      editable: false,
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'july',
       headerName: headerMap[7],
-
+      editable: false,
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'aug',
@@ -145,16 +97,7 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'sep',
@@ -162,16 +105,7 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'oct',
@@ -179,16 +113,7 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'nov',
@@ -196,16 +121,7 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'dec',
@@ -213,16 +129,7 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'jan',
@@ -230,16 +137,7 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'feb',
@@ -247,16 +145,7 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'march',
@@ -264,31 +153,13 @@ const MonthwiseRawMaterial = () => {
 
       align: 'right',
       headerAlign: 'left',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
     {
       field: 'total',
       headerName: 'Total',
       align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
-      flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals(params.value)}</span>
-        </Tooltip>
-      ),
+      editable: false,
     },
   ]
   const columns = [
@@ -302,206 +173,117 @@ const MonthwiseRawMaterial = () => {
     {
       field: 'april',
       headerName: headerMap[4],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
 
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'may',
       headerName: headerMap[5],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'june',
       headerName: headerMap[6],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'july',
       headerName: headerMap[7],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'aug',
       headerName: headerMap[8],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'sep',
       headerName: headerMap[9],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'oct',
       headerName: headerMap[10],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'nov',
       headerName: headerMap[11],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'dec',
       headerName: headerMap[12],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'jan',
       headerName: headerMap[1],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'feb',
       headerName: headerMap[2],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
     {
       field: 'march',
       headerName: headerMap[3],
-      editable: false,
+      editable: true,
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      renderCell: (params) => (
-        <Tooltip
-          title={params.value != null ? params.value.toString() : ''}
-          arrow
-        >
-          <span>{formatValueToThreeDecimals2(params.value)}</span>
-        </Tooltip>
-      ),
     },
-  ]
+    {
+      field: 'remark',
+      headerName: 'Remark',
+      editable: true,
+      align: 'left',
+      headerAlign: 'left',
+      flex: 2,
+    }
 
-  const defaultCustomHeight = { mainBox: 'fit-content', otherBox: '100%' }
-  const defaultCustomHeightGrid2 = { mainBox: '36vh', otherBox: '100%' }
+  ]
 
   const [row, setRow] = useState()
   const [row2, setRow2] = useState()
   const [loading, setLoading] = useState(false)
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
+  const [modifiedCells, setModifiedCells] = React.useState({})
 
   const fetchData = async () => {
     try {
@@ -513,7 +295,11 @@ const MonthwiseRawMaterial = () => {
         res2 = res2?.data?.consumptionSummary.map((item, index) => ({
           ...item,
           id: index,
+          idFromApi: item.id,
+          isEditable: true,
+          remark:item.Remark||""
         }))
+        console.log("data is ",res2);
         setRow2(res2)
       }
 
@@ -521,6 +307,8 @@ const MonthwiseRawMaterial = () => {
         res = res?.data?.consumptionSummary.map((item, index) => ({
           ...item,
           id: index,
+          //idFromApi: item.id,
+          remark:item.Remark||""
         }))
 
         const formattedItems = res.map((item, index) => ({
@@ -639,22 +427,120 @@ const MonthwiseRawMaterial = () => {
     }
   }
 
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+
+  const handleRemarkCellClick = (row) => {
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const saveChanges = async () => {
+    try {
+      if (Object.keys(modifiedCells).length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      var data = Object.values(modifiedCells)
+     console.log('Modified cells before save:', modifiedCells);
+     const year = localStorage.getItem('year') // e.g. "2025-26"
+
+let prevYear = ''
+if (year && year.includes('-')) {
+  const [start, end] = year.split('-').map(Number)
+  prevYear = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
+}
+console.log("row data",data)
+const rowsToUpdate = data.map((row) => ({
+  april: row.april ?? null,
+  may: row.may ?? null,
+  june: row.june ?? null,
+  july: row.july ?? null,
+  aug: row.aug ?? null,
+  sep: row.sep ?? null,
+  oct: row.oct ?? null,
+  nov: row.nov ?? null,
+  dec: row.dec ?? null,
+  jan: row.jan ?? null,
+  feb: row.feb ?? null,
+  march: row.march ?? null,
+  remark: row.remark ?? null,
+   id: row.idFromApi,// support for both camelCase and PascalCase
+}))
+
+      const res = await DataService.postMonthwiseRawData(
+        keycloak,
+        rowsToUpdate,
+        plantId,
+      )
+
+      if (res?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+      
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (err) {
+      console.error('Error while save', err)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: err.message, severity: 'error' })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
   return (
     <Box>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <KendoDataTablesReports
         rows={row2}
         columns={columns}
-        setRows={setRows}
+        setRows={setRow2}
         loading={loading}
         handleCalculate={handleCalculate}
         title='Monthwise Consumption (T-18)'
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
         permissions={{
           // customHeight: defaultCustomHeight,
           // showWorkFlowBtns: flase,
           showCalculate: false,
           allAction: true,
           showTitle: true,
+          saveBtn: true,
+          textAlignment: 'center',
+          remarksEditable: true,
         }}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={setCurrentRowId}
+        saveChanges={saveChanges}
+        handleRemarkCellClick={handleRemarkCellClick}
       />
 
       {Object.entries(normRows).map(([normName, rows]) => (
@@ -667,6 +553,7 @@ const MonthwiseRawMaterial = () => {
             setRows={setRows}
             title='Monthwise Production Summary'
             columns={columnDefs}
+             handleRemarkCellClick={handleRemarkCellClick}
           />
         </div>
       ))}

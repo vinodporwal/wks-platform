@@ -88,7 +88,7 @@
   color: #000000;
   cursor: pointer;
   padding: 3px 4px;
-  border-bottom: 1px solid #dae0ef;
+  border-bottom: 1px solid #d6d6d6;
   font-size: 0.8rem;
 }
 .kendo-data-grid .k-grid-content .k-grid-table td:last-child:after,
@@ -138,7 +138,7 @@
 
 /* 1. Input box styling */
 .k-custom-dtp .k-picker-wrap {
-  /* Mimic MUI‚Äôs readOnly input: disable typing, just open calendar on click */
+  /* Mimic MUIís readOnly input: disable typing, just open calendar on click */
   background-color: #f9f9f9;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -165,7 +165,7 @@
   font-size: 1rem;
 }
 
-/* 4. If you need to style the ‚ÄúNow‚Äù / ‚ÄúToday‚Äù / ‚ÄúTime‚Äù buttons at the bottom */
+/* 4. If you need to style the ìNowî / ìTodayî / ìTimeî buttons at the bottom */
 .k-custom-dtp-popup .k-footer .k-button {
   font-size: 1rem;
 }
@@ -174,11 +174,11 @@
 }
 .k-grid .k-grid-content td.k-number-right-disabled {
   text-align: right !important;
-  background-color: #f0f0f0;
+  background-color: #e7e7e7;
 }
 
 .non-editable-cell {
-  background-color: #f0f0f0;
+  background-color: #e7e7e7;
 }
 
 .k-grid td span {
@@ -186,5 +186,9 @@
 }
 
 .custom-disabled-row {
-  background-color: #f0f0f0 !important;
+  background-color: #e7e7e7 !important;
+}
+.date-picker {
+  margin-right: 10;
+  width: 200px;
 }
