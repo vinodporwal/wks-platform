@@ -714,15 +714,17 @@ const ProductionNorms = ({ permissions }) => {
         note='* MT per Annum'
       />
 
-      <KendoDataTables
-        columns={productionColumnsByProducts}
-        rows={rowsByProducts}
-        setRows={setRowsByProducts}
-        title={'By Products'}
-        fetchData={fetchDataByProducts}
-        permissions={adjustedPermissionsByProducts}
-        // groupBy='Particulars'
-      />
+      {lowerVertName === 'meg' && (
+        <KendoDataTables
+          columns={productionColumnsByProducts}
+          rows={rowsByProducts}
+          setRows={setRowsByProducts}
+          title={'By Products'}
+          fetchData={fetchDataByProducts}
+          permissions={adjustedPermissionsByProducts}
+          // groupBy='Particulars'
+        />
+      )}
     </div>
   )
 }
