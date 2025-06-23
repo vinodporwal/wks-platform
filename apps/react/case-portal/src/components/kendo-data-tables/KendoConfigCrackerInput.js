@@ -54,6 +54,8 @@ const CrackerConfig = () => {
         const parsedData = JSON.parse(response.data)
         setTabs(parsedData)
       } else {
+        //not specified
+        ///
       }
     } catch (error) {
       console.error('Error fetching tabs:', error)
@@ -1382,15 +1384,15 @@ const CrackerConfig = () => {
             (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
           )
           return (
-          <Tab
-            key={tabId}
-            sx={{
-              border: '1px solid #ADD8E6',
-              borderBottom: '1px solid #ADD8E6',
-              textTransform: 'capitalize',
-            }}
+            <Tab
+              key={tabId}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                textTransform: 'capitalize',
+              }}
               label={tabInfo?.displayName}
-          />
+            />
           )
         })}
       </Tabs>
