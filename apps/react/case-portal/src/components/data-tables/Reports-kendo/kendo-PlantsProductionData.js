@@ -64,7 +64,7 @@ const PlantsProductionSummary = () => {
   }
 
   const apiCols = [
-    { field: 'RowNo', title: 'SL.No', width: 80, editable: false },
+    { field: 'RowNo', title: 'SL.No', widthT: 100, editable: false },
 
     {
       title: 'Item',

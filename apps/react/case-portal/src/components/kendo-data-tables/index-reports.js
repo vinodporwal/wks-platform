@@ -29,11 +29,21 @@ import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/inde
 
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
 import '../../kendo-data-grid.css'
-import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
-import FullValueEditor from './Utilities-Kendo/FullValueEditor'
-import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+// import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
+// import FullValueEditor from './Utilities-Kendo/FullValueEditor'
+// import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
 import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
 import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
+import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
+import {
+  DurationDisplayWithTooltipCell,
+  DurationEditor,
+} from './Utilities-Kendo/numericViewCells'
+import {
+  recalcDuration,
+  recalcEndDate,
+} from './Utilities-Kendo/durationHelpers'
+import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 
 export const particulars = [
   'normParameterId',
@@ -56,8 +66,35 @@ export const hiddenFields = [
   'isEditable',
   'period',
 ]
+export const dateFields = [
+  'maintStartDateTime',
+  'maintEndDateTime',
+  'endDateTA',
+  'startDateTA',
+  'endDateSD',
+  'startDateSD',
+  'endDateIBR',
+  'startDateIBR',
+  'toDate',
+  'fromDate',
+]
+export const monthMap = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+}
 const KendoDataTablesReports = ({
   allRedCell = [],
+  modifiedCells = [],
   title = '',
   rows = [],
   setRows,
@@ -77,10 +114,10 @@ const KendoDataTablesReports = ({
   remarkDialogOpen = false,
   handleDeleteSelected = () => {},
   saveChanges = () => {},
+  fetchData = () => {},
   deleteRowData = () => {},
   handleAddPlantSite = () => {},
   handleCalculate = () => {},
-  fetchData = () => {},
   handleUnitChange = () => {},
   handleRemarkCellClick = () => {},
   selectedUsers = [],
@@ -110,10 +147,11 @@ const KendoDataTablesReports = ({
   }, [])
 
   const handleRowClick = (e) => {
-    if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
-      setEdit({})
-      return
-    }
+    console.log(e.dataItem)
+    // if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
+    //   setEdit({})
+    //   return
+    // }
 
     setRows(
       rows.map((r) => ({
@@ -124,19 +162,61 @@ const KendoDataTablesReports = ({
   }
   const itemChange = useCallback(
     (e) => {
+      // const changedDataItem = e.dataItem
+      // const changedField = e.field
+      // const newValue = e.value
+
+      // const originalDataItem = rows.find(
+      //   (item) => item.id === changedDataItem.id,
+      // )
+      // const originalValue = originalDataItem
+      //   ? originalDataItem[changedField]
+      //   : undefined
+
       setIsRowEdited(true)
 
       const { dataItem, field, value } = e
-
+      const itemId = dataItem.id
       setRows((prev) =>
-        prev.map((r) =>
-          r.id === dataItem.id ? updateRowWithDuration(r, field, value) : r,
-        ),
+        prev.map((r) => {
+          if (r.id !== itemId) return r
+          const updated = { ...r, [field]: value }
+
+          if (
+            'fromDate' in updated &&
+            'toDate' in updated &&
+            'durationInHrs' in updated
+          ) {
+            if (field === 'fromDate' || field === 'toDate') {
+              updated.durationInHrs = recalcDuration(
+                updated.fromDate,
+                updated.toDate,
+              )
+            } else if (field === 'durationInHrs') {
+              const newEnd = recalcEndDate(
+                updated.fromDate,
+                value, // string like “10.20”
+              )
+              if (newEnd) {
+                updated.toDate = newEnd
+              }
+            }
+          }
+          return updated
+        }),
       )
 
       setModifiedCells((prev) => {
-        const updatedRow = updateRowWithDuration(dataItem, field, value)
-        return { ...prev, [dataItem.id]: updatedRow }
+        const base = { ...dataItem, [field]: value }
+        if ('fromDate' in base && 'toDate' in base && 'durationInHrs' in base) {
+          if (field === 'fromDate' || field === 'toDate') {
+            base.durationInHrs = recalcDuration(base.fromDate, base.toDate)
+          } else if (field === 'durationInHrs') {
+            const newEnd = recalcEndDate(base.fromDate, value)
+            if (newEnd) base.toDate = newEnd.toISOString()
+          }
+        }
+        return { ...prev, [itemId]: base }
       })
     },
     [setRows, setModifiedCells],
@@ -244,7 +324,9 @@ const KendoDataTablesReports = ({
     const { dataItem, field, onRemarkClick, ...tdProps } = props
 
     const rawValue = dataItem[field]
-    const displayText = truncateRemarks(rawValue)
+    // const displayText = truncateRemarks(rawValue)
+    const displayText = String(rawValue ?? '')
+
     // const editable = Boolean(dataItem.isEditable)
 
     return (
@@ -271,33 +353,33 @@ const KendoDataTablesReports = ({
     )
   }
 
-  useEffect(() => {
-    if (Array.isArray(rows) && rows.length > 0 && groupBy) {
-      if (typeRank) {
-        setGroup([
-          {
-            field: groupBy,
-            dir: 'asc',
-            compare: (a, b) => {
-              const rankA = typeRank[a.value] ?? 99
-              const rankB = typeRank[b.value] ?? 99
-              return rankA - rankB
-            },
-          },
-        ])
-        // setGroup([{ field: groupBy }])
-      }
-      const initialExpandedState = {}
-      const uniqueValues = [...new Set(rows.map((row) => row[groupBy]))]
-      uniqueValues.forEach((value) => {
-        initialExpandedState[`${groupBy}_${value}`] = true
-      })
-      setExpandedState(initialExpandedState)
-    } else {
-      setGroup([])
-      setExpandedState({})
-    }
-  }, [rows, groupBy])
+  // useEffect(() => {
+  //   if (Array.isArray(rows) && rows.length > 0 && groupBy) {
+  //     if (typeRank) {
+  //       setGroup([
+  //         {
+  //           field: groupBy,
+  //           dir: 'asc',
+  //           compare: (a, b) => {
+  //             const rankA = typeRank[a.value] ?? 99
+  //             const rankB = typeRank[b.value] ?? 99
+  //             return rankA - rankB
+  //           },
+  //         },
+  //       ])
+  // setGroup([{ field: groupBy }])
+  //     }
+  //     const initialExpandedState = {}
+  //     const uniqueValues = [...new Set(rows.map((row) => row[groupBy]))]
+  //     uniqueValues.forEach((value) => {
+  //       initialExpandedState[`${groupBy}_${value}`] = true
+  //     })
+  //     setExpandedState(initialExpandedState)
+  //   } else {
+  //     setGroup([])
+  //     setExpandedState({})
+  //   }
+  // }, [rows, groupBy])
 
   // const processedData = useMemo(() => {
   //   if (!Array.isArray(rows) || rows.length === 0) return []
@@ -365,26 +447,11 @@ const KendoDataTablesReports = ({
     )
   }
 
-  const monthMap = {
-    january: 1,
-    february: 2,
-    march: 3,
-    april: 4,
-    may: 5,
-    june: 6,
-    july: 7,
-    august: 8,
-    september: 9,
-    october: 10,
-    november: 11,
-    december: 12,
-  }
-
   const renderColumns = (cols, filter, sort) =>
     cols.map((col, idx) => {
       if (col.children) {
         return (
-          <GridColumn key={col.title || idx} title={col.title}>
+          <GridColumn key={col.title || idx} title={col.title} editable={true}>
             {renderColumns(col.children, filter, sort)}
           </GridColumn>
         )
@@ -414,13 +481,57 @@ const KendoDataTablesReports = ({
           />
         )
       }
+      if (dateFields.includes(col.field)) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            filter='date'
+            filterable={{
+              cell: {
+                operator: 'gte',
+                showOperators: true,
+              },
+            }}
+            cells={{
+              edit: { date: DateOnlyPicker },
+              data: toolTipRenderer,
+            }}
+            format='{0:dd-MM-yyyy}'
+            editor='date'
+            editable={true}
+            hidden={col.hidden}
+            className={!isEditable ? 'non-editable-cell' : ''}
+          />
+        )
+      }
+      if (col.field.includes('durationInHrs')) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            editable={true}
+            columnMenu={ColumnMenuCheckboxFilter}
+            hidden={col.hidden}
+            format={'{0:n2}'}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            cells={{
+              edit: { text: DurationEditor },
+              data: DurationDisplayWithTooltipCell,
+            }}
+          />
+        )
+      }
 
       return (
         <GridColumn
           key={col.field}
           field={col.field}
+          width={col?.widthT}
           title={col.title || col.headerName}
-          editable={col.editable}
+          editable={col.editable || true}
           format={col.format || '{0:#.###}'}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
@@ -464,17 +575,6 @@ const KendoDataTablesReports = ({
     )
   }
 
-  const dateFields = [
-    'maintStartDateTime',
-    'maintEndDateTime',
-    'endDateTA',
-    'startDateTA',
-    'endDateSD',
-    'startDateSD',
-    'endDateIBR',
-    'startDateIBR',
-  ]
-
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -497,7 +597,6 @@ const KendoDataTablesReports = ({
             p: 1,
           }}
         >
-          {/* LEFT: Title � this flexGrow:1 makes it push buttons right */}
           <Box
             sx={{
               display: 'flex',
@@ -519,6 +618,16 @@ const KendoDataTablesReports = ({
 
           {/* RIGHT: Buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {permissions?.addButton && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleAddRow}
+                disabled={true}
+              >
+                Add Item
+              </Button>
+            )}
             {permissions?.saveBtn && (
               <Button
                 variant='contained'
@@ -587,6 +696,7 @@ const KendoDataTablesReports = ({
       <div className='kendo-data-grid'>
         <Tooltip openDelay={50} position='default' anchorElement='target'>
           <Grid
+            modifiedCells={modifiedCells}
             data={rows}
             rows={{ data: CustomRow }}
             sortable={{
@@ -605,7 +715,7 @@ const KendoDataTablesReports = ({
             defaultSkip={0}
             defaultTake={100}
             contextMenu={true}
-            // filterable={columns.some((col) => dateFields.includes(col.field))}
+            filterable={columns.some((col) => dateFields.includes(col.field))}
             size='small'
             pageable={
               rows?.length > 100

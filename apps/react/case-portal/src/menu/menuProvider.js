@@ -8,6 +8,10 @@ import workspace from './workspace'
 import { icons, mapScreen } from 'components/Utilities/menuRefractoring'
 import i18n from 'i18n/index'
 import planCracker from './planCracker'
+
+import planPe from './planPe'
+import workspacePe from './workspacePe'
+
 // import { useNavigate } from '../../node_modules/react-router-dom/dist/index'
 
 const MenuContext = createContext()
@@ -20,8 +24,14 @@ export function MenuProvider({ children }) {
 
   const staticMenu = [plan, workspace]
   const staticMenuCracker = [planCracker]
+  const staticMenuPe = [planPe, workspacePe]
 
-  const menu2 = verticalName == 'Cracker' ? staticMenuCracker : staticMenu
+  const menu2 =
+    verticalName === 'Cracker'
+      ? staticMenuCracker
+      : verticalName === 'PE'
+        ? staticMenuPe
+        : staticMenu
 
   const [menuItems, setMenuItems] = useState(menu2)
   // const navigate = useNavigate()

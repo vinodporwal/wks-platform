@@ -55,7 +55,7 @@ const MonthwiseProduction = () => {
   }
 
   const columns = [
-    { field: 'RowNo', title: 'SL.No', width: 80, editable: false },
+    { field: 'RowNo', title: 'SL.No', widthT: 80, editable: false },
 
     {
       field: 'Month',
@@ -184,7 +184,7 @@ const MonthwiseProduction = () => {
         res = res?.data?.data.map((item, index) => ({
           ...item,
           id: index,
-
+          isEditable: true,
           originalRemark: item.Remark,
         }))
 
@@ -255,7 +255,7 @@ const MonthwiseProduction = () => {
       const rowsToUpdate = data.map((row) => ({
         id: row.Id,
         remark: row.Remark,
-        ThroughputActual: row?.ThroughputActual,
+        opHrsActual: row?.OpHrsActual,
       }))
 
       // const hasEmptyThroughput = rowsToUpdate?.some(
@@ -412,6 +412,8 @@ const MonthwiseProduction = () => {
           customHeight: defaultCustomHeight,
           needTotal: true,
           roundOffDecimals: true,
+          hideByProducts: true,
+          hideNoteText: true,
         }}
       />
       <Notification

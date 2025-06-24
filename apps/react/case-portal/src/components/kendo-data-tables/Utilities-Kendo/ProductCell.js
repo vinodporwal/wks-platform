@@ -5,7 +5,8 @@ const ProductCellEditor = (props) => {
   const { dataItem, field, onChange, allProducts, ...tdProps } = props
 
   const allOptions = useMemo(
-    () => allProducts.map((p) => ({ value: p.id, label: p.displayName })),
+    () =>
+      allProducts.map((p) => ({ value: p.displayName, label: p.displayName })),
     [allProducts],
   )
 

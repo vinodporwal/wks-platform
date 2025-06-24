@@ -78,6 +78,20 @@ export const hiddenFields1 = [
   'period',
 ]
 export const hiddenFields = []
+export const monthMap = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+}
 
 const KendoDataTables = ({
   rows = [],
@@ -360,7 +374,9 @@ const KendoDataTables = ({
     const { dataItem, field, onRemarkClick, ...tdProps } = props
 
     const rawValue = dataItem[field]
-    const displayText = truncateRemarks(rawValue)
+    // const displayText = truncateRemarks(rawValue)
+    const displayText = String(rawValue ?? '')
+    // const displayText = truncateRemarks(String(rawValue ?? ''))
 
     // Tooltip and color logic
     const value = dataItem[field]
@@ -418,21 +434,6 @@ const KendoDataTables = ({
       </tr>
     )
   }, [])
-
-  const monthMap = {
-    january: 1,
-    february: 2,
-    march: 3,
-    april: 4,
-    may: 5,
-    june: 6,
-    july: 7,
-    august: 8,
-    september: 9,
-    october: 10,
-    november: 11,
-    december: 12,
-  }
 
   const toolTipRenderer = (props) => {
     const value = props.dataItem[props.field]
@@ -801,6 +802,8 @@ const KendoDataTables = ({
                   'startDateSD',
                   'endDateIBR',
                   'startDateIBR',
+                  'fromDate',
+                  'toDate',
                 ].includes(col.field)
               ) {
                 return (
@@ -816,20 +819,28 @@ const KendoDataTables = ({
                       },
                     }}
                     cells={{
-                      edit: { date: DateTimePickerEditor },
+                      edit: {
+                        date: ['fromDate', 'toDate'].includes(col.field)
+                          ? DateOnlyPicker
+                          : DateTimePickerEditor,
+                      },
                       data: toolTipRenderer,
                     }}
-                    format='{0:dd-MM-yyyy hh:mm a}'
+                    format={
+                      ['fromDate', 'toDate'].includes(col.field)
+                        ? '{0:dd-MM-yyyy}'
+                        : '{0:dd-MM-yyyy hh:mm a}'
+                    }
                     editor='date'
                     hidden={col.hidden}
                   />
                 )
               }
-              if (col?.field === 'product') {
+              if (col?.field === 'productName1') {
                 return (
                   <GridColumn
-                    key='product'
-                    field='product'
+                    key='productName1'
+                    field='productName1'
                     title={col.title || col.headerName || 'Particulars'}
                     // width={210}
                     editable={col.editable || true}
@@ -849,10 +860,11 @@ const KendoDataTables = ({
                     key={col?.field}
                     field={col?.field}
                     title={col.title || col.headerName || 'Description'}
-                    // width={col.width}
+                    width={col.width}
                     editable={true}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
+                    headerClassName={isActive ? 'active-column' : ''}
                     cells={{
                       edit: { text: TextCellEditor },
                       data: toolTipRenderer,
@@ -1065,7 +1077,7 @@ const KendoDataTables = ({
                   key={col.field}
                   field={col.field}
                   title={col.title || col.headerName}
-                  // width={col.width}
+                  width={col.widthT}
                   hidden={col.hidden}
                   editable={col?.editable ? true : false}
                   headerClassName={isActive ? 'active-column' : ''}

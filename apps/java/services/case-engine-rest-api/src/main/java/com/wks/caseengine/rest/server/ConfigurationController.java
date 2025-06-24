@@ -70,16 +70,38 @@ public class ConfigurationController {
 		return configurationService.getConfigurationConstants(year,plantFKId);
 	}
 
+	@GetMapping(value = "/configuration-constants-export-excel")
+	public ResponseEntity<byte[]> exportConfigurationConstantsReport(
+	         @RequestParam("plantFKId") String plantFKId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = configurationService.createConfigurationConstantsExcel(year,UUID.fromString(plantFKId)); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("configuration_constants.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 
 
 	@GetMapping(value = "/configuration-export-excel")
-	public ResponseEntity<byte[]> exportPlantProductionPlanReport(
+	public ResponseEntity<byte[]> exportConfigurationReport(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = configurationService.createExcel(year,UUID.fromString(plantId)); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        byte[] excelBytes = configurationService.createExcel(year,UUID.fromString(plantId), false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -94,17 +116,38 @@ public class ConfigurationController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
-
-
-
+	
+	
 	@PostMapping(value = "/configuration-import-excel", consumes = "multipart/form-data")
-	public AOPMessageVM importExcel(
+	public ResponseEntity<byte[]> importExcel(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
 			@RequestParam("file") MultipartFile file
 	        ) {
-	        return configurationService.importExcel(year,UUID.fromString(plantId), file); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+			byte[] excelBytes =	configurationService.importExcel(year,UUID.fromString(plantId), file); 
+ HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("plant_production_plan.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+
 	}
+	
+	@PostMapping(value = "/configuration-constants-import-excel", consumes = "multipart/form-data")
+	public AOPMessageVM importConfigurationConstantsExcel(
+	         @RequestParam("plantFKId") String plantFKId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+		
+	        return configurationService.importConfigurationConstantsExcel(year,UUID.fromString(plantFKId), file); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	}
+	
 	@GetMapping(value="/configuration-execution")
 	public AOPMessageVM getConfigurationExecution(@RequestParam String year,@RequestParam String plantId) {
 		return configurationService.getConfigurationExecution(year,plantId);
