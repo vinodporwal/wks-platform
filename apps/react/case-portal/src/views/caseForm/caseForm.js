@@ -221,12 +221,18 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .then(({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
 
+        const attributeValue = caseData.attributes[0].value;
+        const parsedAttributeValue = JSON.parse(attributeValue);
+        console.log('parsedAttributeValue', parsedAttributeValue);
+
+        const caseOwnerId = caseData?.owner?.id;
+        const currentUserId = keycloak?.subject;
+        const currentUserEmail = keycloak.idTokenParsed.email;
+        const caseAssignedToEmail = caseData?.assignedTo?.emailId;
+
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
-          if(!isDraft){
-          const attributeValue = caseData.attributes[0].value;
-          const parsedAttributeValue = JSON.parse(attributeValue);
-          console.log('parsedAttributeValue', parsedAttributeValue);
+        if(!isDraft){
           const analysis = level1.components?.[5] ?? null;
           const recommendation = level1.components?.[6] ?? null;
           const caseDetails = level1.components?.[3] ?? null;
@@ -247,12 +253,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           }
         
           const caseDetails1 = caseDetails?.components?.[1];
+          const analysisTeam = caseDetails1?.columns?.[0]?.components?.[0] ?? null;
           const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
-        
+
           // Disable all components inside columns of caseDetails1, except caseStatus
           caseDetails1?.columns?.forEach((column) => {
             column?.components?.forEach((component) => {
-              if (component.id !== caseStatus?.id) {
+              if (component.id !== caseStatus?.id && 
+                (component.id === analysisTeam?.id && (parsedAttributeValue.dataGrid1.length > 1 || (caseOwnerId !== currentUserId && currentUserEmail !== caseAssignedToEmail)))) {
                 component.disabled = true;
               }
             });
@@ -310,10 +318,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
               const caseStatus = level3?.components?.[1]?.columns?.[1]?.components?.[0] ?? null;
 
-              const caseOwner = caseData?.owner?.id;
-              const currentUser = keycloak?.subject;
-
-              if (caseOwner !== currentUser && caseStatus) {
+              if (caseOwnerId !== currentUserId && caseStatus) {
                 caseStatus.disabled = true;
               }
 
@@ -332,6 +337,22 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               // }
             }
 
+            //Hide analysis save and edit button conditionally.
+            const analysisSection = level1.components.length > 4 ? level1.components[4] : null
+
+            if(analysisSection){
+              const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3]: null;
+              const analysisEditButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[4]: null;
+
+              if(analysisSubmitButton && parsedAttributeValue.analysisDesc !== ''){
+                analysisSubmitButton.hidden = true;
+              }
+
+              if(analysisEditButton && parsedAttributeValue.analysisDesc === ''){
+                analysisEditButton.hidden = true;
+              }
+            }
+
             if (level7 && level7.columns) {
               const saveAsDraft =
                 level7.columns.length > 2
@@ -339,6 +360,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   : null
               if (saveAsDraft) {
                 saveAsDraft.hidden = isDraft ? false : true;
+                if(caseOwnerId !== currentUserId && currentUserEmail !== caseAssignedToEmail){
+                  saveAsDraft.disabled = true;
+                }
               }
               
               const createButton =
@@ -355,7 +379,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   : null
               if (saveButton) {
                   saveButton.hidden =  isDraft ? false : true;
+
+                  if(caseOwnerId !== currentUserId && currentUserEmail !== caseAssignedToEmail){
+                    saveButton.disabled = true;
+                  }
               }
+
+              
             }
 
             // if (level6) {
@@ -434,6 +464,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       setLoading(false)
       return
     }
+
+    const actionAssignedId = getcaseStatusValue('Under Analysis');
+
+    formData.data.container.caseStatus = actionAssignedId;
 
     const currentParams = window.location.search
     setCurrentParams(currentParams)
@@ -966,6 +1000,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .catch((err) => {
         console.error(err.message)
       })
+  }
+
+  const getcaseStatusValue = (label) => {
+    // Retrieve options from localStorage
+    const options = JSON.parse(localStorage.getItem('caseStatusOptions')) || []
+
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.label === label)
+    return matchingOption ? matchingOption.value : label // Fallback to value if no match is found
   }
 
   const handleMainTabChanged = async (event, newValue) => {
@@ -1569,6 +1612,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                             onAnalysisSave()
                           } else if (event.component.key === 'valueRealizationSubmit') {
                             onValueRealizationSubmit()
+                          } else if (event.component.key === 'analysisEdit') {
+                            onAnalysisSave()
                           }
                         }}
                       />
@@ -1734,7 +1779,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
 const fetchAndCacheOptions = async (serviceMethod, cacheKey, mapCallback) => {
   const cachedOptions = JSON.parse(localStorage.getItem(cacheKey)) || [];
-  if (cachedOptions.length > 0) {
+  if (cachedOptions.length > 0 && cacheKey !== 'caseStatusOptions') {
     console.log(`Using cached options for ${cacheKey}`);
     return cachedOptions;
   }

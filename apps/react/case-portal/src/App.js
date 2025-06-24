@@ -52,7 +52,7 @@ const App = () => {
 
       if (!formChecked) {
         checkAndPostForm(keycloak)
-        checkAndPostPIForm(keycloak)
+        // checkAndPostPIForm(keycloak)
         setFormChecked(true) // Ensure it runs only once per session
       }
     })

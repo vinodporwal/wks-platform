@@ -83,10 +83,26 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               }
             }
           }
+
+          //Hide analysis save and edit button on case create page.
+          const analysisSection = level1.components.length > 4 ? level1.components[4] : null
+
+          if(analysisSection){
+            const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3]: null;
+            const analysisEditButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[4]: null;
+
+            if(analysisSubmitButton){
+              analysisSubmitButton.hidden = true;
+            }
+
+            if(analysisEditButton){
+              analysisEditButton.hidden = true;
+            }
+          }
         }
 
         setFormData({
-          data: {},
+          data: {container: {createdBy:keycloak.idTokenParsed.preferred_username}},
           metadata: {},
           isValid: true,
         })
@@ -160,7 +176,6 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         caseDefinitionId: caseDefId,
         owner: {
           id: keycloak.subject || '',
-          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
           name: keycloak.idTokenParsed.name || '',
           email: keycloak.idTokenParsed.email || '',
           phone: keycloak.idTokenParsed.phone || '',
