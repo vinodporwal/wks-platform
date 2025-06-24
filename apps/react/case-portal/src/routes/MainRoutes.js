@@ -60,6 +60,7 @@ import SlowDown from 'components/kendo-data-tables/Slowdown'
 import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/kendo-WorkFlowMerge'
 import PlantsProductionSummary from 'components/data-tables/Reports-kendo/kendo-PlantsProductionData'
 import ProductionVolumeDataBasis from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasis'
+
 import MonthwiseProduction from 'components/data-tables/Reports-kendo/kendo-MonthwiseProduction'
 import MonthwiseRawMaterial from 'components/data-tables/Reports-kendo/kendo-MonthwiseRawMaterial'
 
@@ -92,11 +93,7 @@ export const MainRoutes = (
       <ProductionVolumeDataBasis />
     )
   const NormsHistorianBasisElement =
-    verticalName == 'PE' ? (
-      <NormsHistorianBasisPe />
-    ) : (
-      <ProductionVolumeDataBasis />
-    )
+    verticalName == 'PE' ? <NormsHistorianBasisPe /> : <NormsHistorianBasis />
 
   let routes = {
     path: '/',
