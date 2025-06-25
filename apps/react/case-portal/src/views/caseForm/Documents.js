@@ -20,7 +20,7 @@ import Files from 'react-files'
 import { FileService } from '../../services'
 import CaseStore from './store'
 
-function Documents({ aCase, initialValue }) {
+function Documents({ aCase, initialValue, getCaseInfo }) {
   const keycloak = useSession()
   const [fetching, setFetching] = useState(false)
   const [percent, setPercent] = useState(0)
@@ -39,6 +39,7 @@ function Documents({ aCase, initialValue }) {
     )
       .then((data) => {
         setFilesUploaded([...filesUploaded, ...data])
+        getCaseInfo(aCase)
       })
       .catch((e) => {
         console.log(e)

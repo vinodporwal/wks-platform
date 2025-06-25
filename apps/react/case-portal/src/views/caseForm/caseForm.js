@@ -216,6 +216,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         aCase.documents = caseData?.documents || []
         aCase.comments = caseData?.comments || []
         // aCase.stage = caseData?.stage || "Stage 0";
+
         return { caseData: aCase, updatedFormStructure }
       })
       .then(({ caseData, updatedFormStructure }) => {
@@ -223,12 +224,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
         const attributeValue = caseData.attributes[0].value;
         const parsedAttributeValue = JSON.parse(attributeValue);
-        console.log('parsedAttributeValue', parsedAttributeValue);
 
+        const userEmailIds = [];
         const caseOwnerId = caseData?.owner?.id;
         const currentUserId = keycloak?.subject;
         const currentUserEmail = keycloak.idTokenParsed.email;
         const caseAssignedToEmail = caseData?.assignedTo?.emailId;
+        userEmailIds.push(caseData?.owner?.email);
+        userEmailIds.push(parsedAttributeValue.caseAssignedTo);
+        userEmailIds.concat(parsedAttributeValue.analysisTeam);
 
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
@@ -271,8 +275,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           const level2 = level1.components[0]
           const level7 =
             level1.components.length > 8 ? level1.components[8] : null
-          const level6 =
-            level1.components.length > 6 ? level1.components[6] : null
           if (level2 && level2.components) {
             const caseDescriptionField =
               level2.components.length > 1 ? level2.components[1] : null
@@ -351,6 +353,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               if(analysisEditButton && parsedAttributeValue.analysisDesc === ''){
                 analysisEditButton.hidden = true;
               }
+
+              const shouldDisable = !userEmailIds.includes(currentUserEmail);
+
+              if(shouldDisable){
+                analysisSubmitButton.disabled = true;
+                analysisEditButton.disabled = true;
+              }
+
             }
 
             if (level7 && level7.columns) {
@@ -360,7 +370,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   : null
               if (saveAsDraft) {
                 saveAsDraft.hidden = isDraft ? false : true;
-                if(caseOwnerId !== currentUserId && currentUserEmail !== caseAssignedToEmail){
+                if(!userEmailIds.includes(currentUserEmail)){
                   saveAsDraft.disabled = true;
                 }
               }
@@ -379,25 +389,28 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   : null
               if (saveButton) {
                   saveButton.hidden =  isDraft ? false : true;
-
-                  if(caseOwnerId !== currentUserId && currentUserEmail !== caseAssignedToEmail){
+                  if(!userEmailIds.includes(currentUserEmail)){
                     saveButton.disabled = true;
                   }
               }
-
-              
             }
 
-            // if (level6) {
-            //   const recommendationDescription =
-            //     level6.components[0].components[0].columns[0].components[1]
-            //   if (recommendationDescription) {
-            //     recommendationDescription.disabled = !(
-            //       aCase.owner?.email === keycloak.idTokenParsed?.email
-            //     )
-            //   }
-            //   // console.log('saveAsDraft', recommendationDescription)
-            // }
+            const level6 = level1.components[6] ?? null;
+            if (level6) {
+              const [submitContainer, addMoreComponent] = level6.components;
+
+              const recommendationAddMore = addMoreComponent ?? null;
+              const recommendationSubmit = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[0]?.components?.[0] ?? null;
+              const recommendationDelete = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[1]?.components?.[0] ?? null;
+
+              const shouldDisable = !userEmailIds.includes(currentUserEmail);
+
+              if (shouldDisable) {
+                if (recommendationAddMore) recommendationAddMore.disabled = true;
+                if (recommendationSubmit) recommendationSubmit.disabled = true;
+                if (recommendationDelete) recommendationDelete.disabled = true;
+              }
+            }  
           }
         }
 
@@ -1546,11 +1559,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     {...a11yProps(0)}
                   />
                   <Tab
-                    label={t('pages.caseform.tabs.attachments')}
+                    label={t('pages.caseform.tabs.attachments')+` (${documents ? documents.length : 0})`}
                     {...a11yProps(1)}
                   />
                   <Tab
-                    label={t('pages.caseform.tabs.comments')}
+                    label={t('pages.caseform.tabs.comments')+` (${comments ? comments.length : 0})`}
                     {...a11yProps(2)}
                   />
                 </Tabs>
@@ -1701,7 +1714,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   </Grid>
                 </TabPanel>
                 <TabPanel value={mainTabIndex} index={1}>
-                  <Documents aCase={aCase} initialValue={documents || []} />
+                  <Documents aCase={aCase} getCaseInfo={getCaseInfo} initialValue={documents || []} />
                 </TabPanel>
 
                 <TabPanel value={mainTabIndex} index={2}>

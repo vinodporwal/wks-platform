@@ -41,11 +41,11 @@ const Comment = ({
   return (
     <div key={comment.id} className='comment'>
       <div className='comment-image-container'>
-        <Avatar alt='John Doe' src={User1} />
+        {/* <Avatar alt='John Doe' src={User1} /> */}
       </div>
       <div className='comment-right-part'>
         <div className='comment-content'>
-          <Box sx={{ display: 'flex', flexDirection: 'row', m: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'row', m: 0 }}>
             <Typography sx={{ p: 0.5 }} variant='h5'>
               {formatName(comment.userId)}
             </Typography>
