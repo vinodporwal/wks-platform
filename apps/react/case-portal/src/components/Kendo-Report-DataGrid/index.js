@@ -1,14 +1,19 @@
+import { useEffect, useState } from 'react'
 import {
-  GridColumn as Column,
   Grid,
   isColumnMenuFilterActive,
   isColumnMenuSortActive,
+  GridColumn as Column,
 } from '@progress/kendo-react-grid'
 import '@progress/kendo-theme-default/dist/all.css'
-import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
-import { useState } from 'react'
-import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
 import '../../kendo-data-grid.css'
+import { filterIcon } from '@progress/kendo-svg-icons'
+import { ColumnMenu } from 'components/data-tables/Reports/columnMenu'
+import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
+import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
+import DateTimePickerEditor from 'components/kendo-data-tables/Utilities-Kendo/DatePickeronSelectedYr'
+import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
+import DateOnlyPicker from 'components/kendo-data-tables/Utilities-Kendo/DatePicker'
 
 const KendoDataGrid = ({ rows, columns, onRowChange }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
@@ -73,7 +78,6 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
           resizable={true}
           defaultSkip={0}
           defaultTake={100}
-          // filterable={columns.some((col) => dateFields.includes(col.field))}
           contextMenu={true}
           pageable={
             rows?.length > 100
@@ -94,6 +98,7 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
               filterType = 'text',
               isRightAlligned,
               hidden,
+              widthT,
             } = col
 
             if (['endDate', 'startDate', 'dateTime'].includes(field)) {
@@ -111,11 +116,19 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
                   }}
                   cell={cell}
                   cells={{
-                    // edit: { date: DateTimePickerEditor },
+                    edit: {
+                      date: ['dateTime', 'dateTime'].includes(col.field)
+                        ? DateOnlyPicker
+                        : DateTimePickerEditor,
+                    },
                     data: toolTipRenderer,
                   }}
-                  format='{0:dd-MM-yyyy}'
-                  filterType='date'
+                  editor='date'
+                  format={
+                    ['dateTime', 'dateTime'].includes(col.field)
+                      ? '{0:dd-MM-yyyy}'
+                      : '{0:dd-MM-yyyy hh:mm a}'
+                  }
                   hidden={hidden}
                   className={
                     isRightAlligned === 'numeric'
@@ -125,7 +138,7 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
                   headerClassName={
                     isColumnActive(field, filter, sort) ? 'active-column' : ''
                   }
-                  columnMenu={ColumnMenuCheckboxFilter}
+                  columnMenu={DateColumnMenu}
                 />
               )
             }
@@ -147,6 +160,7 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
                 headerClassName={
                   isColumnActive(field, filter, sort) ? 'active-column' : ''
                 }
+                width={widthT}
               />
             )
           })}

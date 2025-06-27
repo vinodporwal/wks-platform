@@ -46,6 +46,9 @@ export const DataService = {
 
   saveBusinessDemandData,
   saveSpyroInput,
+  saveSpyroOutput,
+  getSpyroOutputData,
+  getCrackerMaintenanceData,
   saveNormalOperationNormsData,
   saveShutDownNormsData,
   saveSlowdownNormsData,
@@ -130,6 +133,7 @@ export const DataService = {
   submitWorkFlow,
   getExcel,
   saveConfigurationExcel,
+  saveConfigurationExcelConstants,
   saveNormalOpsNormsExcel,
   getConfigurationExcel,
   getNormalOpsNormsExcel,
@@ -138,12 +142,13 @@ export const DataService = {
   getConfigurationExecutionDetails,
   saveProductionVolDataExcel,
   getProductionVolExcel,
-
+  getConfigurationExcelConstants,
   handleCalculateNormalOperationNormsPe,
   savePlantContributionData,
   getProductionVolDataBasisPe,
-  saveConfigurationExcelConstants,
-  getConfigurationExcelConstants,
+  saveCrackerMaintenance,
+  // saveConfigurationExcelConstants,
+  // getConfigurationExcelConstants,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -861,7 +866,7 @@ async function getExcel(keycloak, payload) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
-  const url = `${Config.CaseEngineUrl}/task/export-excel?year=${year}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/export-excel?year=${year}&plantId=${plantId}&type=Production`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -1550,7 +1555,7 @@ async function getCatalystSelectivityDataConstants(keycloak) {
   }
 }
 
-async function getConfigurationTabsMatrix(keycloak) {
+async function getConfigurationTabsMatrix(keycloak, type) {
   let plantId = ''
   let siteID =
     JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
@@ -1562,7 +1567,13 @@ async function getConfigurationTabsMatrix(keycloak) {
     plantId = parsedPlant.id
   }
 
-  const url = `${Config.CaseEngineUrl}/task/access/matrix?plantId=${plantId}&siteId=${siteID}&verticalId=${verticalId}`
+  const params = new URLSearchParams({
+    plantId,
+    siteId: siteID,
+    verticalId,
+  })
+  if (type) params.append('type', type)
+  const url = `${Config.CaseEngineUrl}/task/access/matrix?${params.toString()}`
 
   const headers = {
     Accept: 'application/json',
@@ -2294,6 +2305,47 @@ async function saveSpyroInput(payload, keycloak) {
     return await Promise.reject(e)
   }
 }
+async function saveSpyroOutput(payload, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-output`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getSpyroOutputData(keycloak, mode, type) {
+  const year = localStorage.getItem('year')
+  let plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/spyro-output?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&Mode=${encodeURIComponent(mode)}&type=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch spyro-output data', e)
+    return Promise.reject(e)
+  }
+}
 
 async function saveNormalOperationNormsData(
   plantId,
@@ -2763,7 +2815,7 @@ async function getAOPData(keycloak, type) {
     return await Promise.reject(e)
   }
 }
-async function getSpyroInputData(keycloak, mode) {
+async function getSpyroInputData(keycloak, mode, type) {
   const year = localStorage.getItem('year')
   let plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -2772,7 +2824,7 @@ async function getSpyroInputData(keycloak, mode) {
     plantId = parsedPlant.id
   }
 
-  const url = `${Config.CaseEngineUrl}/task/spyro-input?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&Mode=${encodeURIComponent(mode)}`
+  const url = `${Config.CaseEngineUrl}/task/spyro-input?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&Mode=${encodeURIComponent(mode)}&type=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -3033,6 +3085,46 @@ async function saveConfigurationExcel(file, keycloak) {
     return Promise.reject(e)
   }
 }
+
+async function saveConfigurationExcelConstants(file, keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${plantId}&year=${year}`
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'ConfigurationResponse.xlsx' // Filename to save
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing Config data:', e)
+    return Promise.reject(e)
+  }
+}
+
 async function saveNormalOpsNormsExcel(file, keycloak) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
@@ -3295,16 +3387,62 @@ async function getConfigurationExecutionDetails(keycloak) {
     return await Promise.reject(e)
   }
 }
-async function saveConfigurationExcelConstants(file, keycloak) {
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${plantId}&year=${year}`
+// async function saveConfigurationExcelConstants(file, keycloak) {
+//   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+//   const year = localStorage.getItem('year')
+//   const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${plantId}&year=${year}`
 
-  const formData = new FormData()
-  formData.append('file', file)
+//   const formData = new FormData()
+//   formData.append('file', file)
 
+//   const headers = {
+//     Accept: 'application/json',
+//     Authorization: `Bearer ${keycloak.token}`,
+//   }
+
+//   try {
+//     const resp = await fetch(url, {
+//       method: 'POST',
+//       headers,
+//       body: formData,
+//     })
+//     return json(keycloak, resp)
+//   } catch (e) {
+//     console.log(e)
+//     return await Promise.reject(e)
+//   }
+// }
+async function getCrackerMaintenanceData(keycloak) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+
+  const url = `${Config.CaseEngineUrl}/task/maintenance?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveCrackerMaintenance(payload, keycloak) {
+  const { plantId, year, decokePlanningDTOList } = payload
+  const url = `${Config.CaseEngineUrl}/task/maintenance?plantId=${plantId}&year=${year}`
+  
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
 
@@ -3312,7 +3450,7 @@ async function saveConfigurationExcelConstants(file, keycloak) {
     const resp = await fetch(url, {
       method: 'POST',
       headers,
-      body: formData,
+      body: JSON.stringify(decokePlanningDTOList), 
     })
     return json(keycloak, resp)
   } catch (e) {

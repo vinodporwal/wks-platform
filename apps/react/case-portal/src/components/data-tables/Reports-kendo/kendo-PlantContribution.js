@@ -59,7 +59,12 @@ export default function PlantContribution() {
             ...item,
             id: index,
             actualId: item?.id,
-            isEditable: [1, 2, 3, 0].includes(index),
+            isEditable:
+              key == 'OtherVariableCost' && [1, 2, 3, 0].includes(index)
+                ? true
+                : false,
+            // isEditable: [1, 2, 3, 0].includes(index),
+            // isEditable: false,
           }))
           if (key == 'OtherVariableCost') setRows(rows)
         } else {
@@ -233,7 +238,6 @@ export default function PlantContribution() {
               rows={rows || []}
               handleCalculate={handleCalculate}
               title={'Other Variable Cost'}
-              // unsavedChangesRef={unsavedChangesRef}
               setRemarkDialogOpen={setRemarkDialogOpen}
               currentRemark={currentRemark}
               setCurrentRemark={setCurrentRemark}

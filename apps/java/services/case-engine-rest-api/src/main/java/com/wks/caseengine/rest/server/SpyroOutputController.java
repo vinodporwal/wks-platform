@@ -24,13 +24,12 @@ public class SpyroOutputController {
 	private SpyroOutputService spyroOutputService;
 	
 	@GetMapping(value="/spyro-output")
-	public AOPMessageVM getSpyroOutputData(@RequestParam String year,@RequestParam String plantId,@RequestParam String Mode){
-		return	spyroOutputService.getSpyroOutputData(year, plantId,Mode);
+	public AOPMessageVM getSpyroOutputData(@RequestParam String year,@RequestParam String plantId,@RequestParam String Mode,@RequestParam(value = "type", required = false) String type){
+		return	spyroOutputService.getSpyroOutputData(year, plantId,Mode,type);
 	}
 
 	@PostMapping(value="/spyro-output")
 	public AOPMessageVM updateSpyroOutputData(@RequestBody List<SpyroOutputDTO> spyroOutputDTOList){
 		return spyroOutputService.updateSpyroOutputData(spyroOutputDTOList);
-		
 	}
 }

@@ -16,7 +16,7 @@ public class ConfigurationAccessMatrixServiceImpl implements ConfigurationAccess
 	private ConfigurationAccessMatrixRepository configurationAccessMatrixRepository;
 
 	@Override
-	public AOPMessageVM getConfigurationAccessMatrix(String plantId, String siteId, String verticalId) {
+	public AOPMessageVM getConfigurationAccessMatrix(String plantId, String siteId, String verticalId,String type) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			UUID plant = UUID.fromString(plantId);
@@ -24,7 +24,7 @@ public class ConfigurationAccessMatrixServiceImpl implements ConfigurationAccess
 			UUID vertical = UUID.fromString(verticalId);
 
 			String configurationTabsStr = configurationAccessMatrixRepository
-			        .findConfigurationTabsByVerticalSitePlant(vertical, site, plant)
+			        .findConfigurationTabsByVerticalSitePlant(vertical, site, plant,type)
 			        .orElse("[]"); // Default to empty JSON array string if not found
 			// TODO Auto-generated method stub
 			aopMessageVM.setCode(200);

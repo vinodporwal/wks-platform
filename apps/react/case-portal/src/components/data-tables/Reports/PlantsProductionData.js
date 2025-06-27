@@ -43,7 +43,7 @@ const PlantsProductionSummary = () => {
 
   const dataAPI = {
     columns: [
-      { header: 'SL.No', field: 'RowNo', flex: 0.5 },
+      { header: 'SL.No', field: 'RowNo', flex: 0.5, widthT: 50 },
 
       {
         header: 'Item',
