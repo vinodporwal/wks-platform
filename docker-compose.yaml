@@ -57,7 +57,7 @@ services:
             KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
             KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
             KC_PROXY: "passthrough" # Enables proxy address forwarding
-            KC_FRONTEND_URL: "https://wkspwr.dev.connectedplant.honeywell.com:8901" # Set the frontend URL
+            KC_FRONTEND_URL: "https://apm-cmkc-exxonmobil-useast.connectedplant.honeywell.com" # Set the frontend URL
         healthcheck:
             test: curl --fail http://localhost:8080/health/ready || exit 1
             interval: 10s
