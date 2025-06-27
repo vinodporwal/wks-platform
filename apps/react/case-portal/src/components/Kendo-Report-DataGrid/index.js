@@ -124,11 +124,7 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
                     data: toolTipRenderer,
                   }}
                   editor='date'
-                  format={
-                    ['dateTime', 'dateTime'].includes(col.field)
-                      ? '{0:dd-MM-yyyy}'
-                      : '{0:dd-MM-yyyy hh:mm a}'
-                  }
+                  format='{0:dd-MM-yyyy}'
                   hidden={hidden}
                   className={
                     isRightAlligned === 'numeric'

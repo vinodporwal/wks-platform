@@ -313,8 +313,10 @@ const ConfigurationTable = () => {
   useEffect(() => {
     getConfigurationExecutionDetails()
     getAopSummary()
+    let vertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
+    let verticalName = vertical.toLowerCase()
     setTimeout(() => {
-      if (lowerVertName != 'cracker' || lowerVertName != 'meg') {
+      if (verticalName != 'cracker' && verticalName != 'meg') {
         getConfigurationTabsMatrix()
         // getConfigurationAvailableTabs()
         getConfigurationAvailableTabs()
