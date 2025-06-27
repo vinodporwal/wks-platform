@@ -71,6 +71,7 @@ services:
             # Ensure krb5.conf and keytab files are passed into the container
             - ./krb5.conf:/etc/krb5.conf:ro
             - ./keycloak.keytab:/opt/keycloak/data/keycloak.keytab:ro
+            - ./keycloak.conf:/opt/keycloak/conf/keycloak.conf:ro
 
     storage-api:
         build:
