@@ -411,9 +411,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
 
               if (shouldDisable) {
-                if (recommendationAddMore) recommendationAddMore.disabled = true;
                 if (recommendationSubmit) recommendationSubmit.disabled = true;
                 if (recommendationDelete) recommendationDelete.disabled = true;
+              }
+
+              if (recommendationAddMore && (isFinalRecommendationSubmitted || shouldDisable)) {
+                recommendationAddMore.disabled = true;
               }
 
               const recommendations = parsedAttributeValue.dataGrid1;
@@ -536,7 +539,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+            assignedTo: {emailId: formData.data.container.caseAssignedTo},
+            isFinalRecommendationConfirmationOpen: aCase.isFinalRecommendationConfirmationOpen
           }),
         )
       })
@@ -626,7 +630,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+            assignedTo: {emailId: formData.data.container.caseAssignedTo},
+            isFinalRecommendationConfirmationOpen: aCase.isFinalRecommendationConfirmationOpen
           }),
         )
       })
@@ -690,6 +695,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
             assignedTo: {emailId: formData.data.container.caseAssignedTo},
+            isFinalRecommendationConfirmationOpen: aCase.isFinalRecommendationConfirmationOpen
           }),
         )
       })
