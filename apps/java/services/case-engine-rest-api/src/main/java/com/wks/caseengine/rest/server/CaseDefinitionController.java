@@ -130,59 +130,14 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/save-case")
     public ResponseEntity<Case> createCase(@RequestBody Case caseData) {
-		
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		
-		if (authentication instanceof JwtAuthenticationToken) {
-		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
-		    Jwt jwt = jwtAuth.getToken();
-		    
-		    String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
-		    Map<String, Object> claims = jwt.getClaims();
-		    
-		    System.out.println("userId: " + userId);
-		    System.out.println("Claims: " + claims);
-		    
-		    claims.entrySet().stream()
-		    .forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
-
-		    OwnerDetails owner = new OwnerDetails();
-			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
-			owner.setName(jwt.getClaimAsString("name"));
-			owner.setEmail(jwt.getClaimAsString("email"));
-
-			caseData.setOwner(owner);
-		}
+		caseData = assignOwner(caseData);
         Case savedCase = caseDefinitionService.saveCase(caseData);
         return ResponseEntity.ok(savedCase);
     }
 	
 	@PostMapping("/pi/save-case")
     public ResponseEntity<Case> createPICase(@RequestBody Case caseData) {
-		
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		
-		if (authentication instanceof JwtAuthenticationToken) {
-		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
-		    Jwt jwt = jwtAuth.getToken();
-		    
-		    String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
-		    Map<String, Object> claims = jwt.getClaims();
-		    
-		    System.out.println("userId: " + userId);
-		    System.out.println("Claims: " + claims);
-		    
-		    claims.entrySet().stream()
-		    .forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
-
-		    OwnerDetails owner = new OwnerDetails();
-			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
-			owner.setName(jwt.getClaimAsString("name"));
-			owner.setEmail(jwt.getClaimAsString("email"));
-
-			caseData.setOwner(owner);
-		}
-		
+		caseData = assignOwner(caseData);
         Case savedCase = caseDefinitionService.savePICase(caseData);
         
         return ResponseEntity.ok(savedCase);
@@ -287,13 +242,44 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/analysis")
     public ResponseEntity<Case> saveAnalysis(@RequestBody Case caseData) {
+		caseData = assignOwner(caseData);
         Case savedCase = caseDefinitionService.saveAnalysis(caseData);
         return ResponseEntity.ok(savedCase);
     }
 	
 	@PostMapping("/value-realization")
     public ResponseEntity<Case> saveValueRealization(@RequestBody Case caseData) {
+		caseData = assignOwner(caseData);
         Case savedCase = caseDefinitionService.saveValueRealization(caseData);
         return ResponseEntity.ok(savedCase);
     }
+	
+	@PostMapping("/final-recommendation")
+    public ResponseEntity<Case> submitFinalRecommendation(@RequestBody Case caseData) {
+		caseData = assignOwner(caseData);
+        Case savedCase = caseDefinitionService.submitFinalRecommendation(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
+	
+	private Case assignOwner(Case caseData) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		
+		if (authentication instanceof JwtAuthenticationToken) {
+		    JwtAuthenticationToken jwtAuth = (JwtAuthenticationToken) authentication;
+		    Jwt jwt = jwtAuth.getToken();
+		    
+		    String userId = jwt.getClaimAsString("sub"); // or "preferred_username"
+		    Map<String, Object> claims = jwt.getClaims();
+		    
+		    OwnerDetails owner = new OwnerDetails();
+			owner.setId(UUID.fromString(jwt.getClaimAsString("sub")));
+			owner.setName(jwt.getClaimAsString("name"));
+			owner.setEmail(jwt.getClaimAsString("email"));
+
+			caseData.setOwner(owner);
+		}
+		
+		return caseData;
+	}
+	
 }

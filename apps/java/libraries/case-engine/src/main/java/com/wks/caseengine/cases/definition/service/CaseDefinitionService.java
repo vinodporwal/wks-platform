@@ -83,4 +83,6 @@ public interface CaseDefinitionService {
 	Case savePICase(Case caseData);
 	
 	Case saveValueRealization(Case caseData);
+	
+	Case submitFinalRecommendation(Case caseData);
 }

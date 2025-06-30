@@ -77,6 +77,9 @@ public class Case {
 	public String getCaseNo() {
 		return caseNo;
 	}
+	
+    @Column(name ="isFinalRecommendationSubmitted")
+    private Boolean isFinalRecommendationSubmitted = false;
 
 	public void setCaseNo(String caseNo) {
 		this.caseNo = caseNo;
@@ -192,6 +195,14 @@ public class Case {
 	public void setAssignedTo(Users assignedTo) {
 		this.assignedTo = assignedTo;
 	}
+	public Boolean getIsFinalRecommendationSubmitted() {
+		return isFinalRecommendationSubmitted;
+	}
+
+	public void setIsFinalRecommendationSubmitted(Boolean isFinalRecommendationSubmitted) {
+		this.isFinalRecommendationSubmitted = isFinalRecommendationSubmitted;
+	}
+
 	@Override
 	public String toString() {
 		return "Case [caseNo=" + caseNo + ", caseDefinitionId=" + caseDefinitionId + ", owner=" + owner

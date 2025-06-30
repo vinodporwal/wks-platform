@@ -140,7 +140,9 @@ const App = () => {
       delete menu.items[2]
     }
 
-    return setMenu(menu)
+    if(accountStore.isManagerUser(keycloak)){
+      return setMenu(menu)
+    }
   }
 
   async function checkAndPostForm(keycloak) {

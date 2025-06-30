@@ -208,6 +208,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
+            isFinalRecommendationSubmitted: false
           }),
         )
       })
@@ -282,6 +283,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
+        isFinalRecommendationSubmitted: false
       }),
     )
       .then((data) => {

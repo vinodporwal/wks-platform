@@ -73,6 +73,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
   const [apiBody, setApiBody] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [isFinalRecommendationConfirmationOpen, setIsFinalRecommendationConfirmationOpen] = useState(false)
 
   // const handleFollowClick = () => {
   //   setIsFollowing(!isFollowing)
@@ -221,6 +222,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       })
       .then(({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
+        const isFinalRecommendationSubmitted = caseData?.isFinalRecommendationSubmitted;
 
         const attributeValue = caseData.attributes[0].value;
         const parsedAttributeValue = JSON.parse(attributeValue);
@@ -233,6 +235,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         userEmailIds.push(caseData?.owner?.email);
         userEmailIds.push(parsedAttributeValue.caseAssignedTo);
         userEmailIds.concat(parsedAttributeValue.analysisTeam);
+
+        const shouldDisable = !userEmailIds.includes(currentUserEmail);
 
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
@@ -264,7 +268,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           caseDetails1?.columns?.forEach((column) => {
             column?.components?.forEach((component) => {
               if (component.id !== caseStatus?.id && 
-                (component.id === analysisTeam?.id && (parsedAttributeValue.dataGrid1.length > 1 || (caseOwnerId !== currentUserId && currentUserEmail !== caseAssignedToEmail)))) {
+                (component.id === analysisTeam?.id && (parsedAttributeValue.dataGrid1.length > 1 || shouldDisable))) {
                 component.disabled = true;
               }
             });
@@ -343,24 +347,26 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             const analysisSection = level1.components.length > 4 ? level1.components[4] : null
 
             if(analysisSection){
-              const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3]: null;
-              const analysisEditButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[4]: null;
+                const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3]: null;
+                const analysisEditButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[4]: null;
 
-              if(analysisSubmitButton && parsedAttributeValue.analysisDesc !== ''){
-                analysisSubmitButton.hidden = true;
-              }
+                if(isFinalRecommendationSubmitted){
+                  analysisSection.disabled = true
+                  analysisSubmitButton.hidden = true;
+                  analysisEditButton.hidden = true;
+                } else {
+                  if(analysisSubmitButton && parsedAttributeValue.analysisDesc !== ''){
+                    analysisSubmitButton.hidden = true;
+                  }
+                  if(analysisEditButton && parsedAttributeValue.analysisDesc === ''){
+                    analysisEditButton.hidden = true;
+                  }
 
-              if(analysisEditButton && parsedAttributeValue.analysisDesc === ''){
-                analysisEditButton.hidden = true;
-              }
-
-              const shouldDisable = !userEmailIds.includes(currentUserEmail);
-
-              if(shouldDisable){
-                analysisSubmitButton.disabled = true;
-                analysisEditButton.disabled = true;
-              }
-
+                  if(shouldDisable){
+                    analysisSubmitButton.disabled = true;
+                    analysisEditButton.disabled = true;
+                  }
+                }
             }
 
             if (level7 && level7.columns) {
@@ -397,18 +403,21 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
             const level6 = level1.components[6] ?? null;
             if (level6) {
-              const [submitContainer, addMoreComponent] = level6.components;
+              const [submitContainer, addMoreContainer] = level6.components;
 
-              const recommendationAddMore = addMoreComponent ?? null;
               const recommendationSubmit = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[0]?.components?.[0] ?? null;
               const recommendationDelete = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[1]?.components?.[0] ?? null;
-
-              const shouldDisable = !userEmailIds.includes(currentUserEmail);
+              const recommendationAddMore = addMoreContainer?.columns[0]?.components[0] ?? null;
+              const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
 
               if (shouldDisable) {
                 if (recommendationAddMore) recommendationAddMore.disabled = true;
                 if (recommendationSubmit) recommendationSubmit.disabled = true;
                 if (recommendationDelete) recommendationDelete.disabled = true;
+              }
+
+              if(recommendationFinalSubmit && ( shouldDisable || parsedAttributeValue.dataGrid1.length <= 1)){
+                recommendationFinalSubmit.disabled = true;
               }
             }  
           }
@@ -478,9 +487,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       return
     }
 
-    const actionAssignedId = getcaseStatusValue('Under Analysis');
-
-    formData.data.container.caseStatus = actionAssignedId;
+    if(formData.data.container.caseStatus === 1){
+      const actionAssignedId = getcaseStatusValue('Under Analysis');
+      formData.data.container.caseStatus = actionAssignedId;
+    }
 
     const currentParams = window.location.search
     setCurrentParams(currentParams)
@@ -505,13 +515,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.caseNo,
-        owner: {
-          id: keycloak.subject || '',
-          // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '1234567890',
-        },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
         businessKey: aCase.businessKey,
@@ -530,13 +533,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
-            owner: {
-              id: keycloak.subject || '',
-              // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
             assignedTo: {emailId: formData.data.container.caseAssignedTo}
@@ -609,12 +605,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.caseNo,
-        owner: {
-          id: keycloak.subject || '',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '1234567890',
-        },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
         businessKey: aCase.businessKey,
@@ -633,12 +623,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
-            owner: {
-              id: keycloak.subject || '',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
             assignedTo: {emailId: formData.data.container.caseAssignedTo}
@@ -663,16 +647,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onValueRealizationSubmit = () => {
     setLoading(true)
-    // const requiredFields = ['caseCauseCategory', 'caseCauseDescription', 'analysisDesc', 'diagnosis']
-    // const missingFields = requiredFields.filter(
-    //   (field) => !formData.data.container[field],
-    // )
-    // if (missingFields.length > 0) {
-    //   setSnackbarMessages(['Please fill in all required fields.'])
-    //   setSnackbarOpen(true)
-    //   setLoading(false)
-    //   return
-    // }
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
@@ -694,12 +668,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
         caseNo: aCase.caseNo,
-        owner: {
-          id: keycloak.subject || '',
-          name: keycloak.idTokenParsed.name || '',
-          email: keycloak.idTokenParsed.email || '',
-          phone: keycloak.idTokenParsed.phone || '1234567890',
-        },
         attributes: caseAttributes,
         caseUrl: buildCreateUrl(window.location.href),
         businessKey: aCase.businessKey,
@@ -718,15 +686,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
-            owner: {
-              id: keycloak.subject || '',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+            assignedTo: {emailId: formData.data.container.caseAssignedTo},
           }),
         )
       })
@@ -746,6 +708,74 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       })
   }
 
+  const onRecommendationFinalSubmit = () => {
+    setLoading(true)
+    
+    const actionAssignedId = getcaseStatusValue('Resolved');
+    formData.data.container.caseStatus = actionAssignedId;
+    
+    const currentParams = window.location.search
+    setCurrentParams(currentParams)
+    const urlParams = new URLSearchParams(window.location.search)
+    const assetName = urlParams.get('assetName') || 'default'
+    const hierarchyName = urlParams.get('hierarchyName') || 'default'
+    const eventIdsParam = urlParams.get('eventIds')
+    const sourceSystem = urlParams.get('sourceSystem') || 'default'
+    const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
+    const caseAttributes = Object.keys(formData.data).map((key) => ({
+      name: key,
+      value:
+        typeof formData.data[key] !== 'object'
+          ? formData.data[key]
+          : JSON.stringify(formData.data[key]),
+      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    }))
+    CaseService.createCase(
+      keycloak,
+      JSON.stringify({
+        caseDefinitionId: aCase.caseDefinitionId,
+        caseNo: aCase.caseNo,
+        attributes: caseAttributes,
+        caseUrl: buildCreateUrl(window.location.href),
+        businessKey: aCase.businessKey,
+      }),
+    )
+      .then((data) => {
+        const businessKey = data.businessKey
+
+        return CaseService.submitFinalRecommendation(
+          keycloak,
+          JSON.stringify({
+            caseDefinitionId: aCase.caseDefinitionId,
+            assetName: assetName,
+            isDraft: aCase.isDraft,
+            hierarchyName: hierarchyName,
+            sourceSystem: sourceSystem,
+            eventIds: eventIds,
+            businessKey: businessKey,
+            attributes: caseAttributes,
+            caseUrl: buildCreateUrl(window.location.href),
+            assignedTo: {emailId: formData.data.container.caseAssignedTo},
+            isFinalRecommendationSubmitted: true
+          }),
+        )
+      })
+      .then((data) => {
+        setLastCreatedCase(data)
+        setSnackOpen(true)
+        setTimeout(() => {
+          window.location.href = data.caseUrl;
+          // handleClose()
+        }, 1000)
+      })
+      .catch((err) => {
+        console.error(err.message)
+      })
+      .finally(() => {
+        setLoading(false) // Stop loading after the process finishes
+        setIsFinalRecommendationConfirmationOpen(false);
+      })
+  }
   // const onSubmitRecommendation = async (event) => {
   //   console.log('event onSubmitRecommendation', event)
   //   let updatedFormData = JSON.parse(JSON.stringify(formData))
@@ -1184,6 +1214,58 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     return labelMap
   }
 
+  const getValueRealizationCategoryLabel = (value) => {
+    // Retrieve options from localStorage
+    const options = [
+                      {
+                        "label": "Value Realization category",
+                        "value": "valueRealizationCategory"
+                      },
+                      {
+                        "label": "Condition normalized before alarm",
+                        "value": "conditionNormalizedBeforeAlarm"
+                      },
+                      {
+                        "label": "Job could be planned in next opportunity",
+                        "value": "jobCouldBePlannedInNextOpportunity"
+                      },
+                      {
+                        "label": "Instrument malfunction detected",
+                        "value": "instrumentMalfunctionDetected"
+                      },
+                      {
+                        "label": "Operating condition could be normalized",
+                        "value": "operatingConditionCouldBeNormalized"
+                      },
+                      {
+                        "label": "Performance deterioration could be identified",
+                        "value": "performanceDeteriorationCouldBeIdentified"
+                      }
+                    ];
+
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.value === value)
+    return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
+  }
+
+  const getSAPRequestLabel = (value) => {
+    // Retrieve options from localStorage
+    const options = [
+                      {
+                        "label": "Yes",
+                        "value": "y"
+                      },
+                      {
+                        "label": "No",
+                        "value": "n"
+                      },
+                    ];
+
+    // Find the option with the matching value and return its label
+    const matchingOption = options.find((option) => option.value.toLowerCase() === value.toLowerCase())
+    return matchingOption ? matchingOption.label : value // Fallback to value if no match is found
+  }
+
   // Function to format data grids in a 2-column layout without colons in labels, skipping specific fields
   const formatDataGrid = (dataGrid, getLabel) => {
     if (!dataGrid || dataGrid.length === 0) return '<p>No data available</p>'
@@ -1209,7 +1291,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
               <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
               <p style="margin: 0;">
-                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : value || ''}
+                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : key === 'RecommendationConfirmSAP3' ? getSAPRequestLabel(value) : value || '' }
               </p>
             </div>
         `,
@@ -1325,7 +1407,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
-          <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${containerData.valueRealizationCategory}</p>
+          <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${getValueRealizationCategoryLabel(containerData.valueRealizationCategory)}</p>
           <p><strong>${getLabel('productionLoss')}</strong>: ${containerData.productionLoss || ''}</p>
           <p><strong>${getLabel('manHoursCost')}</strong>: ${containerData.manHoursCost || ''}</p>
           <p><strong>${getLabel('spareCost')}</strong>: ${containerData.spareCost || ''}</p>
@@ -1497,14 +1579,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 {'Save'}
               </Button>
               {/* Case Actions Menu */}
-              <IconButton
+              {/* <IconButton
                 edge='end'
                 color='inherit'
                 onClick={handleMenuOpen}
                 aria-label='manual-actions'
               >
                 <MoreVertIcon />
-              </IconButton>
+              </IconButton> */}
               <Menu
                 anchorEl={anchorEl}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -1627,6 +1709,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                             onValueRealizationSubmit()
                           } else if (event.component.key === 'analysisEdit') {
                             onAnalysisSave()
+                          }  else if (event.component.key === 'recommendationFinalSubmit') {
+                            setIsFinalRecommendationConfirmationOpen(true)
                           }
                         }}
                       />
@@ -1656,6 +1740,33 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         </Button>
                         <Button
                           onClick={submitRecommendation}
+                          color='primary'
+                          autoFocus
+                        >
+                          Submit
+                        </Button>
+                      </DialogActions>
+                    </Dialog>
+
+                    <Dialog
+                      open={isFinalRecommendationConfirmationOpen}
+                      onClose={() => setIsFinalRecommendationConfirmationOpen(false)}
+                    >
+                      <DialogTitle>Confirm Submission</DialogTitle>
+                      <DialogContent>
+                        <DialogContentText>
+                          Are you sure you want to submit final recommendation?
+                        </DialogContentText>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button
+                          onClick={() => setIsFinalRecommendationConfirmationOpen(false)}
+                          color='primary'
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={onRecommendationFinalSubmit}
                           color='primary'
                           autoFocus
                         >
