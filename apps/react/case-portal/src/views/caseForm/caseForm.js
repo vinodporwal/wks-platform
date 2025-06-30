@@ -416,7 +416,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 if (recommendationDelete) recommendationDelete.disabled = true;
               }
 
-              if(recommendationFinalSubmit && ( shouldDisable || parsedAttributeValue.dataGrid1.length <= 1)){
+              const recommendations = parsedAttributeValue.dataGrid1;
+              if(recommendationFinalSubmit && ( shouldDisable || (recommendations.length >=1 && recommendations[0].recommendationNo1 !== '')){
                 recommendationFinalSubmit.disabled = true;
               }
             }  
