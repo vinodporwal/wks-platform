@@ -49,6 +49,10 @@ import * as XLSX from 'xlsx'
 import DateTimePickerr from './Utilities-Kendo/DatePicker'
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
+<<<<<<< HEAD
+=======
+import { getColumnMenu } from './Utilities-Kendo/ColumnMenuDate'
+>>>>>>> fdcfeadabbe96ba133c2348d8c540b5e66377e03
 
 export const particulars = [
   'normParametersFKId',
@@ -823,6 +827,9 @@ const KendoDataTables = ({
                     format='{0:dd-MM-yyyy hh:mm a}'
                     editor='date'
                     hidden={col.hidden}
+                    filterable = {true}
+                    filter = 'date'
+                    columnMenu = {getColumnMenu(col.field,rows)}
                   />
                 )
               }
