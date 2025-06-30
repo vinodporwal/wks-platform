@@ -108,7 +108,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: true,
-      minWidth: 20,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -124,7 +124,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: true,
-      minWidth: 50,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -148,6 +148,7 @@ const AnnualProductionPlan = () => {
           <span>{formatValueToThreeDecimals(params.value)}</span>
         </Tooltip>
       ),
+      type:'number'
     },
     { field: 'part3', headerName: 'UOM', editable: false, flex: 1 },
   ]
@@ -157,7 +158,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: true,
-      minWidth: 50,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -181,6 +182,7 @@ const AnnualProductionPlan = () => {
           <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
+      type:'number'
     },
     {
       field: 'part3',
@@ -196,7 +198,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       headerName: 'SL.No',
       editable: true,
-      minWidth: 50,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -220,6 +222,7 @@ const AnnualProductionPlan = () => {
           <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
         </Tooltip>
       ),
+      type:'number'
     },
     {
       field: 'HourlyRate',
@@ -236,6 +239,7 @@ const AnnualProductionPlan = () => {
           <span>{formatValueToThreeDecimalsZero(params.value)}</span>
         </Tooltip>
       ),
+      type:'number'
     },
     {
       field: 'PeriodFrom',
@@ -256,7 +260,7 @@ const AnnualProductionPlan = () => {
       field: 'sno',
       title: 'SL.No',
       editable: false,
-      minWidth: 50,
+      widthT: 100,
       align: 'right',
     },
     {
@@ -276,6 +280,8 @@ const AnnualProductionPlan = () => {
           editable: false, // This column is NOT editable
           flex: 1,
           align: 'right',
+          format: '{0:#.#####}',
+          type:'number'
           // Pass the column's editable state to the cell renderer
         },
         {
@@ -284,6 +290,8 @@ const AnnualProductionPlan = () => {
           editable: false, // This column is NOT editable
           flex: 1,
           align: 'right',
+          format: '{0:#.#####}',
+          type:'number'
           // Pass the column's editable state to the cell renderer
         },
       ],
@@ -297,6 +305,8 @@ const AnnualProductionPlan = () => {
           editable: false,
           flex: 1,
           align: 'right',
+          format: '{0:#.#####}',
+          type:'number'
         },
         {
           field: 'Actual2',
@@ -304,6 +314,8 @@ const AnnualProductionPlan = () => {
           editable: false,
           flex: 1,
           align: 'right',
+          format: '{0:#.#####}',
+          type:'number'
         },
       ],
     },
@@ -316,6 +328,8 @@ const AnnualProductionPlan = () => {
           editable: false,
           flex: 1,
           align: 'right',
+          format: '{0:#.#####}',
+          type:'number'
         },
         {
           field: 'Actual3',
@@ -323,6 +337,8 @@ const AnnualProductionPlan = () => {
           editable: false,
           flex: 1,
           align: 'right',
+          format: '{0:#.#####}',
+          type:'number'
         },
       ],
     },
@@ -335,6 +351,8 @@ const AnnualProductionPlan = () => {
           editable: true,
           flex: 1,
           align: 'right',
+          format: '{0:#.#####}',
+          type:'number'
         },
       ],
     },

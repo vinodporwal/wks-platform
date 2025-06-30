@@ -222,7 +222,7 @@ const ConsumptionNorms = () => {
         }
       }
 
-      if (lowerVertName == 'pe') {
+      if (lowerVertName == 'pe' || lowerVertName == 'pp') {
         try {
           setLoading(true)
 
@@ -540,7 +540,7 @@ const ConsumptionNorms = () => {
       </Backdrop>
 
       <div>
-        {(lowerVertName === 'meg' || lowerVertName === 'pe') && (
+        {(lowerVertName === 'meg' || lowerVertName === 'pe' || lowerVertName === 'pp') && (
           // <CustomAccordion
           //   defaultExpanded
           //   disableGutters

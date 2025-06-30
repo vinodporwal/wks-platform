@@ -64,7 +64,7 @@ const PlantsProductionSummary = () => {
   }
 
   const apiCols = [
-    { field: 'RowNo', title: 'SL.No', width: 80, editable: false },
+    { field: 'RowNo', title: 'SL.No', widthT: 100, editable: false },
 
     {
       title: 'Item',
@@ -88,13 +88,18 @@ const PlantsProductionSummary = () => {
           title: 'Budget',
           width: 120,
           editable: false,
-          format: '{0:#.###}',
+          format: '{0:#.#####}',
+          type:'number'
         },
         {
           field: 'ActualPrevYear',
           title: 'Actual',
           width: 120,
-          editable: true,
+          // editable: true,
+          format: '{0:#.#####}',
+          editable: false,
+          type:'number'
+          
         },
       ],
     },
@@ -107,7 +112,8 @@ const PlantsProductionSummary = () => {
           title: 'Budget',
           width: 120,
           editable: false,
-          format: '{0:#.###}',
+          format: '{0:#.#####}',
+          type:'number'
         },
       ],
     },
@@ -120,14 +126,16 @@ const PlantsProductionSummary = () => {
           title: 'MT',
           width: 120,
           editable: false,
-          format: '{0:#.###}',
+          format: '{0:#.#####}',
+          type:'number'
         },
         {
           field: 'VarBudgetPer',
           title: '%',
           width: 100,
           editable: false,
-          format: '{0:#.###}',
+          format: '{0:#.#####}',
+          type:'number'
         },
       ],
     },
@@ -140,14 +148,16 @@ const PlantsProductionSummary = () => {
           title: 'MT',
           width: 120,
           editable: false,
-          format: '{0:#.###}',
+          format: '{0:#.#####}',
+          type:'number'
         },
         {
           field: 'VarActualPer',
           title: '%',
           width: 100,
           editable: false,
-          format: '{0:#.###}',
+          format: '{0:#.#####}',
+          type:'number'
         },
       ],
     },
@@ -163,8 +173,8 @@ const PlantsProductionSummary = () => {
         res = res?.data.map((Particulates, index) => ({
           ...Particulates,
           id: index,
-          isEditable: index == 4 || index == 5 ? true : false,
-          // isEditable: true,
+          // isEditable: index == 4 || index == 5 ? true : false,
+          isEditable: true,
         }))
 
         setRows(res)

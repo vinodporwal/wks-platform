@@ -67,7 +67,9 @@ import CrackerConfig from 'components/kendo-data-tables/KendoConfigCrackerInput'
 import DecokingConfig from 'components/kendo-data-tables/KendoConfigCrackerActivities'
 import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCrackerOutput'
 import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
-
+import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasisPe'
+import NormsHistorianBasisPe from 'components/data-tables/Reports/NormsHistorianBasisPe'
+import { Navigate } from '../../node_modules/react-router-dom/dist/index'
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -83,6 +85,14 @@ export const MainRoutes = (
 
   const defPage =
     verticalName == 'Cracker' ? <BusinessDemand /> : <BusinessDemand />
+  const ProductionVolumeDataBasisElement =
+    verticalName == 'PE' ? (
+      <ProductionVolumeDataBasisPe />
+    ) : (
+      <ProductionVolumeDataBasis />
+    )
+  const NormsHistorianBasisElement =
+    verticalName == 'PE' ? <NormsHistorianBasisPe /> : <NormsHistorianBasis />
 
   let routes = {
     path: '/',
@@ -90,7 +100,8 @@ export const MainRoutes = (
     children: [
       {
         path: '/',
-        element: defPage,
+        element: <Navigate to='/production-norms-plan/business-demand' />,
+        // element: defPage,
       },
 
       {
@@ -281,11 +292,11 @@ export const MainRoutes = (
           { path: 'aop-annual-cost-report', element: <AnnualAopCost /> },
           {
             path: 'production-volume-basis',
-            element: <ProductionVolumeDataBasis />,
+            element: ProductionVolumeDataBasisElement,
           },
           {
             path: 'norms-historian-basis',
-            element: <NormsHistorianBasis />,
+            element: NormsHistorianBasisElement,
           },
           {
             path: 'plants-production',

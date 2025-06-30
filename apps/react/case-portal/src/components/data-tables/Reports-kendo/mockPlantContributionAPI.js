@@ -1,20 +1,6 @@
-import { Tooltip } from '../../../../node_modules/@mui/material/index'
-
 export const MockReportService = {
   async getReport({ category, year }) {
     const currFY = year || ''
-    const formatValueToThreeDecimalsTwo = (params) => {
-      return params === 0 ? 0 : params ? parseFloat(params).toFixed(2) : ''
-    }
-    const formatValueToThreeDecimalsZero = (params) => {
-      return params === 0 ? 0 : params ? parseFloat(params).toFixed(0) : ''
-    }
-    const formatValueToThreeDecimalsOne = (params) => {
-      return params === 0 ? 0 : params ? parseFloat(params).toFixed(1) : ''
-    }
-    const formatValueToThreeDecimalsFour = (params) => {
-      return params === 0 ? 0 : params ? parseFloat(params).toFixed(4) : ''
-    }
 
     let prevFY = ''
     if (currFY.includes('-')) {
@@ -30,7 +16,7 @@ export const MockReportService = {
               field: 'SrNo',
               title: 'SL.No',
               editable: false,
-              width: 80,
+              widthT: 100,
               align: 'right',
             },
             {
@@ -54,6 +40,8 @@ export const MockReportService = {
                   editable: false,
                   align: 'right',
                   width: 120,
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -69,6 +57,8 @@ export const MockReportService = {
                       editable: false,
                       align: 'right',
                       width: 120,
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearNormActual',
@@ -76,6 +66,8 @@ export const MockReportService = {
                       editable: false,
                       align: 'right',
                       width: 120,
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -88,6 +80,8 @@ export const MockReportService = {
                       editable: false,
                       align: 'right',
                       width: 120,
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -103,7 +97,8 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              width: 80,
+              widthT: 100,
+
               editable: false,
               align: 'right',
             },
@@ -128,6 +123,8 @@ export const MockReportService = {
                   editable: false,
                   width: 120,
                   align: 'right',
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -143,6 +140,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearNormActual',
@@ -150,6 +149,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -162,6 +163,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -179,6 +182,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearCostActual',
@@ -186,6 +191,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -198,6 +205,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -213,7 +222,8 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              width: 80,
+              widthT: 100,
+
               editable: false,
               align: 'right',
             },
@@ -238,6 +248,8 @@ export const MockReportService = {
                   editable: false,
                   width: 120,
                   align: 'right',
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -253,6 +265,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearNormActual',
@@ -260,6 +274,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -272,6 +288,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -289,6 +307,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearCostActual',
@@ -296,6 +316,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -308,6 +330,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -323,7 +347,8 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              width: 80,
+              widthT: 100,
+
               editable: false,
               align: 'right',
             },
@@ -348,6 +373,8 @@ export const MockReportService = {
                   editable: false,
                   width: 120,
                   align: 'right',
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -363,6 +390,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearNormActual',
@@ -370,6 +399,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -382,6 +413,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -399,6 +432,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearCostActual',
@@ -406,6 +441,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -418,6 +455,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -433,7 +472,8 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              width: 80,
+              widthT: 100,
+
               editable: false,
               align: 'right',
             },
@@ -458,6 +498,8 @@ export const MockReportService = {
                   editable: false,
                   width: 120,
                   align: 'right',
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -473,6 +515,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearNormActual',
@@ -480,6 +524,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -492,6 +538,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -509,6 +557,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                     {
                       field: 'PrevYearCostActual',
@@ -516,6 +566,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -528,6 +580,8 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
+                      format: '{0:#.#####}',
+                      type:'number'
                     },
                   ],
                 },
@@ -543,9 +597,13 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              width: 80,
+              widthT: 100,
               align: 'right',
               editable: false,
+            },
+            {
+              field: 'id',
+              hidden: true,
             },
             {
               field: 'OtherCost',
@@ -567,14 +625,18 @@ export const MockReportService = {
                   title: 'Budget',
                   width: 120,
                   align: 'right',
-                  editable: false,
+                  editable: true,
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
                 {
                   field: 'PrevYearActual',
                   title: 'Actual',
                   width: 120,
                   align: 'right',
-                  editable: false,
+                  editable: true,
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -586,7 +648,9 @@ export const MockReportService = {
                   title: 'Budget',
                   width: 120,
                   align: 'right',
-                  editable: false,
+                  editable: true,
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -600,7 +664,8 @@ export const MockReportService = {
             {
               field: 'SrNo',
               title: 'SL.No',
-              width: 80,
+              widthT: 100,
+
               align: 'right',
               editable: false,
             },
@@ -619,6 +684,8 @@ export const MockReportService = {
                   width: 120,
                   align: 'right',
                   editable: false,
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
                 {
                   field: 'PrevYearActual',
@@ -626,6 +693,8 @@ export const MockReportService = {
                   width: 120,
                   align: 'right',
                   editable: false,
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },
@@ -638,6 +707,8 @@ export const MockReportService = {
                   width: 120,
                   align: 'right',
                   editable: false,
+                  format: '{0:#.#####}',
+                  type:'number'
                 },
               ],
             },

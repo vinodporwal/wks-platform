@@ -16,6 +16,8 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import KendoDataTables from './index'
+import KendoDataTablesReports from './index-reports'
+import KendoDataTablesReciepe from './index-reports-receipe'
 
 const SelectivityData = (props) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -99,7 +101,7 @@ const SelectivityData = (props) => {
 
       if (response?.code == 200) {
         setSnackbarData({
-          message: 'Summary Saved Successfully!',
+          message: 'Saved Successfully!',
           severity: 'success',
         })
         setLoading(false)
@@ -107,7 +109,7 @@ const SelectivityData = (props) => {
         // setIsEdited(false)
       } else {
         setSnackbarData({
-          message: 'Summary Saved Failed!',
+          message: 'Saved Failed!',
           severity: 'error',
         })
         setLoading(false)
@@ -371,10 +373,8 @@ const SelectivityData = (props) => {
       showUnit: false,
       saveWithRemark: true,
       saveBtn: true,
-      downloadExcelBtn:
-        lowerVertName == 'meg' && props?.tabIndex == 0 ? true : false,
-      uploadExcelBtn:
-        lowerVertName == 'meg' && props?.tabIndex == 0 ? true : false,
+      downloadExcelBtn: lowerVertName == 'meg' ? true : false,
+      uploadExcelBtn: lowerVertName == 'meg' ? true : false,
       showLoad: lowerVertName == 'meg' ? true : false,
       allAction: true,
     },
@@ -398,7 +398,11 @@ const SelectivityData = (props) => {
     })
 
     try {
-      await DataService.getConfigurationExcel(keycloak)
+      if (props?.tabIndex != 1) {
+        await DataService.getConfigurationExcel(keycloak)
+      } else {
+        await DataService.getConfigurationExcelConstants(keycloak)
+      }
 
       // If no error is thrown, the request was successful
       setSnackbarData({
@@ -450,11 +454,15 @@ const SelectivityData = (props) => {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
-
-      const response = await DataService.saveConfigurationExcel(
-        rawFile,
-        keycloak,
-      )
+      var response
+      if (props?.tabIndex != 1) {
+        response = await DataService.saveConfigurationExcel(rawFile, keycloak)
+      } else {
+        response = await DataService.saveConfigurationExcelConstants(
+          rawFile,
+          keycloak,
+        )
+      }
       if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -483,6 +491,53 @@ const SelectivityData = (props) => {
       // fetchData()
       setLoading(false)
     }
+  }
+
+  if (props?.configType == 'grades') {
+    return (
+      <div>
+        <Box>
+          <Backdrop
+            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={!!loading}
+          >
+            <CircularProgress color='inherit' />
+          </Backdrop>
+          <KendoDataTablesReciepe
+            handleRemarkCellClick={handleRemarkCellClick}
+            NormParameterIdCell={NormParameterIdCell}
+            modifiedCells={modifiedCells}
+            setModifiedCells={setModifiedCells}
+            columns={productionColumns}
+            rows={props?.rows}
+            setRows={props?.setRows}
+            title='Configuration'
+            summaryEdited={props?.summaryEdited}
+            // isCellEditable={isCellEditable}
+            // paginationOptions={[100, 200, 300]}
+            saveChanges={saveChanges}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            apiRef={apiRef}
+            setDeleteId={setDeleteId}
+            setOpen1={setOpen1}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            deleteId={deleteId}
+            open1={open1}
+            remarkDialogOpen={remarkDialogOpen}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            permissions={adjustedPermissions}
+            groupBy={props?.groupBy}
+            handleExcelUpload={handleExcelUpload}
+            downloadExcelForConfiguration={downloadExcelForConfiguration}
+          />
+        </Box>
+      </div>
+    )
   }
 
   return (

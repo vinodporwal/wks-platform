@@ -95,10 +95,27 @@ const SlowDown = ({ permissions }) => {
 
       const slowDownDetailsMEG = newRow.map((row) => ({
         productId: (() => {
-          const matched = allProducts.find((p) => p.displayName === row.productName)
+          const matched = allProducts.find(
+            (p) => p.displayName === row.productName1,
+          )
           return matched?.realId || ''
         })(),
-        productName: row.productName,
+        productName: row.productName1,
+        discription: row.discription,
+        durationInHrs: (() => {
+          const v = findDuration('1', row)
+          if (!v) return null
+          const [h = '00', m = '00'] = String(v).split('.')
+          return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+        })(),
+        maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+        maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+        remark: row.remark,
+        rate: row.rate,
+        audityear: localStorage.getItem('year'),
+        id: row.idFromApi || null,
+      }))
+      const slowDownDetailsElastomer = newRow.map((row) => ({
         discription: row.discription,
         durationInHrs: (() => {
           const v = findDuration('1', row)
@@ -115,11 +132,11 @@ const SlowDown = ({ permissions }) => {
       }))
       const response = await DataService.saveSlowdownData(
         plantId,
-        lowerVertName === 'meg' ? slowDownDetailsMEG : slowDownDetailsMEG,
+        lowerVertName === 'elastomer'
+          ? slowDownDetailsElastomer
+          : slowDownDetailsMEG,
         keycloak,
       )
-
-
 
       const maintenanceResponse = await DataService.getMaintenanceData(keycloak)
 
@@ -166,9 +183,21 @@ const SlowDown = ({ permissions }) => {
           'remark',
           'rate',
           // 'durationInHrs',
-          'productName',
+          'productName1',
         ]
-        const validationMessage = validateFields(data, requiredFields)
+        const requiredFieldsForElastomer = [
+          'maintStartDateTime',
+          'maintEndDateTime',
+          'discription',
+          'remark',
+          'rate',
+        ]
+        const validationMessage = validateFields(
+          data,
+          lowerVertName === 'elastomer'
+            ? requiredFieldsForElastomer
+            : requiredFields,
+        )
         if (validationMessage) {
           setSnackbarOpen(true)
           setSnackbarData({
@@ -227,8 +256,8 @@ const SlowDown = ({ permissions }) => {
 
       const formattedData = data.map((item, index) => ({
         ...item,
-        product: item.productId,              
-        productName: item.productName || '',  
+        product: item.productId,
+        productName1: item.productName || '',
         idFromApi: item?.maintenanceId || item?.id,
         id: index,
         originalRemark: item.remark,
@@ -260,13 +289,13 @@ const SlowDown = ({ permissions }) => {
             .map((product) => ({
               id: product.displayName,
               displayName: product.displayName,
-              realId: product.id, 
+              realId: product.id,
             }))
         } else {
           productList = data.map((product) => ({
             id: product.displayname,
             displayName: product.displayName,
-            realId: product.id, 
+            realId: product.id,
           }))
         }
 
@@ -308,9 +337,10 @@ const SlowDown = ({ permissions }) => {
     },
 
     {
-      field: 'productName',
+      field: 'productName1',
       title: 'Particulars',
       editable: true,
+      hidden: lowerVertName === 'elastomer' ? true : false,
     },
 
     {

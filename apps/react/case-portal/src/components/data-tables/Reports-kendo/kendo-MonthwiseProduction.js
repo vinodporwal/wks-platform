@@ -55,7 +55,7 @@ const MonthwiseProduction = () => {
   }
 
   const columns = [
-    { field: 'RowNo', title: 'SL.No', width: 80, editable: false },
+    { field: 'RowNo', title: 'SL.No', widthT: 80, editable: false },
 
     {
       field: 'Month',
@@ -75,12 +75,14 @@ const MonthwiseProduction = () => {
               title: 'Budget',
               width: 120,
               editable: false,
+              type:'number'
             },
             {
               field: 'EOEProdActual',
               title: 'Actual',
               width: 120,
               editable: false,
+              type:'number'
             },
           ],
         },
@@ -92,12 +94,14 @@ const MonthwiseProduction = () => {
               title: 'Budget',
               width: 120,
               editable: false,
+              type:'number'
             },
             {
               field: 'OpHrsActual',
               title: 'Actual',
               width: 120,
               editable: false,
+              type:'number'
             },
           ],
         },
@@ -109,12 +113,14 @@ const MonthwiseProduction = () => {
               title: 'Budget',
               width: 120,
               editable: false,
+              type:'number'
             },
             {
               field: 'ThroughputActual',
               title: 'Actual',
               width: 120,
               editable: false,
+              type:'number'
             },
           ],
         },
@@ -129,30 +135,35 @@ const MonthwiseProduction = () => {
           title: 'Operating Hours',
           width: 150,
           editable: false,
+          type:'number'
         },
         {
           field: 'MEGThroughput',
           title: 'MEG Throughput, TPH',
           width: 150,
           editable: false,
+          type:'number'
         },
         {
           field: 'EOThroughput',
           title: 'EO Throughput, TPH',
           width: 150,
           editable: false,
+          type:'number'
         },
         {
           field: 'EOEThroughput',
           title: 'EOE Throughput, TPH',
           width: 150,
           editable: false,
+          type:'number'
         },
         {
           field: 'TotalEOE',
           title: 'Total EOE, MT',
           width: 150,
           editable: false,
+          type:'number'
         },
       ],
     },
@@ -184,7 +195,7 @@ const MonthwiseProduction = () => {
         res = res?.data?.data.map((item, index) => ({
           ...item,
           id: index,
-
+          isEditable: true,
           originalRemark: item.Remark,
         }))
 
@@ -255,7 +266,7 @@ const MonthwiseProduction = () => {
       const rowsToUpdate = data.map((row) => ({
         id: row.Id,
         remark: row.Remark,
-        ThroughputActual: row?.ThroughputActual,
+        opHrsActual: row?.OpHrsActual,
       }))
 
       // const hasEmptyThroughput = rowsToUpdate?.some(
@@ -412,6 +423,8 @@ const MonthwiseProduction = () => {
           customHeight: defaultCustomHeight,
           needTotal: true,
           roundOffDecimals: true,
+          hideByProducts: true,
+          hideNoteText: true,
         }}
       />
       <Notification

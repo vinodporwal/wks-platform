@@ -1,0 +1,125 @@
+[
+  {
+    "field": "id",
+    "title": "Id",
+    "editable": true,
+    "hidden": true
+  },
+  {
+    "field": "monthName",
+    "title": "Month",
+    "editable": true,
+    "hidden": false
+  },
+  {
+    "field": "ibr",
+    "title": "IBR",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "mnt",
+    "title": "MNT",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "shutdown",
+    "title": "Shutdown",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "sad",
+    "title": "SAD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "bud",
+    "title": "BUD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "demoHHS",
+    "title": "Demo HHS",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "demoBBU",
+    "title": "Demo BBU",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "demoSAD",
+    "title": "Demo SAD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "fourFD",
+    "title": "4FD",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "fourF",
+    "title": "4F",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "fourFHours",
+    "title": "4F Hours",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "fiveF",
+    "title": "5F Hours",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "total",
+    "title": "Total",
+    "editable": true,
+    "type": "number",
+    "format": "{0:#.###}",
+    "hidden": false
+  },
+  {
+    "field": "remarks",
+    "title": "Remarks",
+    "editable": true,
+    "type": "string",
+    "hidden": false
+  }
+]

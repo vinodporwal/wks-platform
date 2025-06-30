@@ -263,9 +263,12 @@ const ProductionNorms = ({ permissions }) => {
       }
       var plantId = plantId
       const data = await DataService.handleCalculate(plantId, year, keycloak)
-      if (lowerVertName == 'meg' && data?.code == 200) {
+      if (data?.code == 200) {
         fetchData()
-        fetchDataByProducts()
+
+        if (lowerVertName === 'meg') {
+          fetchDataByProducts()
+        }
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
@@ -274,62 +277,6 @@ const ProductionNorms = ({ permissions }) => {
         setLoading(false)
         return
       }
-      let res = data?.data
-      if (res) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data refreshed successfully!',
-          severity: 'success',
-        })
-        setLoading(false)
-
-        const formattedData = res.map((item, index) => {
-          const isKiloTon = selectedUnit != 'MT'
-
-          return {
-            ...item,
-            idFromApi: item.id,
-            normParametersFKId:
-              item?.normParametersFKId?.toLowerCase() ||
-              item?.materialFKId?.toLowerCase(),
-            id: index,
-            ...(isKiloTon && {
-              jan: item.jan != null ? item.jan / 1000 : item.jan,
-              feb: item.feb != null ? item.feb / 1000 : item.feb,
-              march: item.march != null ? item.march / 1000 : item.march,
-              april: item.april != null ? item.april / 1000 : item.april,
-              may: item.may != null ? item.may / 1000 : item.may,
-              june: item.june != null ? item.june / 1000 : item.june,
-              july: item.july != null ? item.july / 1000 : item.july,
-              aug: item.aug != null ? item.aug / 1000 : item.aug,
-              sep: item.sep != null ? item.sep / 1000 : item.sep,
-              oct: item.oct != null ? item.oct / 1000 : item.oct,
-              nov: item.nov != null ? item.nov / 1000 : item.nov,
-              dec: item.dec != null ? item.dec / 1000 : item.dec,
-            }),
-          }
-        })
-
-        const finalData = [...formattedData]
-        if (lowerVertName == 'pe') {
-          setRows(finalData)
-        }
-        if (lowerVertName == 'meg') {
-          // setRows(formattedData)
-        } else {
-          setRows(finalData)
-        }
-        setLoading(false)
-        saveChanges()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Refresh Falied!',
-          severity: 'error',
-        })
-        setLoading(false)
-      }
-
       return res
     } catch (error) {
       console.error('Error saving refresh data:', error)
@@ -419,7 +366,7 @@ const ProductionNorms = ({ permissions }) => {
 
       const finalData = [...formattedData]
 
-      if (lowerVertName == 'pe') {
+      if (lowerVertName == 'pe' || lowerVertName == 'pp') {
         setRows(finalData)
       }
       if (lowerVertName == 'meg') {
@@ -538,7 +485,9 @@ const ProductionNorms = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-    fetchDataByProducts()
+    if (lowerVertName === 'meg') {
+      fetchDataByProducts()
+    }
   }, [
     sitePlantChange,
     oldYear,
@@ -711,18 +660,20 @@ const ProductionNorms = ({ permissions }) => {
         unsavedChangesRef={unsavedChangesRef}
         permissions={adjustedPermissions}
         // groupBy='Particulars'
-        note='* MT per Annum'
+        note={!permissions?.hideNoteText ? '* MT per Annum' : ''}
       />
 
-      <KendoDataTables
-        columns={productionColumnsByProducts}
-        rows={rowsByProducts}
-        setRows={setRowsByProducts}
-        title={'By Products'}
-        fetchData={fetchDataByProducts}
-        permissions={adjustedPermissionsByProducts}
-        // groupBy='Particulars'
-      />
+      {lowerVertName === 'meg' && !permissions?.hideNoteText && (
+        <KendoDataTables
+          columns={productionColumnsByProducts}
+          rows={rowsByProducts}
+          setRows={setRowsByProducts}
+          title={'By Products'}
+          fetchData={fetchDataByProducts}
+          permissions={adjustedPermissionsByProducts}
+          // groupBy='Particulars'
+        />
+      )}
     </div>
   )
 }

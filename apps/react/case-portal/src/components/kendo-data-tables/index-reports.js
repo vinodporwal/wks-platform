@@ -1,4 +1,3 @@
-import { filterBy, process } from '@progress/kendo-data-query'
 import '@progress/kendo-font-icons/dist/index.css'
 import {
   Grid,
@@ -10,8 +9,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { ColumnMenu } from 'components/@extended/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { truncateRemarks } from 'utils/remarksUtils'
+import { useCallback, useState } from 'react'
 import {
   Backdrop,
   Box,
@@ -29,12 +27,22 @@ import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/inde
 
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
 import '../../kendo-data-grid.css'
-import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
-import FullValueEditor from './Utilities-Kendo/FullValueEditor'
-import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+// import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
+// import FullValueEditor from './Utilities-Kendo/FullValueEditor'
+// import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
 import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
 import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
-import { recalcDuration, recalcEndDate } from './Utilities-Kendo/durationHelpers'
+import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
+import {
+  DurationDisplayWithTooltipCell,
+  DurationEditor,
+} from './Utilities-Kendo/numericViewCells'
+import {
+  recalcDuration,
+  recalcEndDate,
+} from './Utilities-Kendo/durationHelpers'
+import DateOnlyPicker from './Utilities-Kendo/DatePicker'
+import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 
 export const particulars = [
   'normParameterId',
@@ -57,14 +65,41 @@ export const hiddenFields = [
   'isEditable',
   'period',
 ]
+export const dateFields = [
+  'maintStartDateTime',
+  'maintEndDateTime',
+  'endDateTA',
+  'startDateTA',
+  'endDateSD',
+  'startDateSD',
+  'endDateIBR',
+  'startDateIBR',
+  'toDate',
+  'fromDate',
+]
+export const monthMap = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+}
 const KendoDataTablesReports = ({
   allRedCell = [],
+  modifiedCells = [],
   title = '',
   rows = [],
   setRows,
   columns,
   loading = false,
-  typeRank = {},
+  // typeRank = {},
   permissions = {},
   setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info' },
@@ -73,31 +108,31 @@ const KendoDataTablesReports = ({
   currentRemark = '',
   setCurrentRemark = () => {},
   currentRowId = null,
-  NormParameterIdCell = () => {},
+  // NormParameterIdCell = () => {},
   setModifiedCells = () => {},
   remarkDialogOpen = false,
-  handleDeleteSelected = () => {},
+  // handleDeleteSelected = () => {},
   saveChanges = () => {},
-  deleteRowData = () => {},
-  handleAddPlantSite = () => {},
-  handleCalculate = () => {},
   fetchData = () => {},
+  deleteRowData = () => {},
+  // handleAddPlantSite = () => {},
+  handleCalculate = () => {},
   handleUnitChange = () => {},
   handleRemarkCellClick = () => {},
-  selectedUsers = [],
-  groupBy = null,
-  allProducts = [],
-  selectMode,
-  setSelectMode = () => {},
+  // selectedUsers = [],
+  // groupBy = null,
+  // allProducts = [],
+  // selectMode,
+  // setSelectMode = () => {},
   handleExport = () => {},
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
-  const [group, setGroup] = useState([])
-  const [expandedState, setExpandedState] = useState({})
-  const [selectedUnit, setSelectedUnit] = useState()
+  // const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
+  // const [group, setGroup] = useState([])
+  // const [expandedState, setExpandedState] = useState({})
+  // const [selectedUnit, setSelectedUnit] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
@@ -111,6 +146,7 @@ const KendoDataTablesReports = ({
   }, [])
 
   const handleRowClick = (e) => {
+    console.log(e.dataItem)
     if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
       setEdit({})
       return
@@ -123,7 +159,7 @@ const KendoDataTablesReports = ({
       })),
     )
   }
- const itemChange = useCallback(
+  const itemChange = useCallback(
     (e) => {
       // const changedDataItem = e.dataItem
       // const changedField = e.field
@@ -140,7 +176,6 @@ const KendoDataTablesReports = ({
 
       const { dataItem, field, value } = e
       const itemId = dataItem.id
-      console.log("dataitem", dataItem);
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
@@ -171,7 +206,7 @@ const KendoDataTablesReports = ({
       )
 
       setModifiedCells((prev) => {
-        const base = { ...dataItem, [field]: value ,id:dataItem.idFromApi}
+        const base = { ...dataItem, [field]: value }
         if ('fromDate' in base && 'toDate' in base && 'durationInHrs' in base) {
           if (field === 'fromDate' || field === 'toDate') {
             base.durationInHrs = recalcDuration(base.fromDate, base.toDate)
@@ -288,7 +323,9 @@ const KendoDataTablesReports = ({
     const { dataItem, field, onRemarkClick, ...tdProps } = props
 
     const rawValue = dataItem[field]
-    const displayText = truncateRemarks(rawValue)
+    // const displayText = truncateRemarks(rawValue)
+    const displayText = String(rawValue ?? '')
+
     // const editable = Boolean(dataItem.isEditable)
 
     return (
@@ -301,13 +338,15 @@ const KendoDataTablesReports = ({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
         }}
-        onClick={() => {
-          onRemarkClick(dataItem)
-          setEdit({})
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
         }}
-        onDoubleClick={() => {
+        onDoubleClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
           onRemarkClick(dataItem)
-          setEdit({})
+          setEdit?.({})
         }}
       >
         {displayText || 'Click to add remark'}
@@ -315,33 +354,33 @@ const KendoDataTablesReports = ({
     )
   }
 
-  useEffect(() => {
-    if (Array.isArray(rows) && rows.length > 0 && groupBy) {
-      if (typeRank) {
-        setGroup([
-          {
-            field: groupBy,
-            dir: 'asc',
-            compare: (a, b) => {
-              const rankA = typeRank[a.value] ?? 99
-              const rankB = typeRank[b.value] ?? 99
-              return rankA - rankB
-            },
-          },
-        ])
-        // setGroup([{ field: groupBy }])
-      }
-      const initialExpandedState = {}
-      const uniqueValues = [...new Set(rows.map((row) => row[groupBy]))]
-      uniqueValues.forEach((value) => {
-        initialExpandedState[`${groupBy}_${value}`] = true
-      })
-      setExpandedState(initialExpandedState)
-    } else {
-      setGroup([])
-      setExpandedState({})
-    }
-  }, [rows, groupBy])
+  // useEffect(() => {
+  //   if (Array.isArray(rows) && rows.length > 0 && groupBy) {
+  //     if (typeRank) {
+  //       setGroup([
+  //         {
+  //           field: groupBy,
+  //           dir: 'asc',
+  //           compare: (a, b) => {
+  //             const rankA = typeRank[a.value] ?? 99
+  //             const rankB = typeRank[b.value] ?? 99
+  //             return rankA - rankB
+  //           },
+  //         },
+  //       ])
+  // setGroup([{ field: groupBy }])
+  //     }
+  //     const initialExpandedState = {}
+  //     const uniqueValues = [...new Set(rows.map((row) => row[groupBy]))]
+  //     uniqueValues.forEach((value) => {
+  //       initialExpandedState[`${groupBy}_${value}`] = true
+  //     })
+  //     setExpandedState(initialExpandedState)
+  //   } else {
+  //     setGroup([])
+  //     setExpandedState({})
+  //   }
+  // }, [rows, groupBy])
 
   // const processedData = useMemo(() => {
   //   if (!Array.isArray(rows) || rows.length === 0) return []
@@ -409,21 +448,6 @@ const KendoDataTablesReports = ({
     )
   }
 
-  const monthMap = {
-    january: 1,
-    february: 2,
-    march: 3,
-    april: 4,
-    may: 5,
-    june: 6,
-    july: 7,
-    august: 8,
-    september: 9,
-    october: 10,
-    november: 11,
-    december: 12,
-  }
-
   const renderColumns = (cols, filter, sort) =>
     cols.map((col, idx) => {
       if (col.children) {
@@ -458,13 +482,75 @@ const KendoDataTablesReports = ({
           />
         )
       }
-
+      if (dateFields.includes(col.field)) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            filter='date'
+            filterable={{
+              cell: {
+                operator: 'gte',
+                showOperators: true,
+              },
+            }}
+            cells={{
+              edit: { date: DateOnlyPicker },
+              data: toolTipRenderer,
+            }}
+            format='{0:dd-MM-yyyy}'
+            editor='date'
+            editable={col.editable || false}
+            hidden={col.hidden}
+            className={!isEditable ? 'non-editable-cell' : ''}
+          />
+        )
+      }
+      if (col.field.includes('durationInHrs')) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            editable={col.editable || false}
+            columnMenu={ColumnMenuCheckboxFilter}
+            hidden={col.hidden}
+            format={'{0:n2}'}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            cells={{
+              edit: { text: DurationEditor },
+              data: DurationDisplayWithTooltipCell,
+            }}
+          />
+        )
+      }
+      if (col.type === 'number') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            className={'k-number-right-disabled'}
+            editable={col?.editable ? true : false}
+            headerClassName={isActive ? 'active-column' : ''}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+          />
+        )
+      }
       return (
         <GridColumn
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
-          editable={col.editable}
+          editable={col.editable || false}
           format={col.format || '{0:#.###}'}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
@@ -473,6 +559,7 @@ const KendoDataTablesReports = ({
           className={!isEditable ? 'non-editable-cell' : ''}
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
+          width={col?.widthT}
         />
       )
     })
@@ -508,17 +595,6 @@ const KendoDataTablesReports = ({
     )
   }
 
-  const dateFields = [
-    'maintStartDateTime',
-    'maintEndDateTime',
-    'endDateTA',
-    'startDateTA',
-    'endDateSD',
-    'startDateSD',
-    'endDateIBR',
-    'startDateIBR',
-  ]
-
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -541,7 +617,6 @@ const KendoDataTablesReports = ({
             p: 1,
           }}
         >
-          {/* LEFT: Title � this flexGrow:1 makes it push buttons right */}
           <Box
             sx={{
               display: 'flex',
@@ -563,6 +638,16 @@ const KendoDataTablesReports = ({
 
           {/* RIGHT: Buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {permissions?.addButton && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleAddRow}
+                disabled={true}
+              >
+                Add Item
+              </Button>
+            )}
             {permissions?.saveBtn && (
               <Button
                 variant='contained'
@@ -631,6 +716,7 @@ const KendoDataTablesReports = ({
       <div className='kendo-data-grid'>
         <Tooltip openDelay={50} position='default' anchorElement='target'>
           <Grid
+            modifiedCells={modifiedCells}
             data={rows}
             rows={{ data: CustomRow }}
             sortable={{
@@ -757,9 +843,7 @@ const KendoDataTablesReports = ({
         <DialogActions>
           <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
           {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
-          <Button onClick={handleRemarkSave} disabled={!currentRemark?.trim()}>
-            Add
-          </Button>
+          <Button onClick={handleRemarkSave}>Add</Button>
         </DialogActions>
       </Dialog>
     </div>

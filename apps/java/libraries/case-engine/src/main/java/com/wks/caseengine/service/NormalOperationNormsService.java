@@ -10,13 +10,14 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface NormalOperationNormsService {
 	
-	public AOPMessageVM getNormalOperationNormsData( String year, String plantId);
+	public AOPMessageVM getNormalOperationNormsData( String year, String plantId,String gradeId);
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData( List<MCUNormsValueDTO> mCUNormsValueDTOList, UUID plantFKId, String year);
 	public AOPMessageVM calculateExpressionConsumptionNorms(String year,String plantId);
 	public AOPMessageVM calculateNormalOpsNorms(String aopYear, String plantId, String siteId, String verticalId);
 	AOPMessageVM getNormsTransaction(String plantId, String aopYear);
-	 public byte[] createExcel(String year, UUID plantFKId);
-    public AOPMessageVM importExcel(String year, UUID fromString, MultipartFile file);
+	 public byte[] createExcel(String year, UUID plantFKId,boolean isAfterSave,List<MCUNormsValueDTO> dtoList);
+    public byte[] importExcel(String year, UUID fromString, MultipartFile file);
+    public AOPMessageVM getNormalOperationNormsGrades(String year,String plantId);
 	// public int getCalculatedNormalOpsNorms( String year, String plantId);
 
 }
