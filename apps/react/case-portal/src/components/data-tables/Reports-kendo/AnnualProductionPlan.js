@@ -103,40 +103,190 @@ const AnnualProductionPlan = () => {
     return isNaN(num) ? '' : num.toFixed(0)
   }
 
+  // const columnsAssumptions = [
+  //   {
+  //     field: 'sno',
+  //     headerName: 'SL.No',
+  //     editable: true,
+  //     widthT: 100,
+  //     align: 'right',
+  //   },
+  //   {
+  //     field: 'part1',
+  //     headerName: 'Assumptions & remarks',
+  //     editable: false,
+  //     flex: 1,
+  //   },
+  // ]
+
+  // const columnsMaxRate = [
+  //   {
+  //     field: 'sno',
+  //     headerName: 'SL.No',
+  //     editable: true,
+  //     widthT: 100,
+  //     align: 'right',
+  //   },
+  //   {
+  //     field: 'part1',
+  //     headerName: 'Max hourly rate achieved',
+  //     editable: false,
+  //     flex: 1,
+  //   },
+  //   {
+  //     field: 'part2',
+  //     headerName: 'Value',
+  //     editable: false,
+  //     flex: 1,
+  //     align: 'right',
+  //     valueFormatter: formatValueToThreeDecimals,
+  //     renderCell: (params) => (
+  //       <Tooltip
+  //         title={params.value != null ? params.value.toString() : ''}
+  //         arrow
+  //       >
+  //         <span>{formatValueToThreeDecimals(params.value)}</span>
+  //       </Tooltip>
+  //     ),
+  //   },
+  //   { field: 'part3', headerName: 'UOM', editable: false, flex: 1 },
+  // ]
+
+  // const columnsOperatingHrs = [
+  //   {
+  //     field: 'sno',
+  //     headerName: 'SL.No',
+  //     editable: true,
+  //     widthT: 100,
+  //     align: 'right',
+  //   },
+  //   {
+  //     field: 'part1',
+  //     headerName: 'Calculation of Operating hours',
+  //     editable: false,
+  //     flex: 1,
+  //   },
+  //   {
+  //     field: 'part2',
+  //     headerName: 'Value',
+  //     editable: false,
+  //     flex: 1,
+  //     align: 'right',
+  //     valueFormatter: formatValueToThreeDecimalsZero,
+  //     renderCell: (params) => (
+  //       <Tooltip
+  //         title={params.value != null ? params.value.toString() : ''}
+  //         arrow
+  //       >
+  //         <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+  //       </Tooltip>
+  //     ),
+  //   },
+  //   {
+  //     field: 'part3',
+  //     headerName: 'Hours',
+  //     editable: false,
+  //     flex: 1,
+  //     align: 'right',
+  //   },
+  // ]
+
+  // const columnsAverageHourlyRate = [
+  //   {
+  //     field: 'sno',
+  //     headerName: 'SL.No',
+  //     editable: true,
+  //     widthT: 100,
+  //     align: 'right',
+  //   },
+  //   {
+  //     field: 'Throughput',
+  //     headerName: 'Throughput  limiting causes',
+  //     editable: false,
+  //     flex: 1,
+  //   },
+  //   {
+  //     field: 'OperatingHrs',
+  //     headerName: 'Achievable Hourly rate',
+  //     editable: false,
+  //     flex: 1,
+  //     align: 'right',
+  //     valueFormatter: formatValueToThreeDecimalsTwo,
+  //     renderCell: (params) => (
+  //       <Tooltip
+  //         title={params.value != null ? params.value.toString() : ''}
+  //         arrow
+  //       >
+  //         <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+  //       </Tooltip>
+  //     ),
+  //   },
+  //   {
+  //     field: 'HourlyRate',
+  //     headerName: 'Op. Hrs',
+  //     editable: false,
+  //     flex: 1,
+  //     align: 'right',
+  //     valueFormatter: formatValueToThreeDecimalsZero,
+  //     renderCell: (params) => (
+  //       <Tooltip
+  //         title={params.value != null ? params.value.toString() : ''}
+  //         arrow
+  //       >
+  //         <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+  //       </Tooltip>
+  //     ),
+  //   },
+  //   {
+  //     field: 'PeriodFrom',
+  //     headerName: 'Period from',
+  //     editable: false,
+  //     flex: 1,
+  //   },
+  //   { field: 'PeriodTo', headerName: 'Period to', editable: false, flex: 1 },
+  // ]
+
   const columnsAssumptions = [
     {
       field: 'sno',
       headerName: 'SL.No',
-      editable: true,
+      editable: false,
       widthT: 100,
       align: 'right',
     },
     {
-      field: 'part1',
+      field: 'activity',
       headerName: 'Assumptions & remarks',
-      editable: false,
+      editable: true,
       flex: 1,
     },
+    {
+      field: 'id',
+      hidden: true,
+    },
   ]
-
   const columnsMaxRate = [
     {
       field: 'sno',
       headerName: 'SL.No',
-      editable: true,
+      editable: false,
       widthT: 100,
       align: 'right',
     },
     {
-      field: 'part1',
+      field: 'activity',
       headerName: 'Max hourly rate achieved',
-      editable: false,
+      editable: true,
       flex: 1,
     },
     {
-      field: 'part2',
+      field: 'id',
+      hidden: true,
+    },
+    {
+      field: 'maxHourlyRateValue',
       headerName: 'Value',
-      editable: false,
+      editable: true,
       flex: 1,
       align: 'right',
       valueFormatter: formatValueToThreeDecimals,
@@ -149,27 +299,30 @@ const AnnualProductionPlan = () => {
         </Tooltip>
       ),
     },
-    { field: 'part3', headerName: 'UOM', editable: false, flex: 1 },
+    { field: 'uom', headerName: 'UOM', editable: true, flex: 1 },
   ]
-
   const columnsOperatingHrs = [
     {
       field: 'sno',
       headerName: 'SL.No',
-      editable: true,
+      editable: false,
       widthT: 100,
       align: 'right',
     },
     {
-      field: 'part1',
+      field: 'activity',
       headerName: 'Calculation of Operating hours',
-      editable: false,
+      editable: true,
       flex: 1,
     },
     {
-      field: 'part2',
+      field: 'id',
+      hidden: true,
+    },
+    {
+      field: 'rateValue',
       headerName: 'Value',
-      editable: false,
+      editable: true,
       flex: 1,
       align: 'right',
       valueFormatter: formatValueToThreeDecimalsZero,
@@ -183,32 +336,35 @@ const AnnualProductionPlan = () => {
       ),
     },
     {
-      field: 'part3',
+      field: 'uom',
       headerName: 'Hours',
-      editable: false,
+      editable: true,
       flex: 1,
       align: 'right',
     },
   ]
-
   const columnsAverageHourlyRate = [
     {
       field: 'sno',
       headerName: 'SL.No',
-      editable: true,
+      editable: false,
       widthT: 100,
       align: 'right',
     },
     {
-      field: 'Throughput',
+      field: 'activity',
       headerName: 'Throughput  limiting causes',
-      editable: false,
+      editable: true,
       flex: 1,
     },
     {
-      field: 'OperatingHrs',
+      field: 'id',
+      hidden: true,
+    },
+    {
+      field: 'rateValue',
       headerName: 'Achievable Hourly rate',
-      editable: false,
+      editable: true,
       flex: 1,
       align: 'right',
       valueFormatter: formatValueToThreeDecimalsTwo,
@@ -222,9 +378,9 @@ const AnnualProductionPlan = () => {
       ),
     },
     {
-      field: 'HourlyRate',
+      field: 'durationHours',
       headerName: 'Op. Hrs',
-      editable: false,
+      editable: true,
       flex: 1,
       align: 'right',
       valueFormatter: formatValueToThreeDecimalsZero,
@@ -238,12 +394,12 @@ const AnnualProductionPlan = () => {
       ),
     },
     {
-      field: 'PeriodFrom',
+      field: 'periodFrom',
       headerName: 'Period from',
-      editable: false,
+      editable: true,
       flex: 1,
     },
-    { field: 'PeriodTo', headerName: 'Period to', editable: false, flex: 1 },
+    { field: 'periodTo', headerName: 'Period to', editable: true, flex: 1 },
   ]
 
   const year4 = localStorage.getItem('year')
