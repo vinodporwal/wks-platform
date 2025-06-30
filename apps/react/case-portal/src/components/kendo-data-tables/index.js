@@ -82,7 +82,7 @@ export const monthMap = {
 
 const KendoDataTables = ({
   rows = [],
-
+  grades = [],
   allRedCell = [],
   modifiedCells = [],
   setRows,
@@ -137,6 +137,8 @@ const KendoDataTables = ({
   const [issRowEdited, setIsRowEdited] = useState(false)
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   // const initialGroup = groupBy ? [{ field: groupBy }] : []
+
+  // console.log('grades', grades)
 
   const initialGroup = groupBy
     ? [
@@ -505,6 +507,14 @@ const KendoDataTables = ({
   //   'startDateIBR',
   // ]
 
+  useEffect(() => {
+    if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
+      const firstGrade = grades[0]
+      setSelectedGrade(firstGrade.gradeId)
+      handleGradeChange(firstGrade.gradeId)
+    }
+  }, [grades, permissions?.showG, selectedGrade])
+
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -534,13 +544,17 @@ const KendoDataTables = ({
                 </Typography>
               )}
 
-              {permissions?.showGrade && (
+              {permissions?.showG && (
                 <TextField
                   select
-                  value={selectedGrade || permissions?.grades?.[0]}
+                  value={selectedGrade || ''}
                   onChange={(e) => {
-                    setSelectedGrade(e.target.value)
-                    handleGradeChange(e.target.value)
+                    const selectedGradeId = e.target.value
+                    const selectedGradeObj = grades.find(
+                      (g) => g.gradeId === selectedGradeId,
+                    )
+                    setSelectedGrade(selectedGradeId)
+                    handleGradeChange(selectedGradeObj?.gradeId)
                   }}
                   sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
                   variant='outlined'
@@ -550,9 +564,9 @@ const KendoDataTables = ({
                     Select Grade
                   </MenuItem>
 
-                  {permissions?.grades.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
+                  {grades?.map((unit) => (
+                    <MenuItem key={unit.gradeId} value={unit.gradeId}>
+                      {unit.displayName}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -743,6 +757,7 @@ const KendoDataTables = ({
             defaultSkip={0}
             defaultTake={100}
             contextMenu={true}
+            grade={grades}
             onRowClick={handleRowClick}
             sortable={{
               mode: 'multiple',
@@ -777,14 +792,32 @@ const KendoDataTables = ({
                     }}
                     cells={{
                       edit: {
-                        date: ['fromDate', 'toDate'].includes(col.field)
+                        date: [
+                          'fromDate',
+                          'toDate',
+                          'endDateTA',
+                          'startDateTA',
+                          'endDateSD',
+                          'startDateSD',
+                          'endDateIBR',
+                          'startDateIBR',
+                        ].includes(col.field)
                           ? DateOnlyPicker
                           : DateTimePickerEditor,
                       },
                       data: toolTipRenderer,
                     }}
                     format={
-                      ['fromDate', 'toDate'].includes(col.field)
+                      [
+                        'fromDate',
+                        'toDate',
+                        'endDateTA',
+                        'startDateTA',
+                        'endDateSD',
+                        'startDateSD',
+                        'endDateIBR',
+                        'startDateIBR',
+                      ].includes(col.field)
                         ? '{0:dd-MM-yyyy}'
                         : '{0:dd-MM-yyyy hh:mm a}'
                     }
@@ -801,6 +834,23 @@ const KendoDataTables = ({
                     field='productName1'
                     title={col.title || col.headerName || 'Particulars'}
                     // width={210}
+                    editable={col.editable || true}
+                    hidden={col.hidden}
+                    cells={{
+                      data: (cellProps) => (
+                        <ProductCell {...cellProps} allProducts={allProducts} />
+                      ),
+                    }}
+                    columnMenu={ColumnMenuCheckboxFilter}
+                  />
+                )
+              }
+              if (col?.field === 'MonthNameDropdown') {
+                return (
+                  <GridColumn
+                    key='MonthNameDropdown'
+                    field='MonthNameDropdown'
+                    title={col.title || col.headerName || 'MonthNameDropdown'}
                     editable={col.editable || true}
                     hidden={col.hidden}
                     cells={{

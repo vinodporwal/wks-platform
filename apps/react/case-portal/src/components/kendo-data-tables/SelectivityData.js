@@ -301,7 +301,11 @@ const SelectivityData = (props) => {
       }
     }
 
-    if (verticalChange?.selectedVertical === 'PE') getAllGrades()
+    if (
+      verticalChange?.selectedVertical === 'PE' ||
+      verticalChange?.selectedVertical === 'PP'
+    )
+      getAllGrades()
 
     if (props?.configType !== 'grades' && lowerVertName !== 'cracker') {
       props?.fetchData()

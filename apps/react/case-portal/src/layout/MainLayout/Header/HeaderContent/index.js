@@ -16,6 +16,8 @@ import {
   setSitePlantChange,
   setCurrentYear,
   setOldYear,
+  setSiteID,
+  setPlantID,
 } from 'store/reducers/dataGridStore'
 import { DataService } from 'services/DataService'
 import Search from './Search'
@@ -141,6 +143,9 @@ export default function HeaderContent({ keycloak }) {
         JSON.stringify({ id: defS.id, name: defS.name }),
       )
       localStorage.setItem('selectedSiteId', JSON.stringify({ id: defS.id }))
+
+      dispatch(setSiteID({ siteId: defS.id }))
+
       dispatch(setSitePlantChange({ sitePlantChange: true }))
     }
   }, [selectedVertical, fullDetails, allowedMap, dispatch])
@@ -169,6 +174,7 @@ export default function HeaderContent({ keycloak }) {
         JSON.stringify({ id: defP.id, name: defP.name }),
       )
       dispatch(setSitePlantChange({ sitePlantChange: true }))
+      dispatch(setPlantID({ plantId: defP.id }))
     }
   }, [selectedSite, selectedVertical, fullDetails, allowedMap, dispatch])
 
@@ -236,10 +242,16 @@ export default function HeaderContent({ keycloak }) {
       )
       // notify Redux that plant (or site/plant combination) changed:
       dispatch(setSitePlantChange({ sitePlantChange: true }))
+      dispatch(setPlantID({ plantId: plantObj.id }))
     }
   }
   const handleVertChange = (e) => {
     const newVId = e.target.value
+
+    // Immediately clear dependent selections
+    setSelectedSite('')
+    setSelectedPlant('')
+
     setSelectedVertical(newVId)
 
     const vert = verticals.find((v) => v.id === newVId)

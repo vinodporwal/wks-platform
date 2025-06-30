@@ -21,7 +21,9 @@ const ProductionNorms = ({ permissions }) => {
   const apiRef = useGridApiRef()
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { sitePlantChange, verticalChange, yearChanged, oldYear } =
+  const [_plantID, set_PlantID] = useState('')
+
+  const { sitePlantChange, verticalChange, yearChanged, oldYear, plantID } =
     dataGridStore
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
@@ -44,6 +46,12 @@ const ProductionNorms = ({ permissions }) => {
     rowsBeforeChange: {},
   })
   const dispatch = useDispatch()
+
+  useEffect(() => {
+    if (plantID?.plantId) {
+      set_PlantID(plantID?.plantId)
+    }
+  }, [plantID])
   // const isBlocked = useSelector((state) => state.isBlocked) // Get block flag from Redux
 
   const saveChanges = React.useCallback(async () => {
@@ -265,7 +273,10 @@ const ProductionNorms = ({ permissions }) => {
       const data = await DataService.handleCalculate(plantId, year, keycloak)
       if (data?.code == 200) {
         fetchData()
-        fetchDataByProducts()
+
+        if (lowerVertName === 'meg') {
+          fetchDataByProducts()
+        }
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
@@ -482,15 +493,10 @@ const ProductionNorms = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-    fetchDataByProducts()
-  }, [
-    sitePlantChange,
-    oldYear,
-    yearChanged,
-    keycloak,
-    selectedUnit,
-    lowerVertName,
-  ])
+    if (lowerVertName === 'meg') {
+      fetchDataByProducts()
+    }
+  }, [plantID, oldYear, yearChanged, keycloak, selectedUnit])
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
@@ -610,6 +616,30 @@ const ProductionNorms = ({ permissions }) => {
       jan: 11280,
       feb: 10850,
       march: 11430,
+      averageTPH: '',
+      isEditable: false,
+      aopStatus: '',
+    },
+    {
+      idFromApi: null,
+      aopCaseId: null,
+      aopType: null,
+      aopYear: null,
+      plantFkId: null,
+      normParametersFKId: 'E + P',
+      uom: 'MT/Month',
+      april: 950,
+      may: 1035,
+      june: 1090,
+      july: 1720,
+      aug: 1560,
+      sep: 985,
+      oct: 140,
+      nov: 575,
+      dec: 1120,
+      jan: 280,
+      feb: 850,
+      march: 1430,
       averageTPH: '',
       isEditable: false,
       aopStatus: '',

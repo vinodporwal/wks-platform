@@ -1,110 +1,112 @@
-import { createContext, useState, useEffect, useContext, useMemo } from 'react'
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useMemo,
+  useCallback,
+} from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from '../SessionStoreContext'
 import { useSelector } from 'react-redux'
 import plan from './plan'
 
 import workspace from './workspace'
-import { icons, mapScreen } from 'components/Utilities/menuRefractoring'
-import i18n from 'i18n/index'
 import planCracker from './planCracker'
-
-import planPe from './planPe'
-import workspacePe from './workspacePe'
-
-// import { useNavigate } from '../../node_modules/react-router-dom/dist/index'
+import { mapScreen } from 'components/Utilities/menuRefractoring'
 
 const MenuContext = createContext()
+const STATIC_MENU_DEFAULT = [plan, workspace]
+const STATIC_MENU_CRACKER = [planCracker]
 const USE_STATIC_MENU = true
 
 export function MenuProvider({ children }) {
-  const verticalName = JSON.parse(
-    localStorage.getItem('selectedVertical'),
-  )?.name
-
-  const staticMenu = [plan, workspace]
-  const staticMenuCracker = [planCracker]
-  const staticMenuPe = [planPe, workspacePe]
-
-  const menu2 =
-    verticalName === 'Cracker'
-      ? staticMenuCracker
-      : verticalName === 'PE'
-        ? staticMenuPe
-        : staticMenu
-
-  const [menuItems, setMenuItems] = useState(menu2)
   // const navigate = useNavigate()
 
   const keycloak = useSession()
-  const { verticalChange } = useSelector((s) => s.dataGridStore)
-  const verticalId = localStorage.getItem('verticalId')
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const userMgmtItem = {
-    id: 'user-management',
-    title: i18n.t('menu.userManage'),
-    type: 'item',
-    url: '/user-management',
-    icon: icons?.IconUserCog,
-    breadcrumbs: true,
-  }
-  useEffect(() => {
-    if (USE_STATIC_MENU) {
-      setMenuItems(menu2)
-      return
-    }
+  const { verticalChange } = useSelector((state) => state.dataGridStore)
+  const verticalName = verticalChange?.selectedVertical || ''
+  const verticalId =
+    verticalChange?.selectedVerticalId || localStorage.getItem('verticalId')
+  const plant = JSON.parse(localStorage.getItem('selectedPlant') || '{}')
+  const plantId = plant?.id
 
-    if (!keycloak?.token || (!verticalId && !plantId)) return
+  const staticMenuForVertical = useMemo(() => {
+    return verticalName === 'Cracker'
+      ? STATIC_MENU_CRACKER
+      : STATIC_MENU_DEFAULT
+  }, [verticalName])
+  const [menuItems, setMenuItems] = useState(staticMenuForVertical)
+  const fetchMenuScreens = useCallback(
+    async (currentToken, vId, pId, staticMenu) => {
+      if (USE_STATIC_MENU) {
+        return staticMenu
+      }
 
-    DataService.getScreenbyPlant(keycloak, verticalId, plantId)
-      .then((res) => {
-        // Map API response
+      if (!currentToken || (!vId && !pId)) {
+        return staticMenu
+      }
+      try {
+        const res = await DataService.getScreenbyPlant(
+          { token: currentToken },
+          vId,
+          pId,
+        )
         const dynamic = Array.isArray(res.data) ? res.data.map(mapScreen) : []
 
         // console.log(dynamic[0].children.length === 0, 'test-----')
         // console.log(dynamic.length && dynamic[0].children.length === 0)
         // Our hardcoded user-management entry
         // if (dynamic[0].children.length === 0) {
-        //   navigate('/user-management')
         //   //   // optionally you can still inject the menu entry so the UI shows it:
         //   //   // dynamic[0].children.push(userMgmtItem)
         //   //   // setMenuItems(dynamic)
         //   //   // return
         // }
         // Function to check existence
-        const containsUserMgmt = (items) =>
-          items.some(
-            (item) =>
-              item.id === 'user-management' ||
-              (Array.isArray(item.children) && containsUserMgmt(item.children)),
-          )
 
-        // If API returned items�
+        // If API returned items?
         if (dynamic.length) {
           // Inject user-management if missing
-          if (!containsUserMgmt(dynamic)) {
-            dynamic[0].children.push(userMgmtItem)
-          }
-          setMenuItems(dynamic)
-        } else {
-          const base = [...menu2]
+          return dynamic
           // if (!containsUserMgmt(base)) {
           //   base.push(userMgmtItem)
           // }
-          setMenuItems(base)
         }
-      })
-      .catch((err) => {
+        return staticMenu
+      } catch (err) {
         console.error('Menu API failed, using static menu', err)
         // Fallback with hardcoded if missing
-        const base = [...menu2]
-        if (!base.some((m) => m.id === 'user-management')) {
-          base.push(userMgmtItem)
-        }
-        setMenuItems(base)
-      })
-  }, [keycloak, plantId, verticalId, verticalChange])
-  // console.log(plantId)
+        return staticMenu
+      }
+    },
+    [],
+  )
+  useEffect(() => {
+    let cancelled = false
+    async function updateMenu() {
+      const token = keycloak?.token
+      const items = await fetchMenuScreens(
+        token,
+        verticalId,
+        plantId,
+        staticMenuForVertical,
+      )
+      if (!cancelled) {
+        setMenuItems(items)
+      }
+    }
+    updateMenu()
+    return () => {
+      cancelled = true
+    }
+  }, [
+    keycloak?.token,
+    verticalId,
+    plantId,
+    staticMenuForVertical,
+    fetchMenuScreens,
+  ])
 
   const menuValue = useMemo(() => ({ items: menuItems }), [menuItems])
   return (
@@ -112,4 +114,13 @@ export function MenuProvider({ children }) {
   )
 }
 
-export const useMenuContext = () => useContext(MenuContext)
+export const useMenuContext = () => {
+  const ctx = useContext(MenuContext)
+  if (!ctx) {
+    throw new Error('useMenuContext must be used within MenuProvider')
+  }
+  return ctx
+}
+// import { mapScreen } from 'components/Utilities/menuRefractoring'
+//     <MenuContext.Provider value={menuValue}>{children}</MenuContext.Provider>
+// export const useMenuContext = () => useContext(MenuContext)
