@@ -21,6 +21,13 @@ has_email_to_case_role := {
 }
 
 allow {
+    input.path == "api"
+    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"]
+	check_origin_request
+    is_user_profile
+}
+
+allow {
     input.path == "case"
     input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION"]
 	check_origin_request
