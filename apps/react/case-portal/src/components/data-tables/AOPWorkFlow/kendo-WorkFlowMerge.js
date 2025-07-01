@@ -586,7 +586,8 @@ const WorkFlowMerge = () => {
         </Stepper>
 
         <Typography component='div' className='text-note'>
-          * Prices - MIIS BPC table, Actual values - MIIS Contribution (YTD).
+          * Prices - MIIS BPC (Last Budget Year), Actual Values - MIIS
+          Contribution (YTD).
         </Typography>
 
         <Stack

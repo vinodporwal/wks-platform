@@ -659,7 +659,7 @@ const ProductionNorms = ({ permissions }) => {
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         columns={productionColumns}
-        rows={lowerVertName === 'cracker' ? rowDataForCracker : rows}
+        rows={rows}
         setRows={setRows}
         title={'Production AOP'}
         isCellEditable={isCellEditable}

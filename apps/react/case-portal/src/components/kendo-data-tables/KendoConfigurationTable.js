@@ -486,7 +486,7 @@ const ConfigurationTable = () => {
           severity: 'error',
         })
       }
-
+      getAopSummary()
       return response
     } catch (error) {
       console.error('Execution Failed!', error)
@@ -620,7 +620,7 @@ const ConfigurationTable = () => {
           severity: 'error',
         })
       }
-
+      getAopSummary()
       return response
     } catch (error) {
       console.error('Execution Falied!', error)
