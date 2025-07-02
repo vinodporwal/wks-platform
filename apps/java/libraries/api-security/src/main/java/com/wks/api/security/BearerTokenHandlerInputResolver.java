@@ -54,9 +54,17 @@ public final class BearerTokenHandlerInputResolver implements HandlerInputResolv
 		return input;
 	}
 
+	// @SuppressWarnings("unchecked")
+	// private String getAllowedOrigin(Jwt jwt) {
+	// 	return HttpUtils.getHost(((List<String>) jwt.getClaim("allowed-origins")).get(0));
+	// }
+
 	@SuppressWarnings("unchecked")
-	private String getAllowedOrigin(Jwt jwt) {
-		return HttpUtils.getHost(((List<String>) jwt.getClaim("allowed-origins")).get(0));
+	private List<String> getAllowedOrigins(Jwt jwt) {
+		List<String> origins = (List<String>) jwt.getClaim("allowed-origins");
+		return origins.stream()
+					.map(HttpUtils::getHost)
+					.collect(Collectors.toList());
 	}
 
 }
