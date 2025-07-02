@@ -33,7 +33,7 @@ public final class HttpUtils {
 			URL allowedOrigin = new URL(url);
 			System.out.println("allowedOrigin "+ allowedOrigin);
 			System.out.println("allowedOrigin host "+ allowedOrigin.getHost());
-			return allowedOrigin;
+			return url;
 			// return allowedOrigin.getHost();
 		} catch (MalformedURLException e) {
 			throw new IllegalArgumentException(e);
