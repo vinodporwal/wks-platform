@@ -102,9 +102,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
 
            const level6 = level1.components[6] ?? null;
             if (level6) {
-              const [addMoreContainer] = level6.components;
-              const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
-
+              const recommendationFinalSubmit = level6.components[1]?.columns[1]?.components[0] ?? null;
               recommendationFinalSubmit.disabled = true;
             }  
         }
