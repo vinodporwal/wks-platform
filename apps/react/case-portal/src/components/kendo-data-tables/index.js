@@ -29,6 +29,7 @@ import { truncateRemarks } from 'utils/remarksUtils'
 import { process } from '@progress/kendo-data-query'
 import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
 import ProductCell from './Utilities-Kendo/ProductCell'
+import MonthCell from './Utilities-Kendo/MonthCell'
 import { ColumnMenu } from 'components/@extended/columnMenu'
 import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
 import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
@@ -115,6 +116,7 @@ const KendoDataTables = ({
   groupBy = null,
   note = '',
   allProducts = [],
+  allMonths = [],
   selectMode,
   setSelectMode = () => {},
   handleExcelUpload = () => {},
@@ -845,17 +847,18 @@ const KendoDataTables = ({
                   />
                 )
               }
-              if (col?.field === 'MonthNameDropdown') {
+              if (col?.field === 'month') {
                 return (
                   <GridColumn
-                    key='MonthNameDropdown'
-                    field='MonthNameDropdown'
-                    title={col.title || col.headerName || 'MonthNameDropdown'}
+                    key='month'
+                    field='month'
+                    title={col.title || col.headerName || 'month'}
                     editable={col.editable || true}
                     hidden={col.hidden}
+                    width={col.widthT}
                     cells={{
                       data: (cellProps) => (
-                        <ProductCell {...cellProps} allProducts={allProducts} />
+                        <MonthCell {...cellProps} allMonths={allMonths} />
                       ),
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}

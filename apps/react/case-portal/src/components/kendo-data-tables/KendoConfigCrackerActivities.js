@@ -27,42 +27,38 @@ import {
   ibrGridThreeRowsSample,
   runningDurationRowsSample,
 } from './rowSamples'
+import { useSelector } from 'react-redux'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
   const tabs = ['IBR Plan', 'Running Duration']
-
-  // --- Global UI State ------------------------------------------------------
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { sitePlantChange, verticalChange, yearChanged, oldYear, plantID } =
+    dataGridStore
+  const isOldYear = oldYear?.oldYear
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-
-  // --- Dynamic Tab Index ----------------------------------------------------
   const [activeTabIndex, setActiveTabIndex] = useState(0)
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
 
-  // --- Remark Dialog (generic) -----------------------------------------------
-  const [remarkDialog, setRemarkDialog] = useState({
-    open: false,
-    rowId: null,
-    remark: '',
-  })
-  const handleRemarkCellClick = useCallback((row) => {
-    setRemarkDialog({
-      open: true,
-      rowId: row.id,
-      remark: row.remarks || row.Remarks || '',
-    })
-  }, [])
+  const handleRemarkCellClick = (dataItem) => {
+    setCurrentRemark(dataItem.remark || '')
+    setCurrentRowId(dataItem.id)
+    setRemarkDialogOpen(true)
+  }
 
   // --- Rows State Per Tab ----------------------------------------------------
   const [ibrScreen1Rows, setIbrScreen1Rows] = useState([])
   const [ibrScreen2Rows, setIbrScreen2Rows] = useState([])
   const [ibrScreen3Rows, setIbrScreen3Rows] = useState([])
   const [runningDurationRows, setRunningDurationRows] = useState([])
-  const modifiedCells = useState({})[0] // you can replace with useState if needed
+  const [modifiedCells, setModifiedCells] = React.useState({})
 
   // --- Get/Set Rows by Tab ---------------------------------------------------
   const getRows = useCallback(
@@ -95,8 +91,19 @@ const DecokingConfig = () => {
     try {
       if (currentTab === 'IBR Plan') {
         // screen 1
-        // const data1 = await DataService.getIbrScreen1(keycloak)
-        setRowsForTab(currentTab, ibrGridOneRowsSample, 1)
+        const data1 = await DataService.getIbrScreen1(keycloak)
+        if (data1?.code === 200) {
+          const processedData = data1.data.map((item, index) => ({
+            ...item,
+            idFromApi: item.id,
+            id: index,
+            month:
+              item?.month === 'Invalid month' ? 'N/A' : item?.month || 'N/A',
+          }))
+          setRowsForTab(currentTab, processedData, 1)
+        } else {
+          setRowsForTab(currentTab, [], 1)
+        }
         // screen 2
         // const data2 = await DataService.getIbrScreen2(keycloak)
         setRowsForTab(currentTab, ibrPlanRowsSample, 2)
@@ -120,7 +127,136 @@ const DecokingConfig = () => {
     fetchData()
   }, [fetchData])
 
-  const allProducts = [
+  const saveChanges = React.useCallback(async () => {
+    // setLoading(true)
+    try {
+      if (Object.keys(modifiedCells).length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      var rawData = Object.values(modifiedCells)
+      const data = rawData.filter((row) => row.inEdit)
+
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+      console.log(data)
+
+      saveCracker(data)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    }
+    // }, 400)
+  }, [modifiedCells])
+
+  const monthMap = {
+    January: 1,
+    February: 2,
+    March: 3,
+    April: 4,
+    May: 5,
+    June: 6,
+    July: 7,
+    August: 8,
+    September: 9,
+    October: 10,
+    November: 11,
+    December: 12,
+  }
+
+  const saveCracker = async (newRow) => {
+    setLoading(true)
+    try {
+      var plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      var payload = []
+
+      payload = newRow.map((row) => ({
+        days: row?.attributeValue,
+        Month: row?.month,
+        remarks: row?.remarks,
+        isEditable: row?.isEditable,
+        normParameterId: row?.normParameterId,
+        aopMonth: monthMap[row?.month] || 0,
+        id: row?.idFromApi || null,
+      }))
+
+      const response = await DataService.saveCracker(plantId, payload, keycloak)
+      if (response) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+
+        setModifiedCells({})
+        setLoading(false)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Falied!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setLoading(false)
+    } finally {
+      // fetchData()
+      setLoading(false)
+    }
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+    }
+  }
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: true,
+      saveBtn: true,
+      allAction: true,
+    },
+    isOldYear,
+  )
+
+  const allMonths = [
+    'N/A',
     'April',
     'May',
     'June',
@@ -138,7 +274,7 @@ const DecokingConfig = () => {
   // --- Renderers -------------------------------------------------------------
   const renderIbrPlanTables = () => (
     <>
-      {[1, 2, 3].map((screen) => (
+      {[1].map((screen) => (
         <Box key={screen} sx={{ mt: 2 }}>
           <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
             {screen === 1
@@ -159,59 +295,136 @@ const DecokingConfig = () => {
             setRows={(data) => setRowsForTab('IBR Plan', data, screen)}
             fetchData={fetchData}
             handleRemarkCellClick={handleRemarkCellClick}
-            remarkDialogOpen={remarkDialog.open}
-            setRemarkDialogOpen={(open) =>
-              setRemarkDialog((v) => ({ ...v, open }))
-            }
-            currentRemark={remarkDialog.remark}
-            setCurrentRemark={(r) =>
-              setRemarkDialog((v) => ({ ...v, remark: r }))
-            }
-            currentRowId={remarkDialog.rowId}
+            remarkDialogOpen={remarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
             snackbarData={snackbarData}
             snackbarOpen={snackbarOpen}
             setSnackbarOpen={setSnackbarOpen}
             setSnackbarData={setSnackbarData}
             modifiedCells={modifiedCells}
-            allProducts={allProducts}
-            setModifiedCells={(m) => {
-              /* implement setter */
-            }}
+            allMonths={allMonths}
+            setModifiedCells={setModifiedCells}
+            permissions={adjustedPermissions}
+            saveChanges={saveChanges}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+          />
+        </Box>
+      ))}
+
+      {[2].map((screen) => (
+        <Box key={screen} sx={{ mt: 2 }}>
+          <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+            {screen === 1
+              ? 'IBR Plan'
+              : screen === 2
+                ? 'SD / TA Activities'
+                : 'Furnace Run length'}
+          </Typography>
+          <KendoDataTables
+            columns={
+              screen === 1
+                ? ibrGridOne
+                : screen === 2
+                  ? ibrPlanColumns
+                  : ibrGridThree
+            }
+            rows={getRows('IBR Plan')[screen]}
+            setRows={(data) => setRowsForTab('IBR Plan', data, screen)}
+            fetchData={fetchData}
+            handleRemarkCellClick={handleRemarkCellClick}
+            remarkDialogOpen={remarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            modifiedCells={modifiedCells}
+            allMonths={allMonths}
+            setModifiedCells={setModifiedCells}
+            permissions={adjustedPermissions}
+            saveChanges={saveChanges}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+          />
+        </Box>
+      ))}
+
+      {[3].map((screen) => (
+        <Box key={screen} sx={{ mt: 2 }}>
+          <Typography variant='h6' sx={{ fontWeight: 'bold' }}>
+            {screen === 1
+              ? 'IBR Plan'
+              : screen === 2
+                ? 'SD / TA Activities'
+                : 'Furnace Run length'}
+          </Typography>
+          <KendoDataTables
+            columns={
+              screen === 1
+                ? ibrGridOne
+                : screen === 2
+                  ? ibrPlanColumns
+                  : ibrGridThree
+            }
+            rows={getRows('IBR Plan')[screen]}
+            setRows={(data) => setRowsForTab('IBR Plan', data, screen)}
+            fetchData={fetchData}
+            handleRemarkCellClick={handleRemarkCellClick}
+            remarkDialogOpen={remarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            snackbarData={snackbarData}
+            snackbarOpen={snackbarOpen}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            modifiedCells={modifiedCells}
+            allMonths={allMonths}
+            setModifiedCells={setModifiedCells}
+            permissions={adjustedPermissions}
+            saveChanges={saveChanges}
+            setRemarkDialogOpen={setRemarkDialogOpen}
           />
         </Box>
       ))}
     </>
   )
 
-  const renderRunningDurationTable = () => (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant='h6'>Running Duration</Typography>
-      <KendoDataTables
-        columns={runningDurationColumns}
-        rows={runningDurationRows}
-        setRows={setRunningDurationRows}
-        fetchData={fetchData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        remarkDialogOpen={remarkDialog.open}
-        setRemarkDialogOpen={(open) => setRemarkDialog((v) => ({ ...v, open }))}
-        currentRemark={remarkDialog.remark}
-        setCurrentRemark={(r) => setRemarkDialog((v) => ({ ...v, remark: r }))}
-        currentRowId={remarkDialog.rowId}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        modifiedCells={modifiedCells}
-        setModifiedCells={(m) => {
-          /* implement setter */
-        }}
-      />
-    </Box>
-  )
+  // const renderRunningDurationTable = () => (
+  //   <Box sx={{ mt: 2 }}>
+  //     <Typography variant='h6'>Running Duration</Typography>
+  //     <KendoDataTables
+  //       columns={runningDurationColumns}
+  //       rows={runningDurationRows}
+  //       setRows={setRunningDurationRows}
+  //       fetchData={fetchData}
+  //       handleRemarkCellClick={handleRemarkCellClick}
+  //       remarkDialogOpen={remarkDialog.open}
+  //       setRemarkDialogOpen={(open) => setRemarkDialog((v) => ({ ...v, open }))}
+  //       currentRemark={remarkDialog.remark}
+  //       setCurrentRemark={(r) => setRemarkDialog((v) => ({ ...v, remark: r }))}
+  //       currentRowId={remarkDialog.rowId}
+  //       snackbarData={snackbarData}
+  //       snackbarOpen={snackbarOpen}
+  //       setSnackbarOpen={setSnackbarOpen}
+  //       setSnackbarData={setSnackbarData}
+  //       modifiedCells={modifiedCells}
+  //       setModifiedCells={(m) => {
+  //         /* implement setter */
+  //       }}
+  //     />
+  //   </Box>
+  // )
 
   return (
     <Box>
-      <Backdrop open={loading} sx={{ color: '#fff', zIndex: 999 }}>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
         <CircularProgress color='inherit' />
       </Backdrop>
 

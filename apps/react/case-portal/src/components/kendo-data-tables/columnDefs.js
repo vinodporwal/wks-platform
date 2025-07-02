@@ -1,31 +1,46 @@
 export const ibrGridOne = [
   {
-    field: 'Furnace',
+    field: 'displayName',
     title: 'Furnace',
     type: 'string',
-    width: 200,
+    widthT: 200,
     editable: false,
   },
   {
-    field: 'MonthNameDropdown',
-    title: 'Month Name',
+    field: 'month',
+    title: 'Month',
     type: 'string',
-    width: 120,
+    widthT: 120,
     editable: true,
   },
   {
-    field: 'days',
-    title: 'Run length',
+    field: 'attributeValue',
+    title: 'Run Length',
     type: 'number',
-    width: 100,
+    widthT: 100,
     editable: true,
   },
   {
-    field: 'Remarks',
+    field: 'remarks',
     title: 'Remarks',
     type: 'string',
     width: 300,
     editable: true,
+  },
+  {
+    field: 'isEditable',
+    title: 'isEditable',
+    hidden: true,
+  },
+  {
+    field: 'isMonthAdd',
+    title: 'isMonthAdd',
+    hidden: true,
+  },
+  {
+    field: 'id',
+    title: 'id',
+    hidden: true,
   },
 ]
 

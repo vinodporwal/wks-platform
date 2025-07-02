@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 import { DropDownList } from '@progress/kendo-react-dropdowns'
 
-const MonthCellEditor = (props) => {
-  const { dataItem, field, onChange, allMonths, ...tdProps } = props
+const ProductCellEditor = (props) => {
+  const { dataItem, field, onChange, allProducts, ...tdProps } = props
 
   const allOptions = useMemo(
     () =>
-      allMonths.map((p) => ({ value: p.displayName, label: p.displayName })),
-    [allMonths],
+      allProducts.map((p) => ({ value: p.displayName, label: p.displayName })),
+    [allProducts],
   )
 
   const currentValueObj = useMemo(
@@ -37,7 +37,7 @@ const MonthCellEditor = (props) => {
     )
   }
 
-  const productObj = allMonths.find((p) => p.id === dataItem[field])
+  const productObj = allProducts.find((p) => p.id === dataItem[field])
   const displayLabel = productObj ? productObj.displayName : ''
 
   return (
@@ -55,4 +55,4 @@ const MonthCellEditor = (props) => {
   )
 }
 
-export default MonthCellEditor
+export default ProductCellEditor

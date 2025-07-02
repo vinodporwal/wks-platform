@@ -470,10 +470,10 @@ const SelectivityData = (props) => {
           keycloak,
         )
       }
-      if (response) {
+      if (response?.code == 200) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Configuration data Upload Successfully!',
+          message: 'Data Upload Successfully!',
           severity: 'success',
         })
         setModifiedCells({})
@@ -482,12 +482,40 @@ const SelectivityData = (props) => {
         if (props?.configType !== 'grades' && lowerVertName !== 'cracker') {
           props?.fetchData()
         }
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File Configuration.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data Saved Falied!',
           severity: 'error',
         })
+      }
+      if (props?.configType !== 'grades' && lowerVertName !== 'cracker') {
+        props?.fetchData()
       }
 
       return response
