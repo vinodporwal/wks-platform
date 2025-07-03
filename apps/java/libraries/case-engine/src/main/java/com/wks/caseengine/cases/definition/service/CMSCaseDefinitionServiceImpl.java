@@ -724,9 +724,9 @@ public class CMSCaseDefinitionServiceImpl implements CMSCaseDefinitionService {
 			String[] reviewers = new String[0];
 			Map<String, Object> data = new HashMap<>();
 			
-			String subject = "CMS Case "+ caseNumber +" Recommendation Added.";
+			String subject = "CMS Case "+ caseNumber +" Action Assigned.";
 			data.put("subject", subject);
-			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" recommendation added.");
+			data.put("caseTitle", "This is to inform you, CMS case "+ caseNumber +" action assigned.");
 			data.put("caseNumber", caseNumber);
 			data.put("status", caseStatusValue);
 			data.put("caseName", caseTitle);
