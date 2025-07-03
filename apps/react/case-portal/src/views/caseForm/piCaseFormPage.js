@@ -11,13 +11,20 @@ import IconButton from '@mui/material/IconButton'
 import Slide from '@mui/material/Slide'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
-import { Form } from '@formio/react'
 import { useSession } from 'SessionStoreContext'
 import { CaseService, FormService } from '../../services'
 import { StorageService } from 'plugins/storage'
 import { Snackbar, SnackbarContent } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { buildCreateUrl } from 'utils/util'
+import { Formio } from 'formiojs'
+import { Form } from '@formio/react'
+
+Formio.options = {
+  vm: {
+    timeout: 5000
+  }
+}
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
