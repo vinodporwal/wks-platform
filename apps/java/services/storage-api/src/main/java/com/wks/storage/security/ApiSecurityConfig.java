@@ -38,7 +38,7 @@ public class ApiSecurityConfig {
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http.cors().and().csrf().disable()
 	            .authorizeRequests(authz -> authz
-	                    .requestMatchers(HttpMethod.GET, "/storage/files1/**").permitAll()  // Allow GET without authentication
+	                    .requestMatchers(HttpMethod.GET, "/files1/**").permitAll()  // Allow GET without authentication
 	                    .anyRequest().authenticated()
 	                    .accessDecisionManager(accessDecisionManager()))  // OPA policy applies to other requests
 				.oauth2ResourceServer(oauth2 -> oauth2

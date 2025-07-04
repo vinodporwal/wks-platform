@@ -4922,7 +4922,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Production Loss (INR)",
+                                                "label": "Production Loss",
                                                 "applyMaskOn": "change",
                                                 "mask": false,
                                                 "tableView": false,
@@ -5009,7 +5009,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Man Hours Cost (INR)",
+                                                "label": "Man Hours Cost",
                                                 "applyMaskOn": "change",
                                                 "mask": false,
                                                 "tableView": false,
@@ -5096,7 +5096,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Spare Cost (INR)",
+                                                "label": "Spare Cost",
                                                 "applyMaskOn": "change",
                                                 "mask": false,
                                                 "tableView": false,
@@ -5180,7 +5180,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Total Value Captured (INR)",
+                                                "label": "Total Value Captured",
                                                 "applyMaskOn": "change",
                                                 "mask": false,
                                                 "tableView": false,

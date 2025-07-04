@@ -1122,7 +1122,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 (file, index) => `
                   <li style="margin-bottom: 16px;">
                     <img 
-                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      src="${Config.StorageUrl}/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
                       alt="${file.name}"
                       style="max-width: 100%; height: auto;"
                     />
@@ -1171,7 +1171,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             (file, index) => `
                   <li style="margin-bottom: 16px;">
                     <a 
-                      href="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      href="${Config.StorageUrl}/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
                       alt="${file.name}"
                       target="_blank"
                     >${file.name}</a>
