@@ -382,11 +382,7 @@ const ConsumptionNorms = () => {
   }
 
   const handleCalculate = () => {
-    if (lowerVertName == 'meg') {
-      handleCalculateMeg()
-    } else {
-      handleCalculatePe()
-    }
+    handleCalculateMeg()
   }
 
   const handleCalculateMeg = async () => {

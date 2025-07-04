@@ -56,15 +56,12 @@ import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
 export const dateFields = [
   'maintStartDateTime',
   'maintEndDateTime',
-  'endDateTA',
-  'startDateTA',
-  'endDateSD',
-  'startDateSD',
-  'endDateIBR',
-  'startDateIBR',
-  'fromDate',
-  'toDate',
+  'periodTo',
+  'periodFrom',
 ]
+export const dateFields2 = ['fromDate', 'toDate']
+export const dateFields1 = ['ibrSD', 'ibrED', 'taSD', 'taED', 'sdED', 'sdSD']
+
 export const hiddenFields = []
 export const monthMap = {
   january: 1,
@@ -115,6 +112,7 @@ const KendoDataTables = ({
   selectedUsers = [],
   groupBy = null,
   note = '',
+  titleName = '',
   allProducts = [],
   allMonths = [],
   selectMode,
@@ -546,6 +544,12 @@ const KendoDataTables = ({
                 </Typography>
               )}
 
+              {permissions?.showTitleName && (
+                <Typography component='div' className='grid-title'>
+                  {titleName}
+                </Typography>
+              )}
+
               {permissions?.showG && (
                 <TextField
                   select
@@ -797,12 +801,8 @@ const KendoDataTables = ({
                         date: [
                           'fromDate',
                           'toDate',
-                          'endDateTA',
-                          'startDateTA',
-                          'endDateSD',
-                          'startDateSD',
-                          'endDateIBR',
-                          'startDateIBR',
+                          'periodTo',
+                          'periodFrom',
                         ].includes(col.field)
                           ? DateOnlyPicker
                           : DateTimePickerEditor,
@@ -810,18 +810,57 @@ const KendoDataTables = ({
                       data: toolTipRenderer,
                     }}
                     format={
-                      [
-                        'fromDate',
-                        'toDate',
-                        'endDateTA',
-                        'startDateTA',
-                        'endDateSD',
-                        'startDateSD',
-                        'endDateIBR',
-                        'startDateIBR',
-                      ].includes(col.field)
+                      ['fromDate', 'toDate', 'periodFrom', 'periodTo'].includes(
+                        col.field,
+                      )
                         ? '{0:dd-MM-yyyy}'
                         : '{0:dd-MM-yyyy hh:mm a}'
+                    }
+                    editor='date'
+                    hidden={col.hidden}
+                    columnMenu={DateColumnMenu}
+                  />
+                )
+              }
+              if (dateFields1.includes(col.field)) {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    filter='date'
+                    filterable={{
+                      cell: {
+                        operator: 'gte',
+                        showOperators: true,
+                      },
+                    }}
+                    cells={{
+                      edit: {
+                        date: [
+                          'ibrSD',
+                          'ibrED',
+                          'taSD',
+                          'taED',
+                          'sdED',
+                          'sdSD',
+                        ].includes(col.field)
+                          ? DateOnlyPicker
+                          : DateOnlyPicker,
+                      },
+                      data: toolTipRenderer,
+                    }}
+                    format={
+                      [
+                        'ibrSD',
+                        'ibrED',
+                        'taSD',
+                        'taED',
+                        'sdED',
+                        'sdSD',
+                      ].includes(col.field)
+                        ? '{0:dd-MM-yyyy}'
+                        : '{0:dd-MM-yyyy}'
                     }
                     editor='date'
                     hidden={col.hidden}

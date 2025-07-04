@@ -3,28 +3,29 @@ export const ibrGridOne = [
     field: 'displayName',
     title: 'Furnace',
     type: 'string',
-    widthT: 200,
+    widthT: 400,
     editable: false,
+    isDisabled: true,
   },
   {
     field: 'month',
     title: 'Month',
     type: 'string',
-    widthT: 120,
+    widthT: 200,
     editable: true,
   },
   {
     field: 'attributeValue',
     title: 'Run Length',
     type: 'number',
-    widthT: 100,
+    widthT: 400,
     editable: true,
   },
   {
     field: 'remarks',
     title: 'Remarks',
     type: 'string',
-    width: 300,
+
     editable: true,
   },
   {
@@ -45,139 +46,169 @@ export const ibrGridOne = [
 ]
 
 export const ibrPlanColumns = [
+  {
+    field: 'ibrEDId',
+    title: 'ibrEDId',
+    hidden: true,
+  },
+  {
+    field: 'ibrSDId',
+    title: 'ibrSDId',
+    hidden: true,
+  },
+  {
+    field: 'sdEDId',
+    title: 'sdEDId',
+    hidden: true,
+  },
+  {
+    field: 'sdSDId',
+    title: 'sdSDId',
+    hidden: true,
+  },
+  {
+    field: 'taEDId',
+    title: 'taEDId',
+    hidden: true,
+  },
+  {
+    field: 'taSDId',
+    title: 'taSDId',
+    hidden: true,
+  },
   { field: 'furnace', title: 'Furnace', editable: false, width: 200 },
-  {
-    field: 'startDateIBR',
-    title: 'Start Date of IBR',
-    editable: true,
-    width: 200,
-  },
-  { field: 'endDateIBR', title: 'End Date of IBR', editable: true, width: 200 },
-  {
-    field: 'startDateSD',
-    title: 'Start Date of SD',
-    editable: true,
-    width: 200,
-  },
-  { field: 'endDateSD', title: 'End Date of SD', editable: true, width: 200 },
-  { field: 'startDateTA', title: 'Start date TA', editable: true, width: 200 },
-  { field: 'endDateTA', title: 'End date TA', editable: true, width: 200 },
-  { field: 'remarks', title: 'Remarks', editable: true, width: 250 },
+
+  { field: 'ibrSD', title: 'Start Date-IBR', editable: true, width: 200 },
+  { field: 'ibrED', title: 'End Date-IBR', editable: true, width: 200 },
+  { field: 'taSD', title: 'Start Date-TA', editable: true, width: 200 },
+  { field: 'taED', title: 'End Date-TA', editable: true, width: 200 },
+  { field: 'sdED', title: 'Start Date-SD', editable: true, width: 200 },
+  { field: 'sdSD', title: 'Start Date-SD', editable: true, width: 200 },
+
+  // { field: 'remarks', title: 'Remarks', editable: true, width: 250 },
 ]
 
 export const ibrGridThree = [
   {
-    field: 'Month',
+    field: 'id',
+    title: 'id',
+    hidden: true,
+  },
+  {
+    field: 'month_',
     title: 'Month',
     type: 'string',
     width: 80,
     headerAlign: 'left',
     editable: false,
+    isDisabled: true,
   },
   {
-    field: 'Date',
+    field: 'date',
     title: 'Date',
     type: 'date',
     format: '{0:dd-MMM-yy}',
     width: 100,
     headerAlign: 'left',
-    editable: true,
-  },
-
-  {
-    field: 'H10ProposedAOP',
-    title: 'H10 – Proposed AOP',
-    type: 'number',
-    format: '{0:n0}',
-    width: 120,
-    align: 'right',
-    headerAlign: 'right',
     editable: false,
     isDisabled: true,
   },
+
   {
-    field: 'H10ActualRunLength',
+    field: 'hTenActual',
     title: 'H10 – Actual run length',
     type: 'number',
     format: '{0:n0}',
     width: 120,
     align: 'right',
     headerAlign: 'right',
-    editable: true,
-  },
-
-  {
-    field: 'H11ProposedAOP',
-    title: 'H11 – Proposed AOP',
-    type: 'number',
-    format: '{0:n0}',
-    width: 120,
-    align: 'right',
-    headerAlign: 'right',
     editable: false,
     isDisabled: true,
   },
 
   {
-    field: 'H11ActualRunLength',
+    field: 'tenProposed',
+    title: 'H10 – Proposed AOP',
+    type: 'number',
+    format: '{0:n0}',
+    width: 120,
+    align: 'right',
+    headerAlign: 'right',
+    editable: true,
+  },
+
+  {
+    field: 'hElevenActual',
     title: 'H11 – Actual run length',
     type: 'number',
     format: '{0:n0}',
     width: 120,
     align: 'right',
     headerAlign: 'right',
-    editable: true,
-  },
-
-  {
-    field: 'H12ProposedAOP',
-    title: 'H12 – Proposed AOP',
-    type: 'number',
-    format: '{0:n0}',
-    width: 120,
-    align: 'right',
-    headerAlign: 'right',
     editable: false,
     isDisabled: true,
   },
 
   {
-    field: 'H12ActualRunLength',
+    field: 'elevenProposed',
+    title: 'H11 – Proposed AOP',
+    type: 'number',
+    format: '{0:n0}',
+    width: 120,
+    align: 'right',
+    headerAlign: 'right',
+    editable: true,
+  },
+
+  {
+    field: 'hTwelveActual',
     title: 'H12 – Actual run length',
     type: 'number',
     format: '{0:n0}',
     width: 120,
     align: 'right',
     headerAlign: 'right',
-    editable: true,
-  },
-
-  {
-    field: 'H13ProposedAOP',
-    title: 'H13 – Proposed AOP',
-    type: 'number',
-    format: '{0:n0}',
-    width: 120,
-    align: 'right',
-    headerAlign: 'right',
     editable: false,
     isDisabled: true,
   },
 
   {
-    field: 'H13ActualRunLength',
+    field: 'twelveProposed',
+    title: 'H12 – Proposed AOP',
+    type: 'number',
+    format: '{0:n0}',
+    width: 120,
+    align: 'right',
+    headerAlign: 'right',
+    editable: true,
+  },
+
+  {
+    field: 'hThirteenActual',
     title: 'H13 – Actual run length',
     type: 'number',
     format: '{0:n0}',
     width: 120,
     align: 'right',
     headerAlign: 'right',
+    editable: false,
+    isDisabled: true,
+  },
+
+  {
+    field: 'thirteenProposed',
+    title: 'H13 – Proposed AOP',
+    type: 'number',
+    format: '{0:n0}',
+    width: 120,
+    align: 'right',
+    headerAlign: 'right',
     editable: true,
   },
 
   {
-    field: 'H14ProposedAOP',
-    title: 'H14 – Proposed AOP',
+    field: 'hFourteenActual',
+    title: 'H14 – Actual run length',
     type: 'number',
     format: '{0:n0}',
     width: 120,
@@ -188,8 +219,8 @@ export const ibrGridThree = [
   },
 
   {
-    field: 'H14ActualRunLength',
-    title: 'H14 – Actual run length',
+    field: 'fourteenProposed',
+    title: 'H14 – Proposed AOP',
     type: 'number',
     format: '{0:n0}',
     width: 120,
@@ -199,7 +230,7 @@ export const ibrGridThree = [
   },
 
   {
-    field: 'DEMO',
+    field: 'demo',
     title: 'DEMO',
     type: 'string',
     width: 80,
