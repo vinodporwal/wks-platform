@@ -529,13 +529,38 @@ const DecokingConfig = () => {
       }
       var payload = []
 
+      //       {
+      //   id: "2BEAAA20-EE5F-402E-9B4C-01629E985B22",
+      //   aopYear: "2025-26",
+      //   date: "2025-05-15",
+      //   month: "May",
+      //   plantFkId: "674ED0D4-2A8F-43D5-B454-D0CAD0AC2064",
+      //   demo: "110",
+      //   remarks: "",
+
+      //   hTenActual: 10,
+      //   tenProposed: 105,
+
+      //   hElevenActual: 90,
+      //   elevenProposed: 90,
+
+      //   hTwelveActual: 8,
+      //   twelveProposed: 8,
+
+      //   hThirteenActual: 4595,
+      //   thirteenProposed: 4595,
+
+      //   hFourteenActual: 615,
+      //   fourteenProposed: 615
+      // }
+
       payload = newRow.map((row) => ({
-        tenProposed: row?.tenProposed || '',
-        elevenProposed: row?.elevenProposed || '',
-        twelveProposed: row?.twelveProposed || '',
-        thirteenProposed: row?.thirteenProposed || '',
-        fourteenProposed: row?.fourteenProposed || '',
-        plantId: row?.plantId || '',
+        tenProposed: row?.tenProposed || null,
+        elevenProposed: row?.elevenProposed || null,
+        twelveProposed: row?.twelveProposed || null,
+        thirteenProposed: row?.thirteenProposed || null,
+        fourteenProposed: row?.fourteenProposed || null,
+        plantId: plantId,
         id: row?.idFromApi || '',
         demo: row?.demo || '',
       }))
