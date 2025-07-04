@@ -22,7 +22,7 @@ import { Form } from '@formio/react'
 
 Formio.options = {
   vm: {
-    timeout: 5000
+    timeout: 25000
   }
 }
 

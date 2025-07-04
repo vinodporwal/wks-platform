@@ -21,7 +21,7 @@ import { Form } from '@formio/react'
 
 Formio.options = {
   vm: {
-    timeout: 5000
+    timeout: 25000
   }
 }
 const Transition = React.forwardRef(function Transition(props, ref) {
