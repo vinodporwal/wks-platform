@@ -802,7 +802,7 @@ const AnnualProductionPlan = () => {
         setRows={setRowsassumptions}
         columns={columnsAssumptions}
         handleCalculate={handleCalculate}
-        title='Plant Production Plan (T-15) - Assumptions & remarks'
+        titleName='Plant Production Plan (T-15) - Assumptions & remarks'
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
         currentRowId={currentRowId}
@@ -816,6 +816,7 @@ const AnnualProductionPlan = () => {
           showTitle: true,
           saveBtn: true,
           allAction: true,
+          showT15: true,
         }}
       />
 

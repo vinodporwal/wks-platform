@@ -544,6 +544,11 @@ const KendoDataTables = ({
                 </Typography>
               )}
 
+              {permissions?.showT15 && (
+                <Typography component='div' className='grid-title'>
+                  {titleName}
+                </Typography>
+              )}
               {permissions?.showTitleName && (
                 <Typography component='div' className='grid-title'>
                   {titleName}
