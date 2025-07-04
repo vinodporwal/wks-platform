@@ -1,6 +1,5 @@
 /* eslint-disable no-unused-vars */
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined'
-import { Form } from '@formio/react'
 import CloseIcon from '@mui/icons-material/Close'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { Grid } from '@mui/material'
@@ -41,6 +40,14 @@ import logo from 'assets/images/logo.svg'
 import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 import Config from '../../consts'
 import { buildCreateUrl } from 'utils/util'
+import { Formio } from 'formiojs'
+import { Form } from '@formio/react'
+
+Formio.options = {
+  vm: {
+    timeout: 5000
+  }
+}
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
