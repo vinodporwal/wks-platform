@@ -18,7 +18,7 @@ import { mapScreen } from 'components/Utilities/menuRefractoring'
 const MenuContext = createContext()
 const STATIC_MENU_DEFAULT = [plan, workspace]
 const STATIC_MENU_CRACKER = [planCracker]
-const USE_STATIC_MENU = false
+const USE_STATIC_MENU = true
 
 export function MenuProvider({ children }) {
 

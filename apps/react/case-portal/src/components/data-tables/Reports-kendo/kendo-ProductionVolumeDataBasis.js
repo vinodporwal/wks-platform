@@ -14,7 +14,7 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import KendoDataGrid, { UOMDropdown } from 'components/Kendo-Report-DataGrid/index'
 import getKendoProductionColumns from '../CommonHeader/KendoProdVolBHeader'
 import {
   ExcelExport,
@@ -53,7 +53,7 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
 
 const ProductionVolumeDataBasis = () => {
   const keycloak = useSession()
-
+  const [uom, setUom] = useState('TPH') 
   const [rowsMC, setRowsMC] = useState([])
   const [rowsMCYearWise, setRowsMCYearWise] = useState([])
   const [rowsCalculatedData, setRowsCalculatedData] = useState([])
@@ -131,11 +131,11 @@ const ProductionVolumeDataBasis = () => {
   })
 
   useEffect(() => {
-    fetchData('MC', setRowsMC)
-    fetchData('MC Yearwise', setRowsMCYearWise)
-    fetchData('Calculated Data', setRowsCalculatedData)
-    fetchData('RowData', setRowsRowData)
-  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
+    fetchData('MC', setRowsMC, uom)
+    fetchData('MC Yearwise', setRowsMCYearWise, uom)
+    fetchData('Calculated Data', setRowsCalculatedData, uom)
+    fetchData('RowData', setRowsRowData, uom)
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName, uom])
 
   const exportRef1 = useRef(null)
   const exportRef2 = useRef(null)
@@ -220,16 +220,28 @@ const ProductionVolumeDataBasis = () => {
         </ExcelExport>
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
+      <Box 
+        display='flex' 
+        justifyContent='flex-end'
+        mb='2px' 
+        alignItems="center" 
+        gap={1}
+      >
+        <UOMDropdown
+          value={uom}
+          onChange={(e) => setUom(e.target.value)}
+          options={['TPH', 'TPD']}
+        />
         <Button
           variant='contained'
           onClick={exportAllGrids}
           className='btn-save'
+          sx={{ minWidth: 100 }}
         >
           Export
         </Button>
+    
       </Box>
-
       <Box display='flex' flexDirection='column' gap={2}>
         <div>
           <CustomAccordion defaultExpanded disableGutters>

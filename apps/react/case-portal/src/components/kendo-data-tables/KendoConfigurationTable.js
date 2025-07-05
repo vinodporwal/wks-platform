@@ -246,7 +246,6 @@ const ConfigurationTable = () => {
     setProductionRowsConstantsMannualEntry([])
     try {
       var constantsRes = await DataService.getCatalystSelectivityData(keycloak)
-
       const formattedData = constantsRes.map((item, index) => ({
         ...item,
         idFromApi: item.id,
@@ -255,7 +254,6 @@ const ConfigurationTable = () => {
         srNo: index + 1,
         Particulars: item.normType,
       }))
-
       var data = formattedData?.filter(
         (item) => item?.Particulars == 'Report Manual Entry',
       )
@@ -323,6 +321,19 @@ const ConfigurationTable = () => {
   }
 
   useEffect(() => {
+    if (lowerVertName === 'pp') {
+      setTabs(['StartupLosses', 'Otherlosses', 'ShutdownNorms', 'Receipe'])
+      setAvailableTabs([
+        { id: 'StartupLosses', displayName: 'Startup Losses', name: 'StartupLosses' },
+        { id: 'Otherlosses', displayName: 'Other Losses', name: 'Otherlosses' },
+        { id: 'ShutdownNorms', displayName: 'Shutdown Norms', name: 'ShutdownNorms' },
+        { id: 'Receipe', displayName: 'Receipe', name: 'Receipe' },
+      ])
+      fetchData()
+      fetchGradeData()
+      return
+    }
+
     getConfigurationExecutionDetails()
     getAopSummary()
     let vertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
@@ -718,7 +729,6 @@ const ConfigurationTable = () => {
                   )}
                 </Box>
               </Box>
-
               <TextField
                 label='AOP Design Basis'
                 multiline
@@ -1173,7 +1183,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
-                  />
+                  /> 
                 )
               default:
                 return null

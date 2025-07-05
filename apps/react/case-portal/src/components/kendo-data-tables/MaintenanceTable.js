@@ -25,7 +25,7 @@ const MaintenanceTable = () => {
         lowerVertName === 'cracker'
           ? DataService.getCrackerMaintenanceData
           : DataService.getMaintenanceData,
-      editable: lowerVertName === 'cracker',
+      editable: lowerVertName === 'cracker', 
     }),
     [lowerVertName],
   )

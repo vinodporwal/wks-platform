@@ -60,7 +60,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		try {
 			List<Object[]> objList = null;
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			// Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			// Sites site = siteRepository.findById(plant.getSiteFkId()).get();slowdownNorms
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			if (vertical.getName().equalsIgnoreCase("MEG")) {
 				objList = getShutdownNorms(year, plant.getId(), "vwScrnShutdownNorms");

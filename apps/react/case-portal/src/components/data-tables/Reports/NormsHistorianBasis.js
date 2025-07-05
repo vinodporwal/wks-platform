@@ -17,7 +17,7 @@ import {
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
 
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import KendoDataGrid, { UOMDropdown } from 'components/Kendo-Report-DataGrid/index'
 import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
 import { Button } from '../../../../node_modules/@mui/material/index'
 import moment from '../../../../node_modules/moment/moment'
@@ -52,7 +52,7 @@ const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
 
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
-
+  const [uom, setUom] = useState('TPH')
   const [rowsHistorianValues, setHistorianValues] = useState([])
   const [rowsMcuAndNormGrid, setMcuAndNormGrid] = useState([])
   const [rowsProductionVolumeData, setProductionVolumeData] = useState([])
@@ -71,9 +71,9 @@ const NormsHistorianBasis = () => {
 
       try {
         const results = await Promise.all([
-          DataService.getNormsHistorianBasis(keycloak, 'HistorianValues'),
-          DataService.getNormsHistorianBasis(keycloak, 'McuAndNormGrid'),
-          DataService.getNormsHistorianBasis(keycloak, 'ProductionVolumeData'),
+          DataService.getNormsHistorianBasis(keycloak, 'HistorianValues', uom),
+          DataService.getNormsHistorianBasis(keycloak, 'McuAndNormGrid', uom),
+          DataService.getNormsHistorianBasis(keycloak, 'ProductionVolumeData', uom),
         ])
 
         const [historianRes, mcuRes, prodRes] = results
@@ -125,7 +125,7 @@ const NormsHistorianBasis = () => {
     }
 
     fetchAllData()
-  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
+  }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName, uom])
 
   const year = localStorage.getItem('year')
   const headerMap = generateHeaderNames(year)
@@ -217,7 +217,12 @@ const NormsHistorianBasis = () => {
         </ExcelExport>
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
+      <Box display='flex' justifyContent='flex-end' mb='2px' gap={1}>
+        <UOMDropdown
+          value={uom}
+          onChange={(e) => setUom(e.target.value)}
+          options={['TPH', 'TPD']}
+        />
         <Button
           variant='contained'
           onClick={exportAllGrids}

@@ -207,7 +207,7 @@ const NormalOpNormsScreen = () => {
       if (lowerVertName === 'meg') {
         promises.push(fetchDataIntermediateValues())
       }
-      if (lowerVertName === 'pe') {
+      if (lowerVertName === 'pe'|| lowerVertName === 'pp') {
         promises.push(fetchGradeDropdowns())
       }
 
@@ -750,7 +750,7 @@ const NormalOpNormsScreen = () => {
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: true,
-      showG: lowerVertName === 'pe' ? true : false,
+      showG: (lowerVertName === 'pe' || lowerVertName === 'pp') ? true : false,
 
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
