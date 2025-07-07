@@ -806,8 +806,8 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const openPIHome = async (evnet) => {
-    const piHomeURL = 'https://portal-pimvo1oidcsit1.dev.forge.connected.honeywell.com/HCP/login?contentId=66c4da87-db90-d362-2197-1cf5423881df';
-    window.open(piHomeURL, '_blank')
+    const piHomeURL = 'https://portal-hcipireliance.forge.connected.honeywell.com/HCP/?contentId=66c4da87-db90-d362-2197-1cf5423881df';
+    window.open(piHomeURL, '_blank');
   }
 
   const handleMainTabChanged = async (event, newValue) => {

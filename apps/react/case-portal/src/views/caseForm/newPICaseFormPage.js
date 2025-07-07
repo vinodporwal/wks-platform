@@ -261,6 +261,11 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'cms' }) => {
       })
   }
 
+  const openPIHome = async (evnet) => {
+    const piHomeURL = 'https://portal-hcipireliance.forge.connected.honeywell.com/HCP/?contentId=66c4da87-db90-d362-2197-1cf5423881df';
+    window.open(piHomeURL, '_blank');
+  }
+
   const snackAction = lastCreatedCase && (
     <React.Fragment>
       <Button
@@ -351,6 +356,8 @@ export const NewPICaseFormPage = ({ open = true, caseDefId = 'cms' }) => {
                 } else if (event.component.key === 'onSave') {
                   // onSubmitRecommendation()
                   onSave()
+                } else if (event.component.key === 'piHomeSubmit') {
+                  openPIHome(event)
                 }
               }}
             />
