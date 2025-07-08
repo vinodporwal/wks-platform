@@ -190,3 +190,12 @@ input[disabled][id*="TextFaultEndTimeDate"].form-control {
   --bs-alert-border-color: #f5c2c7; */
   display: none;
 }
+
+.css-1lrhaky-MuiDataGrid-root .MuiDataGrid-cell {
+  color: #000000;
+}
+
+.css-10w0yel-MuiDataGrid-columnHeaderTitle
+{
+  font-weight: 600;
+}
