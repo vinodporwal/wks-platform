@@ -135,6 +135,12 @@ public class CaseDefinitionController {
         return ResponseEntity.ok(savedCase);
     }
 	
+	@PostMapping("/update-case")
+    public ResponseEntity<Case> updateCase(@RequestBody Case caseData) {
+        Case savedCase = caseDefinitionService.saveCase(caseData);
+        return ResponseEntity.ok(savedCase);
+    }
+	
 	@PostMapping("/pi/save-case")
     public ResponseEntity<Case> createPICase(@RequestBody Case caseData) {
 		caseData = assignOwner(caseData);
@@ -242,21 +248,18 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/analysis")
     public ResponseEntity<Case> saveAnalysis(@RequestBody Case caseData) {
-		caseData = assignOwner(caseData);
         Case savedCase = caseDefinitionService.saveAnalysis(caseData);
         return ResponseEntity.ok(savedCase);
     }
 	
 	@PostMapping("/value-realization")
     public ResponseEntity<Case> saveValueRealization(@RequestBody Case caseData) {
-		caseData = assignOwner(caseData);
         Case savedCase = caseDefinitionService.saveValueRealization(caseData);
         return ResponseEntity.ok(savedCase);
     }
 	
 	@PostMapping("/final-recommendation")
     public ResponseEntity<Case> submitFinalRecommendation(@RequestBody Case caseData) {
-		caseData = assignOwner(caseData);
         Case savedCase = caseDefinitionService.submitFinalRecommendation(caseData);
         return ResponseEntity.ok(savedCase);
     }

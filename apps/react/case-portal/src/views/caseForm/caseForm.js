@@ -75,10 +75,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [loading, setLoading] = useState(false)
   const [isFinalRecommendationConfirmationOpen, setIsFinalRecommendationConfirmationOpen] = useState(false)
 
-  // const handleFollowClick = () => {
-  //   setIsFollowing(!isFollowing)
-  // }
-
   useEffect(() => {
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
     getCaseInfo(aCase)
@@ -109,17 +105,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     setSnackOpen(false)
   }
 
-  // const handleConfirmSubmit = () => {
-  //   // Proceed with the submit action if confirmed
-  //   console.log('Submit confirmed');
-  //   setIsConfirmationOpen(false); // Close the dialog
-  //   // Add your submission logic here
-  // };
-
-  // const handleCancelSubmit = () => {
-  //   setIsConfirmationOpen(false); // Close the dialog if canceled
-  // };
-
   const snackAction = lastCreatedCase && (
     <React.Fragment>
       <Button
@@ -142,48 +127,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       </IconButton>
     </React.Fragment>
   )
-
-  // const getCaseInfo = (aCase) => {
-  //   CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
-  //     .then((data) => {
-  //       setCaseDef(data)
-  //       setStages(
-  //         data.stages.sort((a, b) => a.index - b.index).map((o) => o.name),
-  //       )
-  //       return FormService.getByKey(keycloak, data.formKey)
-  //     })
-  //     .then((data) => {
-  //       setForm(data)
-  //       console.log('data', data);
-  //       return CaseService.getCaseById(keycloak, aCase.businessKey)
-  //     })
-  //     .then((caseData) => {
-  //       setComments(
-  //         caseData?.comments?.sort(
-  //           (a, b) =>
-  //             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  //         ),
-  //       )
-  //       setDocuments(caseData?.documents)
-  //       setFormData({
-  //         data: caseData.attributes.reduce(
-  //           (obj, item) =>
-  //             Object.assign(obj, {
-  //               [item.name]: tryParseJSONObject(item.value)
-  //                 ? JSON.parse(item.value)
-  //                 : item.value,
-  //             }),
-  //           {},
-  //         ),
-  //         metadata: {},
-  //         isValid: true,
-  //       })
-  //       setActiveStage(caseData.stage)
-  //     })
-  //     .catch((err) => {
-  //       console.log(err.message)
-  //     })
-  // }
 
   const getCaseInfo = async (aCase) => {
     await loadOptions(keycloak);
@@ -228,202 +171,270 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         const parsedAttributeValue = JSON.parse(attributeValue);
 
         const userEmailIds = [];
-        const caseOwnerId = caseData?.owner?.id;
-        const currentUserId = keycloak?.subject;
         const currentUserEmail = keycloak.idTokenParsed.email;
         const caseAssignedToEmail = caseData?.assignedTo?.emailId;
         userEmailIds.push(caseData?.owner?.email);
         userEmailIds.push(parsedAttributeValue.caseAssignedTo);
-        userEmailIds.concat(parsedAttributeValue.analysisTeam);
+        const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(parsedAttributeValue.analysisTeam);
 
         const shouldDisable = !userEmailIds.includes(currentUserEmail);
+        const shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.includes(currentUserEmail);
+
+        const recommendations = parsedAttributeValue.dataGrid1;
+        const recommendationAssignees = recommendations.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
+        const recommendationReviewers = recommendations.map((item) => item.recommendationReviewer).filter((assignee) => assignee !== "");
+        const userEmailIdsWithRecommendationAssignees = userEmailIds.concat(recommendationAssignees);
+        const userEmailIdsWithRecommendationUsers = userEmailIdsWithRecommendationAssignees.concat(recommendationReviewers);
+        const shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.includes(currentUserEmail);
 
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
-        if(!isDraft){
-          const analysis = level1.components?.[5] ?? null;
-          const recommendation = level1.components?.[6] ?? null;
-          const caseDetails = level1.components?.[3] ?? null;
-          const valueRealization = level1.components?.[7] ?? null;
-          level1.components?.forEach((component) => {
-            if (
-              component.id !== recommendation?.id &&
-              component.id !== caseDetails?.id && 
-              component.id !== analysis?.id && 
-              (component.id === valueRealization?.id && parsedAttributeValue.valueRealizationCategory !== '')
-            ) {
-              component.disabled = true;
-            }
-          });
-          const caseDetails0 = caseDetails?.components?.[0];
-          if (caseDetails0) {
-            caseDetails0.disabled = true;
-          }
-        
-          const caseDetails1 = caseDetails?.components?.[1];
-          const analysisTeam = caseDetails1?.columns?.[0]?.components?.[0] ?? null;
-          const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
 
-          // Disable all components inside columns of caseDetails1, except caseStatus
-          caseDetails1?.columns?.forEach((column) => {
-            column?.components?.forEach((component) => {
-              if (component.id !== caseStatus?.id && 
-                (component.id === analysisTeam?.id && (parsedAttributeValue.dataGrid1.length > 1 || shouldDisable))) {
+        if (shouldDisable && shouldDisableAnalysis && shouldDisableValueRealization) {
+          // Disable the top-level component
+          level1.disabled = true;
+
+          if (level1?.components) {
+            const [level2, , , , analysisSection, , level6, valueRealizationSection, level7] = level1.components;
+
+            // Analysis Section: Hide submit and edit buttons
+            if (analysisSection?.components[0]?.columns.length > 2) {
+              const analysisColumns = analysisSection.components[0].columns[2];
+              const analysisSubmitButton = analysisColumns.components?.[3] ?? null;
+              const analysisEditButton = analysisColumns.components?.[4] ?? null;
+
+              analysisSubmitButton && (analysisSubmitButton.hidden = true);
+              analysisEditButton && (analysisEditButton.hidden = true);
+            }
+
+            // Level 7: Hide draft, create, and save buttons
+            if (level7?.columns) {
+              const saveAsDraft = level7.columns?.[2]?.components?.[0] ?? null;
+              const createButton = level7.columns?.[2]?.components?.[1] ?? null;
+              const saveButton = level7.columns?.[3]?.components?.[0] ?? null;
+
+              saveAsDraft && (saveAsDraft.hidden = true);
+              createButton && (createButton.hidden = true);
+              saveButton && (saveButton.hidden = true);
+            }
+
+            // Level 6: Hide add-more and final submit buttons
+            if (level6?.components) {
+              const [submitContainer, addMoreContainer] = level6.components;
+              const recommendationAddMore = addMoreContainer?.columns?.[0]?.components?.[0] ?? null;
+              const recommendationFinalSubmit = addMoreContainer?.columns?.[1]?.components?.[0] ?? null;
+
+              recommendationAddMore && (recommendationAddMore.hidden = true);
+              recommendationFinalSubmit && (recommendationFinalSubmit.hidden = true);
+            }
+
+            // Value Realization Section: Hide value realization submit button
+            if (valueRealizationSection?.components) {
+              const valueRealizationSubmit = valueRealizationSection.components?.[3] ?? null;
+              valueRealizationSubmit && (valueRealizationSubmit.hidden = true);
+            }
+          }
+        } else {
+          if (!isDraft) {
+            const analysis = level1.components?.[4] ?? null;
+            const recommendation = level1.components?.[6] ?? null;
+            const caseDetails = level1.components?.[3] ?? null;
+            const valueRealization = level1.components?.[7] ?? null;
+            level1.components?.forEach((component) => {
+              if (
+                component.id !== recommendation?.id &&
+                component.id !== caseDetails?.id &&
+                component.id !== analysis?.id &&
+                component.id !== valueRealization?.id
+              ) {
                 component.disabled = true;
               }
             });
-          });
-        }
 
-        if (level1 && level1.components) {
-          const level2 = level1.components[0]
-          const level7 =
-            level1.components.length > 8 ? level1.components[8] : null
-          if (level2 && level2.components) {
-            const caseDescriptionField =
-              level2.components.length > 1 ? level2.components[1] : null
-            if (caseDescriptionField) {
-              caseDescriptionField.disabled = false
+            if (parsedAttributeValue.valueRealizationCategory !== '') {
+              valueRealization.disabled = true;
+            }
+            const caseDetails0 = caseDetails?.components?.[0];
+            if (caseDetails0) {
+              caseDetails0.disabled = true;
             }
 
-            // const recommendation =
-            //   level1.components.length > 5 ? level1.components[5] : null
-            // if (recommendation) {
-            //   recommendation.disabled = true
-            // }
+            const caseDetails1 = caseDetails?.components?.[1];
+            const analysisTeam = caseDetails1?.columns?.[0]?.components?.[0] ?? null;
+            const caseStatus = caseDetails1?.columns?.[1]?.components?.[0] ?? null;
 
-            if (level2.components[0] && level2.components[0].columns) {
-              const caseNo =
-                level2.components[0].columns.length > 1
-                  ? level2.components[0].columns[0].components[0]
-                  : null
+            // Disable all components inside columns of caseDetails1, except caseStatus
+            caseDetails1?.columns?.forEach((column) => {
+              column?.components?.forEach((component) => {
+                if (component.id !== caseStatus?.id) {
+                  // (component.id === analysisTeam?.id && (parsedAttributeValue.dataGrid1.length > 1 || shouldDisable))) {
+                  component.disabled = true;
+                }
+              });
+            });
+          }
 
-              if (caseNo) {
-                caseNo.calculateValue = `value = ${aCase.caseNo}`
+          if (level1 && level1.components) {
+            const level2 = level1.components[0]
+            const level7 =
+              level1.components.length > 8 ? level1.components[8] : null
+            if (level2 && level2.components) {
+              const caseDescriptionField =
+                level2.components.length > 1 ? level2.components[1] : null
+              if (caseDescriptionField) {
+                caseDescriptionField.disabled = false
               }
 
-              const caseTitleField =
-                level2.components[0].columns.length > 1
-                  ? level2.components[0].columns[1].components[0]
-                  : null
-              if (caseTitleField) {
-                caseTitleField.disabled = true
-              }
-
-              // Commented as per client requirement
-              // const caseAssign =
-              //   level2.components[0].columns.length > 2
-              //     ? level2.components[0].columns[2].components[0]
-              //     : null
-              // if (caseAssign) {
-              //   caseAssign.disabled = true
+              // const recommendation =
+              //   level1.components.length > 5 ? level1.components[5] : null
+              // if (recommendation) {
+              //   recommendation.disabled = true
               // }
 
-              // Disable case status if currentUser is different than case owner
-              const level3 = level1.components?.[3] ?? null;
+              if (level2.components[0] && level2.components[0].columns) {
+                const caseNo =
+                  level2.components[0].columns.length > 1
+                    ? level2.components[0].columns[0].components[0]
+                    : null
 
-              const caseStatus = level3?.components?.[1]?.columns?.[1]?.components?.[0] ?? null;
+                if (caseNo) {
+                  caseNo.calculateValue = `value = ${aCase.caseNo}`
+                }
 
-              if (caseOwnerId !== currentUserId && caseStatus) {
-                caseStatus.disabled = true;
+                const caseTitleField =
+                  level2.components[0].columns.length > 1
+                    ? level2.components[0].columns[1].components[0]
+                    : null
+                if (caseTitleField) {
+                  caseTitleField.disabled = true
+                }
+
+                // Commented as per client requirement
+                // const caseAssign =
+                //   level2.components[0].columns.length > 2
+                //     ? level2.components[0].columns[2].components[0]
+                //     : null
+                // if (caseAssign) {
+                //   caseAssign.disabled = true
+                // }
+
+                // Disable case status if currentUser is different than case owner
+                const level3 = level1.components?.[3] ?? null;
+
+                const caseStatus = level3?.components?.[1]?.columns?.[1]?.components?.[0] ?? null;
+
+                if (shouldDisable && caseStatus) {
+                  caseStatus.disabled = true;
+                }
+
+                const faultCategorySelect =
+                  level2.components[0].columns.length > 2
+                    ? level2.components[0].columns[3].components[0]
+                    : null
+                if (faultCategorySelect && caseData.isDraft == 'n') {
+                  faultCategorySelect.disabled = true
+                }
+
+                // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
+                // console.log('caseAssign1', caseAssign1, aCase)
+                // if (caseAssign1) {
+                //   caseAssign1.defaultValue = `1_true`;
+                // }
               }
 
-              const faultCategorySelect =
-                level2.components[0].columns.length > 2
-                  ? level2.components[0].columns[3].components[0]
-                  : null
-              if (faultCategorySelect && caseData.isDraft == 'n') {
-                faultCategorySelect.disabled = true
-              }
+              //Hide analysis save and edit button conditionally.
+              const analysisSection = level1.components.length > 4 ? level1.components[4] : null
 
-              // const caseAssign1 = level2.components[0].columns.length > 2 ? level2.components[0].columns[3].components[0] : null;
-              // console.log('caseAssign1', caseAssign1, aCase)
-              // if (caseAssign1) {
-              //   caseAssign1.defaultValue = `1_true`;
-              // }
-            }
+              if (analysisSection) {
+                const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3] : null;
+                const analysisEditButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[4] : null;
 
-            //Hide analysis save and edit button conditionally.
-            const analysisSection = level1.components.length > 4 ? level1.components[4] : null
-
-            if(analysisSection){
-                const analysisSubmitButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[3]: null;
-                const analysisEditButton = analysisSection.components[0].columns.length > 2 ? analysisSection.components[0].columns[2].components[4]: null;
-
-                if(isFinalRecommendationSubmitted){
+                if (isFinalRecommendationSubmitted) {
                   analysisSection.disabled = true
                   analysisSubmitButton.hidden = true;
                   analysisEditButton.hidden = true;
                 } else {
-                  if(analysisSubmitButton && parsedAttributeValue.analysisDesc !== ''){
+                  if (analysisSubmitButton && parsedAttributeValue.analysisDesc !== '') {
                     analysisSubmitButton.hidden = true;
                   }
-                  if(analysisEditButton && parsedAttributeValue.analysisDesc === ''){
+                  if (analysisEditButton && parsedAttributeValue.analysisDesc === '') {
                     analysisEditButton.hidden = true;
                   }
 
-                  if(shouldDisable){
+                  if (shouldDisableAnalysis) {
                     analysisSubmitButton.disabled = true;
                     analysisEditButton.disabled = true;
                   }
                 }
-            }
+              }
 
-            if (level7 && level7.columns) {
-              const saveAsDraft =
-                level7.columns.length > 2
-                  ? level7.columns[2].components[0]
-                  : null
-              if (saveAsDraft) {
-                saveAsDraft.hidden = isDraft ? false : true;
-                if(!userEmailIds.includes(currentUserEmail)){
-                  saveAsDraft.disabled = true;
+              if (level7 && level7.columns) {
+                const saveAsDraft =
+                  level7.columns.length > 2
+                    ? level7.columns[2].components[0]
+                    : null
+                if (saveAsDraft) {
+                  saveAsDraft.hidden = isDraft ? false : true;
+                  if (!userEmailIds.includes(currentUserEmail)) {
+                    saveAsDraft.disabled = true;
+                  }
                 }
-              }
-              
-              const createButton =
-                level7.columns.length > 2
-                  ? level7.columns[2].components[1]
-                  : null
-              if (createButton) {
-                createButton.hidden = true
-              }
 
-              const saveButton =
-                level7.columns.length > 3
-                  ? level7.columns[3].components[0]
-                  : null
-              if (saveButton) {
-                  saveButton.hidden =  isDraft ? false : true;
-                  if(!userEmailIds.includes(currentUserEmail)){
+                const createButton =
+                  level7.columns.length > 2
+                    ? level7.columns[2].components[1]
+                    : null
+                if (createButton) {
+                  createButton.hidden = true
+                }
+
+                const saveButton =
+                  level7.columns.length > 3
+                    ? level7.columns[3].components[0]
+                    : null
+                if (saveButton) {
+                  saveButton.hidden = isDraft ? false : true;
+                  if (!userEmailIds.includes(currentUserEmail)) {
                     saveButton.disabled = true;
                   }
+                }
               }
+
+              const level6 = level1.components[6] ?? null;
+              if (level6) {
+                const [submitContainer, addMoreContainer] = level6.components;
+
+                const recommendationSubmit = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[0]?.components?.[0] ?? null;
+                const recommendationDelete = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[1]?.components?.[0] ?? null;
+                const recommendationAddMore = addMoreContainer?.columns[0]?.components[0] ?? null;
+                const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
+
+                if (shouldDisableAnalysis) {
+                  if (recommendationSubmit) recommendationSubmit.disabled = true;
+                  if (recommendationDelete) recommendationDelete.disabled = true;
+                }
+
+                if (recommendationAddMore && (isFinalRecommendationSubmitted || shouldDisableAnalysis)) {
+                  recommendationAddMore.disabled = true;
+                }
+
+                const recommendations = parsedAttributeValue.dataGrid1;
+                if (recommendationFinalSubmit && (isFinalRecommendationSubmitted || shouldDisableAnalysis || (recommendations.length >= 1 && recommendations[0].recommendationNo1 === ''))) {
+                  recommendationFinalSubmit.disabled = true;
+                }
+              }
+
+              const valueRealizationSection = level1.components[7] ?? null;
+              if (valueRealizationSection && shouldDisableValueRealization) {
+                valueRealizationSection.disabled = true;
+                const valueRealizationSubmit = valueRealizationSection?.components?.[3] ?? null;
+
+                if (valueRealizationSubmit) {
+                  valueRealizationSubmit.hidden = true;
+                }
+              }
+
             }
-
-            const level6 = level1.components[6] ?? null;
-            if (level6) {
-              const [submitContainer, addMoreContainer] = level6.components;
-
-              const recommendationSubmit = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[0]?.components?.[0] ?? null;
-              const recommendationDelete = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[1]?.components?.[0] ?? null;
-              const recommendationAddMore = addMoreContainer?.columns[0]?.components[0] ?? null;
-              const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
-
-              if (shouldDisable) {
-                if (recommendationSubmit) recommendationSubmit.disabled = true;
-                if (recommendationDelete) recommendationDelete.disabled = true;
-              }
-
-              if (recommendationAddMore && (isFinalRecommendationSubmitted || shouldDisable)) {
-                recommendationAddMore.disabled = true;
-              }
-
-              const recommendations = parsedAttributeValue.dataGrid1;
-              if(recommendationFinalSubmit && (isFinalRecommendationSubmitted || shouldDisable || (recommendations.length >=1 && recommendations[0].recommendationNo1 === ''))){
-                recommendationFinalSubmit.disabled = true;
-              }
-            }  
           }
         }
 
@@ -472,11 +483,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     } = formData.data.container
 
     const missingFields = []
-    if (!caseDescription) 
+    if (!caseDescription)
       missingFields.push('Case Description')
     if (!dueDate)
       missingFields.push('Due Date')
-    if (!faultCategory) 
+    if (!faultCategory)
       missingFields.push('Fault Category')
     if (!analysisTeam || analysisTeam.length === 0)
       missingFields.push('Analysis Team')
@@ -491,7 +502,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       return
     }
 
-    if(formData.data.container.caseStatus === 1){
+    if (formData.data.container.caseStatus === 1) {
       const actionAssignedId = getcaseStatusValue('Under Analysis');
       formData.data.container.caseStatus = actionAssignedId;
     }
@@ -527,7 +538,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       .then((data) => {
         const businessKey = data.businessKey
 
-        return CaseService.saveCase(
+        return CaseService.updateCase(
           keycloak,
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
@@ -539,8 +550,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo},
-            isFinalRecommendationConfirmationOpen: aCase.isFinalRecommendationConfirmationOpen
+            assignedTo: { emailId: formData.data.container.caseAssignedTo },
+            isFinalRecommendationSubmitted: aCase.isFinalRecommendationSubmitted,
+            owner: aCase.owner
           }),
         )
       })
@@ -570,11 +582,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     } = formData.data.container
 
     const missingFields = []
-    if (!caseCauseCategory) 
+    if (!caseCauseCategory)
       missingFields.push('Case cause category.')
     if (!caseCauseDescription || caseCauseDescription.length === 0)
       missingFields.push('Case cause description.')
-    if (!analysisDesc) 
+    if (!analysisDesc)
       missingFields.push('Observations')
     if (!diagnosis)
       missingFields.push('Diagnosis')
@@ -630,8 +642,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo},
-            isFinalRecommendationConfirmationOpen: aCase.isFinalRecommendationConfirmationOpen
+            assignedTo: { emailId: formData.data.container.caseAssignedTo },
+            isFinalRecommendationSubmitted: aCase.isFinalRecommendationSubmitted,
+            owner: aCase.owner
           }),
         )
       })
@@ -694,8 +707,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo},
-            isFinalRecommendationConfirmationOpen: aCase.isFinalRecommendationConfirmationOpen
+            assignedTo: { emailId: formData.data.container.caseAssignedTo },
+            isFinalRecommendationSubmitted: aCase.isFinalRecommendationSubmitted,
+            owner: aCase.owner
           }),
         )
       })
@@ -717,10 +731,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const onRecommendationFinalSubmit = () => {
     setLoading(true)
-    
+
     const actionAssignedId = getcaseStatusValue('Resolved');
     formData.data.container.caseStatus = actionAssignedId;
-    
+
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
@@ -762,8 +776,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             businessKey: businessKey,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo},
-            isFinalRecommendationSubmitted: true
+            assignedTo: { emailId: formData.data.container.caseAssignedTo },
+            isFinalRecommendationSubmitted: true,
+            owner: aCase.owner
           }),
         )
       })
@@ -908,11 +923,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     } = event.data
 
     const missingFields = []
-    if (!recommendationReviewer) 
+    if (!recommendationReviewer)
       missingFields.push('Recommendation Reviewer')
     if (!recommendationAssignedTo2)
       missingFields.push('Recommendation Assigned To')
-    if (!recommendationHeadline) 
+    if (!recommendationHeadline)
       missingFields.push('Recommendation Headline')
     if (!recommendationTargetCompletionDate1)
       missingFields.push('Target Completion Date')
@@ -950,16 +965,16 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const submitRecommendation = async () => {
     try {
       const response = await CaseService.saveRecommendation(keycloak, apiBody)
-      if(response.status !== 500){
-      console.log('Recommendation submitted successfully:', response)
-      setSnackbarMessages(['Recommendation submitted successfully'])
-      setSnackbarOpen(true)
-      setIsConfirmationOpen(false)
-      setTimeout(() => {
-        window.location.href = response.caseUrl;
-        // window.location.reload()
-      }, 1000)
-      }else{
+      if (response.status !== 500) {
+        console.log('Recommendation submitted successfully:', response)
+        setSnackbarMessages(['Recommendation submitted successfully'])
+        setSnackbarOpen(true)
+        setIsConfirmationOpen(false)
+        setTimeout(() => {
+          window.location.href = response.caseUrl;
+          // window.location.reload()
+        }, 1000)
+      } else {
         setIsConfirmationOpen(false)
         console.error('Error submitting recommendation:', response)
         console.error('Error submitting recommendation:', JSON.stringify(response.body))
@@ -1016,7 +1031,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         // setLastCreatedCase(data);
 
         // Second API call to saveCase with the businessKey
-        return CaseService.saveCase(
+        return CaseService.updateCase(
           keycloak,
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
@@ -1026,16 +1041,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey, // Include businessKey in the payload
-            owner: {
-              id: keycloak.subject || '',
-              // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
-              name: keycloak.idTokenParsed.name || '',
-              email: keycloak.idTokenParsed.email || '',
-              phone: keycloak.idTokenParsed.phone || '',
-            },
+            owner: aCase.owner,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+            assignedTo: { emailId: formData.data.container.caseAssignedTo }
           }),
         )
       })
@@ -1062,7 +1071,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const handleMainTabChanged = async (event, newValue) => {
-    if(newValue == 1){
+    if (newValue == 1) {
       const caseData = await CaseService.getCaseById(
         keycloak,
         aCase.businessKey,
@@ -1224,31 +1233,31 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const getValueRealizationCategoryLabel = (value) => {
     // Retrieve options from localStorage
     const options = [
-                      {
-                        "label": "Value Realization category",
-                        "value": "valueRealizationCategory"
-                      },
-                      {
-                        "label": "Condition normalized before alarm",
-                        "value": "conditionNormalizedBeforeAlarm"
-                      },
-                      {
-                        "label": "Job could be planned in next opportunity",
-                        "value": "jobCouldBePlannedInNextOpportunity"
-                      },
-                      {
-                        "label": "Instrument malfunction detected",
-                        "value": "instrumentMalfunctionDetected"
-                      },
-                      {
-                        "label": "Operating condition could be normalized",
-                        "value": "operatingConditionCouldBeNormalized"
-                      },
-                      {
-                        "label": "Performance deterioration could be identified",
-                        "value": "performanceDeteriorationCouldBeIdentified"
-                      }
-                    ];
+      {
+        "label": "Value Realization category",
+        "value": "valueRealizationCategory"
+      },
+      {
+        "label": "Condition normalized before alarm",
+        "value": "conditionNormalizedBeforeAlarm"
+      },
+      {
+        "label": "Job could be planned in next opportunity",
+        "value": "jobCouldBePlannedInNextOpportunity"
+      },
+      {
+        "label": "Instrument malfunction detected",
+        "value": "instrumentMalfunctionDetected"
+      },
+      {
+        "label": "Operating condition could be normalized",
+        "value": "operatingConditionCouldBeNormalized"
+      },
+      {
+        "label": "Performance deterioration could be identified",
+        "value": "performanceDeteriorationCouldBeIdentified"
+      }
+    ];
 
     // Find the option with the matching value and return its label
     const matchingOption = options.find((option) => option.value === value)
@@ -1258,15 +1267,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const getSAPRequestLabel = (value) => {
     // Retrieve options from localStorage
     const options = [
-                      {
-                        "label": "Yes",
-                        "value": "y"
-                      },
-                      {
-                        "label": "No",
-                        "value": "n"
-                      },
-                    ];
+      {
+        "label": "Yes",
+        "value": "y"
+      },
+      {
+        "label": "No",
+        "value": "n"
+      },
+    ];
 
     // Find the option with the matching value and return its label
     const matchingOption = options.find((option) => option.value.toLowerCase() === value.toLowerCase())
@@ -1291,19 +1300,19 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         return `
       <div style="display: flex; flex-wrap: wrap; border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
         ${Object.entries(item)
-          .map(([key, value]) =>
-            fieldsToSkip.includes(key)
-              ? ''
-              : `
+            .map(([key, value]) =>
+              fieldsToSkip.includes(key)
+                ? ''
+                : `
             <div style="flex: 1 1 45%; border: 1px solid #ccc; margin: 5px; padding: 10px;">
               <p style="font-weight: bold; margin: 0;">${getLabel(key)}</p>
               <p style="margin: 0;">
-                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : key === 'RecommendationConfirmSAP3' ? getSAPRequestLabel(value) : value || '' }
+                ${key === 'equipmentFunctionLocation' ? getEquipmentFunctionLocationLabel(value) : key === 'RecommendationConfirmSAP3' ? getSAPRequestLabel(value) : value || ''}
               </p>
             </div>
         `,
-          )
-          .join('')}
+            )
+            .join('')}
       </div>
     `
       })
@@ -1360,15 +1369,15 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
     // Conditional display based on RecommendationsRadio value
     // if (containerData.RecommendationsRadio === 'no') {
-      const caseCauseCategoryLabel = getCategoryLabel(
-        containerData.caseCauseCategory,
-      )
-      const caseCauseDescriptionLabel = getCaseCauseDescriptionLabel(
-        containerData.caseCauseDescription,
-        containerData.caseCauseCategory,
-      )
-      const files = containerData.file;
-      content += `
+    const caseCauseCategoryLabel = getCategoryLabel(
+      containerData.caseCauseCategory,
+    )
+    const caseCauseDescriptionLabel = getCaseCauseDescriptionLabel(
+      containerData.caseCauseDescription,
+      containerData.caseCauseCategory,
+    )
+    const files = containerData.file;
+    content += `
       <!-- Analysis -->
       <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
@@ -1382,8 +1391,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       content += `
           <ul style="list-style: none; padding: 0; margin: 0;">
             ${files
-              .map(
-                (file, index) => `
+          .map(
+            (file, index) => `
                   <li style="margin-bottom: 16px;">
                     <img 
                       src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
@@ -1392,12 +1401,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     />
                   </li>
     `
-              )
-              .join('')}
+          )
+          .join('')}
           </ul>
       `;
     }
-    content +=`</div>`
+    content += `</div>`
     if (containerData.RecommendationsRadio === 'yes') {
       content += `
       <!-- Data Grid 1 -->
@@ -1460,7 +1469,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     // Open a new window and print the generated content
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-    printWindow.document.write(`
+      printWindow.document.write(`
     <html>
       <head>
         <title>Print Case Details</title>
@@ -1648,11 +1657,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     {...a11yProps(0)}
                   />
                   <Tab
-                    label={t('pages.caseform.tabs.attachments')+` (${documents ? documents.length : 0})`}
+                    label={t('pages.caseform.tabs.attachments') + ` (${documents ? documents.length : 0})`}
                     {...a11yProps(1)}
                   />
                   <Tab
-                    label={t('pages.caseform.tabs.comments')+` (${comments ? comments.length : 0})`}
+                    label={t('pages.caseform.tabs.comments') + ` (${comments ? comments.length : 0})`}
                     {...a11yProps(2)}
                   />
                 </Tabs>
@@ -1716,7 +1725,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                             onValueRealizationSubmit()
                           } else if (event.component.key === 'analysisEdit') {
                             onAnalysisSave()
-                          }  else if (event.component.key === 'recommendationFinalSubmit') {
+                          } else if (event.component.key === 'recommendationFinalSubmit') {
                             setIsFinalRecommendationConfirmationOpen(true)
                           }
                         }}
@@ -1762,7 +1771,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                       <DialogTitle>Confirm Submission</DialogTitle>
                       <DialogContent>
                         <DialogContentText>
-                          Are you sure you want to submit final recommendation?
+                          You are about to make final submission after which no changes will be allowed.
+                          Are you sure you want to proceed?
                         </DialogContentText>
                       </DialogContent>
                       <DialogActions>

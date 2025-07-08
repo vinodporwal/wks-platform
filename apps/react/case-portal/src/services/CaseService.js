@@ -21,7 +21,8 @@ export const CaseService = {
   saveRecommendation,
   saveAnalysis,
   saveValueRealization,
-  submitFinalRecommendation
+  submitFinalRecommendation,
+  updateCase
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -243,7 +244,6 @@ async function saveCase(keycloak, body) {
   }
 }
 
-
 async function saveRecommendation(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-recommendation`;
 
@@ -435,6 +435,26 @@ async function saveValueRealization(keycloak, body) {
 
 async function submitFinalRecommendation(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/final-recommendation`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
+
+async function updateCase(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case-definition/update-case`
 
   try {
     const resp = await fetch(url, {
