@@ -171,21 +171,21 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         const parsedAttributeValue = JSON.parse(attributeValue);
 
         const userEmailIds = [];
-        const currentUserEmail = keycloak.idTokenParsed.email;
+        const currentUserName = keycloak.idTokenParsed.preferred_username;
         const caseAssignedToEmail = caseData?.assignedTo?.emailId;
         userEmailIds.push(caseData?.owner?.email);
         userEmailIds.push(parsedAttributeValue.caseAssignedTo);
         const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(parsedAttributeValue.analysisTeam);
 
-        const shouldDisable = !userEmailIds.includes(currentUserEmail);
-        const shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.includes(currentUserEmail);
+        const shouldDisable = !userEmailIds.some(email => email.startsWith(currentUserName + '@'));
+        const shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(email => email.startsWith(currentUserName + '@'));
 
         const recommendations = parsedAttributeValue.dataGrid1;
         const recommendationAssignees = recommendations.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
         const recommendationReviewers = recommendations.map((item) => item.recommendationReviewer).filter((assignee) => assignee !== "");
         const userEmailIdsWithRecommendationAssignees = userEmailIds.concat(recommendationAssignees);
         const userEmailIdsWithRecommendationUsers = userEmailIdsWithRecommendationAssignees.concat(recommendationReviewers);
-        const shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.includes(currentUserEmail);
+        const shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.some(email => email.startsWith(currentUserName + '@'));
 
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
@@ -375,7 +375,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     : null
                 if (saveAsDraft) {
                   saveAsDraft.hidden = isDraft ? false : true;
-                  if (!userEmailIds.includes(currentUserEmail)) {
+                  if (shouldDisable) {
                     saveAsDraft.disabled = true;
                   }
                 }
@@ -394,7 +394,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                     : null
                 if (saveButton) {
                   saveButton.hidden = isDraft ? false : true;
-                  if (!userEmailIds.includes(currentUserEmail)) {
+                  if (shouldDisable) {
                     saveButton.disabled = true;
                   }
                 }
