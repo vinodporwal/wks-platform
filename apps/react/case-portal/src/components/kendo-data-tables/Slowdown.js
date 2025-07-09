@@ -1,16 +1,22 @@
+import React, { useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
-import React, { useState, useEffect } from 'react'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
-import { useSelector } from 'react-redux'
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
-import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/gridEditRowModel'
-import KendoDataTables from './index'
+import { SlowDownElastomerColumns } from 'components/colums/ElastomerColums'
+import { SlowDownMegColumns } from 'components/colums/MegColums'
+import { SlowDownPeColumns } from 'components/colums/PeColums'
+import { SlowDownPpColumns } from 'components/colums/PpColums'
+import { SlowDownPtaColumns } from 'components/colums/PtaColums'
+import { verticalEnums } from 'enums/verticalEnums'
 import { validateFields } from 'utils/validationUtils'
 import { Box, Tab, Tabs } from '../../../node_modules/@mui/material/index'
+import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/gridEditRowModel'
+import KendoDataTables from './index'
 
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -448,77 +454,94 @@ const SlowDown = ({ permissions }) => {
     }))
   }
 
-  const colDefs = [
-    {
-      field: 'discription',
-      title: 'Slowdown Desc',
-      editable: true,
-    },
+  const colDefs = useMemo(() => {
+    switch (lowerVertName) {
+      case verticalEnums.PE:
+        return SlowDownPeColumns
+      case verticalEnums.PP:
+        return SlowDownPpColumns
+      case verticalEnums.PTA:
+        return SlowDownPtaColumns
+      case verticalEnums.ELASTOMER:
+        return SlowDownElastomerColumns
+      case verticalEnums.MEG:
+        return SlowDownMegColumns
+      default:
+        return SlowDownMegColumns
+    }
+  }, [lowerVertName])
 
-    {
-      field: 'maintenanceId',
-      title: 'maintenanceId',
-      editable: false,
-      hidden: true,
-    },
+  // const colDefs = [
+  //   {
+  //     field: 'discription',
+  //     title: 'Slowdown Desc',
+  //     editable: true,
+  //   },
 
-    {
-      field: 'productName1',
-      title: 'Particulars',
-      editable: true,
-      hidden:
-        lowerVertName === 'elastomer' || lowerVertName === 'meg' ? true : false,
-    },
+  //   {
+  //     field: 'maintenanceId',
+  //     title: 'maintenanceId',
+  //     editable: false,
+  //     hidden: true,
+  //   },
 
-    {
-      field: 'maintStartDateTime',
-      title: 'SD- From',
-      type: 'dateTime',
-      editable: true,
-    },
+  //   {
+  //     field: 'productName1',
+  //     title: 'Particulars',
+  //     editable: true,
+  //     hidden:
+  //       lowerVertName === 'elastomer' || lowerVertName === 'meg' ? true : false,
+  //   },
 
-    {
-      field: 'maintEndDateTime',
-      title: 'SD- To',
-      type: 'dateTime',
-      editable: true,
-    },
+  //   {
+  //     field: 'maintStartDateTime',
+  //     title: 'SD- From',
+  //     type: 'dateTime',
+  //     editable: true,
+  //   },
 
-    {
-      field: 'durationInHrs',
-      title: 'Duration (hrs)',
-      editable: true,
-    },
+  //   {
+  //     field: 'maintEndDateTime',
+  //     title: 'SD- To',
+  //     type: 'dateTime',
+  //     editable: true,
+  //   },
 
-    {
-      field: 'rate',
-      title: 'Rate (TPH)',
-      editable: true,
-      type: 'number',
-      hidden: lowerVertName === 'meg' ? true : false,
-    },
+  //   {
+  //     field: 'durationInHrs',
+  //     title: 'Duration (hrs)',
+  //     editable: true,
+  //   },
 
-    {
-      field: 'rateEOE',
-      title: 'Rate (EOE)',
-      editable: true,
-      type: 'number',
-      hidden: lowerVertName === 'meg' ? false : true,
-    },
-    {
-      field: 'rateEO',
-      title: 'Rate (EO)',
-      editable: true,
-      type: 'number',
-      hidden: lowerVertName === 'meg' ? false : true,
-    },
+  //   {
+  //     field: 'rate',
+  //     title: 'Rate (TPH)',
+  //     editable: true,
+  //     type: 'number',
+  //     hidden: lowerVertName === 'meg' ? true : false,
+  //   },
 
-    {
-      field: 'remark',
-      title: 'Remarks',
-      editable: true,
-    },
-  ]
+  //   {
+  //     field: 'rateEOE',
+  //     title: 'Rate (EOE)',
+  //     editable: true,
+  //     type: 'number',
+  //     hidden: lowerVertName === 'meg' ? false : true,
+  //   },
+  //   {
+  //     field: 'rateEO',
+  //     title: 'Rate (EO)',
+  //     editable: true,
+  //     type: 'number',
+  //     hidden: lowerVertName === 'meg' ? false : true,
+  //   },
+
+  //   {
+  //     field: 'remark',
+  //     title: 'Remarks',
+  //     editable: true,
+  //   },
+  // ]
 
   const deleteRowData = async (paramsForDelete) => {
     try {
