@@ -489,6 +489,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               onCustomEvent={(event) => {
                 console.log('event event:', event)
                 if (event.component.key === 'saveAsDraft' || event.component.key === 'saveAsDraft1') {
+                  setHasUnsavedChanges(false);
                   onSubmitForm()
                 } else if (event.component.key === 'RecommendationSubmit3') {
                   onSubmitRecommendation()
