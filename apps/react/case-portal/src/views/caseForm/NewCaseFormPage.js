@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import CloseIcon from '@mui/icons-material/Close'
 import { Box, Tooltip, CircularProgress } from '@mui/material'
@@ -37,6 +37,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const [loading, setLoading] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentData, setCurrentData] = useState(null);
+  const initialRender = useRef(true); // Track initial render
 
   const handleBeforeUnload = (event) => {
     if (hasUnsavedChanges) {
@@ -47,15 +48,40 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
     }
   };
 
-    // Track when the form values change
-  const handleFormChange = (submission) => {
-    setCurrentData(submission.data); // Update current form data
+  const areObjectsEqualExcludingKeys = (obj1, obj2, keysToExclude) => {
+    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    keysToExclude.forEach(key => allKeys.delete(key));
 
-    // Compare the initial and current data to detect modifications
-    if (formData?.data && JSON.stringify(formData?.data) !== JSON.stringify(submission.data)) {
-      setHasUnsavedChanges(true);
-    } else {
-      setHasUnsavedChanges(false);
+    for (const key of allKeys) {
+      if (Array.isArray(obj1[key]) && Array.isArray(obj2[key])) {
+        // Compare based on array size
+        if (obj1[key].length !== obj2[key].length) {
+          return false;
+        }
+      } else if (obj1[key] !== obj2[key]) {
+        return false;
+      }
+    }
+
+    return true; 
+  };
+
+  const handleFormChange = (submission) => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return; // Skip handling changes on the initial render
+    }
+
+    // Specify which keys to exclude from the key-value comparison
+    const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit'];
+
+    if(currentData){
+      // Custom comparison logic
+      if (!areObjectsEqualExcludingKeys(currentData, submission.data.container, excludedKeys)) {
+        setHasUnsavedChanges(true);
+      } else {
+        setHasUnsavedChanges(false);
+      }
     }
   };
 
@@ -150,6 +176,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           metadata: {},
           isValid: true,
         })
+
+        setCurrentData({createdBy:keycloak.idTokenParsed.preferred_username})
       })
       .catch((err) => {
         console.error(err.message)
