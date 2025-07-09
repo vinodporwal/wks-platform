@@ -8,6 +8,9 @@ public class FaultEvents {
 	private String assetName;
 	private String startTime;
 	private String endTime;
+	private String path;
+	private String faultDisplayName;
+
 	public EventEnrichmentModel getEventEnrichment() {
 		return eventEnrichment;
 	}
@@ -49,5 +52,17 @@ public class FaultEvents {
 	}
 	public void setEndTime(String endTime) {
 		this.endTime = endTime;
+	}
+	public String getPath() {
+		return path;
+	}
+	public void setPath(String path) {
+		this.path = path;
+	}
+	public String getFaultDisplayName() {
+		return faultDisplayName;
+	}
+	public void setFaultDisplayName(String faultDisplayName) {
+		this.faultDisplayName = faultDisplayName;
 	}
 }

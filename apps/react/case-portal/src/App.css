@@ -199,3 +199,8 @@ input[disabled][id*="TextFaultEndTimeDate"].form-control {
 {
   font-weight: 600;
 }
+
+input[disabled][id*="path"].form-control {
+    border: 0px !important;
+    background-color: #ffffff !important;
+}

@@ -28,7 +28,7 @@ import Typography from '@mui/material/Typography'
 import { CaseStatus } from 'common/caseStatus'
 import { StorageService } from 'plugins/storage'
 import PropTypes from 'prop-types'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProcessDefService } from 'services/ProcessDefService'
 import { Comments } from 'views/caseComment/Comments'
@@ -41,6 +41,7 @@ import logo from 'assets/images/logo.svg'
 import { DialogActions, DialogContent, DialogContentText } from '@mui/material'
 import Config from '../../consts'
 import { buildCreateUrl } from 'utils/util'
+import { accountStore } from './../../store'
 
 export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [caseDef, setCaseDef] = useState(null)
@@ -74,7 +75,69 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [apiBody, setApiBody] = useState(null)
   const [loading, setLoading] = useState(false)
   const [isFinalRecommendationConfirmationOpen, setIsFinalRecommendationConfirmationOpen] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [currentData, setCurrentData] = useState(null);
+  const initialRender = useRef(true); // Track initial render
 
+  const handleBeforeUnload = (event) => {
+    if (hasUnsavedChanges) {
+      const message = "You have unsaved changes. Are you sure you want to leave?";
+      event.preventDefault();
+      event.returnValue = message; 
+      return message; 
+    }
+  };
+  
+  const areObjectsEqualExcludingKeys = (obj1, obj2, keysToExclude) => {
+    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    keysToExclude.forEach(key => allKeys.delete(key));
+
+    for (const key of allKeys) {
+      if (Array.isArray(obj1[key]) && Array.isArray(obj2[key])) {
+        // Compare based on array size
+        if (obj1[key].length !== obj2[key].length) {
+          return false;
+        }
+      } else if (obj1[key] !== obj2[key]) {
+        return false;
+      }
+    }
+
+    return true; 
+  };
+
+  const handleFormChange = (submission) => {
+    if (initialRender.current) {
+      initialRender.current = false;
+      return; // Skip handling changes on the initial render
+    }
+
+    // Specify which keys to exclude from the key-value comparison
+    const excludedKeys = [ 'caseNo', 'textField1', 'saveAsDraft1', 'onSave', 'saveAsDraft', 'analysisSubmit', 'analysisEdit', 'valueRealizationSubmit', 'recommendationFinalSubmit'];
+
+    // Custom comparison logic
+    if (!areObjectsEqualExcludingKeys(currentData, submission.data.container, excludedKeys)) {
+      setHasUnsavedChanges(true);
+    } else {
+      setHasUnsavedChanges(false);
+    }
+  };
+  
+  useEffect(() => {
+    // Add the event listener for beforeunload
+    window.addEventListener('beforeunload', handleBeforeUnload);
+  
+    // Cleanup function to remove the event listener
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      setHasUnsavedChanges(false);
+    };
+  }, [hasUnsavedChanges]); // Empty dependency array ensures this runs once on mount and unmount
+  
+  useEffect(() => {
+    setHasUnsavedChanges(hasUnsavedChanges);
+  }, [hasUnsavedChanges])
+  
   useEffect(() => {
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
     getCaseInfo(aCase)
@@ -169,7 +232,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
         const attributeValue = caseData.attributes[0].value;
         const parsedAttributeValue = JSON.parse(attributeValue);
-
+        parsedAttributeValue.caseNo = aCase.caseNo;
+        setCurrentData(parsedAttributeValue)
         const userEmailIds = [];
         const currentUserName = keycloak.idTokenParsed.preferred_username;
         const caseAssignedToEmail = caseData?.assignedTo?.emailId;
@@ -177,16 +241,19 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         userEmailIds.push(parsedAttributeValue.caseAssignedTo);
         const userEmailIdsIncludingAnalysisTeam = userEmailIds.concat(parsedAttributeValue.analysisTeam);
 
-        const shouldDisable = !userEmailIds.some(email => email.startsWith(currentUserName + '@'));
-        const shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(email => email.startsWith(currentUserName + '@'));
+        let shouldDisable = !userEmailIds.some(email => email.startsWith(currentUserName + '@'));
+        let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(email => email.startsWith(currentUserName + '@'));
 
         const recommendations = parsedAttributeValue.dataGrid1;
         const recommendationAssignees = recommendations.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
         const recommendationReviewers = recommendations.map((item) => item.recommendationReviewer).filter((assignee) => assignee !== "");
         const userEmailIdsWithRecommendationAssignees = userEmailIds.concat(recommendationAssignees);
         const userEmailIdsWithRecommendationUsers = userEmailIdsWithRecommendationAssignees.concat(recommendationReviewers);
-        const shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.some(email => email.startsWith(currentUserName + '@'));
+        let shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.some(email => email.startsWith(currentUserName + '@'));
 
+        if(accountStore.isManagerUser(keycloak)){
+          shouldDisable = shouldDisableAnalysis = shouldDisableValueRealization = false;
+        }
         // Disable fields (with proper null checks)
         const level1 = updatedFormStructure.structure.components[0]
 
@@ -900,6 +967,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     console.log('event onSubmitRecommendation', event)
     let updatedFormData = JSON.parse(JSON.stringify(formData))
     setFormData(updatedFormData)
+    setCurrentData(updatedFormData)
 
     if (!formData.data.container.analysisDesc) {
       setSnackbarMessages(['Please submit analysis before posting recommendation.'])
@@ -1095,7 +1163,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       }),
     )
       .then(() => {
-        handleClose()
+        close()
       })
       .catch((err) => {
         console.log(err.message)
@@ -1488,6 +1556,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     }
   }
 
+  const close = () => {
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm("You have unsaved changes. Do you really want to leave?");
+      if (!confirmLeave) return; // Stop closing modal if user cancels
+    }
+    handleClose()
+  }
+
   return (
     aCase &&
     caseDef &&
@@ -1497,7 +1573,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         <Dialog
           fullScreen
           open={open}
-          onClose={handleClose}
+          onClose={close}
           TransitionComponent={Transition}
         >
           <AppBar sx={{ position: 'relative' }}>
@@ -1505,7 +1581,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               <IconButton
                 edge='start'
                 color='inherit'
-                onClick={handleClose}
+                onClick={close}
                 aria-label='close'
               >
                 <CloseIcon />
@@ -1698,6 +1774,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                       <Form
                         form={form.structure}
                         submission={formData}
+                        onChange={(submission) => handleFormChange(submission)} // Listen for changes
                         options={{
                           // readOnly: true,
                           fileService: new StorageService(),
@@ -1711,21 +1788,27 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         onCustomEvent={(event) => {
                           console.log('Form event:', event)
                           if (event.component.key === 'saveAsDraft') {
+                            setHasUnsavedChanges(false);
                             onSubmitForm()
                           } else if (
                             event.component.key === 'RecommendationSubmit3'
                           ) {
+                            setHasUnsavedChanges(false);
                             onSubmitRecommendation(event)
                           } else if (event.component.key === 'onSave') {
-                            // onSubmitRecommendation()
+                            setHasUnsavedChanges(false);
                             onSave()
                           } else if (event.component.key === 'analysisSubmit') {
+                            setHasUnsavedChanges(false);
                             onAnalysisSave()
                           } else if (event.component.key === 'valueRealizationSubmit') {
+                            setHasUnsavedChanges(false);
                             onValueRealizationSubmit()
                           } else if (event.component.key === 'analysisEdit') {
+                            setHasUnsavedChanges(false);
                             onAnalysisSave()
                           } else if (event.component.key === 'recommendationFinalSubmit') {
+                            setHasUnsavedChanges(false);
                             setIsFinalRecommendationConfirmationOpen(true)
                           }
                         }}

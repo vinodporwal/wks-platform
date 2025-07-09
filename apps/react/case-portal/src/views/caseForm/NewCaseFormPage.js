@@ -35,7 +35,45 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const [currentParams, setCurrentParams] = useState([])
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [currentData, setCurrentData] = useState(null);
 
+  const handleBeforeUnload = (event) => {
+    if (hasUnsavedChanges) {
+      const message = "You have unsaved changes. Are you sure you want to leave?";
+      event.preventDefault();
+      event.returnValue = message; 
+      return message; 
+    }
+  };
+
+    // Track when the form values change
+  const handleFormChange = (submission) => {
+    setCurrentData(submission.data); // Update current form data
+
+    // Compare the initial and current data to detect modifications
+    if (formData?.data && JSON.stringify(formData?.data) !== JSON.stringify(submission.data)) {
+      setHasUnsavedChanges(true);
+    } else {
+      setHasUnsavedChanges(false);
+    }
+  };
+
+  useEffect(() => {
+    // Add the event listener for beforeunload
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      setHasUnsavedChanges(false);
+    };
+  }, [hasUnsavedChanges]); // Empty dependency array ensures this runs once on mount and unmount
+
+  useEffect(() => {
+    setHasUnsavedChanges(hasUnsavedChanges);
+  }, [hasUnsavedChanges])
+  
   useEffect(() => {
     const params = window.location.search
     setCurrentParams(params)
@@ -123,9 +161,11 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   }
 
   const handleClose = () => {
-    const params =
-      currentParams.length > 0 ? currentParams : window.location.search
-    console.log('currentParams', params)
+    const params = currentParams.length > 0 ? currentParams : window.location.search
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm("You have unsaved changes. Do you really want to leave?");
+      if (!confirmLeave) return; // Stop closing modal if user cancels
+    }
     navigate(`/case-list/create${params}`)
   }
 
@@ -404,6 +444,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             <Form
               form={form.structure}
               submission={formData}
+              onChange={(submission) => handleFormChange(submission)} // Listen for changes
               options={{
                 fileService: new StorageService(),
               }}

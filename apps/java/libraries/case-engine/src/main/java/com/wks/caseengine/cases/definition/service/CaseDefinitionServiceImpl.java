@@ -292,7 +292,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	        faultEvent.setStartTime(faultHistory.getStartTime());
 	        faultEvent.setEndTime(faultHistory.getEndTime());
-
+	        faultEvent.setPath(faultHistory.getFaultVisualisationData());
+	        faultEvent.setFaultDisplayName(faultHistory.getFaultDisplayName());
 	        // Set Fault History Data
 			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
 	        faultEvent.setEventEnrichment(new EventEnrichmentModel());
