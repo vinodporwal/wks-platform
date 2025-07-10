@@ -491,7 +491,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			        }
 			        
 				}
-			    if(!caseStatusValue.equals("Under Analysis")) {
+//			    if(!caseStatusValue.equals("Under Analysis")) {
 			    	System.out.println("Calling mail send method...");
 //			    	String from = "amol.borse@honeywell.com";
 			    	Map<String, Object> data = new HashMap<>();
@@ -504,7 +504,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			    	caseTitle = "CASE MANAGEMENT :"+ caseTitle;
 			    	caseEmailService.send(from, assignedTo, caseTitle, reviewers, null, null, "email-template", data);
 			    	//(assignedTo, caseNumber, caseTitle, caseStatusValue, reviewers);
-			    }
+//			    }
 			    
 			    int i = 0;
 			    String attributeName = attribute.getName();
