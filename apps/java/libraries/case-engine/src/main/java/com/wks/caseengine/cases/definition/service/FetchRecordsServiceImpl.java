@@ -297,8 +297,8 @@ public class FetchRecordsServiceImpl {
 	public List<HierarchyNodesModel> gethierarchyNodePKID(String assetName) {
 		try {
 //			String sql = "SELECT * FROM HierarchyNodes WHERE DisplayNamePath LIKE ? AND IsDeleted = 0";
-			String sql = "SELECT * FROM HierarchyNodes WHERE Path LIKE ? AND IsDeleted = 0";
-//			String sql = "SELECT * FROM HierarchyNodes WHERE Path = ? AND IsDeleted = 0";
+//			String sql = "SELECT * FROM HierarchyNodes WHERE Path LIKE ? AND IsDeleted = 0";
+			String sql = "SELECT * FROM HierarchyNodes WHERE Path = ? AND IsDeleted = 0";
 
 	        return jdbcTemplate.query(sql, new Object[]{assetName}, (rs, rowNum) -> {
 	        	HierarchyNodesModel hierarchyNode = new HierarchyNodesModel();
@@ -335,4 +335,25 @@ public class FetchRecordsServiceImpl {
 	        (rs, rowNum) -> rs.getString("HierarchyNode_PK_ID")
 	    );
 	}
+	
+	public List<HierarchyNodesModel> getParentHierarchyNode(String path) {
+	    try {
+	        String sql = "SELECT * FROM HierarchyNodes hn WHERE hn.IsDeleted = 0 " +
+	                     "AND hn.HierarchyNode_PK_ID = (SELECT Parent_PK_ID FROM HierarchyNodes WHERE [Path] = ?)";
+
+	        return jdbcTemplate.query(sql, new Object[] { path }, (rs, rowNum) -> {
+	            HierarchyNodesModel hierarchyNode = new HierarchyNodesModel();
+	            hierarchyNode.setHierarchyNodePkId(rs.getString("HierarchyNode_PK_ID"));
+	            hierarchyNode.setDisplayName(rs.getString("DisplayName"));
+	            hierarchyNode.setLocalizedDisplayName(rs.getString("LocalizedDisplayName"));
+	            hierarchyNode.setPath(rs.getString("Path"));
+	            // Add additional fields mapping if necessary
+	            return hierarchyNode;
+	        });
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null; // Return an empty list instead of null to avoid potential NullPointerExceptions
+	}
+	
 }

@@ -368,13 +368,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   caseNo.calculateValue = `value = ${aCase.caseNo}`
                 }
 
-                const caseTitleField =
-                  level2.components[0].columns.length > 1
-                    ? level2.components[0].columns[1].components[0]
-                    : null
-                if (caseTitleField) {
-                  caseTitleField.disabled = true
-                }
+                // const caseTitleField =
+                //   level2.components[0].columns.length > 1
+                //     ? level2.components[0].columns[1].components[0]
+                //     : null
+                // if (caseTitleField) {
+                //   caseTitleField.disabled = true
+                // }
 
                 // Commented as per client requirement
                 // const caseAssign =
@@ -619,7 +619,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             caseUrl: buildCreateUrl(window.location.href),
             assignedTo: { emailId: formData.data.container.caseAssignedTo },
             isFinalRecommendationSubmitted: aCase.isFinalRecommendationSubmitted,
-            owner: aCase.owner
+            owner: aCase.owner,
+            path: formData.data.container.path,
           }),
         )
       })
@@ -711,7 +712,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             caseUrl: buildCreateUrl(window.location.href),
             assignedTo: { emailId: formData.data.container.caseAssignedTo },
             isFinalRecommendationSubmitted: aCase.isFinalRecommendationSubmitted,
-            owner: aCase.owner
+            owner: aCase.owner,
+            path: formData.data.container.path,
           }),
         )
       })
@@ -776,7 +778,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             caseUrl: buildCreateUrl(window.location.href),
             assignedTo: { emailId: formData.data.container.caseAssignedTo },
             isFinalRecommendationSubmitted: aCase.isFinalRecommendationSubmitted,
-            owner: aCase.owner
+            owner: aCase.owner,
+            path: formData.data.container.path,
           }),
         )
       })
@@ -1112,7 +1115,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             owner: aCase.owner,
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: { emailId: formData.data.container.caseAssignedTo }
+            assignedTo: { emailId: formData.data.container.caseAssignedTo },
+            path: formData.data.container.path,
           }),
         )
       })

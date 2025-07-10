@@ -294,7 +294,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        faultEvent.setEndTime(faultHistory.getEndTime());
 	        faultEvent.setPath(faultHistory.getFaultVisualisationData());
 	        faultEvent.setFaultDisplayName(faultHistory.getFaultDisplayName());
-	        // Set Fault History Data
+	        
+	        List<HierarchyNodesModel> hierarchyNodesModels = fetchRecords.getParentHierarchyNode(faultHistory.getFaultVisualisationData());
+        	System.out.println("Main Asset ******************************************************************************");
+        	System.out.println("Main Asset " + hierarchyNodesModels.size());
+	        if (!Objects.isNull(hierarchyNodesModels) && !hierarchyNodesModels.isEmpty() && hierarchyNodesModels.size() > 0) {
+	        	HierarchyNodesModel hierarchyNodesModel = hierarchyNodesModels.get(0);
+	        	System.out.println("Main Asset " + hierarchyNodesModel.getLocalizedDisplayName());
+	        	faultEvent.setMainAsset(hierarchyNodesModel.getLocalizedDisplayName());
+	        }
+        	System.out.println("Main Asset ******************************************************************************");
+	        // Set Fault History Data;
 			String eventEnrichmentPkIdStr = faultHistory.getEventEnrichmentPkId();
 	        faultEvent.setEventEnrichment(new EventEnrichmentModel());
 			if(!Objects.isNull(eventEnrichmentPkIdStr) && !eventEnrichmentPkIdStr.isEmpty()) {
@@ -377,7 +387,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		OwnerDetails owner = caseData.getOwner();
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
-		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(caseData.getPath());
 		if(hierarychyNodes.size()>=1) {
 			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
 		}
@@ -1061,7 +1071,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public Case saveAnalysis(Case caseData) {
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
-		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(caseData.getPath());
 		if(hierarychyNodes.size()>=1) {
 			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
 		}
@@ -1129,7 +1139,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		String currentDate = now.format(formatter);
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
-		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(caseData.getPath());
 		if(hierarychyNodes.size()>=1) {
 			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
 		}
@@ -1248,7 +1258,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public Case saveValueRealization(Case caseData) {
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
-		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(caseData.getPath());
 		if(hierarychyNodes.size()>=1) {
 			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
 		}
@@ -1296,7 +1306,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public Case submitFinalRecommendation(Case caseData) {
 		String assetName = "%"+caseData.getAssetName();
 		String hierarchyNodePKID = "";
-		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(assetName);
+		List<HierarchyNodesModel> hierarychyNodes = fetchRecords.gethierarchyNodePKID(caseData.getPath());
 		if(hierarychyNodes.size()>=1) {
 			hierarchyNodePKID = hierarychyNodes.get(0).getHierarchyNodePkId();
 		}

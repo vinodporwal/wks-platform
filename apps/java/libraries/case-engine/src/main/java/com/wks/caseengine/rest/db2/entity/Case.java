@@ -81,6 +81,9 @@ public class Case {
     @Column(name ="isFinalRecommendationSubmitted")
     private Boolean isFinalRecommendationSubmitted = false;
 
+    @Column(name = "path")
+    private String path;
+    
 	public void setCaseNo(String caseNo) {
 		this.caseNo = caseNo;
 	}
@@ -201,6 +204,14 @@ public class Case {
 
 	public void setIsFinalRecommendationSubmitted(Boolean isFinalRecommendationSubmitted) {
 		this.isFinalRecommendationSubmitted = isFinalRecommendationSubmitted;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
 	}
 
 	@Override
