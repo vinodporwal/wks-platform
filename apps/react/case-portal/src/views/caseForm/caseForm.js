@@ -245,8 +245,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         let shouldDisableAnalysis = !userEmailIdsIncludingAnalysisTeam.some(email => email.startsWith(currentUserName + '@'));
 
         const recommendations = parsedAttributeValue.dataGrid1;
-        const recommendationAssignees = recommendations.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
-        const recommendationReviewers = recommendations.map((item) => item.recommendationReviewer).filter((assignee) => assignee !== "");
+        const recommendationAssignees = recommendations?.map((item) => item.recommendationAssignedTo2).filter((assignee) => assignee !== "");
+        const recommendationReviewers = recommendations?.map((item) => item.recommendationReviewer).filter((assignee) => assignee !== "");
         const userEmailIdsWithRecommendationAssignees = userEmailIds.concat(recommendationAssignees);
         const userEmailIdsWithRecommendationUsers = userEmailIdsWithRecommendationAssignees.concat(recommendationReviewers);
         let shouldDisableValueRealization = !userEmailIdsWithRecommendationUsers.some(email => email.startsWith(currentUserName + '@'));
@@ -304,6 +304,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         } else {
           if (!isDraft) {
             const analysis = level1.components?.[4] ?? null;
+            const recommendationRadio = level1.components?.[5] ?? null;
             const recommendation = level1.components?.[6] ?? null;
             const caseDetails = level1.components?.[3] ?? null;
             const valueRealization = level1.components?.[7] ?? null;
@@ -312,7 +313,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 component.id !== recommendation?.id &&
                 component.id !== caseDetails?.id &&
                 component.id !== analysis?.id &&
-                component.id !== valueRealization?.id
+                component.id !== valueRealization?.id &&
+                component.id !== recommendationRadio.id
               ) {
                 component.disabled = true;
               }
@@ -486,7 +488,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 }
 
                 const recommendations = parsedAttributeValue.dataGrid1;
-                if (recommendationFinalSubmit && (isFinalRecommendationSubmitted || shouldDisableAnalysis || (recommendations.length >= 1 && recommendations[0].recommendationNo1 === ''))) {
+                if (recommendationFinalSubmit && (isFinalRecommendationSubmitted || shouldDisableAnalysis || !recommendations || (recommendations?.length >= 1 && recommendations[0]?.recommendationNo1 === ''))) {
                   recommendationFinalSubmit.disabled = true;
                 }
               }
@@ -541,6 +543,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const onSave = () => {
+    setHasUnsavedChanges(false);
     setLoading(true)
     const {
       caseDescription,
