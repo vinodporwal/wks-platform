@@ -135,17 +135,19 @@ export const DataService = {
   // getConfigurationExcelConstants,
   getNormalOperationNormsGrades,
   deleteTurnArondReportItem,
-  getIbrScreen1,
+  getIbr,
   getConsumptionAOPNormsGrades,
   saveCracker,
   saveAnnualProduction,
-  getIbrScreen2,
-  saveCracker2,
+  getIbrSdTa,
+  // ,saveCracker2
   getIbrScreen3,
-  saveCracker3,
+  saveCrackerRunLength,
   getRunLengthExcel,
   saveRunLengthExcel,
   handleCalculateDecokingActivities,
+  getSlowDownPlantDataTab,
+  postIbr,
 }
 async function handleRefresh(year, plantId, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/handleRefresh?year=${year}&plantId=${plantId}`
@@ -2732,39 +2734,39 @@ async function saveConfigurationExcel(file, keycloak) {
     return Promise.reject(e)
   }
 }
-async function saveConfigurationExcelConstants(file, keycloak) {
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${plantId}&year=${year}`
-  const formData = new FormData()
-  formData.append('file', file)
-  const headers = {
-    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: formData,
-    })
-    if (!resp.ok) {
-      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
-    }
-    const blob = await resp.blob()
-    const urlBlob = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = urlBlob
-    a.download = 'ConfigurationResponse.xlsx' // Filename to save
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    window.URL.revokeObjectURL(urlBlob)
-  } catch (e) {
-    console.error('Error Editing Config data:', e)
-    return Promise.reject(e)
-  }
-}
+// async function saveConfigurationExcelConstants(file, keycloak) {
+//   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+//   const year = localStorage.getItem('year')
+//   const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${plantId}&year=${year}`
+//   const formData = new FormData()
+//   formData.append('file', file)
+//   const headers = {
+//     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+//     Authorization: `Bearer ${keycloak.token}`,
+//   }
+//   try {
+//     const resp = await fetch(url, {
+//       method: 'POST',
+//       headers,
+//       body: formData,
+//     })
+//     if (!resp.ok) {
+//       throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+//     }
+//     const blob = await resp.blob()
+//     const urlBlob = window.URL.createObjectURL(blob)
+//     const a = document.createElement('a')
+//     a.href = urlBlob
+//     a.download = 'ConfigurationResponse.xlsx' // Filename to save
+//     document.body.appendChild(a)
+//     a.click()
+//     a.remove()
+//     window.URL.revokeObjectURL(urlBlob)
+//   } catch (e) {
+//     console.error('Error Editing Config data:', e)
+//     return Promise.reject(e)
+//   }
+// }
 async function saveNormalOpsNormsExcel(file, keycloak) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
@@ -2996,28 +2998,28 @@ async function getConfigurationExecutionDetails(keycloak) {
     return await Promise.reject(e)
   }
 }
-// async function saveConfigurationExcelConstants(file, keycloak) {
-//   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-//   const year = localStorage.getItem('year')
-//   const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${plantId}&year=${year}`
-//   const formData = new FormData()
-//   formData.append('file', file)
-//   const headers = {
-//     Accept: 'application/json',
-//     Authorization: `Bearer ${keycloak.token}`,
-//   }
-//   try {
-//     const resp = await fetch(url, {
-//       method: 'POST',
-//       headers,
-//       body: formData,
-//     })
-//     return json(keycloak, resp)
-//   } catch (e) {
-//     console.log(e)
-//     return await Promise.reject(e)
-//   }
-// }
+async function saveConfigurationExcelConstants(file, keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants-import-excel?plantFKId=${plantId}&year=${year}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 async function getCrackerMaintenanceData(keycloak) {
   var year = localStorage.getItem('year')
   var plantId = ''
@@ -3110,7 +3112,7 @@ async function deleteTurnArondReportItem(maintenanceId, keycloak) {
     return Promise.reject(e)
   }
 }
-async function getIbrScreen1(keycloak, reportType) {
+async function getIbr(keycloak, reportType) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/decoking-activities?plantId=${plantId}&year=${year}&reportType=RunningDuration`
@@ -3193,10 +3195,10 @@ async function saveAnnualProduction(payload, keycloak) {
     return await Promise.reject(e)
   }
 }
-async function getIbrScreen2(keycloak, reportType) {
+async function getIbrSdTa(keycloak, reportType) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/decoking-activities?plantId=${plantId}&year=${year}&reportType=ibr`
+  const url = `${Config.CaseEngineUrl}/task/decoking-activities/ibr?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -3210,7 +3212,7 @@ async function getIbrScreen2(keycloak, reportType) {
     return await Promise.reject(e)
   }
 }
-async function saveCracker2(plantId, data, keycloak) {
+async function postIbr(plantId, data, keycloak) {
   var year = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/decoking-activities/ibr?plantId=${plantId}&year=${year}`
   const headers = {
@@ -3247,7 +3249,7 @@ async function getIbrScreen3(keycloak, reportType) {
     return await Promise.reject(e)
   }
 }
-async function saveCracker3(plantId, data, keycloak) {
+async function saveCrackerRunLength(plantId, data, keycloak) {
   var year = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/decoking-activities/run-length?plantId=${plantId}&year=${year}`
   const headers = {
@@ -3349,5 +3351,27 @@ async function handleCalculateDecokingActivities(plantId, year, keycloak) {
   } catch (e) {
     console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
+  }
+}
+async function getSlowDownPlantDataTab(keycloak) {
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  var year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/shutdown/dynamic/columns?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

@@ -177,6 +177,10 @@
   background-color: #e7e7e7;
 }
 
+.k-grid .k-grid-content td.k-right-disabled {
+  background-color: #e7e7e7;
+}
+
 .non-editable-cell {
   background-color: #e7e7e7;
 }
@@ -191,4 +195,39 @@
 .date-picker {
   margin-right: 10;
   width: 200px;
+}
+
+/* .k-column-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word;
+  font-size: 12px;
+  margin-left: -8px;
+  margin-right: 4px;
+}
+
+a.k-grid-header-menu.k-grid-column-menu {
+  margin-right: -10px;
+}
+
+.k-grid-header .k-header {
+  border-right: 1px solid #ccc;
+} */
+
+/* .k-grid-header .k-header {
+  overflow: visible !important;
+  white-space: normal !important;
+  color: rgba(0, 225, 41, 0.645);
+  word-break: break-word;
+} */
+
+.k-column-title {
+  /* white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  word-break: break-word;*/
+  font-size: 12px;
+  margin-left: -8px;
+  margin-right: 4px;
 }

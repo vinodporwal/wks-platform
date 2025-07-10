@@ -32,10 +32,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.wks.caseengine.dto.CrackerConfigurationDTO;
 import com.wks.caseengine.dto.DecokePlanningIBRDTO;
 import com.wks.caseengine.dto.DecokeRunLengthDTO;
 import com.wks.caseengine.dto.DecokingActivitiesDTO;
 import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.CrackerConfiguration;
 import com.wks.caseengine.entity.DecokeRunLength;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.Plants;
@@ -45,6 +48,7 @@ import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
+import com.wks.caseengine.repository.CrackerConfigurationRepository;
 import com.wks.caseengine.repository.DecokeRunLengthRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.PlantsRepository;
@@ -82,6 +86,9 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 	@Autowired
 	private DecokeRunLengthRepository decokeRunLengthRepository;
+	
+	@Autowired
+	private CrackerConfigurationRepository crackerConfigurationRepository;
 
 	private DataSource dataSource;
 
@@ -143,12 +150,19 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 					map.put("taEDId", row[5] != null ? row[5] : "");
 					map.put("sdSDId", row[6] != null ? row[6] : "");
 					map.put("sdEDId", row[7] != null ? row[7] : "");
-					map.put("ibrSD", row[8] != null ? row[8] : "");
-					map.put("ibrED", row[9] != null ? row[9] : "");
-					map.put("taSD", row[10] != null ? row[10] : "");
-					map.put("taED", row[11] != null ? row[11] : "");
-					map.put("sdSD", row[12] != null ? row[12] : "");
-					map.put("sdED", row[13] != null ? row[13] : "");
+					map.put("preCoilId", row[8] != null ? row[8] : "");
+					map.put("postCoilId", row[9] != null ? row[9] : "");
+					map.put("isCoilId", row[10] != null ? row[10] : "");
+					
+					map.put("ibrSD", row[11] != null ? row[11] : "");
+					map.put("ibrED", row[12] != null ? row[12] : "");
+					map.put("taSD", row[13] != null ? row[13] : "");
+					map.put("taED", row[14] != null ? row[14] : "");
+					map.put("sdSD", row[15] != null ? row[15] : "");
+					map.put("sdED", row[16] != null ? row[16] : "");
+					map.put("preCoil", row[17] != null ? row[17] : "");
+					map.put("postCoil", row[18] != null ? row[18] : "");
+					map.put("isCoil", row[19] != null ? row[19] : "");
 					map.put("remarks", "");
 				} else if (reportType.equalsIgnoreCase("activity")) {
 					map.put("furnace", row[0]);
@@ -254,7 +268,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 			// 2. Construct SQL with dynamic view name
 			String sql = "SELECT * FROM " + viewName +
-					" WHERE Plant_FK_Id = :plantId AND AOPYear = :aopYear";
+					" WHERE Plant_FK_Id = :plantId AND AOPYear = :aopYear order by date";
 
 			// 3. Create and parameterize the native query
 			Query query = entityManager.createNativeQuery(sql);
@@ -322,7 +336,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			case 12:
 				return "December";
 			default:
-				return "Invalid month";
+				return "0";
 		}
 	}
 
@@ -391,151 +405,37 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 	@Override
 	public AOPMessageVM updateDecokingActivitiesIBRData(String year, String plantId, String reportType,
-			List<DecokePlanningIBRDTO> decokePlanningIBRDTOList) {
+			List<CrackerConfigurationDTO> crackerConfigurationDTOList) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<CrackerConfiguration> crackerConfigurationList=new ArrayList<>();
 		try {
-			for (DecokePlanningIBRDTO decokePlanningIBRDTO : decokePlanningIBRDTOList) {
-				if (decokePlanningIBRDTO.getIbrEDId() != null && decokePlanningIBRDTO.getIbrEDId() != "") {
-					Optional<NormAttributeTransactions> normAttributeTransactionsopt = normAttributeTransactionsRepository
-							.findByNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getIbrEDId()));
-					if (normAttributeTransactionsopt.isPresent()) {
-						NormAttributeTransactions normAttributeTransactions = normAttributeTransactionsopt.get();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getIbrED());
-						normAttributeTransactions.setModifiedOn(new Date());
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					} else {
-						NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getIbrED());
-						normAttributeTransactions.setAttributeValueVersion("V1");
-						normAttributeTransactions.setAuditYear(year);
-						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions
-								.setNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getIbrEDId()));
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactions.setUserName("System");
-						normAttributeTransactions.setAopMonth(0);
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					}
+			for (CrackerConfigurationDTO crackerConfigurationDTO : crackerConfigurationDTOList) {
+				if (crackerConfigurationDTO.getId() != null) {
+					CrackerConfiguration crackerConfiguration=null;
+					Optional<CrackerConfiguration> crackerConfigurationopt = crackerConfigurationRepository.findById(crackerConfigurationDTO.getId());
+					if(crackerConfigurationopt.isPresent()) {
+						crackerConfiguration=crackerConfigurationopt.get();
+						crackerConfiguration.setAopYear(crackerConfigurationDTO.getAopYear());
+						crackerConfiguration.setDisplayName(crackerConfigurationDTO.getDisplayName());
+						crackerConfiguration.setDisplaySeq(crackerConfigurationDTO.getDisplaySeq());
+						crackerConfiguration.setIbrEndDate(crackerConfigurationDTO.getIbrEndDate());
+						crackerConfiguration.setIbrStartDate(crackerConfigurationDTO.getIbrStartDate());
+						crackerConfiguration.setIsCr(crackerConfigurationDTO.getIsCr());
+						crackerConfiguration.setName(crackerConfigurationDTO.getName());
+						crackerConfiguration.setPlantFkId(crackerConfigurationDTO.getPlantFkId());
+						crackerConfiguration.setPostCrDays(crackerConfigurationDTO.getPostCrDays());
+						crackerConfiguration.setPreCrDays(crackerConfigurationDTO.getPreCrDays());
+						crackerConfiguration.setRemarks(crackerConfigurationDTO.getRemarks());
+						crackerConfiguration.setShutDownEndDate(crackerConfigurationDTO.getShutDownEndDate());
+						crackerConfiguration.setShutDownStartDate(crackerConfigurationDTO.getShutDownStartDate());
+						crackerConfiguration.setTaEndDate(crackerConfigurationDTO.getTaEndDate());
+						crackerConfiguration.setTaStartDate(crackerConfigurationDTO.getTaStartDate());
+						crackerConfigurationList.add(crackerConfigurationRepository.save(crackerConfiguration));
+					}					
 				}
-				if (decokePlanningIBRDTO.getIbrSDId() != null && decokePlanningIBRDTO.getIbrSDId() != "") {
-					Optional<NormAttributeTransactions> normAttributeTransactionsopt = normAttributeTransactionsRepository
-							.findByNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getIbrSDId()));
-					if (normAttributeTransactionsopt.isPresent()) {
-						NormAttributeTransactions normAttributeTransactions = normAttributeTransactionsopt.get();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getIbrSD());
-						normAttributeTransactions.setModifiedOn(new Date());
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					} else {
-						NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getIbrSD());
-						normAttributeTransactions.setAttributeValueVersion("V1");
-						normAttributeTransactions.setAuditYear(year);
-						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions
-								.setNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getIbrSDId()));
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactions.setUserName("System");
-						normAttributeTransactions.setAopMonth(0);
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					}
-				}
-				if (decokePlanningIBRDTO.getTaSDId() != null && decokePlanningIBRDTO.getTaSDId() != "") {
-					Optional<NormAttributeTransactions> normAttributeTransactionsopt = normAttributeTransactionsRepository
-							.findByNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getTaSDId()));
-					if (normAttributeTransactionsopt.isPresent()) {
-						NormAttributeTransactions normAttributeTransactions = normAttributeTransactionsopt.get();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getTaSD());
-						normAttributeTransactions.setModifiedOn(new Date());
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					} else {
-						NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getTaSD());
-						normAttributeTransactions.setAttributeValueVersion("V1");
-						normAttributeTransactions.setAuditYear(year);
-						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions
-								.setNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getTaSDId()));
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactions.setUserName("System");
-						normAttributeTransactions.setAopMonth(0);
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					}
-				}
-				if (decokePlanningIBRDTO.getTaEDId() != null && decokePlanningIBRDTO.getTaEDId() != "") {
-					Optional<NormAttributeTransactions> normAttributeTransactionsopt = normAttributeTransactionsRepository
-							.findByNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getTaEDId()));
-					if (normAttributeTransactionsopt.isPresent()) {
-						NormAttributeTransactions normAttributeTransactions = normAttributeTransactionsopt.get();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getTaED());
-						normAttributeTransactions.setModifiedOn(new Date());
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					} else {
-						NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getTaED());
-						normAttributeTransactions.setAttributeValueVersion("V1");
-						normAttributeTransactions.setAuditYear(year);
-						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions
-								.setNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getTaEDId()));
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactions.setUserName("System");
-						normAttributeTransactions.setAopMonth(0);
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					}
-				}
-				if (decokePlanningIBRDTO.getSdSDId() != null && decokePlanningIBRDTO.getSdSDId() != "") {
-					Optional<NormAttributeTransactions> normAttributeTransactionsopt = normAttributeTransactionsRepository
-							.findByNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getSdSDId()));
-					if (normAttributeTransactionsopt.isPresent()) {
-						NormAttributeTransactions normAttributeTransactions = normAttributeTransactionsopt.get();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getSdSD());
-						normAttributeTransactions.setModifiedOn(new Date());
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					} else {
-						NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getSdSD());
-						normAttributeTransactions.setAttributeValueVersion("V1");
-						normAttributeTransactions.setAuditYear(year);
-						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions
-								.setNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getSdSDId()));
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactions.setUserName("System");
-						normAttributeTransactions.setAopMonth(0);
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					}
-				}
-				if (decokePlanningIBRDTO.getSdEDId() != null && decokePlanningIBRDTO.getSdEDId() != "") {
-					Optional<NormAttributeTransactions> normAttributeTransactionsopt = normAttributeTransactionsRepository
-							.findByNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getSdEDId()));
-					if (normAttributeTransactionsopt.isPresent()) {
-						NormAttributeTransactions normAttributeTransactions = normAttributeTransactionsopt.get();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getSdED());
-						normAttributeTransactions.setModifiedOn(new Date());
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					} else {
-						NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
-						normAttributeTransactions.setAttributeValue(decokePlanningIBRDTO.getSdED());
-						normAttributeTransactions.setAttributeValueVersion("V1");
-						normAttributeTransactions.setAuditYear(year);
-						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions
-								.setNormParameterFKId(UUID.fromString(decokePlanningIBRDTO.getSdEDId()));
-						normAttributeTransactions.setRemarks(decokePlanningIBRDTO.getRemarks());
-						normAttributeTransactions.setUserName("System");
-						normAttributeTransactions.setAopMonth(0);
-						normAttributeTransactionsRepository.save(normAttributeTransactions);
-					}
-				}
-
 			}
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException("Failed to update data");
 		}
 		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("sd-ta-activity");
@@ -550,7 +450,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		}
 		aopMessageVM.setCode(200);
 		aopMessageVM.setMessage("Data Updated successfully");
-		aopMessageVM.setData(decokePlanningIBRDTOList);
+		aopMessageVM.setData(crackerConfigurationList);
 		return aopMessageVM;
 	}
 
@@ -945,6 +845,41 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			e.printStackTrace();
 			return aopMessageVM;
 		}
+	}
+
+	@Override
+	public AOPMessageVM getDecokingActivitiesIBRData(String year, String plantId, String reportType) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<CrackerConfigurationDTO> crackerConfigurationDTOList = new ArrayList<>();
+		try {
+			List<CrackerConfiguration> crackerConfigurationList= crackerConfigurationRepository.findByPlantFkIdAndAopYear(UUID.fromString(plantId), year);
+			for(CrackerConfiguration crackerConfiguration:crackerConfigurationList) {
+				CrackerConfigurationDTO crackerConfigurationDTO = new CrackerConfigurationDTO();
+				crackerConfigurationDTO.setDisplayName(crackerConfiguration.getDisplayName());
+				crackerConfigurationDTO.setDisplaySeq(crackerConfiguration.getDisplaySeq());
+				crackerConfigurationDTO.setIbrEndDate(crackerConfiguration.getIbrEndDate());
+				crackerConfigurationDTO.setIbrStartDate(crackerConfiguration.getIbrStartDate());
+				crackerConfigurationDTO.setId(crackerConfiguration.getId());
+				crackerConfigurationDTO.setIsCr(crackerConfiguration.getIsCr());
+				crackerConfigurationDTO.setName(crackerConfiguration.getName());
+				crackerConfigurationDTO.setPostCrDays(crackerConfiguration.getPostCrDays());
+				crackerConfigurationDTO.setPreCrDays(crackerConfiguration.getPreCrDays());
+				crackerConfigurationDTO.setRemarks(crackerConfiguration.getRemarks());
+				crackerConfigurationDTO.setShutDownEndDate(crackerConfiguration.getShutDownEndDate());
+				crackerConfigurationDTO.setShutDownStartDate(crackerConfiguration.getShutDownStartDate());
+				crackerConfigurationDTO.setTaEndDate(crackerConfiguration.getTaEndDate());
+				crackerConfigurationDTO.setTaStartDate(crackerConfiguration.getTaStartDate());
+				crackerConfigurationDTO.setAopYear(crackerConfiguration.getAopYear());
+				crackerConfigurationDTO.setPlantFkId(crackerConfiguration.getPlantFkId());
+				crackerConfigurationDTOList.add(crackerConfigurationDTO);
+			}
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to update data");
+		}
+		aopMessageVM.setCode(200);
+		aopMessageVM.setMessage("Data fetched successfully");
+		aopMessageVM.setData(crackerConfigurationDTOList);
+		return aopMessageVM;
 	}
 
 }

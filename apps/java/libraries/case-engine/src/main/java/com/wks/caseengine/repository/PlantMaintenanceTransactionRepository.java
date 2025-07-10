@@ -31,5 +31,20 @@ public interface PlantMaintenanceTransactionRepository extends JpaRepository<Pla
 	int deleteRampActivitiesByNormAndDate(
 			@Param("normParamId") UUID normParamId,
 			@Param("name") String name);
+	
+	@Query(value = "SELECT " +
+            "pm.Discription, " +
+            "pm.MaintForMonth " +
+            "FROM PlantMaintenanceTransaction pm " +
+            "JOIN PlantMaintenance pmt ON pm.PlantMaintenance_FK_Id = pmt.Id " +
+            "JOIN MaintenanceTypes mt ON pmt.MaintenanceType_FK_Id = mt.Id " +
+            "LEFT JOIN NormParameters np ON pm.NormParameter_FK_Id = np.Id " +
+            "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
+            "WHERE mt.Name = :maintenanceTypeName "  +
+            "and pmt.Plant_FK_Id = :plantId " +
+			"and AuditYear = :year order by pm.MaintForMonth",
+            nativeQuery = true)
+	List<Object[]> findDescriptionsByPlantFkId( 
+        @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 
 }

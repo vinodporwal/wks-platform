@@ -1,35 +1,50 @@
+import { BusinessDemandElastomerColumns } from 'components/colums/ElastomerColums'
+import { BusinessDemandMegColumns } from 'components/colums/MegColums'
+import { BusinessDemandPeColumns } from 'components/colums/PeColums'
+import { BusinessDemandPpColumns } from 'components/colums/PpColums'
+import { BusinessDemandPtaColumns } from 'components/colums/PtaColums'
+import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
-import vertical_meg_coldefs_bd from '../../../assets/kendo_businessdata_coldefs.json'
-import vertical_pe_coldefs_bd from '../../../assets/kendo_vertical_pe_coldefs_bd.json'
 
-const getEnhancedColDefs = ({ headerMap }) => {
+const colDefsCache = new Map()
+
+const VERTICAL_COLDEFS_MAP = {
+  [verticalEnums.PE]: BusinessDemandPeColumns,
+  [verticalEnums.PP]: BusinessDemandPpColumns,
+  [verticalEnums.PTA]: BusinessDemandPtaColumns,
+  [verticalEnums.ELASTOMER]: BusinessDemandElastomerColumns,
+  [verticalEnums.MEG]: BusinessDemandMegColumns,
+}
+
+const kendoBusinessDemColDef = ({ headerMap }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const vertName = dataGridStore.verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
 
-  let cols
+  const cacheKey = `${lowerVertName}_${headerMap ? JSON.stringify(headerMap) : 'no_map'}`
 
-  if (lowerVertName === 'pe' || lowerVertName == 'pp') {
-    cols = vertical_pe_coldefs_bd
-  } else {
-    cols = vertical_meg_coldefs_bd
+  if (colDefsCache.has(cacheKey)) {
+    return colDefsCache.get(cacheKey)
   }
+  const cols = VERTICAL_COLDEFS_MAP[lowerVertName] || BusinessDemandMegColumns
 
   const enhancedColDefs = cols.map((col) => {
-    let updatedCol = { ...col }
-    if (headerMap && headerMap[col.title] !== undefined) {
-      updatedCol = {
-        ...updatedCol,
-        title: headerMap[col.title],
-        align: 'right',
-        format: '{0:#.###}',
-      }
+    if (!headerMap || headerMap[col.title] === undefined) {
+      return col
     }
-    return updatedCol
+
+    return {
+      ...col,
+      title: headerMap[col.title],
+      align: 'right',
+      format: '{0:#.###}',
+    }
   })
 
+  colDefsCache.set(cacheKey, enhancedColDefs)
   return enhancedColDefs
 }
 
-export default getEnhancedColDefs
+export const clearColDefsCache = () => colDefsCache.clear()
+
+export default kendoBusinessDemColDef

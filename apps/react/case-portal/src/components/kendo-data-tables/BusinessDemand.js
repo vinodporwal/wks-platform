@@ -286,6 +286,8 @@ const BusinessDemand = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       allAction: permissions?.allAction ?? true,
       units: ['TPH', 'TPD'],
+      showTitleNameBusiness: true,
+      titleName: 'Business Demand Data',
     },
     isOldYear,
   )
@@ -334,10 +336,6 @@ const BusinessDemand = ({ permissions }) => {
           </CustomAccordion>
         </>
       )}
-
-      <Typography component='div' className='grid-title'>
-        Business Demand Data
-      </Typography>
 
       <KendoDataTables
         modifiedCells={modifiedCells}

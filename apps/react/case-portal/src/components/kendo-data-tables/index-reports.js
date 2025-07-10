@@ -525,6 +525,27 @@ const KendoDataTablesReports = ({
           />
         )
       }
+      if (col.type === 'numberNonGrey') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            className={'k-number-right'}
+            editable={col?.editable ? true : false}
+            headerClassName={isActive ? 'active-column' : ''}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+          />
+        )
+      }
+
       if (col.type === 'number') {
         return (
           <GridColumn
@@ -613,8 +634,7 @@ const KendoDataTablesReports = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            width: '100%', // make sure container is full width
-            p: 1,
+            width: '100%',
           }}
         >
           <Box

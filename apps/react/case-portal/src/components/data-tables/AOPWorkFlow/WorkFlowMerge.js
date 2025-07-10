@@ -147,11 +147,9 @@ const WorkFlowMerge = () => {
   }
   // const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
-
   const handleCalculateMeg = async () => {
     try {
       setLoading(true)
-
       const storedPlant = localStorage.getItem('selectedPlant')
       const year = localStorage.getItem('year')
       let plantId = null
@@ -570,6 +568,12 @@ const WorkFlowMerge = () => {
             <Step
               key={step.displayName}
               completed={step.status === 'completed'}
+              sx={{
+                cursor: 'pointer',
+                '& .MuiStepIcon-root.Mui-active': {
+                  color: '#0100cb',
+                },
+              }}
             >
               <StepLabel
                 error={step.status === 'error'}
@@ -619,12 +623,11 @@ const WorkFlowMerge = () => {
                 key={idx}
                 label={label}
                 sx={{
-                  border: tabIndex === idx ? '1px solid' : 'none',
-                  borderBottom: '1px solid',
-                  mr: 0.5,
-                  minWidth: 'auto',
-                  paddingX: 1,
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
                   fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '10px',
                 }}
               />
             ))}
@@ -734,6 +737,7 @@ const WorkFlowMerge = () => {
         )}
 
         {tabIndex === 1 && <PlantsProductionSummary />}
+
         {tabIndex === 2 && <MonthwiseProduction />}
         {tabIndex === 3 && <MonthwiseRawMaterial />}
         {tabIndex === 4 && <TurnaroundReport />}
