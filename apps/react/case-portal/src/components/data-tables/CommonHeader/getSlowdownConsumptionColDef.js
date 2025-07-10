@@ -1,22 +1,22 @@
-import { SlowdownNormsElastomerColumns } from 'components/colums/ELASTOMER/SlowdownNormsElastomerColumns'
-import { SlowdownNormsMegColumns } from 'components/colums/MEG/SlowdownNormsMegColumns'
-import { SlowdownNormsPeColumns } from 'components/colums/PE/SlowdownNormsPeColumns'
-import { SlowdownNormsPpColumns } from 'components/colums/PP/SlowdownNormsPpColumns'
-import { SlowdownNormsPtaColumns } from 'components/colums/PTA/SlowdownNormsPtaColumns'
+import { SlowdownConsumptionElastomerColumns } from 'components/colums/ELASTOMER/SlowdownConsumptionElastomerColumns'
+import { SlowdownConsumptionMegColumns } from 'components/colums/MEG/SlowdownConsumptionMegColumns'
+import { SlowdownConsumptionPeColumns } from 'components/colums/PE/SlowdownConsumptionPeColumns'
+import { SlowdownConsumptionPpColumns } from 'components/colums/PP/SlowdownConsumptionPpColumns'
+import { SlowdownConsumptionPtaColumns } from 'components/colums/PTA/SlowdownConsumptionPtaColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 
 const colDefsCache = new Map()
 
 const VERTICAL_COLDEFS_MAP = {
-  [verticalEnums.PE]: SlowdownNormsPeColumns,
-  [verticalEnums.PP]: SlowdownNormsPpColumns,
-  [verticalEnums.PTA]: SlowdownNormsPtaColumns,
-  [verticalEnums.ELASTOMER]: SlowdownNormsElastomerColumns,
-  [verticalEnums.MEG]: SlowdownNormsMegColumns,
+  [verticalEnums.PE]: SlowdownConsumptionPeColumns,
+  [verticalEnums.PP]: SlowdownConsumptionPpColumns,
+  [verticalEnums.PTA]: SlowdownConsumptionPtaColumns,
+  [verticalEnums.ELASTOMER]: SlowdownConsumptionElastomerColumns,
+  [verticalEnums.MEG]: SlowdownConsumptionMegColumns,
 }
 
-const getSlowdownNormsColDef = ({ headerMap, slowdownMonths }) => {
+const getSlowdownConsumptionColDef = ({ headerMap, slowdownMonths }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const vertName = dataGridStore.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
@@ -49,4 +49,4 @@ const getSlowdownNormsColDef = ({ headerMap, slowdownMonths }) => {
 
 export const clearColDefsCache = () => colDefsCache.clear()
 
-export default getSlowdownNormsColDef
+export default getSlowdownConsumptionColDef

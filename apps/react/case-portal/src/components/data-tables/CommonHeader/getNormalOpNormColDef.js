@@ -1,8 +1,8 @@
-import { NormalOpNormElastomerColumns } from 'components/colums/ElastomerColums'
-import { NormalOpNormMegColumns } from 'components/colums/MegColums'
-import { NormalOpNormPeColumns } from 'components/colums/PeColums'
-import { NormalOpNormPpColumns } from 'components/colums/PpColums'
-import { NormalOpNormPtaColumns } from 'components/colums/PtaColums'
+import { NormalOpNormElastomerColumns } from 'components/colums/ELASTOMER/NormalOpNormElastomerColumns'
+import { NormalOpNormMegColumns } from 'components/colums/MEG/NormalOpNormMegColumns'
+import { NormalOpNormPeColumns } from 'components/colums/PE/NormalOpNormPeColumns'
+import { NormalOpNormPpColumns } from 'components/colums/PP/NormalOpNormPpColumns'
+import { NormalOpNormPtaColumns } from 'components/colums/PTA/NormalOpNormPtaColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 
@@ -29,6 +29,7 @@ const getNormalOpNormColDef = ({ headerMap }) => {
   const cols = VERTICAL_COLDEFS_MAP[lowerVertName] || NormalOpNormMegColumns
 
   const enhancedColDefs = cols.map((col) => {
+    console.log('getNormalOpNormColDef', headerMap, headerMap[col.title])
     if (!headerMap || headerMap[col.title] === undefined) {
       return col
     }

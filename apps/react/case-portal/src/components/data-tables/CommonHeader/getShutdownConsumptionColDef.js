@@ -1,8 +1,8 @@
-import { ShutdownConsumptionElastomerColumns } from 'components/colums/ElastomerColums'
-import { ShutdownConsumptionMegColumns } from 'components/colums/MegColums'
-import { ShutdownConsumptionPeColumns } from 'components/colums/PeColums'
-import { ShutdownConsumptionPpColumns } from 'components/colums/PpColums'
-import { ShutdownConsumptionPtaColumns } from 'components/colums/PtaColums'
+import { ShutdownConsumptionElastomerColumns } from 'components/colums/ELASTOMER/ShutdownConsumptionElastomerColumns'
+import { ShutdownConsumptionMegColumns } from 'components/colums/MEG/ShutdownConsumptionMegColumns'
+import { ShutdownConsumptionPeColumns } from 'components/colums/PE/ShutdownConsumptionPeColumns'
+import { ShutdownConsumptionPpColumns } from 'components/colums/PP/ShutdownConsumptionPpColumns'
+import { ShutdownConsumptionPtaColumns } from 'components/colums/PTA/ShutdownConsumptionPtaColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 

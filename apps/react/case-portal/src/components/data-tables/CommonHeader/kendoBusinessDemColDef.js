@@ -1,8 +1,8 @@
-import { BusinessDemandElastomerColumns } from 'components/colums/ElastomerColums'
-import { BusinessDemandMegColumns } from 'components/colums/MegColums'
-import { BusinessDemandPeColumns } from 'components/colums/PeColums'
-import { BusinessDemandPpColumns } from 'components/colums/PpColums'
-import { BusinessDemandPtaColumns } from 'components/colums/PtaColums'
+import { BusinessDemandElastomerColumns } from 'components/colums/ELASTOMER/BusinessDemandElastomerColumns'
+import { BusinessDemandMegColumns } from 'components/colums/MEG/BusinessDemandMegColumns'
+import { BusinessDemandPeColumns } from 'components/colums/PE/BusinessDemandPeColumns'
+import { BusinessDemandPpColumns } from 'components/colums/PP/BusinessDemandPpColumns'
+import { BusinessDemandPtaColumns } from 'components/colums/PTA/BusinessDemandPtaColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 

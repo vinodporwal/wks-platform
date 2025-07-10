@@ -1,59 +1,54 @@
 import { useSelector } from 'react-redux'
-import productionColDefs from '../../../assets/kendo_production_aop_meg.json'
-import productionColDefsPE from '../../../assets/kendo_production_aop_pe.json'
-import productionColDefsCracker from '../../../assets/kendo_production_aop_cracker.json'
 
-const monthFields = [
-  'april',
-  'may',
-  'june',
-  'july',
-  'aug',
-  'sep',
-  'oct',
-  'nov',
-  'dec',
-  'jan',
-  'feb',
-  'march',
-]
+import { ProductionAopCrackerColumns } from 'components/colums/CRAKER/ProductionAopCrackerColumns'
+import { ProductionAopElastomerColumns } from 'components/colums/ELASTOMER/ProductionAopElastomerColumns'
+import { ProductionAopMegColumns } from 'components/colums/MEG/ProductionAopMegColumns'
+import { ProductionAopPeColumns } from 'components/colums/PE/ProductionAopPeColumns'
+import { ProductionAopPpColumns } from 'components/colums/PP/ProductionAopPpColumns'
+import { ProductionAopPtaColumns } from 'components/colums/PTA/ProductionAopPtaColumns'
+import { verticalEnums } from 'enums/verticalEnums'
+
+const colDefsCache = new Map()
+
+const VERTICAL_COLDEFS_MAP = {
+  [verticalEnums.MEG]: ProductionAopMegColumns,
+  [verticalEnums.PE]: ProductionAopPeColumns,
+  [verticalEnums.PP]: ProductionAopPpColumns,
+  [verticalEnums.CRACKER]: ProductionAopCrackerColumns,
+  [verticalEnums.PTA]: ProductionAopPtaColumns,
+  [verticalEnums.ELASTOMER]: ProductionAopElastomerColumns,
+}
 
 const getEnhancedColDefs = ({ headerMap }) => {
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const { verticalChange } = useSelector((state) => state.dataGridStore)
+  const selectedVertical =
+    verticalChange?.selectedVertical?.toLowerCase() || verticalEnums.MEG
 
-  let cols
+  const cacheKey = `${selectedVertical}_${JSON.stringify(headerMap)}`
 
-  if (lowerVertName == 'pe' || lowerVertName == 'pp') {
-    cols = productionColDefsPE
-  } else if (lowerVertName === 'cracker') {
-    cols = productionColDefsCracker
-  } else {
-    cols = productionColDefs
+  if (colDefsCache.has(cacheKey)) {
+    return colDefsCache.get(cacheKey)
   }
 
-  const hasTotal = cols.some((col) => col.field === 'averageTPH')
-
-  if (!hasTotal) {
+  const baseCols =
+    VERTICAL_COLDEFS_MAP[selectedVertical] || ProductionAopMegColumns
+  const cols = [...baseCols]
+  if (!cols.some((col) => col.field === 'averageTPH')) {
     cols.push({
       field: 'averageTPH',
       title: 'Total',
     })
   }
 
-  const enhancedColDefs = cols.map((col) => {
-    let updatedCol = { ...col }
+  const enhancedColDefs = cols.map((col) => ({
+    ...col,
+    title: headerMap?.[col.title] ?? col.title,
+  }))
 
-    if (headerMap && headerMap[col.title] !== undefined) {
-      updatedCol.title = headerMap[col.title]
-    }
-
-    return updatedCol
-  })
-
+  colDefsCache.set(cacheKey, enhancedColDefs)
   return enhancedColDefs
 }
+
+export const clearColDefsCache = () => colDefsCache.clear()
 
 export default getEnhancedColDefs
