@@ -146,27 +146,6 @@ export const CaseList = ({ status, caseDefId }) => {
         field: 'path',
         headerName: 'Path',
         flex: 1,
-        valueGetter: (value, row) => {
-          try {
-            const attributes =
-              typeof row.attributes === 'string'
-                ? JSON.parse(row.attributes)
-                : row.attributes
-
-            const containerValue = attributes?.find(
-              (attr) => attr.name === 'container',
-            )?.value
-
-            const parsedContainer = containerValue
-              ? JSON.parse(containerValue)
-              : {}
-
-            return parsedContainer.path || ''
-          } catch (error) {
-            console.error('Error parsing mainAsset:', error)
-            return ''
-          }
-        },
       },
       {
         field: 'mainAsset',
