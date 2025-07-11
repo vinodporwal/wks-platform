@@ -3,12 +3,12 @@ import { Box, Tab, Tabs } from '@mui/material'
 import MuiAccordion from '@mui/material/Accordion'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
+import { styled } from '@mui/material/styles'
+import Notification from 'components/Utilities/Notification'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-import { styled } from '@mui/material/styles'
-import Notification from 'components/Utilities/Notification'
 import {
   Backdrop,
   Button,
@@ -1029,6 +1029,7 @@ const ConfigurationTable = () => {
         <Box>
           {(() => {
             const currentTabId = tabs[tabIndex]?.toLowerCase()
+            console.log(currentTabId, 'currentTabId')
             switch (currentTabId) {
               // case 'ac3c9ad7-82b5-4550-b04d-fed0f1fb4908': // StartupLosses
               case getTheId('StartupLosses'):

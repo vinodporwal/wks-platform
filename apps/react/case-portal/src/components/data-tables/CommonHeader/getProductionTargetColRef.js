@@ -1,8 +1,13 @@
+import { ProductionTargetAromaticColumns } from 'components/colums/AROMATICS/ProductionTargetAromaticColumns'
+import { ProductionTargetChemicalColumns } from 'components/colums/CHEMICAL/ProductionTargetChemicalColumns'
 import { ProductionTargetElastomerColumns } from 'components/colums/ELASTOMER/ProductionTargetElastomerColumns'
 import { ProductionTargetMegColumns } from 'components/colums/MEG/ProductionTargetMegColumns'
 import { ProductionTargetPeColumns } from 'components/colums/PE/ProductionTargetPeColumns'
+import { ProductionTargetPetColumns } from 'components/colums/PET/ProductionTargetPetColumns'
 import { ProductionTargetPpColumns } from 'components/colums/PP/ProductionTargetPpColumns'
 import { ProductionTargetPtaColumns } from 'components/colums/PTA/ProductionTargetPtaColumns'
+import { ProductionTargetPvcColumns } from 'components/colums/PVC/ProductionTargetPvcColumns'
+import { ProductionTargetVcmColumns } from 'components/colums/VCM/ProductionTargetVcmColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 
@@ -14,6 +19,11 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.PTA]: ProductionTargetPtaColumns,
   [verticalEnums.ELASTOMER]: ProductionTargetElastomerColumns,
   [verticalEnums.MEG]: ProductionTargetMegColumns,
+  [verticalEnums.AROMATICS]: ProductionTargetAromaticColumns,
+  [verticalEnums.CHEMICAL]: ProductionTargetChemicalColumns,
+  [verticalEnums.PET]: ProductionTargetPetColumns,
+  [verticalEnums.PVC]: ProductionTargetPvcColumns,
+  [verticalEnums.VCM]: ProductionTargetVcmColumns,
 }
 
 const getProductionTargetColRef = ({ headerMap, hideSummary }) => {

@@ -1,8 +1,13 @@
+import { ShutdownConsumptionAromaticColumns } from 'components/colums/AROMATICS/ShutdownConsumptionAromaticColumns'
+import { ShutdownConsumptionChemicalColumns } from 'components/colums/CHEMICAL/ShutdownConsumptionChemicalColumns'
 import { ShutdownConsumptionElastomerColumns } from 'components/colums/ELASTOMER/ShutdownConsumptionElastomerColumns'
 import { ShutdownConsumptionMegColumns } from 'components/colums/MEG/ShutdownConsumptionMegColumns'
 import { ShutdownConsumptionPeColumns } from 'components/colums/PE/ShutdownConsumptionPeColumns'
+import { ShutdownConsumptionPetColumns } from 'components/colums/PET/ShutdownConsumptionPetColumns'
 import { ShutdownConsumptionPpColumns } from 'components/colums/PP/ShutdownConsumptionPpColumns'
 import { ShutdownConsumptionPtaColumns } from 'components/colums/PTA/ShutdownConsumptionPtaColumns'
+import { ShutdownConsumptionPvcColumns } from 'components/colums/PVC/ShutdownConsumptionPvcColumns'
+import { ShutdownConsumptionVcmColumns } from 'components/colums/VCM/ShutdownConsumptionVcmColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 
@@ -14,6 +19,11 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.PTA]: ShutdownConsumptionPtaColumns,
   [verticalEnums.ELASTOMER]: ShutdownConsumptionElastomerColumns,
   [verticalEnums.MEG]: ShutdownConsumptionMegColumns,
+  [verticalEnums.AROMATICS]: ShutdownConsumptionAromaticColumns,
+  [verticalEnums.CHEMICAL]: ShutdownConsumptionChemicalColumns,
+  [verticalEnums.PET]: ShutdownConsumptionPetColumns,
+  [verticalEnums.PVC]: ShutdownConsumptionPvcColumns,
+  [verticalEnums.VCM]: ShutdownConsumptionVcmColumns,
 }
 
 const getShutdownConsumptionColDef = ({ headerMap, shutdownMonths }) => {

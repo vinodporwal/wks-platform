@@ -1,8 +1,13 @@
+import { ConsumptionAopAromaticColumns } from 'components/colums/AROMATICS/ConsumptionAopAromaticColumns'
+import { ConsumptionAopChemicalColumns } from 'components/colums/CHEMICAL/ConsumptionAopChemicalColumns'
 import { ConsumptionAopElastomerColumns } from 'components/colums/ELASTOMER/ConsumptionAopElastomerColumns'
 import { ConsumptionAopMegColumns } from 'components/colums/MEG/ConsumptionAopMegColumns'
 import { ConsumptionAopPeColumns } from 'components/colums/PE/ConsumptionAopPeColumns'
+import { ConsumptionAopPetColumns } from 'components/colums/PET/ConsumptionAopPetColumns'
 import { ConsumptionAopPpColumns } from 'components/colums/PP/ConsumptionAopPpColumns'
 import { ConsumptionAopPtaColumns } from 'components/colums/PTA/ConsumptionAopPtaColumns'
+import { ConsumptionAopPvcColumns } from 'components/colums/PVC/ConsumptionAopPvcColumns'
+import { ConsumptionAopVcmColumns } from 'components/colums/VCM/ConsumptionAopVcmColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 
@@ -14,6 +19,11 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.PTA]: ConsumptionAopPtaColumns,
   [verticalEnums.ELASTOMER]: ConsumptionAopElastomerColumns,
   [verticalEnums.MEG]: ConsumptionAopMegColumns,
+  [verticalEnums.AROMATICS]: ConsumptionAopAromaticColumns,
+  [verticalEnums.CHEMICAL]: ConsumptionAopChemicalColumns,
+  [verticalEnums.PET]: ConsumptionAopPetColumns,
+  [verticalEnums.PVC]: ConsumptionAopPvcColumns,
+  [verticalEnums.VCM]: ConsumptionAopVcmColumns,
 }
 
 const getCunsumptionAopColDef = ({ headerMap }) => {

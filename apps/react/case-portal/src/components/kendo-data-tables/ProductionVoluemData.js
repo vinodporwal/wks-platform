@@ -836,7 +836,7 @@ const ProductionvolumeData = ({ permissions }) => {
     const displayName = product?.displayName || ''
     return <td>{displayName}</td>
   }
-  var cols = permissions?.hideSummary ? colDefs1233 : productionColumns
+  // var cols = permissions?.hideSummary ? colDefs1233 : productionColumns
   var rows1 = permissions?.hideSummary ? rows500 : rows
 
   const handleExcelUpload = (rawFile) => {

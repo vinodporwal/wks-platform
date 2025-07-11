@@ -7,11 +7,16 @@ import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
+import { SlowDownAromaticColumns } from 'components/colums/AROMATICS/SlowDownAromaticColumns'
+import { SlowDownChemicalColumns } from 'components/colums/CHEMICAL/SlowDownChemicalColumns'
 import { SlowDownElastomerColumns } from 'components/colums/ELASTOMER/SlowDownElastomerColumns'
 import { SlowDownMegColumns } from 'components/colums/MEG/SlowDownMegColumns'
 import { SlowDownPeColumns } from 'components/colums/PE/SlowDownPeColumns'
+import { SlowDownPetColumns } from 'components/colums/PET/SlowDownPetColumns'
 import { SlowDownPpColumns } from 'components/colums/PP/SlowDownPpColumns'
 import { SlowDownPtaColumns } from 'components/colums/PTA/SlowDownPtaColumns'
+import { SlowDownPvcColumns } from 'components/colums/PVC/SlowDownPvcColumns'
+import { SlowDownVcmColumns } from 'components/colums/VCM/SlowDownVcmColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { validateFields } from 'utils/validationUtils'
 import { Box, Tab, Tabs } from '../../../node_modules/@mui/material/index'
@@ -436,6 +441,16 @@ const SlowDown = ({ permissions }) => {
         return SlowDownElastomerColumns
       case verticalEnums.MEG:
         return SlowDownMegColumns
+      case verticalEnums.AROMATICS:
+        return SlowDownAromaticColumns
+      case verticalEnums.CHEMICAL:
+        return SlowDownChemicalColumns
+      case verticalEnums.PET:
+        return SlowDownPetColumns
+      case verticalEnums.PVC:
+        return SlowDownPvcColumns
+      case verticalEnums.VCM:
+        return SlowDownVcmColumns
       default:
         return SlowDownMegColumns
     }
