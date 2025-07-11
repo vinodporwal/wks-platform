@@ -1,5 +1,5 @@
 import { useGridApiRef } from '@mui/x-data-grid'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -8,6 +8,12 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 
+import { ShutdownActivitiesElastomerColumns } from 'components/colums/ELASTOMER/ShutdownActivitiesElastomerColumns'
+import { ShutdownActivitiesMegColumns } from 'components/colums/MEG/ShutdownActivitiesMegColumns'
+import { ShutdownActivitiesPeColumns } from 'components/colums/PE/ShutdownActivitiesPeColumns'
+import { ShutdownActivitiesPpColumns } from 'components/colums/PP/ShutdownActivitiesPpColumns'
+import { ShutdownActivitiesPtaColumns } from 'components/colums/PTA/ShutdownActivitiesPtaColumns'
+import { verticalEnums } from 'enums/verticalEnums'
 import KendoDataTables from './index'
 
 const ShutDown = ({ permissions }) => {
@@ -16,7 +22,10 @@ const ShutDown = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { yearChanged, oldYear, plantID } = dataGridStore
+  const { yearChanged, oldYear, plantID, verticalChange } = dataGridStore
+  const vertName = verticalChange?.selectedVertical
+
+  const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
 
   useEffect(() => {
     if (plantID?.plantId) {
@@ -223,41 +232,22 @@ const ShutDown = ({ permissions }) => {
 
     return ''
   }
-
-  const colDefs = [
-    {
-      field: 'discription',
-      title: 'Shutdown Desc',
-      width: 250,
-      editable: true,
-    },
-    {
-      field: 'maintenanceId',
-      title: 'Maintenance ID',
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'maintStartDateTime',
-      title: 'SD - From',
-      editable: true,
-    },
-    {
-      field: 'maintEndDateTime',
-      title: 'SD - To',
-      editable: true,
-    },
-    {
-      field: 'durationInHrs',
-      title: 'Duration (hrs)',
-      editable: true,
-    },
-    {
-      field: 'remark',
-      title: 'Shutdown Basis',
-      editable: true,
-    },
-  ]
+  const colDefs = useMemo(() => {
+    switch (lowerVertName) {
+      case verticalEnums.PE:
+        return ShutdownActivitiesPeColumns
+      case verticalEnums.PP:
+        return ShutdownActivitiesPpColumns
+      case verticalEnums.PTA:
+        return ShutdownActivitiesPtaColumns
+      case verticalEnums.ELASTOMER:
+        return ShutdownActivitiesElastomerColumns
+      case verticalEnums.MEG:
+        return ShutdownActivitiesMegColumns
+      default:
+        return ShutdownActivitiesMegColumns
+    }
+  }, [lowerVertName])
 
   const deleteRowData = async (paramsForDelete) => {
     try {

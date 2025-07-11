@@ -14,6 +14,7 @@ import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { Typography } from '../../../node_modules/@mui/material/index'
 // import TextField from '@mui/material/TextField'
+import getProductionTargetColRef from 'components/data-tables/CommonHeader/getProductionTargetColRef'
 import KendoDataTables from './index'
 
 const ProductionvolumeData = ({ permissions }) => {
@@ -372,337 +373,337 @@ const ProductionvolumeData = ({ permissions }) => {
     })
   }
 
-  const colDefs = [
-    {
-      field: 'idFromApi',
-      title: 'ID',
-      hidden: true,
-    },
-    {
-      field: 'aopCaseId',
-      title: 'Case ID',
+  // const colDefs = [
+  //   {
+  //     field: 'idFromApi',
+  //     title: 'ID',
+  //     hidden: true,
+  //   },
+  //   {
+  //     field: 'aopCaseId',
+  //     title: 'Case ID',
 
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'materialFKId',
-      title: 'Particulars',
+  //     editable: false,
+  //     hidden: true,
+  //   },
+  //   {
+  //     field: 'materialFKId',
+  //     title: 'Particulars',
 
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'productName',
-      title: 'Particulars',
+  //     editable: false,
+  //     hidden: true,
+  //   },
+  //   {
+  //     field: 'productName',
+  //     title: 'Particulars',
 
-      editable: false,
-    },
-    {
-      field: 'april',
-      title: headerMap[4],
-      editable: false,
-      align: 'left',
-      headerAlign: 'left',
-      format: '{0:#.###}',
-      type: 'number',
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: false,
+  //     editable: false,
+  //   },
+  //   {
+  //     field: 'april',
+  //     title: headerMap[4],
+  //     editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     format: '{0:#.###}',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'may',
+  //     title: headerMap[5],
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      format: '{0:#.###}',
-      type: 'number',
-    },
-    {
-      field: 'june',
-      title: headerMap[6],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     format: '{0:#.###}',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'june',
+  //     title: headerMap[6],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'july',
-      format: '{0:#.###}',
-      title: headerMap[7],
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'july',
+  //     format: '{0:#.###}',
+  //     title: headerMap[7],
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'august',
-      title: headerMap[8],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'august',
+  //     title: headerMap[8],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'september',
-      title: headerMap[9],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'september',
+  //     title: headerMap[9],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'october',
-      title: headerMap[10],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'october',
+  //     title: headerMap[10],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'november',
-      title: headerMap[11],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'november',
+  //     title: headerMap[11],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'december',
-      title: headerMap[12],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'december',
+  //     title: headerMap[12],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'january',
-      title: headerMap[1],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'january',
+  //     title: headerMap[1],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'february',
-      title: headerMap[2],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'february',
+  //     title: headerMap[2],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'march',
-      title: headerMap[3],
-      format: '{0:#.###}',
-      editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'march',
+  //     title: headerMap[3],
+  //     format: '{0:#.###}',
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
 
-    {
-      field: 'avgTph',
-      title: 'AVG',
+  //   {
+  //     field: 'avgTph',
+  //     title: 'AVG',
 
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'isEditable',
-      title: 'isEditable',
-      hidden: true,
-    },
-  ]
+  //     editable: false,
+  //     hidden: true,
+  //   },
+  //   {
+  //     field: 'isEditable',
+  //     title: 'isEditable',
+  //     hidden: true,
+  //   },
+  // ]
 
-  const colDefs1233 = [
-    {
-      field: 'idFromApi',
-      title: 'ID',
-      hidden: true,
-    },
-    {
-      field: 'aopCaseId',
-      title: 'Case ID',
-      hidden: true,
-    },
+  // const colDefs1233 = [
+  //   {
+  //     field: 'idFromApi',
+  //     title: 'ID',
+  //     hidden: true,
+  //   },
+  //   {
+  //     field: 'aopCaseId',
+  //     title: 'Case ID',
+  //     hidden: true,
+  //   },
 
-    {
-      field: 'normParametersFKId',
-      title: 'Particulars',
+  //   {
+  //     field: 'normParametersFKId',
+  //     title: 'Particulars',
 
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'productName',
-      title: 'Particulars',
+  //     editable: false,
+  //     hidden: true,
+  //   },
+  //   {
+  //     field: 'productName',
+  //     title: 'Particulars',
 
-      editable: false,
-    },
+  //     editable: false,
+  //   },
 
-    {
-      field: 'april',
-      title: headerMap[4],
-      editable: false,
-      align: 'left',
-      headerAlign: 'left',
-      format: '{0:#.###}',
+  //   {
+  //     field: 'april',
+  //     title: headerMap[4],
+  //     editable: false,
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     format: '{0:#.###}',
 
-      type: 'number',
-    },
-    {
-      field: 'may',
-      title: headerMap[5],
-      format: '{0:#.###}',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'may',
+  //     title: headerMap[5],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'june',
-      title: headerMap[6],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'june',
+  //     title: headerMap[6],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'july',
-      title: headerMap[7],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'july',
+  //     title: headerMap[7],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'august',
-      title: headerMap[8],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'august',
+  //     title: headerMap[8],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'september',
-      title: headerMap[9],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'september',
+  //     title: headerMap[9],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'october',
-      title: headerMap[10],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'october',
+  //     title: headerMap[10],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'november',
-      title: headerMap[11],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'november',
+  //     title: headerMap[11],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'december',
-      title: headerMap[12],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'december',
+  //     title: headerMap[12],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'january',
-      title: headerMap[1],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'january',
+  //     title: headerMap[1],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'february',
-      title: headerMap[2],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'february',
+  //     title: headerMap[2],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
-    {
-      field: 'march',
-      title: headerMap[3],
-      format: '{0:#.###}',
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
+  //   {
+  //     field: 'march',
+  //     title: headerMap[3],
+  //     format: '{0:#.###}',
 
-      editable: false,
+  //     editable: false,
 
-      align: 'left',
-      headerAlign: 'left',
-      type: 'number',
-    },
+  //     align: 'left',
+  //     headerAlign: 'left',
+  //     type: 'number',
+  //   },
 
-    {
-      field: 'avgTph',
-      title: 'AVG',
+  //   {
+  //     field: 'avgTph',
+  //     title: 'AVG',
 
-      editable: false,
-      hidden: true,
-    },
-    {
-      field: 'isEditable',
-      title: 'isEditable',
-      hidden: true,
-    },
-  ]
+  //     editable: false,
+  //     hidden: true,
+  //   },
+  //   {
+  //     field: 'isEditable',
+  //     title: 'isEditable',
+  //     hidden: true,
+  //   },
+  // ]
 
   useEffect(() => {
     fetchData()
@@ -710,6 +711,11 @@ const ProductionvolumeData = ({ permissions }) => {
 
   const productionColumns = getEnhancedProductionColDefs({
     headerMap,
+  })
+
+  const colDefs = getProductionTargetColRef({
+    headerMap,
+    hideSummary: permissions?.hideSummary,
   })
 
   const handleUnitChange = (unit) => {
@@ -940,7 +946,7 @@ const ProductionvolumeData = ({ permissions }) => {
         setModifiedCells={setModifiedCells}
         enableSaveAddBtn={enableSaveAddBtn}
         setRows={setRows}
-        columns={cols}
+        columns={colDefs}
         rows={rows1}
         title='Production Volume Data'
         paginationOptions={[100, 200, 300]}

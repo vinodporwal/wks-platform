@@ -1,8 +1,8 @@
-import { ConsumptionAopElastomerColumns } from 'components/colums/ElastomerColums'
-import { ConsumptionAopMegColumns } from 'components/colums/MegColums'
-import { ConsumptionAopPeColumns } from 'components/colums/PeColums'
-import { ConsumptionAopPpColumns } from 'components/colums/PpColums'
-import { ConsumptionAopPtaColumns } from 'components/colums/PtaColums'
+import { ConsumptionAopElastomerColumns } from 'components/colums/ELASTOMER/ConsumptionAopElastomerColumns'
+import { ConsumptionAopMegColumns } from 'components/colums/MEG/ConsumptionAopMegColumns'
+import { ConsumptionAopPeColumns } from 'components/colums/PE/ConsumptionAopPeColumns'
+import { ConsumptionAopPpColumns } from 'components/colums/PP/ConsumptionAopPpColumns'
+import { ConsumptionAopPtaColumns } from 'components/colums/PTA/ConsumptionAopPtaColumns'
 import { verticalEnums } from 'enums/verticalEnums'
 import { useSelector } from 'react-redux'
 
