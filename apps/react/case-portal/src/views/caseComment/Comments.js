@@ -8,7 +8,7 @@ import CommentForm from './CommentForm'
 import { deleteComment as deleteCommentApi } from './api'
 import './comments.css'
 
-export const Comments = ({ comments, aCase, getCaseInfo }) => {
+export const Comments = ({ comments, aCase, getCaseInfo, isCommentEnabled }) => {
   const [backendComments, setBackendComments] = useState(comments)
 
   const [activeComment, setActiveComment] = useState(null)
@@ -32,6 +32,7 @@ export const Comments = ({ comments, aCase, getCaseInfo }) => {
   const addComment = async (text, parentId) => {
     CaseService.addComment(keycloak, text, parentId, aCase.businessKey)
       .then(() => {
+        CaseService.dispatchCommentNotification(keycloak, aCase.caseNo, text, aCase.businessKey)
         getCaseInfo(aCase)
       })
       .then(() => {
@@ -100,7 +101,7 @@ export const Comments = ({ comments, aCase, getCaseInfo }) => {
         Comments
       </Typography>
 
-      <CommentForm submitLabel='Send' handleSubmit={addComment} />
+      <CommentForm submitLabel='Send' handleSubmit={addComment} isCommentEnabled={isCommentEnabled} />
       {rootComments.map((rootComment) => (
         <Comment
           key={rootComment.id}
@@ -113,6 +114,7 @@ export const Comments = ({ comments, aCase, getCaseInfo }) => {
           updateComment={updateComment}
           formatName={formatName}
           currentUserId={keycloak.tokenParsed.preferred_username}
+          isCommentEnabled={isCommentEnabled}
         />
       ))}
     </React.Fragment>

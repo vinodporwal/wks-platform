@@ -9,6 +9,7 @@ const CommentForm = ({
   hasCancelButton = false,
   handleCancel,
   initialText = '',
+  isCommentEnabled
 }) => {
   const [text, setText] = useState(initialText)
   const isTextareaDisabled = text.length === 0
@@ -29,7 +30,7 @@ const CommentForm = ({
         sx={{ mt: 1 }}
         variant='contained'
         onClick={onSubmit}
-        disabled={isTextareaDisabled}
+        disabled={isTextareaDisabled || !isCommentEnabled}
       >
         {submitLabel}
       </Button>

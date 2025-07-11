@@ -18,6 +18,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.wks.caseengine.cases.definition.CaseDefinition;
+import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.rest.db2.entity.Case;
 import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
 import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
@@ -85,4 +86,8 @@ public interface CaseDefinitionService {
 	Case saveValueRealization(Case caseData);
 	
 	Case submitFinalRecommendation(Case caseData);
+
+	void dispatchCommentNotification(String caseNumber, CaseComment comment);
+
+	Case updateCase(Case caseData);
 }

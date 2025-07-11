@@ -25,7 +25,7 @@
 </head>
 <body>
     <div class="header">
-        <h2>New case has been assigned to you</h2>
+		<h2 th:text="'' + ${subject} + ''">New case has been assigned to you</h2>
     </div>
 
     <div class="content">
@@ -40,6 +40,8 @@
             <p><span class="label">Title:</span> <span th:text="${caseName}">Case Name</span></p>
 <!--            <p><span class="label">Description:</span> <span th:text="${description}">Description</span></p>
             <p><span class="label">Category:</span> <span th:text="${caseCategory}">Category</span></p>  -->
+			<p th:if="${commentBy != null}"><span class="label"> Comment By:</span> <span th:text="${commentBy}">Comment By</span></p> 
+			<p th:if="${comment != null}"><span class="label"> Comment:</span> <span th:text="${comment}">Comment</span></p>
             <p><span class="label">URL:</span> <span th:text="${caseUrl}">URL</span></p>
         </div>
 

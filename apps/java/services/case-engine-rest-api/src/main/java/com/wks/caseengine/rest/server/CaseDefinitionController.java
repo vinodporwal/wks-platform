@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.wks.caseengine.cases.definition.CaseDefinition;
 import com.wks.caseengine.cases.definition.CaseDefinitionNotFoundException;
 import com.wks.caseengine.cases.definition.service.CaseDefinitionService;
+import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseOwner;
 import com.wks.caseengine.rest.db2.entity.Case;
 import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
@@ -137,7 +138,7 @@ public class CaseDefinitionController {
 	
 	@PostMapping("/update-case")
     public ResponseEntity<Case> updateCase(@RequestBody Case caseData) {
-        Case savedCase = caseDefinitionService.saveCase(caseData);
+        Case savedCase = caseDefinitionService.updateCase(caseData);
         return ResponseEntity.ok(savedCase);
     }
 	
@@ -262,6 +263,12 @@ public class CaseDefinitionController {
     public ResponseEntity<Case> submitFinalRecommendation(@RequestBody Case caseData) {
         Case savedCase = caseDefinitionService.submitFinalRecommendation(caseData);
         return ResponseEntity.ok(savedCase);
+    }
+	
+	@PostMapping("/comment-notification/{caseNumber}")
+    public ResponseEntity<String> dispatchCommentNotification(@PathVariable String caseNumber, @RequestBody CaseComment comment) {
+        caseDefinitionService.dispatchCommentNotification(caseNumber, comment);
+        return ResponseEntity.ok("Notification sent.");
     }
 	
 	private Case assignOwner(Case caseData) {

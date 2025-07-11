@@ -78,6 +78,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [currentData, setCurrentData] = useState(null);
   const initialRender = useRef(true); // Track initial render
+  const [isCommentEnabled, setIsCommentEnabled] = useState(true);
+  const [isAttachmentEnabled, setIsAttachmentEnabled] = useState(true);
+  const [isDraft, setIsDraft] = useState(true);
 
   const handleBeforeUnload = (event) => {
     if (hasUnsavedChanges) {
@@ -228,6 +231,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       })
       .then(({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
+        setIsDraft(isDraft);
         const isFinalRecommendationSubmitted = caseData?.isFinalRecommendationSubmitted;
 
         const attributeValue = caseData.attributes[0].value;
@@ -260,7 +264,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         if (shouldDisable && shouldDisableAnalysis && shouldDisableValueRealization) {
           // Disable the top-level component
           level1.disabled = true;
-
+          setIsAttachmentEnabled(false);
+          setIsCommentEnabled(false);
           if (level1?.components) {
             const [level2, , , , analysisSection, , level6, valueRealizationSection, level7] = level1.components;
 
@@ -1674,7 +1679,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 {'Print'}
               </Button>
 
-              <Button color='inherit' onClick={onSave}>
+              <Button color='inherit' hidden={!isDraft} onClick={onSave}>
                 {'Save'}
               </Button>
               {/* Case Actions Menu */}
@@ -1932,7 +1937,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   </Grid>
                 </TabPanel>
                 <TabPanel value={mainTabIndex} index={1}>
-                  <Documents aCase={aCase} getCaseInfo={getCaseInfo} initialValue={documents || []} />
+                  <Documents 
+                    aCase={aCase} 
+                    getCaseInfo={getCaseInfo} 
+                    initialValue={documents || []} 
+                    isAttachmentEnabled={isAttachmentEnabled}
+                  />
                 </TabPanel>
 
                 <TabPanel value={mainTabIndex} index={2}>
@@ -1946,6 +1956,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         aCase={aCase}
                         getCaseInfo={getCaseInfo}
                         comments={comments ? comments : []}
+                        isCommentEnabled={isCommentEnabled}
                       />
                     </Grid>
                   </Grid>

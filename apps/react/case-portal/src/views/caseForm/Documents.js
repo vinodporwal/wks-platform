@@ -20,7 +20,7 @@ import Files from 'react-files'
 import { FileService } from '../../services'
 import CaseStore from './store'
 
-function Documents({ aCase, initialValue, getCaseInfo }) {
+function Documents({ aCase, initialValue, getCaseInfo, isAttachmentEnabled }) {
   const keycloak = useSession()
   const [fetching, setFetching] = useState(false)
   const [percent, setPercent] = useState(0)
@@ -131,8 +131,10 @@ function Documents({ aCase, initialValue, getCaseInfo }) {
             multiple
             minFileSize={1024} // 1KB 
             maxFileSize={20000000} // 20MB
+            clickable={isAttachmentEnabled} // Prevents clicking when disabled
+            disabled={!isAttachmentEnabled}
           >
-            <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: 1 }}>
+            <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: isAttachmentEnabled ? 1 : 0.5 }}>
               Drop files here or click to upload
             </Typography>
           </Files>

@@ -22,7 +22,8 @@ export const CaseService = {
   saveAnalysis,
   saveValueRealization,
   submitFinalRecommendation,
-  updateCase
+  updateCase,
+  dispatchCommentNotification
 }
 
 async function getAllByStatus(keycloak, status, limit) {
@@ -471,4 +472,38 @@ async function updateCase(keycloak, body) {
     console.log(err)
     return await Promise.reject(err)
   }
+}
+
+async function dispatchCommentNotification(keycloak, caseNumber, text, businessKey) {
+  const url = `${Config.CaseEngineUrl}/case-definition/comment-notification/${caseNumber}`
+
+  const comment = {
+    body: text,
+    userId: capitalizeWords(keycloak.tokenParsed.preferred_username),
+    userName: keycloak.tokenParsed.given_name,
+    caseId: businessKey,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      body: JSON.stringify(comment),
+    })
+    return nop(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+function capitalizeWords(str) {
+    return str.split(/[.\\s]+/)
+              .filter(word => word.length > 0)
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(' ');
 }
