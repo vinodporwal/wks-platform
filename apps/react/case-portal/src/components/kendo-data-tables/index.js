@@ -44,6 +44,7 @@ import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 // import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
 import { RemarkCell } from './Utilities-Kendo/RemarkCell'
+import { descLimit } from './Utilities-Kendo/descLimit'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -128,6 +129,7 @@ const KendoDataTables = ({
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
+  const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
 
   const initialGroup = groupBy
@@ -195,6 +197,10 @@ const KendoDataTables = ({
       // console.log(e)
 
       const { dataItem, field, value } = e
+      // console.log('e', e)
+
+      if (dataItem?.field === 'Particulars') return
+
       const itemId = dataItem.id
       setRows((prev) =>
         prev.map((r) => {
@@ -289,7 +295,7 @@ const KendoDataTables = ({
     const newRow = {
       id: newRowId,
       isNew: true,
-      ...Object.fromEntries(columns.map((col) => [col.field, ''])),
+      ...Object.fromEntries(columns?.map((col) => [col.field, ''])),
     }
 
     setRows((prevRows) => [newRow, ...prevRows])
@@ -772,8 +778,27 @@ const KendoDataTables = ({
                 : false
             }
           >
-            {columns.map((col) => {
+            {columns?.map((col) => {
               const isActive = isColumnActive(col?.field, filter, sort)
+
+              if (col.type === 'descLimit') {
+                return (
+                  <GridColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title || col.headerName}
+                    width={col.widthT}
+                    hidden={col.hidden}
+                    editable={col?.editable ? true : false}
+                    headerClassName={isActive ? 'active-column' : ''}
+                    cells={{
+                      edit: { text: descLimit },
+                      data: toolTipRenderer,
+                    }}
+                    columnMenu={ColumnMenuCheckboxFilter}
+                  />
+                )
+              }
 
               if (dateFields.includes(col.field)) {
                 return (
@@ -819,6 +844,11 @@ const KendoDataTables = ({
                     editor='date'
                     hidden={col.hidden}
                     columnMenu={DateColumnMenu}
+                    headerClassName={
+                      isDateFilterActive.includes(col.field)
+                        ? 'active-column'
+                        : ''
+                    }
                   />
                 )
               }
@@ -904,6 +934,7 @@ const KendoDataTables = ({
                   />
                 )
               }
+
               if (['discription', 'Name'].includes(col?.field)) {
                 return (
                   <GridColumn
@@ -1084,7 +1115,7 @@ const KendoDataTables = ({
                     key={col.field}
                     field={col.field}
                     title={col.title || col.headerName}
-                    // width={col.width}
+                    width={col.widthT}
                     hidden={col.hidden}
                     className={
                       col?.isDisabled
@@ -1103,6 +1134,7 @@ const KendoDataTables = ({
                   />
                 )
               }
+
               if (col.type === 'numberWidth') {
                 return (
                   <GridColumn

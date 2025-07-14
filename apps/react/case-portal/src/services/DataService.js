@@ -13,6 +13,7 @@ export const DataService = {
   getRunningDurationData,
   getYearlyData,
   getSlowDownPlantData,
+  getSlowDownConfigurationData,
   getTAPlantData,
   getBDData,
   getCatalystSelectivityData,
@@ -131,6 +132,7 @@ export const DataService = {
   savePlantContributionData,
   getProductionVolDataBasisPe,
   saveCrackerMaintenance,
+  saveSlowdownConfigData,
   // saveConfigurationExcelConstants,
   // getConfigurationExcelConstants,
   getNormalOperationNormsGrades,
@@ -1808,6 +1810,25 @@ async function saveSummaryAOPConsumptionNorm(
     return await Promise.reject(e)
   }
 }
+async function saveSlowdownConfigData(plantId, year, slowDownConfigDetails, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown/configuration?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(slowDownConfigDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 async function saveSlowdownData(plantId, slowDownDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/saveSlowdownData/${plantId}`
   const headers = {
@@ -2046,6 +2067,13 @@ async function saveSpyroOutput(payload, keycloak) {
   }
 }
 async function getSpyroOutputData(keycloak, mode, type) {
+  const needsOperationSuffix = ['5F', '4F', '4F+D']
+  const modeForApi =
+    needsOperationSuffix.includes(mode) &&
+    !mode.toLowerCase().includes('operation')
+      ? `${mode} Operation`
+      : mode
+
   const year = localStorage.getItem('year')
   let plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -2053,12 +2081,20 @@ async function getSpyroOutputData(keycloak, mode, type) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
-  const url = `${Config.CaseEngineUrl}/task/spyro-output?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&Mode=${encodeURIComponent(mode)}&type=${type}`
+
+  const url =
+    `${Config.CaseEngineUrl}/task/spyro-output` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    `&Mode=${encodeURIComponent(modeForApi)}` +
+    `&type=${encodeURIComponent(type)}`
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
+
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
@@ -2067,6 +2103,7 @@ async function getSpyroOutputData(keycloak, mode, type) {
     return Promise.reject(e)
   }
 }
+
 async function saveNormalOperationNormsData(
   plantId,
   turnAroundDetails,
@@ -2137,7 +2174,9 @@ async function saveSlowdownNormsData(plantId, turnAroundDetails, keycloak) {
 }
 // Config.CaseEngineUrl
 async function editAOPMCCalculatedData(plantId, turnAroundDetails, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/editAOPMCCalculatedData`
+  const year = localStorage.getItem('year')
+
+  const url = `${Config.CaseEngineUrl}/task/editAOPMCCalculatedData?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2411,6 +2450,34 @@ async function getShutDownPlantData(keycloak, _plantID) {
   // plantId = 'A4212E62-2BAC-4A38-9DAB-2C9066A9DA7D'
   // plantId = plantId
   const url = `${Config.CaseEngineUrl}/task/getShutDownPlanData?plantId=${_plantID}&maintenanceTypeName=${maintenanceTypeName}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getSlowDownConfigurationData(keycloak) {
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const maintenanceTypeName = 'Slowdown' // Assuming the maintenance type is 'Slowdown'
+  var year = localStorage.getItem('year')
+  // const storedPlant = localStorage.getItem('selectedPlant')
+  // if (storedPlant) {
+  //   const parsedPlant = JSON.parse(storedPlant)
+  //   plantId= (parsedPlant.id)
+  // }
+  const url = `${Config.CaseEngineUrl}/task/slowdown/configuration?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2875,13 +2942,13 @@ async function getConfigurationExcelConstants(keycloak) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Configuration.xlsx' // Filename to save
+    a.download = 'Production & Norms Basis.xlsx' // Filename to save
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error Editing Config data:', e)
+    console.error('Error Editing data:', e)
     return Promise.reject(e)
   }
 }
@@ -2912,13 +2979,13 @@ async function getNormalOpsNormsExcel(keycloak) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Normal Ops Norms.xlsx'
+    a.download = 'Steady State Norms.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error Editing Config data:', e)
+    console.error('Error Editing data:', e)
     return Promise.reject(e)
   }
 }
@@ -2948,13 +3015,13 @@ async function getProductionVolExcel(keycloak) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Production Vol Data.xlsx'
+    a.download = 'Production Target.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error Editing Config data:', e)
+    console.error('Error Editing data:', e)
     return Promise.reject(e)
   }
 }

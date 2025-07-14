@@ -147,6 +147,7 @@ const KendoDataTablesCracker = ({
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
+  const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const initialGroup = groupBy
     ? [
         {
@@ -397,7 +398,7 @@ const KendoDataTablesCracker = ({
                   <ProductCell {...cellProps} allProducts={allProducts} />
                 ),
               }}
-              columnMenu={ColumnMenuCheckboxFilter}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
             />
           )
         }
@@ -415,7 +416,7 @@ const KendoDataTablesCracker = ({
                   <MonthCell {...cellProps} allMonths={allMonths} />
                 ),
               }}
-              columnMenu={ColumnMenuCheckboxFilter}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
             />
           )
         }
@@ -438,7 +439,7 @@ const KendoDataTablesCracker = ({
                   />
                 ),
               }}
-              columnMenu={ColumnMenuCheckboxFilter}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
               hidden={col.hidden}
             />
           )
@@ -482,7 +483,7 @@ const KendoDataTablesCracker = ({
                 edit: { text: NoSpinnerNumericEditor },
                 data: toolTipRenderer,
               }}
-              columnMenu={ColumnMenuCheckboxFilter}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
               filter='numeric'
               format={col.format}
             />
@@ -505,7 +506,7 @@ const KendoDataTablesCracker = ({
                 edit: { text: NoSpinnerNumericEditor },
                 data: toolTipRenderer,
               }}
-              columnMenu={ColumnMenuCheckboxFilter}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
               filter='numeric'
               format={col.format}
             />
@@ -533,7 +534,7 @@ const KendoDataTablesCracker = ({
               headerClassName={
                 isColumnActive(col?.field, filter, sort) ? 'active-column' : ''
               }
-              columnMenu={ColumnMenuCheckboxFilter}
+              sortable={col?.filter}
               cells={{
                 // edit: {
                 //   text: (props) => (
@@ -588,7 +589,8 @@ const KendoDataTablesCracker = ({
               edit: { text: TextCellEditor },
               data: toolTipRenderer,
             }}
-            columnMenu={ColumnMenuCheckboxFilter}
+            columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+            sortable={col?.filter}
           />
         )
       })}

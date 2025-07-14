@@ -1,27 +1,44 @@
 package com.wks.caseengine.service;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.PersistenceContext;
+import org.hibernate.Session;
+import java.text.DateFormatSymbols;
+import java.util.*;
+import java.util.regex.*;
+import java.sql.*;
 
+import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
-import com.wks.caseengine.dto.SlowDownPlanDTO;
 import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
+import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantMaintenanceRepository;
 import com.wks.caseengine.repository.PlantMaintenanceTransactionRepository;
+import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SlowdownPlanRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.rest.entity.Vertical;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+
+import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 @Service
 public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
@@ -42,8 +59,20 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
-
 	
+	@Autowired
+	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+	
+	@PersistenceContext
+	private EntityManager entityManager;
+	
+	@Autowired
+	private PlantsRepository plantsRepository;
+	
+	@Autowired
+	private VerticalsRepository verticalRepository;
+
+
 	@Override
 	public List<ShutDownPlanDTO> findSlowdownDetailsByPlantIdAndType(UUID plantId, String maintenanceTypeName,
 			String year) {
@@ -248,4 +277,182 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		return shutDownPlanDTOList;
 	}
 
+	@Override
+	public AOPMessageVM saveSlowdownConfigurationData(String plantId, String year,
+			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<>();
+		try {
+			for(NormAttributeTransactionsDTO normAttributeTransactionsDTO:normAttributeTransactionsDTOList) {
+				String rawDesc = normAttributeTransactionsDTO.getDescription();
+				String cleanDesc = stripTrailingSuffix(rawDesc);
+				UUID maintenanceId=plantMaintenanceTransactionRepository.findTransactionIdByDynamicParams("Slowdown",year,UUID.fromString(plantId),cleanDesc);
+				if(maintenanceId==null) {
+					throw new RuntimeException("No Maintenance Id found with "+normAttributeTransactionsDTO.getDescription());
+				}
+				
+				//UUID maintenanceId=plantMaintenanceTransactionRepository.findIdByNormIdAndDiscription(normAttributeTransactionsDTO.getDescription(),normAttributeTransactionsDTO.getNormParameterFKId());
+				normAttributeTransactionsDTO.setMaintenanceId(maintenanceId);
+				NormAttributeTransactions  normAttributeTransactions= normAttributeTransactionsRepository.findByMaintenanceIdAndNormParameterFKIdAndAuditYear(normAttributeTransactionsDTO.getMaintenanceId(),normAttributeTransactionsDTO.getNormParameterFKId(),year);
+				if(normAttributeTransactions!=null) {
+					normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());
+					normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
+				}else {
+					normAttributeTransactions = new NormAttributeTransactions();
+			
+					Optional<PlantMaintenanceTransaction> PlantMaintenanceTransactionopt=plantMaintenanceTransactionRepository.findById(maintenanceId);
+					if(PlantMaintenanceTransactionopt.isPresent()) {
+						normAttributeTransactions.setAopMonth(PlantMaintenanceTransactionopt.get().getMaintForMonth());
+					}	
+					normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());
+					normAttributeTransactions.setAttributeValueVersion("v1");
+					normAttributeTransactions.setAuditYear(year);
+					normAttributeTransactions.setCreatedOn(new Date());
+					normAttributeTransactions.setMaintenanceId(normAttributeTransactionsDTO.getMaintenanceId());
+					normAttributeTransactions.setNormParameterFKId(normAttributeTransactionsDTO.getNormParameterFKId());
+					normAttributeTransactions.setUserName("System");
+					normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
+				}
+			}
+		}catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to save/update data", ex);
+		}
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(normAttributeTransactionsList);
+		aopMessageVM.setMessage("Data updated successfully");
+		return aopMessageVM;
+	}
+
+	 	@Override
+	    public AOPMessageVM getSlowdownConfigurationData(String plantId, String year) {
+		 AOPMessageVM aopMessageVM = new AOPMessageVM();
+		 Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName = vertical.getName()+"_GetSlowdownNormConfiguration";
+	        try {
+	            // Get the data
+	            List<Object[]> rows = getData(plantId, year,procedureName);
+
+	            // Get column names
+	            
+	            List<String> columnNames = getColumnNames(procedureName, plantId, year);
+
+	            // Prepare the list of maps
+	            List<Map<String, Object>> resultList = new ArrayList<>();
+
+	            for (Object[] row : rows) {
+	                Map<String, Object> rowMap = new LinkedHashMap<>();
+	                for (int i = 0; i < columnNames.size(); i++) {
+	                    rowMap.put(columnNames.get(i), row[i]);
+	                }
+	                resultList.add(rowMap);
+	            }
+	            aopMessageVM.setCode(200);
+	    		aopMessageVM.setData(resultList);
+	    		aopMessageVM.setMessage("Data updated successfully");
+	    		return aopMessageVM;
+	            
+	        } catch (Exception ex) {
+	            throw new RuntimeException("Failed to fetch data", ex);
+	        }
+	    }
+	
+	public List<Object[]> getData(String plantId, String aopYear,String procedureName) {
+		
+		try {
+			
+			String sql = "EXEC " + procedureName +
+					" @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<String> getColumnNames(String procedureName, String plantId, String aopYear) {
+	    return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+	        List<String> columnNames = new ArrayList<>();
+
+	        String sql = "EXEC " + procedureName + " @plantId = ?, @aopYear = ?";
+	        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+	            ps.setString(1, plantId);
+	            ps.setString(2, aopYear);
+
+	            try (ResultSet rs = ps.executeQuery()) {
+	                ResultSetMetaData rsMetaData = rs.getMetaData();
+	                for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+	                    columnNames.add(rsMetaData.getColumnLabel(i));
+	                }
+	            }
+	        }
+	        return columnNames;
+	    });
+	}
+	
+	@Override
+	public AOPMessageVM getShutdownDynamicColumns(String auditYear, UUID plantId) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    List<Map<String, String>> listOfMaps = new ArrayList<>();
+
+	    // 1. Add static "Particulars" column
+	    {
+	        Map<String, String> map = new HashMap<>();
+	        map.put("field", "particulars");
+	        map.put("title", "Particulars");
+	        listOfMaps.add(map);
+	    }
+
+	    // 2. Prepare month-regex pattern
+	    List<String> months = Arrays.asList(
+	        "January", "February", "March", "April", "May", "June",
+	        "July", "August", "September", "October", "November", "December"
+	    );
+	    String monthPattern = String.join("|", months);
+	    Pattern monthSuffixPattern = Pattern.compile("_(?i)(" + monthPattern + ")$");
+
+	    try {
+	    	Plants plant = plantsRepository.findById(plantId).orElseThrow();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName = vertical.getName()+"_GetSlowdownNormConfiguration";
+	        List<String> data = getColumnNames(procedureName, plantId.toString(), auditYear);
+
+	        // 3. Process each dynamic column
+	        for (String row : data) {
+	            Map<String, String> map = new HashMap<>();
+	            map.put("field", row);
+
+	            String title = row;
+	            Matcher m = monthSuffixPattern.matcher(row);
+	            if (m.find()) {
+	                title = row.replaceFirst("_(?=[^_]+$)", " (") + ")";
+	            }
+	            map.put("title", title);
+
+	            listOfMaps.add(map);
+	        }
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid data format", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+
+	    aopMessageVM.setCode(200);
+	    aopMessageVM.setMessage("Data fetched successfully");
+	    aopMessageVM.setData(listOfMaps);
+	    return aopMessageVM;
+	}
+	
+	private String stripTrailingSuffix(String description) {
+	    return description.replaceAll("_[^_]*$", "");
+	}
 }

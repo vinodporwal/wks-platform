@@ -40,10 +40,10 @@ public class PlantMaintenanceTransaction {
     @Column(name = "Rate")
     private Double rate;
     
-    @Column(name = "RateEO")
+    @Column(name = "EO_OpsProdRate")
     private Double rateEO;
     
-    @Column(name = "RateEOE")
+    @Column(name = "EOE_OpsProdRate")
     private Double rateEOE;
 
     @Column(name = "Remarks", length = 500)

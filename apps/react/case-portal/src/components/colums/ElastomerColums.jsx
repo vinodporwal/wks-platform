@@ -1,11 +1,9 @@
-export const BusinessDemandMegColumns = [
+export const BusinessDemandElastomerColumns = [
   {
     field: 'Particulars',
     title: 'Type',
     width: 100,
     groupable: true,
-    headerClass: 'bold-header',
-    filterable: 'false',
     editable: false,
     hidden: true,
   },
@@ -13,27 +11,22 @@ export const BusinessDemandMegColumns = [
     field: 'normParameterId',
     title: 'Particulars',
     editable: false,
-    width: 150,
+    width: 125,
     hidden: true,
   },
+
   {
     field: 'displayName',
     title: 'Particulars',
     editable: false,
-    width: 150,
-  },
-  {
-    field: 'UOM',
-    title: 'UOM',
-    editable: false,
-    width: 120,
+    width: 125,
   },
   {
     field: 'april',
     title: 4,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: true,
     headerAlign: 'left',
     type: 'number',
   },
@@ -42,7 +35,7 @@ export const BusinessDemandMegColumns = [
     title: 5,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -51,7 +44,7 @@ export const BusinessDemandMegColumns = [
     title: 6,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -60,7 +53,7 @@ export const BusinessDemandMegColumns = [
     title: 7,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -69,7 +62,7 @@ export const BusinessDemandMegColumns = [
     title: 8,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -78,17 +71,16 @@ export const BusinessDemandMegColumns = [
     title: 9,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
-
   {
     field: 'oct',
     title: 10,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -97,7 +89,7 @@ export const BusinessDemandMegColumns = [
     title: 11,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -106,7 +98,7 @@ export const BusinessDemandMegColumns = [
     title: 12,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -115,7 +107,7 @@ export const BusinessDemandMegColumns = [
     title: 1,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -124,7 +116,7 @@ export const BusinessDemandMegColumns = [
     title: 2,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
@@ -133,31 +125,28 @@ export const BusinessDemandMegColumns = [
     title: 3,
     editable: true,
     width: 120,
-    align: 'left',
+    rightAlign: 'left',
     headerAlign: 'left',
     type: 'number',
   },
   {
     field: 'remark',
     title: 'Remark',
-    editable: false,
     width: 180,
-    type: 'string',
+    editable: false,
   },
   {
     field: 'idFromApi',
-    title: 'idFromApi',
-    filterable: 'false',
+    title: 'ID from API',
     hidden: true,
   },
 ]
 
-export const SlowDownMegColumns = [
+export const SlowDownElastomerColumns = [
   {
     field: 'discription',
     title: 'Slowdown Desc',
     editable: true,
-    type: 'descLimit',
   },
 
   {
@@ -188,18 +177,10 @@ export const SlowDownMegColumns = [
   },
 
   {
-    field: 'rateEOE',
-    title: 'EOE Production Rate',
+    field: 'rate',
+    title: 'Rate (TPH)',
     editable: true,
     type: 'number',
-    widthT: 225,
-  },
-  {
-    field: 'rateEO',
-    title: 'EO Production Rate',
-    editable: true,
-    type: 'number',
-    widthT: 215,
   },
 
   {
@@ -209,7 +190,7 @@ export const SlowDownMegColumns = [
   },
 ]
 
-export const NormalOpNormMegColumns = [
+export const NormalOpNormElastomerColumns = [
   {
     field: 'Particulars',
     title: 'Type',
@@ -372,7 +353,59 @@ export const NormalOpNormMegColumns = [
   },
 ]
 
-export const ShutdownConsumptionMegColumns = [
+export const ShutdownConsumptionElastomerColumns = [
+  {
+    field: 'Particulars',
+    headerName: 'Type',
+    width: 120,
+    hidden: true,
+  },
+  {
+    field: 'materialFkId',
+    headerName: 'Particulars',
+    minWidth: 150,
+    editable: false,
+    hidden: true,
+    width: 120,
+  },
+  {
+    field: 'productName',
+    headerName: 'Particulars',
+    width: 180,
+    editable: false,
+  },
+  { field: 'UOM', headerName: 'UOM', width: 150, editable: false },
+
+  ...Array.from({ length: 12 }, (_, i) => {
+    const monthIndex = (i + 4) % 12 || 12
+    const monthField = new Date(2000, monthIndex - 1)
+      .toLocaleString('en-US', { month: 'long' })
+      .toLowerCase()
+
+    return {
+      field: monthField,
+      width: 120,
+      type: 'number',
+      format: '{0:#.#####}',
+      editable: false,
+      isDisabled: true,
+      monthNumber: monthIndex,
+    }
+  }),
+
+  {
+    field: 'remarks',
+    headerName: 'Remark',
+    width: 120,
+    editable: false,
+  },
+  {
+    field: 'idFromApi',
+    headerName: 'idFromApi',
+    hidden: true,
+  },
+]
+export const SlowdownNormsElastomerColumns = [
   {
     field: 'Particulars',
     headerName: 'Type',
@@ -425,60 +458,7 @@ export const ShutdownConsumptionMegColumns = [
   },
 ]
 
-export const SlowdownNormsMegColumns = [
-  {
-    field: 'Particulars',
-    headerName: 'Type',
-    width: 120,
-    hidden: true,
-  },
-  {
-    field: 'materialFkId',
-    headerName: 'Particulars',
-    minWidth: 150,
-    editable: false,
-    hidden: true,
-    width: 120,
-  },
-  {
-    field: 'productName',
-    headerName: 'Particulars',
-    width: 180,
-    editable: false,
-  },
-  { field: 'UOM', headerName: 'UOM', width: 150, editable: false },
-
-  ...Array.from({ length: 12 }, (_, i) => {
-    const monthIndex = (i + 4) % 12 || 12
-    const monthField = new Date(2000, monthIndex - 1)
-      .toLocaleString('en-US', { month: 'long' })
-      .toLowerCase()
-
-    return {
-      field: monthField,
-      width: 120,
-      type: 'number',
-      format: '{0:#.#####}',
-      editable: false,
-      isDisabled: true,
-      monthNumber: monthIndex,
-    }
-  }),
-
-  {
-    field: 'remarks',
-    headerName: 'Remark',
-    width: 120,
-    editable: false,
-  },
-  {
-    field: 'idFromApi',
-    headerName: 'idFromApi',
-    hidden: true,
-  },
-]
-
-export const ConsumptionAopMegColumns = [
+export const ConsumptionAopElastomerColumns = [
   {
     field: 'Particulars',
     title: 'Type',

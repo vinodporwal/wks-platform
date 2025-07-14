@@ -37,11 +37,11 @@ export default function StepperNav() {
 
       if (!planGroup?.children) return []
 
-      // 2. Prepare an array to collect ?step items?
+      // 2. Prepare an array to collect �step items�
 
       // 2.a If the child itself is a leaf item (has a valid `url`), include it
       const allItems = collectItems(planGroup.children)
-      // 2.b Otherwise, if it?s a collapse and has children, include each grandchild
+      // 2.b Otherwise, if it�s a collapse and has children, include each grandchild
 
       // 3. Map each collected item into the shape { label, url, key }
       return allItems.map((item) => {
@@ -89,6 +89,9 @@ export default function StepperNav() {
           '& .MuiStepLabel-label.Mui-active': {
             fontWeight: 'bold',
             color: '#000',
+          },
+          '& .MuiStepLabel-alternativeLabel': {
+            marginTop: '3px !important',
           },
         }}
       >

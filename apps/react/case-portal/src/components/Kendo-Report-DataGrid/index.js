@@ -18,7 +18,7 @@ import DateOnlyPicker from 'components/kendo-data-tables/Utilities-Kendo/DatePic
 const KendoDataGrid = ({ rows, columns, onRowChange }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
-
+  const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const handleItemChange = (e) => {
     const updated = [...rows]
     const index = updated.findIndex((r) => r.id === e.dataItem.id)

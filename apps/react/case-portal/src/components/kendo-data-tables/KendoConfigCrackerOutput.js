@@ -60,7 +60,8 @@ const CrackerConfig = () => {
   // const [furnace, setFurnance] = useState([])
 
   // Mode selection
-  const allModes = ['5F Operation', '4F Operation', '4F+D Operation']
+  // const allModes = ['5F Operation', '4F Operation', '4F+D Operation']
+  const allModes = ['5F', '4F', '4F+D']
   const [selectMode, setSelectMode] = useState(allModes[0])
 
   // Permissions helper
@@ -217,18 +218,16 @@ const CrackerConfig = () => {
         break
 
       default:
-        // no-op or log if unexpected
         console.warn('No state for tab:', tabId)
     }
   }, [])
 
-  // ===== Fetch rows for a given tab =====
   const fetchCrackerRows = useCallback(
     async (currentTabDisplay, mode) => {
       if (!currentTabDisplay) return
       try {
         setLoading(true)
-        // Use tabId directly for API
+
         const spyroVM = await DataService.getSpyroOutputData(
           keycloak,
           mode,
@@ -261,7 +260,6 @@ const CrackerConfig = () => {
         }
         setRowsForTab(currentTabDisplay, transformedData)
       } catch (err) {
-        // console.warn(`Failed to load ${tabId} data:`, err)
         setSnackbarData({
           message: `Failed to load ${currentTabDisplay} data. Please try again.`,
           severity: 'error',
@@ -275,9 +273,7 @@ const CrackerConfig = () => {
     [keycloak, setRowsForTab, currentTabDisplay],
   )
 
-  // When tabIndex, selectMode, plantId change, load that tab
   useEffect(() => {
-    // const tabId = tabs[tabIndex]
     if (keycloak && plantId && currentTabDisplay) {
       fetchCrackerRows(currentTabDisplay, selectMode)
     } else {
@@ -297,7 +293,6 @@ const CrackerConfig = () => {
     currentTabDisplay,
   ])
 
-  // ===== Save logic unchanged except reload uses setRowsForTab =====
   const [modifiedCells, setModifiedCells] = useState({})
   const saveChanges = useCallback(async () => {
     try {
@@ -315,7 +310,7 @@ const CrackerConfig = () => {
         setLoading(false)
         return
       }
-      // console.log(data)
+
       const validationMessage = validateFields(data, ['particulars', 'remarks'])
       if (validationMessage) {
         setSnackbarOpen(true)
@@ -370,7 +365,7 @@ const CrackerConfig = () => {
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Spyro Input data Saved Successfully!',
+          message: 'Data Saved Successfully!',
           severity: 'success',
         })
         setModifiedCells({})
@@ -380,13 +375,13 @@ const CrackerConfig = () => {
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Error saving Spyro Input data!',
+          message: 'Error saving data!',
           severity: 'error',
         })
       }
       return response
     } catch (error) {
-      console.error('Error saving Spyro Input data!', error)
+      console.error('Error saving data!', error)
     } finally {
       setLoading(false)
     }
@@ -438,8 +433,6 @@ const CrackerConfig = () => {
 
       <Box>
         {(() => {
-          // const tabId = tabs[tabIndex]
-          // console.log(tabId)
           const rows = getRows(currentTabDisplay)
           const setRowsForCurrent = useCallback(
             (newRows) => setRowsForTab(currentTabDisplay, newRows),
