@@ -1,6 +1,5 @@
 package com.wks.caseengine.service;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,14 +9,18 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -43,6 +46,9 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	
 	@Autowired
 	private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
+	
+	@Autowired
+	private NormParametersRepository normParametersRepository;
 
 	@Override
 	public AOPMessageVM getSpyroOutputData(String year, String plantId,String Mode,String type) {
@@ -122,6 +128,28 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	public List<Object[]> getYieldData(String plantId, String aopYear,
+			String procedureName) {
+		try {
+			
+			String sql = "EXEC " + procedureName +
+					" @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 
 	@Override
 	public AOPMessageVM updateSpyroOutputData(List<SpyroOutputDTO> spyroOutputDTOList) {
@@ -210,6 +238,82 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		normAttributeTransactions.setRemarks(spyroOutputDTO.getRemarks());
 
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
+	}
+
+	@Override
+	public AOPMessageVM getSpyroOutputYieldData(String year, String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> spyroOutputYieldDataList = new ArrayList<>();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+        
+        String procedureName=vertical.getName()+"_GetYield";
+		try {
+			List<Object[]> results = getYieldData(plantId, year,procedureName);
+
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
+				
+					map.put("normParameterId", row[0]);
+					map.put("name", row[1]);
+					map.put("displayName", row[2]);
+					map.put("uom", row[3]);
+					map.put("attributeValue", row[4]);
+					map.put("remarks", row[5]);
+					map.put("operation", row[6]);
+					map.put("type", row[7]);
+					spyroOutputYieldDataList.add(map); // Add the map to the list here
+				
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(spyroOutputYieldDataList);
+			return aopMessageVM;
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+
+	}
+
+	@Override
+	public AOPMessageVM updateSpyroOutputYieldData(String plantId, String year,
+			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<>();
+		
+		try {
+			for(NormAttributeTransactionsDTO normAttributeTransactionsDTO:normAttributeTransactionsDTOList) {
+				String normParameterName=normAttributeTransactionsDTO.getNormParameterName();
+				Optional<NormParameters> normParameterOpt=normParametersRepository.findByNameAndPlantFkId(normParameterName, UUID.fromString(plantId));
+				if(normParameterOpt.isPresent()) {
+					NormParameters normParameters = normParameterOpt.get();
+					NormAttributeTransactions normAttributeTransactions=normAttributeTransactionsRepository.findByNormParameterFKIdAndAuditYear(normParameters.getId(),year);
+					if(normAttributeTransactions==null) {
+						normAttributeTransactions=new NormAttributeTransactions();
+						normAttributeTransactions.setAopMonth(4);
+						normAttributeTransactions.setNormParameterFKId(normParameters.getId());
+						normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());
+						normAttributeTransactions.setAuditYear(year);
+						normAttributeTransactions.setCreatedOn(new Date());
+						normAttributeTransactions.setUserName("System");
+						normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
+					}else {
+						normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());
+						normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
+					}
+				}
+			
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			aopMessageVM.setData(normAttributeTransactionsList);
+			return aopMessageVM;
+		}catch (Exception ex) {
+			throw new RuntimeException("Failed to update data", ex);
+		}
 	}
 
 

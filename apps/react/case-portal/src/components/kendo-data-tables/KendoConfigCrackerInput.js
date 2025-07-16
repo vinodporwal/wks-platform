@@ -46,6 +46,7 @@ const CrackerConfig = () => {
     'Hydrogenation',
     'Recovery',
     'Furnace',
+    'Constant',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -75,6 +76,8 @@ const CrackerConfig = () => {
   const [furnace, setFurnance] = useState([])
   const allModes = ['5F', '4F', '4F+D']
   const [selectMode, setSelectMode] = useState(allModes[0])
+  const [constantsRows, setConstantsRows] = useState([])
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -113,15 +116,24 @@ const CrackerConfig = () => {
     // console.log(info)
     return info ? info.name : tabs[tabIndex] || 'Feed'
   }, [tabs, tabIndex, availableTabs])
+
   const productionColumns = useMemo(() => {
     const configType =
-      currentTabDisplay === 'Composition' ? 'cracker_composition' : 'cracker'
+      currentTabDisplay === 'Composition'
+        ? 'cracker_composition'
+        : currentTabDisplay === 'Constant'
+          ? 'cracker_constants'
+          : currentTabDisplay === 'Yield'
+            ? 'cracker_yield'
+            : 'cracker'
+
     return getEnhancedAOPColDefs({
       headerMap,
       handleRemarkCellClick,
       configType,
     })
   }, [headerMap, currentTabDisplay])
+
   const fetchTabsMatrix = useCallback(async () => {
     try {
       const resp = await DataService.getConfigurationTabsMatrix(
@@ -174,11 +186,13 @@ const CrackerConfig = () => {
       )
     }
   }, [keycloak])
+
   useEffect(() => {
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
   }, [keycloak, fetchTabsMatrix, fetchAvailableTabs])
+
   const getRows = useCallback(
     (tabId) => {
       switch (tabId) {
@@ -194,6 +208,8 @@ const CrackerConfig = () => {
           return optimizing
         case 'Furnace':
           return furnace
+        case 'Constant':
+          return constantsRows
         default:
           return []
       }
@@ -205,6 +221,7 @@ const CrackerConfig = () => {
       recoveryRows,
       furnace,
       optimizing,
+      constantsRows,
     ],
   )
   const setRowsForTab = useCallback((tabId, data) => {
@@ -226,48 +243,81 @@ const CrackerConfig = () => {
         break
       case 'Optimizing':
         setOptimizing(data)
+
+        break
+
+      case 'Constant':
+        setConstantsRows(data)
         break
       default:
         console.warn('No state for tab:', tabId)
     }
   }, [])
+
   const fetchCrackerRows = useCallback(
-    // Simulate network delay
     async (currentTabDisplay, mode) => {
       if (!currentTabDisplay) return
       try {
         setLoading(true)
+        let transformedData = []
+        let transformedData1 = []
+        var spyroVM1 = []
+        if (currentTabDisplay == 'Constant') {
+          spyroVM1 = await DataService.getSpyroOutputData(
+            keycloak,
+            mode,
+            currentTabDisplay,
+          )
+
+          if (spyroVM1?.data && Array.isArray(spyroVM1.data)) {
+            transformedData1 = spyroVM1.data.map((item, index) => ({
+              id: item.NormParameterFKID || `row_${index}`,
+              particulars: item.Particulars,
+              uom: item.UOM,
+              remarks: item.Remarks,
+              originalRemark: item.Remarks,
+              ParticularsType: item.NormParameterTypeName,
+              april: item.Apr,
+              NormParameterFKID: item.NormParameterFKID,
+              ...item,
+            }))
+          }
+          setRowsForTab(currentTabDisplay, transformedData1)
+          return
+        }
+
         const spyroVM = await DataService.getSpyroInputData(
           keycloak,
           mode,
           currentTabDisplay,
         )
-        let transformedData = []
-        if (spyroVM?.data && Array.isArray(spyroVM.data)) {
-          transformedData = spyroVM.data.map((item, index) => ({
-            id: item.NormParameterFKID || `row_${index}`,
-            particulars: item.Particulars,
-            uom: item.UOM,
-            remarks: item.Remarks,
-            originalRemark: item.Remarks,
-            ParticularsType: item.Type,
-            jan: item.Jan,
-            feb: item.Feb,
-            march: item.Mar,
-            april: item.Apr,
-            may: item.May,
-            june: item.Jun,
-            july: item.Jul,
-            aug: item.Aug,
-            sep: item.Sep,
-            oct: item.Oct,
-            nov: item.Nov,
-            dec: item.Dec,
-            NormParameterFKID: item.NormParameterFKID,
-            ...item,
-          }))
-        }
-        setRowsForTab(currentTabDisplay, transformedData)
+        setTimeout(() => {
+          if (spyroVM?.data && Array.isArray(spyroVM.data)) {
+            transformedData = spyroVM.data.map((item, index) => ({
+              id: item.NormParameterFKID || `row_${index}`,
+              particulars: item.Particulars,
+              uom: item.UOM,
+              remarks: item.Remarks,
+              originalRemark: item.Remarks,
+              ParticularsType: item.NormParameterTypeName,
+              jan: item.Jan,
+              feb: item.Feb,
+              march: item.Mar,
+              april: item.Apr,
+              may: item.May,
+              june: item.Jun,
+              july: item.Jul,
+              aug: item.Aug,
+              sep: item.Sep,
+              oct: item.Oct,
+              nov: item.Nov,
+              dec: item.Dec,
+              NormParameterFKID: item.NormParameterFKID,
+              ...item,
+            }))
+          }
+          setRowsForTab(currentTabDisplay, transformedData)
+        }, 500)
       } catch (err) {
         // console.warn(`Failed to load ${tabId} data:`, err)
         setSnackbarData({
@@ -349,6 +399,7 @@ const CrackerConfig = () => {
       const storedPlant = localStorage.getItem('selectedPlant')
       if (storedPlant) plant = JSON.parse(storedPlant).id
       let verticalId = localStorage.getItem('verticalId')
+
       const SpyroInputData = newRows.map((row) => ({
         VerticalFKId: verticalId,
         PlantFKId: plant,
@@ -360,19 +411,20 @@ const CrackerConfig = () => {
         UOM: row.uom ?? row.UOM ?? null,
         AuditYear: row.AuditYear ?? null,
         Remarks: row.remarks ?? row.Remarks ?? null,
-        Jan: row.jan ?? row.Jan ?? null,
-        Feb: row.feb ?? row.Feb ?? null,
-        Mar: row.march ?? row.Mar ?? null,
-        Apr: row.april ?? row.Apr ?? null,
-        May: row.may ?? row.May ?? null,
-        Jun: row.june ?? row.Jun ?? null,
-        Jul: row.july ?? row.Jul ?? null,
-        Aug: row.aug ?? row.Aug ?? null,
-        Sep: row.sep ?? row.Sep ?? null,
-        Oct: row.oct ?? row.Oct ?? null,
-        Nov: row.nov ?? row.Nov ?? null,
-        Dec: row.dec ?? row.Dec ?? null,
-        id: row.idFromApi ?? row.id ?? null,
+
+        Jan: row.jan || null,
+        Feb: row.feb || null,
+        Mar: row.march || null,
+        Apr: row.april || null,
+        May: row.may || null,
+        Jun: row.june || null,
+        Jul: row.july || null,
+        Aug: row.aug || null,
+        Sep: row.sep || null,
+        Oct: row.oct || null,
+        Nov: row.nov || null,
+        Dec: row.dec || null,
+        id: row.idFromApi || null,
         inEdit: row.inEdit || false,
       }))
       const response = await DataService.saveSpyroInput(
@@ -459,6 +511,7 @@ const CrackerConfig = () => {
             case 'Recovery':
             case 'Optimizing':
             case 'Furnace':
+            case 'Constant':
               return (
                 <Box key={currentTabDisplay}>
                   <KendoDataTables

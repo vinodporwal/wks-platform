@@ -45,6 +45,7 @@ import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
 import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import { descLimit } from './Utilities-Kendo/descLimit'
+import { useSelector } from 'react-redux'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -200,6 +201,7 @@ const KendoDataTables = ({
       // console.log('e', e)
 
       if (dataItem?.field === 'Particulars') return
+      if (dataItem?.field === 'ParticularsType') return
 
       const itemId = dataItem.id
       setRows((prev) =>
@@ -764,6 +766,9 @@ const KendoDataTables = ({
             contextMenu={true}
             grade={grades}
             onRowClick={handleRowClick}
+            // navigatable={true}
+            // scrollable='virtual'
+            // loader={<div>Loading...</div>}
             sortable={{
               mode: 'multiple',
             }}
@@ -1106,6 +1111,7 @@ const KendoDataTables = ({
                     }}
                     format={col.format}
                     sortable={false}
+                    width={col?.widthT}
                   />
                 )
               }
