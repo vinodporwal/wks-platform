@@ -408,14 +408,15 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	public AOPMessageVM updateDecokingActivitiesIBRData(String year, String plantId, String reportType,
 			List<CrackerConfigurationDTO> crackerConfigurationDTOList) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		List<CrackerConfiguration> crackerConfigurationList=new ArrayList<>();
+		List<CrackerConfiguration> crackerConfigurationList = new ArrayList<>();
 		try {
 			for (CrackerConfigurationDTO crackerConfigurationDTO : crackerConfigurationDTOList) {
 				if (crackerConfigurationDTO.getId() != null) {
-					CrackerConfiguration crackerConfiguration=null;
-					Optional<CrackerConfiguration> crackerConfigurationopt = crackerConfigurationRepository.findById(crackerConfigurationDTO.getId());
-					if(crackerConfigurationopt.isPresent()) {
-						crackerConfiguration=crackerConfigurationopt.get();
+					CrackerConfiguration crackerConfiguration = null;
+					Optional<CrackerConfiguration> crackerConfigurationopt = crackerConfigurationRepository
+							.findById(crackerConfigurationDTO.getId());
+					if (crackerConfigurationopt.isPresent()) {
+						crackerConfiguration = crackerConfigurationopt.get();
 						crackerConfiguration.setAopYear(crackerConfigurationDTO.getAopYear());
 						crackerConfiguration.setDisplayName(crackerConfigurationDTO.getDisplayName());
 						crackerConfiguration.setDisplaySeq(crackerConfigurationDTO.getDisplaySeq());
@@ -896,13 +897,14 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		}
 	}
 
-	
 	public List<Object[]> findByYearAndPlantFkId(String year, UUID plantFkId, String viewName) {
 		try {
 			String sql = "SELECT "
 					+ "Id, Name, DisplayName, IBR_SD, IBR_ED, TA_SD, TA_ED, ShutDown_SD, ShutDown_ED, Post_CR_Days, Pre_CR_Days, IsCR, Plant_FK_Id, AOPYear, "
 					+ "Remarks, DisplaySeq FROM " + viewName + " "
-					+ "WHERE AOPYear = :year " + "AND Plant_FK_Id = :plantFkId ";
+					+ "WHERE AOPYear = :year "
+					+ "AND Plant_FK_Id = :plantFkId "
+					+ "ORDER BY DisplaySeq";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("year", year);

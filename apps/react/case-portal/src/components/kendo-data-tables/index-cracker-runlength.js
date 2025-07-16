@@ -228,7 +228,38 @@ const KendoDataTablesCrackerRunLength = ({
                   updatedRow.demo = 'BBU'
                 }
 
+                // if (isNextNonNumeric) {
+                //   if (index === editedIndex - 1) {
+                //     updatedRow[field] = 'SAD'
+                //     updatedRow.demo = 1
+                //   }
+                //   if (index === editedIndex) {
+                //     updatedRow[field] = 'SAD'
+                //     updatedRow.demo = 2
+                //   }
+                //   if (index === editedIndex - 2) {
+                //     updatedRow.demo = 'BBU'
+                //   }
+                // }
+
+                // if (!isNextNonNumeric && isNextNextNonNumeric) {
+                //   if (index === editedIndex) {
+                //     updatedRow[field] = 'SAD'
+                //     updatedRow.demo = 1
+                //   }
+                //   if (index === editedIndex + 1) {
+                //     updatedRow[field] = 'SAD'
+                //     updatedRow.demo = 2
+                //   }
+                //   if (index === editedIndex - 1) {
+                //     updatedRow.demo = 'BBU'
+                //   }
+                // }
+
                 if (isNextNonNumeric) {
+                  if (index === editedIndex - 2) {
+                    updatedRow.demo = 'BBU'
+                  }
                   if (index === editedIndex - 1) {
                     updatedRow[field] = 'SAD'
                     updatedRow.demo = 1
@@ -237,12 +268,23 @@ const KendoDataTablesCrackerRunLength = ({
                     updatedRow[field] = 'SAD'
                     updatedRow.demo = 2
                   }
-                  if (index === editedIndex - 2) {
-                    updatedRow.demo = 'BBU'
+
+                  // Continue demo numbering: 3, 4, ... until a non-numeric is encountered
+                  if (index > editedIndex) {
+                    const currentDemo = prevRows[index]?.demo
+                    if (!isNaN(Number(currentDemo))) {
+                      updatedRow.demo = index - editedIndex + 2 // demo = 3, 4, 5...
+                    } else {
+                      // stop numbering when non-numeric encountered
+                      updatedRow.demo = prevRows[index]?.demo
+                    }
                   }
                 }
 
                 if (!isNextNonNumeric && isNextNextNonNumeric) {
+                  if (index === editedIndex - 1) {
+                    updatedRow.demo = 'BBU'
+                  }
                   if (index === editedIndex) {
                     updatedRow[field] = 'SAD'
                     updatedRow.demo = 1
@@ -251,8 +293,16 @@ const KendoDataTablesCrackerRunLength = ({
                     updatedRow[field] = 'SAD'
                     updatedRow.demo = 2
                   }
-                  if (index === editedIndex - 1) {
-                    updatedRow.demo = 'BBU'
+
+                  // Continue demo numbering: 3, 4, ... until a non-numeric is encountered
+                  if (index > editedIndex + 1) {
+                    const currentDemo = prevRows[index]?.demo
+                    if (!isNaN(Number(currentDemo))) {
+                      updatedRow.demo = index - editedIndex + 1 // demo = 3, 4, 5...
+                    } else {
+                      // stop numbering when non-numeric encountered
+                      updatedRow.demo = prevRows[index]?.demo
+                    }
                   }
                 }
 
