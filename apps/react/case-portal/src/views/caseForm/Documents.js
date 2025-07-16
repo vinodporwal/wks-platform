@@ -28,12 +28,41 @@ function Documents({ aCase, initialValue, getCaseInfo, isAttachmentEnabled }) {
   const [filesUploaded, setFilesUploaded] = useState(initialValue)
 
   const isDraft = aCase?.isDraft === 'y'
+
+  function modifyFileName(fileName) {
+    const lastDotIndex = fileName.lastIndexOf('.');
+    const baseName = (lastDotIndex === -1) ? fileName : fileName.substring(0, lastDotIndex);
+    const extension = (lastDotIndex === -1) ? '' : fileName.substring(lastDotIndex);
+
+    // Get the current timestamp
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    
+    // Construct the new file name with the timestamp
+    const modifiedFileName = baseName + '_' + timestamp + extension;
+    
+    return modifiedFileName;
+  }
+
   const handleChange = (files) => {
     setFetching(true)
+    // Function to modify file names and return updated file objects
+    function updateFileObjects(files) {
+      return Array.from(files).map(file => {
+          return {
+              name: modifyFileName(file.name), // Modify the name
+              size: file.size,                 // Retain other properties
+              type: file.type,
+              originalFile: file               // Store original file if needed
+          };
+      });
+    }
+
+    const updatedFiles = updateFileObjects(files);
 
     CaseStore.saveDocumentsFromFiles(
       keycloak,
-      files,
+      updatedFiles,
       aCase.businessKey,
       setPercent,
     )
