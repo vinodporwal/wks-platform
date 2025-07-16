@@ -90,4 +90,6 @@ public interface CaseDefinitionService {
 	void dispatchCommentNotification(String caseNumber, CaseComment comment);
 
 	Case updateCase(Case caseData);
+
+	List<Case> updateCaseStatus() throws Exception;
 }

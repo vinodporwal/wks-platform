@@ -271,6 +271,12 @@ public class CaseDefinitionController {
         return ResponseEntity.ok("Notification sent.");
     }
 	
+	@GetMapping("/update-case-status")
+    public ResponseEntity<List<Case>> updateCaseStatus() throws Exception {
+        List<Case> caseList = caseDefinitionService.updateCaseStatus();
+        return ResponseEntity.ok(caseList);
+    }
+	
 	private Case assignOwner(Case caseData) {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		

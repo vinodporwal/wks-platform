@@ -1150,6 +1150,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    }
 	    return cases;
 	}
+	
 	@Override
 	public Case saveAnalysis(Case caseData) {
 		String assetName = "%"+caseData.getAssetName();
@@ -1519,6 +1520,93 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        e.printStackTrace();
 	    }
 	}
+	
+	@Override
+	// @Scheduled(cron = "0 */5 * * * ?")
+	public List<Case> updateCaseStatus() throws Exception {
+	    LocalDate today = LocalDate.now();
+	    LocalDate oneMonthBefore = today.minusDays(10); // Typically should be minusMonths(1)
+	    List<Case> cases = getCaseDetailsByStatus(oneMonthBefore, today, "Under Analysis");
+	    System.out.println("Cases size: " + cases.size());
+	    
+	    ObjectMapper objectMapper = new ObjectMapper();
+	    Optional<CaseStatus> closedStatusOpt = getAllCaseStatus().stream()
+	            .filter(status -> status.getName().equalsIgnoreCase("Closed"))
+	            .findFirst();
+	    
+	    if (closedStatusOpt.isEmpty()) {
+	        System.err.println("No 'Closed' status found. Cannot update case statuses.");
+	        return cases;
+	    }
+	    
+	    CaseStatus closedStatus = closedStatusOpt.get();
+	    
+	    for (Case caseDetails : cases) {
+	        if (isCaseReadyForClosure(caseDetails, objectMapper)) {
+	            caseDetails.setStatus(closedStatus);
+	            caseRepository.save(caseDetails);
+	        }
+	    }
+	    
+	    return cases;
+	}
+
+	private boolean isCaseReadyForClosure(Case caseDetails, ObjectMapper objectMapper) throws Exception {
+	    for (Attribute attribute : caseDetails.getAttributes()) {
+	        String attributeValue = attribute.getValue();
+	        JsonNode rootNode = objectMapper.readTree(attributeValue);
+	        JsonNode recommendationNode = rootNode.path("dataGrid1");
+
+	        if (recommendationNode.isArray()) {
+	            for (JsonNode node : recommendationNode) {
+	                if (node.has("recommendationStatus") && node.isObject()) {
+	                    String recommendationStatus = node.get("recommendationStatus").asText();
+	                    if (!"Closed".equalsIgnoreCase(recommendationStatus)) {
+	                        return false;
+	                    }
+	                }
+	            }
+	        }
+	    }
+	    return true;
+	}
+	
+	private List<Case> getCaseDetailsByStatus(LocalDate from, LocalDate to, String status) {
+		String searchQueryStr = "SELECT c.* FROM cases c LEFT JOIN case_status cs ON c.status_id = cs.id";
+		ArrayList<String> conditions = new ArrayList<>();
+		if(from != null) {
+			conditions.add("CAST(c.creation_date AS DATE) >= '"+from+"'");
+		}
+		
+		if(to != null) {
+			conditions.add("CAST(c.creation_date AS DATE) <= '"+to+"'");
+		}
+		
+		if(status!=null && !status.isBlank()) {
+			Optional<CaseStatus> statusOpt = getAllCaseStatus().stream()
+		            .filter(statusObj -> statusObj.getName().equalsIgnoreCase(status))
+		            .findFirst();
+		    
+		    if (statusOpt.isEmpty()) {
+		        System.err.println("Nostatus found.");
+		        return new ArrayList<Case>();
+		    }
+		    
+		    CaseStatus statusObject = statusOpt.get();
+			conditions.add("c.status_id =" + statusObject.getId() +"");
+			
+		}
+		
+		if(conditions.size()>0) {
+			searchQueryStr = searchQueryStr+ " where "+ String.join(" AND ", conditions);
+		}
+
+		
+		Query searchQuery = entityManager.createNativeQuery(searchQueryStr, Case.class);
+		List<Case> searchResults  = searchQuery.getResultList();
+		return searchResults;
+	}
+
 	
 	private String getGEAPMRecommendationStatusAndUpdateRecommendationStatus(String geAPMAcsessToken, String recommendationNo) {
 		 RestTemplate restTemplate = new RestTemplate();
