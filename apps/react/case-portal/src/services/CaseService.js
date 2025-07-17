@@ -479,7 +479,7 @@ async function dispatchCommentNotification(keycloak, caseNumber, text, businessK
 
   const comment = {
     body: text,
-    userId: capitalizeWords(keycloak.tokenParsed.preferred_username),
+    userId: keycloak.tokenParsed.preferred_username,
     userName: keycloak.tokenParsed.given_name,
     caseId: businessKey,
   }

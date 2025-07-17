@@ -1500,7 +1500,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        data.put("caseName", caseTitle);
 	        data.put("caseUrl", caseDetails.getCaseUrl());
 	        data.put("comment", comment.getBody());
-	        data.put("commentBy", comment.getUserId());
+	        data.put("commentBy", convertUsername(comment.getUserId()));
 	        data.put("environment", "");
 	        caseTitle = "CASE MANAGEMENT :" + caseTitle;
 
@@ -1720,5 +1720,19 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	private String getString(Map<String, Object> map, String key) {
 	    return map.getOrDefault(key, "").toString();
+	}
+
+	private String convertUsername(String input) {
+		// Remove digits, split by dot, capitalize each part
+		String[] parts = input.replaceAll("\\d", "").split("\\.");
+		StringBuilder result = new StringBuilder();
+
+		for (String part : parts) {
+			if (!part.isEmpty()) {
+				result.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1)).append(" ");
+			}
+		}
+
+		return result.toString().trim();
 	}
 }
