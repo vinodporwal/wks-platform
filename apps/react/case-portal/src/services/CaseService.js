@@ -502,8 +502,7 @@ async function dispatchCommentNotification(keycloak, caseNumber, text, businessK
 }
 
 function capitalizeWords(str) {
-    return str.split(/[.\\s]+/)
-              .filter(word => word.length > 0)
+    return str.split(/[\\s.]+/) // Split using "." or whitespace
               .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
               .join(' ');
 }
