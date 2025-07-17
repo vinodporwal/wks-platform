@@ -263,7 +263,7 @@ const CrackerConfig = () => {
         let transformedData1 = []
         var spyroVM1 = []
         if (currentTabDisplay == 'Constant') {
-          spyroVM1 = await DataService.getSpyroOutputData(
+          spyroVM1 = await DataService.getSpyroInputData(
             keycloak,
             mode,
             currentTabDisplay,
@@ -411,7 +411,6 @@ const CrackerConfig = () => {
         UOM: row.uom ?? row.UOM ?? null,
         AuditYear: row.AuditYear ?? null,
         Remarks: row.remarks ?? row.Remarks ?? null,
-
         Jan: row.jan || null,
         Feb: row.feb || null,
         Mar: row.march || null,

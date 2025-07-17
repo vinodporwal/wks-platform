@@ -143,7 +143,8 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 	List<Object[]> findByYearAndPlantFkIdMEG(@Param("year") String year, @Param("plantFKId") UUID plantFKId);
 
 	@Query(value = """
-				SELECT * FROM NormAttributeTransactions d WHERE d.NormParameter_FK_Id = :normParameterFKId  AND d.AOPMonth = :month AND d.AuditYear = :auditYear
+				SELECT * FROM NormAttributeTransactions d WHERE d.NormParameter_FK_Id = :normParameterFKId  AND d.AOPMonth = :month 
+				AND d.AuditYear = :auditYear AND PlantMaintenanceTransaction_FK_Id IS NULL
 			""", nativeQuery = true)
 	Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYear(
 			@Param("normParameterFKId") UUID normParameterFKId,
@@ -175,11 +176,12 @@ public interface NormAttributeTransactionsRepository extends JpaRepository<NormA
 	@Query(value = "SELECT * FROM NormAttributeTransactions " +
             "WHERE PlantMaintenanceTransaction_FK_Id = :maintenanceId " +
             "AND NormParameter_FK_Id = :normParameterFKId " +
-            "AND AuditYear = :auditYear", nativeQuery = true)
+            "AND AuditYear = :auditYear AND AOPMonth = :month", nativeQuery = true)
 	NormAttributeTransactions findByMaintenanceIdAndNormParameterFKIdAndAuditYear(
 	     @Param("maintenanceId") UUID maintenanceId,
 	     @Param("normParameterFKId") UUID normParameterFKId,
-	     @Param("auditYear") String auditYear
+	     @Param("auditYear") String auditYear,
+	     @Param("month") int month
 );
 	
 	@Query(value = "SELECT * FROM NormAttributeTransactions " +

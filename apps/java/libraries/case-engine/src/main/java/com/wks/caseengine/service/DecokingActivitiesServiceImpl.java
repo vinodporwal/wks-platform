@@ -412,11 +412,10 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		try {
 			for (CrackerConfigurationDTO crackerConfigurationDTO : crackerConfigurationDTOList) {
 				if (crackerConfigurationDTO.getId() != null) {
-					CrackerConfiguration crackerConfiguration = null;
-					Optional<CrackerConfiguration> crackerConfigurationopt = crackerConfigurationRepository
-							.findById(crackerConfigurationDTO.getId());
-					if (crackerConfigurationopt.isPresent()) {
-						crackerConfiguration = crackerConfigurationopt.get();
+					CrackerConfiguration crackerConfiguration=null;
+					Optional<CrackerConfiguration> crackerConfigurationopt = crackerConfigurationRepository.findById(crackerConfigurationDTO.getId());
+					if(crackerConfigurationopt.isPresent()) {
+						crackerConfiguration=crackerConfigurationopt.get();
 						crackerConfiguration.setAopYear(crackerConfigurationDTO.getAopYear());
 						crackerConfiguration.setDisplayName(crackerConfigurationDTO.getDisplayName());
 						crackerConfiguration.setDisplaySeq(crackerConfigurationDTO.getDisplaySeq());
@@ -794,6 +793,16 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to update data");
 		}
+		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("Furnace-run-length");
+		for (ScreenMapping screenMapping : screenMappingList) {
+			AopCalculation aopCalculation = new AopCalculation();
+			aopCalculation.setAopYear(year);
+			aopCalculation.setIsChanged(true);
+			aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+			aopCalculation.setPlantId(UUID.fromString(plantId));
+			aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+			aopCalculationRepository.save(aopCalculation);
+		}
 		aopMessageVM.setCode(200);
 		aopMessageVM.setMessage("Data Updated successfully");
 		aopMessageVM.setData(failedList);
@@ -832,6 +841,16 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 				aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId),
 						aopYear, "Furnace-run-length");
+				List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("Furnace-run-length");
+				for (ScreenMapping screenMapping : screenMappingList) {
+					AopCalculation aopCalculation = new AopCalculation();
+					aopCalculation.setAopYear(aopYear);
+					aopCalculation.setIsChanged(true);
+					aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+					aopCalculation.setPlantId(UUID.fromString(plantId));
+					aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+					aopCalculationRepository.save(aopCalculation);
+				}
 
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("SP Executed successfully");
@@ -879,7 +898,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 				dto.setPlantFkId(row[12] != null ? UUID.fromString(row[12].toString()) : null);
 				dto.setAopYear(row[13] != null ? row[13].toString() : null);
-				dto.setRemarks(row[14] != null ? row[14].toString() : null);
+	            dto.setRemarks(row[14] != null ? row[14].toString() : "");
 				dto.setDisplaySeq(row[15] != null ? ((Number) row[15]).intValue() : null);
 
 				crackerConfigurationDTOList.add(dto);

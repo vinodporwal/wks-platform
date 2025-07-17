@@ -163,11 +163,13 @@ const KendoDataTablesCrackerRunLength = ({
         ),
       )
 
+      let updatedRows = []
+
       if (value?.toUpperCase() === 'SAD' && dataItem[field] !== 'SAD') {
         setTimeout(() => {
           setRows((prevRows) => {
             const editedIndex = prevRows.findIndex((r) => r.id === itemId)
-            let updatedRows = [...prevRows]
+            updatedRows = [...prevRows]
 
             const next = prevRows[editedIndex + 1]?.[field]
             const nextNext = prevRows[editedIndex + 2]?.[field]
@@ -310,11 +312,16 @@ const KendoDataTablesCrackerRunLength = ({
               })
             }
 
-            setModifiedCells(() => ({ updatedRows }))
+            setModifiedCells(() => updatedRows)
             setIsRowEdited(true)
             return updatedRows
           })
         }, 150) // delay to avoid blocking typing
+      } else {
+        setModifiedCells((prev) => {
+          const base = { ...dataItem, [field]: value }
+          return { ...prev, [itemId]: base }
+        })
       }
     },
     [setRows, setModifiedCells],
@@ -434,6 +441,8 @@ const KendoDataTablesCrackerRunLength = ({
     event.target.value = ''
   }
 
+  console.log('modifiedCells', modifiedCells)
+
   const renderGrid = () => (
     <Grid
       scrollable='virtual'
@@ -460,7 +469,7 @@ const KendoDataTablesCrackerRunLength = ({
       allRedCell={allRedCell}
       size='small'
       defaultSkip={0}
-      defaultTake={50}
+      defaultTake={100}
       pageable={
         rows?.length > 50
           ? {
@@ -641,8 +650,7 @@ const KendoDataTablesCrackerRunLength = ({
                   className='btn-save'
                   onClick={saveModalOpen}
                   disabled={
-                    isButtonDisabled ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                    isButtonDisabled || Object.keys(modifiedCells).length === 0
                   }
                   {...(loading ? {} : {})}
                 >

@@ -215,26 +215,7 @@ const DecokingConfig = () => {
 
   const saveChangesRunLength = React.useCallback(async () => {
     try {
-      if (Object.keys(modifiedCellsRunLength.updatedRows).length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        setLoading(false)
-        return
-      }
-      const rawData = modifiedCellsRunLength.updatedRows || []
-      if (rawData.length == 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
-        })
-        setLoading(false)
-        return
-      }
-      saveCrackerRunLength(rawData)
+      saveCrackerRunLength(Object.values(modifiedCellsRunLength))
     } catch (error) {
       console.log('Error saving changes:', error)
     }
@@ -337,7 +318,7 @@ const DecokingConfig = () => {
           message: 'Data Saved Successfully!',
           severity: 'success',
         })
-        setModifiedCellsSdTa({})
+        setModifiedCellsRunLength({})
         setLoading(false)
       } else {
         setSnackbarOpen(true)
