@@ -35,8 +35,9 @@ import MonthwiseRawMaterial from 'components/data-tables/Reports-kendo/kendo-Mon
 import CrackerConfig from 'components/kendo-data-tables/KendoConfigCrackerInput'
 import DecokingConfig from 'components/kendo-data-tables/KendoConfigCrackerActivities'
 import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCrackerOutput'
+// import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasisPe'
 import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
-import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasisPe'
+import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/ProductionVolumeDataBasisPe'
 import NormsHistorianBasisPe from 'components/data-tables/Reports/NormsHistorianBasisPe'
 import { Navigate } from '../../node_modules/react-router-dom/dist/index'
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))

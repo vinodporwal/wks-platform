@@ -15,8 +15,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
 import Notification from 'components/Utilities/Notification'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
@@ -27,7 +25,6 @@ import MuiAccordion from '@mui/material/Accordion'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import { styled } from '@mui/material/styles'
-import { Switch } from '@progress/kendo-react-inputs'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
 import {
   isColumnMenuFilterActive,
@@ -35,7 +32,6 @@ import {
 } from '../../../node_modules/@progress/kendo-react-grid/index'
 import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
-import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -441,7 +437,15 @@ const KendoDataTablesCrackerRunLength = ({
     event.target.value = ''
   }
 
-  console.log('modifiedCells', modifiedCells)
+  // const HeaderWithTooltip = (props) => {
+  //   return (
+  //     <th {...props.thProps}>
+  //       <a className='k-link' onClick={props.onClick}>
+  //         <span title={props.title}>{props.title}</span>
+  //       </a>
+  //     </th>
+  //   )
+  // }
 
   const renderGrid = () => (
     <Grid
@@ -493,6 +497,7 @@ const KendoDataTablesCrackerRunLength = ({
                   date: DateOnlyPicker,
                 },
                 data: toolTipRenderer,
+                // headerCell: HeaderWithTooltip,
               }}
               format='{0:dd-MM-yyyy}'
               editor='date'
@@ -510,6 +515,7 @@ const KendoDataTablesCrackerRunLength = ({
               cells={{
                 edit: {
                   date: DateOnlyPicker,
+                  // headerCell: HeaderWithTooltip,
                 },
                 data: toolTipRenderer,
               }}
@@ -518,32 +524,6 @@ const KendoDataTablesCrackerRunLength = ({
               hidden={col.hidden}
               sortable={false}
               className={'k-right-disabled'}
-            />
-          )
-        }
-
-        if (
-          ['aopRemarks', 'remarks', 'remark', 'Remarks'].includes(col.field)
-        ) {
-          return (
-            <GridColumn
-              key={col.field}
-              field={col.field}
-              title={col.title || col.headerName}
-              editor={true}
-              editable={{ mode: 'popup' }}
-              cells={{
-                data: (cellProps, allRedCell) => (
-                  <RemarkCell
-                    {...cellProps}
-                    allRedCell={allRedCell} // pass your extra flag
-                    onRemarkClick={handleRemarkCellClick}
-                  />
-                ),
-              }}
-              columnMenu={ColumnMenuCheckboxFilter}
-              hidden={col.hidden}
-              sortable={false}
             />
           )
         }

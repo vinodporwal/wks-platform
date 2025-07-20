@@ -115,6 +115,8 @@ const SlowdownNormForMeg = () => {
 
       if (response) {
         showNotification('Data refreshed successfully!', 'success')
+        await fetchSlowdownNormsColumns()
+
         await fetchSlowdownNormsData()
       } else {
         showNotification('Data Refresh Failed!', 'error')
@@ -239,10 +241,6 @@ const SlowdownNormForMeg = () => {
   }, [keycloak, plantId, selectedYear, fetchSlowdownNormsColumns])
 
   const tablePermissions = useMemo(() => {
-    if (tableRows.length === 0) {
-      return { allAction: false }
-    }
-
     const isCurrentYear = isOldYear !== 1
     const hasCalculationResults = calculationResults.length > 0
 

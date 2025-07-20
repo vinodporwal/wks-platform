@@ -5,17 +5,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import { validateFields } from 'utils/validationUtils'
 import crackercolumns from '../../assets/CrackerMaintenanceColumn.json'
 import KendoDataTables from './index'
-
 const MaintenanceTable = () => {
   const keycloak = useSession()
-  const { sitePlantChange, verticalChange, yearChanged, oldYear, plantID } =
-    useSelector((s) => s.dataGridStore)
-  const lowerVertName = verticalChange?.selectedVertical?.toLowerCase() || 'meg'
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const { verticalChange, yearChanged, oldYear, plantID } = useSelector(
+    (s) => s.dataGridStore,
+  )
+  const lowerVertName = verticalChange?.selectedVertical?.toLowerCase()
 
-  // Config based on vertical
   const dataConfig = useMemo(
     () => ({
       isCracker: lowerVertName === 'cracker',
@@ -23,20 +22,12 @@ const MaintenanceTable = () => {
         lowerVertName === 'cracker'
           ? DataService.getCrackerMaintenanceData
           : DataService.getMaintenanceData,
-      // editable: lowerVertName === 'cracker',
-      editable: false,
+      editable: lowerVertName === 'cracker',
     }),
-    [lowerVertName],
+    [plantID],
   )
 
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
-
-  const [_plantID, set_PlantID] = useState('')
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-  }, [plantID])
 
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -77,13 +68,13 @@ const MaintenanceTable = () => {
         return
       }
 
-      // const validationMessage = validateFields(data, ['remarks'])
-      // if (validationMessage) {
-      //   setSnackbarOpen(true)
-      //   setSnackbarData({ message: validationMessage, severity: 'error' })
-      //   setLoading(false)
-      //   return
-      // }
+      const validationMessage = validateFields(data, ['remarks'])
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: validationMessage, severity: 'error' })
+        setLoading(false)
+        return
+      }
 
       await saveCrackerMaintenanceData(data)
     } catch (err) {
@@ -134,20 +125,20 @@ const MaintenanceTable = () => {
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Cracker maintenance data saved successfully!',
+          message: 'Saved successfully!',
           severity: 'success',
         })
         setModifiedCells({})
-        fetchData() // ?? Refresh table
+        fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Error saving Cracker maintenance data!',
+          message: 'Error saving data!',
           severity: 'error',
         })
       }
     } catch (error) {
-      console.error('Error saving Cracker maintenance data:', error)
+      console.error('Error saving data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',
@@ -177,7 +168,7 @@ const MaintenanceTable = () => {
     } finally {
       setLoading(false)
     }
-  }, [plantId, keycloak])
+  }, [plantID, keycloak])
 
   const handleCalculate = useCallback(async () => {
     const plantId = JSON.parse(localStorage.getItem('selectedPlant') || '{}').id
@@ -374,11 +365,10 @@ const MaintenanceTable = () => {
           editButton: false,
           showUnit: false,
           saveWithRemark: false,
-          // saveBtn: dataConfig.isCracker,
-          // allAction: dataConfig.isCracker,
+          saveBtn: dataConfig.isCracker,
+          allAction: dataConfig.isCracker,
 
-          saveBtn: false,
-          allAction: false,
+          //allAction: false,
           showRefresh: false,
         },
         oldYear?.oldYear,

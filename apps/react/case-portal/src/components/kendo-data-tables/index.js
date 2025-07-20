@@ -17,8 +17,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
-import DownloadIcon from '@mui/icons-material/Download'
-import UploadIcon from '@mui/icons-material/Upload'
 import Notification from 'components/Utilities/Notification'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
@@ -43,9 +41,8 @@ import { DurationEditor } from './Utilities-Kendo/numericViewCells'
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 // import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
-import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import { descLimit } from './Utilities-Kendo/descLimit'
-import { useSelector } from 'react-redux'
+import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -379,20 +376,16 @@ const KendoDataTables = ({
 
   const toolTipRenderer = (props) => {
     const value = props.dataItem[props.field]
-    const month = monthMap[props.field?.toLowerCase()]
-    const normId = props.dataItem.materialFkId
+    const month = props.field
+    const normId =
+      props.dataItem.materialFkId || props.dataItem.NormParameter_FK_Id
 
     const isRedFromAllRedCell = allRedCell.some(
       (cell) =>
         cell.month === month &&
-        cell.normParameterFKId?.toLowerCase() === normId?.toLowerCase(),
+        cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
     )
 
-    // const isRedFromEdit =
-    //   editedCellMap?.[rowId]?.[props.field] !== undefined &&
-    //   editedCellMap?.[rowId]?.[props.field]?.toString() === value?.toString()
-
-    // const isRed = isRedFromAllRedCell || isRedFromEdit
     const isRed = isRedFromAllRedCell
 
     return (
@@ -401,6 +394,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: isRed ? 'orange' : undefined,
+          fontWeight: isRed ? 'bold' : undefined,
         }}
       >
         {props.children}
@@ -766,9 +760,6 @@ const KendoDataTables = ({
             contextMenu={true}
             grade={grades}
             onRowClick={handleRowClick}
-            // navigatable={true}
-            // scrollable='virtual'
-            // loader={<div>Loading...</div>}
             sortable={{
               mode: 'multiple',
             }}
@@ -970,6 +961,7 @@ const KendoDataTables = ({
                     hidden={col.hidden}
                     cells={{
                       data: toolTipRenderer,
+                      // headerCell: HeaderWithTooltip,
                     }}
                   />
                 )

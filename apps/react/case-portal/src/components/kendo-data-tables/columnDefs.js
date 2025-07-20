@@ -51,7 +51,7 @@ export const ibrPlanColumns = [
     field: 'displayName',
     title: 'Furnace',
     editable: false,
-    width: 200,
+    width: 85,
     filter: true,
   },
   {
@@ -109,6 +109,13 @@ export const ibrPlanColumns = [
     title: 'Is Coil Replacement',
     editable: true,
     type: 'switch',
+    width: 200,
+    filter: false,
+  },
+  {
+    field: 'remarks',
+    title: 'Remarks',
+    editable: true,
     width: 200,
     filter: false,
   },

@@ -899,7 +899,17 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 				dto.setPlantFkId(row[12] != null ? UUID.fromString(row[12].toString()) : null);
 				dto.setAopYear(row[13] != null ? row[13].toString() : null);
 	            dto.setRemarks(row[14] != null ? row[14].toString() : "");
-				dto.setDisplaySeq(row[15] != null ? ((Number) row[15]).intValue() : null);
+	            dto.setDisplaySeq(row[15] != null ? ((Number) row[15]).intValue() : null);
+	            Object val = row[16];
+	            if (val instanceof Number) {
+	                int i = ((Number) val).intValue();
+	                dto.setIsEditable(i != 0);
+	            } else if (val instanceof Boolean) {
+	                dto.setIsEditable((Boolean) val);
+	            } else {
+	                dto.setIsEditable(null); // or choose default
+	            }
+
 
 				crackerConfigurationDTOList.add(dto);
 			}
@@ -918,9 +928,8 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 	public List<Object[]> findByYearAndPlantFkId(String year, UUID plantFkId, String viewName) {
 		try {
-			String sql = "SELECT "
-					+ "Id, Name, DisplayName, IBR_SD, IBR_ED, TA_SD, TA_ED, ShutDown_SD, ShutDown_ED, Post_CR_Days, Pre_CR_Days, IsCR, Plant_FK_Id, AOPYear, "
-					+ "Remarks, DisplaySeq FROM " + viewName + " "
+			String sql = "SELECT " + "Id, Name, DisplayName, IBR_SD, IBR_ED, TA_SD, TA_ED, ShutDown_SD, ShutDown_ED, Post_CR_Days, Pre_CR_Days, IsCR, Plant_FK_Id, AOPYear, "
+					+ "Remarks, DisplaySeq,isEditable FROM " + viewName + " "
 					+ "WHERE AOPYear = :year "
 					+ "AND Plant_FK_Id = :plantFkId "
 					+ "ORDER BY DisplaySeq";

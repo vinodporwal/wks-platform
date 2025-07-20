@@ -201,6 +201,7 @@ export default function HeaderContent({ keycloak }) {
             setSelectedYear(currentYear)
             localStorage.setItem('year', currentYear)
             dispatch(setAopYear({ selectedYear: currentYear }))
+            dispatch(setOldYear({ oldYear: 0 }))
           }
         }
       } catch (err) {

@@ -137,7 +137,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 				map.put("fourFHours", row[17]);
 				map.put("aopYear", row[18]);
 				map.put("plantId", row[19]);
-				String remarks = row[20] == null ? "" : row[17].toString();
+				String remarks = row[20] == null ? "" : row[20].toString();
 				map.put("remarks", remarks);
 				map.put("totalSAD", row[21]);
 				map.put("numberOfDays", row[22]);
@@ -206,19 +206,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 						.findById(decokePlanningDTO.getId());
 				if (decokePlanningop.isPresent()) {
 					DecokePlanning decokePlanning = decokePlanningop.get();
-					decokePlanning.setBud(decokePlanningDTO.getBud());
-					decokePlanning.setDemoBBU(decokePlanningDTO.getDemoBBU());
-					decokePlanning.setDemoHSS(decokePlanningDTO.getDemoHSS());
-					decokePlanning.setDemoSAD(decokePlanningDTO.getDemoSAD());
-					decokePlanning.setFiveF(decokePlanningDTO.getFiveF());
-					decokePlanning.setFourF(decokePlanningDTO.getFourF());
-					decokePlanning.setFourFD(decokePlanningDTO.getFourFD());
-					decokePlanning.setFourFHours(decokePlanningDTO.getFourFHours());
-					decokePlanning.setIbr(decokePlanningDTO.getIbr());
 					decokePlanning.setMnt(decokePlanningDTO.getMnt());
-					decokePlanning.setMonthName(decokePlanningDTO.getMonthName());
-					decokePlanning.setShutdown(decokePlanningDTO.getShutdown());
-					decokePlanning.setSad(decokePlanningDTO.getSad());
 					decokePlanning.setRemarks(decokePlanningDTO.getRemarks());
 					decokePlanningList.add(decokePlanningRepository.save(decokePlanning));
 				}

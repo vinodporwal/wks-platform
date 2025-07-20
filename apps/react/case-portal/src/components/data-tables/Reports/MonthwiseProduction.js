@@ -54,7 +54,7 @@ const MonthwiseProduction = () => {
   const formatValueToThreeDecimalsZero = (params) => {
     return params === 0 ? 0 : params ? parseFloat(params).toFixed(0) : ''
   }
- const isOldYear = oldYear?.oldYear === 1 
+  const isOldYear = oldYear?.oldYear === 1
   const columns = [
     {
       field: 'RowNo',
@@ -111,7 +111,7 @@ const MonthwiseProduction = () => {
     },
     {
       field: 'MEGThroughput', // was megTPH
-      headerName: 'MEG Throughput, TPH',
+      headerName: 'Throughput, TPH',
       editable: false,
     },
     {
@@ -146,7 +146,7 @@ const MonthwiseProduction = () => {
       children: [
         {
           groupId: 'cy-eoe',
-          headerName: 'EOE Production, MT',
+          headerName: 'Production, MT',
           children: [
             { field: 'EOEProdBudget' }, // was eoeBudgetCY
             { field: 'EOEProdActual' }, // was eoeActualCY
