@@ -7,6 +7,8 @@ import moment from '../../../node_modules/moment/moment.js'
 import { ibrGridThree, ibrPlanColumns } from './columnDefs'
 import FurnaceRunLengthGrid from './FurnaceRunLengthGrid.js'
 import SDTAActivitiesGrid from './SDTAActivitiesGrid.js'
+import { validateFields } from 'utils/validationUtils.js'
+import { Height } from '../../../node_modules/@mui/icons-material/index.js'
 const DecokingConfig = () => {
   const keycloak = useSession()
   const tabs = ['IBR Plan']
@@ -206,10 +208,7 @@ const DecokingConfig = () => {
         return
       }
       var rawData = Object.values(modifiedCellsSdTa)
-      const requiredFields = [
-        'idFromApi',
-        'remarks'
-      ]
+      const requiredFields = ['idFromApi', 'remarks']
 
       const validationMessage = validateFields(rawData, requiredFields)
       if (validationMessage) {

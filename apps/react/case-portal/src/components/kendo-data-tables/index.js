@@ -232,26 +232,48 @@ const KendoDataTables = ({
           return updated
         }),
       )
+      if (permissions?.onlyCellUpdate) {
+        setModifiedCells((prev) => {
+          const updated = { ...(prev[itemId] || {}) }
 
-      setModifiedCells((prev) => {
-        const base = { ...dataItem, [field]: value }
-        if (
-          'maintStartDateTime' in base &&
-          'maintEndDateTime' in base &&
-          'durationInHrs' in base
-        ) {
-          if (field === 'maintStartDateTime' || field === 'maintEndDateTime') {
-            base.durationInHrs = recalcDuration(
-              base.maintStartDateTime,
-              base.maintEndDateTime,
-            )
-          } else if (field === 'durationInHrs') {
-            const newEnd = recalcEndDate(base.maintStartDateTime, value)
-            if (newEnd) base.maintEndDateTime = newEnd.toISOString()
+          updated[field] = value
+
+          if (!updated.NormParameter_FK_Id && dataItem?.NormParameter_FK_Id) {
+            updated.NormParameter_FK_Id = dataItem.NormParameter_FK_Id
           }
-        }
-        return { ...prev, [itemId]: base }
-      })
+
+          const result = {
+            ...prev,
+            [itemId]: updated,
+          }
+
+          return result
+        })
+      } else {
+        setModifiedCells((prev) => {
+          const base = { ...dataItem, [field]: value }
+          if (
+            'maintStartDateTime' in base &&
+            'maintEndDateTime' in base &&
+            'durationInHrs' in base
+          ) {
+            if (
+              field === 'maintStartDateTime' ||
+              field === 'maintEndDateTime'
+            ) {
+              base.durationInHrs = recalcDuration(
+                base.maintStartDateTime,
+                base.maintEndDateTime,
+              )
+            } else if (field === 'durationInHrs') {
+              const newEnd = recalcEndDate(base.maintStartDateTime, value)
+              if (newEnd) base.maintEndDateTime = newEnd.toISOString()
+            }
+          }
+
+          return { ...prev, [itemId]: base }
+        })
+      }
     },
     [setRows, setModifiedCells],
   )

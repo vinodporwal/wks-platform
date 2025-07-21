@@ -12,7 +12,7 @@ import { useSession } from 'SessionStoreContext'
 const CrackerConfig = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, oldYear } = dataGridStore
+  const { verticalChange, oldYear, plantID, yearChanged } = dataGridStore
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -78,6 +78,12 @@ const CrackerConfig = () => {
   const [selectMode, setSelectMode] = useState(allModes[0])
   const [constantsRows, setConstantsRows] = useState([])
 
+  const currentTabDisplay = useMemo(() => {
+    const idLower = tabs[tabIndex]?.toLowerCase() || ''
+    const info = availableTabs.find((t) => t.id.toLowerCase() === idLower)
+    return info ? info.name : tabs[tabIndex] || 'Feed'
+  }, [tabs, tabIndex, availableTabs])
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -92,6 +98,8 @@ const CrackerConfig = () => {
       saveBtn: false,
       isOldYear: isOldYear,
       allAction: false,
+      uploadExcelBtn: false,
+      downloadExcelBtn: false,
     }
   }
   const adjustedPermissions = getAdjustedPermissions(
@@ -106,16 +114,12 @@ const CrackerConfig = () => {
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
       modes: allModes,
+      uploadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
+      downloadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
     },
     isOldYear,
   )
   const NormParameterIdCell = (props) => <td>{props?.dataItem?.particulars}</td>
-  const currentTabDisplay = useMemo(() => {
-    const idLower = tabs[tabIndex]?.toLowerCase() || ''
-    const info = availableTabs.find((t) => t.id.toLowerCase() === idLower)
-    // console.log(info)
-    return info ? info.name : tabs[tabIndex] || 'Feed'
-  }, [tabs, tabIndex, availableTabs])
 
   const productionColumns = useMemo(() => {
     const configType =
@@ -333,9 +337,7 @@ const CrackerConfig = () => {
     [keycloak, setRowsForTab, currentTabDisplay],
   )
 
-  // 5️⃣ Whenever the selected tab changes, reload that tab’s rows
   useEffect(() => {
-    // const tabId = tabs[tabIndex]
     if (keycloak && plantId && currentTabDisplay) {
       fetchCrackerRows(currentTabDisplay, selectMode)
     } else {
@@ -348,11 +350,12 @@ const CrackerConfig = () => {
   }, [
     tabIndex,
     selectMode,
-    plantId,
+    plantID,
     tabs,
     fetchCrackerRows,
     keycloak,
     currentTabDisplay,
+    yearChanged,
   ])
   // console.log(props)
   // const productId = props.dataItem.normParameterFKId
@@ -454,6 +457,124 @@ const CrackerConfig = () => {
       setLoading(false)
     }
   }
+  //------------------
+  const saveSpyroInputExcelFile = async (rawFile) => {
+    setLoading(true)
+
+    if (currentTabDisplay === 'Constant') {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel import is not available for the "Constant" tab.',
+        severity: 'info',
+      })
+      setLoading(false)
+      return
+    }
+
+    try {
+      const storedPlant = localStorage.getItem('selectedPlant')
+      const plantId = storedPlant ? JSON.parse(storedPlant)?.id : ''
+      const mode = selectMode || '' // Optional mode
+      let response
+
+      response = await DataService.importSpyroInputExcel(
+        rawFile,
+        keycloak,
+        mode,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchAllData?.()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Spyro Input.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Spyro Input Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  const handleExcelUpload = (rawFile) => {
+    saveSpyroInputExcelFile(rawFile)
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    const mode = selectMode // Can be empty — that's fine
+
+    try {
+      const response = await DataService.exportSpyroInputExcel(keycloak, mode)
+
+      if (response?.code === 200) {
+        setSnackbarData({
+          message: 'Excel download completed successfully!',
+          severity: 'success',
+        })
+      } else {
+        setSnackbarData({
+          message: 'Failed to download Excel.',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  //--------------------
   return (
     <Box>
       <Backdrop
@@ -538,6 +659,10 @@ const CrackerConfig = () => {
                     setSnackbarData={setSnackbarData}
                     modifiedCells={modifiedCells}
                     setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
                   />
                 </Box>
               )
