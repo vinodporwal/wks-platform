@@ -402,6 +402,7 @@ const CrackerConfig = () => {
       const storedPlant = localStorage.getItem('selectedPlant')
       if (storedPlant) plant = JSON.parse(storedPlant).id
       let verticalId = localStorage.getItem('verticalId')
+      let year = localStorage.getItem('plant')
 
       const SpyroInputData = newRows.map((row) => ({
         VerticalFKId: verticalId,
@@ -432,6 +433,8 @@ const CrackerConfig = () => {
       const response = await DataService.saveSpyroInput(
         SpyroInputData,
         keycloak,
+        plant,
+        year,
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -483,14 +486,14 @@ const CrackerConfig = () => {
         mode,
       )
 
-      if (response?.code === 200) {
+      if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Uploaded Successfully!',
           severity: 'success',
         })
         setModifiedCells({})
-        fetchAllData?.()
+        fetchCrackerRows(currentTabDisplay, selectMode)
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -517,23 +520,24 @@ const CrackerConfig = () => {
           severity: 'warning',
         })
       } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Upload Failed!',
-          severity: 'error',
-        })
+        // setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: 'Upload Failed!',
+        //   severity: 'error',
+        // })
       }
 
       return response
     } catch (error) {
       console.error('Error uploading Spyro Input Excel:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
-        severity: 'error',
-      })
+      // setSnackbarOpen(true)
+      // setSnackbarData({
+      //   message: 'Unexpected error occurred!',
+      //   severity: 'error',
+      // })
     } finally {
       setLoading(false)
+      fetchCrackerRows(currentTabDisplay, selectMode)
     }
   }
   const handleExcelUpload = (rawFile) => {
@@ -547,7 +551,7 @@ const CrackerConfig = () => {
       severity: 'success',
     })
 
-    const mode = selectMode // Can be empty — that's fine
+    const mode = selectMode
 
     try {
       const response = await DataService.exportSpyroInputExcel(keycloak, mode)
@@ -558,17 +562,17 @@ const CrackerConfig = () => {
           severity: 'success',
         })
       } else {
-        setSnackbarData({
-          message: 'Failed to download Excel.',
-          severity: 'error',
-        })
+        // setSnackbarData({
+        //   message: 'Failed to download Excel.',
+        //   severity: 'error',
+        // })
       }
     } catch (error) {
-      console.error('Error downloading Excel:', error)
-      setSnackbarData({
-        message: 'Failed to download Excel.',
-        severity: 'error',
-      })
+      // console.error('Error downloading Excel:', error)
+      // setSnackbarData({
+      //   message: 'Failed to download Excel.',
+      //   severity: 'error',
+      // })
     } finally {
       setSnackbarOpen(true)
     }
