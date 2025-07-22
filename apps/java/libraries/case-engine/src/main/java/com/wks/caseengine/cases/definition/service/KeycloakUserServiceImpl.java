@@ -7,6 +7,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.rest.db2.entity.Users;
@@ -37,6 +38,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 	}
 
 	@Override
+	@Scheduled(cron = "0 0 1 ? * MON")
 	public Map<String, Object> getUsers() throws Exception {
 		Map<String, Object> result = new HashMap<String, Object>();
 
