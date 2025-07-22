@@ -25,12 +25,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 public class KeycloakUserService {
 
 	@Value("${keycloak.realm.name}")
 	private String keycloakRealmName;
+	// private String keycloakRealmName = "localhost";
 
 	@Autowired
 	private UserScreenMappingRepository userScreenMappingRepository;
@@ -46,12 +48,22 @@ public class KeycloakUserService {
 
 		try {
 			Keycloak keycloak = keycloakAdminClient.getInstance();
-			List<UserRepresentation> summaryUsers = keycloak.realm(keycloakRealmName).users().list();
-
+			if(!Objects.isNull(keycloak)) {
+			System.out.println("Keycloak instance: " + keycloak);
+			System.out.println("Keycloak realm name: " + keycloakRealmName);
+			} else {
+				System.out.println("Keycloak instance is null");
+			}
+			List<UserRepresentation> summaryUsers = keycloak.realm("localhost").users().list();
+			if(!Objects.isNull(summaryUsers)) {
+			System.out.println("Summary users: " + summaryUsers);
+			} else {
+				System.out.println("Summary users is null");
+			}
 			List<Map<String, Object>> userDetails = summaryUsers.stream()
 			    .map(user -> {
 			        String userId = user.getId();
-			        UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+			        UserResource userResource = keycloak.realm("localhost").users().get(userId);
 			        UserRepresentation userRep = userResource.toRepresentation();
 
 			        // Directly assigned realm roles
@@ -70,9 +82,10 @@ public class KeycloakUserService {
 
 
 			result.put("status", 200);
-			result.put("message", "Users list by realm " + keycloakRealmName + ".");
+			result.put("message", "Users list by realm " + "localhost" + ".");
 			result.put("data", userDetails);
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new Exception("Failed to fetch users from keyclok: " + ex.getMessage(), ex);
 		}
 
@@ -94,7 +107,7 @@ public class KeycloakUserService {
 
 		    // Step 2: Loop through each userId
 		    for (String userId : new HashSet<>(userIds)) {
-		        UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+		        UserResource userResource = keycloak.realm("localhost").users().get(userId);
 		        UserRepresentation user = userResource.toRepresentation();
 
 		        // Prepare mapping for this user
@@ -237,7 +250,7 @@ public class KeycloakUserService {
 		        // Assign realm role
 		        if (roleObj instanceof String && !((String) roleObj).isBlank()) {
 		            String roleName = (String) roleObj;
-		            RoleRepresentation roleToAdd = keycloak.realm(keycloakRealmName).roles().get(roleName)
+		            RoleRepresentation roleToAdd = keycloak.realm("localhost").roles().get(roleName)
 		                .toRepresentation();
 		            userResource.roles().realmLevel().add(Collections.singletonList(roleToAdd));
 		        }
@@ -259,7 +272,7 @@ public class KeycloakUserService {
 		Keycloak keycloak = keycloakAdminClient.getInstance();
 
 		try {
-			List<RoleRepresentation> realmRoles = keycloak.realm(keycloakRealmName).roles().list();
+			List<RoleRepresentation> realmRoles = keycloak.realm("localhost").roles().list();
 
 			result.put("status", 200);
 			result.put("message", "User roles fetched successfully.");
@@ -276,7 +289,7 @@ public class KeycloakUserService {
 		Keycloak keycloak = keycloakAdminClient.getInstance();
 
 		try {
-			List<GroupRepresentation> groups = keycloak.realm(keycloakRealmName).groups().groups();;
+			List<GroupRepresentation> groups = keycloak.realm("localhost").groups().groups();;
 
 			result.put("status", 200);
 			result.put("message", "User groups fetched successfully.");
@@ -294,7 +307,7 @@ public class KeycloakUserService {
 
 	    try {
 	        // This performs a general search across username, first name, last name, and email
-	        List<UserRepresentation> users = keycloak.realm(keycloakRealmName)
+	        List<UserRepresentation> users = keycloak.realm("localhost")
 	                                                 .users()
 	                                                 .search(searchString, 0, 100); // optional: start, max
 
@@ -314,7 +327,7 @@ public class KeycloakUserService {
 		Keycloak keycloak = keycloakAdminClient.getInstance();
 
 		try {
-			UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+			UserResource userResource = keycloak.realm("localhost").users().get(userId);
 			UserRepresentation user = userResource.toRepresentation();
 
 			Object attrObj = data.get("attributes");
