@@ -25,8 +25,8 @@ import Profile from './Profile/index'
 import Search from './Search'
 
 // import Logo from '../../../assets/images/ril-logo2.png'
-import { Skeleton } from '@progress/kendo-react-indicators'
 import Logo from 'assets/images/ril-logo2.png'
+import { Skeleton } from '../../../../../node_modules/@progress/kendo-react-indicators/index'
 
 // Utility to parse the Keycloak ?allowed? JSON
 function parseAllowed(raw) {
@@ -348,7 +348,7 @@ export default function HeaderContent({ keycloak }) {
             Year:
           </Typography>
           {headerLoading ? (
-            <Skeleton shape='rectangle' style={{ width: 100, height: 40 }} />
+            <Skeleton variant='rectangle' width={100} height={40} />
           ) : (
             <FormControl sx={{ minWidth: 100 }}>
               <Select
@@ -372,7 +372,7 @@ export default function HeaderContent({ keycloak }) {
             Vertical:
           </Typography>
           {headerLoading ? (
-            <Skeleton shape='rectangle' style={{ width: 100, height: 40 }} />
+            <Skeleton variant='rectangle' width={100} height={40} />
           ) : (
             <FormControl sx={{ minWidth: 100 }}>
               <Select
@@ -396,7 +396,7 @@ export default function HeaderContent({ keycloak }) {
             Site:
           </Typography>
           {headerLoading ? (
-            <Skeleton shape='rectangle' style={{ width: 100, height: 40 }} />
+            <Skeleton variant='rectangle' width={100} height={40} />
           ) : (
             <FormControl sx={{ minWidth: 100 }}>
               <Select
@@ -421,7 +421,7 @@ export default function HeaderContent({ keycloak }) {
             Plant:
           </Typography>
           {headerLoading ? (
-            <Skeleton shape='rectangle' style={{ width: 100, height: 40 }} />
+            <Skeleton variant='rectangle' width={100} height={40} />
           ) : (
             <FormControl sx={{ minWidth: 100 }}>
               <Select
