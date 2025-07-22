@@ -52,18 +52,20 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 			        UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
 			        UserRepresentation userRep = userResource.toRepresentation();
 
-			        String convertedUsername = convertUsername(userRep.getUsername());
-			        String convertedEmail = convertEmail(userRep.getEmail());
+			        if(userRep.isEnabled()) {
+			        	String convertedUsername = convertUsername(userRep.getUsername());
+				        String convertedEmail = convertEmail(userRep.getEmail());
 
-			        Users existingUser = usersRepository.findByEmailId(convertedEmail);
-			        
-			        if(Objects.isNull(existingUser)) {
-				        Users users = new Users();
-				        users.setUserPkId(UUID.randomUUID().toString());
-				        users.setUserId(convertedUsername);
-				        users.setEmailId(convertedEmail);
-				        usersRepository.save(users);
-			        }
+				        Users existingUser = usersRepository.findByEmailId(convertedEmail);
+				        
+				        if(Objects.isNull(existingUser)) {
+					        Users users = new Users();
+					        users.setUserPkId(UUID.randomUUID().toString());
+					        users.setUserId(convertedUsername);
+					        users.setEmailId(convertedEmail);
+					        usersRepository.save(users);
+				        }
+			        }	        
    
 //			        // Directly assigned realm roles
 //			        List<RoleRepresentation> realmRoles = userResource.roles().realmLevel().listEffective(false); // false -> only direct
