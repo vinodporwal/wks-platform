@@ -14,6 +14,7 @@ import com.wks.caseengine.rest.db2.entity.Users;
 import com.wks.caseengine.rest.db2.repository.UsersRepository;
 import com.wks.caseengine.utility.KeycloakAdminClient;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +45,24 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 
 		try {
 			Keycloak keycloak = keycloakAdminClient.getInstance();
-			List<UserRepresentation> summaryUsers = keycloak.realm(keycloakRealmName).users().list();
+			List<UserRepresentation> allUsers = new ArrayList<UserRepresentation>(); // This will store all users.
 
-			List<Map<String, Object>> userDetails = summaryUsers.stream()
+			int first = 0; // Start at index 0.
+			int pageSize = 100; // Retrieve 100 users per request (Keycloak default max limit is 100).
+
+			while (true) {
+			    List<UserRepresentation> usersBatch = keycloak.realm(keycloakRealmName)
+			            .users()
+			            .list(first, pageSize);
+
+			    if (usersBatch.isEmpty()) {
+			        break; // If no users are returned, exit the loop.
+			    }
+
+			    allUsers.addAll(usersBatch); // Add the fetched users to the main list.
+			    first += pageSize; // Move to the next page.
+			}
+			List<Map<String, Object>> userDetails = allUsers.stream()
 			    .map(user -> {
 			        String userId = user.getId();
 			        UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
