@@ -68,7 +68,7 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 			        UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
 			        UserRepresentation userRep = userResource.toRepresentation();
 
-			        if(userRep.isEnabled()) {
+			        if(userRep.isEnabled() && !Objects.isNull(userRep.getEmail()) && !Objects.isNull(userRep.getUsername())) {
 			        	String convertedUsername = convertUsername(userRep.getUsername());
 				        String convertedEmail = convertEmail(userRep.getEmail());
 
