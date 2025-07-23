@@ -1007,7 +1007,6 @@ const KendoDataTables = ({
                 )
               }
               if (col?.field === 'UOM') {
-                console.log('col', col?.field)
                 return (
                   <GridColumn
                     key='UOM'
@@ -1117,6 +1116,7 @@ const KendoDataTables = ({
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
                     headerClassName={isActive ? 'active-column' : ''}
+                    width={col.widthT || ''}
                   />
                 )
               }
