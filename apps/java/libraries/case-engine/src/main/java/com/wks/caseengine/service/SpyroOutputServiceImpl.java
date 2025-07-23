@@ -9,7 +9,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -79,28 +80,24 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				
 				if(row[4].toString().contains(type)) {	
-					map.put("VerticalFKId", row[0]);
-					map.put("PlantFKId", row[1]);
-					map.put("NormParameterFKID", row[2]);
-					map.put("Particulars", row[3]);
-					map.put("NormParameterDisplayName", row[4]);
-					map.put("NormParameterTypeFKID", row[5]);
-					map.put("Type", row[6]);
-					map.put("UOM", row[7]);
-					map.put("AuditYear", row[8]);
-					map.put("Remarks", row[9]);
-					map.put("Jan", row[10]);
-					map.put("Feb", row[11]);
-					map.put("Mar", row[12]);
-					map.put("Apr", row[13]);
-					map.put("May", row[14]);
-					map.put("Jun", row[15]);
-					map.put("Jul", row[16]);
-					map.put("Aug", row[17]);
-					map.put("Sep", row[18]);
-					map.put("Oct", row[19]);
-					map.put("Nov", row[20]);
-					map.put("Dec", row[21]);
+					
+					map.put("normParameterFKID", row[2]);
+					map.put("particulars", row[3]);
+					map.put("normParameterDisplayName", row[4]);
+					map.put("uom", row[7]);
+					map.put("remarks", row[9]);
+					map.put("jan", row[10]);
+					map.put("feb", row[11]);
+					map.put("mar", row[12]);
+					map.put("apr", row[13]);
+					map.put("may", row[14]);
+					map.put("jun", row[15]);
+					map.put("jul", row[16]);
+					map.put("aug", row[17]);
+					map.put("sep", row[18]);
+					map.put("oct", row[19]);
+					map.put("nov", row[20]);
+					map.put("dec", row[21]);
 					map.put("isEditable", row[22]);
 					spyroOutputDataList.add(map); // Add the map to the list here
 				}
@@ -164,19 +161,16 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 
 
 	@Override
-	public AOPMessageVM updateSpyroOutputData(List<SpyroOutputDTO> spyroOutputDTOList) {
+	public AOPMessageVM updateSpyroOutputData(String year,String plantId,List<SpyroOutputDTO> spyroOutputDTOList) {
 		AOPMessageVM aopMessageVM=new AOPMessageVM();
-		String year=null;
-		UUID plantId=null;
+		
 		try {
 			for (SpyroOutputDTO spyroOutputDTO : spyroOutputDTOList) {
 				UUID normParameterFKId = UUID.fromString(spyroOutputDTO.getNormParameterFKID());
-				year=spyroOutputDTO.getAuditYear();
-				plantId=UUID.fromString(spyroOutputDTO.getPlantFKId());
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(spyroOutputDTO, i);
 		
-					saveData(normParameterFKId, i, attributeValue, spyroOutputDTO);
+					saveData(normParameterFKId, i, attributeValue, spyroOutputDTO,year);
 				}
 			}
 			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("spyro-output");
@@ -185,7 +179,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				aopCalculation.setAopYear(year);
 				aopCalculation.setIsChanged(true);
 				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
-				aopCalculation.setPlantId(plantId);
+				aopCalculation.setPlantId(UUID.fromString(plantId));
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
 			}
@@ -235,11 +229,12 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		return spyroOutputDTO.getJan();
 	}
 	
-	void saveData(UUID normParameterFKId, Integer i, Double attributeValue,SpyroOutputDTO spyroOutputDTO) {
-			
+	void saveData(UUID normParameterFKId, Integer i, Double attributeValue,SpyroOutputDTO spyroOutputDTO,String year) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String userId = authentication.getName();	
 
 		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
-				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, spyroOutputDTO.getAuditYear());
+				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
 
 		NormAttributeTransactions normAttributeTransactions;
 
@@ -252,10 +247,10 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			normAttributeTransactions = new NormAttributeTransactions();
 			normAttributeTransactions.setCreatedOn(new Date());
 			normAttributeTransactions.setAttributeValueVersion("V1");
-			normAttributeTransactions.setUserName("System");
+			normAttributeTransactions.setUserName(userId);
 			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
 			normAttributeTransactions.setAopMonth(i);
-			normAttributeTransactions.setAuditYear(spyroOutputDTO.getAuditYear());
+			normAttributeTransactions.setAuditYear(year);
 		}
 
 		normAttributeTransactions
@@ -306,6 +301,8 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	@Override
 	public AOPMessageVM updateSpyroOutputYieldData(String plantId, String year,
 			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String userId = authentication.getName();	
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<>();
 		
@@ -323,7 +320,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());
 						normAttributeTransactions.setAuditYear(year);
 						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions.setUserName("System");
+						normAttributeTransactions.setUserName(userId);
 						normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
 					}else {
 						normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());

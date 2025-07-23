@@ -20,6 +20,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -89,10 +91,6 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-		System.out.println("year " + year);
-		System.out.println("plantId " + plantId);
-		System.out.println("Mode " + Mode);
-		System.out.println("type " + type);
 		String siteId = site.getId().toString();
 		String verticalId = vertical.getId().toString();
 		String procedureName = vertical.getName() + "_" + site.getName() + "_GetSpyroInput";
@@ -102,28 +100,24 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			for (Object[] row : results) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				if (!type.equalsIgnoreCase("Composition") && row[4].toString().contains(type)) {
-					map.put("VerticalFKId", row[0]);
-					map.put("PlantFKId", row[1]);
-					map.put("NormParameterFKID", row[2]);
-					map.put("Particulars", row[3]);
-					map.put("NormParameterTypeName", row[4]);
-					map.put("NormParameterTypeFKID", row[5]);
-					map.put("Type", row[6]);
-					map.put("UOM", row[7]);
-					map.put("AuditYear", row[8]);
-					map.put("Remarks", row[9]);
-					map.put("Jan", row[10]);
-					map.put("Feb", row[11]);
-					map.put("Mar", row[12]);
-					map.put("Apr", row[13]);
-					map.put("May", row[14]);
-					map.put("Jun", row[15]);
-					map.put("Jul", row[16]);
-					map.put("Aug", row[17]);
-					map.put("Sep", row[18]);
-					map.put("Oct", row[19]);
-					map.put("Nov", row[20]);
-					map.put("Dec", row[21]);
+					
+					map.put("normParameterFKID", row[2]);
+					map.put("particulars", row[3]);
+					map.put("normParameterTypeName", row[4]);
+					map.put("uom", row[7]);
+					map.put("remarks", row[9]);
+					map.put("jan", row[10]);
+					map.put("feb", row[11]);
+					map.put("mar", row[12]);
+					map.put("apr", row[13]);
+					map.put("may", row[14]);
+					map.put("jun", row[15]);
+					map.put("jul", row[16]);
+					map.put("aug", row[17]);
+					map.put("sep", row[18]);
+					map.put("oct", row[19]);
+					map.put("nov", row[20]);
+					map.put("dec", row[21]);
 					map.put("isEditable", row[22]);
 					spyroInputDataList.add(map); // Add the map to the list here
 				} else {
@@ -132,28 +126,24 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 								|| row[4].toString().contains("BPCL Kochi Propylene")
 								|| row[4].toString().contains("Import Propane") || row[4].toString().contains("FCC C3")
 								|| row[4].toString().contains("LDPE Off Gas")) {
-							map.put("VerticalFKId", row[0]);
-							map.put("PlantFKId", row[1]);
-							map.put("NormParameterFKID", row[2]);
-							map.put("Particulars", row[3]);
-							map.put("NormParameterTypeName", row[4]);
-							map.put("NormParameterTypeFKID", row[5]);
-							map.put("Type", row[6]);
-							map.put("UOM", row[7]);
-							map.put("AuditYear", row[8]);
-							map.put("Remarks", row[9]);
-							map.put("Jan", row[10]);
-							map.put("Feb", row[11]);
-							map.put("Mar", row[12]);
-							map.put("Apr", row[13]);
-							map.put("May", row[14]);
-							map.put("Jun", row[15]);
-							map.put("Jul", row[16]);
-							map.put("Aug", row[17]);
-							map.put("Sep", row[18]);
-							map.put("Oct", row[19]);
-							map.put("Nov", row[20]);
-							map.put("Dec", row[21]);
+							
+							map.put("normParameterFKID", row[2]);
+							map.put("particulars", row[3]);
+							map.put("normParameterTypeName", row[4]);
+							map.put("uom", row[7]);
+							map.put("remarks", row[9]);
+							map.put("jan", row[10]);
+							map.put("feb", row[11]);
+							map.put("mar", row[12]);
+							map.put("apr", row[13]);
+							map.put("may", row[14]);
+							map.put("jun", row[15]);
+							map.put("jul", row[16]);
+							map.put("aug", row[17]);
+							map.put("sep", row[18]);
+							map.put("oct", row[19]);
+							map.put("nov", row[20]);
+							map.put("dec", row[21]);
 							map.put("isEditable", row[22]);
 							spyroInputDataList.add(map); // Add the map to the list here
 						}
@@ -222,7 +212,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(spyroInputDTO, i);
 
-					saveData(normParameterFKId, i, attributeValue, spyroInputDTO);
+					saveData(normParameterFKId, i, attributeValue, spyroInputDTO,plantFKId,year);
 				}
 			}
 			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("spyro-input");
@@ -279,10 +269,11 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		return spyroInputDTO.getJan();
 	}
 
-	void saveData(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO) {
-
+	void saveData(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO,String plantId,String year) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String userId = authentication.getName();	
 		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
-				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, spyroInputDTO.getAuditYear());
+				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
 
 		NormAttributeTransactions normAttributeTransactions;
 
@@ -295,10 +286,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			normAttributeTransactions = new NormAttributeTransactions();
 			normAttributeTransactions.setCreatedOn(new Date());
 			normAttributeTransactions.setAttributeValueVersion("V1");
-			normAttributeTransactions.setUserName("System");
+			normAttributeTransactions.setUserName(userId);
 			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
 			normAttributeTransactions.setAopMonth(i);
-			normAttributeTransactions.setAuditYear(spyroInputDTO.getAuditYear());
+			normAttributeTransactions.setAuditYear(year);
 		}
 
 		normAttributeTransactions
@@ -446,7 +437,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 					try {
 						dto.setNormParameterFKID(getStringCellValue(row.getCell(0), dto));
 						dto.setParticulars(getStringCellValue(row.getCell(1), dto));
-						dto.setUOM(getStringCellValue(row.getCell(2), dto));
+						dto.setUom(getStringCellValue(row.getCell(2), dto));
 						dto.setAuditYear(year);
 						dto.setApr(getNumericCellValue(row.getCell(3), dto));
 						dto.setMay(getNumericCellValue(row.getCell(4), dto));
@@ -552,22 +543,22 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"NormParameterFKID\", \r\n" + //
-						"\t\t\t\t\t\"Particulars\", \r\n" + //
-						"\t\t\t\t\t\"UOM\", \r\n" + //
-						"\t\t\t\t\t\"Jan\", \r\n" + //
-						"\t\t\t\t\t\"Feb\", \r\n" + //
-						"\t\t\t\t\t\"Mar\", \r\n" + //
-						"\t\t\t\t\t\"Apr\", \r\n" + //
-						"\t\t\t\t\t\"May\", \r\n" + //
-						"\t\t\t\t\t\"Jun\", \r\n" + //
-						"\t\t\t\t\t\"Jul\", \r\n" + //
-						"\t\t\t\t\t\"Aug\", \r\n" + //
-						"\t\t\t\t\t\"Sep\", \r\n" + //
-						"\t\t\t\t\t\"Oct\", \r\n" + //
-						"\t\t\t\t\t\"Nov\", \r\n" + //
-						"\t\t\t\t\t\"Dec\", \r\n" + //
-						"\t\t\t\t\t\"Remarks\"\r\n" + //
+						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\", \r\n" + //
+						"\t\t\t\t\t\"remarks\"\r\n" + //
 						"                ],\r\n" + //
 						"                \"startingIndexOfMonths\":3,\r\n" + //
 						"                \"title\":\"\",\r\n" + //
@@ -575,9 +566,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"NormParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"UOM\",\r\n" + //
-						"                    \"Remark\"]],\r\n" + //
+						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
+						"                    \"uom\",\r\n" + //
+						"                    \"remark\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
 						"                \"hiddenColumns\":[0],\r\n" + //
 						"                \"styles\": {\r\n" + //
@@ -599,22 +590,22 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"NormParameterFKID\", \r\n" + //
-						"\t\t\t\t\t\"Particulars\", \r\n" + //
-						"\t\t\t\t\t\"UOM\", \r\n" + //
-						"\t\t\t\t\t\"Jan\", \r\n" + //
-						"\t\t\t\t\t\"Feb\", \r\n" + //
-						"\t\t\t\t\t\"Mar\", \r\n" + //
-						"\t\t\t\t\t\"Apr\", \r\n" + //
-						"\t\t\t\t\t\"May\", \r\n" + //
-						"\t\t\t\t\t\"Jun\", \r\n" + //
-						"\t\t\t\t\t\"Jul\", \r\n" + //
-						"\t\t\t\t\t\"Aug\", \r\n" + //
-						"\t\t\t\t\t\"Sep\", \r\n" + //
-						"\t\t\t\t\t\"Oct\", \r\n" + //
-						"\t\t\t\t\t\"Nov\", \r\n" + //
-						"\t\t\t\t\t\"Dec\", \r\n" + //
-						"\t\t\t\t\t\"Remarks\"\r\n" + //
+						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\", \r\n" + //
+						"\t\t\t\t\t\"remarks\"\r\n" + //
 						"                ],\r\n" + //
 						"                \"startingIndexOfMonths\":3,\r\n" + //
 						"                \"title\":\"\",\r\n" + //
@@ -622,9 +613,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"NormParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"UOM\",\r\n" + //
-						"                    \"Remark\"]],\r\n" + //
+						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
+						"                    \"uom\",\r\n" + //
+						"                    \"remark\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
 						"                \"hiddenColumns\":[0],\r\n" + //
 						"                \"styles\": {\r\n" + //
@@ -646,22 +637,22 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"NormParameterFKID\", \r\n" + //
-						"\t\t\t\t\t\"Particulars\", \r\n" + //
-						"\t\t\t\t\t\"UOM\", \r\n" + //
-						"\t\t\t\t\t\"Jan\", \r\n" + //
-						"\t\t\t\t\t\"Feb\", \r\n" + //
-						"\t\t\t\t\t\"Mar\", \r\n" + //
-						"\t\t\t\t\t\"Apr\", \r\n" + //
-						"\t\t\t\t\t\"May\", \r\n" + //
-						"\t\t\t\t\t\"Jun\", \r\n" + //
-						"\t\t\t\t\t\"Jul\", \r\n" + //
-						"\t\t\t\t\t\"Aug\", \r\n" + //
-						"\t\t\t\t\t\"Sep\", \r\n" + //
-						"\t\t\t\t\t\"Oct\", \r\n" + //
-						"\t\t\t\t\t\"Nov\", \r\n" + //
-						"\t\t\t\t\t\"Dec\", \r\n" + //
-						"\t\t\t\t\t\"Remarks\"\r\n" + //
+						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\", \r\n" + //
+						"\t\t\t\t\t\"remarks\"\r\n" + //
 						"                ],\r\n" + //
 						"                \"startingIndexOfMonths\":3,\r\n" + //
 						"                \"title\":\"\",\r\n" + //
@@ -669,9 +660,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"NormParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"UOM\",\r\n" + //
-						"                    \"Remark\"]],\r\n" + //
+						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
+						"                    \"uom\",\r\n" + //
+						"                    \"remark\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
 						"                \"hiddenColumns\":[0],\r\n" + //
 						"                \"styles\": {\r\n" + //
@@ -693,22 +684,22 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"NormParameterFKID\", \r\n" + //
-						"\t\t\t\t\t\"Particulars\", \r\n" + //
-						"\t\t\t\t\t\"UOM\", \r\n" + //
-						"\t\t\t\t\t\"Jan\", \r\n" + //
-						"\t\t\t\t\t\"Feb\", \r\n" + //
-						"\t\t\t\t\t\"Mar\", \r\n" + //
-						"\t\t\t\t\t\"Apr\", \r\n" + //
-						"\t\t\t\t\t\"May\", \r\n" + //
-						"\t\t\t\t\t\"Jun\", \r\n" + //
-						"\t\t\t\t\t\"Jul\", \r\n" + //
-						"\t\t\t\t\t\"Aug\", \r\n" + //
-						"\t\t\t\t\t\"Sep\", \r\n" + //
-						"\t\t\t\t\t\"Oct\", \r\n" + //
-						"\t\t\t\t\t\"Nov\", \r\n" + //
-						"\t\t\t\t\t\"Dec\", \r\n" + //
-						"\t\t\t\t\t\"Remarks\"\r\n" + //
+						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\", \r\n" + //
+						"\t\t\t\t\t\"remarks\"\r\n" + //
 						"                ],\r\n" + //
 						"                \"startingIndexOfMonths\":3,\r\n" + //
 						"                \"title\":\"\",\r\n" + //
@@ -716,9 +707,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"NormParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"UOM\",\r\n" + //
-						"                    \"Remark\"]],\r\n" + //
+						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
+						"                    \"uom\",\r\n" + //
+						"                    \"remark\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
 						"                \"hiddenColumns\":[0],\r\n" + //
 						"                \"styles\": {\r\n" + //
@@ -740,22 +731,22 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"NormParameterFKID\", \r\n" + //
-						"\t\t\t\t\t\"Particulars\", \r\n" + //
-						"\t\t\t\t\t\"UOM\", \r\n" + //
-						"\t\t\t\t\t\"Jan\", \r\n" + //
-						"\t\t\t\t\t\"Feb\", \r\n" + //
-						"\t\t\t\t\t\"Mar\", \r\n" + //
-						"\t\t\t\t\t\"Apr\", \r\n" + //
-						"\t\t\t\t\t\"May\", \r\n" + //
-						"\t\t\t\t\t\"Jun\", \r\n" + //
-						"\t\t\t\t\t\"Jul\", \r\n" + //
-						"\t\t\t\t\t\"Aug\", \r\n" + //
-						"\t\t\t\t\t\"Sep\", \r\n" + //
-						"\t\t\t\t\t\"Oct\", \r\n" + //
-						"\t\t\t\t\t\"Nov\", \r\n" + //
-						"\t\t\t\t\t\"Dec\", \r\n" + //
-						"\t\t\t\t\t\"Remarks\"\r\n" + //
+						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\", \r\n" + //
+						"\t\t\t\t\t\"remarks\"\r\n" + //
 						"                ],\r\n" + //
 						"                \"startingIndexOfMonths\":3,\r\n" + //
 						"                \"title\":\"\",\r\n" + //
@@ -763,9 +754,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"NormParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"UOM\",\r\n" + //
-						"                    \"Remark\"]],\r\n" + //
+						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
+						"                    \"uom\",\r\n" + //
+						"                    \"remark\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
 						"                \"hiddenColumns\":[0],\r\n" + //
 						"                \"styles\": {\r\n" + //
@@ -787,22 +778,22 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"NormParameterFKID\", \r\n" + //
-						"\t\t\t\t\t\"Particulars\", \r\n" + //
-						"\t\t\t\t\t\"UOM\", \r\n" + //
-						"\t\t\t\t\t\"Jan\", \r\n" + //
-						"\t\t\t\t\t\"Feb\", \r\n" + //
-						"\t\t\t\t\t\"Mar\", \r\n" + //
-						"\t\t\t\t\t\"Apr\", \r\n" + //
-						"\t\t\t\t\t\"May\", \r\n" + //
-						"\t\t\t\t\t\"Jun\", \r\n" + //
-						"\t\t\t\t\t\"Jul\", \r\n" + //
-						"\t\t\t\t\t\"Aug\", \r\n" + //
-						"\t\t\t\t\t\"Sep\", \r\n" + //
-						"\t\t\t\t\t\"Oct\", \r\n" + //
-						"\t\t\t\t\t\"Nov\", \r\n" + //
-						"\t\t\t\t\t\"Dec\", \r\n" + //
-						"\t\t\t\t\t\"Remarks\"\r\n" + //
+						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\", \r\n" + //
+						"\t\t\t\t\t\"remarks\"\r\n" + //
 						"                ],\r\n" + //
 						"                \"startingIndexOfMonths\":3,\r\n" + //
 						"                \"title\":\"\",\r\n" + //
@@ -810,9 +801,9 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"NormParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"UOM\",\r\n" + //
-						"                    \"Remark\"]],\r\n" + //
+						"                    \"normParameterFKID\",\"particulars\",\r\n" + //
+						"                    \"uom\",\r\n" + //
+						"                    \"remark\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
 						"                \"hiddenColumns\":[0],\r\n" + //
 						"                \"styles\": {\r\n" + //

@@ -9,7 +9,7 @@
     "field": "monthName",
     "title": "Month",
     "editable": false,
-    "widthT": 80
+    "widthT": 100
   },
 
   {
@@ -22,7 +22,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 80
+    "widthT": 70
   },
   {
     "field": "fourF",
@@ -34,7 +34,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 80
+    "widthT": 70
   },
 
   {
@@ -58,7 +58,8 @@
     "format": "{0:#.###}",
     "hidden": false,
     "hideFilter": true,
-    "hideSort": true
+    "hideSort": true,
+    "widthT": 100
   },
   {
     "field": "demoBBU",
@@ -70,7 +71,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 150
+    "widthT": 120
   },
   {
     "field": "demoSAD",
@@ -81,7 +82,8 @@
     "format": "{0:#.###}",
     "hidden": false,
     "hideFilter": true,
-    "hideSort": true
+    "hideSort": true,
+    "widthT": 100
   },
   {
     "field": "demoSD",
@@ -92,7 +94,8 @@
     "format": "{0:#.###}",
     "hidden": false,
     "hideFilter": true,
-    "hideSort": true
+    "hideSort": true,
+    "widthT": 100
   },
 
   {
@@ -104,7 +107,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 80
+    "widthT": 100
   },
   {
     "field": "coilReplacement",
@@ -117,7 +120,7 @@
     "hideSort": true,
 
     "isDisabled": true,
-    "widthT": 150
+    "widthT": 125
   },
   {
     "field": "shutdown",
@@ -128,7 +131,8 @@
     "hidden": false,
     "hideFilter": true,
     "isDisabled": true,
-    "hideSort": true
+    "hideSort": true,
+    "widthT": 90
   },
   {
     "field": "slowdown",
@@ -139,7 +143,8 @@
     "format": "{0:#.###}",
     "hidden": false,
     "hideFilter": true,
-    "hideSort": true
+    "hideSort": true,
+    "widthT": 90
   },
   {
     "field": "sad",
@@ -151,7 +156,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 80
+    "widthT": 70
   },
   {
     "field": "bbu",
@@ -163,7 +168,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 80
+    "widthT": 70
   },
   {
     "field": "bbd",
@@ -175,7 +180,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 80
+    "widthT": 70
   },
 
   {
@@ -188,7 +193,7 @@
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 80
+    "widthT": 70
   },
   {
     "field": "numberOfDays",
@@ -224,12 +229,13 @@
     "format": "{0:#.###}",
     "hidden": true,
     "hideFilter": true,
-    "hideSort": true
+    "hideSort": true,
+    "widthT": 120
   },
+
   {
     "field": "remarks",
     "title": "Remarks",
-    "editable": true,
-    "width": 200
+    "widthT": 120
   }
 ]

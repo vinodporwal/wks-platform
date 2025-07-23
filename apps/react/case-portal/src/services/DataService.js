@@ -2067,7 +2067,8 @@ async function saveBusinessDemandData(plantId, turnAroundDetails, keycloak) {
     return await Promise.reject(e)
   }
 }
-async function saveSpyroInput(payload, keycloak, plantId, year) {
+async function saveSpyroInput(payload, keycloak, plantId) {
+  var year = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/spyro-input?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
@@ -2086,8 +2087,9 @@ async function saveSpyroInput(payload, keycloak, plantId, year) {
     return await Promise.reject(e)
   }
 }
-async function saveSpyroOutput(payload, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/spyro-output`
+async function saveSpyroOutput(payload, keycloak, plantId) {
+  var year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/spyro-output?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2152,7 +2154,7 @@ async function saveNormalOperationNormsData(
 ) {
   const year = localStorage.getItem('year')
   const queryParams = new URLSearchParams({ year, plantId })
-  if (lowerVertName === 'pe') {
+  if (lowerVertName === 'pe' || lowerVertName === 'pp') {
     queryParams.append('gradeId', gradeId)
   }
   const url = `${Config.CaseEngineUrl}/task/normalOperationNorms?${queryParams.toString()}`

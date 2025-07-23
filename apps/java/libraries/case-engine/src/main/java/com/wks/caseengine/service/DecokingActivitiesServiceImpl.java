@@ -30,6 +30,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -291,7 +293,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			// 2. Construct SQL with dynamic view name
 			String sql = "SELECT * FROM " + viewName +
 					" WHERE PlantId = :plantId" +
-					" ORDER BY DisplaySeq"; // ← sort by DisplaySeq (ascending)
+					" ORDER BY DisplaySeq"; // sort by DisplaySeq (ascending)
 
 			// 3. Create and parameterize the native query
 			Query query = entityManager.createNativeQuery(sql);
@@ -344,6 +346,8 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	@Override
 	public AOPMessageVM updateDecokingActivitiesData(String year, String plantId, String reportType,
 			List<DecokingActivitiesDTO> decokingActivitiesDTOList) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String userId = authentication.getName();	
 		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<>();
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -378,7 +382,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 					normAttributeTransactions.setAttributeValueVersion("V1");
 					normAttributeTransactions
 							.setNormParameterFKId(UUID.fromString(decokingActivitiesDTO.getNormParameterId()));
-					normAttributeTransactions.setUserName("System");
+					normAttributeTransactions.setUserName(userId);
 					normAttributeTransactionsList
 							.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
 				}
@@ -416,14 +420,9 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 					Optional<CrackerConfiguration> crackerConfigurationopt = crackerConfigurationRepository.findById(crackerConfigurationDTO.getId());
 					if(crackerConfigurationopt.isPresent()) {
 						crackerConfiguration=crackerConfigurationopt.get();
-						crackerConfiguration.setAopYear(crackerConfigurationDTO.getAopYear());
-						crackerConfiguration.setDisplayName(crackerConfigurationDTO.getDisplayName());
-						crackerConfiguration.setDisplaySeq(crackerConfigurationDTO.getDisplaySeq());
 						crackerConfiguration.setIbrEndDate(crackerConfigurationDTO.getIbrEndDate());
 						crackerConfiguration.setIbrStartDate(crackerConfigurationDTO.getIbrStartDate());
 						crackerConfiguration.setIsCr(crackerConfigurationDTO.getIsCr());
-						crackerConfiguration.setName(crackerConfigurationDTO.getName());
-						crackerConfiguration.setPlantFkId(crackerConfigurationDTO.getPlantFkId());
 						crackerConfiguration.setPostCrDays(crackerConfigurationDTO.getPostCrDays());
 						crackerConfiguration.setPreCrDays(crackerConfigurationDTO.getPreCrDays());
 						crackerConfiguration.setRemarks(crackerConfigurationDTO.getRemarks());
@@ -882,7 +881,6 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 				CrackerConfigurationDTO dto = new CrackerConfigurationDTO();
 
 				dto.setId(row[0] != null ? UUID.fromString(row[0].toString()) : null);
-				dto.setName(row[1] != null ? row[1].toString() : null);
 				dto.setDisplayName(row[2] != null ? row[2].toString() : null);
 
 				dto.setIbrStartDate(row[3] != null ? (Date) row[3] : null);
@@ -895,11 +893,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 				dto.setPostCrDays(row[9] != null ? ((Number) row[9]).intValue() : null);
 				dto.setPreCrDays(row[10] != null ? ((Number) row[10]).intValue() : null);
 				dto.setIsCr(row[11] != null ? (Boolean) row[11] : null);
-
-				dto.setPlantFkId(row[12] != null ? UUID.fromString(row[12].toString()) : null);
-				dto.setAopYear(row[13] != null ? row[13].toString() : null);
 	            dto.setRemarks(row[14] != null ? row[14].toString() : "");
-	            dto.setDisplaySeq(row[15] != null ? ((Number) row[15]).intValue() : null);
 	            Object val = row[16];
 	            if (val instanceof Number) {
 	                int i = ((Number) val).intValue();
@@ -909,8 +903,6 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	            } else {
 	                dto.setIsEditable(null); // or choose default
 	            }
-
-
 				crackerConfigurationDTOList.add(dto);
 			}
 
@@ -947,5 +939,6 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
 
 }

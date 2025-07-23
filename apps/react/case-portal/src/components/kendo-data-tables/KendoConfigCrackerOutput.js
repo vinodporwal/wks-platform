@@ -9,7 +9,6 @@ import { validateFields } from 'utils/validationUtils'
 import { useSession } from 'SessionStoreContext'
 
 const CrackerConfig = () => {
-  // Redux/context
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, oldYear, plantID, yearChanged } = dataGridStore
@@ -17,8 +16,8 @@ const CrackerConfig = () => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const plantId = JSON.parse(localStorage.getItem('selectedPlant') || '{}')?.id
+  const [modifiedCells, setModifiedCells] = useState({})
 
-  // Snackbar/loading/remark
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -34,13 +33,11 @@ const CrackerConfig = () => {
     setRemarkDialogOpen(true)
   }
 
-  // Header map for columns
   const headerMap = useMemo(
     () => generateHeaderNames(localStorage.getItem('year')),
     [],
   )
 
-  // ===== Dynamic-tabs state (static fallback) =====
   const rawTabsStatic = [
     'Total Feed',
     'Total Products',
@@ -52,31 +49,19 @@ const CrackerConfig = () => {
   const [availableTabs, setAvailableTabs] = useState([])
   const [tabIndex, setTabIndex] = useState(0)
 
-  // ===== Separate row states per known tab =====
-  // Initialize an individual state for each rawTabsStatic entry:
   const [yieldRows, setYieldRows] = useState([])
   const [constantsRows, setConstantsRows] = useState([])
   const [feedRows, setFeedRows] = useState([])
   const [compositionRows, setCompositionRows] = useState([])
   const [hydrogenationRows, setHydrogenationRows] = useState([])
-  // const [recoveryRows, setRecoveryRows] = useState([])
-  // const [optimizing, setOptimizing] = useState([])
-  // const [furnace, setFurnance] = useState([])
 
-  // Mode selection
-  // const allModes = ['5F Operation', '4F Operation', '4F+D Operation']
   const allModes = ['5F', '4F', '4F+D']
   const [selectMode, setSelectMode] = useState(allModes[0])
 
-  // NormParameterIdCell
-  const NormParameterIdCell = (props) => <td>{props?.dataItem?.particulars}</td>
-
-  // currentTab displayName
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
     const info = availableTabs.find((t) => t.id.toLowerCase() === idLower)
-    // console.log(info)
-    return info ? info.displayName : tabs[tabIndex] || 'Feed'
+    return info ? info.name : tabs[tabIndex] || 'Feed'
   }, [tabs, tabIndex, availableTabs])
 
   const productionColumns = useMemo(() => {
@@ -96,7 +81,6 @@ const CrackerConfig = () => {
     })
   }, [headerMap, currentTabDisplay])
 
-  // Permissions helper
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -133,7 +117,6 @@ const CrackerConfig = () => {
     isOldYear,
   )
 
-  // ===== Fetch dynamic-tabs from API =====
   const fetchTabsMatrix = useCallback(async () => {
     try {
       const resp = await DataService.getConfigurationTabsMatrix(
@@ -194,7 +177,6 @@ const CrackerConfig = () => {
     setTabIndex(0)
   }, [keycloak, fetchTabsMatrix, fetchAvailableTabs])
 
-  // ===== Helper: getRows / setRowsForTab =====
   const getRows = useCallback(
     (tabId) => {
       switch (tabId) {
@@ -213,16 +195,7 @@ const CrackerConfig = () => {
           return []
       }
     },
-    [
-      feedRows,
-      compositionRows,
-      hydrogenationRows,
-      constantsRows,
-      yieldRows,
-      // recoveryRows,
-      // furnace,
-      // optimizing,
-    ],
+    [feedRows, compositionRows, hydrogenationRows, constantsRows, yieldRows],
   )
 
   const setRowsForTab = useCallback((tabId, data) => {
@@ -263,24 +236,9 @@ const CrackerConfig = () => {
         if (spyroVM?.data && Array.isArray(spyroVM.data)) {
           transformedData = spyroVM.data.map((item, index) => ({
             id: item.NormParameterFKID || `row_${index}`,
-            particulars: item.Particulars,
-            uom: item.UOM,
             remarks: item.Remarks,
             originalRemark: item.Remarks,
             ParticularsType: item.Type,
-            jan: item.Jan,
-            feb: item.Feb,
-            march: item.Mar,
-            april: item.Apr,
-            may: item.May,
-            june: item.Jun,
-            july: item.Jul,
-            aug: item.Aug,
-            sep: item.Sep,
-            oct: item.Oct,
-            nov: item.Nov,
-            dec: item.Dec,
-            NormParameterFKID: item.NormParameterFKID,
             ...item,
           }))
         }
@@ -386,8 +344,6 @@ const CrackerConfig = () => {
     yearChanged,
   ])
 
-  const [modifiedCells, setModifiedCells] = useState({})
-
   const saveChanges = useCallback(async () => {
     if (currentTabDisplay === 'Yield') {
       await saveSpyroDataYield(yieldRows)
@@ -426,39 +382,27 @@ const CrackerConfig = () => {
     setLoading(true)
 
     try {
-      let plant = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) plant = JSON.parse(storedPlant).id
-      let verticalId = localStorage.getItem('verticalId')
       const SpyroInputData = newRows.map((row) => ({
-        VerticalFKId: verticalId,
-        PlantFKId: plant,
-        NormParameterFKID: row.NormParameterFKID ?? null,
-        Particulars: row.particulars ?? row.Particulars ?? null,
-        NormParameterTypeName: row.NormParameterTypeName ?? null,
-        NormParameterTypeFKID: row.NormParameterTypeFKID ?? null,
-        Type: row.ParticularsType ?? row.Type ?? null,
-        UOM: row.uom ?? row.UOM ?? null,
-        AuditYear: row.AuditYear ?? null,
-        Remarks: row.remarks ?? row.Remarks ?? null,
-        Jan: row.jan || null,
-        Feb: row.feb || null,
-        Mar: row.march || null,
-        Apr: row.april || null,
-        May: row.may || null,
-        Jun: row.june || null,
-        Jul: row.july || null,
-        Aug: row.aug || null,
-        Sep: row.sep || null,
-        Oct: row.oct || null,
-        Nov: row.nov || null,
-        Dec: row.dec || null,
-        id: row.idFromApi || null,
-        inEdit: row.inEdit || false,
+        normParameterFKID: row.normParameterFKID,
+        remarks: row.remarks,
+        Remarks: row.remarks,
+        jan: row.jan || null,
+        feb: row.feb || null,
+        mar: row.mar || null,
+        apr: row.apr || null,
+        may: row.may || null,
+        jun: row.jun || null,
+        jul: row.jul || null,
+        aug: row.aug || null,
+        sep: row.sep || null,
+        oct: row.oct || null,
+        nov: row.nov || null,
+        dec: row.dec || null,
       }))
       const response = await DataService.saveSpyroOutput(
         SpyroInputData,
         keycloak,
+        plantId,
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -544,7 +488,7 @@ const CrackerConfig = () => {
       setLoading(false)
     }
   }
-  //----
+
   const saveSpyroOutputExcelFile = async (rawFile) => {
     setLoading(true)
 
@@ -555,7 +499,6 @@ const CrackerConfig = () => {
 
       let response
 
-      // Spyro Output Excel Import API call
       response = await DataService.importSpyroOutputExcel(
         rawFile,
         keycloak,
@@ -654,8 +597,6 @@ const CrackerConfig = () => {
     }
   }
 
-  //----
-  // ===== Render =====
   return (
     <Box>
       <Backdrop
@@ -664,40 +605,42 @@ const CrackerConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
-      <Tabs
-        sx={{
-          borderBottom: '0px solid #ccc',
-          '.MuiTabs-indicator': { display: 'none' },
-        }}
-        textColor='primary'
-        indicatorColor='primary'
-        value={tabIndex}
-        onChange={(e, newIndex) => {
-          if (newIndex >= 0 && newIndex < tabs.length) {
-            setTabIndex(newIndex)
-          }
-        }}
-      >
-        {tabs.map((tabId) => {
-          const info = availableTabs.find(
-            (t) => t.id.toLowerCase() === tabId.toLowerCase(),
-          )
-          const label = info?.displayName || tabId
-          return (
-            <Tab
-              key={tabId}
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                padding: '9px',
-                minHeight: '10px',
-              }}
-              label={label}
-            />
-          )
-        })}
-      </Tabs>
+      <Box sx={{ overflowX: 'auto', width: '100%' }}>
+        <Tabs
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            minWidth: 'max-content',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+          value={tabIndex}
+          onChange={(e, newIndex) => {
+            if (newIndex >= 0 && newIndex < tabs.length) {
+              setTabIndex(newIndex)
+            }
+          }}
+        >
+          {tabs.map((tabId) => {
+            const info = availableTabs.find(
+              (t) => t.id.toLowerCase() === tabId.toLowerCase(),
+            )
+            const label = info?.displayName || tabId
+            return (
+              <Tab
+                key={tabId}
+                sx={{
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
+                  padding: '9px',
+                  minHeight: '10px',
+                }}
+                label={label}
+              />
+            )
+          })}
+        </Tabs>
+      </Box>
 
       <Box>
         {(() => {
@@ -724,7 +667,6 @@ const CrackerConfig = () => {
                     }
                     configType='cracker'
                     handleRemarkCellClick={handleRemarkCellClick}
-                    NormParameterIdCell={NormParameterIdCell}
                     columns={productionColumns}
                     remarkDialogOpen={remarkDialogOpen}
                     setRemarkDialogOpen={setRemarkDialogOpen}

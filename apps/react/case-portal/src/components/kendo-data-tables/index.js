@@ -1,5 +1,6 @@
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
+import { Tooltip } from '@progress/kendo-react-tooltip'
 import '@progress/kendo-theme-default/dist/all.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -31,7 +32,6 @@ import {
   isColumnMenuFilterActive,
   isColumnMenuSortActive,
 } from '../../../node_modules/@progress/kendo-react-grid/index'
-import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
 import {
   recalcDuration,
   recalcEndDate,
@@ -83,6 +83,7 @@ const KendoDataTables = ({
   loading = false,
   typeRank = {},
   permissions = {},
+
   setSnackbarOpen = () => {},
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
@@ -118,7 +119,7 @@ const KendoDataTables = ({
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
   const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
-  const [selectedUnit, setSelectedUnit] = useState()
+  const [selectedUnit, setSelectedUnit] = useState(permissions?.units?.[0])
   const [selectedGrade, setSelectedGrade] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
@@ -424,15 +425,44 @@ const KendoDataTables = ({
     )
   }
 
-  // const HeaderWithTooltip = (props) => {
-  //   return (
-  //     <th {...props.thProps}>
-  //       <a className='k-link' onClick={props.onClick}>
-  //         <span title={props.title}>{props.title}</span>
-  //       </a>
-  //     </th>
-  //   )
-  // }
+  const HeaderWithTooltip = (props) => {
+    console.log('HeaderWithTooltip', props)
+    return (
+      <th {...props.thProps}>
+        <a className='k-link' onClick={props.onClick}>
+          <span title={props.title}>{props.title}</span>
+        </a>
+      </th>
+    )
+  }
+
+  const SimpleHeaderWithTooltip = (props) => {
+    return (
+      // <div
+      //   className='k-header-cell-wrapper'
+      //   title={props.tooltipText || props.title}
+      // >
+      //   {props.children}
+      //   {/* You could implement a custom CSS-only tooltip here if needed */}
+      // </div>
+      <th
+        {...props.thProps}
+        title={props.title}
+        style={{
+          padding: '0px',
+        }}
+      >
+        <Tooltip
+          position={'top'}
+          anchorElement={props.thProps}
+          parentTitle={true}
+          className='test'
+        >
+          {props.children}
+        </Tooltip>
+      </th>
+    )
+  }
   const triggerFileUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click()
@@ -527,6 +557,17 @@ const KendoDataTables = ({
       handleGradeChange(firstGrade.gradeId)
     }
   }, [grades, permissions?.showG, selectedGrade])
+
+  useEffect(() => {
+    if (
+      permissions?.units?.length > 0 &&
+      (!selectedUnit || !permissions.units.includes(selectedUnit))
+    ) {
+      const defaultUnit = permissions.units[0]
+      setSelectedUnit(defaultUnit)
+      handleUnitChange(defaultUnit)
+    }
+  }, [permissions])
 
   return (
     <div style={{ position: 'relative' }}>
@@ -812,6 +853,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: descLimit },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                   />
@@ -846,6 +888,7 @@ const KendoDataTables = ({
                           : DateTimePickerEditor,
                       },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     format={
                       [
@@ -897,6 +940,7 @@ const KendoDataTables = ({
                           : DateOnlyPicker,
                       },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     format={
                       [
@@ -929,6 +973,7 @@ const KendoDataTables = ({
                       data: (cellProps) => (
                         <ProductCell {...cellProps} allProducts={allProducts} />
                       ),
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                   />
@@ -947,6 +992,7 @@ const KendoDataTables = ({
                       data: (cellProps) => (
                         <MonthCell {...cellProps} allMonths={allMonths} />
                       ),
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                   />
@@ -967,6 +1013,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: TextCellEditor },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                   />
                 )
@@ -983,7 +1030,7 @@ const KendoDataTables = ({
                     hidden={col.hidden}
                     cells={{
                       data: toolTipRenderer,
-                      // headerCell: HeaderWithTooltip,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                   />
                 )
@@ -1000,6 +1047,7 @@ const KendoDataTables = ({
                     hidden={col.hidden}
                     cells={{
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                   />
                 )
@@ -1022,6 +1070,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: NoSpinnerNumericEditor },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                     filter='numeric'
@@ -1041,6 +1090,7 @@ const KendoDataTables = ({
                     hidden={col.hidden}
                     cells={{
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                   />
                 )
@@ -1073,10 +1123,12 @@ const KendoDataTables = ({
                           onRemarkClick={handleRemarkCellClick}
                         />
                       ),
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
                     headerClassName={isActive ? 'active-column' : ''}
+                    width={col.widthT || ''}
                   />
                 )
               }
@@ -1099,6 +1151,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: DurationEditor },
                       data: DurationDisplayWithTooltipCell,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     headerClassName={isActive ? 'active-column' : ''}
                   />
@@ -1122,6 +1175,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: NoSpinnerNumericEditor },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     format={col.format}
                     sortable={false}
@@ -1147,6 +1201,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: NoSpinnerNumericEditor },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                     filter='numeric'
@@ -1173,6 +1228,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: NoSpinnerNumericEditor },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                     filter='numeric'
@@ -1194,6 +1250,7 @@ const KendoDataTables = ({
                     cells={{
                       edit: { text: NoSpinnerNumericEditor },
                       data: toolTipRenderer,
+                      headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
                   />
@@ -1212,6 +1269,7 @@ const KendoDataTables = ({
                   cells={{
                     edit: { text: TextCellEditor },
                     data: toolTipRenderer,
+                    headerCell: SimpleHeaderWithTooltip,
                   }}
                   columnMenu={ColumnMenuCheckboxFilter}
                 />
@@ -1229,6 +1287,7 @@ const KendoDataTables = ({
                 editable={false}
                 cells={{
                   data: ActionsCell,
+                  headerCell: SimpleHeaderWithTooltip,
                 }}
               />
             )}
