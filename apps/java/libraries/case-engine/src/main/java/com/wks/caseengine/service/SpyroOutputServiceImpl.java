@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -29,6 +32,7 @@ import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -230,9 +234,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	}
 	
 	void saveData(UUID normParameterFKId, Integer i, Double attributeValue,SpyroOutputDTO spyroOutputDTO,String year) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
-
+		
 		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
 				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
 
@@ -247,7 +249,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			normAttributeTransactions = new NormAttributeTransactions();
 			normAttributeTransactions.setCreatedOn(new Date());
 			normAttributeTransactions.setAttributeValueVersion("V1");
-			normAttributeTransactions.setUserName(userId);
+			normAttributeTransactions.setUserName(Utility.getUserName());
 			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
 			normAttributeTransactions.setAopMonth(i);
 			normAttributeTransactions.setAuditYear(year);
@@ -301,8 +303,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	@Override
 	public AOPMessageVM updateSpyroOutputYieldData(String plantId, String year,
 			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+		
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<>();
 		
@@ -320,7 +321,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());
 						normAttributeTransactions.setAuditYear(year);
 						normAttributeTransactions.setCreatedOn(new Date());
-						normAttributeTransactions.setUserName(userId);
+						normAttributeTransactions.setUserName(Utility.getUserName());
 						normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
 					}else {
 						normAttributeTransactions.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());

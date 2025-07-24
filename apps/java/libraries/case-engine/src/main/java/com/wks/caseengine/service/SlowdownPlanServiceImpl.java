@@ -5,6 +5,8 @@ import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
@@ -32,6 +34,7 @@ import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SlowdownPlanRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 @Service
 public class SlowdownPlanServiceImpl implements SlowdownPlanService {
@@ -122,8 +125,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	@Override
 	public List<ShutDownPlanDTO> saveShutdownData(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
 		String year=null;
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+			
 		try {
 			UUID plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Slowdown");
 			if (plantMaintenanceId == null) {
@@ -170,7 +172,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					plantMaintenanceTransaction.setRemarks(shutDownPlanDTO.getRemark());
 					// plantMaintenanceTransaction.setName("Default Name");
 					plantMaintenanceTransaction.setVersion("V1");
-					plantMaintenanceTransaction.setUser(userId);
+					plantMaintenanceTransaction.setUser(Utility.getUserName());
 					if (shutDownPlanDTO.getProductId() != null) {
 						plantMaintenanceTransaction.setNormParametersFKId(shutDownPlanDTO.getProductId());
 					}
@@ -208,7 +210,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 							.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1);
 					System.out.println("plantMaintenanceTransaction.getMaintForMonth()"
 							+ plantMaintenanceTransaction.getMaintForMonth());
-					plantMaintenanceTransaction.setUser(userId);
+					plantMaintenanceTransaction.setUser(Utility.getUserName());
 					// plantMaintenanceTransaction.setName("Default Name");
 					plantMaintenanceTransaction.setVersion("V1");
 					System.out.println("shutDownPlanDTO.getCreatedOn()" + shutDownPlanDTO.getCreatedOn());
@@ -276,8 +278,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	@Override
 	public AOPMessageVM saveSlowdownConfigurationData(String plantId, String year,
 			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+		
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<>();
 		try {
@@ -304,6 +305,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					    for (NormAttributeTransactions existing : existingList) {
 					        if (!Objects.equals(existing.getAttributeValue(), normAttributeTransactionsDTO.getAttributeValue())) {
 					            existing.setAttributeValue(normAttributeTransactionsDTO.getAttributeValue());
+					            existing.setModifiedOn(new Date());
 					            normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(existing));
 					        }
 					    }
@@ -319,7 +321,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					    nat.setCreatedOn(new Date());
 					    nat.setMaintenanceId(maintenanceId);
 					    nat.setNormParameterFKId(normAttributeTransactionsDTO.getNormParameterFKId());
-					    nat.setUserName(userId);
+					    nat.setUserName(Utility.getUserName());
 					    normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(nat));
 					}
 			}

@@ -22,9 +22,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.security.oauth2.jwt.Jwt;
+// Optional: for using the standard claim constant
+import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.AOPReportDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
@@ -46,6 +50,7 @@ import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.ExcelConstants;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -270,15 +275,13 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 	}
 
 	void saveData(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO,String plantId,String year) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+		
 		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
 				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
 
 		NormAttributeTransactions normAttributeTransactions;
 
 		if (existingRecord.isPresent()) {
-
 			normAttributeTransactions = existingRecord.get();
 			normAttributeTransactions.setModifiedOn(new Date());
 		} else {
@@ -286,16 +289,15 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			normAttributeTransactions = new NormAttributeTransactions();
 			normAttributeTransactions.setCreatedOn(new Date());
 			normAttributeTransactions.setAttributeValueVersion("V1");
-			normAttributeTransactions.setUserName(userId);
 			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
 			normAttributeTransactions.setAopMonth(i);
 			normAttributeTransactions.setAuditYear(year);
 		}
-
+		
 		normAttributeTransactions
 				.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
 		normAttributeTransactions.setRemarks(spyroInputDTO.getRemarks());
-
+		normAttributeTransactions.setUserName(Utility.getUserName());
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
 	}
 
