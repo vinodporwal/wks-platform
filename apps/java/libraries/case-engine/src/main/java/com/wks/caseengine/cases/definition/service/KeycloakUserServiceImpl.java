@@ -39,9 +39,12 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 0 1 ? * MON")
+	@Scheduled(cron = "0 5 13 ? * MON")
 	public Map<String, Object> getUsers() throws Exception {
 		Map<String, Object> result = new HashMap<String, Object>();
+
+		System.out.println("******************************************************************************************");
+		System.out.println("Job started: Fetch users from AD and dump into database.");
 
 		try {
 			Keycloak keycloak = keycloakAdminClient.getInstance();
@@ -103,6 +106,9 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 		} catch (Exception ex) {
 			throw new Exception("Failed to fetch users from keyclok: " + ex.getMessage(), ex);
 		}
+		
+		System.out.println("Job completed: Fetch users from AD and dump into database.");
+		System.out.println("******************************************************************************************");
 
 		return result;
 	}
