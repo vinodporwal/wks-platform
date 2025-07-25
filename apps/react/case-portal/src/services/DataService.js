@@ -923,8 +923,11 @@ async function getUserScreen(keycloak, verticalId) {
     return await Promise.reject(e)
   }
 }
-async function getScreenbyPlant(keycloak, verticalId, plantId) {
-  const url = `${Config.CaseEngineUrl}/task/user/screen?verticalId=${verticalId}&plantId=${plantId}`
+async function getScreenbyPlant(keycloak, verticalId, plantId, userId) {
+  let url = `${Config.CaseEngineUrl}/task/user/screen?verticalId=${verticalId}&plantId=${plantId}`
+  if (userId) {
+    url += `&userId=${userId}`
+  }
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

@@ -14,6 +14,7 @@ import {
   ListItemText,
   MenuItem,
   Select,
+  Stack,
   Typography,
 } from '@mui/material'
 import Dialog from '@mui/material/Dialog'
@@ -72,7 +73,7 @@ const UserForm = ({ keycloak }) => {
 
   const fetchMenuScreens = async (vId, pId) => {
     try {
-      const res = await DataService.getScreenbyPlant(keycloak, vId, pId)
+      const res = await DataService.getScreenbyPlant(keycloak, vId, pId, userId)
 
       if (!res?.data || !Array.isArray(res.data) || res.data.length === 0) {
         return []
@@ -172,11 +173,7 @@ const UserForm = ({ keycloak }) => {
                 const plantObj = {
                   plantId: plant.id,
                   screens: plantScreens,
-                  permissions: {
-                    read: false,
-                    write: false,
-                    approve: false,
-                  },
+                  permissions: [],
                 }
                 sitePlants.push(plantObj)
               })
@@ -223,11 +220,7 @@ const UserForm = ({ keycloak }) => {
                     {
                       plantId: '',
                       screens: [],
-                      permissions: {
-                        read: false,
-                        write: false,
-                        approve: false,
-                      },
+                      permissions: [],
                     },
                   ],
                 },
@@ -288,7 +281,7 @@ const UserForm = ({ keycloak }) => {
             {
               plantId: '',
               screens: [],
-              permissions: { read: false, write: false, approve: false },
+              permissions: [],
             },
           ],
         },
@@ -341,7 +334,7 @@ const UserForm = ({ keycloak }) => {
                 {
                   plantId: matchedPlant ? matchedPlant.id : '',
                   screens: [],
-                  permissions: { read: false, write: false, approve: false },
+                  permissions: [],
                 },
               ],
             })
@@ -358,11 +351,7 @@ const UserForm = ({ keycloak }) => {
                     {
                       plantId: '',
                       screens: [],
-                      permissions: {
-                        read: false,
-                        write: false,
-                        approve: false,
-                      },
+                      permissions: [],
                     },
                   ],
                 },
@@ -495,7 +484,7 @@ const UserForm = ({ keycloak }) => {
                 {
                   plantId: '',
                   screens: [],
-                  permissions: { read: false, write: false, approve: false },
+                  permissions: [],
                 },
               ],
             },
@@ -554,7 +543,8 @@ const UserForm = ({ keycloak }) => {
             {
               plantId: '',
               screens: [],
-              permissions: { read: false, write: false, approve: false },
+              // permissions: { read: false, write: false, approve: false },
+              permissions: [],
             },
           ],
         },
@@ -580,7 +570,8 @@ const UserForm = ({ keycloak }) => {
           {
             plantId: '',
             screens: [],
-            permissions: { read: false, write: false, approve: false },
+            // permissions: { read: false, write: false, approve: false },
+            permissions: [],
           },
         ],
       }
@@ -636,14 +627,15 @@ const UserForm = ({ keycloak }) => {
                   .map((plantEntry) => ({
                     plantId: plantEntry.plantId,
                     screens: plantEntry.screens || [],
-                    permission: transformPermissions(plantEntry.permissions),
+                    // permission: transformPermissions(plantEntry.permissions),
+                    permission: plantEntry.permissions,
                   })),
               })),
           }
         }),
       },
     }
-
+    console.log('selectedUsers', result)
     try {
       setLoading(true)
       let res = {}
@@ -848,7 +840,9 @@ const UserForm = ({ keycloak }) => {
                         {siteEntry.plants.map((plantEntry, plantIndex) => {
                           console.log('plantEntry', plantEntry)
                           return (
-                            <Box
+                            <Stack
+                              direction='row'
+                              gap={2}
                               key={plantIndex}
                               style={{
                                 display: 'flex',
@@ -896,9 +890,9 @@ const UserForm = ({ keycloak }) => {
                                 item
                                 xs={1}
                                 style={{
-                                  marginInline: '10px',
+                                  // marginInline: '10px',
                                   paddingTop: '12px',
-                                  paddingLeft: '5px',
+                                  // paddingLeft: '5px',
                                 }}
                               >
                                 {plantIndex === 0 ? (
@@ -1004,7 +998,36 @@ const UserForm = ({ keycloak }) => {
                                   </Select>
                                 </FormControl>
                               </Grid>
-                            </Box>
+                              {/* Permissions Dropdown */}
+                              <Grid item xs={4} sm={3}>
+                                <Typography variant='h6' gutterBottom>
+                                  Permissions
+                                </Typography>
+
+                                <FormControl fullWidth size='small'>
+                                  <Select
+                                    multiple
+                                    sx={{ height: '40px' }}
+                                    value={plantEntry.permissions || []}
+                                    onChange={(e) => {
+                                      const selected = e.target.value
+
+                                      handlePlantChange(
+                                        verticalId,
+                                        siteIndex,
+                                        plantIndex,
+                                        'permissions',
+                                        selected,
+                                      )
+                                    }}
+                                  >
+                                    <MenuItem value='read'>Read</MenuItem>
+                                    <MenuItem value='write'>Write</MenuItem>
+                                    <MenuItem value='approve'>Approve</MenuItem>
+                                  </Select>
+                                </FormControl>
+                              </Grid>
+                            </Stack>
                           )
                         })}
                       </Grid>
