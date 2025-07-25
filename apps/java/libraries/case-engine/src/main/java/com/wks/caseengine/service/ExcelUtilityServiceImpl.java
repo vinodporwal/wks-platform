@@ -53,6 +53,10 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                 System.out.println("data" + data);
                 for (Map<String, Object> table : tables) {
                     String title = "";
+                    boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
+                    if(hideTable){
+                        continue;
+                    }
                     tableCount++;
                     Integer startRow = (table.get(ExcelConstants.STARTROW) == null) ? currentRow
                             : (int) table.get(ExcelConstants.STARTROW);
@@ -63,6 +67,7 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                     List<List<Object>> rows = new ArrayList<>();
 
                     title = (String) table.get(ExcelConstants.TITLE);
+                   String textBeforeTitle = (String) table.get(ExcelConstants.TEXT_BEFORE_TITLE);
                     String tableId = (String) table.get(ExcelConstants.TABLEID);
                     rows = data.get(tableId);
                     System.out.println("rows " + rows);
@@ -84,6 +89,16 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
 
                     currentRow = Math.max(currentRow, startRow);
                     // currentRow += 1;
+                    
+                    if (textBeforeTitle != null && !textBeforeTitle.isEmpty()) {
+                        Row titleRow = sheet.createRow(currentRow++);
+                        Cell titleCell = titleRow.createCell(0);
+                        titleCell.setCellValue(textBeforeTitle);
+                        titleCell.setCellStyle(boldStyle);
+
+                        currentRow++;
+                        currentRow++;
+                    }
                     if (title != null && !title.isEmpty()) {
                         Row titleRow = sheet.createRow(currentRow++);
                         Cell titleCell = titleRow.createCell(0);
@@ -202,7 +217,7 @@ public class ExcelUtilityServiceImpl implements ExcelUtilityService {
                     for (Integer column : hiddenColumnsList) {
                         sheet.setColumnHidden(column, true);
                     }
-                    currentRow += 1;
+                    currentRow += 2;
 
                 }
                 for (int i = 0; i < columnCount; i++) {
