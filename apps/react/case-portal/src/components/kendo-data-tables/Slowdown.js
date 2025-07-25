@@ -741,6 +741,10 @@ const SlowDown = ({ permissions }) => {
           severity: 'success',
         })
         fetchData()
+        const maintenanceResponse =
+          await DataService.getMaintenanceData(keycloak)
+      } else {
+        setLoading(false)
       }
     } catch (error) {
       console.error('Error deleting Record!', error)
