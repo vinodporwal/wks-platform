@@ -325,7 +325,7 @@ public class KeycloakUserService {
 	public Map<String, Object> revokeUserAccess(String userId, Map<String, Object> data) throws Exception {
 		Map<String, Object> result = new HashMap<>();
 		Keycloak keycloak = keycloakAdminClient.getInstance();
-
+		List<UserScreenMapping> mappings = new ArrayList<>();
 		try {
 			UserResource userResource = keycloak.realm("localhost").users().get(userId);
 			UserRepresentation user = userResource.toRepresentation();
@@ -366,6 +366,7 @@ public class KeycloakUserService {
 
 							userScreenMappingRepository.deleteAllByUserId(userId);
 							List<UserScreenMapping> newMappings = new ArrayList<>();
+							
 
 							for (String screen : screens) {
 								UserScreenMapping userScreenMapping = new UserScreenMapping();
@@ -377,11 +378,16 @@ public class KeycloakUserService {
 								userScreenMapping.setPermissions(permissionsString);
 
 								newMappings.add(userScreenMapping);
-								System.out.println("getScreenCode "+userScreenMapping.getScreenCode());
-								System.out.println("getId "+userScreenMapping.getId());
-								System.out.println("getPlantId "+userScreenMapping.getPlantFKId());
-								System.out.println("getVerticalId "+userScreenMapping.getVerticalFKId());
-								System.out.println("getUserId "+userScreenMapping.getUserId());
+								
+							}
+
+							mappings=(userScreenMappingRepository.saveAll(newMappings));
+							for(UserScreenMapping UserScreenMapping:mappings) {
+								System.out.println("getScreenCode "+UserScreenMapping.getScreenCode());
+								System.out.println("getId "+UserScreenMapping.getId());
+								System.out.println("getPlantId "+UserScreenMapping.getPlantFKId());
+								System.out.println("getVerticalId "+UserScreenMapping.getVerticalFKId());
+								System.out.println("getUserId "+UserScreenMapping.getUserId());
 							}
 
 							userScreenMappingRepository.saveAll(newMappings);
