@@ -1,18 +1,14 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +16,7 @@ import com.wks.caseengine.dto.CatalystAttributesDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -216,8 +213,7 @@ public class NormAttributeTransactionsServiceImpl implements NormAttributeTransa
 	
 	@Override
 	public Boolean saveCatalystData(CatalystAttributesDTO catalystAttributesDTO) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+		
 		for(Integer i=1;i<12;i++) {
 			NormAttributeTransactions normAttributeTransactions= new NormAttributeTransactions();
 			normAttributeTransactions.setAttributeValue(getAttributeValue(catalystAttributesDTO,(i+1)).toString());
@@ -231,7 +227,7 @@ public class NormAttributeTransactionsServiceImpl implements NormAttributeTransa
 			normAttributeTransactions.setCreatedOn(new Date());
 			normAttributeTransactions.setAttributeValueVersion("V1");
 			normAttributeTransactions.setRemarks(catalystAttributesDTO.getRemarks());
-			normAttributeTransactions.setUserName(userId);
+			normAttributeTransactions.setUserName(Utility.getUserName());
 			normAttributeTransactionsRepository.save(normAttributeTransactions);
 			
 		}

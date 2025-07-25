@@ -96,8 +96,8 @@ const CrackerConfig = () => {
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
       modes: allModes,
-      uploadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
-      downloadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
+      uploadExcelBtn: currentTabDisplay == 'Constant' ? false : false,
+      downloadExcelBtn: currentTabDisplay == 'Constant' ? false : false,
     },
     isOldYear,
   )

@@ -15,9 +15,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import jakarta.persistence.Query;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -40,8 +38,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+
+
 import java.util.regex.Matcher;
 
 import jakarta.persistence.EntityManager;
@@ -50,7 +48,7 @@ import jakarta.persistence.PersistenceContext;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
-
+import com.wks.caseengine.utility.Utility;
 import com.wks.caseengine.dto.ConfigurationDTO;
 
 import com.wks.caseengine.dto.ExecutionDetailDto;
@@ -405,7 +403,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 
 	public AOPMessageVM saveConfigurationExecution(List<ExecutionDetailDto> executionDetailDtoList) {
-
+		
 		for (ExecutionDetailDto executionDetailDto : executionDetailDtoList) {
 			NormAttributeTransactions normAttributeTransactions = null;
 			if (executionDetailDto.getId() != null) {
@@ -420,9 +418,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			normAttributeTransactions.setRemarks(executionDetailDto.getRemarks());
 			normAttributeTransactions.setAopMonth(4);
 			normAttributeTransactions.setAuditYear(executionDetailDto.getAuditYear());
-			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			String userId = authentication.getName();
-			normAttributeTransactions.setUserName(userId);
+			normAttributeTransactions.setUserName(Utility.getUserName());
 			normAttributeTransactionsRepository.save(normAttributeTransactions);
 
 		}
@@ -839,8 +835,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 	void saveData(NormParameters normParameter, Integer i, String year, Double attributeValue,
 			ConfigurationDTO configurationDTO) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+		
 		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
 				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameter.getId(), i, year);
 
@@ -856,7 +851,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			// normAttributeTransactions.setId(UUID.randomUUID());
 			normAttributeTransactions.setCreatedOn(new Date());
 			normAttributeTransactions.setAttributeValueVersion("V1");
-			normAttributeTransactions.setUserName(userId);
+			normAttributeTransactions.setUserName(Utility.getUserName());
 			normAttributeTransactions.setNormParameterFKId(normParameter.getId());
 			normAttributeTransactions.setAopMonth(i);
 			//normAttributeTransactions.setAuditYear(configurationDTO.getAuditYear());
@@ -985,8 +980,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	@Override
 	public List<NormAttributeTransactionReceipe> updateCalculatedConsumptionNorms(String year, String plantId,
 			List<NormAttributeTransactionReceipeRequestDTO> normAttributeTransactionReceipeDTOLists) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+		
 		try {
 
 			List<NormAttributeTransactionReceipe> normAttributeTransactionReceipelist = new ArrayList<>();
@@ -1021,7 +1015,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						newEntity.setAopYear(year);
 						newEntity.setCreatedOn(new Date());
 						newEntity.setModifiedOn(new Date());
-						newEntity.setUser(userId);
+						newEntity.setUser(Utility.getUserName());
 
 						if (attributeValue != null && !attributeValue.trim().isEmpty()) {
 							newEntity.setAttributeValue((attributeValue.trim()));

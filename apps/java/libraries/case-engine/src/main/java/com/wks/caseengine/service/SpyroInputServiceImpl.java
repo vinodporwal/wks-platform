@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.lang.reflect.Method;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -22,9 +24,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.security.oauth2.jwt.Jwt;
+// Optional: for using the standard claim constant
+import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.AOPReportDTO;
 import com.wks.caseengine.dto.ConfigurationDTO;
@@ -46,6 +52,7 @@ import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.ExcelConstants;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -100,7 +107,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			for (Object[] row : results) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				if (!type.equalsIgnoreCase("Composition") && row[4].toString().contains(type)) {
-					
+
 					map.put("normParameterFKID", row[2]);
 					map.put("particulars", row[3]);
 					map.put("normParameterTypeName", row[4]);
@@ -126,7 +133,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 								|| row[4].toString().contains("BPCL Kochi Propylene")
 								|| row[4].toString().contains("Import Propane") || row[4].toString().contains("FCC C3")
 								|| row[4].toString().contains("LDPE Off Gas")) {
-							
+
 							map.put("normParameterFKID", row[2]);
 							map.put("particulars", row[3]);
 							map.put("normParameterTypeName", row[4]);
@@ -212,7 +219,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(spyroInputDTO, i);
 
-					saveData(normParameterFKId, i, attributeValue, spyroInputDTO,plantFKId,year);
+					saveData(normParameterFKId, i, attributeValue, spyroInputDTO, plantFKId, year);
 				}
 			}
 			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("spyro-input");
@@ -269,16 +276,15 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		return spyroInputDTO.getJan();
 	}
 
-	void saveData(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO,String plantId,String year) {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+	void saveData(UUID normParameterFKId, Integer i, Double attributeValue, SpyroInputDTO spyroInputDTO, String plantId,
+			String year) {
+
 		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
 				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
 
 		NormAttributeTransactions normAttributeTransactions;
 
 		if (existingRecord.isPresent()) {
-
 			normAttributeTransactions = existingRecord.get();
 			normAttributeTransactions.setModifiedOn(new Date());
 		} else {
@@ -286,7 +292,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			normAttributeTransactions = new NormAttributeTransactions();
 			normAttributeTransactions.setCreatedOn(new Date());
 			normAttributeTransactions.setAttributeValueVersion("V1");
-			normAttributeTransactions.setUserName(userId);
+			normAttributeTransactions.setUserName(Utility.getUserName());
 			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
 			normAttributeTransactions.setAopMonth(i);
 			normAttributeTransactions.setAuditYear(year);
@@ -295,7 +301,7 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		normAttributeTransactions
 				.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
 		normAttributeTransactions.setRemarks(spyroInputDTO.getRemarks());
-
+		normAttributeTransactions.setUserName(Utility.getUserName());
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
 	}
 
@@ -306,13 +312,23 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			ObjectMapper mapper = new ObjectMapper();
 			Map<String, List<List<Object>>> data = new HashMap<>();
 			Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
+			Map<String, List<Map<String, Object>>> spyroInputDataListMap = new HashMap<>();
+			if (!isAfterSave) {
+				AOPMessageVM vm = getSpyroInputData(year, plantId, mode, "Composition");
+				List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
+				spyroInputDataListMap = Utility.groupByNormParameterTypeName(spyroInputDataList);
+			}
+
 			for (String sheetName : structure.keySet()) {
 				Map<String, Object> sheetData = (Map<String, Object>) structure.get(sheetName);
 				List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get(ExcelConstants.TABLES);
 
 				for (Map<String, Object> table : tables) {
+					String title = (String) table.get(ExcelConstants.TITLE);
 					String tableId = (String) table.get(ExcelConstants.TABLEID);
+					String dataInput = (String) table.get(ExcelConstants.DATA_INPUT);
 					List<String> headers = (List<String>) table.get(ExcelConstants.HEADERS);
+					boolean hideTable = (boolean) table.get(ExcelConstants.HIDE_TABLE);
 					Integer startingIndexofMonths = (Integer) table.get(ExcelConstants.STARTING_INDEX_OF_MONTHS);
 					List<List<String>> headersOuterTitles = (List<List<String>>) table
 							.get(ExcelConstants.HEADERSTITLES);
@@ -320,11 +336,18 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 							excelUtilityService.getAcademicYearMonths(year));
 					List<List<Object>> dataList = new ArrayList<>();
 					if (isAfterSave) {
+						if(!mapForExcel.containsKey(tableId)){
+							hideTable = true;
+							continue;
+						}
 						headers.add("saveStatus");
 						headers.add("errDescription");
 						headersOuterTitles.get(0).add("SaveStatus");
-						headersOuterTitles.get(0).add("errDescription");
+						headersOuterTitles.get(0).add("ErrDescription");
+
+
 						for (SpyroInputDTO dto : mapForExcel.get(tableId)) {
+
 							List<Object> list = new ArrayList<>();
 							for (String fieldName : headers) {
 								String methodName = "get" + capitalize(fieldName);
@@ -332,14 +355,30 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 								Object value = method.invoke(dto);
 								list.add(value);
 							}
+							list.add(tableId);
 							dataList.add(list);
 						}
 
 					} else {
-						AOPMessageVM vm = getSpyroInputData(year, plantId, mode, sheetName);
-						List<Map<String, Object>> spyroInputDataList = (List<Map<String, Object>>) vm.getData();
-						System.out.println("sheetName " + sheetName + " " + spyroInputDataList);
 
+						List<Map<String, Object>> spyroInputDataList = new ArrayList<>();
+						if (dataInput.equalsIgnoreCase("Composition")) {
+							if(spyroInputDataListMap.containsKey(title)){
+								spyroInputDataList = spyroInputDataListMap.get(title);
+							}else{
+								hideTable = true;
+								continue;
+							}
+						} else {
+							AOPMessageVM vm = getSpyroInputData(year, plantId, mode, dataInput);
+							spyroInputDataList = (List<Map<String, Object>>) vm.getData();
+							System.out.println("sheetName " + sheetName + " " + spyroInputDataList);
+						}
+
+						if(spyroInputDataList==null ||spyroInputDataList.isEmpty()){
+							hideTable = true;
+							continue;
+						}
 						// Data rows
 						for (Map<String, Object> map : spyroInputDataList) {
 							List<Object> list = new ArrayList<>();
@@ -347,8 +386,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 								System.out.println("header " + header);
 								list.add(map.get(header));
 							}
+							list.add(tableId);
 							dataList.add(list);
 						}
+
 					}
 
 					System.out.println("datalist " + dataList);
@@ -364,6 +405,15 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		}
 		return null;
 
+	}
+
+	public static Map<String, List<SpyroInputDTO>> groupByNormParameterTypeName(List<SpyroInputDTO> dtoList) {
+		if (dtoList == null)
+			return Collections.emptyMap();
+
+		return dtoList.stream()
+				.filter(dto -> dto.getNormParameterTypeName() != null) // Optional: filter null keys
+				.collect(Collectors.groupingBy(SpyroInputDTO::getNormParameterTypeName));
 	}
 
 	private static String capitalize(String str) {
@@ -397,13 +447,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 			System.out.println("Ended Save spyroInput in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
-				byte[] fileByteArray = createExcel(year, plantFKId, mode, true, mapForExcel);
+				byte[] fileByteArray = createExcel(year, plantFKId, mode, true, map);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
 				aopMessageVM.setMessage("Partial data has been saved");
 			} else {
-				// aopMessageVM.setData();
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("All data has been saved");
 			}
@@ -422,8 +471,8 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 		Map<String, List<SpyroInputDTO>> map = new HashMap<>();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-			for (int i = 0; i < 6; i++) {
-				Sheet sheet = workbook.getSheetAt(i);
+			
+				Sheet sheet = workbook.getSheetAt(0);
 				Iterator<Row> rowIterator = sheet.iterator();
 				List<SpyroInputDTO> spyroInputDTOs = new ArrayList<>();
 				if (rowIterator.hasNext())
@@ -431,38 +480,43 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 				while (rowIterator.hasNext()) {
 					Row row = rowIterator.next();
+					Cell tableIdCell = row.getCell(16, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
+                    	continue;
+                	}
 
 					SpyroInputDTO dto = new SpyroInputDTO();
 
 					try {
-						dto.setNormParameterFKID(getStringCellValue(row.getCell(0), dto));
-						dto.setParticulars(getStringCellValue(row.getCell(1), dto));
-						dto.setUom(getStringCellValue(row.getCell(2), dto));
+						
+						dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+						dto.setUom(getStringCellValue(row.getCell(1), dto));
 						dto.setAuditYear(year);
-						dto.setApr(getNumericCellValue(row.getCell(3), dto));
-						dto.setMay(getNumericCellValue(row.getCell(4), dto));
-						dto.setJun(getNumericCellValue(row.getCell(5), dto));
-						dto.setJul(getNumericCellValue(row.getCell(6), dto));
-						dto.setAug(getNumericCellValue(row.getCell(7), dto));
-						dto.setSep(getNumericCellValue(row.getCell(8), dto));
-						dto.setOct(getNumericCellValue(row.getCell(9), dto));
-						dto.setNov(getNumericCellValue(row.getCell(10), dto));
-						dto.setDec(getNumericCellValue(row.getCell(11), dto));
-						dto.setJan(getNumericCellValue(row.getCell(12), dto));
-						dto.setFeb(getNumericCellValue(row.getCell(13), dto));
-						dto.setMar(getNumericCellValue(row.getCell(14), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+						dto.setApr(getNumericCellValue(row.getCell(2), dto));
+						dto.setMay(getNumericCellValue(row.getCell(3), dto));
+						dto.setJun(getNumericCellValue(row.getCell(4), dto));
+						dto.setJul(getNumericCellValue(row.getCell(5), dto));
+						dto.setAug(getNumericCellValue(row.getCell(6), dto));
+						dto.setSep(getNumericCellValue(row.getCell(7), dto));
+						dto.setOct(getNumericCellValue(row.getCell(8), dto));
+						dto.setNov(getNumericCellValue(row.getCell(9), dto));
+						dto.setDec(getNumericCellValue(row.getCell(10), dto));
+						dto.setJan(getNumericCellValue(row.getCell(11), dto));
+						dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+						dto.setMar(getNumericCellValue(row.getCell(13), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+						dto.setNormParameterFKID(getStringCellValue(row.getCell(15), dto));
+						dto.setTableId(getStringCellValue(row.getCell(16), dto));
+
 					} catch (Exception e) {
 						e.printStackTrace();
 						dto.setErrDescription(e.getMessage());
 						dto.setSaveStatus("Failed");
 					}
+					map.putIfAbsent(dto.getTableId(), new ArrayList<>());
 
-					spyroInputDTOs.add(dto);
+					map.get(dto.getTableId()).add(dto);
 				}
-
-				map.put(sheet.getSheetName(), spyroInputDTOs);
-			}
 
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to read Data", e);
@@ -537,18 +591,15 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 
 	String getJson() {
 		return "{\r\n" + //
-						"    \"Feed\": {\r\n" + //
+						"    \"SpyroInput\": {\r\n" + //
 						"        \"columnCount\":13,\r\n" + //
 						"        \"tables\": [\r\n" + //
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
+						"\t\t\t\t\t \r\n" + //
 						"\t\t\t\t\t\"particulars\", \r\n" + //
 						"\t\t\t\t\t\"uom\", \r\n" + //
-						"\t\t\t\t\t\"jan\", \r\n" + //
-						"\t\t\t\t\t\"feb\", \r\n" + //
-						"\t\t\t\t\t\"mar\", \r\n" + //
 						"\t\t\t\t\t\"apr\", \r\n" + //
 						"\t\t\t\t\t\"may\", \r\n" + //
 						"\t\t\t\t\t\"jun\", \r\n" + //
@@ -557,20 +608,27 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"\t\t\t\t\t\"sep\", \r\n" + //
 						"\t\t\t\t\t\"oct\", \r\n" + //
 						"\t\t\t\t\t\"nov\", \r\n" + //
-						"\t\t\t\t\t\"dec\", \r\n" + //
-						"\t\t\t\t\t\"remarks\"\r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
 						"                ],\r\n" + //
-						"                \"startingIndexOfMonths\":3,\r\n" + //
-						"                \"title\":\"\",\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"Feed\",\r\n" + //
 						"                \"tableId\":\"Feed\",\r\n" + //
+						"                \"dataInput\":\"Feed\",\r\n" + //
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"uom\",\r\n" + //
-						"                    \"remark\"]],\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[0],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -581,21 +639,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                    \"columns\": [],\r\n" + //
 						"                    \"rows\": []\r\n" + //
 						"                }\r\n" + //
-						"            }\r\n" + //
-						"        ]\r\n" + //
-						"    },\r\n" + //
-						"    \"Composition\": {\r\n" + //
-						"        \"columnCount\":13,\r\n" + //
-						"        \"tables\": [\r\n" + //
+						"            },\r\n" + //
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
 						"\t\t\t\t\t\"particulars\", \r\n" + //
 						"\t\t\t\t\t\"uom\", \r\n" + //
-						"\t\t\t\t\t\"jan\", \r\n" + //
-						"\t\t\t\t\t\"feb\", \r\n" + //
-						"\t\t\t\t\t\"mar\", \r\n" + //
 						"\t\t\t\t\t\"apr\", \r\n" + //
 						"\t\t\t\t\t\"may\", \r\n" + //
 						"\t\t\t\t\t\"jun\", \r\n" + //
@@ -604,20 +653,27 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"\t\t\t\t\t\"sep\", \r\n" + //
 						"\t\t\t\t\t\"oct\", \r\n" + //
 						"\t\t\t\t\t\"nov\", \r\n" + //
-						"\t\t\t\t\t\"dec\", \r\n" + //
-						"\t\t\t\t\t\"remarks\"\r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
 						"                ],\r\n" + //
-						"                \"startingIndexOfMonths\":3,\r\n" + //
-						"                \"title\":\"\",\r\n" + //
-						"                \"tableId\":\"Composition\",\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"Composition\",\r\n" + //
+						"                \"title\":\"BPCL Kochi Propylene\",\r\n" + //
+						"                \"tableId\":\"BPCL_Kochi_Propylene\",\r\n" + //
+						"                \"dataInput\":\"Composition\",\r\n" + //
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"uom\",\r\n" + //
-						"                    \"remark\"]],\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[0],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -628,21 +684,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                    \"columns\": [],\r\n" + //
 						"                    \"rows\": []\r\n" + //
 						"                }\r\n" + //
-						"            }\r\n" + //
-						"        ]\r\n" + //
-						"    },\r\n" + //
-						"    \"Hydrogenation\": {\r\n" + //
-						"        \"columnCount\":13,\r\n" + //
-						"        \"tables\": [\r\n" + //
+						"            },\r\n" + //
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
 						"\t\t\t\t\t\"particulars\", \r\n" + //
 						"\t\t\t\t\t\"uom\", \r\n" + //
-						"\t\t\t\t\t\"jan\", \r\n" + //
-						"\t\t\t\t\t\"feb\", \r\n" + //
-						"\t\t\t\t\t\"mar\", \r\n" + //
 						"\t\t\t\t\t\"apr\", \r\n" + //
 						"\t\t\t\t\t\"may\", \r\n" + //
 						"\t\t\t\t\t\"jun\", \r\n" + //
@@ -651,20 +698,252 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"\t\t\t\t\t\"sep\", \r\n" + //
 						"\t\t\t\t\t\"oct\", \r\n" + //
 						"\t\t\t\t\t\"nov\", \r\n" + //
-						"\t\t\t\t\t\"dec\", \r\n" + //
-						"\t\t\t\t\t\"remarks\"\r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
 						"                ],\r\n" + //
-						"                \"startingIndexOfMonths\":3,\r\n" + //
-						"                \"title\":\"\",\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"C2/C3\",\r\n" + //
+						"                \"tableId\":\"C2_C3\",\r\n" + //
+						"                \"dataInput\":\"Composition\",\r\n" + //
+						"                \"isColumnMergeRequired\":false,\r\n" + //
+						"                \"isRowMergeRequired\":false,\r\n" + //
+						"                \"headersTitles\":[[\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
+						"                \"rows\": [],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"styles\": {\r\n" + //
+						"                    \"boldColumns\": [\r\n" + //
+						"                        0\r\n" + //
+						"                    ],\r\n" + //
+						"                    \"borders\": true\r\n" + //
+						"                },\r\n" + //
+						"                \"autoMerge\": {\r\n" + //
+						"                    \"columns\": [],\r\n" + //
+						"                    \"rows\": []\r\n" + //
+						"                }\r\n" + //
+						"            },\r\n" + //
+						"            {\r\n" + //
+						"                \"startRow\": 0,\r\n" + //
+						"                \"headers\": [\r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
+						"                ],\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"FCC C3\",\r\n" + //
+						"                \"tableId\":\"FCC_C3\",\r\n" + //
+						"                \"dataInput\":\"Composition\",\r\n" + //
+						"                \"isColumnMergeRequired\":false,\r\n" + //
+						"                \"isRowMergeRequired\":false,\r\n" + //
+						"                \"headersTitles\":[[\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
+						"                \"rows\": [],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"styles\": {\r\n" + //
+						"                    \"boldColumns\": [\r\n" + //
+						"                        0\r\n" + //
+						"                    ],\r\n" + //
+						"                    \"borders\": true\r\n" + //
+						"                },\r\n" + //
+						"                \"autoMerge\": {\r\n" + //
+						"                    \"columns\": [],\r\n" + //
+						"                    \"rows\": []\r\n" + //
+						"                }\r\n" + //
+						"            },\r\n" + //
+						"            {\r\n" + //
+						"                \"startRow\": 0,\r\n" + //
+						"                \"headers\": [\r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
+						"                ],\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"Hexene Purge Gas\",\r\n" + //
+						"                \"tableId\":\"Hexene_Purge_Gas\",\r\n" + //
+						"                \"dataInput\":\"Composition\",\r\n" + //
+						"                \"isColumnMergeRequired\":false,\r\n" + //
+						"                \"isRowMergeRequired\":false,\r\n" + //
+						"                \"headersTitles\":[[\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
+						"                \"rows\": [],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"styles\": {\r\n" + //
+						"                    \"boldColumns\": [\r\n" + //
+						"                        0\r\n" + //
+						"                    ],\r\n" + //
+						"                    \"borders\": true\r\n" + //
+						"                },\r\n" + //
+						"                \"autoMerge\": {\r\n" + //
+						"                    \"columns\": [],\r\n" + //
+						"                    \"rows\": []\r\n" + //
+						"                }\r\n" + //
+						"            },\r\n" + //
+						"            {\r\n" + //
+						"                \"startRow\": 0,\r\n" + //
+						"                \"headers\": [\r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
+						"                ],\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"Import Propane\",\r\n" + //
+						"                \"tableId\":\"Import_Propane\",\r\n" + //
+						"                \"dataInput\":\"Composition\",\r\n" + //
+						"                \"isColumnMergeRequired\":false,\r\n" + //
+						"                \"isRowMergeRequired\":false,\r\n" + //
+						"                \"headersTitles\":[[\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
+						"                \"rows\": [],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"styles\": {\r\n" + //
+						"                    \"boldColumns\": [\r\n" + //
+						"                        0\r\n" + //
+						"                    ],\r\n" + //
+						"                    \"borders\": true\r\n" + //
+						"                },\r\n" + //
+						"                \"autoMerge\": {\r\n" + //
+						"                    \"columns\": [],\r\n" + //
+						"                    \"rows\": []\r\n" + //
+						"                }\r\n" + //
+						"            },\r\n" + //
+						"            {\r\n" + //
+						"                \"startRow\": 0,\r\n" + //
+						"                \"headers\": [\r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
+						"                ],\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"LDPE Off Gas\",\r\n" + //
+						"                \"tableId\":\"LDPE_Off_Gas\",\r\n" + //
+						"                \"dataInput\":\"Composition\",\r\n" + //
+						"                \"isColumnMergeRequired\":false,\r\n" + //
+						"                \"isRowMergeRequired\":false,\r\n" + //
+						"                \"headersTitles\":[[\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
+						"                \"rows\": [],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"styles\": {\r\n" + //
+						"                    \"boldColumns\": [\r\n" + //
+						"                        0\r\n" + //
+						"                    ],\r\n" + //
+						"                    \"borders\": true\r\n" + //
+						"                },\r\n" + //
+						"                \"autoMerge\": {\r\n" + //
+						"                    \"columns\": [],\r\n" + //
+						"                    \"rows\": []\r\n" + //
+						"                }\r\n" + //
+						"            },\r\n" + //
+						"             {\r\n" + //
+						"                \"startRow\": 0,\r\n" + //
+						"                \"headers\": [\r\n" + //
+						"\t\t\t\t\t\"particulars\", \r\n" + //
+						"\t\t\t\t\t\"uom\", \r\n" + //
+						"\t\t\t\t\t\"apr\", \r\n" + //
+						"\t\t\t\t\t\"may\", \r\n" + //
+						"\t\t\t\t\t\"jun\", \r\n" + //
+						"\t\t\t\t\t\"jul\", \r\n" + //
+						"\t\t\t\t\t\"aug\", \r\n" + //
+						"\t\t\t\t\t\"sep\", \r\n" + //
+						"\t\t\t\t\t\"oct\", \r\n" + //
+						"\t\t\t\t\t\"nov\", \r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
+						"                ],\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"Hydrogenation\",\r\n" + //
 						"                \"tableId\":\"Hydrogenation\",\r\n" + //
+						"                \"dataInput\":\"Hydrogenation\",\r\n" + //
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"uom\",\r\n" + //
-						"                    \"remark\"]],\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[0],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -675,21 +954,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                    \"columns\": [],\r\n" + //
 						"                    \"rows\": []\r\n" + //
 						"                }\r\n" + //
-						"            }\r\n" + //
-						"        ]\r\n" + //
-						"    },\r\n" + //
-						"    \"Recovery\": {\r\n" + //
-						"        \"columnCount\":13,\r\n" + //
-						"        \"tables\": [\r\n" + //
+						"            },\r\n" + //
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
 						"\t\t\t\t\t\"particulars\", \r\n" + //
 						"\t\t\t\t\t\"uom\", \r\n" + //
-						"\t\t\t\t\t\"jan\", \r\n" + //
-						"\t\t\t\t\t\"feb\", \r\n" + //
-						"\t\t\t\t\t\"mar\", \r\n" + //
 						"\t\t\t\t\t\"apr\", \r\n" + //
 						"\t\t\t\t\t\"may\", \r\n" + //
 						"\t\t\t\t\t\"jun\", \r\n" + //
@@ -698,20 +968,27 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"\t\t\t\t\t\"sep\", \r\n" + //
 						"\t\t\t\t\t\"oct\", \r\n" + //
 						"\t\t\t\t\t\"nov\", \r\n" + //
-						"\t\t\t\t\t\"dec\", \r\n" + //
-						"\t\t\t\t\t\"remarks\"\r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
 						"                ],\r\n" + //
-						"                \"startingIndexOfMonths\":3,\r\n" + //
-						"                \"title\":\"\",\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"Recovery\",\r\n" + //
 						"                \"tableId\":\"Recovery\",\r\n" + //
+						"                \"dataInput\":\"Recovery\",\r\n" + //
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"uom\",\r\n" + //
-						"                    \"remark\"]],\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[0],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -722,21 +999,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                    \"columns\": [],\r\n" + //
 						"                    \"rows\": []\r\n" + //
 						"                }\r\n" + //
-						"            }\r\n" + //
-						"        ]\r\n" + //
-						"    },\r\n" + //
-						"    \"Optimizing\": {\r\n" + //
-						"        \"columnCount\":13,\r\n" + //
-						"        \"tables\": [\r\n" + //
+						"            },\r\n" + //
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
 						"\t\t\t\t\t\"particulars\", \r\n" + //
 						"\t\t\t\t\t\"uom\", \r\n" + //
-						"\t\t\t\t\t\"jan\", \r\n" + //
-						"\t\t\t\t\t\"feb\", \r\n" + //
-						"\t\t\t\t\t\"mar\", \r\n" + //
 						"\t\t\t\t\t\"apr\", \r\n" + //
 						"\t\t\t\t\t\"may\", \r\n" + //
 						"\t\t\t\t\t\"jun\", \r\n" + //
@@ -745,20 +1013,27 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"\t\t\t\t\t\"sep\", \r\n" + //
 						"\t\t\t\t\t\"oct\", \r\n" + //
 						"\t\t\t\t\t\"nov\", \r\n" + //
-						"\t\t\t\t\t\"dec\", \r\n" + //
-						"\t\t\t\t\t\"remarks\"\r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
 						"                ],\r\n" + //
-						"                \"startingIndexOfMonths\":3,\r\n" + //
-						"                \"title\":\"\",\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"Optimizing\",\r\n" + //
 						"                \"tableId\":\"Optimizing\",\r\n" + //
+						"                \"dataInput\":\"Optimizing\",\r\n" + //
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"normParameterFKID\",\"Particulars\",\r\n" + //
-						"                    \"uom\",\r\n" + //
-						"                    \"remark\"]],\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[0],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -769,21 +1044,12 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                    \"columns\": [],\r\n" + //
 						"                    \"rows\": []\r\n" + //
 						"                }\r\n" + //
-						"            }\r\n" + //
-						"        ]\r\n" + //
-						"    },\r\n" + //
-						"    \"Furnace\": {\r\n" + //
-						"        \"columnCount\":13,\r\n" + //
-						"        \"tables\": [\r\n" + //
+						"            },\r\n" + //
 						"            {\r\n" + //
 						"                \"startRow\": 0,\r\n" + //
 						"                \"headers\": [\r\n" + //
-						"\t\t\t\t\t\"normParameterFKID\", \r\n" + //
 						"\t\t\t\t\t\"particulars\", \r\n" + //
 						"\t\t\t\t\t\"uom\", \r\n" + //
-						"\t\t\t\t\t\"jan\", \r\n" + //
-						"\t\t\t\t\t\"feb\", \r\n" + //
-						"\t\t\t\t\t\"mar\", \r\n" + //
 						"\t\t\t\t\t\"apr\", \r\n" + //
 						"\t\t\t\t\t\"may\", \r\n" + //
 						"\t\t\t\t\t\"jun\", \r\n" + //
@@ -792,20 +1058,27 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"\t\t\t\t\t\"sep\", \r\n" + //
 						"\t\t\t\t\t\"oct\", \r\n" + //
 						"\t\t\t\t\t\"nov\", \r\n" + //
-						"\t\t\t\t\t\"dec\", \r\n" + //
-						"\t\t\t\t\t\"remarks\"\r\n" + //
+						"\t\t\t\t\t\"dec\",\r\n" + //
+						"                    \"jan\", \r\n" + //
+						"\t\t\t\t\t\"feb\", \r\n" + //
+						"\t\t\t\t\t\"mar\", \r\n" + //
+						"\t\t\t\t\t\"remarks\",\r\n" + //
+						"                    \"normParameterFKID\"\r\n" + //
 						"                ],\r\n" + //
-						"                \"startingIndexOfMonths\":3,\r\n" + //
-						"                \"title\":\"\",\r\n" + //
+						"                \"startingIndexOfMonths\":2,\r\n" + //
+						"                \"hideTable\":false,\r\n" + //
+						"                \"textBeforeTitle\":\"\",\r\n" + //
+						"                \"title\":\"Furnace\",\r\n" + //
 						"                \"tableId\":\"Furnace\",\r\n" + //
+						"                \"dataInput\":\"Furnace\",\r\n" + //
 						"                \"isColumnMergeRequired\":false,\r\n" + //
 						"                \"isRowMergeRequired\":false,\r\n" + //
 						"                \"headersTitles\":[[\r\n" + //
-						"                    \"normParameterFKID\",\"particulars\",\r\n" + //
-						"                    \"uom\",\r\n" + //
-						"                    \"remark\"]],\r\n" + //
+						"                    \"Particulars\",\r\n" + //
+						"                    \"UOM\",\r\n" + //
+						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[0],\r\n" + //
+						"                \"hiddenColumns\":[15,16],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -817,8 +1090,10 @@ public class SpyroInputServiceImpl implements SpyroInputService {
 						"                    \"rows\": []\r\n" + //
 						"                }\r\n" + //
 						"            }\r\n" + //
+						"\r\n" + //
 						"        ]\r\n" + //
 						"    }\r\n" + //
+						"    \r\n" + //
 						"}";
 	}
 

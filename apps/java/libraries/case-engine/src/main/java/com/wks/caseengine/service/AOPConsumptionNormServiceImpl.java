@@ -32,7 +32,7 @@ import javax.sql.DataSource;
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.sql.Connection;
-import jakarta.persistence.Query;
+
 
 
 @Service
@@ -344,8 +344,6 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 				listDTO.add(dto);
 			}
 
-			// return
-			// results.stream().map(this::mapToAopDataDTO).collect(Collectors.toList());
 			return listDTO;
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);

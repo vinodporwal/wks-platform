@@ -1,7 +1,6 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.ShutdownNormsValueDTO;
 import com.wks.caseengine.entity.AopCalculation;
-import com.wks.caseengine.entity.MCUNormsValue;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.ShutdownNormsValue;
@@ -25,6 +23,7 @@ import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.ShutdownNormsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -120,6 +119,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	public List<ShutdownNormsValueDTO> saveShutdownNormsData(List<ShutdownNormsValueDTO> shutdownNormsValueDTOList) {
 		String year=null;
 		UUID plantId=null;
+		
 		try {
 			for (ShutdownNormsValueDTO shutdownNormsValueDTO : shutdownNormsValueDTOList) {
 				year=shutdownNormsValueDTO.getFinancialYear();
@@ -184,7 +184,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				shutdownNormsValue.setFinancialYear(shutdownNormsValueDTO.getFinancialYear());
 				shutdownNormsValue.setRemarks(shutdownNormsValueDTO.getRemarks());
 				shutdownNormsValue.setMcuVersion("V1");
-				shutdownNormsValue.setUpdatedBy("System");
+				shutdownNormsValue.setUpdatedBy(Utility.getUserName());
 
 				System.out.println("Data Saved Succussfully");
 				shutdownNormsRepository.save(shutdownNormsValue);

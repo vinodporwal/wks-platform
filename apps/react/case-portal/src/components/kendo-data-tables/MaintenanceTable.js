@@ -205,7 +205,7 @@ const MaintenanceTable = () => {
       title: 'Description',
       align: 'left',
       headerAlign: 'left',
-      width: 220,
+      width: 300,
       editable: false,
     },
     {

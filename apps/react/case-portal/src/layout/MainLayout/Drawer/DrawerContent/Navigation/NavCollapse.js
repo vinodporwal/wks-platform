@@ -15,8 +15,8 @@ import NavItem from './NavItem'
 
 const NavCollapse = ({ menu, level }) => {
   const theme = useTheme()
-  const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState(null)
+  const [open, setOpen] = useState(true)
+  const [selected, setSelected] = useState(menu.id)
   const { plantID, verticalChange } = useSelector(
     (state) => state.dataGridStore,
   )

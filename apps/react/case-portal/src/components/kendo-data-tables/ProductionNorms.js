@@ -517,7 +517,7 @@ const ProductionNorms = ({ permissions }) => {
       let finalData = []
 
       if (formattedData.length > 0) {
-        if (lowerVertName !== 'meg') {
+        if (lowerVertName !== 'meg' && lowerVertName !== 'cracker') {
           finalData = [...formattedData, totalsRow]
         } else {
           finalData = [...formattedData]

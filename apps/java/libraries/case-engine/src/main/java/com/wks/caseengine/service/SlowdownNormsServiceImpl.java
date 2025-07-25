@@ -29,11 +29,8 @@ import org.springframework.stereotype.Service;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.SlowdownNormsValueDTO;
 import com.wks.caseengine.entity.AopCalculation;
-import com.wks.caseengine.entity.NormAttributeTransactions;
-import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
-import com.wks.caseengine.entity.ShutdownNormsValue;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.SlowdownConsumption;
 import com.wks.caseengine.entity.SlowdownNormsValue;
@@ -49,6 +46,8 @@ import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.SlowdownConsumptionRepository;
 import com.wks.caseengine.repository.SlowdownNormsRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -89,7 +88,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	
 	private DataSource dataSource;
 
-	// Inject or set your DataSource (e.g., via constructor or setter)
+	
 	public SlowdownNormsServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
@@ -190,6 +189,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	public List<SlowdownNormsValueDTO> saveSlowdownNormsData(List<SlowdownNormsValueDTO> slowdownNormsValueDTOList) {
 		String year=null;
 		UUID plantId=null;
+		
 		try {
 			for (SlowdownNormsValueDTO slowdownNormsValueDTO : slowdownNormsValueDTOList) {
 				year=slowdownNormsValueDTO.getFinancialYear();
@@ -254,7 +254,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				slowdownNormsValue.setFinancialYear(slowdownNormsValueDTO.getFinancialYear());
 				slowdownNormsValue.setRemarks(slowdownNormsValueDTO.getRemarks());
 				slowdownNormsValue.setMcuVersion("V1");
-				slowdownNormsValue.setUpdatedBy("System");
+				slowdownNormsValue.setUpdatedBy(Utility.getUserName());
 				System.out.println(slowdownNormsValue.getApril());
 				System.out.println("Data Saved Succussfully");
 				slowdownNormsRepository.save(slowdownNormsValue);
@@ -269,7 +269,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
 			}
-			// TODO Auto-generated method stub
+			
 			return slowdownNormsValueDTOList;
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -417,7 +417,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			// Execute the stored procedure
 			int rowsAffected = stmt.executeUpdate();
 
-			// Optional: commit if auto-commit is off
+			
 			if (!connection.getAutoCommit()) {
 				connection.commit();
 			}
@@ -435,7 +435,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
 	    List<Map<String, String>> listOfMaps = new ArrayList<>();
 
-	    // 1. Add static "Particulars" column
+	    
 	    {
 	        Map<String, String> map = new HashMap<>();
 	        map.put("field", "particulars");
@@ -443,7 +443,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	        listOfMaps.add(map);
 	    }
 
-	    // 2. Prepare month-regex pattern
+	    
 	    List<String> months = Arrays.asList(
 	        "January", "February", "March", "April", "May", "June",
 	        "July", "August", "September", "October", "November", "December"
@@ -514,7 +514,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
             // Get the data
             List<Object[]> rows = getData(plantId, year,procedureName);
 
-            // Get column names
+            
             
             List<String> columnNames = getColumnNames(procedureName, plantId, year);
 
@@ -568,6 +568,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	public AOPMessageVM saveSlowdownNormsConfigurationData(String plantId, String year,
 			List<NormAttributeTransactionsDTO> normAttributeTransactionsDTOList) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
 		List<SlowdownConsumption> slowdownConsumptionList = new ArrayList<>();
 		try {
 			for(NormAttributeTransactionsDTO normAttributeTransactionsDTO:normAttributeTransactionsDTOList) {
@@ -582,7 +583,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				if(slowdownConsumption!=null) {
 					slowdownConsumption.setParameterValue(Double.parseDouble(normAttributeTransactionsDTO.getAttributeValue()));
 					slowdownConsumption.setUpdatedOn(new Date());
-					slowdownConsumption.setUpdatedBy("System");
+					slowdownConsumption.setUpdatedBy(Utility.getUserName());
 					slowdownConsumptionList.add(slowdownConsumptionRepository.save(slowdownConsumption));
 				}else {
 					slowdownConsumption = new SlowdownConsumption();
@@ -592,7 +593,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 					slowdownConsumption.setPlantMaintenanceFkId(maintenanceId);
 					slowdownConsumption.setAopMonth(month);
 					slowdownConsumption.setNormParameterFkId(normAttributeTransactionsDTO.getNormParameterFKId());
-					slowdownConsumption.setCreatedBy("System");
+					slowdownConsumption.setCreatedBy(Utility.getUserName());
 					slowdownConsumption.setPlantFkId(UUID.fromString(plantId));
 					slowdownConsumptionList.add(slowdownConsumptionRepository.save(slowdownConsumption));
 				}
@@ -611,16 +612,16 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	}
 	
 	public static int extractMonthNumber(String description) {
-        // 1. Grab the suffix after the last underscore
+        
         int u = description.lastIndexOf('_');
         if (u < 0 || u == description.length() - 1) {
             throw new IllegalArgumentException("No month suffix found.");
         }
         String monthName = description.substring(u + 1);
         try {
-            // 2. Map it to month number (1-12) using Month enum
+            
             Month m = Month.valueOf(monthName.toUpperCase());
-            return m.getValue(); // = 1 for Jan … 7 for July … 12 for Dec
+            return m.getValue(); 
         } catch (Exception ex) {
             throw new IllegalArgumentException("Unknown month: " + monthName, ex);
         }

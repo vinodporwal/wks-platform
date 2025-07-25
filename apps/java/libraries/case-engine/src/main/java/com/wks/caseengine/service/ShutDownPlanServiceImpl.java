@@ -2,15 +2,11 @@ package com.wks.caseengine.service;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.MonthWiseDataDTO;
@@ -21,7 +17,6 @@ import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
-import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.NormParametersRepository;
@@ -29,9 +24,9 @@ import com.wks.caseengine.repository.PlantMaintenanceRepository;
 import com.wks.caseengine.repository.PlantMaintenanceTransactionRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.ShutDownPlanRepository;
+import com.wks.caseengine.utility.Utility;
+
 import org.springframework.transaction.annotation.Transactional;
-import java.time.*;
-import java.time.temporal.ChronoUnit;
 
 @Service
 public class ShutDownPlanServiceImpl implements ShutDownPlanService {
@@ -272,8 +267,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	@Override
 	public List<ShutDownPlanDTO> saveShutdownPlantData(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
 		String year=null;
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		String userId = authentication.getName();	
+		
 		try {
 			UUID plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
 			if (plantMaintenanceId == null) {
@@ -319,7 +313,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 					plantMaintenanceTransaction
 							.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1);
-					plantMaintenanceTransaction.setUser(userId);
+					plantMaintenanceTransaction.setUser(Utility.getUserName());
 					plantMaintenanceTransaction.setName("Default Name");
 					plantMaintenanceTransaction.setVersion("V1");
 					plantMaintenanceTransaction.setCreatedOn(new Date());
@@ -337,11 +331,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
 
 					String verticalName = plantsService.findVerticalNameByPlantId(plantId);
-					System.out.println("verticalName" + verticalName);
+					
 					String description = shutDownPlanDTO.getDiscription();
 					if (verticalName.equalsIgnoreCase("MEG")) {
 						shutDownPlanDTO.setCreatedOn(plantMaintenanceTransaction.getCreatedOn());
-						shutDownPlanDTO.setMaintEndDateTime(shutDownPlanDTO.getMaintStartDateTime());
+						//shutDownPlanDTO.setMaintEndDateTime(shutDownPlanDTO.getMaintStartDateTime());
 						shutDownPlanDTO
 								.setPlantMaintenanceTransactionName(plantMaintenanceTransaction.getId().toString());
 						List<ShutDownPlanDTO> list = new ArrayList<>();
@@ -351,7 +345,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						shutDownPlanDTO.setProductId(
 								plantMaintenanceTransactionRepository.findIdByNameAndPlantFkId("EO", plantId));
 						list.add(shutDownPlanDTO);
-						slowdownPlanService.saveShutdownData(plantId, list);
+						slowdownPlanService.saveRampUpData(plantId, list);
 
 						List<ShutDownPlanDTO> list2 = new ArrayList<>();
 						shutDownPlanDTO.setDiscription(description + " Ramp Down");
@@ -360,7 +354,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 						shutDownPlanDTO.setDurationInHrs(0.00);
 						shutDownPlanDTO.setDurationInMins(0);
 						list2.add(shutDownPlanDTO);
-						slowdownPlanService.saveShutdownData(plantId, list2);
+						slowdownPlanService.saveRampDownData(plantId, list2);
 					}
 				} else {
 					// Updating an existing record

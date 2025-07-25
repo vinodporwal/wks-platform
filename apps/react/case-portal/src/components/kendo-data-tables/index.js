@@ -397,6 +397,24 @@ const KendoDataTables = ({
     )
   }, [])
 
+  const toolTipRendererdescLimit = (props) => {
+    const value = props.dataItem[props.field]
+    const type = props?.dataItem?.type ?? ''
+    // const isDisabled = type === 'ramp-down' || type === 'ramp-up'
+    const isDisabled = false
+
+    return (
+      <td
+        {...props.tdProps}
+        title={value}
+        style={{
+          backgroundColor: isDisabled ? '#f0f0f0' : undefined,
+        }}
+      >
+        {props.children}
+      </td>
+    )
+  }
   const toolTipRenderer = (props) => {
     const value = props.dataItem[props.field]
     const month = props.field
@@ -426,7 +444,7 @@ const KendoDataTables = ({
   }
 
   const HeaderWithTooltip = (props) => {
-    console.log('HeaderWithTooltip', props)
+    // console.log('HeaderWithTooltip', props)
     return (
       <th {...props.thProps}>
         <a className='k-link' onClick={props.onClick}>
@@ -450,6 +468,7 @@ const KendoDataTables = ({
         title={props.title}
         style={{
           padding: '0px',
+          borderRight: '1px solid #ccc',
         }}
       >
         <Tooltip
@@ -852,7 +871,7 @@ const KendoDataTables = ({
                     headerClassName={isActive ? 'active-column' : ''}
                     cells={{
                       edit: { text: descLimit },
-                      data: toolTipRenderer,
+                      data: toolTipRendererdescLimit,
                       headerCell: SimpleHeaderWithTooltip,
                     }}
                     columnMenu={ColumnMenuCheckboxFilter}
@@ -1128,7 +1147,8 @@ const KendoDataTables = ({
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
                     headerClassName={isActive ? 'active-column' : ''}
-                    width={col.widthT || ''}
+                    // width={col.widthT || ''}
+                    width={170}
                   />
                 )
               }
