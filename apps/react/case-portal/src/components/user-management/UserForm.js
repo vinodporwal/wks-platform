@@ -74,7 +74,7 @@ const UserForm = ({ keycloak }) => {
   const fetchMenuScreens = async (vId, pId) => {
     try {
       const res = await DataService.getScreenbyPlant(keycloak, vId, pId, userId)
-
+      const permissions = res?.permission ? JSON.parse(res.permission) : []
       if (!res?.data || !Array.isArray(res.data) || res.data.length === 0) {
         return []
       }
@@ -83,10 +83,17 @@ const UserForm = ({ keycloak }) => {
 
       const result =
         dynamic.length > 0 && dynamic[0]?.children?.length > 0 ? dynamic : []
-
-      return result
+      const mergeResult = {
+        result,
+        permissions: permissions ? permissions : [],
+      }
+      return mergeResult
     } catch (err) {
-      return []
+      const mergeResult = {
+        result: [],
+        permissions: [],
+      }
+      return mergeResult
     }
   }
 
@@ -95,7 +102,6 @@ const UserForm = ({ keycloak }) => {
 
     // 1. Fetch screens for any newly selected verticals
     const fetchPromises = selectedVerticals.map(async (verticalId) => {
-      console.log('fetchScreensForVerticals', newMap, newMap[verticalId])
       if (!newMap[verticalId]) {
         try {
           const response = await DataService.getUserScreen(keycloak, verticalId)
@@ -103,10 +109,6 @@ const UserForm = ({ keycloak }) => {
           const screens = extractScreens(groups).map((s) => s.title)
           newMap[verticalId] = screens
         } catch (err) {
-          console.error(
-            `Error fetching screens for vertical ${verticalId}`,
-            err,
-          )
           newMap[verticalId] = []
         }
       }
@@ -149,7 +151,6 @@ const UserForm = ({ keycloak }) => {
         const vert = verticalIds.find((v) => v[verticalId])
         const sites = Object.values(vert)[0]
         const selSites = Object.values(vert)[0].map((s) => Object.keys(s)[0])
-        console.log('vertical', vertical)
         if (!vertical) return
         let siteEntries = []
         vertical.sites
@@ -161,9 +162,11 @@ const UserForm = ({ keycloak }) => {
             site.plants
               .filter((p) => selPlants.some((sp) => sp === p.id))
               .forEach(async (plant) => {
-                const screens = await fetchMenuScreens(verticalId, plant.id)
+                const fetchScreen = await fetchMenuScreens(verticalId, plant.id)
+                const screens = fetchScreen.result
+                const permissions = fetchScreen.permissions
                 let plantScreens = []
-                if (screens.length > 0) {
+                if (screens && screens.length > 0) {
                   if (screens[0].children.length > 0) {
                     plantScreens = screens[0].children[0].children.map(
                       (s) => s.title,
@@ -173,7 +176,7 @@ const UserForm = ({ keycloak }) => {
                 const plantObj = {
                   plantId: plant.id,
                   screens: plantScreens,
-                  permissions: [],
+                  permissions: permissions,
                 }
                 sitePlants.push(plantObj)
               })
