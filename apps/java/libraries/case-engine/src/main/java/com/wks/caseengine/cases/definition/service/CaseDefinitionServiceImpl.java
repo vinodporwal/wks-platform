@@ -480,7 +480,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			String caseStatusValue = caseStatus.get().getName();
 			List<String> reviewersList = new ArrayList<>();
 			OwnerDetails ownerDetails = caseDetails.getOwner();
-			reviewersList.add(ownerDetails.getEmail());
+			String convertedEmail = convertEmail(ownerDetails.getEmail());
+			reviewersList.add(convertedEmail);
 
 			String[] reviewers = reviewersList.stream().filter(s -> !s.isEmpty()).collect(Collectors.toSet())
 					.toArray(String[]::new);
@@ -578,7 +579,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		        }
 				
 				OwnerDetails ownerDetails = caseDetails.getOwner();
-				reviewersList.add(ownerDetails.getEmail());
+				String convertedEmail = convertEmail(ownerDetails.getEmail());
+				reviewersList.add(convertedEmail);
 				
 				String[] reviewers = reviewersList.stream().filter(s -> !s.isEmpty()).collect(Collectors.toSet())
 						.toArray(String[]::new);
@@ -1481,7 +1483,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        }
 	        
 	        OwnerDetails ownerDetails = caseDetails.getOwner();
-	        reviewersList.add(ownerDetails.getEmail());
+			String convertedEmail = convertEmail(ownerDetails.getEmail());
+			reviewersList.add(convertedEmail);
 	        
 	        String[] reviewers = reviewersList.stream()
                     .filter(s -> !s.isEmpty())
@@ -1734,5 +1737,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		}
 
 		return result.toString().trim();
+	}
+
+	private String convertEmail(String email) {
+		// Replace "@text." with "@"
+		return email.replaceFirst("@in\\.", "@");
 	}
 }
