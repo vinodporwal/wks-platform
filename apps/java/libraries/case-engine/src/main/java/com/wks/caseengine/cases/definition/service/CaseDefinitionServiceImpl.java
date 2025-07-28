@@ -490,7 +490,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			String subject = "New case has been assigned to you.";
 	        Map<String, Object> data = new HashMap<>();
 	        data.put("subject", subject);
-			data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+			data.put("caseTitle", "This is to inform you, the new case has been assigned to you");
 			data.put("caseNumber", caseNumber);
 			data.put("status", caseStatusValue);
 			data.put("caseName", caseTitle);
@@ -589,7 +589,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 				String subject = "New case has been assigned to you.";
 		        Map<String, Object> data = new HashMap<>();
 		        data.put("subject", subject);
-		        data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+		        data.put("caseTitle", "This is to inform you, the new case has been assigned to you");
 				data.put("caseNumber", caseNumber);
 				data.put("status", caseStatusValue);
 				data.put("caseName", caseTitle);
@@ -770,7 +770,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //        SimpleMailMessage message = new SimpleMailMessage();
 //        message.setTo("shrikantp2143@gmail.com");
 //        message.setSubject("New Case has been assinged to you");
-//        message.setText("This is to inform you, the new case has been assined to you.");
+//        message.setText("This is to inform you, the new case has been assigned to you.");
 //        message.setFrom("shrikant.mnt@gmail.com");
 //
 //        try {
@@ -785,7 +785,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 //		SimpleMailMessage message = new SimpleMailMessage();
 //        message.setTo("shrikantp2143@gmail.com");
 //        message.setSubject("New Case has been assinged to you for review");
-//        message.setText("This is to inform you, the new case has been assined to you for review");
+//        message.setText("This is to inform you, the new case has been assigned to you for review");
 //        message.setFrom("shrikant.mnt@gmail.com");
 //
 //        try {
@@ -803,7 +803,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        message.setTo(assignedTo);
 	        message.setCc(reviewers);
 	        message.setSubject("New Case: "+ caseTitle);
-	        message.setText("This is to inform you, the new case Case Number: " +caseNo + ", \n Case Title: "+caseTitle+", has been assined to you\n Case Status: "+status);
+	        message.setText("This is to inform you, the new case Case Number: " +caseNo + ", \n Case Title: "+caseTitle+", has been assigned to you\n Case Status: "+status);
 	        message.setFrom(from);
 	        mailSender.send(message);
 		} catch (Exception e) {
@@ -1320,7 +1320,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			    if(!caseStatusValue.equals("Under Analysis")) {
 			    	System.out.println("Calling mail send method...");
 			    	Map<String, Object> data = new HashMap<>();
-			    	data.put("caseTitle", "This is to inform you, the new case has been assined to you");
+			    	data.put("caseTitle", "This is to inform you, the new case has been assigned to you");
 					data.put("caseNumber", caseNumber);
 					data.put("status", caseStatusValue);
 					data.put("caseName", caseTitle);
