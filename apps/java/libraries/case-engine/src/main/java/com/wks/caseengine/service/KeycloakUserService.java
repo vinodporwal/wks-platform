@@ -337,6 +337,7 @@ public class KeycloakUserService {
 
 			// Prepare mapping for this user
 			List<Map<String, List<Map<String, List<String>>>>> userPlantMapping = new ArrayList<>();
+			userScreenMappingRepository.deleteAllByUserId(userId);
 
 			if (attrObj instanceof Map) {
 				Map<String, Object> attrMap = (Map<String, Object>) attrObj;
@@ -364,7 +365,7 @@ public class KeycloakUserService {
 							ObjectMapper objectMapper = new ObjectMapper();
 							String permissionsString = objectMapper.writeValueAsString(permissions);
 
-							userScreenMappingRepository.deleteAllByUserId(userId);
+							
 							List<UserScreenMapping> newMappings = new ArrayList<>();
 							
 
@@ -382,15 +383,7 @@ public class KeycloakUserService {
 							}
 
 							mappings=(userScreenMappingRepository.saveAll(newMappings));
-							for(UserScreenMapping UserScreenMapping:mappings) {
-								System.out.println("getScreenCode "+UserScreenMapping.getScreenCode());
-								System.out.println("getId "+UserScreenMapping.getId());
-								System.out.println("getPlantId "+UserScreenMapping.getPlantFKId());
-								System.out.println("getVerticalId "+UserScreenMapping.getVerticalFKId());
-								System.out.println("getUserId "+UserScreenMapping.getUserId());
-							}
-
-							userScreenMappingRepository.saveAll(newMappings);
+							
 						}
 
 						siteEntries.add(Map.of(siteId, plantIds));
