@@ -27,7 +27,7 @@ keycloak.data.import.realm: ${spring.data.mongodb.database.tenant}
 # keycloak.data.import.dns: localhost
 # keycloak.data.import.port: :3001
 # keycloak.data.import.protocol: http://
-keycloak.data.import.dns: wkspwr.dev.connectedplant.honeywell.com
+keycloak.data.import.dns: apm-cm-exxonmobil-useast.connectedplant.honeywell.com
 keycloak.data.import.port: :8901
 keycloak.data.import.protocol: https://
 keycloak.data.import.redirecturl: ${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}/*

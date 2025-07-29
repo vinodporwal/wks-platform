@@ -2,7 +2,7 @@ package wks.authz
 
 import future.keywords
 
-default allow = false
+default allow = true
 
 has_client_role := {
     "client_case", 
@@ -19,132 +19,6 @@ has_manager_role := {
 has_email_to_case_role := {
     "email_to_case", 
 }
-
-allow {
-    input.path == "api"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"]
-	check_origin_request
-    is_user_profile
-}
-
-allow {
-    input.path == "api/case"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION"]
-	check_origin_request
-    is_user_profile
-}
-
-allow {
-    input.path = "api/case-definition"
-    input.method in ["GET", "OPTION"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/record-type"
-    input.method in ["GET", "OPTION"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/record"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/task"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/form"
-    input.method in ["GET", "OPTION"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/variable"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/process-instance"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/process-definition"
-    input.method in ["POST", "OPTION", "HEAD"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/queue"
-    input.method in ["GET", "OPTION"]
-	check_origin_request    
-    is_user_profile
-}
-
-allow {
-    input.path = "api/case-email"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-    check_origin_request
-    is_user_profile
-}
-
-allow {
-    input.path = "api/case-email"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-    is_email_to_case_profile
-}
-
-allow {
-    input.path = "api/record-type"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_manager_profile
-}
-
-allow {
-    input.path = "api/form"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_manager_profile
-}
-
-allow {
-    input.path = "api/process-definition"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_manager_profile
-}
-
-allow {
-    input.path = "api/deployment"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_manager_profile
-}
-
-allow {
-    input.path = "api/case-definition"
-    input.method in ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTION", "HEAD"]
-	check_origin_request    
-    is_manager_profile
-}
-
 
 allow {
     input.path == "case"
