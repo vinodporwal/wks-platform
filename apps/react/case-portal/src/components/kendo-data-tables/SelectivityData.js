@@ -44,7 +44,14 @@ const SelectivityData = (props) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [allProducts, setAllProducts] = useState([])
-  const headerMap = generateHeaderNames(localStorage.getItem('year'))
+
+  const currentYear = localStorage.getItem('year')
+
+  const [start, end] = currentYear.split('-').map(Number)
+  const prevYearFormatted = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
+
+  const headerMap = generateHeaderNames(currentYear)
+  const headerMapForPrevYear = generateHeaderNames(prevYearFormatted)
   const [isEdited, setIsEdited] = useState(false)
 
   const handleRemarkCellClick = (row) => {
@@ -341,13 +348,15 @@ const SelectivityData = (props) => {
     }
   }
 
+  const type = props?.configType === 'megConstantsMannualEntry'
+  const selectedHeaderMap = !type ? headerMap : headerMapForPrevYear
+
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
     allProducts,
-    headerMap,
+    headerMap: selectedHeaderMap,
     handleRemarkCellClick,
     configType: props?.configType,
-    // columnConfig,
   })
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
