@@ -2108,13 +2108,6 @@ async function saveSpyroOutput(payload, keycloak, plantId) {
   }
 }
 async function getSpyroOutputData(keycloak, mode, type) {
-  const needsOperationSuffix = ['5F', '4F', '4F+D']
-  const modeForApi =
-    needsOperationSuffix.includes(mode) &&
-    !mode.toLowerCase().includes('operation')
-      ? `${mode} Operation`
-      : mode
-
   const year = localStorage.getItem('year')
   let plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -2127,7 +2120,7 @@ async function getSpyroOutputData(keycloak, mode, type) {
     `${Config.CaseEngineUrl}/task/spyro-output` +
     `?year=${encodeURIComponent(year)}` +
     `&plantId=${encodeURIComponent(plantId)}` +
-    `&Mode=${encodeURIComponent(modeForApi)}` +
+    `&Mode=${encodeURIComponent(mode)}` +
     `&type=${encodeURIComponent(type)}`
 
   const headers = {

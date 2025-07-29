@@ -314,7 +314,7 @@ const SelectivityData = (props) => {
     )
       getAllGrades()
 
-    if (props?.configType !== 'grades' && lowerVertName !== 'cracker') {
+    if (props?.configType !== 'grades') {
       props?.fetchData()
     }
 

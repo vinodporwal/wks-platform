@@ -15,6 +15,8 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
+import { ibrGridThreePopUP, singleRowColumn } from './columnDefs'
+
 import Notification from 'components/Utilities/Notification'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
 import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
@@ -31,9 +33,14 @@ import {
   isColumnMenuSortActive,
 } from '../../../node_modules/@progress/kendo-react-grid/index'
 import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
-import DateOnlyPicker from './Utilities-Kendo/DatePicker'
+
 import { Input } from '@progress/kendo-react-inputs'
 import { Skeleton } from '../../../node_modules/@progress/kendo-react-indicators/index'
+import { DatePicker } from '@progress/kendo-react-dateinputs'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
+import moment from '../../../node_modules/moment/moment'
+
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -45,6 +52,10 @@ const CustomAccordion = styled((props) => (
     display: 'none',
   },
 }))
+
+const year = localStorage.getItem('year')
+const startYear = parseInt(year?.split('-')[0], 10)
+const nextYear = `${startYear + 1}-${(startYear + 2).toString()?.slice(-2)}`
 
 const CustomAccordionSummary = styled((props) => (
   <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
@@ -111,14 +122,9 @@ const KendoDataTablesCrackerRunLength = ({
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
-  const initialGroup = groupBy
-    ? [
-        {
-          field: groupBy,
-          dir: undefined,
-        },
-      ]
-    : []
+  const [rowsPopUp, setRowsPopUp] = useState([])
+  const [singleRow, setSingleRow] = useState([])
+
   const fileInputRef = useRef(null)
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
@@ -339,6 +345,8 @@ const KendoDataTablesCrackerRunLength = ({
       setIsButtonDisabled(false)
     }, 500)
   }
+  const saveModalOpenForPopup = async () => {}
+
   const handleCalculateBtn = async () => {
     setIsButtonDisabled(true)
     handleCalculate()
@@ -346,6 +354,7 @@ const KendoDataTablesCrackerRunLength = ({
       setIsButtonDisabled(false)
     }, 500)
   }
+
   const isColumnActive = (field, filter, sort) => {
     return (
       isColumnMenuFilterActive(field, filter) ||
@@ -362,6 +371,7 @@ const KendoDataTablesCrackerRunLength = ({
       </tr>
     )
   }, [])
+
   const toolTipRenderer = (props) => {
     const value = props.dataItem[props.field]
 
@@ -371,6 +381,7 @@ const KendoDataTablesCrackerRunLength = ({
       </td>
     )
   }
+
   const triggerFileUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click()
@@ -666,15 +677,257 @@ const KendoDataTablesCrackerRunLength = ({
     </Grid>
   )
 
+  const renderGrid2 = () => (
+    <Grid
+      style={{ height: 500 }}
+      scrollable={'virtual'}
+      rowHeight={35}
+      data={rowsPopUp}
+      total={rowsPopUp?.length}
+      sortable={{
+        mode: 'multiple',
+      }}
+      sort={sort}
+      defaultSkip={0}
+      defaultTake={100}
+      onItemChange={itemChange}
+      dataItemKey='id'
+      size='small'
+      autoProcessData={true}
+      cells={{
+        data: LoadingCell,
+      }}
+      pageable={{
+        buttonCount: 4,
+        pageSizes: [10, 50, 100, 366],
+      }}
+    >
+      {ibrGridThreePopUP.map((col) => {
+        const isActive = isColumnActive(col.field, filter, sort)
+
+        if (
+          dateFields1.includes(col.field) ||
+          dateFieldsRunLength.includes(col.field)
+        ) {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              format='{0:dd-MM-yyyy}'
+              editor='date'
+              hidden={col.hidden}
+              sortable={false}
+              cells={{
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+              className={
+                dateFieldsRunLength.includes(col.field)
+                  ? 'k-right-disabled'
+                  : ''
+              }
+            />
+          )
+        }
+
+        if (!col.editable) {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              hidden={col.hidden}
+              headerClassName={isActive ? 'active-column' : ''}
+              columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+              sortable={!!col.filter}
+              className={col.isDisabled ? 'k-right-disabled' : ''}
+              cells={{
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+            />
+          )
+        }
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            // width={col.widthT}
+            hidden={col.hidden}
+            headerClassName={isActive ? 'active-column' : ''}
+            columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+            sortable={!!col.filter}
+            className={col.isDisabled ? 'k-right-disabled' : ''}
+            cells={
+              col.editable
+                ? { data: CellWithState, headerCell: SimpleHeaderWithTooltip }
+                : { headerCell: SimpleHeaderWithTooltip }
+            }
+          />
+        )
+      })}
+
+      {permissions?.deleteButton && (
+        <GridColumn
+          key='actions'
+          field='actions'
+          title='Action'
+          width={80}
+          className='k-text-center'
+          filterable={false}
+          editable={false}
+          cells={{
+            data: ActionsCell,
+          }}
+        />
+      )}
+    </Grid>
+  )
+
+  const renderGrid3 = () => {
+    if (!singleRow) return null
+
+    return (
+      <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: '13px',
+          }}
+        >
+          <thead>
+            <tr style={{ backgroundColor: '#f9f9f9', textAlign: 'left' }}>
+              {singleRowColumn.map((col) => (
+                <th
+                  key={col.field}
+                  style={{
+                    padding: '8px 10px',
+                    border: '1px solid #ddd',
+                    whiteSpace: 'nowrap',
+                    fontWeight: '500',
+                  }}
+                >
+                  {col.title || col.headerName || col.field}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {singleRowColumn.map((col) => (
+                <td
+                  key={col.field}
+                  style={{
+                    padding: '8px 10px',
+                    border: '1px solid #ddd',
+                    textAlign: 'left',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {col.field === 'date'
+                    ? moment(singleRow[col.field]).format('DD-MM-YYYY')
+                    : singleRow[col.field] ?? ''}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  const [open, setOpen] = useState(false)
+  const [startDate, setStartDate] = useState(null)
+  const [hValues, setHValues] = useState({
+    H10: '10',
+    H11: '11',
+    H12: '12',
+    H13: '13',
+    H14: '14',
+    Demo: '16',
+  })
+
+  const handleOpen = () => setOpen(true)
+  const handleClose = () => setOpen(false)
+
+  const handleChange = (key, value) => {
+    setHValues((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleCalculate2 = (hValues) => {
+    // console.log('Start Date:', startDate)
+    // console.log('Entered Values:', hValues)
+    fetchData()
+  }
+
+  const keycloak = useSession()
+
+  const fetchData = useCallback(async () => {
+    try {
+      const data3 = await DataService.getIbrScreen3(keycloak)
+      const toDateObject = (value) =>
+        value ? moment(value, 'YYYY-MM-DD').toDate() : null
+
+      if (data3?.code === 200) {
+        const processedData = data3.data?.decokingActivitiesList.map(
+          (item, index) => ({
+            ...item,
+            month_: item?.month,
+            idFromApi: item?.id,
+            id: index,
+            remarks: item?.remarks || '',
+            date: toDateObject(item.date),
+          }),
+        )
+
+        const lastRow = processedData[processedData.length - 1]
+
+        const incrementIfNumber = (val) =>
+          !isNaN(val) ? (parseInt(val, 10) + 1).toString() : val
+
+        const nextDate = toDateObject(moment(lastRow.date).add(1, 'month'))
+        const nextMonthName = moment(lastRow.date)
+          .add(1, 'month')
+          ?.format('MMMM')
+
+        const generateRandomId = () =>
+          `${Date.now()}-${Math.floor(Math.random() * 100000)}`
+
+        const newRow = {
+          ...lastRow,
+          id: lastRow.id + 1,
+          date: nextDate,
+          month: nextMonthName,
+          month_: nextMonthName,
+          hTenActual: incrementIfNumber(lastRow.hTenActual),
+          tenProposed: incrementIfNumber(lastRow.tenProposed),
+          hElevenActual: incrementIfNumber(lastRow.hElevenActual),
+          elevenProposed: incrementIfNumber(lastRow.elevenProposed),
+          hTwelveActual: incrementIfNumber(lastRow.hTwelveActual),
+          twelveProposed: incrementIfNumber(lastRow.twelveProposed),
+          hThirteenActual: incrementIfNumber(lastRow.hThirteenActual),
+          thirteenProposed: incrementIfNumber(lastRow.thirteenProposed),
+          hFourteenActual: incrementIfNumber(lastRow.hFourteenActual),
+          fourteenProposed: incrementIfNumber(lastRow.fourteenProposed),
+          idFromApi: generateRandomId(),
+        }
+
+        setRowsPopUp([...processedData, newRow])
+        setSingleRow(newRow)
+      } else {
+        setRowsPopUp([])
+      }
+    } catch (err) {
+      console.error('Error loading data:', err)
+    } finally {
+      // setLoading(false)
+    }
+  }, [keycloak])
+
   return (
     <Box>
-      {loading && (
-        <div className='k-loading-mask'>
-          <span className='k-loading-text'>Loading...</span>
-          <div className='k-loading-image' />
-          <div className='k-loading-color' />
-        </div>
-      )}
       {(permissions?.allAction ?? false) && (
         <Box className='action-box'>
           <Box
@@ -754,10 +1007,20 @@ const KendoDataTablesCrackerRunLength = ({
                   Calculate
                 </Button>
               )}
+              {permissions?.showCalculate && (
+                <Button
+                  variant='contained'
+                  onClick={handleOpen}
+                  className='btn-save'
+                >
+                  Calculate For Next Year
+                </Button>
+              )}
             </Box>
           </Box>
         </Box>
       )}
+
       <Box className='kendo-data-grid'>
         {!permissions?.showAccordian ? (
           <CustomAccordion
@@ -784,6 +1047,7 @@ const KendoDataTablesCrackerRunLength = ({
           </Tooltip>
         )}
       </Box>
+
       <Box
         sx={{
           marginTop: 2,
@@ -804,12 +1068,14 @@ const KendoDataTablesCrackerRunLength = ({
           </Button>
         )}
       </Box>
+
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
       />
+
       <Dialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}
@@ -829,6 +1095,7 @@ const KendoDataTablesCrackerRunLength = ({
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
@@ -848,6 +1115,7 @@ const KendoDataTablesCrackerRunLength = ({
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
@@ -875,6 +1143,107 @@ const KendoDataTablesCrackerRunLength = ({
           {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
           <Button onClick={handleRemarkSave} disabled={!currentRemark?.trim()}>
             Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={open} onClose={handleClose} maxWidth='xl' fullWidth>
+        <DialogTitle style={{ padding: '8px 16px', fontSize: '16px' }}>
+          Configuration for Next Year {nextYear}
+        </DialogTitle>
+
+        <DialogContent dividers style={{ padding: '8px' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              rowGap: '8px',
+              columnGap: '6px',
+            }}
+          >
+            {/* First Row */}
+            <div>
+              <label style={{ fontSize: '14px' }}>Start Date</label>
+              <DatePicker
+                id='start-date-1'
+                format='dd-MM-yyyy'
+                value={startDate}
+                onChange={(e) => setStartDate(e.value)}
+                style={{ width: '100%' }}
+                size='small'
+                popupSettings={{
+                  appendTo: document.body,
+                  style: { zIndex: 1302 },
+                }}
+              />
+            </div>
+
+            {['H10', 'H11', 'H12'].map((label) => (
+              <div key={label}>
+                <label style={{ fontSize: '14px' }}>{label}</label>
+                <input
+                  type='text'
+                  value={hValues[label]}
+                  onChange={(e) => handleChange(label, e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '30px',
+                    padding: '2px 6px',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+            ))}
+
+            {/* Second Row */}
+            {['H13', 'H14', 'Demo'].map((label) => (
+              <div key={label}>
+                <label style={{ fontSize: '14px' }}>{label}</label>
+                <input
+                  type='text'
+                  value={hValues[label]}
+                  onChange={(e) => handleChange(label, e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '30px',
+                    padding: '2px 6px',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+            ))}
+
+            {/* Calculate Button in last column of 2nd row */}
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button
+                onClick={() => handleCalculate2(hValues)}
+                style={{
+                  width: '40%',
+                  height: '30px',
+                  fontSize: '14px',
+                }}
+              >
+                Calculate
+              </button>
+            </div>
+          </div>
+
+          {/* Grid Rendering */}
+          <div style={{ marginTop: '12px' }}>
+            <Tooltip openDelay={50} position='default' anchorElement='target'>
+              {renderGrid3()}
+            </Tooltip>
+          </div>
+          <div style={{ marginTop: '12px' }}>
+            <Tooltip openDelay={50} position='default' anchorElement='target'>
+              {renderGrid2()}
+            </Tooltip>
+          </div>
+        </DialogContent>
+
+        <DialogActions style={{ padding: '4px 8px' }}>
+          <Button onClick={() => setOpen(false)} size='small'>
+            Cancel
           </Button>
         </DialogActions>
       </Dialog>
