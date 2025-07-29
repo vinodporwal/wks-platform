@@ -14,7 +14,6 @@ import ConsumptionNorms from 'components/kendo-data-tables/ConsumptionNorms'
 import DecokingConfig from 'components/kendo-data-tables/KendoConfigCrackerActivities'
 import CrackerConfig from 'components/kendo-data-tables/KendoConfigCrackerInput'
 import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCrackerOutput'
-import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
 import MaintenanceTable from 'components/kendo-data-tables/MaintenanceTable'
 import NormalOpNormsScreen from 'components/kendo-data-tables/NormalOpNorms'
 import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
@@ -39,6 +38,7 @@ import { TaskList } from 'views/taskList/taskList'
 // import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasisPe'
 import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/ProductionVolumeDataBasisPe'
 import NormsHistorianBasisPe from 'components/data-tables/Reports/NormsHistorianBasisPe'
+import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
 import { Navigate } from '../../node_modules/react-router-dom/dist/index'
 import PrivateRoute from './PrivateRoutes'
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
@@ -198,6 +198,7 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='configuration'>
                 <ConfigurationTable />
+                {/* <Configuration /> */}
               </PrivateRoute>
             ),
             // element: <SelectivityData />,

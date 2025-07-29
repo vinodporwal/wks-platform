@@ -8,15 +8,9 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-} from '../../../node_modules/@mui/material/index'
+import { Box } from '../../../node_modules/@mui/material/index'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import KendoDataTables from './index'
-import KendoDataTablesReports from './index-reports'
 import KendoDataTablesReciepe from './index-reports-receipe'
 
 const SelectivityData = (props) => {
@@ -307,7 +301,7 @@ const SelectivityData = (props) => {
     )
       getAllGrades()
 
-    if (props?.configType !== 'grades' && lowerVertName !== 'cracker') {
+    if (props?.configType !== 'grades') {
       props?.fetchData()
     }
 

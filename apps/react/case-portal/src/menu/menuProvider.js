@@ -38,6 +38,7 @@ export function MenuProvider({ children }) {
       : STATIC_MENU_DEFAULT
   }, [verticalName])
   const [menuItems, setMenuItems] = useState(staticMenuForVertical)
+  const [permissions, setPermissions] = useState([])
   // const fetchMenuScreens = useCallback(
   //   async (currentToken, vId, pId, staticMenu) => {
   //     if (USE_STATIC_MENU) {
@@ -95,12 +96,6 @@ export function MenuProvider({ children }) {
         return staticMenu
       }
 
-      const cacheKey = `${currentToken}-${vId}-${pId}`
-
-      if (menuCache.has(cacheKey)) {
-        return menuCache.get(cacheKey)
-      }
-
       try {
         const res = await DataService.getScreenbyPlant(
           { token: currentToken },
@@ -113,6 +108,11 @@ export function MenuProvider({ children }) {
           return staticMenu
         }
 
+        const parsedPermissions = res?.permission
+          ? JSON.parse(res.permission)
+          : []
+        console.log('parsedPermissions', parsedPermissions)
+        setPermissions(parsedPermissions)
         const dynamic = res.data.map(mapScreen)
 
         const result =
@@ -120,10 +120,9 @@ export function MenuProvider({ children }) {
             ? dynamic
             : staticMenu
 
-        menuCache.set(cacheKey, result)
         return result
       } catch (err) {
-        menuCache.set(cacheKey, staticMenu)
+        setPermissions([])
         return staticMenu
       }
     },
@@ -156,7 +155,10 @@ export function MenuProvider({ children }) {
     fetchMenuScreens,
   ])
 
-  const menuValue = useMemo(() => ({ items: menuItems }), [menuItems])
+  const menuValue = useMemo(
+    () => ({ items: menuItems, permissions }),
+    [menuItems, permissions],
+  )
   return (
     <MenuContext.Provider value={menuValue}>{children}</MenuContext.Provider>
   )
