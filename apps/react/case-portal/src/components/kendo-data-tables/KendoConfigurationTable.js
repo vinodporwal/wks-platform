@@ -560,6 +560,16 @@ const ConfigurationTable = () => {
     }
   }, [tabs])
 
+  const one = configurationExecutionDetails.find(
+    (item) => item.Name === 'StartDate',
+  )
+  const two = configurationExecutionDetails.find(
+    (item) => item.Name === 'EndDate',
+  )
+
+  const startDate1 = new Date(one?.AttributeValue)
+  const endDate1 = new Date(two?.AttributeValue)
+
   const ConfigurationAccordian = useMemo(() => {
     return (
       <Box sx={{ mb: '0px' }}>
@@ -690,7 +700,7 @@ const ConfigurationTable = () => {
         </CustomAccordion>
       </Box>
     )
-  }, [startDate, endDate, summary])
+  }, [startDate, endDate, summary, startDate1, endDate1])
 
   const ConfigurationDialog = useMemo(() => {
     return (
@@ -729,14 +739,6 @@ const ConfigurationTable = () => {
       />
     )
   }
-  const one = configurationExecutionDetails.find(
-    (item) => item.Name === 'StartDate',
-  )
-  const two = configurationExecutionDetails.find(
-    (item) => item.Name === 'EndDate',
-  )
-  const startDate1 = new Date(one?.AttributeValue)
-  const endDate1 = new Date(two?.AttributeValue)
 
   if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']

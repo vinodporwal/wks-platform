@@ -1,25 +1,25 @@
-import { useEffect, useState, lazy, Suspense } from 'react'
-import { ThemeRoutes } from './routes'
-import ThemeCustomization from './themes'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { SessionStoreProvider } from './SessionStoreContext'
+import ThemeCustomization from './themes'
 // import {
 //   CaseService,
 //   //  RecordService
 // } from 'services'
-import { RegisterInjectUserSession, RegisteOptions } from './plugins'
-import { accountStore, sessionStore } from './store'
 import './App.css'
-import './extra-css.css'
 import './data-grid-css.css'
+import './extra-css.css'
 import './jio-grid-style.css'
+import { RegisteOptions, RegisterInjectUserSession } from './plugins'
+import { accountStore, sessionStore } from './store'
 // import '@progress/kendo-theme-default/dist/all.css'
 // import '@progress/kendo-theme-bootstrap/dist/all.css'
-import '@progress/kendo-theme-fluent/dist/all.css'
 import '@progress/kendo-font-icons/dist/index.css'
+import '@progress/kendo-theme-fluent/dist/all.css'
 
 // import { useSelector } from 'react-redux'
 import Layout from 'layout/FooterLayout/index'
 import { MenuProvider } from 'menu/menuProvider'
+import ThemeRoutes from 'routes/index'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 

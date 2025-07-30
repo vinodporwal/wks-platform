@@ -350,7 +350,7 @@ export const MainRoutes = (
             path: 'production-volume-basis',
             element: (
               <PrivateRoute routeId='production-volume-basis'>
-                <ProductionVolumeDataBasisElement />
+                {ProductionVolumeDataBasisElement}
               </PrivateRoute>
             ),
           },
@@ -358,7 +358,7 @@ export const MainRoutes = (
             path: 'norms-historian-basis',
             element: (
               <PrivateRoute routeId='norms-historian-basis'>
-                <NormsHistorianBasisElement />
+                {NormsHistorianBasisElement}
               </PrivateRoute>
             ),
           },
