@@ -4,10 +4,10 @@ import MuiAccordion from '@mui/material/Accordion'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import { styled } from '@mui/material/styles'
-
+import AopTabs from 'components/AopTabs'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
-
+import { usePermissions } from 'hooks/usePermissions'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -26,7 +26,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
-import AopTabs from 'components/AopTabs'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -101,6 +100,9 @@ const ConfigurationTable = () => {
   const [isEdited, setIsEdited] = useState(false)
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
 
+  const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
+    usePermissions()
+
   const handleOpenDialog = () => {
     setOpenConfirmDialog(true)
   }
@@ -111,16 +113,16 @@ const ConfigurationTable = () => {
     setOpenConfirmDialog(false)
     onLoad()
   }
+
   const fetchData = async () => {
     setProductionRows([])
     setProductionRowsConstants([])
     setProductionRowsConstantsMannualEntry([])
     setLoading(true)
+
     try {
       setLoading(true)
       var data = await DataService.getCatalystSelectivityData(keycloak)
-      console.log('lowerVertName', lowerVertName)
-      console.log('verticalEnums', verticalEnums)
       if (lowerVertName == 'meg' || lowerVertName == verticalEnums.CRACKER) {
         data = data?.filter((item) => item.normType !== 'Report Manual Entry')
         const formattedData = data.map((item, index) => ({
@@ -129,7 +131,7 @@ const ConfigurationTable = () => {
           id: index,
           originalRemark: item.remarks,
           srNo: index + 1,
-          Particulars: item?.normType,
+          Particulars: item.normType,
         }))
         setProductionRows(formattedData)
         if (data) {
@@ -201,6 +203,7 @@ const ConfigurationTable = () => {
       setLoading(false)
     }
   }
+
   const fetchDataConstants = async () => {
     setProductionRowsConstants([])
     try {
@@ -296,6 +299,7 @@ const ConfigurationTable = () => {
       setLoading(false)
     }
   }
+
   useEffect(() => {
     getConfigurationExecutionDetails()
     getAopSummary()
@@ -319,6 +323,7 @@ const ConfigurationTable = () => {
     // setStartDate(startDate)
     // setEndDate(endDate)
   }, [oldYear, yearChanged, keycloak, plantID])
+
   const computeAndSetDates = useCallback(() => {
     setStartDate('')
     setEndDate('')
@@ -560,6 +565,15 @@ const ConfigurationTable = () => {
     }
   }, [tabs])
 
+  const one = configurationExecutionDetails.find(
+    (item) => item.Name === 'StartDate',
+  )
+  const two = configurationExecutionDetails.find(
+    (item) => item.Name === 'EndDate',
+  )
+  const startDate1 = new Date(one?.AttributeValue)
+  const endDate1 = new Date(two?.AttributeValue)
+
   const ConfigurationAccordian = useMemo(() => {
     return (
       <Box sx={{ mb: '0px' }}>
@@ -690,7 +704,7 @@ const ConfigurationTable = () => {
         </CustomAccordion>
       </Box>
     )
-  }, [startDate, endDate, summary])
+  }, [startDate, endDate, summary, startDate1, endDate1])
 
   const ConfigurationDialog = useMemo(() => {
     return (
@@ -729,14 +743,6 @@ const ConfigurationTable = () => {
       />
     )
   }
-  const one = configurationExecutionDetails.find(
-    (item) => item.Name === 'StartDate',
-  )
-  const two = configurationExecutionDetails.find(
-    (item) => item.Name === 'EndDate',
-  )
-  const startDate1 = new Date(one?.AttributeValue)
-  const endDate1 = new Date(two?.AttributeValue)
 
   if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
@@ -827,6 +833,7 @@ const ConfigurationTable = () => {
       </div>
     )
   }
+
   if (lowerVertName === 'cracker') {
     const crackerTabs = ['Configuration', 'Constants']
     const auditYear = localStorage.getItem('year')
@@ -900,6 +907,7 @@ const ConfigurationTable = () => {
       </div>
     )
   }
+
   return (
     <div>
       <Backdrop
@@ -930,7 +938,8 @@ const ConfigurationTable = () => {
             const tabInfo = availableTabs.find(
               (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
             )
-            return tabInfo?.displayName || 'loading..'
+            // console.log('tabInfo', tabInfo)
+            if (tabInfo) return tabInfo?.displayName || 'loading..'
           })}
         />
 

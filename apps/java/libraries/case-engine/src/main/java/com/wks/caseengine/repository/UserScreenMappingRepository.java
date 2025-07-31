@@ -23,7 +23,12 @@ public interface UserScreenMappingRepository extends JpaRepository<UserScreenMap
 	
 	@Modifying
 	@Transactional
-	@Query(value="DELETE FROM [UserScreenMapping] where UserId=:userId", nativeQuery=true)
-	void deleteAllByUserId(@Param("userId") String userId);
+	@Query(value="DELETE FROM [UserScreenMapping] where UserId=:userId and PlantFKId=:plantFKId", nativeQuery=true)
+	void deleteAllByUserId(@Param("userId") String userId,@Param("plantFKId") String plantFKId);
+	
+	@Query(value="SELECT Distinct permissions"
+			+ "  FROM [dbo].[UserScreenMapping] where UserId=:userId and PlantFKId=:plantId and VerticalFKId=:verticalId", nativeQuery=true)
+	List<String> findPermissionsByVerticalFKIdAndPlantFKIdandUserId(@Param("verticalId") String verticalId, @Param("plantId") String plantId, @Param("userId") String userId);
+
 
 }

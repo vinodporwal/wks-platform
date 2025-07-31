@@ -3,8 +3,10 @@ import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import '@progress/kendo-theme-default/dist/all.css'
 import React, { useCallback, useRef, useState } from 'react'
 import {
+  Backdrop,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -115,8 +117,12 @@ const KendoDataTablesCrackerRunLength = ({
   const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
   const [selectedGrade, setSelectedGrade] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const [openSaveDialogeBoxSingleRow, setOpenSaveDialogeBoxSingleRow] =
+    useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  const closeSaveDialogeBoxSingleRow = () =>
+    setOpenSaveDialogeBoxSingleRow(false)
   const [edit, setEdit] = useState({})
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
@@ -124,6 +130,21 @@ const KendoDataTablesCrackerRunLength = ({
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   const [rowsPopUp, setRowsPopUp] = useState([])
   const [singleRow, setSingleRow] = useState([])
+  const [modifiedCellsSingleRow, setModifiedCellsSingleRow] = useState([])
+  const [modifiedCellsDayWise, setModifiedCellsDayWise] = useState([])
+
+  const keycloak = useSession()
+  const [loading1, setLoading1] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [startDate, setStartDate] = useState(null)
+  const [hValues, setHValues] = useState({
+    H10: '0',
+    H11: '0',
+    H12: '0',
+    H13: '0',
+    H14: '0',
+    Demo: 'SAD',
+  })
 
   const fileInputRef = useRef(null)
   const handleEditChange = useCallback((e) => {
@@ -288,6 +309,181 @@ const KendoDataTablesCrackerRunLength = ({
     },
     [setRows, setModifiedCells],
   )
+  const itemChangeDayWise = useCallback(
+    (e) => {
+      const { dataItem, field, value } = e
+      const itemId = dataItem.id
+
+      setRowsPopUp((prevRows) =>
+        prevRows.map((row) =>
+          row.id === itemId ? { ...row, [field]: value } : row,
+        ),
+      )
+
+      let updatedRows = []
+
+      if (value?.toUpperCase() === 'SAD' && dataItem[field] !== 'SAD') {
+        setTimeout(() => {
+          setRowsPopUp((prevRows) => {
+            const editedIndex = prevRows.findIndex((r) => r.id === itemId)
+            updatedRows = [...prevRows]
+
+            const next = prevRows[editedIndex + 1]?.[field]
+            const nextNext = prevRows[editedIndex + 2]?.[field]
+
+            const isNextNonNumeric =
+              editedIndex + 1 < prevRows.length && isNaN(Number(next))
+            const isNextNextNonNumeric =
+              editedIndex + 2 < prevRows.length && isNaN(Number(nextNext))
+
+            if (isNextNonNumeric || isNextNextNonNumeric) {
+              let anchorIndex = -1
+              for (let i = editedIndex - 1; i >= 1; i--) {
+                if (
+                  prevRows[i][field] === 'SAD' &&
+                  prevRows[i - 1]?.[field] === 'SAD'
+                ) {
+                  anchorIndex = i - 2
+                  break
+                }
+              }
+
+              let startValue = 0
+              if (
+                anchorIndex >= 0 &&
+                !isNaN(Number(prevRows[anchorIndex][field]))
+              ) {
+                startValue = Number(prevRows[anchorIndex][field]) + 1
+              }
+
+              let counter = startValue
+
+              updatedRows = prevRows.map((row, index) => {
+                const updatedRow = { ...row }
+
+                if (index > anchorIndex && index < editedIndex - 1) {
+                  updatedRow[field] = counter++
+                }
+
+                if (
+                  index <= editedIndex - 2 &&
+                  prevRows[index][field] === 'SAD' &&
+                  prevRows[index + 1]?.[field] === 'SAD'
+                ) {
+                  updatedRow.demo = 'SD'
+                }
+                if (
+                  index <= editedIndex - 1 &&
+                  prevRows[index - 1]?.[field] === 'SAD' &&
+                  prevRows[index][field] === 'SAD'
+                ) {
+                  updatedRow.demo = 'SD'
+                }
+                if (
+                  index <= editedIndex - 3 &&
+                  prevRows[index + 1]?.[field] === 'SAD' &&
+                  prevRows[index + 2]?.[field] === 'SAD'
+                ) {
+                  // updatedRow.demo = 'BBU'
+                  updatedRow.demo = 'SD'
+                }
+
+                if (isNextNonNumeric) {
+                  if (index === editedIndex - 2) {
+                    updatedRow.demo = 'BBU'
+                  }
+                  if (index === editedIndex - 1) {
+                    updatedRow[field] = 'SAD'
+                    updatedRow.demo = 1
+                  }
+                  if (index === editedIndex) {
+                    updatedRow[field] = 'SAD'
+                    updatedRow.demo = 2
+                  }
+
+                  // Continue demo numbering: 3, 4, ... until a non-numeric is encountered
+                  if (index > editedIndex) {
+                    const currentDemo = prevRows[index]?.demo
+                    if (!isNaN(Number(currentDemo))) {
+                      updatedRow.demo = index - editedIndex + 2 // demo = 3, 4, 5...
+                    } else {
+                      // stop numbering when non-numeric encountered
+                      updatedRow.demo = prevRows[index]?.demo
+                    }
+                  }
+                }
+
+                if (!isNextNonNumeric && isNextNextNonNumeric) {
+                  if (index === editedIndex - 1) {
+                    updatedRow.demo = 'BBU'
+                  }
+                  if (index === editedIndex) {
+                    updatedRow[field] = 'SAD'
+                    updatedRow.demo = 1
+                  }
+                  if (index === editedIndex + 1) {
+                    updatedRow[field] = 'SAD'
+                    updatedRow.demo = 2
+                  }
+
+                  // Continue demo numbering: 3, 4, ... until a non-numeric is encountered
+                  if (index > editedIndex + 1) {
+                    const currentDemo = prevRows[index]?.demo
+                    if (!isNaN(Number(currentDemo))) {
+                      updatedRow.demo = index - editedIndex + 1 // demo = 3, 4, 5...
+                    } else {
+                      // stop numbering when non-numeric encountered
+                      updatedRow.demo = prevRows[index]?.demo
+                    }
+                  }
+                }
+
+                return updatedRow
+              })
+            }
+
+            setModifiedCellsSingleRow(() => updatedRows)
+            return updatedRows
+          })
+        }, 150)
+      } else {
+        setModifiedCellsDayWise((prev) => {
+          const base = { ...dataItem, [field]: value }
+          return { ...prev, [itemId]: base }
+        })
+      }
+    },
+    [setRowsPopUp, setModifiedCellsDayWise],
+  )
+  const itemChangeSingleRow = useCallback(
+    (e) => {
+      const { dataItem, field, value } = e
+      const itemId = dataItem.id
+
+      setSingleRow((prevRows) =>
+        prevRows.map((row) =>
+          row.id === itemId ? { ...row, [field]: value } : row,
+        ),
+      )
+
+      setModifiedCellsSingleRow((prev) => {
+        const base = { ...dataItem, [field]: value }
+        return { ...prev, [itemId]: base }
+      })
+    },
+    [setSingleRow, setModifiedCellsSingleRow],
+  )
+
+  const handleOpen = () => {
+    setOpen(true)
+    fetchDataNextYearParameters()
+  }
+
+  const handleClose = () => setOpen(false)
+
+  const handleChange = (key, value) => {
+    setHValues((prev) => ({ ...prev, [key]: value }))
+  }
 
   const handleRemarkSave = () => {
     setRows((prevRows) => {
@@ -319,6 +515,10 @@ const KendoDataTablesCrackerRunLength = ({
     setOpenSaveDialogeBox(false)
     setEdit({})
   }
+  const saveConfirmationSingleRow = async () => {
+    handleSave()
+    setOpenSaveDialogeBoxSingleRow(false)
+  }
   const handleDeleteClick = async (params) => {
     setParamsForDelete(params)
     setOpenDeleteDialogeBox(true)
@@ -344,6 +544,9 @@ const KendoDataTablesCrackerRunLength = ({
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
+  }
+  const saveModalOpenSingleRow = async () => {
+    setOpenSaveDialogeBoxSingleRow(true)
   }
   const saveModalOpenForPopup = async () => {}
 
@@ -571,7 +774,7 @@ const KendoDataTablesCrackerRunLength = ({
     <Grid
       style={{ height: 600 }}
       scrollable={'virtual'}
-      rowHeight={35}
+      rowHeight={40}
       data={rows}
       total={rows.length}
       sortable={{
@@ -631,7 +834,6 @@ const KendoDataTablesCrackerRunLength = ({
               columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
               sortable={!!col.filter}
               className={col.isDisabled ? 'k-right-disabled' : ''}
-              headerCell={SimpleHeaderWithTooltip}
               cells={{
                 headerCell: SimpleHeaderWithTooltip,
               }}
@@ -650,11 +852,10 @@ const KendoDataTablesCrackerRunLength = ({
             columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
             sortable={!!col.filter}
             className={col.isDisabled ? 'k-right-disabled' : ''}
-            headerCell={SimpleHeaderWithTooltip}
             cells={
               col.editable
                 ? { data: CellWithState, headerCell: SimpleHeaderWithTooltip }
-                : undefined
+                : { headerCell: SimpleHeaderWithTooltip }
             }
           />
         )
@@ -677,11 +878,11 @@ const KendoDataTablesCrackerRunLength = ({
     </Grid>
   )
 
-  const renderGrid2 = () => (
+  const renderGridDayWise = () => (
     <Grid
       style={{ height: 500 }}
       scrollable={'virtual'}
-      rowHeight={35}
+      rowHeight={40}
       data={rowsPopUp}
       total={rowsPopUp?.length}
       sortable={{
@@ -690,7 +891,7 @@ const KendoDataTablesCrackerRunLength = ({
       sort={sort}
       defaultSkip={0}
       defaultTake={100}
-      onItemChange={itemChange}
+      onItemChange={itemChangeDayWise}
       dataItemKey='id'
       size='small'
       autoProcessData={true}
@@ -785,86 +986,162 @@ const KendoDataTablesCrackerRunLength = ({
     </Grid>
   )
 
-  const renderGrid3 = () => {
-    if (!singleRow) return null
+  // const renderGrid3 = () => {
+  //   if (!singleRow) return null
 
-    return (
-      <div style={{ overflowX: 'auto', marginTop: '12px' }}>
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '13px',
+  //   return (
+  //     <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+  //       <table
+  //         style={{
+  //           width: '100%',
+  //           borderCollapse: 'collapse',
+  //           fontSize: '13px',
+  //         }}
+  //       >
+  //         <thead>
+  //           <tr style={{ backgroundColor: '#f9f9f9', textAlign: 'left' }}>
+  //             {singleRowColumn.map((col) => (
+  //               <th
+  //                 key={col.field}
+  //                 style={{
+  //                   padding: '8px 10px',
+  //                   border: '1px solid #ddd',
+  //                   whiteSpace: 'nowrap',
+  //                   fontWeight: '500',
+  //                 }}
+  //               >
+  //                 {col.title || col.headerName || col.field}
+  //               </th>
+  //             ))}
+  //           </tr>
+  //         </thead>
+  //         <tbody>
+  //           <tr>
+  //             {singleRowColumn.map((col) => (
+  //               <td
+  //                 key={col.field}
+  //                 style={{
+  //                   padding: '8px 10px',
+  //                   border: '1px solid #ddd',
+  //                   textAlign: 'left',
+  //                   whiteSpace: 'nowrap',
+  //                 }}
+  //               >
+  //                 {col.field === 'date'
+  //                   ? moment(singleRow[col.field]).format('DD-MM-YYYY')
+  //                   : singleRow[col.field] ?? ''}
+  //               </td>
+  //             ))}
+  //           </tr>
+  //         </tbody>
+  //       </table>
+  //     </div>
+  //   )
+  // }
+
+  const renderGridSingleRow = () => (
+    <Grid
+      scrollable={'virtual'}
+      rowHeight={40}
+      data={singleRow}
+      sortable={{
+        mode: 'multiple',
+      }}
+      sort={sort}
+      onItemChange={itemChangeSingleRow}
+      dataItemKey='id'
+      size='small'
+      autoProcessData={true}
+    >
+      {singleRowColumn.map((col) => {
+        if (
+          dateFields1.includes(col.field) ||
+          dateFieldsRunLength.includes(col.field)
+        ) {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              format='{0:dd-MM-yyyy}'
+              editor='date'
+              hidden={col.hidden}
+              sortable={false}
+              cells={{
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+              className={
+                dateFieldsRunLength.includes(col.field)
+                  ? 'k-right-disabled'
+                  : ''
+              }
+            />
+          )
+        }
+
+        if (!col.editable) {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              hidden={col.hidden}
+              sortable={!!col.filter}
+              className={col.isDisabled ? 'k-right-disabled' : ''}
+              cells={{
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+            />
+          )
+        }
+
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            // width={col.widthT}
+            hidden={col.hidden}
+            columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+            sortable={!!col.filter}
+            className={col.isDisabled ? 'k-right-disabled' : ''}
+            cells={
+              col.editable
+                ? { data: CellWithState, headerCell: SimpleHeaderWithTooltip }
+                : { headerCell: SimpleHeaderWithTooltip }
+            }
+          />
+        )
+      })}
+
+      {permissions?.deleteButton && (
+        <GridColumn
+          key='actions'
+          field='actions'
+          title='Action'
+          width={80}
+          className='k-text-center'
+          filterable={false}
+          editable={false}
+          cells={{
+            data: ActionsCell,
           }}
-        >
-          <thead>
-            <tr style={{ backgroundColor: '#f9f9f9', textAlign: 'left' }}>
-              {singleRowColumn.map((col) => (
-                <th
-                  key={col.field}
-                  style={{
-                    padding: '8px 10px',
-                    border: '1px solid #ddd',
-                    whiteSpace: 'nowrap',
-                    fontWeight: '500',
-                  }}
-                >
-                  {col.title || col.headerName || col.field}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              {singleRowColumn.map((col) => (
-                <td
-                  key={col.field}
-                  style={{
-                    padding: '8px 10px',
-                    border: '1px solid #ddd',
-                    textAlign: 'left',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {col.field === 'date'
-                    ? moment(singleRow[col.field]).format('DD-MM-YYYY')
-                    : singleRow[col.field] ?? ''}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-
-  const [open, setOpen] = useState(false)
-  const [startDate, setStartDate] = useState(null)
-  const [hValues, setHValues] = useState({
-    H10: '10',
-    H11: '11',
-    H12: '12',
-    H13: '13',
-    H14: '14',
-    Demo: '16',
-  })
-
-  const handleOpen = () => setOpen(true)
-  const handleClose = () => setOpen(false)
-
-  const handleChange = (key, value) => {
-    setHValues((prev) => ({ ...prev, [key]: value }))
-  }
+        />
+      )}
+    </Grid>
+  )
 
   const handleCalculate2 = (hValues) => {
-    // console.log('Start Date:', startDate)
-    // console.log('Entered Values:', hValues)
-    fetchData()
+    fetchDataNextYearCalculate(hValues, startDate)
+    // fetchDataNew(startDate, hValues)
+  }
+  const handleSave = () => {
+    // console.log('singleRow', singleRow)
+    saveCrackerRunLength(singleRow)
   }
 
-  const keycloak = useSession()
-
   const fetchData = useCallback(async () => {
+    setLoading1(true)
     try {
       const data3 = await DataService.getIbrScreen3(keycloak)
       const toDateObject = (value) =>
@@ -901,21 +1178,21 @@ const KendoDataTablesCrackerRunLength = ({
           date: nextDate,
           month: nextMonthName,
           month_: nextMonthName,
-          hTenActual: incrementIfNumber(lastRow.hTenActual),
-          tenProposed: incrementIfNumber(lastRow.tenProposed),
-          hElevenActual: incrementIfNumber(lastRow.hElevenActual),
-          elevenProposed: incrementIfNumber(lastRow.elevenProposed),
-          hTwelveActual: incrementIfNumber(lastRow.hTwelveActual),
-          twelveProposed: incrementIfNumber(lastRow.twelveProposed),
-          hThirteenActual: incrementIfNumber(lastRow.hThirteenActual),
-          thirteenProposed: incrementIfNumber(lastRow.thirteenProposed),
-          hFourteenActual: incrementIfNumber(lastRow.hFourteenActual),
-          fourteenProposed: incrementIfNumber(lastRow.fourteenProposed),
+
+          tenProposed: incrementIfNumber(lastRow.hTenProposed),
+
+          elevenProposed: incrementIfNumber(lastRow.hElevenProposed),
+
+          twelveProposed: incrementIfNumber(lastRow.hTwelveProposed),
+
+          thirteenProposed: incrementIfNumber(lastRow.hThirteenProposed),
+
+          fourteenProposed: incrementIfNumber(lastRow.hFourteenProposed),
           idFromApi: generateRandomId(),
         }
 
         setRowsPopUp([...processedData, newRow])
-        setSingleRow(newRow)
+        setSingleRow([newRow])
       } else {
         setRowsPopUp([])
       }
@@ -923,8 +1200,189 @@ const KendoDataTablesCrackerRunLength = ({
       console.error('Error loading data:', err)
     } finally {
       // setLoading(false)
+      setLoading1(false)
     }
   }, [keycloak])
+
+  const saveCrackerRunLength = async (row) => {
+    setLoading1(true)
+    try {
+      var plantId = ''
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+      const payload = [
+        {
+          tenProposed: row[0]?.hTenProposed || null,
+          elevenProposed: row[0]?.hElevenProposed || null,
+          twelveProposed: row[0]?.hTwelveProposed || null,
+          thirteenProposed: row[0]?.hThirteenProposed || null,
+          fourteenProposed: row[0]?.hFourteenProposed || null,
+          plantId: plantId,
+          id: null,
+          demo: row[0]?.demo || null,
+          date: row[0]?.date,
+        },
+      ]
+
+      const response = await DataService.saveCrackerRunLength(
+        plantId,
+        payload,
+        keycloak,
+      )
+      if (response?.code == 200) {
+        // setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: 'Data Saved Successfully!',
+        //   severity: 'success',
+        // })
+        // setModifiedCellsRunLength({})
+        // setLoading(false)
+      } else {
+        // setSnackbarOpen(true)
+        // setSnackbarData({
+        //   message: 'Data Saved Falied!',
+        //   severity: 'error',
+        // })
+      }
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      // setLoading(false)
+    } finally {
+      // fetchData(3)
+      setLoading1(false)
+    }
+  }
+
+  const fetchDataNextYearParameters = useCallback(async () => {
+    setLoading1(true)
+    try {
+      const res = await DataService.getCrackerNextYearParameters(keycloak)
+
+      if (res?.code === 200 && Array.isArray(res.data) && res.data.length > 0) {
+        const item = res.data[0]
+
+        const mappedValues = {
+          H10: item.hTen || '0',
+          H11: item.hEleven || '0',
+          H12: item.hTwelve || '0',
+          H13: item.hThirteen || '0',
+          H14: item.hFourteen || '0',
+          Demo: item.demo || '',
+        }
+
+        setHValues(mappedValues)
+        setStartDate(item.startDate ? new Date(item.startDate) : null)
+
+        // const data4 = await DataService.getCrackerNextYearData(keycloak)
+      }
+    } catch (err) {
+      console.error('Error loading data:', err)
+    } finally {
+      // setLoading(false)
+      setLoading1(false)
+    }
+  }, [keycloak])
+
+  const fetchDataNextYearCalculate = useCallback(
+    async (hValuesParam, startDateParam) => {
+      setLoading1(true)
+      try {
+        const queryParams = {
+          h10: hValuesParam.H10,
+          h11: hValuesParam.H11,
+          h12: hValuesParam.H12,
+          h13: hValuesParam.H13,
+          h14: hValuesParam.H14,
+          startDate: moment(startDateParam).format('YYYY-MM-DD'),
+        }
+
+        const res = await DataService.getCrackerNextYearData(
+          keycloak,
+          queryParams,
+        )
+
+        if (
+          res?.code === 200 &&
+          Array.isArray(res.data) &&
+          res.data.length > 0
+        ) {
+          console.log('res.data', res.data)
+          const toDateObject = (value) =>
+            value ? moment(value, 'YYYY-MM-DD').toDate() : null
+
+          const processedData = res?.data?.map((item, index) => ({
+            ...item,
+            month_: item?.month,
+            id: index,
+            remarks: item?.remarks || '',
+            date: toDateObject(item.date),
+            tenProposed: item.hTenProposed,
+            hElevenActual: '',
+            elevenProposed: item.hElevenProposed,
+            hTwelveActual: '',
+            twelveProposed: item.hTwelveProposed,
+            hThirteenActual: '',
+            thirteenProposed: item.hThirteenProposed,
+            hFourteenActual: '',
+            fourteenProposed: item.hFourteenProposed,
+          }))
+          const lastRow = processedData[processedData.length - 1]
+          const incrementIfNumber = (val) =>
+            !isNaN(val) ? (parseInt(val, 10) + 1).toString() : val
+
+          const nextDate = toDateObject(moment(lastRow.date).add(1, 'month'))
+          const nextMonthName = moment(lastRow.date)
+            .add(1, 'month')
+            ?.format('MMMM')
+
+          const generateRandomId = () =>
+            `${Date.now()}-${Math.floor(Math.random() * 100000)}`
+
+          const newRow = {
+            ...lastRow,
+            id: lastRow.id + 1,
+            date: nextDate,
+            month: nextMonthName,
+            month_: nextMonthName,
+            hTenActual: '',
+            tenProposed: incrementIfNumber(lastRow.tenProposed),
+            hElevenActual: '',
+            elevenProposed: incrementIfNumber(lastRow.elevenProposed),
+            hTwelveActual: '',
+            twelveProposed: incrementIfNumber(lastRow.twelveProposed),
+            hThirteenActual: '',
+            thirteenProposed: incrementIfNumber(lastRow.thirteenProposed),
+            hFourteenActual: '',
+            fourteenProposed: incrementIfNumber(lastRow.fourteenProposed),
+            demo: incrementIfNumber(lastRow.demo),
+            idFromApi: generateRandomId(),
+          }
+
+          setRowsPopUp([...processedData, newRow])
+          setSingleRow([newRow])
+        }
+      } catch (err) {
+        setRowsPopUp([])
+        console.error('Error loading data:', err)
+      } finally {
+        // setLoading(false)
+        setLoading1(false)
+      }
+    },
+    [keycloak],
+  )
+
+  const fetchDataNew = useCallback(
+    async (date, hvalues) => {
+      // console.log('date', date)
+      // console.log('hvalues', hvalues)
+    },
+    [keycloak],
+  )
 
   return (
     <Box>
@@ -1117,6 +1575,27 @@ const KendoDataTablesCrackerRunLength = ({
       </Dialog>
 
       <Dialog
+        open={openSaveDialogeBoxSingleRow}
+        onClose={closeSaveDialogeBoxSingleRow}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        sx={{ zIndex: 2000 }} // Works in most cases
+      >
+        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+            Are you sure you want to save these changes?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeSaveDialogeBoxSingleRow}>Cancel</Button>
+          <Button onClick={saveConfirmationSingleRow} autoFocus>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
       >
@@ -1149,10 +1628,30 @@ const KendoDataTablesCrackerRunLength = ({
 
       <Dialog open={open} onClose={handleClose} maxWidth='xl' fullWidth>
         <DialogTitle style={{ padding: '8px 16px', fontSize: '16px' }}>
-          Configuration for Next Year {nextYear}
+          Configuration for Next Year ({nextYear})
         </DialogTitle>
 
         <DialogContent dividers style={{ padding: '8px' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'flex-end',
+            }}
+          >
+            <button
+              onClick={() => handleCalculate2(hValues)}
+              disabled={
+                !startDate ||
+                Object.values(hValues).some(
+                  (value) => value === null || value === '',
+                )
+              }
+              className='btn-save'
+            >
+              Calculate
+            </button>
+          </div>
           <div
             style={{
               display: 'grid',
@@ -1214,31 +1713,43 @@ const KendoDataTablesCrackerRunLength = ({
             ))}
 
             {/* Calculate Button in last column of 2nd row */}
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button
-                onClick={() => handleCalculate2(hValues)}
-                style={{
-                  width: '40%',
-                  height: '30px',
-                  fontSize: '14px',
-                }}
-              >
-                Calculate
-              </button>
-            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end', // aligns content to the right
+              alignItems: 'flex-end',
+            }}
+          >
+            <button
+              onClick={saveModalOpenSingleRow}
+              disabled={singleRow?.length === 0}
+              className='btn-save'
+            >
+              Save
+            </button>
           </div>
 
           {/* Grid Rendering */}
           <div style={{ marginTop: '12px' }}>
             <Tooltip openDelay={50} position='default' anchorElement='target'>
-              {renderGrid3()}
+              {renderGridSingleRow()}
             </Tooltip>
           </div>
+
           <div style={{ marginTop: '12px' }}>
             <Tooltip openDelay={50} position='default' anchorElement='target'>
-              {renderGrid2()}
+              {renderGridDayWise()}
             </Tooltip>
           </div>
+
+          <Backdrop
+            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={!!loading1}
+          >
+            <CircularProgress color='inherit' />
+          </Backdrop>
         </DialogContent>
 
         <DialogActions style={{ padding: '4px 8px' }}>
