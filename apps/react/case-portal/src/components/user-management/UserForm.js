@@ -231,7 +231,9 @@ const UserForm = ({ keycloak }) => {
       })
 
       setVerticalSites(newVerticalSites)
-    } catch (error) {}
+    } catch (error) {
+      //test
+    }
   }
 
   useEffect(() => {
