@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { ThemeRoutes } from './routes'
 import { SessionStoreProvider } from './SessionStoreContext'
 import ThemeCustomization from './themes'
 // import {
@@ -19,7 +20,6 @@ import '@progress/kendo-theme-fluent/dist/all.css'
 // import { useSelector } from 'react-redux'
 import Layout from 'layout/FooterLayout/index'
 import { MenuProvider } from 'menu/menuProvider'
-import ThemeRoutes from 'routes/index'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
