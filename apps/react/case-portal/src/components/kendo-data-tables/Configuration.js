@@ -683,8 +683,14 @@ const Configuration = memo(() => {
   ])
 
   // Memoized components
-  const DatePickerSection = memo(
-    ({ startDate, endDate, onStartDateChange, onEndDateChange }) => (
+
+  const DatePickerSection = memo(function DatePickerSection({
+    startDate,
+    endDate,
+    onStartDateChange,
+    onEndDateChange,
+  }) {
+    return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
           Start Date
@@ -709,11 +715,19 @@ const Configuration = memo(() => {
           size='large'
         />
       </Box>
-    ),
-  )
+    )
+  })
 
-  const ConfirmDialog = memo(
-    ({ open, onClose, onConfirm, startDate, endDate }) => (
+  DatePickerSection.displayName = 'DatePickerSection'
+
+  const ConfirmDialog = memo(function ConfirmDialog({
+    open,
+    onClose,
+    onConfirm,
+    startDate,
+    endDate,
+  }) {
+    return (
       <Dialog
         open={open}
         onClose={onClose}
@@ -723,7 +737,9 @@ const Configuration = memo(() => {
         <DialogTitle id='alert-dialog-title'>Load?</DialogTitle>
         <DialogContent>
           <DialogContentText id='alert-dialog-description'>
-            {`Are you sure you want to load data for the period from ${formatDateForText(startDate)} to ${formatDateForText(endDate)}?`}
+            {`Are you sure you want to load data for the period from ${formatDateForText(
+              startDate,
+            )} to ${formatDateForText(endDate)}?`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -733,8 +749,10 @@ const Configuration = memo(() => {
           </Button>
         </DialogActions>
       </Dialog>
-    ),
-  )
+    )
+  })
+
+  ConfirmDialog.displayName = 'ConfirmDialog'
 
   // Early returns for specific verticals
   if (lowerVertName === 'elastomer') {

@@ -215,9 +215,7 @@ const NormalOpNormsScreen = () => {
     setAllRedCell([])
 
     try {
-      const promises = [fetchData(gradeId), 
-        // getNormTransactions()
-      ]
+      const promises = [fetchData(gradeId), getNormTransactions()]
 
       if (lowerVertName === 'meg') {
         promises.push(fetchDataIntermediateValues())
@@ -262,12 +260,12 @@ const NormalOpNormsScreen = () => {
     {
       field: 'ProductName',
       title: 'Particulars',
-      width: 120,
+      widthT: 220,
     },
     {
       field: 'UOM',
       title: 'UOM',
-      width: 80,
+      widthT: 60,
       editable: false,
     },
     {
@@ -493,7 +491,7 @@ const NormalOpNormsScreen = () => {
 
           fetchData(gradeId)
           if (lowerVertName == 'meg') fetchDataIntermediateValues()
-          // getNormTransactions()
+          getNormTransactions()
         } else {
           setSnackbarOpen(true)
           setSnackbarData({
@@ -558,7 +556,7 @@ const NormalOpNormsScreen = () => {
           fetchGradeDropdowns()
         fetchData(gradeId)
         if (lowerVertName == 'meg') fetchDataIntermediateValues()
-        // getNormTransactions()
+        getNormTransactions()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

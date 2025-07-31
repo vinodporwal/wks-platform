@@ -388,23 +388,14 @@ const KendoDataTables = ({
   const CustomRow = useCallback(({ dataItem, className, ...rest }) => {
     const isDisabled =
       !dataItem.isEditable && dataItem?.isEditable !== undefined
-  // Check if this row has validation errors
-  const hasError = errorRows.has(dataItem.id)
-  // Build the className combining all conditions
-  let rowClassName = className || ''
-  if (isDisabled) {
-    rowClassName += ' custom-disabled-row'
-  }
-  if (hasError) {
-    rowClassName += ' error-row'
-  }
+    const rowClassName = isDisabled ? `custom-disabled-row` : className
 
     return (
-    <tr {...rest?.trProps} className={rowClassName.trim()}>
+      <tr {...rest?.trProps} className={rowClassName}>
         {rest.children}
       </tr>
     )
-}, [errorRows])
+  }, [])
 
   const toolTipRendererdescLimit = (props) => {
     const value = props.dataItem[props.field]
@@ -837,7 +828,7 @@ const KendoDataTables = ({
             defaultGroup={initialGroup}
             data={rows}
             rows={{ data: CustomRow }}
-            rowRender={CustomRow}
+            // rowRender={CustomRow}
             dataItemKey='id'
             editField='inEdit'
             editable={{ mode: 'incell' }}
@@ -1034,7 +1025,7 @@ const KendoDataTables = ({
                     key={col?.field}
                     field={col?.field}
                     title={col.title || col.headerName || 'Description'}
-                    width={col.width}
+                    width={col.widthT}
                     editable={true}
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
@@ -1157,8 +1148,7 @@ const KendoDataTables = ({
                     columnMenu={ColumnMenuCheckboxFilter}
                     hidden={col.hidden}
                     headerClassName={isActive ? 'active-column' : ''}
-                    // width={col.widthT || ''}
-                    width={170}
+                    width={col.widthT || ''}
                   />
                 )
               }

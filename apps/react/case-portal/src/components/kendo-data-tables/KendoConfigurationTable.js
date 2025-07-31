@@ -566,7 +566,6 @@ const ConfigurationTable = () => {
   const two = configurationExecutionDetails.find(
     (item) => item.Name === 'EndDate',
   )
-
   const startDate1 = new Date(one?.AttributeValue)
   const endDate1 = new Date(two?.AttributeValue)
 
@@ -854,7 +853,6 @@ const ConfigurationTable = () => {
           />
           {(() => {
             const currentTab = crackerTabs[tabIndex]?.toLowerCase()
-            console.log('🚀 ~ (() => { ~ currentTab:', currentTab)
             switch (currentTab) {
               case 'configuration':
                 return (

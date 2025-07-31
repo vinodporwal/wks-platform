@@ -6,6 +6,7 @@ const useFilteredMenu = () => {
   const keycloak = useSession()
   const { items: menuItems } = useMenuContext()
   const isPlantManager = keycloak?.realmAccess?.roles?.includes('plant_manager')
+  // const isPlantManager = true
 
   const filterMenuByRole = (items, hasPlantManagerRole) => {
     return items.map((item) => {

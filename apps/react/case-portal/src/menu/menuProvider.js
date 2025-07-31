@@ -111,7 +111,7 @@ export function MenuProvider({ children }) {
         const parsedPermissions = res?.permission
           ? JSON.parse(res.permission)
           : []
-        console.log('parsedPermissions', parsedPermissions)
+        // console.log('parsedPermissions', parsedPermissions)
         setPermissions(parsedPermissions)
         const dynamic = res.data.map(mapScreen)
 
@@ -138,7 +138,7 @@ export function MenuProvider({ children }) {
         plantId,
         staticMenuForVertical,
       )
-      console.log('items', items)
+      // console.log('items', items)
       if (!cancelled) {
         setMenuItems(items)
       }

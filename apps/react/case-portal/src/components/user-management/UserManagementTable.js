@@ -98,12 +98,14 @@ const UserManagementTable = ({ keycloak }) => {
   }, [])
   console.log('tempSelectedUsers', tempSelectedUsers)
   const handleAddPlantSite = () => {
+    const plantDataArray = tempSelectedUsers?.[0]?.attributes?.plants || []
+
     const revokeData = {
       type: tabIndex,
-      plantData: tempSelectedUsers[0]?.attributes?.plants[0] || [],
-      userId: selectedUsers[0].id,
+      plantData: plantDataArray[0] || {},
+      userId: selectedUsers?.[0]?.id || null,
     }
-    console.log('revokeData', revokeData, tempSelectedUsers)
+
     localStorage.setItem('revokeData', JSON.stringify(revokeData))
 
     navigate(`/user-form`, { state: { rows, tabIndex } })
@@ -407,7 +409,6 @@ const UserManagementTable = ({ keycloak }) => {
               }
             }}
             onChange={(e, newSel) => {
-              console.log('Single select onChange:', newSel)
               setSelectedSingleUser(newSel)
 
               // Update existing states for compatibility
