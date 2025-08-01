@@ -862,7 +862,7 @@ const ConfigurationTable = () => {
                     fetchData={fetchData}
                     setRows={setProductionRows}
                     configType='cracker_configuration'
-                    // groupBy='Particulars'
+                    groupBy='Particulars'
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
@@ -877,7 +877,7 @@ const ConfigurationTable = () => {
                     fetchData={fetchDataConstants}
                     setRows={setProductionRowsConstants}
                     configType='cracker_constants'
-                    // groupBy='Particulars'
+                    groupBy='Particulars'
                     summaryEdited={summaryEdited}
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
@@ -930,7 +930,8 @@ const ConfigurationTable = () => {
             const tabInfo = availableTabs.find(
               (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
             )
-            return tabInfo?.displayName || 'loading..'
+            // console.log('tabInfo', tabInfo)
+            if (tabInfo) return tabInfo?.displayName || 'loading..'
           })}
         />
 
