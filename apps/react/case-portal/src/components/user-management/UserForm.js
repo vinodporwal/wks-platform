@@ -89,6 +89,7 @@ const UserForm = ({ keycloak }) => {
         result,
         permissions: permissions ? permissions : [],
       }
+      console.log('dynamic', dynamic, result)
       return mergeResult
     } catch (err) {
       const mergeResult = {
@@ -115,8 +116,8 @@ const UserForm = ({ keycloak }) => {
         }
       }
     })
-
     // 2. Remove data for any deselected verticals
+    console.log('fetchPromises', newMap)
     Object.keys(newMap).forEach((vId) => {
       if (!selectedVerticals.includes(vId)) {
         delete newMap[vId]
@@ -125,7 +126,8 @@ const UserForm = ({ keycloak }) => {
 
     // 3. Wait for all fetches to complete, then update state
     await Promise.all(fetchPromises)
-
+    const testing = await Promise.all(fetchPromises)
+    console.log('fetchPromises', testing)
     setScreensByVertical(newMap)
   }
 
@@ -134,6 +136,26 @@ const UserForm = ({ keycloak }) => {
       fetchScreensForVerticals()
     }
   }, [selectedVerticals, keycloak])
+
+  const getAllScreens = (screens) => {
+    const result = []
+
+    const traverse = (nodes) => {
+      for (const node of nodes) {
+        if (node.type === 'item') {
+          result.push(node.title)
+        } else if (node.children) {
+          traverse(node.children)
+        }
+      }
+    }
+
+    if (Array.isArray(screens)) {
+      traverse(screens)
+    }
+
+    return result
+  }
 
   const getScreensForVerticals = async () => {
     setIsLoading(true)
@@ -171,16 +193,19 @@ const UserForm = ({ keycloak }) => {
           )) {
             const fetchScreen = await fetchMenuScreens(verticalId, plant.id)
             const screens = fetchScreen.result
+
+            const allScreens = getAllScreens(screens)
+            console.log('allScreens', allScreens)
             const permissions = fetchScreen.permissions
-            let plantScreens = []
+            // let plantScreens = []
+            // console.log('fetchScreen', screens)
 
-            if (screens?.length > 0 && screens[0].children?.length > 0) {
-              plantScreens = screens[0].children[0].children.map((s) => s.title)
-            }
-
+            // if (screens?.length > 0 && screens[0].children?.length > 0) {
+            //   plantScreens = screens[0].children[0].children.map((s) => s.title)
+            // }
             sitePlants.push({
               plantId: plant.id,
-              screens: plantScreens,
+              screens: allScreens,
               permissions,
             })
           }
@@ -621,7 +646,6 @@ const UserForm = ({ keycloak }) => {
         }),
       },
     }
-    console.log('selectedUsers', result)
     try {
       setLoading(true)
       let res = {}
@@ -643,9 +667,11 @@ const UserForm = ({ keycloak }) => {
         severity: 'success',
       })
       closeSaveDialogeBox()
-      navigate('/user-management', {
-        state: 'success',
-      })
+      setTimeout(() => {
+        navigate('/user-management', {
+          state: 'success',
+        })
+      }, 1000)
     } catch (error) {
       console.error('Update failed:', error)
       setSnackbarOpen(true)
