@@ -771,26 +771,9 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 					failedList.add(decokeRunLengthDTO);
 					continue;
 				}
-				if (decokeRunLengthDTO.getId() != null &&
-					    !decokeRunLengthDTO.getId().trim().isEmpty()) {
-					Optional<DecokeRunLength> decokeRunLengthopt = decokeRunLengthRepository
-							.findById(UUID.fromString(decokeRunLengthDTO.getId()));
-					if (decokeRunLengthopt.isPresent()) {
-						DecokeRunLength decokeRunLength = decokeRunLengthopt.get();
-						decokeRunLength.setH10Proposed(decokeRunLengthDTO.getTenProposed());
-						decokeRunLength.setH11Proposed(decokeRunLengthDTO.getElevenProposed());
-						decokeRunLength.setH12Proposed(decokeRunLengthDTO.getTwelveProposed());
-						decokeRunLength.setH13Proposed(decokeRunLengthDTO.getThirteenProposed());
-						decokeRunLength.setH14Proposed(decokeRunLengthDTO.getFourteenProposed());
-						decokeRunLength.setDemo(decokeRunLengthDTO.getDemo());
-						decokeRunLengthRepository.save(decokeRunLength);
-					} else {
-						decokeRunLengthDTO.setSaveStatus("Failed");
-						decokeRunLengthDTO.setErrDescription("Norm Paramter not found");
-						failedList.add(decokeRunLengthDTO);
-						continue;
-					}
-				}else {
+						String newyear=nextAcademicYear(year);
+						int deletedRecords=decokeRunLengthRepository.deleteByPlantFkIdAndAopYear(UUID.fromString(plantId),newyear);
+						System.out.println(deletedRecords);
 						DecokeRunLength decokeRunLength = new DecokeRunLength();
 						decokeRunLength.setH10Proposed(decokeRunLengthDTO.getTenProposed());
 						decokeRunLength.setH11Proposed(decokeRunLengthDTO.getElevenProposed());
@@ -809,9 +792,8 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 						}
 						decokeRunLength.setDate(parsedDate);
 						decokeRunLength.setPlantFkId(UUID.fromString(plantId));
-						decokeRunLength.setAopYear(year);
+						decokeRunLength.setAopYear(newyear);
 						decokeRunLengthRepository.save(decokeRunLength);
-				}
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -832,6 +814,17 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		aopMessageVM.setData(failedList);
 		return aopMessageVM;
 	}
+	
+	public static String nextAcademicYear(String yearStr) {
+	    String[] parts = yearStr.split("-");
+	    // e.g. yearStr="2025-26", parts[0]="2025"
+	    int start = Integer.parseInt(parts[0].trim());
+	    int next = start + 1;
+	    // Format next start and next+1
+	    return String.format("%04d-%02d", next, (next + 1) % 100);
+	    
+	}
+
 
 	@Override
 	public AOPMessageVM calculateDecokingActivities(String plantId, String aopYear) {
@@ -1029,7 +1022,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 	}
 
 	@Override
-	public AOPMessageVM getNextYearConfiguration(String plantId, String year) {
+	public AOPMessageVM getNextYearConfiguration(String plantId, String year,String startDate) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<NextYearConfigurationDTO> nextYearConfigurationDTOList = new ArrayList<>();
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
@@ -1037,7 +1030,7 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 		String viewName =  "vwScrn"+vertical.getName()+"ConfigurationNextYear";
 		try {
-			List<Object[]> nextYearConfiurationList = findNextYearConfiguration(year, UUID.fromString(plantId),  viewName);
+			List<Object[]> nextYearConfiurationList = findNextYearConfiguration(year, UUID.fromString(plantId),  viewName,startDate);
 			for (Object[] row : nextYearConfiurationList) {
 				NextYearConfigurationDTO dto = new NextYearConfigurationDTO();
 				dto.setStartDate(row[0] != null ? row[0].toString() : null);
@@ -1065,16 +1058,17 @@ public class DecokingActivitiesServiceImpl implements DecokingActivitiesService 
 
 	}
 	
-	public List<Object[]> findNextYearConfiguration(String aopYear, UUID plantId, String viewName) {
+	public List<Object[]> findNextYearConfiguration(String aopYear, UUID plantId, String viewName,String StartDate) {
 		try {
 			// 2. Construct SQL with dynamic view name
 						String sql = "SELECT * FROM " + viewName +
-								" WHERE Plant_FK_Id = :plantId and aopYear = :aopYear";
+								" WHERE Plant_FK_Id = :plantId and aopYear = :aopYear and StartDate = :StartDate";
 
 						// 3. Create and parameterize the native query
 						Query query = entityManager.createNativeQuery(sql);
 						query.setParameter("plantId", plantId);
 						query.setParameter("aopYear", aopYear);
+						query.setParameter("StartDate", StartDate);
 
 						// 4. Execute
 						return query.getResultList();

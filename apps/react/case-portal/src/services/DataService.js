@@ -3704,7 +3704,7 @@ async function saveSpyroOutputYield(payload, keycloak) {
 //   }
 // }
 
-async function getCrackerNextYearParameters(keycloak, mode, type) {
+async function getCrackerNextYearParameters(keycloak, date) {
   const year = localStorage
     .getItem('year')
     ?.replace(
@@ -3721,7 +3721,8 @@ async function getCrackerNextYearParameters(keycloak, mode, type) {
   const url =
     `${Config.CaseEngineUrl}/task/next-year/configuration` +
     `?year=${encodeURIComponent(year)}` +
-    `&plantId=${encodeURIComponent(plantId)}`
+    `&plantId=${encodeURIComponent(plantId)}` +
+    `&startDate=${encodeURIComponent(date)}`
 
   const headers = {
     Accept: 'application/json',

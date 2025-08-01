@@ -106,10 +106,10 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
           onItemChange={handleItemChange}
           resizable={true}
           defaultSkip={0}
-          defaultTake={100}
+          defaultTake={10}
           contextMenu={true}
           pageable={
-            rows?.length > 100
+            rows?.length > 10
               ? {
                   buttonCount: 4,
                   pageSizes: [10, 50, 100],
