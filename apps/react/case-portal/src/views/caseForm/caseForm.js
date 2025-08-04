@@ -1440,7 +1440,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       </div>
 
       <!-- Associated Faults -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
+      <div class="no-break" style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin-left: 1px; margin-right: 1px;">Associated Faults</h3>
         <p style="padding: 10px; margin: 0;"><strong>${getLabel('textField1')}</strong>: ${containerData.textField1}</p>
         ${formatDataGrid(containerData.dataGrid2, getLabel)}
@@ -1459,7 +1459,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     const files = containerData.file;
     content += `
       <!-- Analysis -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
+      <div class="no-break" style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Analysis</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('caseCauseCategory')}</strong>: ${caseCauseCategoryLabel}</p>
@@ -1490,7 +1490,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     if (containerData.RecommendationsRadio === 'yes') {
       content += `
       <!-- Data Grid 1 -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
+      <div class="no-break" style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px;  padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">${getLabel('dataGrid1')}</h3>
         ${formatDataGrid(containerData.dataGrid1, getLabel)}
       </div>
@@ -1500,7 +1500,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     // Value Realization section
     content += `
       <!-- Value Realization -->
-      <div style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
+      <div class="no-break" style="border: 1px solid #333; border-radius: 5px; margin-bottom: 20px; padding: 20px;">
         <h3 style="background-color: #333; color: #fff; padding: 10px; margin: 0;">Value Realization</h3>
         <div style="padding: 10px;">
           <p><strong>${getLabel('valueRealizationCategory')}</strong>: ${getValueRealizationCategoryLabel(containerData.valueRealizationCategory)}</p>
@@ -1547,25 +1547,63 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     const printContent = generatePrintContent(aCase, formStructure);
 
     // Open a new window and print the generated content
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
+    // const printWindow = window.open('', '_blank');
+    // if (printWindow) {
+    //   printWindow.document.write(`
+    // <html>
+    //   <head>
+    //     <title>Print Case Details</title>
+    //   </head>
+    //   <body>
+    //     ${printContent}
+    //   </body>
+    // </html>
+    //   `);
+    //   printWindow.document.close();
+    //   setTimeout(() => {
+    //     printWindow.print();
+    //   }, 500); // 500ms delay (you can adjust this if needed)
+    // } else {
+    //   console.error('Failed to open the print window.');
+    // }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+
+    <!DOCTYPE html>
     <html>
-      <head>
-        <title>Print Case Details</title>
-      </head>
-      <body>
-        ${printContent}
-      </body>
+    <head>
+      <title>Case Details - ${aCase.caseNo}</title>
+      <style>
+        @media print {
+          body { 
+            margin: 0; 
+          }
+          
+          .no-break {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      ${printContent}
+    </body>
     </html>
-      `);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 500); // 500ms delay (you can adjust this if needed)
-    } else {
-      console.error('Failed to open the print window.');
-    }
+    `);
+    doc.close();
+
+    iframe.onload = function () {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    };  
   }
 
   const close = () => {
