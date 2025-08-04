@@ -157,26 +157,46 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
 	@Value("${spring.mail.fromEmail}")
 	private String from;
+	
     @PersistenceContext(unitName = "db2")
     private EntityManager entityManager;
 
-    
  	@Value("${spring.datasource.db1.name}")
     private String db1Name;
+ 	
  	@Value("${ge.authentication.datasource}")
     private String geAuthenticationDatasource;
+ 	
  	@Value("${ge.authentication.id}")
     private String geAuthenticationId;
+ 	
  	@Value("${ge.authentication.password}")
     private String geAuthenticationPassword;
+ 	
  	@Value("${ge.authentication.api}")
     private String geAuthenticationAPI;
+ 	
  	@Value("${ge.users.api}")
     private String geUsersAPI;
+ 	
  	@Value("${ge.create_case.api}")
     private String geCreateCaseAPI;
+ 	
 	@Value("${ge.case_status.api}")
     private String geCaseStatusAPI;
+	
+ 	@Value("${ge.users.authenticate.api}")
+    private String geUsersAuthenticationAPI;
+    
+ 	@Value("${ge.users.authenticate.systemname}")
+    private String geUsersAuthenticationSystemName;
+ 	
+ 	@Value("${ge.users.authenticate.userid}")
+    private String geUsersAuthenticationUserId;
+ 	
+	@Value("${ge.users.authenticate.password}")
+    private String geUsersAuthenticationPassword;
+
 	@Override
 	public List<CaseDefinition> find(final Optional<Boolean> deployed) {
 		return commandExecutor.execute(
@@ -679,8 +699,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 			String reviewerUserId) throws Exception {
 		System.out.println("Calling Recommendation GEAPM API...");
 		System.out.println(dataGridEntry.toPrettyString().toString());
-		 String geAPMAcsessToken = geLogin();
-		 System.out.println("GE APM Acsess Token: " + geAPMAcsessToken);
+		 String geUserAcsessToken = authenticateGEUser();
+		 System.out.println("GE User Acsess Token: " + geUserAcsessToken);
 //		Boolean isFunctionalLocationAvailableInGEAPM = checkFunctionalLocationAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("equipmentFunctionLocation").asText());
 //		
 //		Boolean isUserAvailableInGEAPM = checkUserAvailableInGEAPM(geAPMAcsessToken, dataGridEntry.path("recommendationAssignedTo2").asText());
@@ -691,7 +711,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		 RestTemplate restTemplate = new RestTemplate();
 		 HttpHeaders headers = new HttpHeaders();
 		 headers.setContentType(MediaType.APPLICATION_JSON);
-	    headers.add("MeridiumToken", geAPMAcsessToken);
+	    headers.add("Authorization", "Bearer " + geUserAcsessToken);
 		String targetDateString = dataGridEntry.path("recommendationTargetCompletionDate1").asText();
 		SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
 		Date date = inputFormat.parse(targetDateString);
@@ -710,20 +730,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		requestBody.put("MI_REC_LONG_DESCR_TX", dataGridEntry.path("recommendationDescription1").asText());
 		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", targetDate);
          requestBody.put("MI_REC_PRIORITY_C", "2");
-//			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
-			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
+			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", dataGridEntry.path("RecommendationConfirmSAP3").asText().toUpperCase());
+//			requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
 		requestBody.put("CaseID", caseNo);
-//		requestBody.put("Auther_Domain_Id", "Devang.Bhatt@ril.com");
-//		requestBody.put("Pending_Approval_Domain_Id", "MIADMIN");
-//		requestBody.put("Approved_Domain_Id", "Vipul.Rupareliya@ril.com");
-//		requestBody.put("RECOMMENDATION_Des", "EED Headline");
-//		requestBody.put("MI_REC_BASIS", "Recommendation Basis EED");
-//		requestBody.put("MI_REC_LOC_ID_CHR", "JSR-CFP-Z357-Z357FV231A");
-//		requestBody.put("MI_REC_LONG_DESCR_TX", "EED Long Description");
-//		requestBody.put("MI_REC_TARGE_COMPL_DATE_DT", "2024-02-28 10:00:00");
-//		requestBody.put("MI_REC_PRIORITY_C", "2");
-//		requestBody.put("CC_REC_CREAT_SAP_REQUE_L", "N");
-//		requestBody.put("CaseID", "123456");
 		 System.out.println("GE APM Create Case body: " + requestBody.toString());
 
 		try {
@@ -1082,35 +1091,6 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	                        }
 
 	    return geUsers;
-	                }
-
-	private String geLogin() throws Exception {
-	    RestTemplate restTemplate = new RestTemplate();
-	    HttpHeaders headers = new HttpHeaders();
-	    headers.setContentType(MediaType.APPLICATION_JSON);
-	    Map<String, Object> requestBody = Map.of(
-	        "DatasourceId", geAuthenticationDatasource,
-	        "Id", geAuthenticationId,
-	        "Password", geAuthenticationPassword
-	    );
-	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-	    try {
-	        ResponseEntity<Map> response = restTemplate.postForEntity(geAuthenticationAPI, requestEntity, Map.class);
-	        System.out.println("Response Body: " + response.getBody());
-	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-	            return (String) response.getBody().getOrDefault("sessionId", "");
-	        } else {
-	            System.err.println("GE APM Authentication API failed: Non-successful response - " + response.getStatusCode());
-	        }
-	    } catch (RestClientException e) {
-	        System.err.println("GE APM Authentication API request failed: " + e.getMessage());
-	        throw new Exception("GE APM Authentication API request failed: " + e.getMessage());
-	    } catch (Exception e) {
-	        System.err.println("Unexpected error during authentication: " + e.getMessage());
-	        e.printStackTrace();
-	        throw new Exception("GE APM Authentication API request failed: " + e.getMessage());
-	    }
-	    return "";
 	}
 	
 	@Override
@@ -1554,6 +1534,64 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	    return cases;
 	}
 
+	private String geLogin() throws Exception {
+	    RestTemplate restTemplate = new RestTemplate();
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    Map<String, Object> requestBody = Map.of(
+	        "DatasourceId", geAuthenticationDatasource,
+	        "Id", geAuthenticationId,
+	        "Password", geAuthenticationPassword
+	    );
+	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+	    try {
+	        ResponseEntity<Map> response = restTemplate.postForEntity(geAuthenticationAPI, requestEntity, Map.class);
+	        System.out.println("Response Body: " + response.getBody());
+	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+	            return (String) response.getBody().getOrDefault("sessionId", "");
+	        } else {
+	            System.err.println("GE APM Authentication API failed: Non-successful response - " + response.getStatusCode());
+	        }
+	    } catch (RestClientException e) {
+	        System.err.println("GE APM Authentication API request failed: " + e.getMessage());
+	        throw new Exception("GE APM Authentication API request failed: " + e.getMessage());
+	    } catch (Exception e) {
+	        System.err.println("Unexpected error during authentication: " + e.getMessage());
+	        e.printStackTrace();
+	        throw new Exception("GE APM Authentication API request failed: " + e.getMessage());
+	    }
+	    return "";
+	}
+	
+	private String authenticateGEUser() throws Exception {
+	    RestTemplate restTemplate = new RestTemplate();
+	    HttpHeaders headers = new HttpHeaders();
+	    headers.setContentType(MediaType.APPLICATION_JSON);
+	    Map<String, Object> requestBody = Map.of(
+	        "SysName", geUsersAuthenticationSystemName,
+	        "UserID", geUsersAuthenticationUserId,
+	        "Password", geUsersAuthenticationPassword
+	    );
+	    HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+	    try {
+	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAuthenticationAPI, requestEntity, Map.class);
+	        System.out.println("Response Body: " + response.getBody());
+	        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+	            return (String) response.getBody().getOrDefault("Token", "");
+	        } else {
+	            System.err.println("EED Integraion Users Authentication API failed: Non-successful response - " + response.getStatusCode());
+	        }
+	    } catch (RestClientException e) {
+	        System.err.println("EED Integraion Users Authentication API request failed: " + e.getMessage());
+	        throw new Exception("EED Integraion Users Authentication API request failed: " + e.getMessage());
+	    } catch (Exception e) {
+	        System.err.println("Unexpected error during authentication: " + e.getMessage());
+	        e.printStackTrace();
+	        throw new Exception("EED Integraion Users Authentication API request failed: " + e.getMessage());
+	    }
+	    return "";
+	}
+	
 	private boolean isCaseReadyForClosure(Case caseDetails, ObjectMapper objectMapper) throws Exception {
 	    for (Attribute attribute : caseDetails.getAttributes()) {
 	        String attributeValue = attribute.getValue();
