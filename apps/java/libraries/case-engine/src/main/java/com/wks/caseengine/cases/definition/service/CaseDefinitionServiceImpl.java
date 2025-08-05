@@ -1060,9 +1060,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
  	    try {
  	        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
  	        ResponseEntity<Map> response = restTemplate.postForEntity(geUsersAPI, requestEntity, Map.class);
- 	        System.out.println("Response Code: " + response.getStatusCode());
-// 	        System.out.println("Response Body: " + response.getBody());
- 	      
+ 	        System.out.println("Response Code: " + response.getStatusCode()); 	      
 
 	        Map<String, Object> responseBody = response.getBody();
  	        if (responseBody != null && responseBody.get("output") instanceof Map) {
