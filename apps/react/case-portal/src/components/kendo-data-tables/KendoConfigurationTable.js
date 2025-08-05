@@ -256,7 +256,7 @@ const ConfigurationTable = () => {
     setLoading(true)
     try {
       var data = await DataService.getPeConfigData(keycloak)
-      const formattedData = data.map((item, index) => ({
+      const formattedData = data?.map((item, index) => ({
         ...item,
         id: index,
       }))
@@ -336,7 +336,7 @@ const ConfigurationTable = () => {
   }, [oldYear, yearChanged, keycloak, plantID])
 
   // if (!plantID || !year) {
-  //   return <Loader /> // ✅ Correct — render JSX conditionally
+  //   return <Loader /> //
   // }
 
   const computeAndSetDates = useCallback(() => {
@@ -345,10 +345,6 @@ const ConfigurationTable = () => {
     // if (!configurationExecutionDetails.length) return
     const hasModifiedOn = configurationExecutionDetails[0]?.ModifiedOn
     if (hasModifiedOn) {
-      // console.log(
-      //   'configurationExecutionDetails',
-      //   configurationExecutionDetails,
-      // )
       const getDateValue = (name) =>
         new Date(
           configurationExecutionDetails.find(
