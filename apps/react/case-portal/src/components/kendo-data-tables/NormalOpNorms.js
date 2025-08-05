@@ -90,12 +90,6 @@ const NormalOpNormsScreen = () => {
 
   const keycloak = useSession()
 
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-  }, [plantID])
-
   const fetchData = async (gradeId) => {
     if ((lowerVertName === 'pe' || lowerVertName === 'pp') && !gradeId) return
 

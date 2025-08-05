@@ -298,11 +298,16 @@ const KendoDataTables = ({
     },
     [setRows, setModifiedCells, setCustomModifiedCells],
   )
+
   useEffect(() => {
-    if (Object.keys(modifiedCells).length === 0) {
+    const isModifiedCellsEmpty = Object.keys(modifiedCells).length === 0
+    const isCustomModifiedCellsEmpty =
+      Object.keys(customModifiedCells).length === 0
+
+    if (isModifiedCellsEmpty && !isCustomModifiedCellsEmpty) {
       setCustomModifiedCells({})
     }
-  }, [modifiedCells])
+  }, [modifiedCells, customModifiedCells])
 
   const handleRemarkSave = () => {
     setRows((prevRows) => {
@@ -1000,7 +1005,7 @@ const KendoDataTables = ({
                             {...props}
                             customModifiedCells={customModifiedCells}
                             allRedCell={allRedCell}
-        disableRedHighlight={disableRedHighlight}
+                            disableRedHighlight={disableRedHighlight}
                           />
                         ),
                         headerCell: SimpleHeaderWithTooltip,
@@ -1052,7 +1057,7 @@ const KendoDataTables = ({
                             {...props}
                             customModifiedCells={customModifiedCells}
                             allRedCell={allRedCell}
-        disableRedHighlight={disableRedHighlight}
+                            disableRedHighlight={disableRedHighlight}
                           />
                         ),
                         headerCell: SimpleHeaderWithTooltip,
@@ -1297,7 +1302,7 @@ const KendoDataTables = ({
                             {...props}
                             customModifiedCells={customModifiedCells}
                             allRedCell={allRedCell}
-        disableRedHighlight={disableRedHighlight}
+                            disableRedHighlight={disableRedHighlight}
                           />
                         ),
                         headerCell: SimpleHeaderWithTooltip,
@@ -1330,7 +1335,7 @@ const KendoDataTables = ({
                             {...props}
                             customModifiedCells={customModifiedCells}
                             allRedCell={allRedCell}
-      disableRedHighlight={disableRedHighlight}
+                            disableRedHighlight={disableRedHighlight}
                           />
                         ),
                         headerCell: SimpleHeaderWithTooltip,
