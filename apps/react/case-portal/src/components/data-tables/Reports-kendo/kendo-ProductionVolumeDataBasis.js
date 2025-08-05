@@ -66,12 +66,11 @@ const ProductionVolumeDataBasis = () => {
   const [rowsRawData, setRowsRowData] = useState([])
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { sitePlantChange, verticalChange, yearChanged, oldYear } =
-    dataGridStore
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
-  const isOldYear = oldYear?.oldYear=== 1 
+  const { yearChanged, oldYear, plantID } = dataGridStore
+
+  const isOldYear = oldYear?.oldYear === 1
   const [loading, setLoading] = useState(false)
+  const [showGrids, setShowGrids] = useState({})
 
   function parseDDMMYYYY(dateStr) {
     if (!dateStr) return null
@@ -146,18 +145,32 @@ const ProductionVolumeDataBasis = () => {
   })
 
   useEffect(() => {
-    fetchData('MC', setRowsMC, selectedUnit)
-    fetchData('MC Yearwise', setRowsMCYearWise, selectedUnit)
-    fetchData('Calculated Data', setRowsCalculatedData, selectedUnit)
-    fetchData('RowData', setRowsRowData, selectedUnit)
-  }, [
-    sitePlantChange,
-    oldYear,
-    yearChanged,
-    keycloak,
-    lowerVertName,
-    selectedUnit,
-  ])
+    const fetchAllData = async () => {
+      setLoading(true)
+      await Promise.all([
+        fetchData('MC', setRowsMC, selectedUnit),
+        fetchData('MC Yearwise', setRowsMCYearWise, selectedUnit),
+        fetchData('Calculated Data', setRowsCalculatedData, selectedUnit),
+        fetchData('RowData', setRowsRowData, selectedUnit),
+      ])
+      setLoading(false)
+    }
+    fetchAllData()
+  }, [oldYear, yearChanged, keycloak, plantID, selectedUnit])
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setShowGrids((prev) => ({ ...prev, mc: true })), 100),
+      setTimeout(() => setShowGrids((prev) => ({ ...prev, year: true })), 300),
+      setTimeout(
+        () => setShowGrids((prev) => ({ ...prev, calculated: true })),
+        500,
+      ),
+      setTimeout(() => setShowGrids((prev) => ({ ...prev, raw: true })), 700),
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [])
+
   const exportRef1 = useRef(null)
   const exportRef2 = useRef(null)
   const exportRef3 = useRef(null)
@@ -188,8 +201,7 @@ const ProductionVolumeDataBasis = () => {
     .replace(/T/, ' ')
     .replace(/:/g, '-')
     .split('.')[0]
-  const fileName = `Production Volume Data Basis ${currentDateTime}.xlsx`
-
+  const fileName = `Production Volume Data Basis ${new Date().toISOString().replace(/T/, ' ').replace(/:/g, '-').split('.')[0]}.xlsx`
   return (
     <div>
       <Backdrop
@@ -201,55 +213,37 @@ const ProductionVolumeDataBasis = () => {
 
       {/* Export hidden ExcelExport instances */}
       <div style={{ display: 'none' }}>
-        <ExcelExport data={rowsMC} ref={exportRef1} fileName={fileName}>
-          {colsMC.map((col) => (
-            <ExcelExportColumn
-              key={col.field}
-              field={col.field}
-              title={col.title}
-            />
-          ))}
-        </ExcelExport>
-
-        <ExcelExport data={rowsMCYearWise} ref={exportRef2}>
-          {colsMCYearwise.map((col) => (
-            <ExcelExportColumn
-              key={col.field}
-              field={col.field}
-              title={col.title}
-            />
-          ))}
-        </ExcelExport>
-
-        <ExcelExport data={rowsCalculatedData} ref={exportRef3}>
-          {colsCalculatedData.map((col) => (
-            <ExcelExportColumn
-              key={col.field}
-              field={col.field}
-              title={col.title}
-            />
-          ))}
-        </ExcelExport>
-        <ExcelExport data={rowsRawData} ref={exportRef4}>
-          {colsRowData.map((col) => (
-            <ExcelExportColumn
-              key={col.field}
-              field={col.field}
-              title={col.title}
-            />
-          ))}
-        </ExcelExport>
+        {[rowsMC, rowsMCYearWise, rowsCalculatedData, rowsRawData].map(
+          (data, i) => (
+            <ExcelExport
+              key={i}
+              data={data}
+              ref={[exportRef1, exportRef2, exportRef3, exportRef4][i]}
+              fileName={fileName}
+            >
+              {[colsMC, colsMCYearwise, colsCalculatedData, colsRowData][i].map(
+                (col) => (
+                  <ExcelExportColumn
+                    key={col.field}
+                    field={col.field}
+                    title={col.title}
+                  />
+                ),
+              )}
+            </ExcelExport>
+          ),
+        )}
       </div>
 
       <Box display='flex' justifyContent='flex-end' mb='2px'>
-        {!isOldYear && ( 
-        <Button
-          variant='contained'
-          onClick={exportAllGrids}
-          className='btn-save'
-        >
-          Export
-        </Button>
+        {!isOldYear && (
+          <Button
+            variant='contained'
+            onClick={exportAllGrids}
+            className='btn-save'
+          >
+            Export
+          </Button>
         )}
         <TextField
           select
@@ -279,93 +273,60 @@ const ProductionVolumeDataBasis = () => {
       </Box>
 
       <Box display='flex' flexDirection='column' gap={2}>
-        <div>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                MC
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
-                  rows={rowsMC}
-                  columns={colsMC}
-                  permissions={{ allAction: false }}
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </div>
-
-        <div>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                MC Yearwise
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
-                  rows={rowsMCYearWise}
-                  columns={colsMCYearwise}
-                  permissions={{ allAction: false }}
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </div>
-
-        <div>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                Calculated Data
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
-                  rows={rowsCalculatedData}
-                  columns={colsCalculatedData}
-                  permissions={{ allAction: false }}
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </div>
-
-        <div>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                Raw Data
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <KendoDataGrid
-                  rows={rowsRawData}
-                  columns={colsRowData}
-                  permissions={{ allAction: false }}
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </div>
+        {[
+          {
+            label: 'MC',
+            visible: showGrids.mc,
+            rows: rowsMC,
+            cols: colsMC,
+          },
+          {
+            label: 'MC Yearwise',
+            visible: showGrids.year,
+            rows: rowsMCYearWise,
+            cols: colsMCYearwise,
+          },
+          {
+            label: 'Calculated Data',
+            visible: showGrids.calculated,
+            rows: rowsCalculatedData,
+            cols: colsCalculatedData,
+          },
+          {
+            label: 'Raw Data',
+            visible: showGrids.raw,
+            rows: rowsRawData,
+            cols: colsRowData,
+          },
+        ].map(
+          (section, index) =>
+            section.visible && (
+              <div key={index}>
+                <CustomAccordion defaultExpanded disableGutters>
+                  <CustomAccordionSummary
+                    aria-controls='meg-grid-content'
+                    id='meg-grid-header'
+                  >
+                    <Typography component='span' className='grid-title'>
+                      {section.label}
+                    </Typography>
+                  </CustomAccordionSummary>
+                  <CustomAccordionDetails>
+                    <Box sx={{ width: '100%', margin: 0 }}>
+                      <KendoDataGrid
+                        rows={section.rows}
+                        columns={section.cols}
+                        permissions={{
+                          allAction: false,
+                          isHeight: section.label === 'Calculated Data',
+                        }}
+                      />
+                    </Box>
+                  </CustomAccordionDetails>
+                </CustomAccordion>
+              </div>
+            ),
+        )}
       </Box>
     </div>
   )

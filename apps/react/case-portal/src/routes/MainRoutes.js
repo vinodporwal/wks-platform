@@ -54,13 +54,17 @@ export const MainRoutes = (
   )?.name
 
   const ProductionVolumeDataBasisElement =
-    verticalName == 'PE' ? (
+    verticalName == 'PE' || verticalName == 'PP' ? (
       <ProductionVolumeDataBasisPe />
     ) : (
       <ProductionVolumeDataBasis />
     )
   const NormsHistorianBasisElement =
-    verticalName == 'PE' ? <NormsHistorianBasisPe /> : <NormsHistorianBasis />
+    verticalName == 'PE' || verticalName == 'PP' ? (
+      <NormsHistorianBasisPe />
+    ) : (
+      <NormsHistorianBasis />
+    )
 
   let routes = {
     path: '/',

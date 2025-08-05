@@ -324,6 +324,7 @@ public class KeycloakUserService {
 
 			// Prepare mapping for this user
 			List<Map<String, List<Map<String, List<String>>>>> userPlantMapping = new ArrayList<>();
+			
 
 			if (attrObj instanceof Map) {
 				Map<String, Object> attrMap = (Map<String, Object>) attrObj;
@@ -343,6 +344,7 @@ public class KeycloakUserService {
 
 						for (Map<String, Object> plant : plantList) {
 							String plantId = (String) plant.get("plantId");
+							userScreenMappingRepository.deleteAllByUserId(userId,plantId);
 							List<String> screens = (List<String>) plant.get("screens");
 							List<String> permissions = (List<String>) plant.get("permission");
 
@@ -351,8 +353,9 @@ public class KeycloakUserService {
 							ObjectMapper objectMapper = new ObjectMapper();
 							String permissionsString = objectMapper.writeValueAsString(permissions);
 
-							userScreenMappingRepository.deleteAllByUserId(userId);
+							
 							List<UserScreenMapping> newMappings = new ArrayList<>();
+							
 
 							for (String screen : screens) {
 								UserScreenMapping userScreenMapping = new UserScreenMapping();
@@ -368,15 +371,7 @@ public class KeycloakUserService {
 							}
 
 							mappings=(userScreenMappingRepository.saveAll(newMappings));
-							for(UserScreenMapping UserScreenMapping:mappings) {
-								System.out.println("getScreenCode "+UserScreenMapping.getScreenCode());
-								System.out.println("getId "+UserScreenMapping.getId());
-								System.out.println("getPlantId "+UserScreenMapping.getPlantFKId());
-								System.out.println("getVerticalId "+UserScreenMapping.getVerticalFKId());
-								System.out.println("getUserId "+UserScreenMapping.getUserId());
-							}
-
-							userScreenMappingRepository.saveAll(newMappings);
+							
 						}
 
 						siteEntries.add(Map.of(siteId, plantIds));

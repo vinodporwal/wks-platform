@@ -126,7 +126,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<List<Object>> rows = new ArrayList<>();
 			// Data rows
 			for (ConfigurationDTO dto : dtoList) {
-				if (dto.getIsEditable() == null || dto.getIsEditable()) {
+				 
 					List<Object> list = new ArrayList<>();
 					list.add(dto.getNormType());
 					list.add(dto.getProductName());
@@ -149,7 +149,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						list.add(dto.getErrDescription());
 					}
 					rows.add(list);
-				}
 			}
 
 			List<String> innerHeaders = new ArrayList<>();
@@ -268,7 +267,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			String viewName = "vwScrn" + verticalName + "GetConfigTypes";
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")) {
+			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER") || verticalName.equalsIgnoreCase("CRACKER")) {
 
 				String procedureName = verticalName + "_GetConfiguration";
 				obj = findByYearAndPlantFkIdMEG(year, plantFKId, procedureName);
@@ -335,7 +334,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 				}
 
-				if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")) {
+				if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER") || verticalName.equalsIgnoreCase("CRACKER")) {
 
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUOM(row[15] != null ? row[15].toString() : "");
@@ -489,7 +488,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
 			String procedureName = verticalName + "_GetConfiguration_Constant";
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")) {
+			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER") || verticalName.equalsIgnoreCase("CRACKER")) {
 				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
 			}
 			for (Object[] row : obj) {
@@ -652,6 +651,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					configurationDTO.setSaveStatus("Failed");
 					configurationDTO.setErrDescription("Norm Paramter not found");
 					failedList.add(configurationDTO);
+					continue;
+				}
+				if(optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
 					continue;
 				}
 
@@ -842,7 +844,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		NormAttributeTransactions normAttributeTransactions;
 
 		if (existingRecord.isPresent()) {
-
+			
 			normAttributeTransactions = existingRecord.get();
 			normAttributeTransactions.setModifiedOn(new Date());
 		} else {
@@ -857,10 +859,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			//normAttributeTransactions.setAuditYear(configurationDTO.getAuditYear());
 			normAttributeTransactions.setAuditYear(year);
 		}
+		
+		
 
 		normAttributeTransactions.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
 		normAttributeTransactions.setRemarks(configurationDTO.getRemarks());
-
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
 	}
 

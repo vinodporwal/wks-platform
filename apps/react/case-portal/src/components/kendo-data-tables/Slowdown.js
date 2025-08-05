@@ -23,7 +23,7 @@ const SlowDown = ({ permissions }) => {
   const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
-
+  const [errorRows, setErrorRows] = useState(new Set())
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -248,7 +248,8 @@ const SlowDown = ({ permissions }) => {
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
-      if (data.length == 0) {
+
+      if (data.length === 0) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'No Records to Save!',
@@ -257,6 +258,7 @@ const SlowDown = ({ permissions }) => {
         return
       }
 
+      // Select required fields based on vertical
       const requiredFields = ['discription', 'remark']
       const requiredFieldsForElastomer = ['discription', 'remark', 'rate']
       const requiredFieldsForMeg = [
@@ -266,16 +268,36 @@ const SlowDown = ({ permissions }) => {
         'rateEO',
       ]
 
-      const validationMessage = validateFields(
-        data,
+      const chosenFields =
         lowerVertName === 'elastomer'
           ? requiredFieldsForElastomer
           : lowerVertName === 'meg'
             ? requiredFieldsForMeg
-            : requiredFields,
-      )
+            : requiredFields
 
+      // Missing required fields
+      for (const record of data) {
+        for (const field of chosenFields) {
+          const value = record[field]
+          if (
+            value === null ||
+            value === undefined ||
+            (typeof value === 'string' && value.trim() === '')
+          ) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Required field "${field}" is missing for "${record.discription || 'this record'}".`,
+              severity: 'error',
+            })
+            return
+          }
+        }
+      }
+
+      const validationMessage = validateFields(data, chosenFields)
       if (validationMessage) {
+        data.forEach((r) => (r.isError = true))
         setSnackbarOpen(true)
         setSnackbarData({
           message: validationMessage,
@@ -284,6 +306,7 @@ const SlowDown = ({ permissions }) => {
         return
       }
 
+      // Duplicate check
       const allDescriptions = rows.map((r) =>
         (r.discription || '').trim().toLowerCase(),
       )
@@ -292,23 +315,39 @@ const SlowDown = ({ permissions }) => {
       )
 
       if (duplicate) {
+        rows.forEach((row) => {
+          if ((row.discription || '').trim().toLowerCase() === duplicate) {
+            row.isError = true
+          }
+        })
         setSnackbarOpen(true)
         setSnackbarData({
-          message: `The description "${duplicate}" already exists in the list. Please enter a unique description to avoid duplication.`,
+          message: `The description "${duplicate}" already exists. Please enter a unique description.`,
           severity: 'error',
         })
         return
       }
 
-      const allRecords = [...rows]
-
+      // Date required + Start < End check
       for (const record of data) {
+        const startMissing = !record.maintStartDateTime
+        const endMissing = !record.maintEndDateTime
+        if (startMissing || endMissing) {
+          record.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Start Date and End Date are required for all records.',
+            severity: 'error',
+          })
+          return
+        }
         if (
           record.maintStartDateTime &&
           record.maintEndDateTime &&
           record.maintStartDateTime.getTime() >=
             record.maintEndDateTime.getTime()
         ) {
+          record.isError = true
           setSnackbarOpen(true)
           setSnackbarData({
             message: `Start time must be before end time for "${record.discription || 'this record'}".`,
@@ -318,52 +357,45 @@ const SlowDown = ({ permissions }) => {
         }
       }
 
-      // console.log('vertName', vertName)
-      // console.log('lowerVertName', lowerVertName)
-
-      if (lowerVertName == 'meg') {
-        for (const row of allRecords) {
+      // MEG specific checks
+      if (lowerVertName === 'meg') {
+        // Month span check
+        for (const row of rows) {
           const start = new Date(row.maintStartDateTime)
           const end = new Date(row.maintEndDateTime)
-
-          if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
-
-          const formatDate = (date) =>
-            date.toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })
+          if (isNaN(start) || isNaN(end)) continue
 
           const isSameMonth =
             start.getMonth() === end.getMonth() &&
             start.getFullYear() === end.getFullYear()
 
           if (!isSameMonth) {
+            row.isError = true
             setSnackbarOpen(true)
             setSnackbarData({
-              message: `The slowdown timeframe for '${row.discription}' spans multiple months (from ${formatDate(start, 'dd MMM yyyy')} to ${formatDate(end, 'dd MMM yyyy')}). Please split it into separate entries for each month.`,
+              message: `The slowdown timeframe for '${row.discription}' spans multiple months. Please split into separate entries.`,
               severity: 'error',
             })
             return
           }
         }
 
-        for (let i = 0; i < allRecords.length; i++) {
-          const a = allRecords[i]
+        // Overlap within Slowdown
+        for (let i = 0; i < rows.length; i++) {
+          const a = rows[i]
           const aStart = new Date(a.maintStartDateTime).getTime()
           const aEnd = new Date(a.maintEndDateTime).getTime()
-
           if (isNaN(aStart) || isNaN(aEnd)) continue
 
-          for (let j = i + 1; j < allRecords.length; j++) {
-            const b = allRecords[j]
+          for (let j = i + 1; j < rows.length; j++) {
+            const b = rows[j]
             const bStart = new Date(b.maintStartDateTime).getTime()
             const bEnd = new Date(b.maintEndDateTime).getTime()
-
             if (isNaN(bStart) || isNaN(bEnd)) continue
 
             if (aStart < bEnd && bStart < aEnd) {
+              a.isError = true
+              b.isError = true
               setSnackbarOpen(true)
               setSnackbarData({
                 message: `The slowdown timeframe for "${a.discription}" overlaps with "${b.discription}". Please ensure no overlapping of timeframes.`,
@@ -374,21 +406,21 @@ const SlowDown = ({ permissions }) => {
           }
         }
 
+        // Cross overlap with Shutdown
         for (let i = 0; i < rows.length; i++) {
           const a = rows[i]
           const aStart = new Date(a.maintStartDateTime).getTime()
           const aEnd = new Date(a.maintEndDateTime).getTime()
-
           if (isNaN(aStart) || isNaN(aEnd)) continue
 
           for (let j = 0; j < rowsShutdown.length; j++) {
             const b = rowsShutdown[j]
             const bStart = new Date(b.maintStartDateTime).getTime()
             const bEnd = new Date(b.maintEndDateTime).getTime()
-
             if (isNaN(bStart) || isNaN(bEnd)) continue
 
             if (aStart < bEnd && bStart < aEnd) {
+              a.isError = true
               setSnackbarOpen(true)
               setSnackbarData({
                 message: `The timeframe for "${a.discription} (Slowdown)" overlaps with "${b.discription} (Shutdown)". Please ensure no overlapping of timeframes.`,
@@ -400,11 +432,13 @@ const SlowDown = ({ permissions }) => {
         }
       }
 
+      // If validations pass
+      data.forEach((r) => (r.isError = false)) // Clear errors
       saveSlowDownData(data)
     } catch (error) {
-      // setIsSaving(false);
+      console.log('Error saving changes:', error)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, rows, rowsShutdown, lowerVertName])
 
   const saveChanges2 = React.useCallback(async () => {
     try {
@@ -778,6 +812,8 @@ const SlowDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${lowerVertName}_Slowdown / TA Activities`,
     },
     isOldYear,
   )
@@ -836,6 +872,7 @@ const SlowDown = ({ permissions }) => {
           paginationOptions={[100, 200, 300]}
           updateSlowdownData={updateSlowdownData}
           saveChanges={saveChanges}
+          errorRows={errorRows}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
@@ -858,6 +895,7 @@ const SlowDown = ({ permissions }) => {
           handleCancelClick={handleCancelClick}
           focusFirstField={focusFirstField}
           allProducts={allProducts}
+          disableRedHighlight={true}
         />
       )}
 
@@ -871,6 +909,7 @@ const SlowDown = ({ permissions }) => {
           paginationOptions={[100, 200, 300]}
           updateSlowdownData={updateSlowdownData2}
           saveChanges={saveChanges2}
+          errorRows={errorRows}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
@@ -882,7 +921,13 @@ const SlowDown = ({ permissions }) => {
           open1={open1}
           fetchData={fetchData2}
           unsavedChangesRef={unsavedChangesRef}
-          permissions={{ saveBtn: true, allAction: true, onlyCellUpdate: true }}
+          permissions={{
+            saveBtn: true,
+            allAction: true,
+            onlyCellUpdate: true,
+            downloadExcelBtnFromUI: true,
+            ExcelName: `${lowerVertName}_Slowdown Activities Configuration`,
+          }}
           handleCancelClick={handleCancelClick}
           groupBy='Particulars'
           allRedCell={allRedCell}

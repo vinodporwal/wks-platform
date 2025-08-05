@@ -14,9 +14,13 @@ import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { Typography } from '../../../node_modules/@mui/material/index'
 // import TextField from '@mui/material/TextField'
+// import { usePermissions } from 'hooks/usePermissions'
 import KendoDataTables from './index'
 
 const ProductionvolumeData = ({ permissions }) => {
+  // const { isReadOnly, isWriteOnly, isReadWrite, isFullAccess, isApproveOnly } =
+  //   usePermissions()
+
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
 
@@ -392,6 +396,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'materialFKId',
       title: 'Particulars',
+      widthT: 220,
 
       editable: false,
       hidden: true,
@@ -399,7 +404,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'productName',
       title: 'Particulars',
-
+      widthT: 220,
       editable: false,
     },
     {
@@ -551,6 +556,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'normParametersFKId',
       title: 'Particulars',
+      widthT: 220,
 
       editable: false,
       hidden: true,
@@ -558,6 +564,8 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'productName',
       title: 'Particulars',
+
+      widthT: 220,
 
       editable: false,
     },
@@ -809,16 +817,8 @@ const ProductionvolumeData = ({ permissions }) => {
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
-      downloadExcelBtn: permissions?.hideDownloadExcel
-        ? false
-        : lowerVertName == 'meg'
-          ? true
-          : false,
-      uploadExcelBtn: permissions?.hideUploadExcel
-        ? false
-        : lowerVertName == 'meg'
-          ? true
-          : false,
+      downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
+      uploadExcelBtn: permissions?.hideUploadExcel ? false : true,
     },
     isOldYear,
   )

@@ -157,6 +157,8 @@ export const DataService = {
   postIbr,
   getSpyroOutputDataYield,
   saveSpyroOutputYield,
+  getCrackerNextYearParameters,
+  getCrackerNextYearData,
 }
 async function handleRefresh(year, plantId, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/handleRefresh?year=${year}&plantId=${plantId}`
@@ -923,8 +925,11 @@ async function getUserScreen(keycloak, verticalId) {
     return await Promise.reject(e)
   }
 }
-async function getScreenbyPlant(keycloak, verticalId, plantId) {
-  const url = `${Config.CaseEngineUrl}/task/user/screen?verticalId=${verticalId}&plantId=${plantId}`
+async function getScreenbyPlant(keycloak, verticalId, plantId, userId) {
+  let url = `${Config.CaseEngineUrl}/task/user/screen?verticalId=${verticalId}&plantId=${plantId}`
+  if (userId) {
+    url += `&userId=${userId}`
+  }
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2108,13 +2113,6 @@ async function saveSpyroOutput(payload, keycloak, plantId) {
   }
 }
 async function getSpyroOutputData(keycloak, mode, type) {
-  const needsOperationSuffix = ['5F', '4F', '4F+D']
-  const modeForApi =
-    needsOperationSuffix.includes(mode) &&
-    !mode.toLowerCase().includes('operation')
-      ? `${mode} Operation`
-      : mode
-
   const year = localStorage.getItem('year')
   let plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -2127,7 +2125,7 @@ async function getSpyroOutputData(keycloak, mode, type) {
     `${Config.CaseEngineUrl}/task/spyro-output` +
     `?year=${encodeURIComponent(year)}` +
     `&plantId=${encodeURIComponent(plantId)}` +
-    `&Mode=${encodeURIComponent(modeForApi)}` +
+    `&Mode=${encodeURIComponent(mode)}` +
     `&type=${encodeURIComponent(type)}`
 
   const headers = {
@@ -3674,5 +3672,106 @@ async function saveSpyroOutputYield(payload, keycloak) {
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
+  }
+}
+
+// async function getCrackerNextYearParameters(keycloak) {
+//   const year = localStorage.getItem('year')
+//   let plantId = ''
+//   const storedPlant = localStorage.getItem('selectedPlant')
+//   if (storedPlant) {
+//     const parsedPlant = JSON.parse(storedPlant)
+//     plantId = parsedPlant.id
+//   }
+
+//   const url =
+//     `${Config.CaseEngineUrl}/task/next-year/configuration` +
+//     `?year=${encodeURIComponent(year)}` +
+//     `&plantId=${encodeURIComponent(plantId)}`
+
+//   const headers = {
+//     Accept: 'application/json',
+//     'Content-Type': 'application/json',
+//     Authorization: `Bearer ${keycloak.token}`,
+//   }
+
+//   try {
+//     const resp = await fetch(url, { method: 'GET', headers })
+//     return json(keycloak, resp)
+//   } catch (e) {
+//     console.error('Failed to fetch spyro-output data', e)
+//     return Promise.reject(e)
+//   }
+// }
+
+async function getCrackerNextYearParameters(keycloak, date) {
+  const year = localStorage.getItem('year')
+  let plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+
+  const url =
+    `${Config.CaseEngineUrl}/task/next-year/configuration` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    `&startDate=${encodeURIComponent(date)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch spyro-output data', e)
+    return Promise.reject(e)
+  }
+}
+async function getCrackerNextYearData(keycloak, qParams) {
+  const year = localStorage
+    .getItem('year')
+    ?.replace(
+      /(\d{4})-(\d{2})/,
+      (_, a, b) => `${+a + 1}-${String((+b + 1) % 100).padStart(2, '0')}`,
+    )
+
+  let plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+
+  const extraQueryString = Object.entries(qParams)
+    .map(
+      ([key, value]) =>
+        `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+    )
+    .join('')
+
+  const url =
+    `${Config.CaseEngineUrl}/task/next-year/entry` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    extraQueryString
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch next-year data', e)
+    return Promise.reject(e)
   }
 }

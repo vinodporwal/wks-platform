@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react'
-import { DataService } from 'services/DataService'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { useSession } from 'SessionStoreContext'
-import { useSelector } from 'react-redux'
-import { useDispatch } from 'react-redux'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import getEnhancedColDefsByProducts from 'components/data-tables/CommonHeader/Kendo_ProductionAopHeaderByProducts'
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopHeader'
 import KendoDataTables from './index'
-import getEnhancedColDefsByProducts from 'components/data-tables/CommonHeader/Kendo_ProductionAopHeaderByProducts'
 
 const ProductionNorms = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -684,12 +683,14 @@ const ProductionNorms = ({ permissions }) => {
       allAction: permissions?.allAction ?? true,
       showNote: true,
       showCalculateVisibility:
-        Object.keys(calculationObject).length > 0
+        calculationObject && Object.keys(calculationObject).length > 0
           ? permissions?.showCalculate ?? true
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       customHeight: permissions?.customHeight,
+      downloadExcelBtnFromUI: !permissions?.hideExportBtn,
+      ExcelName: `${lowerVertName}_Production Target`,
     },
     isOldYear,
   )
@@ -705,12 +706,13 @@ const ProductionNorms = ({ permissions }) => {
       showCalculate: permissions?.showCalculate ?? false,
       allAction: permissions?.allAction ?? true,
       showCalculateVisibility:
-        Object.keys(calculationObject).length > 0
+        calculationObject && Object.keys(calculationObject).length > 0
           ? permissions?.showCalculate ?? true
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
-
+      downloadExcelBtnFromUI: !permissions?.hideExportBtn,
+      ExcelName: `${lowerVertName}_Production Target`,
       customHeight: permissions?.customHeight,
     },
     isOldYear,

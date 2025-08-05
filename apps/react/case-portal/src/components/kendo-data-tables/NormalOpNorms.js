@@ -260,12 +260,12 @@ const NormalOpNormsScreen = () => {
     {
       field: 'ProductName',
       title: 'Particulars',
-      width: 120,
+      widthT: 220,
     },
     {
       field: 'UOM',
       title: 'UOM',
-      width: 80,
+      widthT: 60,
       editable: false,
     },
     {
@@ -610,8 +610,8 @@ const NormalOpNormsScreen = () => {
 
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
-      downloadExcelBtn: lowerVertName == 'meg' ? true : false,
-      uploadExcelBtn: lowerVertName == 'meg' ? true : false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
     },
     isOldYear,
   )
@@ -643,6 +643,9 @@ const NormalOpNormsScreen = () => {
       saveBtn: false,
       showCalculate: false,
       allAction: true,
+
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${lowerVertName}_Intermediate Values`,
     },
     isOldYear,
   )
