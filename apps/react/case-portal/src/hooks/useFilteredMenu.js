@@ -11,6 +11,9 @@ const useFilteredMenu = () => {
   // const isPlantManager = true
 
   const filterMenuByRole = (items) => {
+    if (!keycloak?.idTokenParsed?.plants) {
+      return []
+    }
     return items.map((item, index) => {
       if (item.type === 'group' && item.children) {
         const filteredChildren = item.children.filter((child) => {
