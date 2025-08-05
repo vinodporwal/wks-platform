@@ -1044,6 +1044,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	@Override
 	public List<com.wks.caseengine.rest.db2.entity.Users> getGEUsers() throws Exception {
 	    List<com.wks.caseengine.rest.db2.entity.Users> geUsers = new ArrayList<>();
+	    
+ 	    System.out.println("Truststore------------------------: " + System.getProperty("javax.net.ssl.trustStore"));
+
+ 	    System.out.println("Truststore Password-------------: " + System.getProperty("javax.net.ssl.trustStorePassword"));  
+ 	    
 	    String geAPMAcsessToken = geLogin();
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
