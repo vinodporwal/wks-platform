@@ -415,9 +415,11 @@ const SelectivityData = (props) => {
         lowerVertName == 'meg' || lowerVertName == 'cracker' ? true : false,
       showLoad: true,
       allAction: true,
-      showG: props?.configType === 'cracker_configuration' ? true : false,
+      // showG: props?.configType === 'cracker_configuration' ? true : false,
+      showG: false,
       dropdownLabel: 'Select Mode',
-      marginTop: props?.configType === 'cracker_configuration' ? true : false,
+      // marginTop: props?.configType === 'cracker_configuration' ? true : false,
+      marginTop: false,
     },
     isOldYear,
   )
