@@ -140,28 +140,28 @@ const NormalOpNormsScreen = () => {
       setGrades([])
 
       if (lowerVertName === 'cracker') {
-        setGrades([
-          {
-            name: 'Monthly',
-            displayName: 'Monthly',
-            gradeId: 'Monthly',
-          },
-          {
-            name: '4F',
-            displayName: '4F',
-            gradeId: '4F',
-          },
-          {
-            name: '5F',
-            displayName: '5F',
-            gradeId: '5F',
-          },
-          {
-            name: '4F+D',
-            displayName: '4F+D',
-            gradeId: '4F+D',
-          },
-        ])
+        // setGrades([
+        //   {
+        //     name: 'Monthly',
+        //     displayName: 'Monthly',
+        //     gradeId: 'Monthly',
+        //   },
+        //   {
+        //     name: '4F',
+        //     displayName: '4F',
+        //     gradeId: '4F',
+        //   },
+        //   {
+        //     name: '5F',
+        //     displayName: '5F',
+        //     gradeId: '5F',
+        //   },
+        //   {
+        //     name: '4F+D',
+        //     displayName: '4F+D',
+        //     gradeId: '4F+D',
+        //   },
+        // ])
         return
       }
 
@@ -631,12 +631,7 @@ const NormalOpNormsScreen = () => {
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: true,
-      showG:
-        lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
-        lowerVertName === 'cracker'
-          ? true
-          : false,
+      showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
       dropdownLabel:
         lowerVertName === 'pe' || lowerVertName === 'pp'
           ? 'Select Grade'
