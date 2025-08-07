@@ -47,7 +47,7 @@
     "@progress/kendo-svg-icons": "^4.3.0",
     "@progress/kendo-theme-bootstrap": "^11.0.2",
     "@progress/kendo-theme-default": "^11.0.2",
-    "@progress/kendo-theme-fluent": "^11.0.2",
+    "@progress/kendo-theme-fluent": "^6.2.0",
     "@reduxjs/toolkit": "^2.2.3",
     "@syncfusion/ej2-react-kanban": "^20.4.42",
     "@tabler/icons-react": "^3.2.0",
