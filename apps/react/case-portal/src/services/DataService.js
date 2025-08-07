@@ -1341,29 +1341,33 @@ async function getSlowdownNormsData(keycloak) {
     return await Promise.reject(e)
   }
 }
-async function getCatalystSelectivityData(keycloak) {
-  var plantId = ''
+async function getCatalystSelectivityData(keycloak, grade) {
+  console.log('grade', grade)
+
+  let plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
   if (storedPlant) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
-  // let siteID =
-  //   JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
-  var year = localStorage.getItem('year')
-  //const url = `${process.env.REACT_APP_API_URL}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
-  const url = `${Config.CaseEngineUrl}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
+  const year = localStorage.getItem('year')
+  let url = `${Config.CaseEngineUrl}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
+  if (grade) {
+    url += `&mode=${encodeURIComponent(grade)}`
+  }
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
+
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
-    return await Promise.reject(e)
+    return Promise.reject(e)
   }
 }
 async function getCatalystSelectivityDataConstants(keycloak) {
@@ -2951,7 +2955,7 @@ async function exportSpyroOutputExcel(keycloak, mode) {
     plantId = parsedPlant.id
   }
 
-  const url = `${Config.CaseEngineUrl}/task/spyro-output-export-excel?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&Mode=${encodeURIComponent(mode)}`
+  const url = `${Config.CaseEngineUrl}/task/spyro-output-export-excel?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&mode=${encodeURIComponent(mode)}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -3051,7 +3055,7 @@ async function exportSpyroInputExcel(keycloak, mode) {
 }
 
 //--
-async function getConfigurationExcel(keycloak) {
+async function getConfigurationExcel(keycloak, grade) {
   var year = localStorage.getItem('year')
   var plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -3059,7 +3063,12 @@ async function getConfigurationExcel(keycloak) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
-  const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${year}&plantId=${plantId}`
+  let url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${year}&plantId=${plantId}`
+
+  if (grade) {
+    url += `&mode=${encodeURIComponent(grade)}`
+  }
+
   //const url = `${Config.CaseEngineUrl}/task/norms-export-excel?year=${year}&plantId=${plantId}`
   const headers = {
     'Content-Type': 'application/json',
