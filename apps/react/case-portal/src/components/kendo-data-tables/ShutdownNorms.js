@@ -325,8 +325,7 @@ const ShutdownNorms = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-
-      // Fetch data from API
+      setRows([])
       const data = await DataService.getShutdownNormsData(keycloak)
       const isTPD = selectedUnit === 'TPD'
 
@@ -493,6 +492,8 @@ const ShutdownNorms = () => {
       showCalculate: lowerVertName == 'meg' ? false : true,
       // noColor: true,
       allAction: true,
+      downloadExcelBtnFromUI: true,
+      ExcelName: `${lowerVertName}_Shutdown Consumption (Quantity)`,
     },
     isOldYear,
   )

@@ -126,7 +126,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<List<Object>> rows = new ArrayList<>();
 			// Data rows
 			for (ConfigurationDTO dto : dtoList) {
-				if (dto.getIsEditable() == null || dto.getIsEditable()) {
+				 
 					List<Object> list = new ArrayList<>();
 					list.add(dto.getNormType());
 					list.add(dto.getProductName());
@@ -149,7 +149,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						list.add(dto.getErrDescription());
 					}
 					rows.add(list);
-				}
 			}
 
 			List<String> innerHeaders = new ArrayList<>();
@@ -654,6 +653,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					failedList.add(configurationDTO);
 					continue;
 				}
+				if(optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
+					continue;
+				}
 
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(configurationDTO, i);
@@ -842,7 +844,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		NormAttributeTransactions normAttributeTransactions;
 
 		if (existingRecord.isPresent()) {
-
+			
 			normAttributeTransactions = existingRecord.get();
 			normAttributeTransactions.setModifiedOn(new Date());
 		} else {
@@ -857,10 +859,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			//normAttributeTransactions.setAuditYear(configurationDTO.getAuditYear());
 			normAttributeTransactions.setAuditYear(year);
 		}
+		
+		
 
 		normAttributeTransactions.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
 		normAttributeTransactions.setRemarks(configurationDTO.getRemarks());
-
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
 	}
 
@@ -1106,6 +1109,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	
 
 	public List<Object[]> findConstantsByYearAndPlantFkId(String aopYear, String plantId, String procedureName) {
 		try {
@@ -1284,25 +1289,26 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				Row row = rowIterator.next();
 				ConfigurationDTO dto = new ConfigurationDTO();
 				try {
-					dto.setUOM(getStringCellValue(row.getCell(1), dto));
-					dto.setProductName(getStringCellValue(row.getCell(0), dto));
+					dto.setTypeName(getStringCellValue(row.getCell(0), dto));
+					dto.setUOM(getStringCellValue(row.getCell(2), dto));
+					dto.setProductName(getStringCellValue(row.getCell(1), dto));
 					//dto.setAuditYear(year);
-					dto.setApr(getNumericCellValue(row.getCell(2), dto));
-					dto.setMay(getNumericCellValue(row.getCell(2), dto));
-					dto.setJun(getNumericCellValue(row.getCell(2), dto));
-					dto.setJul(getNumericCellValue(row.getCell(2), dto));
-					dto.setAug(getNumericCellValue(row.getCell(2), dto));
-					dto.setSep(getNumericCellValue(row.getCell(2), dto));
-					dto.setOct(getNumericCellValue(row.getCell(2), dto));
-					dto.setNov(getNumericCellValue(row.getCell(2), dto));
-					dto.setDec(getNumericCellValue(row.getCell(2), dto));
-					dto.setJan(getNumericCellValue(row.getCell(2), dto));
-					dto.setFeb(getNumericCellValue(row.getCell(2), dto));
-					dto.setMar(getNumericCellValue(row.getCell(2), dto));
-					dto.setRemarks(getStringCellValue(row.getCell(3), dto));
+					dto.setApr(getNumericCellValue(row.getCell(3), dto));
+					dto.setMay(getNumericCellValue(row.getCell(3), dto));
+					dto.setJun(getNumericCellValue(row.getCell(3), dto));
+					dto.setJul(getNumericCellValue(row.getCell(3), dto));
+					dto.setAug(getNumericCellValue(row.getCell(3), dto));
+					dto.setSep(getNumericCellValue(row.getCell(3), dto));
+					dto.setOct(getNumericCellValue(row.getCell(3), dto));
+					dto.setNov(getNumericCellValue(row.getCell(3), dto));
+					dto.setDec(getNumericCellValue(row.getCell(3), dto));
+					dto.setJan(getNumericCellValue(row.getCell(3), dto));
+					dto.setFeb(getNumericCellValue(row.getCell(3), dto));
+					dto.setMar(getNumericCellValue(row.getCell(3), dto));
+					dto.setRemarks(getStringCellValue(row.getCell(4), dto));
 					//dto.setTypeName(getStringCellValue(row.getCell(4), dto));
-					if (row.getCell(4) != null) {
-						dto.setNormParameterFKId(getStringCellValue(row.getCell(4), dto));
+					if (row.getCell(5) != null) {
+						dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
 					} else {
 						dto.setSaveStatus("Failed");
 					
@@ -1398,7 +1404,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			String procedureName = verticalName + "_GetConfiguration_Constant";
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")) {
+			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER") || verticalName.equalsIgnoreCase("Cracker")) {
 				obj = findConstantsByYearAndPlantFkId(year, plantFKId.toString(), procedureName);
 			}
 			Workbook workbook = new XSSFWorkbook();
@@ -1422,11 +1428,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					isEditable = false; // or default
 				}
 				if (isEditable) {
+					list.add(row[0]);
 					list.add(row[3]);
 					list.add(row[4]);
 					list.add(row[5]);
 					list.add(row[7]);
-					//list.add(row[0]);
 					list.add(row[1]);
 					//list.add(row[2]);
 					//list.add(row[6]);
@@ -1436,7 +1442,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 
 			List<String> innerHeaders = new ArrayList<>();
-
+			innerHeaders.add("Type");
 			innerHeaders.add("Particulars");
 			innerHeaders.add("UOM");
 			innerHeaders.add("Value");
@@ -1477,7 +1483,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 				}
 			}
-			sheet.setColumnHidden(4, true);
+			sheet.setColumnHidden(5, true);
 			//sheet.setColumnHidden(5, true);
 			//sheet.setColumnHidden(6, true);
 			//sheet.setColumnHidden(7, true);

@@ -96,7 +96,7 @@ const UserManagementTable = ({ keycloak }) => {
     }
     return newRow
   }, [])
-  console.log('tempSelectedUsers', tempSelectedUsers)
+
   const handleAddPlantSite = () => {
     const plantDataArray = tempSelectedUsers?.[0]?.attributes?.plants || []
 

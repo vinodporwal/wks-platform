@@ -225,6 +225,7 @@ const ProductionVolumeDataBasisPe = () => {
             startDate: item?.startDate ? parseDDMMYYYY(item.startDate) : null,
             endDate: item?.endDate ? parseDDMMYYYY(item.endDate) : null,
             dateTime: item?.dateTime ? parseDDMMYYYY(item.dateTime) : null,
+            mcuDate: item?.mcuDate ? parseDDMMYYYY(item.mcuDate) : null,
           }))
           return rowsWithId
         } else {
@@ -255,7 +256,12 @@ const ProductionVolumeDataBasisPe = () => {
           (d) => d.Name === 'EndDate',
         )?.AttributeValue
 
+        if (!StartDate || !EndDate) {
+          updateData({ loading: false })
+          return
+        }
         // Fetch all data in parallel
+
         const [
           rawMcuData,
           mcuWithinRangeData,

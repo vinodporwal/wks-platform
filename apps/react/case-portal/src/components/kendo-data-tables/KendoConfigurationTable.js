@@ -7,8 +7,8 @@ import { styled } from '@mui/material/styles'
 import AopTabs from 'components/AopTabs'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
-import { usePermissions } from 'hooks/usePermissions'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+// import { usePermissions } from 'hooks/usePermissions'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -26,6 +26,7 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
+import Loader from 'components/Loader'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -66,6 +67,7 @@ const ConfigurationTable = () => {
   const [startUpRows, setStartUpRows] = useState([])
   const [otherLossRows, setOtherLossRows] = useState([])
   const [shutdownNormsRows, setShutdownRows] = useState([])
+  const [constantsRows, setConstantsRows] = useState([])
   const [productionRows, setProductionRows] = useState([])
   const [elastomerRows, setElastomerRows] = useState([])
   const [productionRowsConstants, setProductionRowsConstants] = useState([])
@@ -100,8 +102,8 @@ const ConfigurationTable = () => {
   const [isEdited, setIsEdited] = useState(false)
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
 
-  const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
-    usePermissions()
+  // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
+  //   usePermissions()
 
   const handleOpenDialog = () => {
     setOpenConfirmDialog(true)
@@ -114,7 +116,9 @@ const ConfigurationTable = () => {
     onLoad()
   }
 
-  const fetchData = async () => {
+  const [gradeId, setGradeId] = React.useState(null)
+
+  const fetchData = async (gradeId = null) => {
     setProductionRows([])
     setProductionRowsConstants([])
     setProductionRowsConstantsMannualEntry([])
@@ -122,7 +126,7 @@ const ConfigurationTable = () => {
 
     try {
       setLoading(true)
-      var data = await DataService.getCatalystSelectivityData(keycloak)
+      var data = await DataService.getCatalystSelectivityData(keycloak, gradeId)
       if (lowerVertName == 'meg' || lowerVertName == verticalEnums.CRACKER) {
         data = data?.filter((item) => item.normType !== 'Report Manual Entry')
         const formattedData = data.map((item, index) => ({
@@ -138,16 +142,6 @@ const ConfigurationTable = () => {
           setLoading(false)
         }
         // setRows(formattedData)
-      } else if (lowerVertName == 'elastomer') {
-        const formattedData = data.map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.remarks,
-          srNo: index + 1,
-          Particulars: item.normType,
-        }))
-        setElastomerRows(formattedData)
       } else {
         const groups = new Map()
         data.forEach((item) => {
@@ -168,6 +162,7 @@ const ConfigurationTable = () => {
         let otherLossRows = []
         let continiousGradeRows = []
         let discontiniousGradeRows = []
+        let constantsRows = []
         groups.forEach((normGroup, ConfigTypeName) => {
           let rowsForThisCategory = []
           normGroup.forEach((items, TypeName) => {
@@ -189,13 +184,17 @@ const ConfigurationTable = () => {
             continiousGradeRows = rowsForThisCategory
           } else if (ConfigTypeName == 'DisContineGradeChange') {
             discontiniousGradeRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Constant') {
+            constantsRows = rowsForThisCategory
           }
         })
+
         setShutdownRows(shutdownRows)
         setStartUpRows(startUpRows)
         setOtherLossRows(otherLossRows)
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
+        setConstantsRows(constantsRows)
       }
       setLoading(false)
     } catch (error) {
@@ -252,7 +251,7 @@ const ConfigurationTable = () => {
     setLoading(true)
     try {
       var data = await DataService.getPeConfigData(keycloak)
-      const formattedData = data.map((item, index) => ({
+      const formattedData = data?.map((item, index) => ({
         ...item,
         id: index,
       }))
@@ -300,9 +299,25 @@ const ConfigurationTable = () => {
     }
   }
 
+  const year = localStorage.getItem('year')
+
   useEffect(() => {
+    if (!plantID || !year) return
+
+    getConfigurationExecutionDetails()
+  }, [plantID, year])
+
+  useEffect(() => {
+    // console.log(plantID)
+    // console.log(localStorage.getItem('year'))
+
+    if (!plantID || !year) {
+      return
+    }
+
     getConfigurationExecutionDetails()
     getAopSummary()
+
     let vertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
     let verticalName = vertical?.toLowerCase()
     setTimeout(() => {
@@ -313,15 +328,6 @@ const ConfigurationTable = () => {
         fetchGradeData()
       }
     }, 500)
-    // const today = new Date()
-    // const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
-    // const startDate = new Date(
-    //   today.getFullYear() - 5,
-    //   today.getMonth() - 1 + 1,
-    //   1,
-    // )
-    // setStartDate(startDate)
-    // setEndDate(endDate)
   }, [oldYear, yearChanged, keycloak, plantID])
 
   const computeAndSetDates = useCallback(() => {
@@ -330,10 +336,6 @@ const ConfigurationTable = () => {
     // if (!configurationExecutionDetails.length) return
     const hasModifiedOn = configurationExecutionDetails[0]?.ModifiedOn
     if (hasModifiedOn) {
-      // console.log(
-      //   'configurationExecutionDetails',
-      //   configurationExecutionDetails,
-      // )
       const getDateValue = (name) =>
         new Date(
           configurationExecutionDetails.find(
@@ -442,9 +444,14 @@ const ConfigurationTable = () => {
     }
   }
   useEffect(() => {
+    if (!plantID || !year) {
+      return
+    }
+
     hasExecutedRef.current = false
     getConfigurationExecutionDetails()
   }, [plantID])
+
   const hasExecutedRef = useRef(false)
   const getConfigurationExecutionDetails = async () => {
     try {
@@ -508,8 +515,7 @@ const ConfigurationTable = () => {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
-      // console.log('startDateObj', startDateObj)
-      // console.log('endDateObj', endDateObj)
+
       setStartDateObj(startDateObj)
       setEndDateObj(endDateObj)
       const payload = [
@@ -573,6 +579,13 @@ const ConfigurationTable = () => {
   )
   const startDate1 = new Date(one?.AttributeValue)
   const endDate1 = new Date(two?.AttributeValue)
+
+  const handleGradeChange = (gradeId) => {
+    console.log('gradeId', gradeId)
+
+    setGradeId(gradeId)
+    // fetchData(gradeId)
+  }
 
   const ConfigurationAccordian = useMemo(() => {
     return (
@@ -730,20 +743,6 @@ const ConfigurationTable = () => {
     )
   }, [openConfirmDialog])
 
-  if (lowerVertName == 'elastomer') {
-    return (
-      <SelectivityData
-        rows={elastomerRows}
-        loading={loading}
-        fetchData={fetchData}
-        setRows={setElastomerRows}
-        configType='meg'
-        groupBy='Particulars'
-        summary={debouncedSummary}
-      />
-    )
-  }
-
   if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
     const auditYear = localStorage.getItem('year')
@@ -874,6 +873,7 @@ const ConfigurationTable = () => {
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='0'
+                    setGradeId={handleGradeChange}
                   />
                 )
               case 'constants':
@@ -991,6 +991,21 @@ const ConfigurationTable = () => {
                     // groupBy2='ConfigTypeDisplayName'
                   />
                 )
+              case getTheId('Constant'): // Constant
+                return (
+                  <SelectivityData
+                    rows={constantsRows}
+                    loading={loading}
+                    setRows={setConstantsRows}
+                    fetchData={fetchData}
+                    configType='ShutdownNorms'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    // groupBy2='ConfigTypeDisplayName'
+                  />
+                )
               case getTheId('Receipe'): // Receipe - Fixed to use gradeFetchData
                 return (
                   <SelectivityData
@@ -1030,6 +1045,21 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                   />
                 )
+              //  case getTheId('Constant'): // ShutdownNorms
+              //   return (
+              //     <SelectivityData
+              //       rows={shutdownNormsRows}
+              //       loading={loading}
+              //       setRows={setShutdownRows}
+              //       fetchData={fetchData}
+              //       configType='ShutdownNorms'
+              //       groupBy='TypeDisplayName'
+              //       summary={debouncedSummary}
+              //       summaryEdited={summaryEdited}
+              //       onSummaryEditChange={setSummaryEdited}
+              //       // groupBy2='ConfigTypeDisplayName'
+              //     />
+              //   )
               default:
                 return null
             }

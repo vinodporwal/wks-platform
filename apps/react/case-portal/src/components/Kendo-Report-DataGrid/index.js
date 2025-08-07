@@ -15,7 +15,7 @@ import DateTimePickerEditor from 'components/kendo-data-tables/Utilities-Kendo/D
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
 import DateOnlyPicker from 'components/kendo-data-tables/Utilities-Kendo/DatePicker'
 
-const KendoDataGrid = ({ rows, columns, onRowChange }) => {
+const KendoDataGrid = ({ rows, columns, onRowChange, permissions }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
@@ -48,38 +48,19 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
     )
   }
 
-  const HeaderWithTooltip = (props) => {
-    return (
-      <th {...props.thProps}>
-        <a className='k-link' onClick={props.onClick}>
-          <span title={props.title}>{props.title}</span>
-        </a>
-      </th>
-    )
-  }
-
-  const dateFields = ['endDate', 'startDate', 'dateTime']
-
   const SimpleHeaderWithTooltip = (props) => {
+    const { ariaSort, ...restThProps } = props.thProps || {}
+
     return (
-      // <div
-      //   className='k-header-cell-wrapper'
-      //   title={props.tooltipText || props.title}
-      // >
-      //   {props.children}
-      //   {/* You could implement a custom CSS-only tooltip here if needed */}
-      // </div>
       <th
-        {...props.thProps}
+        {...restThProps}
+        aria-sort={ariaSort}
         title={props.title}
-        style={{
-          padding: '0px',
-          borderRight: '1px solid #ccc',
-        }}
+        style={{ padding: '0px' }}
       >
         <Tooltip
-          position={'top'}
-          anchorElement={props.thProps}
+          position='top'
+          anchorElement='target'
           parentTitle={true}
           className='test'
         >
@@ -93,7 +74,11 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
     <div className='kendo-data-grid'>
       <Tooltip openDelay={50} position='bottom' anchorElement='target'>
         <Grid
-          style={{ flex: 1, overflow: 'auto' }}
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            ...(permissions?.isHeight ? { height: 500 } : {}),
+          }}
           data={rows}
           dataItemKey='id'
           autoProcessData={true}
@@ -106,10 +91,10 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
           onItemChange={handleItemChange}
           resizable={true}
           defaultSkip={0}
-          defaultTake={10}
+          defaultTake={100}
           contextMenu={true}
           pageable={
-            rows?.length > 10
+            rows?.length > 100
               ? {
                   buttonCount: 4,
                   pageSizes: [10, 50, 100],
@@ -130,23 +115,20 @@ const KendoDataGrid = ({ rows, columns, onRowChange }) => {
               widthT,
             } = col
 
-            if (['endDate', 'startDate', 'dateTime'].includes(field)) {
+            if (
+              ['endDate', 'startDate', 'dateTime', 'mcuDate'].includes(field)
+            ) {
               return (
                 <Column
                   key={field}
                   field={field}
                   title={title}
-                  filter='date'
-                  filterable={{
-                    cell: {
-                      operator: 'gte',
-                      showOperators: true,
-                    },
-                  }}
                   cell={cell}
                   cells={{
                     edit: {
-                      date: ['dateTime', 'dateTime'].includes(col.field)
+                      date: ['dateTime', 'dateTime', 'mcuDate'].includes(
+                        col.field,
+                      )
                         ? DateOnlyPicker
                         : DateTimePickerEditor,
                     },

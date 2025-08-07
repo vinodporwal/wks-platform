@@ -4,20 +4,22 @@
     "headerName": "SL No.",
     "flex": 1,
     "editable": false,
-    "widthT": 50
+    "widthT": 70
   },
   {
     "field": "norms",
     "headerName": "Type",
 
     "flex": 2,
-    "editable": false
+    "editable": false,
+    "widthT": 220
   },
   {
     "field": "materialName",
     "headerName": "Particulars",
     "flex": 2,
-    "editable": false
+    "editable": false,
+    "widthT": 220
   },
   {
     "field": "aopMonth",

@@ -689,6 +689,8 @@ const ProductionNorms = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       customHeight: permissions?.customHeight,
+      downloadExcelBtnFromUI: !permissions?.hideExportBtn,
+      ExcelName: `${lowerVertName}_Production Target`,
     },
     isOldYear,
   )
@@ -709,7 +711,8 @@ const ProductionNorms = ({ permissions }) => {
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
-
+      downloadExcelBtnFromUI: !permissions?.hideExportBtn,
+      ExcelName: `${lowerVertName}_Production Target`,
       customHeight: permissions?.customHeight,
     },
     isOldYear,
