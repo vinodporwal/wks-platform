@@ -1,7 +1,4 @@
-import NumericInputOnly from 'utils/NumericInputOnly'
-
 export default function getKendoNormsHistorianColumns({ headerMap, type }) {
-  // load the right JSON asset
   let rawCols
   switch (type) {
     case 'HistorianValues':
@@ -12,6 +9,15 @@ export default function getKendoNormsHistorianColumns({ headerMap, type }) {
       break
     case 'ProductionVolumeData':
       rawCols = require('../../../assets/norms_historian_basis_ProductionVolumeData.json')
+      break
+    case 'bestachieved':
+      rawCols = require('../../../assets/norms_historian_basis_BestAchieved.json')
+      break
+    case 'expessionbased':
+      rawCols = require('../../../assets/norms_historian_basis_ExpressionBased.json')
+      break
+    case 'currentyear':
+      rawCols = require('../../../assets/norms_historian_basis_CurrentYear.json')
       break
     default:
       throw new Error(`Unknown type "${type}"`)

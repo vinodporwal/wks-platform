@@ -136,6 +136,7 @@ export const DataService = {
   handleCalculateNormalOperationNormsPe,
   savePlantContributionData,
   getProductionVolDataBasisPe,
+  getProductionVolDataBasisMode,
   saveCrackerMaintenance,
   saveSlowdownConfigData,
   // saveConfigurationExcelConstants,
@@ -1010,25 +1011,80 @@ async function getProductionVolDataBasis(keycloak, reportType, uom) {
 async function getProductionVolDataBasisPe(
   keycloak,
   reportType,
-  PeriodFrom,
-  PeriodTo,
+  periodFrom,
+  periodTo,
+  mode,
 ) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/report/norms-basis/pe?plantId=${plantId}&year=${year}&type=${reportType}&periodFrom=${PeriodFrom}&periodTo=${PeriodTo}`
+
+  let url = `${Config.CaseEngineUrl}/task/report/norms-basis/pe?plantId=${plantId}&year=${year}&type=${reportType}`
+
+  if (periodFrom !== undefined) {
+    url += `&periodFrom=${periodFrom}`
+  }
+
+  if (periodTo !== undefined) {
+    url += `&periodTo=${periodTo}`
+  }
+
+  if (mode !== undefined) {
+    url += `&mode=${mode}`
+  }
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
+
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
-    return await Promise.reject(e)
+    return Promise.reject(e)
   }
 }
+async function getProductionVolDataBasisMode(
+  keycloak,
+  reportType,
+  periodFrom,
+  periodTo,
+  mode,
+) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+
+  let url = `${Config.CaseEngineUrl}/task/report/norms-basis/mode?plantId=${plantId}&year=${year}&type=${reportType}`
+
+  if (periodFrom !== undefined) {
+    url += `&periodFrom=${periodFrom}`
+  }
+
+  if (periodTo !== undefined) {
+    url += `&periodTo=${periodTo}`
+  }
+
+  if (mode !== undefined) {
+    url += `&mode=${mode}`
+  }
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
 async function getNormsHistorianBasis(keycloak, reportType, uom) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
@@ -1241,7 +1297,11 @@ async function getMaintenanceData(keycloak) {
     return await Promise.reject(e)
   }
 }
-async function getNormalOperationNormsData(keycloak, gradeId) {
+async function getNormalOperationNormsData(
+  keycloak,
+  gradeId,
+  isCracker = false,
+) {
   const year = localStorage.getItem('year') || ''
   const storedPlant = localStorage.getItem('selectedPlant')
   const plantId = storedPlant ? JSON.parse(storedPlant)?.id || '' : ''
@@ -1252,7 +1312,9 @@ async function getNormalOperationNormsData(keycloak, gradeId) {
     plantId,
   })
   if (gradeId) {
-    queryParams.append('gradeId', gradeId)
+    isCracker
+      ? queryParams.append('mode', gradeId)
+      : queryParams.append('gradeId', gradeId)
   }
   const url = `${baseUrl}?${queryParams.toString()}`
   const headers = {
@@ -1341,27 +1403,23 @@ async function getSlowdownNormsData(keycloak) {
     return await Promise.reject(e)
   }
 }
-async function getCatalystSelectivityData(keycloak, grade) {
-  console.log('grade', grade)
-
-  let plantId = ''
+async function getCatalystSelectivityData(keycloak) {
+  var plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
   if (storedPlant) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
-  const year = localStorage.getItem('year')
-  let url = `${Config.CaseEngineUrl}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
-  if (grade) {
-    url += `&mode=${encodeURIComponent(grade)}`
-  }
-
+  // let siteID =
+  //   JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
+  var year = localStorage.getItem('year')
+  //const url = `${process.env.REACT_APP_API_URL}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/getConfigurationData?year=${year}&plantFKId=${plantId}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
-
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
@@ -3056,7 +3114,7 @@ async function exportSpyroInputExcel(keycloak, mode) {
 }
 
 //--
-async function getConfigurationExcel(keycloak, grade) {
+async function getConfigurationExcel(keycloak) {
   var year = localStorage.getItem('year')
   var plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -3064,12 +3122,7 @@ async function getConfigurationExcel(keycloak, grade) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
-  let url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${year}&plantId=${plantId}`
-
-  if (grade) {
-    url += `&mode=${encodeURIComponent(grade)}`
-  }
-
+  const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${year}&plantId=${plantId}`
   //const url = `${Config.CaseEngineUrl}/task/norms-export-excel?year=${year}&plantId=${plantId}`
   const headers = {
     'Content-Type': 'application/json',

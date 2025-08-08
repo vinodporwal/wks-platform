@@ -64,6 +64,7 @@ const ConfigurationTable = () => {
   const [loading, setLoading] = useState(false)
   const [loading1, setLoading1] = useState(false)
   const [summaryEdited, setSummaryEdited] = useState(false)
+  const [configurationRows, setConfigurationRows] = useState([])
   const [startUpRows, setStartUpRows] = useState([])
   const [otherLossRows, setOtherLossRows] = useState([])
   const [shutdownNormsRows, setShutdownRows] = useState([])
@@ -126,7 +127,10 @@ const ConfigurationTable = () => {
 
     try {
       setLoading(true)
-      var data = await DataService.getCatalystSelectivityData(keycloak, gradeId)
+      var data = []
+
+      data = await DataService.getCatalystSelectivityData(keycloak, gradeId)
+
       if (lowerVertName == 'meg' || lowerVertName == verticalEnums.CRACKER) {
         data = data?.filter((item) => item.normType !== 'Report Manual Entry')
         const formattedData = data.map((item, index) => ({
@@ -163,6 +167,7 @@ const ConfigurationTable = () => {
         let continiousGradeRows = []
         let discontiniousGradeRows = []
         let constantsRows = []
+        let configurationRows = []
         groups.forEach((normGroup, ConfigTypeName) => {
           let rowsForThisCategory = []
           normGroup.forEach((items, TypeName) => {
@@ -174,6 +179,9 @@ const ConfigurationTable = () => {
               })
             })
           })
+          if (ConfigTypeName == 'Configuration') {
+            configurationRows = rowsForThisCategory
+          }
           if (ConfigTypeName == 'ShutdownNorms') {
             shutdownRows = rowsForThisCategory
           } else if (ConfigTypeName == 'StartupLosses') {
@@ -195,6 +203,7 @@ const ConfigurationTable = () => {
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
         setConstantsRows(constantsRows)
+        setConfigurationRows(configurationRows)
       }
       setLoading(false)
     } catch (error) {
@@ -948,6 +957,20 @@ const ConfigurationTable = () => {
             const currentTabId = tabs[tabIndex]?.toLowerCase()
             switch (currentTabId) {
               // case 'ac3c9ad7-82b5-4550-b04d-fed0f1fb4908': // StartupLosses
+              case getTheId('Configuration'):
+                return (
+                  <SelectivityData
+                    rows={configurationRows}
+                    loading={loading}
+                    fetchData={fetchData}
+                    setRows={setConfigurationRows}
+                    configType='Configuration'
+                    groupBy='TypeDisplayName'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                  />
+                )
               case getTheId('StartupLosses'):
                 return (
                   <SelectivityData
