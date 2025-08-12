@@ -1,8 +1,4 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import {
-  Accordion as MuiAccordion,
-  AccordionDetails as MuiAccordionDetails,
-  AccordionSummary as MuiAccordionSummary,
   Backdrop,
   Box,
   Button,
@@ -11,48 +7,24 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { styled } from '@mui/material/styles'
-import { useEffect, useRef, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { DataService } from 'services/DataService'
-import { useSession } from 'SessionStoreContext'
 import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
 import moment from 'moment'
+import { useEffect, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
 
 import KendoDataGrid from 'components/Kendo-Report-DataGrid'
-import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-
-const CustomAccordion = styled((props) => (
-  <MuiAccordion disableGutters elevation={0} square {...props} />
-))(() => ({
-  position: 'unset',
-  border: 'none',
-  boxShadow: 'none',
-  margin: '0px',
-  '&:before': {
-    display: 'none',
-  },
-}))
-
-const CustomAccordionSummary = styled((props) => (
-  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
-))(() => ({
-  backgroundColor: '#fff',
-  padding: '0px 12px',
-  minHeight: '40px',
-  '& .MuiAccordionSummary-content': {
-    margin: '8px 0',
-  },
-}))
-
-const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
-  padding: '0px 0px 12px',
-  backgroundColor: '#F2F3F8',
-}))
+import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian'
 
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
@@ -368,6 +340,7 @@ const NormsHistorianBasis = () => {
                   <Box sx={{ width: '100%' }}>
                     <KendoDataGrid
                       rows={section.rows}
+                      loading={loading}
                       columns={section.cols}
                       permissions={{ isHeight: section.label === 'MCU & Norm' }}
                     />

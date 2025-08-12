@@ -266,7 +266,6 @@ const ProductionvolumeData = ({ permissions }) => {
       if (response?.code != 200) {
         setRows([])
         setLoading(false)
-
         return
       }
 
@@ -541,6 +540,142 @@ const ProductionvolumeData = ({ permissions }) => {
     },
   ]
 
+  const colDefsDesignCapacity = [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 220,
+
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 220,
+      editable: true,
+    },
+    {
+      field: 'april',
+      title: headerMap[4],
+      editable: true,
+      align: 'left',
+      headerAlign: 'left',
+      format: '{0:#.###}',
+      type: 'number',
+    },
+    {
+      field: 'may',
+      title: headerMap[5],
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      format: '{0:#.###}',
+      type: 'number',
+    },
+    {
+      field: 'june',
+      title: headerMap[6],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'july',
+      format: '{0:#.###}',
+      title: headerMap[7],
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'august',
+      title: headerMap[8],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'september',
+      title: headerMap[9],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'october',
+      title: headerMap[10],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'november',
+      title: headerMap[11],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'december',
+      title: headerMap[12],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'january',
+      title: headerMap[1],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'february',
+      title: headerMap[2],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'march',
+      title: headerMap[3],
+      format: '{0:#.###}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+  ]
+
   const colDefs1233 = [
     {
       field: 'idFromApi',
@@ -798,6 +933,28 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }
 
+  const adjustedPermissionsGrid1 = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      allAction: permissions?.allAction ?? true,
+      addButton: permissions?.addButton ?? false,
+      deleteButton: permissions?.deleteButton ?? false,
+      editButton: permissions?.editButton ?? false,
+      showUnit: permissions?.showUnit ?? true,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      showRefreshBtn: permissions?.showRefreshBtn ?? true,
+      saveBtn: false,
+      units: ['TPH', 'TPD'],
+      customHeight: permissions?.customHeight ?? defaultCustomHeight,
+
+      downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
+
+      showTitleNameBusiness: true,
+      titleName: 'Max Achieved Capacity',
+    },
+    isOldYear,
+  )
+
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? false,
@@ -819,23 +976,15 @@ const ProductionvolumeData = ({ permissions }) => {
           : false,
       downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       uploadExcelBtn: permissions?.hideUploadExcel ? false : true,
+      showTitleNameBusiness: lowerVertName === 'meg' ? false : true,
+      titleName: 'Current Operating Capacity',
     },
     isOldYear,
   )
-  const NormParameterIdCell = (props) => {
-    const productId = props.dataItem.normParametersFKId
-    const product = allProducts.find((p) => p.id === productId)
-    const displayName = product?.displayName || ''
-    return <td>{displayName}</td>
-  }
-  const NormParameterIdCell2 = (props) => {
-    const productId = props.dataItem.normParametersFKId
-    const product = allProducts.find((p) => p.id === productId)
-    const displayName = product?.displayName || ''
-    return <td>{displayName}</td>
-  }
+
   var cols = permissions?.hideSummary ? colDefs1233 : productionColumns
   var rows1 = permissions?.hideSummary ? rows500 : rows
+  var rowsMaxCapacity = rows500
 
   const handleExcelUpload = (rawFile) => {
     saveExcelFile(rawFile)
@@ -931,6 +1080,8 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }
 
+  const conditionForFirst = false
+
   return (
     <div>
       <Backdrop
@@ -939,6 +1090,27 @@ const ProductionvolumeData = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
+      {conditionForFirst && (
+        <KendoDataTables
+          setRows={setRows2}
+          columns={colDefsDesignCapacity}
+          rows={rows1}
+          fetchData={fetchData}
+          permissions={adjustedPermissionsGrid2}
+        />
+      )}
+
+      {conditionForFirst && (
+        <KendoDataTables
+          setRows={setRows2}
+          columns={colDefsDesignCapacity}
+          rows={rowsMaxCapacity}
+          fetchData={fetchData}
+          permissions={adjustedPermissionsGrid1}
+        />
+      )}
+
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
@@ -952,7 +1124,6 @@ const ProductionvolumeData = ({ permissions }) => {
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
-        NormParameterIdCell={NormParameterIdCell}
         setSnackbarData={setSnackbarData}
         apiRef={apiRef}
         fetchData={fetchData}
@@ -983,7 +1154,6 @@ const ProductionvolumeData = ({ permissions }) => {
             rows={rows2}
             title='Production Volume Data Reference'
             fetchData={fetchData}
-            NormParameterIdCell={NormParameterIdCell2}
           />
         </>
       )}

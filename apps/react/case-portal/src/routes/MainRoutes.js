@@ -26,6 +26,7 @@ import Loadable from 'components/Loadable'
 import TextSubmitComponent from 'components/user-management/TextSubmitComponent'
 import UserForm from 'components/user-management/UserForm'
 import UserManagementTable from 'components/user-management/UserManagementTable'
+
 import MainLayout from 'layout/MainLayout'
 import { lazy } from 'react'
 import { CaseList } from 'views/caseList/caseList'
@@ -41,6 +42,7 @@ import NormsHistorianBasisPe from 'components/data-tables/Reports/NormsHistorian
 import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
 import { Navigate } from '../../node_modules/react-router-dom/dist/index'
 import PrivateRoute from './PrivateRoutes'
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -209,17 +211,17 @@ export const MainRoutes = (
               {
                 path: 'spyro-input',
                 element: (
-                  // <PrivateRoute routeId='spyro-input'>
-                  <CrackerConfig keycloak={keycloak} />
-                  // </PrivateRoute>
+                  <PrivateRoute routeId='spyro-input'>
+                    <CrackerConfig keycloak={keycloak} />
+                  </PrivateRoute>
                 ),
               },
               {
                 path: 'spyro-output',
                 element: (
-                  // <PrivateRoute routeId='spyro-output'>
-                  <CrackerConfigOutput />
-                  // </PrivateRoute>
+                  <PrivateRoute routeId='spyro-output'>
+                    <CrackerConfigOutput />
+                  </PrivateRoute>
                 ),
               },
               {
@@ -410,6 +412,7 @@ export const MainRoutes = (
           </PrivateRoute>
         ),
       },
+
       {
         path: 'user-form',
         element: <UserForm keycloak={keycloak} />,

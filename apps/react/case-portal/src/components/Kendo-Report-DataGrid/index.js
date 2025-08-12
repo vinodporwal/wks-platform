@@ -1,19 +1,17 @@
-import { useEffect, useState } from 'react'
 import {
+  GridColumn as Column,
   Grid,
   isColumnMenuFilterActive,
   isColumnMenuSortActive,
-  GridColumn as Column,
 } from '@progress/kendo-react-grid'
 import '@progress/kendo-theme-default/dist/all.css'
-import '../../kendo-data-grid.css'
-import { filterIcon } from '@progress/kendo-svg-icons'
-import { ColumnMenu } from 'components/data-tables/Reports/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
-import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
+import DateOnlyPicker from 'components/kendo-data-tables/Utilities-Kendo/DatePicker'
 import DateTimePickerEditor from 'components/kendo-data-tables/Utilities-Kendo/DatePickeronSelectedYr'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
-import DateOnlyPicker from 'components/kendo-data-tables/Utilities-Kendo/DatePicker'
+import { useState } from 'react'
+import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
+import '../../kendo-data-grid.css'
 
 const KendoDataGrid = ({ rows, columns, onRowChange, permissions }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
@@ -102,7 +100,7 @@ const KendoDataGrid = ({ rows, columns, onRowChange, permissions }) => {
               : false
           }
         >
-          {columns.map((col) => {
+          {columns?.map((col) => {
             const {
               field,
               title,
@@ -113,11 +111,10 @@ const KendoDataGrid = ({ rows, columns, onRowChange, permissions }) => {
               isRightAlligned,
               hidden,
               widthT,
+              type,
             } = col
 
-            if (
-              ['endDate', 'startDate', 'dateTime', 'mcuDate'].includes(field)
-            ) {
+            if (['endDate', 'startDate', 'dateTime'].includes(field)) {
               return (
                 <Column
                   key={field}
@@ -131,6 +128,36 @@ const KendoDataGrid = ({ rows, columns, onRowChange, permissions }) => {
                       )
                         ? DateOnlyPicker
                         : DateTimePickerEditor,
+                    },
+                    data: toolTipRenderer,
+                    headerCell: SimpleHeaderWithTooltip,
+                  }}
+                  editor='date'
+                  format='{0:dd-MM-yyyy}'
+                  hidden={hidden}
+                  className={
+                    isRightAlligned === 'numeric'
+                      ? 'k-number-right-disabled'
+                      : 'non-editable-cell'
+                  }
+                  headerClassName={
+                    isColumnActive(field, filter, sort) ? 'active-column' : ''
+                  }
+                  columnMenu={DateColumnMenu}
+                />
+              )
+            }
+
+            if (col.type === 'date') {
+              return (
+                <Column
+                  key={field}
+                  field={field}
+                  title={title}
+                  cell={cell}
+                  cells={{
+                    edit: {
+                      DateOnlyPicker,
                     },
                     data: toolTipRenderer,
                     headerCell: SimpleHeaderWithTooltip,

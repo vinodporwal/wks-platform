@@ -26,33 +26,16 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
-import Loader from 'components/Loader'
-const CustomAccordion = styled((props) => (
-  <MuiAccordion disableGutters elevation={0} square {...props} />
-))(() => ({
-  position: 'unset',
-  border: 'none',
-  boxShadow: 'none',
-  margin: '0px',
-  '&:before': {
-    display: 'none',
-  },
-}))
-const CustomAccordionSummary = styled((props) => (
-  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
-))(() => ({
-  backgroundColor: '#fff',
-  padding: '0px 0px',
-  minHeight: '40px',
-  '& .MuiAccordionSummary-content': {
-    margin: '8px 0',
-  },
-}))
-const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
-  padding: '0px 0px 0px',
-  backgroundColor: '#F2F3F8',
-}))
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian'
+
 const ConfigurationTable = () => {
+  const year = localStorage.getItem('year')
+  const hasExecutedRef = useRef(false)
+
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
@@ -86,7 +69,7 @@ const ConfigurationTable = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSummary(summary)
-    }, 300) // adjust debounce delay as needed
+    }, 300)
     return () => clearTimeout(handler)
   }, [summary])
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -100,8 +83,8 @@ const ConfigurationTable = () => {
   const [endDateObj, setEndDateObj] = useState([])
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState([])
-  const [isEdited, setIsEdited] = useState(false)
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
+  const [gradeId, setGradeId] = React.useState(null)
 
   // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
   //   usePermissions()
@@ -116,8 +99,6 @@ const ConfigurationTable = () => {
     setOpenConfirmDialog(false)
     onLoad()
   }
-
-  const [gradeId, setGradeId] = React.useState(null)
 
   const fetchData = async (gradeId = null) => {
     setProductionRows([])
@@ -263,6 +244,9 @@ const ConfigurationTable = () => {
       const formattedData = data?.map((item, index) => ({
         ...item,
         id: index,
+        TypeDisplayName: item?.TypeDisplayName
+          ? item?.TypeDisplayName
+          : 'Recipe',
       }))
       setGradeData(formattedData)
       setLoading(false)
@@ -308,8 +292,6 @@ const ConfigurationTable = () => {
     }
   }
 
-  const year = localStorage.getItem('year')
-
   useEffect(() => {
     if (!plantID || !year) return
 
@@ -317,22 +299,16 @@ const ConfigurationTable = () => {
   }, [plantID, year])
 
   useEffect(() => {
-    // console.log(plantID)
-    // console.log(localStorage.getItem('year'))
-
     if (!plantID || !year) {
       return
     }
-
     getConfigurationExecutionDetails()
     getAopSummary()
-
     let vertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
     let verticalName = vertical?.toLowerCase()
     setTimeout(() => {
       if (verticalName != 'cracker' && verticalName != 'meg') {
         getConfigurationTabsMatrix()
-        // getConfigurationAvailableTabs()
         getConfigurationAvailableTabs()
         fetchGradeData()
       }
@@ -342,7 +318,6 @@ const ConfigurationTable = () => {
   const computeAndSetDates = useCallback(() => {
     setStartDate('')
     setEndDate('')
-    // if (!configurationExecutionDetails.length) return
     const hasModifiedOn = configurationExecutionDetails[0]?.ModifiedOn
     if (hasModifiedOn) {
       const getDateValue = (name) =>
@@ -456,12 +431,10 @@ const ConfigurationTable = () => {
     if (!plantID || !year) {
       return
     }
-
     hasExecutedRef.current = false
     getConfigurationExecutionDetails()
   }, [plantID])
 
-  const hasExecutedRef = useRef(false)
   const getConfigurationExecutionDetails = async () => {
     try {
       const response =
@@ -580,20 +553,19 @@ const ConfigurationTable = () => {
     }
   }, [tabs])
 
-  const one = configurationExecutionDetails.find(
+  const startDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'StartDate',
   )
-  const two = configurationExecutionDetails.find(
+
+  const endDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'EndDate',
   )
-  const startDate1 = new Date(one?.AttributeValue)
-  const endDate1 = new Date(two?.AttributeValue)
+
+  const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
+  const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
 
   const handleGradeChange = (gradeId) => {
-    console.log('gradeId', gradeId)
-
     setGradeId(gradeId)
-    // fetchData(gradeId)
   }
 
   const ConfigurationAccordian = useMemo(() => {
@@ -673,7 +645,7 @@ const ConfigurationTable = () => {
                     className='summary-title'
                     sx={{ whiteSpace: 'normal' }}
                   >
-                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDate1)} to ${formatDateForText(endDate1)})`}
+                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
                   </Typography>
                 )}
               </Box>
@@ -726,7 +698,7 @@ const ConfigurationTable = () => {
         </CustomAccordion>
       </Box>
     )
-  }, [startDate, endDate, summary, startDate1, endDate1])
+  }, [startDate, endDate, summary, startDateFromConfig, endDateDateFromConfig])
 
   const ConfigurationDialog = useMemo(() => {
     return (
@@ -947,7 +919,6 @@ const ConfigurationTable = () => {
             const tabInfo = availableTabs.find(
               (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
             )
-            // console.log('tabInfo', tabInfo)
             if (tabInfo) return tabInfo?.displayName || 'loading..'
           })}
         />
@@ -956,7 +927,6 @@ const ConfigurationTable = () => {
           {(() => {
             const currentTabId = tabs[tabIndex]?.toLowerCase()
             switch (currentTabId) {
-              // case 'ac3c9ad7-82b5-4550-b04d-fed0f1fb4908': // StartupLosses
               case getTheId('Configuration'):
                 return (
                   <SelectivityData
@@ -985,7 +955,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                   />
                 )
-              case getTheId('Otherlosses'): // Otherlosses
+              case getTheId('Otherlosses'):
                 return (
                   <SelectivityData
                     rows={otherLossRows}
@@ -999,7 +969,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                   />
                 )
-              case getTheId('ShutdownNorms'): // ShutdownNorms
+              case getTheId('ShutdownNorms'):
                 return (
                   <SelectivityData
                     rows={shutdownNormsRows}
@@ -1011,10 +981,9 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
-                    // groupBy2='ConfigTypeDisplayName'
                   />
                 )
-              case getTheId('Constant'): // Constant
+              case getTheId('Constant'):
                 return (
                   <SelectivityData
                     rows={constantsRows}
@@ -1026,10 +995,9 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
-                    // groupBy2='ConfigTypeDisplayName'
                   />
                 )
-              case getTheId('Receipe'): // Receipe - Fixed to use gradeFetchData
+              case getTheId('Receipe'):
                 return (
                   <SelectivityData
                     rows={gradeData}
@@ -1037,12 +1005,13 @@ const ConfigurationTable = () => {
                     fetchData={fetchGradeData}
                     setRows={setGradeData}
                     configType='grades'
+                    groupBy='TypeDisplayName'
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
                   />
                 )
-              case getTheId('ContineGradeChange'): // ContineGradeChange
+              case getTheId('ContineGradeChange'):
                 return (
                   <SelectivityData
                     rows={continiousGradeData}
@@ -1055,7 +1024,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                   />
                 )
-              case getTheId('DisContineGradeChange'): // DisContineGradeChange
+              case getTheId('DisContineGradeChange'):
                 return (
                   <SelectivityData
                     rows={discontiniousGradeData}
@@ -1068,21 +1037,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                   />
                 )
-              //  case getTheId('Constant'): // ShutdownNorms
-              //   return (
-              //     <SelectivityData
-              //       rows={shutdownNormsRows}
-              //       loading={loading}
-              //       setRows={setShutdownRows}
-              //       fetchData={fetchData}
-              //       configType='ShutdownNorms'
-              //       groupBy='TypeDisplayName'
-              //       summary={debouncedSummary}
-              //       summaryEdited={summaryEdited}
-              //       onSummaryEditChange={setSummaryEdited}
-              //       // groupBy2='ConfigTypeDisplayName'
-              //     />
-              //   )
+
               default:
                 return null
             }
