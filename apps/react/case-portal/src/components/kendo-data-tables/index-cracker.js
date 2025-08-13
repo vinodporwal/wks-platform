@@ -1,7 +1,7 @@
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import '@progress/kendo-theme-default/dist/all.css'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -134,6 +134,7 @@ const KendoDataTablesCracker = ({
   handleExcelUpload = () => {},
   downloadExcelForConfiguration = () => {},
   onLoad = () => {},
+  leftComponent = undefined,
 }) => {
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -640,94 +641,108 @@ const KendoDataTablesCracker = ({
           <div className='k-loading-color' />
         </div>
       )}
-      {(permissions?.allAction ?? false) && (
-        <Box className='action-box'>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-          >
-            {/* Left side - Note */}
-            <Box>
-              {permissions?.showNote && (
-                <Typography component='div' className='text-note'>
-                  {note}
-                </Typography>
-              )}
-            </Box>
-            {/* Right side - All other actions */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {permissions?.downloadExcelBtn && (
-                <Tooltip>
-                  <span title='Export Data'>
-                    <Button
-                      variant='outlined'
-                      size='large'
-                      onClick={downloadExcelForConfiguration}
-                      disabled={isButtonDisabled}
-                    >
-                      <DownloadIcon fontSize='small' />
-                    </Button>
-                  </span>
-                </Tooltip>
-              )}
-              {permissions?.uploadExcelBtn && (
-                <Tooltip>
-                  <span title='Import Data'>
-                    <Button
-                      variant='outlined'
-                      size='large'
-                      onClick={triggerFileUpload}
-                      disabled={isButtonDisabled}
-                    >
-                      <UploadIcon fontSize='small' />
-                    </Button>
-                  </span>
-                  <input
-                    type='file'
-                    accept='.xlsx,.xls'
-                    onChange={onFileChange}
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                  />
-                </Tooltip>
-              )}
-              {permissions?.saveBtn && (
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={saveModalOpen}
-                  disabled={
-                    isButtonDisabled ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
-                  }
-                  {...(loading ? {} : {})}
-                >
-                  Save
-                </Button>
-              )}
-              {permissions?.showCalculate && (
-                <Button
-                  variant='contained'
-                  onClick={handleCalculateBtn}
-                  disabled={
-                    rows?.length === 0
-                      ? false
-                      : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility
-                  }
-                  className='btn-save'
-                >
-                  Calculate
-                </Button>
-              )}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          marginBottom: '10px',
+          height: '100%',
+        }}
+      >
+        <>{leftComponent && leftComponent}</>
+        {(permissions?.allAction ?? false) && (
+          <Box className='action-box'>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+              }}
+            >
+              {/* Left side - Note */}
+              <Box>
+                {permissions?.showNote && (
+                  <Typography component='div' className='text-note'>
+                    {note}
+                  </Typography>
+                )}
+              </Box>
+              {/* Right side - All other actions */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {permissions?.downloadExcelBtn && (
+                  <Tooltip>
+                    <span title='Export Data'>
+                      <Button
+                        variant='outlined'
+                        size='large'
+                        onClick={downloadExcelForConfiguration}
+                        disabled={isButtonDisabled}
+                      >
+                        <DownloadIcon fontSize='small' />
+                      </Button>
+                    </span>
+                  </Tooltip>
+                )}
+                {permissions?.uploadExcelBtn && (
+                  <Tooltip>
+                    <span title='Import Data'>
+                      <Button
+                        variant='outlined'
+                        size='large'
+                        onClick={triggerFileUpload}
+                        disabled={isButtonDisabled}
+                      >
+                        <UploadIcon fontSize='small' />
+                      </Button>
+                    </span>
+                    <input
+                      type='file'
+                      accept='.xlsx,.xls'
+                      onChange={onFileChange}
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                    />
+                  </Tooltip>
+                )}
+                {permissions?.saveBtn && (
+                  <Button
+                    variant='contained'
+                    className='btn-save'
+                    onClick={saveModalOpen}
+                    disabled={
+                      isButtonDisabled ||
+                      (!summaryEdited &&
+                        Object.keys(modifiedCells).length === 0)
+                    }
+                    {...(loading ? {} : {})}
+                  >
+                    Save
+                  </Button>
+                )}
+                {permissions?.showCalculate && (
+                  <Button
+                    variant='contained'
+                    onClick={handleCalculateBtn}
+                    disabled={
+                      rows?.length === 0
+                        ? false
+                        : isButtonDisabled ||
+                          !permissions?.showCalculateVisibility
+                    }
+                    className='btn-save'
+                  >
+                    Calculate
+                  </Button>
+                )}
+              </Box>
             </Box>
           </Box>
-        </Box>
-      )}
+        )}
+      </Box>
+
       <div className='kendo-data-grid'>
         <>
           {permissions?.showAccordian ? (

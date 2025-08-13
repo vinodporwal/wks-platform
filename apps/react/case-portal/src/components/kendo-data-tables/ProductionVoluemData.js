@@ -15,6 +15,7 @@ import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { Typography } from '../../../node_modules/@mui/material/index'
 // import TextField from '@mui/material/TextField'
 // import { usePermissions } from 'hooks/usePermissions'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import KendoDataTables from './index'
 
 const ProductionvolumeData = ({ permissions }) => {
@@ -939,6 +940,7 @@ const ProductionvolumeData = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
@@ -970,6 +972,11 @@ const ProductionvolumeData = ({ permissions }) => {
         setSelectedUnit={setSelectedUnit}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
+        leftComponent={
+          permissions?.hideBreadcrumb ? undefined : (
+            <Breadcrumbs divider={false} />
+          )
+        }
       />
 
       {!permissions?.hideSummary && (

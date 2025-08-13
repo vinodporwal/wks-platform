@@ -2,6 +2,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { useSession } from 'SessionStoreContext'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getEnhancedColDefsByProducts from 'components/data-tables/CommonHeader/Kendo_ProductionAopHeaderByProducts'
 import React, { useEffect, useState } from 'react'
@@ -726,7 +727,7 @@ const ProductionNorms = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
+      {lowerVertName !== 'cracker' && <Breadcrumbs />}
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
@@ -761,6 +762,9 @@ const ProductionNorms = ({ permissions }) => {
           !permissions?.hideNoteText && lowerVertName !== 'cracker'
             ? '* MT per Annum'
             : ''
+        }
+        leftComponent={
+          lowerVertName !== 'cracker' ? undefined : <Breadcrumbs />
         }
       />
 

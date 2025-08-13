@@ -14,6 +14,7 @@ import { validateFields } from 'utils/validationUtils'
 // import TextField from '@mui/material/TextField'
 // import { useDispatch } from 'react-redux'
 // import { setIsBlocked } from 'store/reducers/dataGridStore'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import getShutdownConsumptionColDef from 'components/data-tables/CommonHeader/getShutdownConsumptionColDef'
 import KendoDataTables from './index'
 
@@ -531,6 +532,7 @@ const ShutdownNorms = () => {
         handleCalculate={handleCalculate}
         groupBy='Particulars'
         permissions={adjustedPermissions}
+        leftComponent={<Breadcrumbs />}
       />
     </div>
   )

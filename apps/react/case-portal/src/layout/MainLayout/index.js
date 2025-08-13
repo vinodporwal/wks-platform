@@ -1,15 +1,16 @@
+import { Box, Toolbar } from '@mui/material'
+import StepperNavNew from 'components/Utilities/StepperNavNew'
+import { useMenuContext } from 'menu/menuProvider'
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Outlet } from 'react-router-dom'
-import { Box, Toolbar } from '@mui/material'
-import Breadcrumbs from 'components/@extended/Breadcrumbs'
+import { Outlet, useLocation } from 'react-router-dom'
+import { openDrawer } from 'store/reducers/menu'
 import Drawer from './Drawer'
 import Header from './Header'
-import { openDrawer } from 'store/reducers/menu'
-import { useMenuContext } from 'menu/menuProvider'
 
 const MainLayout = ({ keycloak, authenticated }) => {
   const dispatch = useDispatch()
+  const location = useLocation()
   const { drawerOpen: open } = useSelector((state) => state.menu)
   // const menu = useMenu()
   const { items: menuItems } = useMenuContext()
@@ -34,7 +35,17 @@ const MainLayout = ({ keycloak, authenticated }) => {
           sx={{ width: '100%', flexGrow: 1, p: { xs: 2, sm: 3 } }}
         >
           <Toolbar />
-          <Breadcrumbs navigation={menu} divider={false} />
+          {location.pathname.startsWith('/production-norms-plan') && (
+            <Box
+              sx={{
+                mb: 2,
+              }}
+            >
+              <StepperNavNew />
+            </Box>
+          )}
+          {/* <NewBreadcrumbs divider={false} /> */}
+
           <Outlet />
         </Box>
       </Box>

@@ -41,12 +41,12 @@ import { DurationEditor } from './Utilities-Kendo/numericViewCells'
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 // import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
-import { descLimit } from './Utilities-Kendo/descLimit'
-import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import {
   ExcelExport,
   ExcelExportColumn,
 } from '../../../node_modules/@progress/kendo-react-excel-export/index'
+import { descLimit } from './Utilities-Kendo/descLimit'
+import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -121,6 +121,7 @@ const KendoDataTables = ({
   downloadExcelForConfiguration = () => {},
   onLoad = () => {},
   disableRedHighlight = false,
+  leftComponent = undefined,
 }) => {
   // const _export = (React.useRef < ExcelExport) | (null > null)
   const _export = useRef(null)
@@ -685,18 +686,20 @@ const KendoDataTables = ({
         </div>
       )}
 
-      {(permissions?.allAction ?? false) && (
-        <Box className='action-box'>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              ...(permissions?.marginTop && { marginTop: '10px' }),
-            }}
-          >
-            {/* Left side - Note */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          marginBottom: '10px',
+          height: '100%',
+        }}
+      >
+        <>
+          {leftComponent ? (
+            leftComponent
+          ) : (
             <Box>
               {permissions?.showNote && (
                 <Typography component='div' className='text-note'>
@@ -748,176 +751,192 @@ const KendoDataTables = ({
                 </TextField>
               )}
             </Box>
+          )}
+        </>
+        {(permissions?.allAction ?? false) && (
+          <Box className='action-box'>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                ...(permissions?.marginTop && { marginTop: '10px' }),
+              }}
+            >
+              {/* Left side - Note */}
 
-            {/* Right side - All other actions */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {permissions?.UnitToShow && (
-                <Chip
-                  label={permissions.UnitToShow}
-                  variant='outlined'
-                  className='unit-chip'
-                />
-              )}
+              {/* Right side - All other actions */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {permissions?.UnitToShow && (
+                  <Chip
+                    label={permissions.UnitToShow}
+                    variant='outlined'
+                    className='unit-chip'
+                  />
+                )}
 
-              {permissions?.addButton && (
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={handleAddRow}
-                  disabled={isButtonDisabled}
-                >
-                  Add Item
-                </Button>
-              )}
-
-              {permissions?.downloadExcelBtn && (
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={downloadExcelForConfiguration}
-                  disabled={isButtonDisabled}
-                >
-                  Export
-                </Button>
-              )}
-
-              {permissions?.uploadExcelBtn && (
-                <>
+                {permissions?.addButton && (
                   <Button
                     variant='contained'
-                    onClick={triggerFileUpload}
+                    className='btn-save'
+                    onClick={handleAddRow}
+                    disabled={isButtonDisabled}
+                  >
+                    Add Item
+                  </Button>
+                )}
+
+                {permissions?.downloadExcelBtn && (
+                  <Button
+                    variant='contained'
+                    className='btn-save'
+                    onClick={downloadExcelForConfiguration}
+                    disabled={isButtonDisabled}
+                  >
+                    Export
+                  </Button>
+                )}
+
+                {permissions?.uploadExcelBtn && (
+                  <>
+                    <Button
+                      variant='contained'
+                      onClick={triggerFileUpload}
+                      disabled={isButtonDisabled}
+                      className='btn-save'
+                    >
+                      Import
+                    </Button>
+
+                    <input
+                      type='file'
+                      accept='.xlsx,.xls'
+                      onChange={onFileChange}
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                    />
+                  </>
+                )}
+
+                {permissions?.saveBtn && (
+                  <Button
+                    variant='contained'
+                    className='btn-save'
+                    onClick={saveModalOpen}
+                    disabled={
+                      isButtonDisabled ||
+                      (!summaryEdited &&
+                        Object.keys(modifiedCells).length === 0)
+                    }
+                    {...(loading ? {} : {})}
+                  >
+                    Save
+                  </Button>
+                )}
+
+                {permissions?.showCalculate && (
+                  <Button
+                    variant='contained'
+                    onClick={handleCalculateBtn}
+                    disabled={
+                      rows?.length === 0
+                        ? false
+                        : isButtonDisabled ||
+                          !permissions?.showCalculateVisibility
+                    }
+                    className='btn-save'
+                  >
+                    Calculate
+                  </Button>
+                )}
+
+                {permissions?.showRefresh && (
+                  <Button
+                    variant='contained'
+                    onClick={handleCalculateBtn}
                     disabled={isButtonDisabled}
                     className='btn-save'
                   >
-                    Import
+                    Refresh
                   </Button>
+                )}
 
-                  <input
-                    type='file'
-                    accept='.xlsx,.xls'
-                    onChange={onFileChange}
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                  />
-                </>
-              )}
+                {permissions?.showRefreshBtn && false && (
+                  <Button
+                    variant='contained'
+                    onClick={handleRefresh}
+                    className='btn-save'
+                  >
+                    Refresh
+                  </Button>
+                )}
 
-              {permissions?.saveBtn && (
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={saveModalOpen}
-                  disabled={
-                    isButtonDisabled ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
-                  }
-                  {...(loading ? {} : {})}
-                >
-                  Save
-                </Button>
-              )}
+                {permissions?.downloadExcelBtnFromUI && (
+                  <Button
+                    variant='contained'
+                    className='btn-save'
+                    onClick={excelExport}
+                    disabled={rows?.length === 0}
+                  >
+                    Export
+                  </Button>
+                )}
 
-              {permissions?.showCalculate && (
-                <Button
-                  variant='contained'
-                  onClick={handleCalculateBtn}
-                  disabled={
-                    rows?.length === 0
-                      ? false
-                      : isButtonDisabled ||
-                        !permissions?.showCalculateVisibility
-                  }
-                  className='btn-save'
-                >
-                  Calculate
-                </Button>
-              )}
-
-              {permissions?.showRefresh && (
-                <Button
-                  variant='contained'
-                  onClick={handleCalculateBtn}
-                  disabled={isButtonDisabled}
-                  className='btn-save'
-                >
-                  Refresh
-                </Button>
-              )}
-
-              {permissions?.showRefreshBtn && false && (
-                <Button
-                  variant='contained'
-                  onClick={handleRefresh}
-                  className='btn-save'
-                >
-                  Refresh
-                </Button>
-              )}
-
-              {permissions?.downloadExcelBtnFromUI && (
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={excelExport}
-                  disabled={rows?.length === 0}
-                >
-                  Export
-                </Button>
-              )}
-
-              {permissions?.showUnit && (
-                <TextField
-                  select
-                  value={selectedUnit || permissions?.units?.[0]}
-                  onChange={(e) => {
-                    setSelectedUnit(e.target.value)
-                    handleUnitChange(e.target.value)
-                  }}
-                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
-                  variant='outlined'
-                  label='Select UOM'
-                >
-                  <MenuItem value='' disabled>
-                    Select UOM
-                  </MenuItem>
-
-                  {/* Render the correct unit options dynamically */}
-                  {permissions?.units.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
+                {permissions?.showUnit && (
+                  <TextField
+                    select
+                    value={selectedUnit || permissions?.units?.[0]}
+                    onChange={(e) => {
+                      setSelectedUnit(e.target.value)
+                      handleUnitChange(e.target.value)
+                    }}
+                    sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                    variant='outlined'
+                    label='Select UOM'
+                  >
+                    <MenuItem value='' disabled>
+                      Select UOM
                     </MenuItem>
-                  ))}
-                </TextField>
-              )}
 
-              {permissions?.showModes && (
-                <TextField
-                  select
-                  value={selectMode || permissions?.modes?.[0]}
-                  onChange={(e) => {
-                    setSelectMode(e.target.value)
-                    // fetchData()
-                  }}
-                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
-                  variant='outlined'
-                  label='Select Modes'
-                >
-                  <MenuItem value='' disabled>
-                    Select Modes
-                  </MenuItem>
+                    {/* Render the correct unit options dynamically */}
+                    {permissions?.units.map((unit) => (
+                      <MenuItem key={unit} value={unit}>
+                        {unit}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
 
-                  {/* Render the correct unit options dynamically */}
-                  {permissions?.modes.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
+                {permissions?.showModes && (
+                  <TextField
+                    select
+                    value={selectMode || permissions?.modes?.[0]}
+                    onChange={(e) => {
+                      setSelectMode(e.target.value)
+                      // fetchData()
+                    }}
+                    sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                    variant='outlined'
+                    label='Select Modes'
+                  >
+                    <MenuItem value='' disabled>
+                      Select Modes
                     </MenuItem>
-                  ))}
-                </TextField>
-              )}
+
+                    {/* Render the correct unit options dynamically */}
+                    {permissions?.modes.map((unit) => (
+                      <MenuItem key={unit} value={unit}>
+                        {unit}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              </Box>
             </Box>
           </Box>
-        </Box>
-      )}
+        )}
+      </Box>
 
       <div className='kendo-data-grid'>
         <Tooltip openDelay={50} position='auto' anchorElement='target'>

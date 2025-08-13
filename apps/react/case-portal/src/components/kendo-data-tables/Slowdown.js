@@ -7,6 +7,7 @@ import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import { SlowDownElastomerColumns } from 'components/colums/ElastomerColums'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
 import { SlowDownPeColumns } from 'components/colums/PeColums'
@@ -818,6 +819,41 @@ const SlowDown = ({ permissions }) => {
     isOldYear,
   )
 
+  const TabComponent = () => (
+    <Box style={{ margin: 0, padding: 0 }}>
+      <Tabs
+        value={selectedTab}
+        onChange={handleTabChange}
+        sx={{
+          borderBottom: '0px solid #ccc',
+          '.MuiTabs-indicator': { display: 'none' },
+          margin: '0px 0px 0px 0px',
+          minHeight: '35px',
+        }}
+      >
+        <Tab
+          label='Slowdown Details'
+          sx={{
+            border: '1px solid #ADD8E6',
+            borderBottom: '1px solid #ADD8E6',
+            padding: '9px',
+            minHeight: '10px',
+          }}
+        />
+
+        <Tab
+          label='Configuration'
+          sx={{
+            border: '1px solid #ADD8E6',
+            borderBottom: '1px solid #ADD8E6',
+            p: '9px',
+            minHeight: 10,
+          }}
+        />
+      </Tabs>
+    </Box>
+  )
+
   return (
     <div>
       <Backdrop
@@ -826,41 +862,7 @@ const SlowDown = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
-      {lowerVertName === 'meg' && (
-        <Box style={{ margin: 0, padding: 0 }}>
-          <Tabs
-            value={selectedTab}
-            onChange={handleTabChange}
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 0px 0px',
-              minHeight: '35px',
-            }}
-          >
-            <Tab
-              label='Slowdown Details'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                padding: '9px',
-                minHeight: '10px',
-              }}
-            />
-
-            <Tab
-              label='Configuration'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                p: '9px',
-                minHeight: 10,
-              }}
-            />
-          </Tabs>
-        </Box>
-      )}
+      {lowerVertName === 'meg' && <Breadcrumbs divider={false} />}
 
       {selectedTab === 0 && (
         <KendoDataTables
@@ -896,6 +898,13 @@ const SlowDown = ({ permissions }) => {
           focusFirstField={focusFirstField}
           allProducts={allProducts}
           disableRedHighlight={true}
+          leftComponent={
+            lowerVertName === 'meg' ? (
+              <TabComponent />
+            ) : (
+              <Breadcrumbs divider={false} />
+            )
+          }
         />
       )}
 
@@ -931,6 +940,13 @@ const SlowDown = ({ permissions }) => {
           handleCancelClick={handleCancelClick}
           groupBy='Particulars'
           allRedCell={allRedCell}
+          leftComponent={
+            lowerVertName === 'meg' ? (
+              <TabComponent />
+            ) : (
+              <Breadcrumbs divider={false} />
+            )
+          }
         />
       )}
     </div>

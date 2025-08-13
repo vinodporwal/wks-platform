@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import React, { useEffect, useState } from 'react'
@@ -331,6 +332,7 @@ const PlantsProductionSummary = () => {
         saveChanges={saveChanges}
         handleCalculate={handleCalculate}
         handleRemarkCellClick={handleRemarkCellClick}
+        leftComponent={<Breadcrumbs />}
       />
 
       <Notification

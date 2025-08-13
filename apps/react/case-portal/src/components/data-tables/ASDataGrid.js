@@ -2,14 +2,16 @@ import CancelIcon from '@mui/icons-material/Close'
 // import DeleteIcon from '@mui/icons-material/Delete'
 import DeleteIcon from '@mui/icons-material/DeleteOutlined'
 import EditIcon from '@mui/icons-material/Edit'
-import VisibilityIcon from '@mui/icons-material/Visibility'
 import SaveIcon from '@mui/icons-material/Save'
-import { Box, Button, IconButton, TextField } from '@mui/material'
-import { DataGrid, GridToolbar } from '@mui/x-data-grid'
-import * as React from 'react'
-import { useEffect, useMemo, useState } from 'react'
 import SearchIcon from '@mui/icons-material/Search'
-import { InputAdornment } from '@mui/material'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import {
+  Box,
+  Button,
+  IconButton,
+  InputAdornment,
+  TextField,
+} from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -18,8 +20,15 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
-import { GridActionsCellItem, GridRowModes } from '@mui/x-data-grid'
+import {
+  DataGrid,
+  GridActionsCellItem,
+  GridRowModes,
+  GridToolbar,
+} from '@mui/x-data-grid'
 import Notification from 'components/Utilities/Notification'
+import * as React from 'react'
+import { useEffect, useMemo, useState } from 'react'
 //import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined'
 //import Tooltip from '@mui/material/Tooltip'
 
@@ -88,7 +97,7 @@ const DataGridTable = ({
   setSelectionModel = () => {},
   // onSelectionModelChange = () => {},
   handleDeleteSelected = () => {},
-
+  leftComponent = undefined,
   // createCase = () => {},
   // isCreatingCase = false,
   // showCreateCasebutton = false,
@@ -444,25 +453,36 @@ const DataGridTable = ({
       </Box> */}
       {/* )} */}
       {/* {(permissions?.allAction ?? true) && ( */}
-      <Box className='action-box'>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            width: '100%', // make sure container is full width
-            p: 1,
-            gap: 1,
-          }}
-        >
-          {permissions?.UnitToShow && (
-            <Chip
-              label={permissions.UnitToShow}
-              variant='outlined'
-              className='unit-chip'
-            />
-          )}
-          {/* {permissions?.showCalculate && (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          marginBottom: '10px',
+          height: '100%',
+        }}
+      >
+        <>{leftComponent && leftComponent}</>
+        <Box className='action-box'>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              width: '100%', // make sure container is full width
+              p: 1,
+              gap: 1,
+            }}
+          >
+            {permissions?.UnitToShow && (
+              <Chip
+                label={permissions.UnitToShow}
+                variant='outlined'
+                className='unit-chip'
+              />
+            )}
+            {/* {permissions?.showCalculate && (
               <Tooltip title='Calculate'>
                 <span>
                   <Button
@@ -485,168 +505,170 @@ const DataGridTable = ({
               </Tooltip>
             )} */}
 
-          {permissions?.addButton && (
-            <Button
-              variant='contained'
-              className='btn-save'
-              onClick={handleAddRow}
-              disabled={isButtonDisabled}
-            >
-              Add Item
-            </Button>
-          )}
+            {permissions?.addButton && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleAddRow}
+                disabled={isButtonDisabled}
+              >
+                Add Item
+              </Button>
+            )}
 
-          {permissions?.saveBtn && (
-            <Button
-              variant='contained'
-              className='btn-save'
-              onClick={saveModalOpen}
-              disabled={isButtonDisabled || !enableSaveAddBtn}
-              // loading={loading}
-              // loadingposition='start'
-              {...(loading ? {} : {})}
-            >
-              Save
-            </Button>
-          )}
+            {permissions?.saveBtn && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={saveModalOpen}
+                disabled={isButtonDisabled || !enableSaveAddBtn}
+                // loading={loading}
+                // loadingposition='start'
+                {...(loading ? {} : {})}
+              >
+                Save
+              </Button>
+            )}
 
-          {permissions?.showCalculate && (
-            <Button
-              variant='contained'
-              onClick={handleCalculateBtn}
-              disabled={
-                rows?.length === 0
-                  ? false
-                  : isButtonDisabled || !permissions?.showCalculateVisibility
-              }
-              className='btn-save'
-            >
-              Calculate
-            </Button>
-          )}
+            {permissions?.showCalculate && (
+              <Button
+                variant='contained'
+                onClick={handleCalculateBtn}
+                disabled={
+                  rows?.length === 0
+                    ? false
+                    : isButtonDisabled || !permissions?.showCalculateVisibility
+                }
+                className='btn-save'
+              >
+                Calculate
+              </Button>
+            )}
 
-          {permissions?.showRefresh && (
-            <Button
-              variant='contained'
-              onClick={handleCalculateBtn}
-              disabled={isButtonDisabled}
-              className='btn-save'
-            >
-              Refresh
-            </Button>
-          )}
+            {permissions?.showRefresh && (
+              <Button
+                variant='contained'
+                onClick={handleCalculateBtn}
+                disabled={isButtonDisabled}
+                className='btn-save'
+              >
+                Refresh
+              </Button>
+            )}
 
-          {permissions?.showRefreshBtn && false && (
-            <Button
-              variant='contained'
-              onClick={handleRefresh}
-              className='btn-save'
-            >
-              Refresh
-            </Button>
-          )}
+            {permissions?.showRefreshBtn && false && (
+              <Button
+                variant='contained'
+                onClick={handleRefresh}
+                className='btn-save'
+              >
+                Refresh
+              </Button>
+            )}
 
-          {permissions?.showUnit && (
-            <TextField
-              select
-              value={selectedUnit || permissions?.units?.[0]}
-              onChange={(e) => {
-                setSelectedUnit(e.target.value)
-                handleUnitChange(e.target.value)
-              }}
-              sx={{ width: '150px', backgroundColor: jioColors.background }}
-              variant='outlined'
-              label='Select UOM'
-            >
-              <MenuItem value='' disabled>
-                Select UOM
-              </MenuItem>
-
-              {/* Render the correct unit options dynamically */}
-              {permissions?.units.map((unit) => (
-                <MenuItem key={unit} value={unit}>
-                  {unit}
+            {permissions?.showUnit && (
+              <TextField
+                select
+                value={selectedUnit || permissions?.units?.[0]}
+                onChange={(e) => {
+                  setSelectedUnit(e.target.value)
+                  handleUnitChange(e.target.value)
+                }}
+                sx={{ width: '150px', backgroundColor: jioColors.background }}
+                variant='outlined'
+                label='Select UOM'
+              >
+                <MenuItem value='' disabled>
+                  Select UOM
                 </MenuItem>
-              ))}
-            </TextField>
-          )}
 
-          {false && (
-            <TextField
-              variant='outlined'
-              placeholder='Search...'
-              value={searchText}
-              onChange={handleSearchChange}
-              sx={{
-                width: '300px',
-                borderRadius: 1,
-                backgroundColor: jioColors.background,
-                color: '#8A9BC2',
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position='start'>
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          )}
+                {/* Render the correct unit options dynamically */}
+                {permissions?.units.map((unit) => (
+                  <MenuItem key={unit} value={unit}>
+                    {unit}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
-          {false && (
-            <IconButton
-              aria-label='import'
-              onClick={handleImportExport}
-              sx={{
-                border: `1px solid ${jioColors.border}`,
-                borderRadius: 1,
-                padding: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                color: 'inherit',
-                width: '150px',
-                '&:hover': {
+            {false && (
+              <TextField
+                variant='outlined'
+                placeholder='Search...'
+                value={searchText}
+                onChange={handleSearchChange}
+                sx={{
+                  width: '300px',
+                  borderRadius: 1,
+                  backgroundColor: jioColors.background,
+                  color: '#8A9BC2',
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position='start'>
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+
+            {false && (
+              <IconButton
+                aria-label='import'
+                onClick={handleImportExport}
+                sx={{
+                  border: `1px solid ${jioColors.border}`,
+                  borderRadius: 1,
+                  padding: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
                   backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                },
-              }}
-            >
-              <FileDownload sx={{ color: '#2A3ACD' }} />
-              <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
-                Import
-              </span>
-            </IconButton>
-          )}
+                  color: 'inherit',
+                  width: '150px',
+                  '&:hover': {
+                    backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                  },
+                }}
+              >
+                <FileDownload sx={{ color: '#2A3ACD' }} />
+                <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
+                  Import
+                </span>
+              </IconButton>
+            )}
 
-          {false && (
-            <IconButton
-              aria-label='export'
-              onClick={handleImportExport}
-              sx={{
-                border: `1px solid ${jioColors.border}`,
-                borderRadius: 1,
-                padding: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                color: 'inherit',
-                width: '150px',
-                '&:hover': {
+            {false && (
+              <IconButton
+                aria-label='export'
+                onClick={handleImportExport}
+                sx={{
+                  border: `1px solid ${jioColors.border}`,
+                  borderRadius: 1,
+                  padding: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
                   backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                },
-              }}
-            >
-              <FileUpload sx={{ color: '#2A3ACD' }} />
-              <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
-                Export
-              </span>
-            </IconButton>
-          )}
-          {/* </Box> */}
+                  color: 'inherit',
+                  width: '150px',
+                  '&:hover': {
+                    backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                  },
+                }}
+              >
+                <FileUpload sx={{ color: '#2A3ACD' }} />
+                <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
+                  Export
+                </span>
+              </IconButton>
+            )}
+            {/* </Box> */}
+          </Box>
         </Box>
       </Box>
+
       {/* )} */}
       <Box
         sx={{

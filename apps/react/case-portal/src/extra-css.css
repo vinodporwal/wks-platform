@@ -67,8 +67,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0px;
-  margin-bottom: 0px;
+  /* margin-top: 0px;
+  margin-bottom: 0px; */
 }
 .action-box2 {
   display: flex;

@@ -1,5 +1,6 @@
 import { Backdrop, Box, CircularProgress, Tab, Tabs } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -528,6 +529,7 @@ const CrackerConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+      <Breadcrumbs />
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
         <Tabs
           sx={{

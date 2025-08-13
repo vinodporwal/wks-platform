@@ -1,5 +1,6 @@
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -344,6 +345,7 @@ const MaintenanceTable = () => {
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
+        leftComponent={<Breadcrumbs divider={false} />}
       />
     </div>
   )

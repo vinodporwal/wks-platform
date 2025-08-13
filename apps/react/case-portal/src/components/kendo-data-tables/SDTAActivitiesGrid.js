@@ -1,5 +1,5 @@
-import React from 'react'
 import { Box } from '@mui/material'
+import Breadcrumbs from 'components/@extended/Breadcrumbs.js'
 import KendoDataTablesCracker from './index-cracker.js'
 
 const SDTAActivitiesGrid = ({
@@ -30,7 +30,7 @@ const SDTAActivitiesGrid = ({
         rows={rows}
         setRows={setRows}
         editable={true}
-        editField="inEdit"
+        editField='inEdit'
         fetchData={fetchData}
         handleRemarkCellClick={handleRemarkCellClick}
         remarkDialogOpen={remarkDialogOpen}
@@ -48,6 +48,7 @@ const SDTAActivitiesGrid = ({
         saveChanges={saveChanges}
         setRemarkDialogOpen={setRemarkDialogOpen}
         titleName='SD / TA Activities'
+        leftComponent={<Breadcrumbs />}
       />
     </Box>
   )

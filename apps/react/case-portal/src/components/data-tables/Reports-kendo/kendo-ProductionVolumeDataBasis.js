@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import {
   CustomAccordion,
@@ -190,42 +191,44 @@ const ProductionVolumeDataBasis = () => {
           ),
         )}
       </div>
-
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
-        {!isOldYear && (
-          <Button
-            variant='contained'
-            onClick={exportAllGrids}
-            className='btn-save'
+      <Box display='flex' justifyContent='space-between' alignItems='center'>
+        <Breadcrumbs />
+        <Box display='flex' justifyContent='flex-end' mb='2px'>
+          {!isOldYear && (
+            <Button
+              variant='contained'
+              onClick={exportAllGrids}
+              className='btn-save'
+            >
+              Export
+            </Button>
+          )}
+          <TextField
+            select
+            value={selectedUnit || 'TPH'}
+            onChange={(e) => {
+              setSelectedUnit(e.target.value)
+              handleUnitChange(e.target.value)
+            }}
+            sx={{
+              width: '150px',
+              backgroundColor: '#FFFFFF',
+              marginLeft: '12px',
+            }}
+            variant='outlined'
+            label='Select UOM'
           >
-            Export
-          </Button>
-        )}
-        <TextField
-          select
-          value={selectedUnit || 'TPH'}
-          onChange={(e) => {
-            setSelectedUnit(e.target.value)
-            handleUnitChange(e.target.value)
-          }}
-          sx={{
-            width: '150px',
-            backgroundColor: '#FFFFFF',
-            marginLeft: '12px',
-          }}
-          variant='outlined'
-          label='Select UOM'
-        >
-          <MenuItem value='' disabled>
-            Select UOM
-          </MenuItem>
-
-          {units.map((unit) => (
-            <MenuItem key={unit} value={unit}>
-              {unit}
+            <MenuItem value='' disabled>
+              Select UOM
             </MenuItem>
-          ))}
-        </TextField>
+
+            {units.map((unit) => (
+              <MenuItem key={unit} value={unit}>
+                {unit}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Box>
       </Box>
 
       <Box display='flex' flexDirection='column' gap={2}>

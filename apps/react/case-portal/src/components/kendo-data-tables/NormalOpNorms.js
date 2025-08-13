@@ -1,27 +1,22 @@
-import { useGridApiRef } from '@mui/x-data-grid'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { DataService } from 'services/DataService'
-import { useSession } from 'SessionStoreContext'
-import KendoDataTables from './index'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
-import { useDispatch } from 'react-redux'
-import { setIsBlocked } from 'store/reducers/dataGridStore'
-import { validateFields } from 'utils/validationUtils'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import MuiAccordion from '@mui/material/Accordion'
-import MuiAccordionDetails from '@mui/material/AccordionDetails'
-import MuiAccordionSummary from '@mui/material/AccordionSummary'
-import { styled } from '@mui/material/styles'
+import { useGridApiRef } from '@mui/x-data-grid'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import getNormalOpNormColDef from 'components/data-tables/CommonHeader/getNormalOpNormColDef'
-import { Box, Typography } from '../../../node_modules/@mui/material/index'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
+import { setIsBlocked } from 'store/reducers/dataGridStore'
 import {
   CustomAccordion,
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+import { validateFields } from 'utils/validationUtils'
+import { Box, Typography } from '../../../node_modules/@mui/material/index'
+import KendoDataTables from './index'
 
 const NormalOpNormsScreen = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -746,6 +741,7 @@ const NormalOpNormsScreen = () => {
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleGradeChange={handleGradeChange}
         plantID={plantID}
+        leftComponent={<Breadcrumbs />}
       />
 
       {lowerVertName === 'meg' && (

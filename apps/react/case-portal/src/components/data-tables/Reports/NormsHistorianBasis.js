@@ -17,14 +17,15 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import KendoDataGrid from 'components/Kendo-Report-DataGrid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
 import {
   CustomAccordion,
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
 
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
@@ -292,38 +293,41 @@ const NormsHistorianBasis = () => {
         ))}
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
-        {!isOldYear && (
-          <Button
-            variant='contained'
-            onClick={exportAllGrids}
-            className='btn-save'
+      <Box display='flex' justifyContent='space-between' alignItems='center'>
+        <Breadcrumbs />
+        <Box display='flex' justifyContent='flex-end' mb='2px'>
+          {!isOldYear && (
+            <Button
+              variant='contained'
+              onClick={exportAllGrids}
+              className='btn-save'
+            >
+              Export
+            </Button>
+          )}
+          <TextField
+            select
+            value={selectedUnit}
+            onChange={(e) => handleUnitChange(e.target.value)}
+            sx={{
+              width: '150px',
+              backgroundColor: '#FFFFFF',
+              marginLeft: '12px',
+            }}
+            variant='outlined'
+            label={lowerVertName === 'cracker' ? 'Select Mode.' : 'Select UOM.'}
           >
-            Export
-          </Button>
-        )}
-        <TextField
-          select
-          value={selectedUnit}
-          onChange={(e) => handleUnitChange(e.target.value)}
-          sx={{
-            width: '150px',
-            backgroundColor: '#FFFFFF',
-            marginLeft: '12px',
-          }}
-          variant='outlined'
-          label={lowerVertName === 'cracker' ? 'Select Mode.' : 'Select UOM.'}
-        >
-          <MenuItem value='' disabled>
-            {lowerVertName === 'cracker' ? 'Select Mode.' : 'Select UOM.'}
-          </MenuItem>
-
-          {units.map((unit) => (
-            <MenuItem key={unit} value={unit}>
-              {unit}
+            <MenuItem value='' disabled>
+              {lowerVertName === 'cracker' ? 'Select Mode.' : 'Select UOM.'}
             </MenuItem>
-          ))}
-        </TextField>
+
+            {units.map((unit) => (
+              <MenuItem key={unit} value={unit}>
+                {unit}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Box>
       </Box>
 
       <Box display='flex' flexDirection='column' gap={2}>

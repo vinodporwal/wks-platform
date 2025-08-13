@@ -654,6 +654,7 @@ const SelectivityData = (props) => {
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}
           handleGradeChange={handleGradeChange}
+          leftComponent={props?.leftComponent}
         />
       </Box>
     </div>

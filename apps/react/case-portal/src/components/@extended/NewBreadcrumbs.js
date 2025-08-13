@@ -5,16 +5,18 @@ import PropTypes from 'prop-types'
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
-import { Box, Typography } from '@mui/material'
+import { Grid, Typography } from '@mui/material'
+import Chip from '@mui/material/Chip'
+import Stack from '@mui/material/Stack'
 import { useSession } from 'SessionStoreContext'
+import StepperNav from 'components/Utilities/StepperNav'
 import Config from 'consts/index'
-import { useMenuContext } from 'menu/menuProvider'
 import { useDispatch, useSelector } from 'react-redux'
 import { setScreenTitle } from 'store/reducers/dataGridStore'
+import { Box } from '../../../node_modules/@mui/material/index'
+import MainCard from '../MainCard'
 
-const Breadcrumbs = ({ title, ...others }) => {
-  const { items: menuItems } = useMenuContext()
-  const navigation = { items: [...menuItems] }
+const Breadcrumbs = ({ navigation, title, ...others }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange } = dataGridStore
@@ -247,26 +249,101 @@ const Breadcrumbs = ({ title, ...others }) => {
       location?.pathname !== '/user-form'
     ) {
       breadcrumbContent = (
-        <>
-          <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
-            <Typography
-              component='div'
-              sx={{
-                textDecoration: 'none',
-                fontWeight: 800,
-                color: 'black',
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              {verticalName} / {siteName} / {plantName}{' '}
-              {/* {getRoleName(verticalId, item?.id)} */}
-              {/* {keycloak?.realmAccess?.roles[0]} */}
-              {itemContent}
-            </Typography>
-          </Box>
+        <MainCard
+          border={false}
+          sx={{ mb: 3, bgcolor: 'transparent' }}
+          {...others}
+          content={false}
+        >
+          {location?.pathname.startsWith('/production-norms-plan') && (
+            <Box>
+              <StepperNav />
+            </Box>
+          )}
+          <Grid
+            container
+            direction='column'
+            justifyContent='flex-start'
+            alignItems='flex-start'
+            spacing={1}
+            sx={{ marginTop: '-18px' }}
+          >
+            {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
+            {/* <MuiBreadcrumbs aria-label='breadcrumb'> */}
+            {/* HIDE HOME OPTION FROM Navigators MENU */}
+            {/* <Typography
+                  component={Link}
+                  to='/home'
+                  color='textSecondary'
+                  variant='h6'
+                  sx={{ textDecoration: 'none' }}
+                >
+                  Home
+                </Typography> */}
 
+            {/* {mainContent} */}
+
+            {/* <Typography
+                  component='div'
+                  sx={{
+                    textDecoration: 'none',
+                    fontWeight: 800,
+                    color: 'black',
+                    // fontStyle: 'italic',
+                    fontSize: '1rem',
+                  }}
+                >
+                  {verticalName} / {siteName} / {plantName}
+                </Typography>
+                {itemContent}
+              </MuiBreadcrumbs>
+            </Grid> */}
+
+            <Grid
+              container
+              sx={{ ml: 1.5 }}
+              justifyContent='space-between'
+              alignItems='center'
+            >
+              <Grid item>
+                <Typography
+                  component='div'
+                  sx={{
+                    textDecoration: 'none',
+                    fontWeight: 800,
+                    color: 'black',
+                    fontSize: '0.8rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  {verticalName} / {siteName} / {plantName}{' '}
+                  {/* {getRoleName(verticalId, item?.id)} */}
+                  {/* {keycloak?.realmAccess?.roles[0]} */}
+                  {itemContent}
+                </Typography>
+              </Grid>
+
+              <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
+                <Grid item>
+                  <Chip
+                    color='primary'
+                    variant='outlined'
+                    // label={getRoleName(verticalId, item?.id)}
+                    className='role-name'
+                    sx={{ border: 'none' }} // Remove the border
+                  />
+                </Grid>
+              </Stack>
+            </Grid>
+
+            {/* HIDE THE TITLE NAME */}
+            {title && (
+              <Grid item sx={{ mt: 0.5 }}>
+                <Typography variant='h5'>{item.title}</Typography>
+              </Grid>
+            )}
+          </Grid>
           {/* Notification Component */}
           <Notification
             open={notification.open}
@@ -274,7 +351,7 @@ const Breadcrumbs = ({ title, ...others }) => {
             severity={notification.severity}
             onClose={() => setNotification({ ...notification, open: false })}
           />
-        </>
+        </MainCard>
       )
     }
   }

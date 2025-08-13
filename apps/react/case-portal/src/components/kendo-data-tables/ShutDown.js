@@ -8,6 +8,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import KendoDataTables from './index'
 
 const ShutDown = ({ permissions }) => {
@@ -555,6 +556,7 @@ const ShutDown = ({ permissions }) => {
         deleteRowData={deleteRowData}
         permissions={adjustedPermissions}
         disableRedHighlight={true}
+        leftComponent={<Breadcrumbs divider={false} />}
       />
     </div>
   )

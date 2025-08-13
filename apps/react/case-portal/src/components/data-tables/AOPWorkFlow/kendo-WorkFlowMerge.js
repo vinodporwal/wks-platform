@@ -28,14 +28,15 @@ import { remarkColumn } from 'components/Utilities/remarkColumn'
 
 import './jio-grid-style.css'
 
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import ProductionAopView from 'components/data-tables-views/kendo-DataTable-production-aop'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import PlantsProductionSummary from '../Reports-kendo/kendo-PlantsProductionData'
+import AnnualProductionPlan from '../Reports-kendo/AnnualProductionPlan'
 import MonthwiseProduction from '../Reports-kendo/kendo-MonthwiseProduction'
 import MonthwiseRawMaterial from '../Reports-kendo/kendo-MonthwiseRawMaterial'
-import TurnaroundReport from '../Reports-kendo/kendo-TurnaroundReport'
-import AnnualProductionPlan from '../Reports-kendo/AnnualProductionPlan'
 import PlantContribution from '../Reports-kendo/kendo-PlantContribution'
+import PlantsProductionSummary from '../Reports-kendo/kendo-PlantsProductionData'
+import TurnaroundReport from '../Reports-kendo/kendo-TurnaroundReport'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -585,7 +586,7 @@ const WorkFlowMerge = () => {
             </Step>
           ))}
         </Stepper>
-
+        <Breadcrumbs />
         <Typography component='div' className='text-note'>
           * Prices - MIIS BPC (Last Budget Year), Actual Values - MIIS
           Contribution (YTD).

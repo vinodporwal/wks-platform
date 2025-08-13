@@ -1,17 +1,18 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { Box } from '@mui/material'
-import MuiAccordion from '@mui/material/Accordion'
-import MuiAccordionDetails from '@mui/material/AccordionDetails'
-import MuiAccordionSummary from '@mui/material/AccordionSummary'
-import { styled } from '@mui/material/styles'
 import AopTabs from 'components/AopTabs'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
 // import { usePermissions } from 'hooks/usePermissions'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
+import {
+  CustomAccordion,
+  CustomAccordionDetails,
+  CustomAccordionSummary,
+} from 'utils/CustomAccrodian'
 import {
   Backdrop,
   Button,
@@ -26,11 +27,6 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
-import {
-  CustomAccordion,
-  CustomAccordionDetails,
-  CustomAccordionSummary,
-} from 'utils/CustomAccrodian'
 
 const ConfigurationTable = () => {
   const year = localStorage.getItem('year')
@@ -741,16 +737,9 @@ const ConfigurationTable = () => {
         >
           <CircularProgress color='inherit' />
         </Backdrop>
+        <Breadcrumbs divider={false} />
         {ConfigurationAccordian}
         <Box>
-          <AopTabs
-            tabIndex={tabIndex}
-            setTabIndex={setTabIndex}
-            tabs={megTabs.map((tab) =>
-              tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
-            )}
-          />
-
           {(() => {
             const currentTab = megTabs[tabIndex]?.toLowerCase()
             switch (currentTab) {
@@ -767,6 +756,17 @@ const ConfigurationTable = () => {
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='0'
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={megTabs.map((tab) =>
+                          tab === 'Report Manual Entry'
+                            ? `${tab} ${displayYear}`
+                            : tab,
+                        )}
+                      />
+                    }
                   />
                 )
               case 'constants':
@@ -782,6 +782,17 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='1'
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={megTabs.map((tab) =>
+                          tab === 'Report Manual Entry'
+                            ? `${tab} ${displayYear}`
+                            : tab,
+                        )}
+                      />
+                    }
                   />
                 )
               case 'report manual entry':
@@ -797,6 +808,17 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='2'
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={megTabs.map((tab) =>
+                          tab === 'Report Manual Entry'
+                            ? `${tab} ${displayYear}`
+                            : tab,
+                        )}
+                      />
+                    }
                   />
                 )
               default:
@@ -831,13 +853,9 @@ const ConfigurationTable = () => {
         >
           <CircularProgress color='inherit' />
         </Backdrop>
+        <Breadcrumbs divider={false} />
         {ConfigurationAccordian}
         <Box>
-          <AopTabs
-            tabIndex={tabIndex}
-            setTabIndex={setTabIndex}
-            tabs={crackerTabs}
-          />
           {(() => {
             const currentTab = crackerTabs[tabIndex]?.toLowerCase()
 
@@ -856,6 +874,13 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='0'
                     setGradeId={handleGradeChange}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={crackerTabs}
+                      />
+                    }
                   />
                 )
               case 'constants':
@@ -871,6 +896,13 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='1'
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={crackerTabs}
+                      />
+                    }
                   />
                 )
 
@@ -898,6 +930,7 @@ const ConfigurationTable = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+      <Breadcrumbs divider={false} />
       {ConfigurationAccordian}
       <Notification
         open={snackbarOpen}
@@ -913,17 +946,6 @@ const ConfigurationTable = () => {
           flexDirection: 'column',
         }}
       >
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={tabs.map((tabId) => {
-            const tabInfo = availableTabs.find(
-              (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
-            )
-            if (tabInfo) return tabInfo?.displayName || 'loading..'
-          })}
-        />
-
         <Box>
           {(() => {
             const currentTabId = tabs[tabIndex]?.toLowerCase()
@@ -940,6 +962,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
               case getTheId('StartupLosses'):
@@ -954,6 +990,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
               case getTheId('Otherlosses'):
@@ -968,6 +1018,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
               case getTheId('ShutdownNorms'):
@@ -982,6 +1046,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
               case getTheId('Constant'):
@@ -996,6 +1074,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
               case getTheId('Receipe'):
@@ -1010,6 +1102,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
               case getTheId('ContineGradeChange'):
@@ -1023,6 +1129,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
               case getTheId('DisContineGradeChange'):
@@ -1036,6 +1156,20 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    leftComponent={
+                      <AopTabs
+                        tabIndex={tabIndex}
+                        setTabIndex={setTabIndex}
+                        tabs={tabs.map((tabId) => {
+                          const tabInfo = availableTabs.find(
+                            (tab) =>
+                              tab.id.toLowerCase() === tabId.toLowerCase(),
+                          )
+                          if (tabInfo)
+                            return tabInfo?.displayName || 'loading..'
+                        })}
+                      />
+                    }
                   />
                 )
 

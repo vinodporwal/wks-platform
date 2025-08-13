@@ -1,29 +1,26 @@
 import { DataService } from 'services/DataService'
 //import DataGridTable from './ASDataGrid'
-import React, { useEffect, useState } from 'react'
-import { useSession } from 'SessionStoreContext'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useSelector } from 'react-redux'
-import { useGridApiRef } from '@mui/x-data-grid'
-import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
-import { validateFields } from 'utils/validationUtils'
-import TextField from '@mui/material/TextField'
-import { useDispatch } from 'react-redux'
+import { useGridApiRef } from '@mui/x-data-grid'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useSession } from 'SessionStoreContext'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { validateFields } from 'utils/validationUtils'
+import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 
-import Typography from '@mui/material/Typography'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { Box } from '@mui/material'
-import { Button } from '@mui/material'
 //import './data-grid-css.css'
 //import './extra-css.css'
 
-import { styled } from '@mui/material/styles'
 import MuiAccordion from '@mui/material/Accordion'
-import MuiAccordionSummary from '@mui/material/AccordionSummary'
 import MuiAccordionDetails from '@mui/material/AccordionDetails'
+import MuiAccordionSummary from '@mui/material/AccordionSummary'
+import { styled } from '@mui/material/styles'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import KendoDataTables from './index'
 
 // Customized Accordion
@@ -622,6 +619,7 @@ const ConsumptionNorms = () => {
               groupBy='Particulars'
               grades={grades}
               handleGradeChange={handleGradeChange}
+              leftComponent={<Breadcrumbs />}
             />
           </Box>
           // </CustomAccordionDetails>

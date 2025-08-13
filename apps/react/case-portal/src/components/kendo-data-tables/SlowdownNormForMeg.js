@@ -1,3 +1,4 @@
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { SlowdownNormForMegServices } from 'services/SlowdownNormForMegServices'
@@ -279,6 +280,7 @@ const SlowdownNormForMeg = () => {
         fetchData={fetchSlowdownNormsColumns}
         permissions={tablePermissions}
         groupBy='Particulars'
+        leftComponent={<Breadcrumbs />}
       />
     </div>
   )

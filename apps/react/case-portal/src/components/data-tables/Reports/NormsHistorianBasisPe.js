@@ -2,12 +2,13 @@ import { Box } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
+import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import {
   CustomAccordion,
   CustomAccordionDetails,
@@ -317,7 +318,13 @@ const ProductionVolumeDataBasisPe = () => {
         ))}
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb='2px'
+      >
+        <Breadcrumbs />
         <Button
           variant='contained'
           onClick={exportAllGrids}

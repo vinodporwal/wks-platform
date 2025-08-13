@@ -1,12 +1,13 @@
-import { Box, Tab, Tabs, Backdrop, CircularProgress } from '@mui/material'
-import { useCallback, useEffect, useState, useMemo } from 'react'
-import { useSelector } from 'react-redux'
+import { Backdrop, Box, CircularProgress, Tab, Tabs } from '@mui/material'
+import { useSession } from 'SessionStoreContext'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
-import KendoDataTables from './index'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
-import { useSession } from 'SessionStoreContext'
+import KendoDataTables from './index'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -616,6 +617,7 @@ const CrackerConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+      <Breadcrumbs />
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
         <Tabs
           sx={{

@@ -6,6 +6,7 @@ import React, { useState } from 'react'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 // import NumericInputOnly from 'utils/NumericInputOnly'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import getEnhancedColDefs from './CommonHeader/feedstockHeaders'
 
 const FeedStockAvailability = () => {
@@ -201,6 +202,7 @@ const FeedStockAvailability = () => {
           saveWithRemark: false,
           saveBtn: false,
         }}
+        leftComponent={<Breadcrumbs />}
       />
     </div>
   )

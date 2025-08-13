@@ -14,6 +14,7 @@ import { validateFields } from 'utils/validationUtils'
 // import TextField from '@mui/material/TextField'
 // import { useDispatch } from 'react-redux'
 // import { setIsBlocked } from 'store/reducers/dataGridStore'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import getSlowdownNormsColDef from 'components/data-tables/CommonHeader/getSlowdownNormsColDef'
 import { verticalEnums } from 'enums/verticalEnums'
 import KendoDataTables from './index'
@@ -574,6 +575,7 @@ const SlowdownNorms = () => {
           handleCalculate={handleCalculate}
           permissions={adjustedPermissions}
           groupBy='Particulars'
+          leftComponent={<Breadcrumbs />}
 
           // permissions={{
           //   showAction: false,

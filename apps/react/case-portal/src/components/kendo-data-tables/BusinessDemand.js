@@ -3,6 +3,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
 import { useGridApiRef } from '@mui/x-data-grid'
+import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import kendoGetEnhancedColDefs from 'components/data-tables/CommonHeader/kendoBusinessDemColDef'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import React, { useEffect, useState } from 'react'
@@ -268,7 +269,7 @@ const BusinessDemand = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
+      <Breadcrumbs divider={false} />
       {lowerVertName !== 'cracker' && (
         <>
           <CustomAccordion defaultExpanded disableGutters>
@@ -297,6 +298,7 @@ const BusinessDemand = ({ permissions }) => {
                     hideSummary: true,
                     hideUploadExcel: true,
                     hideDownloadExcel: true,
+                    hideBreadcrumb: true,
                   }}
                 />
               </Box>
