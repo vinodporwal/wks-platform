@@ -154,7 +154,7 @@ const ProductionVolumeDataBasisPe = () => {
   const exportRef4 = useRef(null)
   const exportRef5 = useRef(null)
   const exportRef6 = useRef(null)
-  const exportRef7 = useRef(null)
+  // const exportRef7 = useRef(null)
 
   const exportAllGrids = () => {
     const options1 = exportRef1.current.workbookOptions()
@@ -163,7 +163,7 @@ const ProductionVolumeDataBasisPe = () => {
     const options4 = exportRef4.current.workbookOptions()
     const options5 = exportRef5.current.workbookOptions()
     const options6 = exportRef6.current.workbookOptions()
-    const options7 = exportRef7.current.workbookOptions()
+    // const options7 = exportRef7.current.workbookOptions()
 
     // Add additional sheets to first export
     options1.sheets[1] = options2.sheets[0]
@@ -259,7 +259,7 @@ const ProductionVolumeDataBasisPe = () => {
             />
           ))}
         </ExcelExport>
-        <ExcelExport data={rowsBestAchivedNorms} ref={exportRef7}>
+        {/* <ExcelExport data={rowsBestAchivedNorms} ref={exportRef7}>
           {colsBestAchivedNorms.map((col) => (
             <ExcelExportColumn
               key={col.field}
@@ -267,7 +267,7 @@ const ProductionVolumeDataBasisPe = () => {
               title={col.title}
             />
           ))}
-        </ExcelExport>
+        </ExcelExport> */}
       </div>
 
       {!isOldYear && (
