@@ -78,6 +78,7 @@ export const monthMap = {
 
 const KendoDataTables = ({
   rows = [],
+  plantID = null,
   grades = [],
   allRedCell = [],
   modifiedCells = [],
@@ -659,6 +660,9 @@ const KendoDataTables = ({
       handleGradeChange(firstGrade.gradeId)
     }
   }, [grades, permissions?.showG, selectedGrade])
+  useEffect(() => {
+    setSelectedGrade(null)
+  }, [plantID])
 
   useEffect(() => {
     if (
@@ -728,12 +732,12 @@ const KendoDataTables = ({
                     setSelectedGrade(selectedGradeId)
                     handleGradeChange(selectedGradeObj?.gradeId)
                   }}
-                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                  sx={{ width: '165px', backgroundColor: '#FFFFFF' }}
                   variant='outlined'
-                  label={permissions?.dropdownLabel}
+                  label={permissions?.dropdownLabel || 'Select'}
                 >
                   <MenuItem value='' disabled>
-                    {permissions?.dropdownLabel}
+                    {permissions?.dropdownLabel || 'Select'}
                   </MenuItem>
 
                   {grades?.map((unit) => (

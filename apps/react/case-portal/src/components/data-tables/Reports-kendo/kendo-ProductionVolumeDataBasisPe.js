@@ -133,10 +133,10 @@ const ProductionVolumeDataBasisPe = () => {
     headerMap,
     type: 'MIIS NORMS RAW DATA',
   })
-  const colsBestAchivedNorms = getKendoNormsHistorianBasisPe({
-    headerMap,
-    type: 'BEST ACHIEVED NORMS',
-  })
+  // const colsBestAchivedNorms = getKendoNormsHistorianBasisPe({
+  //   headerMap,
+  //   type: 'BEST ACHIEVED NORMS',
+  // })
 
   useEffect(() => {
     fetchData('RAW MCU', setRowsRawMcu)
@@ -145,7 +145,7 @@ const ProductionVolumeDataBasisPe = () => {
     fetchData('AVG ANNUAL NORMS', setRowsAvgAnnualNorms)
     fetchData('CONSECUTIVE DAYS', setRowsConsecutiveDays)
     fetchData('MIIS NORMS RAW DATA', setRowsMiisNormsRawData)
-    fetchData('BEST ACHIEVED NORMS', setRowsBestAchivedNorms)
+    // fetchData('BEST ACHIEVED NORMS', setRowsBestAchivedNorms)
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
   const exportRef1 = useRef(null)
@@ -171,7 +171,7 @@ const ProductionVolumeDataBasisPe = () => {
     options1.sheets[3] = options4.sheets[0]
     options1.sheets[4] = options5.sheets[0]
     options1.sheets[5] = options6.sheets[0]
-    options1.sheets[6] = options7.sheets[0]
+    // options1.sheets[6] = options7.sheets[0]
 
     // Rename sheets
     options1.sheets[0].title = 'RAW MCU'
@@ -180,7 +180,7 @@ const ProductionVolumeDataBasisPe = () => {
     options1.sheets[3].title = 'AVG ANNUAL NORMS'
     options1.sheets[4].title = 'CONSECUTIVE DAYS'
     options1.sheets[5].title = 'MIIS NORMS RAW DATA'
-    options1.sheets[6].title = 'BEST ACHIEVED NORMS'
+    // options1.sheets[6].title = 'BEST ACHIEVED NORMS'
 
     exportRef1.current.save(options1)
   }
@@ -277,9 +277,9 @@ const ProductionVolumeDataBasisPe = () => {
             onClick={exportAllGrids}
             className='btn-save'
           >
-          Export
-        </Button>
-      </Box>
+            Export
+          </Button>
+        </Box>
       )}
       <Box display='flex' flexDirection='column' gap={2}>
         <div>
@@ -412,7 +412,7 @@ const ProductionVolumeDataBasisPe = () => {
             </CustomAccordionDetails>
           </CustomAccordion>
         </div>
-        <div>
+        {/* <div>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
               aria-controls='meg-grid-content'
@@ -432,7 +432,7 @@ const ProductionVolumeDataBasisPe = () => {
               </Box>
             </CustomAccordionDetails>
           </CustomAccordion>
-        </div>
+        </div> */}
       </Box>
     </div>
   )

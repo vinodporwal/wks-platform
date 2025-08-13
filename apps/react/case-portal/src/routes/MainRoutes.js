@@ -26,6 +26,7 @@ import Loadable from 'components/Loadable'
 import TextSubmitComponent from 'components/user-management/TextSubmitComponent'
 import UserForm from 'components/user-management/UserForm'
 import UserManagementTable from 'components/user-management/UserManagementTable'
+
 import MainLayout from 'layout/MainLayout'
 import { lazy } from 'react'
 import { CaseList } from 'views/caseList/caseList'
@@ -41,6 +42,10 @@ import NormsHistorianBasisPe from 'components/data-tables/Reports/NormsHistorian
 import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
 import { Navigate } from '../../node_modules/react-router-dom/dist/index'
 import PrivateRoute from './PrivateRoutes'
+import AopBudget from 'components/kendo-data-tables/AopBudget'
+import MonthlyTemplatePlants from 'components/kendo-data-tables/MonthlyTemplatePlants'
+import AopSummary from 'components/kendo-data-tables/AopSummary'
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -209,17 +214,17 @@ export const MainRoutes = (
               {
                 path: 'spyro-input',
                 element: (
-                  // <PrivateRoute routeId='spyro-input'>
-                  <CrackerConfig keycloak={keycloak} />
-                  // </PrivateRoute>
+                  <PrivateRoute routeId='spyro-input'>
+                    <CrackerConfig keycloak={keycloak} />
+                  </PrivateRoute>
                 ),
               },
               {
                 path: 'spyro-output',
                 element: (
-                  // <PrivateRoute routeId='spyro-output'>
-                  <CrackerConfigOutput />
-                  // </PrivateRoute>
+                  <PrivateRoute routeId='spyro-output'>
+                    <CrackerConfigOutput />
+                  </PrivateRoute>
                 ),
               },
               {
@@ -335,6 +340,7 @@ export const MainRoutes = (
           { path: 'reliability', element: <TextSubmitComponent /> },
         ],
       },
+
       {
         path: 'reports',
         children: [
@@ -393,6 +399,37 @@ export const MainRoutes = (
           },
         ],
       },
+
+      // {
+      //   path: 'functional-aop',
+      //   children: [
+      //     {
+      //       path: 'aop-budget',
+      //       element: (
+      //         <PrivateRoute routeId='aop-budget'>
+      //           <AopBudget />
+      //         </PrivateRoute>
+      //       ),
+      //     },
+      //     {
+      //       path: 'monthly-template-plants',
+      //       element: (
+      //         <PrivateRoute routeId='monthly-template-plants'>
+      //           <MonthlyTemplatePlants />
+      //         </PrivateRoute>
+      //       ),
+      //     },
+      //     {
+      //       path: 'aop-summary',
+      //       element: (
+      //         <PrivateRoute routeId='aop-summary'>
+      //           <AopSummary />
+      //         </PrivateRoute>
+      //       ),
+      //     },
+      //   ],
+      // },
+
       {
         path: 'workflow',
         element: (
@@ -410,6 +447,7 @@ export const MainRoutes = (
           </PrivateRoute>
         ),
       },
+
       {
         path: 'user-form',
         element: <UserForm keycloak={keycloak} />,

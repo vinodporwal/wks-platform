@@ -18,7 +18,7 @@ import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import ProductionvolumeData from './ProductionVoluemData'
 
-const BusinessDemand = ({ permissions }) => {
+const AopSummary = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
 
   const keycloak = useSession()
@@ -261,81 +261,83 @@ const BusinessDemand = ({ permissions }) => {
   )
 
   return (
-    <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+    // <div>
+    //   <Backdrop
+    //     sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+    //     open={!!loading}
+    //   >
+    //     <CircularProgress color='inherit' />
+    //   </Backdrop>
 
-      {lowerVertName !== 'cracker' && (
-        <>
-          <CustomAccordion defaultExpanded disableGutters>
-            <CustomAccordionSummary
-              aria-controls='meg-grid-content'
-              id='meg-grid-header'
-            >
-              <Typography component='span' className='grid-title'>
-                Production Volume Data (MT) (This is a reference for entering
-                the Business Demand value)
-              </Typography>
-            </CustomAccordionSummary>
-            <CustomAccordionDetails>
-              <Box sx={{ width: '100%', margin: 0 }}>
-                <ProductionvolumeData
-                  permissions={{
-                    allAction: true,
-                    showAction: false,
-                    addButton: false,
-                    deleteButton: false,
-                    editButton: false,
-                    showUnit: true,
-                    saveWithRemark: false,
-                    showCalculate: false,
-                    saveBtn: false,
-                    hideSummary: true,
-                    hideUploadExcel: true,
-                    hideDownloadExcel: true,
-                  }}
-                />
-              </Box>
-            </CustomAccordionDetails>
-          </CustomAccordion>
-        </>
-      )}
+    //   {lowerVertName !== 'cracker' && (
+    //     <>
+    //       <CustomAccordion defaultExpanded disableGutters>
+    //         <CustomAccordionSummary
+    //           aria-controls='meg-grid-content'
+    //           id='meg-grid-header'
+    //         >
+    //           <Typography component='span' className='grid-title'>
+    //             Production Volume Data (MT) (This is a reference for entering
+    //             the Business Demand value)
+    //           </Typography>
+    //         </CustomAccordionSummary>
+    //         <CustomAccordionDetails>
+    //           <Box sx={{ width: '100%', margin: 0 }}>
+    //             <ProductionvolumeData
+    //               permissions={{
+    //                 allAction: true,
+    //                 showAction: false,
+    //                 addButton: false,
+    //                 deleteButton: false,
+    //                 editButton: false,
+    //                 showUnit: true,
+    //                 saveWithRemark: false,
+    //                 showCalculate: false,
+    //                 saveBtn: false,
+    //                 hideSummary: true,
+    //                 hideUploadExcel: true,
+    //                 hideDownloadExcel: true,
+    //               }}
+    //             />
+    //           </Box>
+    //         </CustomAccordionDetails>
+    //       </CustomAccordion>
+    //     </>
+    //   )}
 
-      <KendoDataTables
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        setRows={setRows}
-        columns={colDefs}
-        rows={rows || []}
-        title='Business Demand'
-        saveChanges={saveChanges}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        apiRef={apiRef}
-        deleteId={deleteId}
-        setDeleteId={setDeleteId}
-        setOpen1={setOpen1}
-        open1={open1}
-        fetchData={fetchData}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        setCurrentRowId={setCurrentRowId}
-        handleRemarkCellClick={handleRemarkCellClick}
-        deleteRowData={deleteRowData}
-        permissions={adjustedPermissions}
-        groupBy='Particulars'
-      />
-    </div>
+    //   <KendoDataTables
+    //     modifiedCells={modifiedCells}
+    //     setModifiedCells={setModifiedCells}
+    //     setRows={setRows}
+    //     columns={colDefs}
+    //     rows={rows || []}
+    //     title='Business Demand'
+    //     saveChanges={saveChanges}
+    //     snackbarData={snackbarData}
+    //     snackbarOpen={snackbarOpen}
+    //     setSnackbarOpen={setSnackbarOpen}
+    //     setSnackbarData={setSnackbarData}
+    //     apiRef={apiRef}
+    //     deleteId={deleteId}
+    //     setDeleteId={setDeleteId}
+    //     setOpen1={setOpen1}
+    //     open1={open1}
+    //     fetchData={fetchData}
+    //     remarkDialogOpen={remarkDialogOpen}
+    //     setRemarkDialogOpen={setRemarkDialogOpen}
+    //     currentRemark={currentRemark}
+    //     setCurrentRemark={setCurrentRemark}
+    //     currentRowId={currentRowId}
+    //     setCurrentRowId={setCurrentRowId}
+    //     handleRemarkCellClick={handleRemarkCellClick}
+    //     deleteRowData={deleteRowData}
+    //     permissions={adjustedPermissions}
+    //     groupBy='Particulars'
+    //   />
+    // </div>
+
+    <div>Summary for ALL Sites</div>
   )
 }
 
-export default BusinessDemand
+export default AopSummary

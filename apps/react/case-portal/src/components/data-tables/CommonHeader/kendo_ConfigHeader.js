@@ -20,6 +20,8 @@ const getConfigByType = (configType) => {
       return productionColumnsConstants
     case 'StartupLosses':
       return productionColumnsPE1
+    case 'Configuration':
+      return productionColumnsPE1
     case 'Otherlosses':
       return productionColumnsPE2
     case 'ShutdownNorms':
@@ -60,7 +62,7 @@ const getEnhancedAOPColDefs = ({
     config = [
       {
         field: 'ReceipeName',
-        title: 'Receipe',
+        title: 'Recipe',
         editable: false,
         width1: 200,
       },
