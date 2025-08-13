@@ -60,16 +60,18 @@ export const NewCaseForm = ({
     const eventIdsParam = urlParams.get('eventIds')
     const sourceSystem = urlParams.get('sourceSystem') || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
-
+	let updFormData = formData.data;
+	updFormData.businessKey = data.businessKey;
+    updFormData.eventIds = eventIds;
     const caseAttributes = []
-    Object.keys(formData.data).forEach((key) => {
+    Object.keys(updFormData).forEach((key) => {
       caseAttributes.push({
         name: key,
         value:
-          typeof formData.data[key] !== 'object'
-            ? formData.data[key]
-            : JSON.stringify(formData.data[key]),
-        type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+          typeof updFormData[key] !== 'object'
+            ? updFormData[key]
+            : JSON.stringify(updFormData[key]),
+        type: typeof updFormData[key] !== 'object' ? 'String' : 'Json',
       })
     })
 
@@ -108,16 +110,18 @@ export const NewCaseForm = ({
     const eventIdsParam = urlParams.get('eventIds')
     const sourceSystem = urlParams.get('sourceSystem') || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
-
+	let updFormData = formData.data;
+	updFormData.businessKey = data.businessKey;
+    updFormData.eventIds = eventIds;	
     const caseAttributes = []
-    Object.keys(formData.data).forEach((key) => {
+    Object.keys(updFormData).forEach((key) => {
       caseAttributes.push({
         name: key,
         value:
-          typeof formData.data[key] !== 'object'
-            ? formData.data[key]
-            : JSON.stringify(formData.data[key]),
-        type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+          typeof updFormData[key] !== 'object'
+            ? updFormData[key]
+            : JSON.stringify(updFormData[key]),
+        type: typeof updFormData[key] !== 'object' ? 'String' : 'Json',
       })
     })
 
@@ -169,9 +173,9 @@ export const NewCaseForm = ({
             <Typography sx={{ ml: 2, flex: 1 }} component='div'>
               <div>{caseDef.name}</div>
             </Typography>
-            {/* <Button color='inherit' onClick={onSave}>
+            { <Button color='inherit' onClick={onSave}>
               Save As Draft
-            </Button> */}
+            </Button>}
           </Toolbar>
         </AppBar>
 

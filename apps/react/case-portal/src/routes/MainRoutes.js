@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { useSearchParams } from 'react-router-dom';
 import Loadable from 'components/Loadable'
 import MainLayout from 'layout/MainLayout'
 import { CaseStatus } from 'common/caseStatus'
@@ -22,6 +23,7 @@ export const MainRoutes = (
   recordsTypes,
   casesDefinitions,
 ) => {
+  const [searchParams] = useSearchParams();
   let routes = {
     path: '/',
     element: <MainLayout keycloak={keycloak} authenticated={authenticated} />,
@@ -106,6 +108,14 @@ export const MainRoutes = (
           },
         ],
       },
+      {
+        path: 'case/create',
+        element: <CaseList status={CaseStatus.WipCaseStatus.description} {...searchParams}/>,
+      },  
+      {
+        path: 'case/view',
+        element: <CaseList status={null} {...searchParams}/>,
+      },  
     ],
   }
 

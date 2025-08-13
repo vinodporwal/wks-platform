@@ -69,7 +69,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                   ? level7.columns[2].components[0]
                   : null
               if (saveAsDraft) {
-                saveAsDraft.hidden = true
+                //saveAsDraft.hidden = true
               }
 
               const createButton =
@@ -77,7 +77,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                   ? level7.columns[2].components[1]
                   : null
               if (createButton) {
-                createButton.hidden = false
+                //createButton.hidden = false
               }
 
               const saveButton =
@@ -85,7 +85,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                   ? level7.columns[3].components[0]
                   : null
               if (saveButton) {
-                saveButton.hidden = true
+                //saveButton.hidden = true
               }
             }
           }
@@ -147,15 +147,20 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
     const eventIdsParam = urlParams.get('eventIds')
     const sourceSystem = urlParams.get('sourceSystem') || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
-    const caseAttributes = Object.keys(formData.data).map((key) => ({
+	
+	let updFormData = formData.data;
+	updFormData.businessKey = data.businessKey;
+	updFormData.caseNo = data.businessKey;
+
+    const caseAttributes = Object.keys(updFormData).map((key) => ({
       name: key,
       value:
-        typeof formData.data[key] !== 'object'
-          ? formData.data[key]
-          : JSON.stringify(formData.data[key]),
-      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+        typeof updFormData[key] !== 'object'
+          ? updFormData[key]
+          : JSON.stringify(updFormData[key]),
+      type: typeof updFormData[key] !== 'object' ? 'String' : 'Json',
     }))
-
+    
     // First API call to createCase to get the businessKey
 
     console.log('Cleaned URL', buildCreateUrl(window.location.href))
@@ -175,7 +180,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         caseUrl: buildCreateUrl(window.location.href),
       }),
     )
-      .then((data) => {
+    .then((data) => {
         const businessKey = data.businessKey
         // setLastCreatedCase(data);
 
@@ -325,8 +330,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         color='primary'
         size='small'
         onClick={() => {
-          navigate(`/case-list/create${currentParams}`)
           handleCloseSnack()
+		  navigate(`/case-list/create${currentParams}`)
         }}
       >
         {lastCreatedCase.caseNo}
@@ -363,6 +368,9 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             <Typography sx={{ ml: 2, flex: 1 }} component='div'>
               {caseDef.name}
             </Typography>
+            { <Button color='inherit' onClick={onSave}>
+              Save As Draft
+            </Button>}			
           </Toolbar>
         </AppBar>
 

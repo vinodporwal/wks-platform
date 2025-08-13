@@ -1,6 +1,7 @@
 import Config from '../consts'
 import i18n from '../i18n'
 import { json, nop } from './request'
+import moment from 'moment'
 
 export const CaseService = {
   getAllByStatus,
@@ -205,6 +206,7 @@ async function createCase(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case`
 
   try {
+    const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
@@ -212,7 +214,7 @@ async function createCase(keycloak, body) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${keycloak.token}`,
       },
-      body: body,
+      body: bodyWithDates,
     })
     return json(keycloak, resp)
   } catch (err) {
@@ -225,6 +227,7 @@ async function saveCase(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-case`
 
   try {
+    const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
@@ -232,7 +235,7 @@ async function saveCase(keycloak, body) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${keycloak.token}`,
       },
-      body: body,
+      body: bodyWithDates,
     })
     return json(keycloak, resp)
   } catch (err) {
@@ -240,7 +243,6 @@ async function saveCase(keycloak, body) {
     return await Promise.reject(err)
   }
 }
-
 
 async function saveRecommendation(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-recommendation`;
