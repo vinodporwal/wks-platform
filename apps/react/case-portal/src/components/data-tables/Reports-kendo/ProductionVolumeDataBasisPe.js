@@ -80,7 +80,7 @@ const DataAccordion = React.memo(
             columns={columns}
             permissions={{
               allAction: false,
-              isHeight: rows?.length > 10,
+              isHeight: rows?.length > 15,
             }}
           />
         </Box>
