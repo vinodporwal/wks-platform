@@ -606,6 +606,7 @@ const SelectivityData = (props) => {
             groupBy={props?.groupBy}
             handleExcelUpload={handleExcelUpload}
             downloadExcelForConfiguration={downloadExcelForConfiguration}
+            leftComponent={props?.leftComponent}
           />
         </Box>
       </div>

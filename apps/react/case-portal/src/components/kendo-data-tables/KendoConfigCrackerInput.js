@@ -27,8 +27,6 @@ const CrackerConfig = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const handleRemarkCellClick = (row) => {
-    // if (!row?.isEditable) return
-
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
@@ -521,6 +519,44 @@ const CrackerConfig = () => {
     }
   }
 
+  const TabComponent = () => (
+    <Box sx={{ overflowX: 'auto', width: '100%' }}>
+      <Tabs
+        sx={{
+          borderBottom: '0px solid #ccc',
+          '.MuiTabs-indicator': { display: 'none' },
+        }}
+        textColor='primary'
+        indicatorColor='primary'
+        value={tabIndex}
+        onChange={(e, newIndex) => {
+          if (newIndex >= 0 && newIndex < tabs.length) {
+            setTabIndex(newIndex)
+          }
+        }}
+      >
+        {tabs.map((tabId) => {
+          const info = availableTabs.find(
+            (t) => t.id.toLowerCase() === tabId.toLowerCase(),
+          )
+          const label = info?.displayName || tabId
+          return (
+            <Tab
+              key={tabId}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                padding: '9px',
+                minHeight: '10px',
+              }}
+              label={label}
+            />
+          )
+        })}
+      </Tabs>
+    </Box>
+  )
+
   return (
     <Box>
       <Backdrop
@@ -530,42 +566,7 @@ const CrackerConfig = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <Breadcrumbs />
-      <Box sx={{ overflowX: 'auto', width: '100%' }}>
-        <Tabs
-          sx={{
-            borderBottom: '0px solid #ccc',
-            '.MuiTabs-indicator': { display: 'none' },
-            // margin: '-35px 0px -8px 0%',
-          }}
-          textColor='primary'
-          indicatorColor='primary'
-          value={tabIndex}
-          onChange={(e, newIndex) => {
-            if (newIndex >= 0 && newIndex < tabs.length) {
-              setTabIndex(newIndex)
-            }
-          }}
-        >
-          {tabs.map((tabId) => {
-            const info = availableTabs.find(
-              (t) => t.id.toLowerCase() === tabId.toLowerCase(),
-            )
-            const label = info?.displayName || tabId
-            return (
-              <Tab
-                key={tabId}
-                sx={{
-                  border: '1px solid #ADD8E6',
-                  borderBottom: '1px solid #ADD8E6',
-                  padding: '9px',
-                  minHeight: '10px',
-                }}
-                label={label}
-              />
-            )
-          })}
-        </Tabs>
-      </Box>
+
       <Box>
         {(() => {
           const rows = getRows(currentTabDisplay)
@@ -610,6 +611,7 @@ const CrackerConfig = () => {
                     downloadExcelForConfiguration={
                       downloadExcelForConfiguration
                     }
+                    leftComponent={<TabComponent />}
                   />
                 </Box>
               )
@@ -642,6 +644,7 @@ const CrackerConfig = () => {
                     setSnackbarData={setSnackbarData}
                     modifiedCells={modifiedCells}
                     setModifiedCells={setModifiedCells}
+                    leftComponent={<TabComponent />}
                   />
                 </Box>
               )

@@ -609,6 +609,45 @@ const CrackerConfig = () => {
     }
   }
 
+  const TabComponent = () => (
+    <Box sx={{ overflowX: 'auto', width: '100%' }}>
+      <Tabs
+        sx={{
+          borderBottom: '0px solid #ccc',
+          '.MuiTabs-indicator': { display: 'none' },
+          minWidth: 'max-content',
+        }}
+        textColor='primary'
+        indicatorColor='primary'
+        value={tabIndex}
+        onChange={(e, newIndex) => {
+          if (newIndex >= 0 && newIndex < tabs.length) {
+            setTabIndex(newIndex)
+          }
+        }}
+      >
+        {tabs.map((tabId) => {
+          const info = availableTabs.find(
+            (t) => t.id.toLowerCase() === tabId.toLowerCase(),
+          )
+          const label = info?.displayName || tabId
+          return (
+            <Tab
+              key={tabId}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                padding: '9px',
+                minHeight: '10px',
+              }}
+              label={label}
+            />
+          )
+        })}
+      </Tabs>
+    </Box>
+  )
+
   return (
     <Box>
       <Backdrop
@@ -618,42 +657,6 @@ const CrackerConfig = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
       <Breadcrumbs />
-      <Box sx={{ overflowX: 'auto', width: '100%' }}>
-        <Tabs
-          sx={{
-            borderBottom: '0px solid #ccc',
-            '.MuiTabs-indicator': { display: 'none' },
-            minWidth: 'max-content',
-          }}
-          textColor='primary'
-          indicatorColor='primary'
-          value={tabIndex}
-          onChange={(e, newIndex) => {
-            if (newIndex >= 0 && newIndex < tabs.length) {
-              setTabIndex(newIndex)
-            }
-          }}
-        >
-          {tabs.map((tabId) => {
-            const info = availableTabs.find(
-              (t) => t.id.toLowerCase() === tabId.toLowerCase(),
-            )
-            const label = info?.displayName || tabId
-            return (
-              <Tab
-                key={tabId}
-                sx={{
-                  border: '1px solid #ADD8E6',
-                  borderBottom: '1px solid #ADD8E6',
-                  padding: '9px',
-                  minHeight: '10px',
-                }}
-                label={label}
-              />
-            )
-          })}
-        </Tabs>
-      </Box>
 
       <Box>
         {(() => {
@@ -700,6 +703,7 @@ const CrackerConfig = () => {
                     downloadExcelForConfiguration={
                       downloadExcelForConfiguration
                     }
+                    leftComponent={<TabComponent />}
                   />
                 </Box>
               )

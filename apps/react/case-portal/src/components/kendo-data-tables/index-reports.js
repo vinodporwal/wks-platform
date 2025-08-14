@@ -366,12 +366,14 @@ const KendoDataTablesReports = ({
       const isEditable = col.editable === true
       const isActive = isColumnActive(col.field, filter, sort)
 
-      const headerColorClass =
-        col?.parent === 'Procurment Budget'
-          ? 'header-procurment-budget'
-          : col?.parent === 'Consumption Budget'
-            ? 'header-consumption-budget'
-            : undefined
+      // const headerColorClass =
+      //   col?.parent === 'Procurment Budget'
+      //     ? 'header-procurment-budget'
+      //     : col?.parent === 'Consumption Budget'
+      //       ? 'header-consumption-budget'
+      //       : undefined
+
+      const headerColorClass = undefined
 
       if (col.children) {
         return (

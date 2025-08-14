@@ -1,4 +1,3 @@
-import { filterBy, process } from '@progress/kendo-data-query'
 import '@progress/kendo-font-icons/dist/index.css'
 import {
   Grid,
@@ -7,11 +6,9 @@ import {
   isColumnMenuSortActive,
 } from '@progress/kendo-react-grid'
 import '@progress/kendo-theme-default/dist/all.css'
-import { ColumnMenu } from 'components/@extended/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { truncateRemarks } from 'utils/remarksUtils'
+import { useCallback, useState } from 'react'
 import {
   Backdrop,
   Box,
@@ -32,19 +29,12 @@ import '../../kendo-data-grid.css'
 // import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
 // import FullValueEditor from './Utilities-Kendo/FullValueEditor'
 // import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
-import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
 import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
-import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
-import {
-  DurationDisplayWithTooltipCell,
-  DurationEditor,
-} from './Utilities-Kendo/numericViewCells'
 import {
   recalcDuration,
   recalcEndDate,
 } from './Utilities-Kendo/durationHelpers'
-import DateOnlyPicker from './Utilities-Kendo/DatePicker'
-import { RemarkCell } from './Utilities-Kendo/RemarkCell'
+import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
 
 export const particulars = [
   'normParameterId',
@@ -127,6 +117,7 @@ const KendoDataTablesReciepe = ({
   selectMode,
   setSelectMode = () => {},
   handleExport = () => {},
+  leftComponent = undefined,
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -435,7 +426,7 @@ const KendoDataTablesReciepe = ({
           <CircularProgress color='inherit' />
         </Backdrop>
       )}
-
+      {leftComponent ? leftComponent : <div>Some content</div>}
       {(permissions?.allAction ?? true) && (
         <Box
           className='action-box2'
@@ -542,7 +533,6 @@ const KendoDataTablesReciepe = ({
           </Box>
         </Box>
       )}
-
       <div className='kendo-data-grid'>
         <Tooltip openDelay={50} position='auto' anchorElement='target'>
           <Grid
@@ -601,14 +591,12 @@ const KendoDataTablesReciepe = ({
           </Grid>
         </Tooltip>
       </div>
-
       <Notification
         open={snackbarOpen}
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
       />
-
       <Dialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}
@@ -628,7 +616,6 @@ const KendoDataTablesReciepe = ({
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
@@ -648,7 +635,6 @@ const KendoDataTablesReciepe = ({
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
