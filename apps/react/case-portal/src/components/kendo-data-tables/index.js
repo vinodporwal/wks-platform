@@ -47,6 +47,7 @@ import {
   ExcelExport,
   ExcelExportColumn,
 } from '../../../node_modules/@progress/kendo-react-excel-export/index'
+import { useSelector } from 'react-redux'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -113,6 +114,7 @@ const KendoDataTables = ({
   groupBy = null,
   note = '',
   titleName = '',
+
   allProducts = [],
   allMonths = [],
   selectMode,
@@ -122,7 +124,6 @@ const KendoDataTables = ({
   onLoad = () => {},
   disableRedHighlight = false,
 }) => {
-  // const _export = (React.useRef < ExcelExport) | (null > null)
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
 
@@ -141,6 +142,11 @@ const KendoDataTables = ({
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const { verticalChange } = dataGridStore
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
 
   const initialGroup = groupBy
     ? [
@@ -179,41 +185,9 @@ const KendoDataTables = ({
 
   const itemChange = useCallback(
     (e) => {
-      // const changedDataItem = e.dataItem
-      // const changedField = e.field
-      // // const newValue = e.value
-
-      // const originalDataItem = rows.find(
-      //   (item) => item.id === changedDataItem.id,
-      // )
-      // const originalValue = originalDataItem
-      //   ? originalDataItem[changedField]
-      //   : undefined
-
-      // setEditedCellMap((prev) => ({
-      //   ...prev,
-      //   [rowId]: {
-      //     ...(prev[rowId] || {}),
-      //     [changedField]: newValue,
-      //   },
-      // }))
-
-      //console.log('--- Cell Value Changed ---')
-      //console.log('Row ID:', changedDataItem.id)
-      //console.log('Field (Column Name):', changedField)
-      //console.log('Original Value:', originalValue)
-      //console.log('New Value:', newValue)
-      //console.log('Full Changed Data Item:', changedDataItem)
-
-      // setEditedId(changedDataItem.id)
-      // setEditedValue(changedField)
-
       setIsRowEdited(true)
 
-      // console.log(e)
-
       const { dataItem, field, value } = e
-      // console.log('e', e)
 
       if (dataItem?.field === 'Particulars') return
       if (dataItem?.field === 'ParticularsType') return
@@ -553,7 +527,7 @@ const KendoDataTables = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px' }}
+        style={{ padding: '0px', borderRight: '1px solid #b4b4b4ff' }}
       >
         <Tooltip
           position='top'
@@ -675,6 +649,18 @@ const KendoDataTables = ({
     }
   }, [permissions])
 
+  const rowHeightVH = 5 // each row ~4vh
+  const headerVH = 10 // grid’s own header/filter area
+  const pageHeaderVH = 20 // top app bar + stepper + controls
+  const maxVH = 60 // cap grid height
+
+  const calculatedVH = React.useMemo(() => {
+    if (!rows || rows?.length === 0) return 20
+    const needed = rows?.length * rowHeightVH + headerVH
+    const available = 100 - pageHeaderVH
+    return Math.round(Math.min(needed, maxVH, available))
+  }, [rows?.length])
+
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -683,6 +669,12 @@ const KendoDataTables = ({
           <div className='k-loading-image' />
           <div className='k-loading-color' />
         </div>
+      )}
+
+      {permissions?.showReportTitleMain && (
+        <Typography component='div' className='grid-title'>
+          {permissions?.titleNameMain}
+        </Typography>
       )}
 
       {(permissions?.allAction ?? false) && (
@@ -927,6 +919,24 @@ const KendoDataTables = ({
             fileName={`${permissions?.ExcelName}.xlsx`}
           >
             <Grid
+              style={{
+                flex: 1,
+                overflow: 'auto',
+                // height: 'auto',
+                // height: permissions?.isHeight ? '60vh' : '60vh',
+                // height: '60vh',
+                // height: `${gridHeight}px`,
+
+                height:
+                  lowerVertName === 'meg'
+                    ? undefined
+                    : rows?.length > 10
+                      ? `${calculatedVH}vh`
+                      : undefined,
+
+                // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
+                // height: `${calculatedVH}vh`,
+              }}
               modifiedCells={modifiedCells}
               autoProcessData={true}
               defaultGroup={initialGroup}
@@ -1030,6 +1040,7 @@ const KendoDataTables = ({
                       editor='date'
                       hidden={col.hidden}
                       columnMenu={DateColumnMenu}
+                      width={col?.widthT}
                       headerClassName={
                         isDateFilterActive.includes(col.field)
                           ? 'active-column'
@@ -1266,7 +1277,7 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
-                      // width={col.width}
+                      width={col.widthT}
                       editable={true}
                       columnMenu={ColumnMenuCheckboxFilter}
                       hidden={col.hidden}

@@ -249,9 +249,9 @@ const MaintenanceTable = () => {
   ]
 
   // Column sets
-  const productionColumnsMEG = generateColumns(415)
-  const productionColumnsPE = generateColumns(250)
-  const productionColumnsPP = generateColumns(250)
+  const productionColumnsMEG = generateColumns(390)
+  const productionColumnsPE = generateColumns(150)
+  const productionColumnsPP = generateColumns(220)
 
   // Column selection
   let basecols

@@ -512,7 +512,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			query.setParameter("financialYear", financialYear);
 			query.setParameter("plantId", plantId);
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")) {
-				query.setParameter("gradeId", gradeId);
+				query.setParameter("gradeId", UUID.fromString(gradeId));
 			}
 			if (vertical.getName().equalsIgnoreCase("Cracker")) {
 				query.setParameter("mode", mode);
@@ -590,7 +590,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
-				byte[] fileByteArray = createExcel(year, plantFKId, true, failedRecords,mode);
+				byte[] fileByteArray = createExcel(year, plantFKId, true, failedRecords,mode,gradeId);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
@@ -724,9 +724,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		}
 	}
 
-	public byte[] createExcel(String year, UUID plantFKId, boolean isAfterSave, List<MCUNormsValueDTO> dtoList,String mode) {
+	public byte[] createExcel(String year, UUID plantFKId, boolean isAfterSave, List<MCUNormsValueDTO> dtoList,String mode,String gradeId) {
 		try {
-			AOPMessageVM aopMessageVM = getNormalOperationNormsData(year, plantFKId.toString(), "",mode);
+			AOPMessageVM aopMessageVM = getNormalOperationNormsData(year, plantFKId.toString(), gradeId,mode);
+			List<Boolean> isEditable = new ArrayList<>();
 
 			if (!isAfterSave) {
 				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
@@ -740,6 +741,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			// List<List<Object>> rows = new ArrayList<>();
 
 			List<List<Object>> rows = new ArrayList<>();
+			
+			// Create styles for locking/unlocking cells
+			CellStyle lockedStyle = workbook.createCellStyle();
+			lockedStyle.setLocked(true);
+			lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+			CellStyle unlockedStyle = workbook.createCellStyle();
+			unlockedStyle.setLocked(false);
 			// Data rows
 			for (MCUNormsValueDTO dto : dtoList) {
 				//if (isAfterSave) {
@@ -761,8 +771,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					list.add(dto.getMarch());
 					list.add(dto.getRemarks());
 					list.add(dto.getId());
+					isEditable.add(dto.getIsEditable());
 					// list.add(dto.getMaterialFkId());
-					// list.add(dto.getIsEditable());
+					 //list.add(dto.getIsEditable());
 					if (isAfterSave) {
 						list.add(dto.getSaveStatus());
 						list.add(dto.getErrDescription());
@@ -780,7 +791,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			innerHeaders.add("Remarks");
 			innerHeaders.add("Id");
 			// innerHeaders.add("NormParamterId");
-			// innerHeaders.add("IsEditable");
+			 //innerHeaders.add("IsEditable");
 			if (isAfterSave) {
 				innerHeaders.add("Status");
 				innerHeaders.add("Error Description");
@@ -797,6 +808,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				}
 			}
 			for (List<Object> rowData : rows) {
+				boolean isRowEditable=true;
+				if(isEditable.get(currentRow-1)!=null) {
+					isRowEditable = isEditable.get(currentRow-1);
+				}
+				 
 				Row row = sheet.createRow(currentRow++);
 				for (int col = 0; col < rowData.size(); col++) {
 					Cell cell = row.createCell(col);
@@ -811,11 +827,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					} else {
 						cell.setCellValue("");
 					}
+					if (isRowEditable) {
+                        cell.setCellStyle(unlockedStyle);
+                    } else {
+                        cell.setCellStyle(lockedStyle);
+                    }
 
 				}
 			}
 			sheet.setColumnHidden(16, true);
-			//sheet.setColumnHidden(17, true);
 			//sheet.setColumnHidden(18, true);
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 

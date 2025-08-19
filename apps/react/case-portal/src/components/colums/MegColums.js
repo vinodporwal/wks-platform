@@ -20,13 +20,13 @@ export const BusinessDemandMegColumns = [
     field: 'displayName',
     title: 'Particulars',
     editable: false,
-    widthT: 220,
+    widthT: 120,
   },
   {
     field: 'UOM',
     title: 'UOM',
     editable: false,
-    width: 120,
+    widthT: 75,
   },
   {
     field: 'april',
@@ -141,7 +141,7 @@ export const BusinessDemandMegColumns = [
     field: 'remark',
     title: 'Remark',
     editable: false,
-    widthT: 220,
+    widthT: 160,
     type: 'string',
   },
   {
@@ -192,21 +192,21 @@ export const SlowDownMegColumns = [
     title: 'EOE Production Rate',
     editable: true,
     type: 'number',
-    widthT: 225,
+    widthT: 140,
   },
   {
     field: 'rateEO',
     title: 'EO Production Rate',
     editable: true,
     type: 'number',
-    widthT: 215,
+    widthT: 140,
   },
 
   {
     field: 'remark',
     title: 'Remarks',
     editable: true,
-    widthT: 220,
+    widthT: 120,
   },
 ]
 
@@ -228,7 +228,7 @@ export const NormalOpNormMegColumns = [
   {
     field: 'productName',
     title: 'Particulars',
-    widthT: 220,
+    widthT: 130,
   },
 
   {
@@ -357,7 +357,7 @@ export const NormalOpNormMegColumns = [
   {
     field: 'remarks',
     title: 'Remark',
-    widthT: 220,
+    widthT: 160,
     editable: true,
   },
 
@@ -391,7 +391,7 @@ export const ShutdownConsumptionMegColumns = [
   {
     field: 'productName',
     headerName: 'Particulars',
-    widthT: 220,
+    widthT: 130,
     editable: false,
   },
   { field: 'UOM', headerName: 'UOM', widthT: 60, editable: false },
@@ -416,7 +416,7 @@ export const ShutdownConsumptionMegColumns = [
   {
     field: 'remarks',
     headerName: 'Remark',
-    widthT: 220,
+    widthT: 160,
     editable: false,
   },
   {
@@ -496,7 +496,7 @@ export const ConsumptionAopMegColumns = [
     field: 'productName',
     title: 'Particulars',
     editable: false,
-    widthT: 220,
+    widthT: 170,
   },
   {
     field: 'UOM',
