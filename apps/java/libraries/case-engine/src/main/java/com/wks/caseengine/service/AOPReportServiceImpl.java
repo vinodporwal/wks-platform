@@ -147,8 +147,26 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String AopYearFilter) {
 		List<String> headers = new ArrayList<>();
 
+		// Step 1: Resolve Plant, Vertical, and Site
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+		// Step 2: Determine which stored procedure to call
+		String storedProcedure;
+		if ("MEG".equalsIgnoreCase(vertical.getName())) {
+			storedProcedure = "AnnualCostAOPReport";
+		} else {
+			storedProcedure = vertical.getName() + "_" + site.getName() + "_AnnualAOPCostReport";
+		}
+
 		try (Connection conn = dataSource.getConnection();
-				CallableStatement stmt = conn.prepareCall("{call AnnualCostAopReport(?,?,?,?)}")) {
+				CallableStatement stmt = conn.prepareCall("{call " + storedProcedure + "(?,?,?,?)}")) {
 
 			stmt.setObject(1, UUID.fromString(plantId));
 			stmt.setString(2, aopYear);
@@ -157,12 +175,10 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 			boolean hasResultSet = stmt.execute();
 
-			// Move forward until we find a result set
 			while (!hasResultSet && stmt.getUpdateCount() != -1) {
 				hasResultSet = stmt.getMoreResults();
 			}
 
-			// If a result set is found, get metadata and headers
 			if (hasResultSet) {
 				try (ResultSet rs = stmt.getResultSet()) {
 					ResultSetMetaData metaData = rs.getMetaData();
@@ -175,7 +191,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			}
 
 		} catch (SQLException e) {
-			throw new RuntimeException("Failed to fetch headers", e);
+			throw new RuntimeException("Failed to fetch headers for stored procedure: " + storedProcedure, e);
 		}
 
 		return headers;
@@ -189,16 +205,16 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure;
 			if ("MEG".equalsIgnoreCase(vertical.getName())) {
 				storedProcedure = "AnnualCostAOPReport";
 			} else {
-				storedProcedure = vertical.getName() + "_AnnualCostAOPReport";
+				storedProcedure = vertical.getName() + "_" + site.getName() + "_AnnualAOPCostReport";
 			}
 
-			String sql = "EXEC " + storedProcedure +
-					" @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType, @aopYearFilter = :AopYearFilter";
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType, @aopYearFilter = :AopYearFilter";
 
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -227,8 +243,8 @@ public class AOPReportServiceImpl implements AOPReportService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 			String procedureName = "ProductionVolumnDataReport";
-			String sql = "EXEC " + procedureName +
-					" @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType,@UOM = :uom";
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType,@UOM = :uom";
 
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -327,5 +343,65 @@ public class AOPReportServiceImpl implements AOPReportService {
 		// TODO Auto-generated method stub
 
 	}
+	
+	@Override
+	public AOPMessageVM getHandleCalculateMIISContribution(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadAnnualAOPCost_MIISContribution";
+			System.out.println(storedProcedure);
+			Integer result=  executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+			
+			aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(result);
+	        return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return aopMessageVM;
+	}
+	
+	public int executeDynamicUpdateProcedure(String procedureName, String plantId,
+			String aopYear) {
+		try {
+			
+			String callSql = "{call " + procedureName + "(?, ?)}";
+
+	        try (Connection connection = dataSource.getConnection();
+	             CallableStatement stmt = connection.prepareCall(callSql)) {
+
+	            // Set parameters in the correct order
+	            stmt.setString(1, plantId); // @finYear
+	            stmt.setString(2, aopYear); // @siteId
+
+	            // Execute the stored procedure
+	            int rowsAffected = stmt.executeUpdate();
+
+	            // Optional: commit if auto-commit is off
+	            if (!connection.getAutoCommit()) {
+	                connection.commit();
+	            }
+
+	            return rowsAffected;
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return 0;
+	        }
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+
+	
+
 
 }

@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-
 
 import java.util.List;
 import java.util.UUID;
@@ -16,7 +14,6 @@ import java.util.UUID;
 import com.wks.caseengine.entity.AnnualAOPCost;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
-
 
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
@@ -314,9 +311,15 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	public List<Object[]> getData(String plantId, String aopYear) {
 		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String verticalName = vertical.getName();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			// Stored procedure name
 			String procedureName = "GetAnnualAOPCost";
-
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				procedureName = verticalName + "_" + site.getName() + "_GetAnnualAOPCost";
+			}
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
@@ -337,8 +340,18 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<Object[]> getProductionWorkflowData(String plantId, String aopYear) {
 		try {
 			// Stored procedure name
+			// Fetch plant and vertical to determine procedure name
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+					() -> new RuntimeException("Plant not found for ID: " + plantId));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+					() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			// Determine stored procedure name dynamically
+			String verticalName = vertical.getName();
 			String procedureName = "GetAnnualProductionCost";
-
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
+			}
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
@@ -359,8 +372,25 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<String> getHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
 
+		// Fetch plant and vertical to determine procedure name
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+				() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+				() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+
+		// Determine stored procedure name dynamically
+		String verticalName = vertical.getName();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		// Stored procedure name
+		String procedureName = "GetAnnualAOPCost";
+		if (!"MEG".equalsIgnoreCase(verticalName)) {
+			procedureName = verticalName + "_" + site.getName() + "_GetAnnualAOPCost";
+		}
+
+		String callableSql = "{call " + procedureName + "(?, ?)}";
+
 		try (Connection conn = dataSource.getConnection();
-				CallableStatement stmt = conn.prepareCall("{call GetAnnualAOPCost(?, ?)}")) {
+				CallableStatement stmt = conn.prepareCall(callableSql)) {
 
 			stmt.setString(1, plantId);
 			stmt.setString(2, aopYear);
@@ -394,8 +424,22 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<String> getProductionWorkflowHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
 
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+				() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+				() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+
+		// Determine stored procedure name dynamically
+		String verticalName = vertical.getName();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String procedureName = "GetAnnualProductionCost";
+		if (!"MEG".equalsIgnoreCase(verticalName)) {
+			procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
+		}
+		String callableSql = "{call " + procedureName + "(?, ?)}";
+
 		try (Connection conn = dataSource.getConnection();
-				CallableStatement stmt = conn.prepareCall("{call GetAnnualProductionCost(?, ?)}")) {
+				CallableStatement stmt = conn.prepareCall(callableSql)) {
 
 			stmt.setString(1, plantId);
 			stmt.setString(2, aopYear);
@@ -566,11 +610,11 @@ public class WorkflowServiceImpl implements WorkflowService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadAnnualAOPCost";
 			System.out.println(storedProcedure);
-			Integer result= executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+			Integer result = executeDynamicUpdateProcedure(storedProcedure, plantId, year);
 			aopMessageVM.setCode(200);
-	        aopMessageVM.setMessage("SP Executed successfully");
-	        aopMessageVM.setData(result);
-	        return aopMessageVM;
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(result);
+			return aopMessageVM;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -582,32 +626,32 @@ public class WorkflowServiceImpl implements WorkflowService {
 		try {
 			String callSql = "{call " + procedureName + "(?, ?)}";
 
-	        try (Connection connection = dataSource.getConnection();
-	             CallableStatement stmt = connection.prepareCall(callSql)) {
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
 
-	            // Set parameters in the correct order
-	            stmt.setString(1, plantId); // @finYear
-	            stmt.setString(2, aopYear); // @plantId
-	            
-	            // Execute the stored procedure
-	            int rowsAffected = stmt.executeUpdate();
+				// Set parameters in the correct order
+				stmt.setString(1, plantId); // @finYear
+				stmt.setString(2, aopYear); // @plantId
 
-	            // Optional: commit if auto-commit is off
-	            if (!connection.getAutoCommit()) {
-	                connection.commit();
-	            }
+				// Execute the stored procedure
+				int rowsAffected = stmt.executeUpdate();
 
-	            return rowsAffected;
+				// Optional: commit if auto-commit is off
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
 
-	        } catch (SQLException e) {
-	            e.printStackTrace();
-	            return 0;
-	        }
+				return rowsAffected;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return 0;
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return 0;
 	}
-	
+
 }
