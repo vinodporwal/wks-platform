@@ -65,11 +65,16 @@ public class KeycloakUserServiceImpl implements KeycloakUserService {
 			    allUsers.addAll(usersBatch); // Add the fetched users to the main list.
 			    first += pageSize; // Move to the next page.
 			}
+
+			System.out.println("Job running: Count of Users ." + allUsers.size());
+
 			List<Map<String, Object>> userDetails = allUsers.stream()
 			    .map(user -> {
 			        String userId = user.getId();
 			        UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
 			        UserRepresentation userRep = userResource.toRepresentation();
+
+					System.out.println("Job running: User email ." + userRep.getEmail());
 
 			        if(userRep.isEnabled() && !Objects.isNull(userRep.getEmail()) && !Objects.isNull(userRep.getUsername())) {
 			        	String convertedUsername = convertUsername(userRep.getUsername());
