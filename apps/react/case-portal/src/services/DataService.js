@@ -49,6 +49,7 @@ export const DataService = {
   saveShutDownNormsData,
   saveSlowdownNormsData,
   editAOPMCCalculatedData,
+  editDesignCapacityData,
   updateSlowdownData,
   updateShutdownData,
   updateTurnAroundData,
@@ -131,8 +132,12 @@ export const DataService = {
   getNormalOpsNormsExcel,
   executeConfiguration,
   getConfigurationExecutionDetails,
+  getMaxAchievedCapacityData,
+  getDesignCapacityData,
   saveProductionVolDataExcel,
   getProductionVolExcel,
+  getMaxAchievedCapacityExcel,
+  getDesignCapacityExcel,
   getConfigurationExcelConstants,
   handleCalculateNormalOperationNormsPe,
   savePlantContributionData,
@@ -161,6 +166,7 @@ export const DataService = {
   saveSpyroOutputYield,
   getCrackerNextYearParameters,
   getCrackerNextYearData,
+  calculateNormsHistorianValues,
 }
 async function handleRefresh(year, plantId, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/handleRefresh?year=${year}&plantId=${plantId}`
@@ -277,6 +283,7 @@ async function handleCalculateNormalOperationNormsPe(
     return Promise.reject(e)
   }
 }
+
 async function handleCalculateShutdownNorms(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
   //  const url = `${Config.CaseEngineUrl}/task/getCalculatedShutdownNorms?year=${year1}&plantId=${plantId}`
@@ -2301,6 +2308,49 @@ async function saveSlowdownNormsData(plantId, turnAroundDetails, keycloak) {
     return await Promise.reject(e)
   }
 }
+
+async function editDesignCapacityData(plantId, designCapacityData, keycloak) {
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/design/capacity?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(designCapacityData),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+//editDesignCapacityData
+async function editDesignCapacityData1(plantId, turnAroundDetails, keycloak) {
+  const year = localStorage.getItem('year')
+
+  const url = `${Config.CaseEngineUrl}/task/design/capacity?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(turnAroundDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 // Config.CaseEngineUrl
 async function editAOPMCCalculatedData(plantId, turnAroundDetails, keycloak) {
   const year = localStorage.getItem('year')
@@ -3192,6 +3242,81 @@ async function getNormalOpsNormsExcel(keycloak, gradeId) {
     return Promise.reject(e)
   }
 }
+
+async function getDesignCapacityExcel(keycloak) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/production-volume-data/export/excel?year=${year}&plantId=${plantId}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'Design Capacity.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getMaxAchievedCapacityExcel(keycloak) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/production-volume-data/export/excel?year=${year}&plantId=${plantId}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'max_achieved_capacity.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing data:', e)
+    return Promise.reject(e)
+  }
+}
+
 async function getProductionVolExcel(keycloak) {
   var year = localStorage.getItem('year')
   var plantId = ''
@@ -3249,6 +3374,42 @@ async function executeConfiguration(executionDetailDtoList, keycloak) {
   } catch (e) {
     console.error('Error saving configuration execution:', e)
     return Promise.reject(e)
+  }
+}
+
+async function getDesignCapacityData(keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/design/capacity?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getMaxAchievedCapacityData(keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/max-achieved/capacity?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 async function getConfigurationExecutionDetails(keycloak) {
@@ -3802,6 +3963,34 @@ async function getCrackerNextYearData(keycloak, qParams) {
     return json(keycloak, resp)
   } catch (e) {
     console.error('Failed to fetch next-year data', e)
+    return Promise.reject(e)
+  }
+}
+
+async function calculateNormsHistorianValues(
+  plantId,
+  year,
+  periodFrom,
+  periodTo,
+  keycloak,
+) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-norms-historian-values?plantId=${plantId}&aopYear=${year}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json()
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
   }
 }

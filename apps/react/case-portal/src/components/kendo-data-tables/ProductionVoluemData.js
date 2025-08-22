@@ -16,6 +16,7 @@ import { Typography } from '../../../node_modules/@mui/material/index'
 // import TextField from '@mui/material/TextField'
 // import { usePermissions } from 'hooks/usePermissions'
 import KendoDataTables from './index'
+import { validateFields } from 'utils/validationUtils'
 
 const ProductionvolumeData = ({ permissions }) => {
   // const { isReadOnly, isWriteOnly, isReadWrite, isFullAccess, isApproveOnly } =
@@ -23,7 +24,10 @@ const ProductionvolumeData = ({ permissions }) => {
 
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
-
+  const [modifiedCellsDesignCapacity, setModifiedCellsDesignCapacity] =
+    React.useState({})
+  const [enableSaveAddBtnDesignCapacity, setEnableSaveAddBtnDesignCapacity] =
+    useState(false)
   const [_plantID, set_PlantID] = useState('')
 
   const keycloak = useSession()
@@ -50,14 +54,26 @@ const ProductionvolumeData = ({ permissions }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [unitDesignCapacity, setUnitDesignCapacity] = useState('TPH')
+  const [unitMaxCapacity, setUnitMaxCapacity] = useState('TPH')
   const [selectedUnit, setSelectedUnit] = useState('TPH')
   const [loading, setLoading] = useState(false)
 
   // States for the Remark Dialog
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [remarkDialogOpenDesignCapacity, setRemarkDialogOpenDesignCapacity] =
+    useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRemarkDesignCapacity, setCurrentRemarkDesignCapacity] =
+    useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [currentRowIdDesignCapacity, setCurrentRowIdDesignCapacity] =
+    useState(null)
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
   const dispatch = useDispatch()
+  const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
+  const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
   // const unsavedChangesRef = React.useRef({
   //   unsavedRows: {},
   //   rowsBeforeChange: {},
@@ -67,7 +83,11 @@ const ProductionvolumeData = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-
+  const handleRemarkCellClickDesignCapacity = (row) => {
+    setCurrentRemarkDesignCapacity(row.remarks || '')
+    setCurrentRowIdDesignCapacity(row.id)
+    setRemarkDialogOpenDesignCapacity(true)
+  }
   useEffect(() => {
     if (plantID?.plantId) {
       set_PlantID(plantID?.plantId)
@@ -153,17 +173,30 @@ const ProductionvolumeData = ({ permissions }) => {
         aopmccCalculatedData,
         keycloak,
       )
-      // console.log(response)
+
       if (response) {
         dispatch(setIsBlocked(false))
-
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Saved Successfully!',
           severity: 'success',
         })
-        setLoading(false)
         setModifiedCells({})
+
+        if (lowerVertName == 'meg') {
+          const responseForNorms =
+            await DataService.calculateNormsHistorianValues(
+              plantId,
+              localStorage.getItem('year'),
+              startDate,
+              endDate,
+              keycloak,
+            )
+
+          if (responseForNorms?.code == 200) setLoading(false)
+        } else {
+          setLoading(false)
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -182,6 +215,111 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }
 
+  const editDesignCapacityData = async (newRows) => {
+    setLoading(true)
+    try {
+      let plantId = ''
+      const isTPH = unitDesignCapacity === 'TPD' // match third grid logic!
+      const storedPlant = localStorage.getItem('selectedPlant')
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      const months = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
+      ]
+
+      const designCapacityData = newRows.map((row) => {
+        const mapped = { id: row.idFromApi || row.id || null }
+        months.forEach((month) => {
+          mapped[month] =
+            isTPH && row[month] ? row[month] / 24 : row[month] || null
+        })
+        mapped.remarks = row.remarks || row.remark || ''
+        mapped.materialFKId = row.normParametersFKId || row.materialFKId || null
+        mapped.productName = row.productName || row.materialDisplayName || null
+        return mapped
+      })
+
+      const response = await DataService.editDesignCapacityData(
+        plantId,
+        designCapacityData,
+        keycloak,
+      )
+
+      if (response && response.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCellsDesignCapacity({})
+        setEnableSaveAddBtnDesignCapacity(false)
+        fetchDesignCapacityData(unitDesignCapacity)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please fill all fields, try again!',
+          severity: 'error',
+        })
+      }
+      setLoading(false)
+      return response
+    } catch (error) {
+      console.error('Error saving Design Capacity:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error saving Design Capacity!',
+        severity: 'error',
+      })
+      setLoading(false)
+    }
+  }
+  const saveChangesDesignCapacity = React.useCallback(async () => {
+    try {
+      const data = Object.values(modifiedCellsDesignCapacity)
+
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      editDesignCapacityData(data)
+      setEnableSaveAddBtnDesignCapacity(false)
+    } catch (error) {
+      console.log('Facing issue at saving data', error)
+    }
+  }, [modifiedCellsDesignCapacity, unitDesignCapacity])
+
+  //
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -258,19 +396,16 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }, [modifiedCells, selectedUnit])
 
-  const fetchData = async () => {
+  const fetchData = async (unit = selectedUnit) => {
     try {
       setLoading(true)
       const response = await DataService.getAOPMCCalculatedData(keycloak)
-
       if (response?.code != 200) {
         setRows([])
         setLoading(false)
         return
       }
-
       setCalculationObject(response?.data?.aopCalculation)
-
       var formattedData = response?.data?.aopMCCalculatedDataDTOList.map(
         (item, index) => {
           const isTPH = selectedUnit == 'TPD'
@@ -344,6 +479,46 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }
 
+  function formatDate(date) {
+    if (!date) return ''
+    const year = date?.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const fetchConfiguration = async () => {
+    try {
+      setLoading(true)
+      const configData =
+        await DataService.getConfigurationExecutionDetails(keycloak)
+      if (configData?.code !== 200) return
+
+      const StartDate = configData.data.find(
+        (d) => d.Name === 'StartDate',
+      )?.AttributeValue
+      const EndDate = configData.data.find(
+        (d) => d.Name === 'EndDate',
+      )?.AttributeValue
+
+      if (!StartDate || !EndDate) {
+        const today = new Date()
+        const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
+        const startDate = new Date(today.getFullYear() - 5, today.getMonth(), 1)
+
+        setStartDate(formatDate(startDate))
+        setEndDate(formatDate(endDate))
+      } else {
+        setStartDate(StartDate)
+        setEndDate(EndDate)
+      }
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
   function normalizeAllRows(grid) {
     const monthKeys = [
       'april',
@@ -395,7 +570,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'materialFKId',
       title: 'Particulars',
-      widthT: 120,
+      widthT: 100,
 
       editable: false,
       hidden: true,
@@ -403,7 +578,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 120,
+      widthT: 100,
       editable: false,
     },
     {
@@ -412,7 +587,7 @@ const ProductionvolumeData = ({ permissions }) => {
       editable: false,
       align: 'left',
       headerAlign: 'left',
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       type: 'number',
     },
     {
@@ -422,13 +597,13 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       type: 'number',
     },
     {
       field: 'june',
       title: headerMap[6],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -437,7 +612,7 @@ const ProductionvolumeData = ({ permissions }) => {
     },
     {
       field: 'july',
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       title: headerMap[7],
       editable: false,
 
@@ -448,7 +623,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'august',
       title: headerMap[8],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -458,7 +633,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'september',
       title: headerMap[9],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -468,7 +643,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'october',
       title: headerMap[10],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -478,7 +653,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'november',
       title: headerMap[11],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -488,7 +663,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'december',
       title: headerMap[12],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -498,7 +673,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'january',
       title: headerMap[1],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -508,7 +683,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'february',
       title: headerMap[2],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -518,7 +693,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'march',
       title: headerMap[3],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: false,
 
       align: 'left',
@@ -544,7 +719,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'materialFKId',
       title: 'Particulars',
-      widthT: 120,
+      widthT: 100,
 
       editable: true,
       hidden: true,
@@ -552,7 +727,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 120,
+      widthT: 100,
       editable: true,
     },
     {
@@ -561,7 +736,7 @@ const ProductionvolumeData = ({ permissions }) => {
       editable: true,
       align: 'left',
       headerAlign: 'left',
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       type: 'number',
     },
     {
@@ -571,13 +746,13 @@ const ProductionvolumeData = ({ permissions }) => {
 
       align: 'left',
       headerAlign: 'left',
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       type: 'number',
     },
     {
       field: 'june',
       title: headerMap[6],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -586,7 +761,7 @@ const ProductionvolumeData = ({ permissions }) => {
     },
     {
       field: 'july',
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       title: headerMap[7],
       editable: true,
 
@@ -597,7 +772,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'august',
       title: headerMap[8],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -607,7 +782,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'september',
       title: headerMap[9],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -617,7 +792,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'october',
       title: headerMap[10],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -627,7 +802,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'november',
       title: headerMap[11],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -637,7 +812,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'december',
       title: headerMap[12],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -647,7 +822,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'january',
       title: headerMap[1],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -657,7 +832,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'february',
       title: headerMap[2],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -667,7 +842,150 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'march',
       title: headerMap[3],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'remarks',
+      title: 'Remark',
+      editable: true,
+      align: 'left',
+      headerAlign: 'left',
+      widthT: 150,
+    },
+  ]
+  const max_achieved_capacity = [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 100,
+      editable: true,
+    },
+    {
+      field: 'april',
+      title: headerMap[4],
+      editable: true,
+      align: 'left',
+      headerAlign: 'left',
+      format: '{0:#.##}',
+      type: 'number',
+    },
+    {
+      field: 'may',
+      title: headerMap[5],
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      format: '{0:#.##}',
+      type: 'number',
+    },
+    {
+      field: 'june',
+      title: headerMap[6],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'july',
+      format: '{0:#.##}',
+      title: headerMap[7],
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'august',
+      title: headerMap[8],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'september',
+      title: headerMap[9],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'october',
+      title: headerMap[10],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'november',
+      title: headerMap[11],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'december',
+      title: headerMap[12],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'january',
+      title: headerMap[1],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'february',
+      title: headerMap[2],
+      format: '{0:#.##}',
+      editable: true,
+
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+    },
+    {
+      field: 'march',
+      title: headerMap[3],
+      format: '{0:#.##}',
       editable: true,
 
       align: 'left',
@@ -700,7 +1018,7 @@ const ProductionvolumeData = ({ permissions }) => {
       field: 'productName',
       title: 'Particulars',
 
-      widthT: 120,
+      widthT: 100,
 
       editable: false,
     },
@@ -711,14 +1029,14 @@ const ProductionvolumeData = ({ permissions }) => {
       editable: false,
       align: 'left',
       headerAlign: 'left',
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       type: 'number',
     },
     {
       field: 'may',
       title: headerMap[5],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -729,7 +1047,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'june',
       title: headerMap[6],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -740,7 +1058,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'july',
       title: headerMap[7],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -751,7 +1069,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'august',
       title: headerMap[8],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -762,7 +1080,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'september',
       title: headerMap[9],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -773,7 +1091,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'october',
       title: headerMap[10],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -784,7 +1102,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'november',
       title: headerMap[11],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -795,7 +1113,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'december',
       title: headerMap[12],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -806,7 +1124,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'january',
       title: headerMap[1],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -817,7 +1135,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'february',
       title: headerMap[2],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -828,7 +1146,7 @@ const ProductionvolumeData = ({ permissions }) => {
     {
       field: 'march',
       title: headerMap[3],
-      format: '{0:#.###}',
+      format: '{0:#.##}',
 
       editable: false,
 
@@ -853,13 +1171,23 @@ const ProductionvolumeData = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
+
+    if (lowerVertName == 'meg') fetchConfiguration()
   }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
 
   const productionColumns = getEnhancedProductionColDefs({
     headerMap,
   })
 
-  const handleUnitChange = (unit) => {
+  const handleUnitChangeDesignCapacity = (unit) => {
+    setUnitDesignCapacity(unit)
+  }
+
+  const handleUnitChangeMaxCapacity = (unit) => {
+    setUnitMaxCapacity(unit)
+  }
+
+  const handleUnitChangeMain = (unit) => {
     setSelectedUnit(unit)
   }
 
@@ -870,6 +1198,173 @@ const ProductionvolumeData = ({ permissions }) => {
       // handleCalculatePe()
     }
   }
+
+  const fetchDesignCapacityData = async (unit = unitDesignCapacity) => {
+    setLoading(true)
+    try {
+      const response = await DataService.getDesignCapacityData(keycloak, unit)
+      let data = response?.data?.aopMCCalculatedDataDTOList
+      if (data && !Array.isArray(data)) {
+        data = [data]
+      }
+      if (response?.code === 200 && data) {
+        const isTPD = unit === 'TPD'
+        const formatted = data.map((item, index) => ({
+          ...item,
+          id: item?.id,
+          productName: item?.materialDisplayName,
+          remarks: item?.remarks?.trim() || null,
+          originalRemark: item?.remarks?.trim() || null,
+          remark: item.remarks?.trim() || '',
+
+          april:
+            isTPD && item.april
+              ? (item.april * 24).toFixed(2)
+              : item.april || null,
+          may:
+            isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null,
+          june:
+            isTPD && item.june
+              ? (item.june * 24).toFixed(2)
+              : item.june || null,
+          july:
+            isTPD && item.july
+              ? (item.july * 24).toFixed(2)
+              : item.july || null,
+          august:
+            isTPD && item.august
+              ? (item.august * 24).toFixed(2)
+              : item.august || null,
+          september:
+            isTPD && item.september
+              ? (item.september * 24).toFixed(2)
+              : item.september || null,
+          october:
+            isTPD && item.october
+              ? (item.october * 24).toFixed(2)
+              : item.october || null,
+          november:
+            isTPD && item.november
+              ? (item.november * 24).toFixed(2)
+              : item.november || null,
+          december:
+            isTPD && item.december
+              ? (item.december * 24).toFixed(2)
+              : item.december || null,
+          january:
+            isTPD && item.january
+              ? (item.january * 24).toFixed(2)
+              : item.january || null,
+          february:
+            isTPD && item.february
+              ? (item.february * 24).toFixed(2)
+              : item.february || null,
+          march:
+            isTPD && item.march
+              ? (item.march * 24).toFixed(2)
+              : item.march || null,
+        }))
+        setRowsDesignCapacity(formatted)
+      } else {
+        setRowsDesignCapacity([])
+      }
+    } catch (error) {
+      console.error('Error fetching Design Capacity:', error)
+      setRowsDesignCapacity([])
+    } finally {
+      setLoading(false)
+    }
+  }
+  const fetchMaxCapacityData = async (unit = unitMaxCapacity) => {
+    setLoading(true)
+    try {
+      const response = await DataService.getMaxAchievedCapacityData(
+        keycloak,
+        unit,
+      )
+      let data = response?.data?.aopMCCalculatedDataDTOList
+      if (data && !Array.isArray(data)) {
+        data = [data]
+      }
+      if (response?.code === 200 && data) {
+        // Conversion logic
+        const isTPD = unit === 'TPD'
+        const formatted = data.map((item, index) => ({
+          ...item,
+          idFromApi: item?.id,
+          productName: item?.materialDisplayName,
+          april:
+            isTPD && item.april
+              ? (item.april * 24).toFixed(2)
+              : item.april || null,
+          may:
+            isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null,
+          june:
+            isTPD && item.june
+              ? (item.june * 24).toFixed(2)
+              : item.june || null,
+          july:
+            isTPD && item.july
+              ? (item.july * 24).toFixed(2)
+              : item.july || null,
+          august:
+            isTPD && item.august
+              ? (item.august * 24).toFixed(2)
+              : item.august || null,
+          september:
+            isTPD && item.september
+              ? (item.september * 24).toFixed(2)
+              : item.september || null,
+          october:
+            isTPD && item.october
+              ? (item.october * 24).toFixed(2)
+              : item.october || null,
+          november:
+            isTPD && item.november
+              ? (item.november * 24).toFixed(2)
+              : item.november || null,
+          december:
+            isTPD && item.december
+              ? (item.december * 24).toFixed(2)
+              : item.december || null,
+          january:
+            isTPD && item.january
+              ? (item.january * 24).toFixed(2)
+              : item.january || null,
+          february:
+            isTPD && item.february
+              ? (item.february * 24).toFixed(2)
+              : item.february || null,
+          march:
+            isTPD && item.march
+              ? (item.march * 24).toFixed(2)
+              : item.march || null,
+          isEditable: false,
+        }))
+        setRowsMaxCapacity(formatted)
+      } else {
+        setRowsMaxCapacity([])
+      }
+    } catch (error) {
+      console.error('Error fetching Max Achieved Capacity:', error)
+      setRowsMaxCapacity([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDesignCapacityData(unitDesignCapacity)
+  }, [unitDesignCapacity, plantID, yearChanged, keycloak])
+
+  useEffect(() => {
+    fetchMaxCapacityData(unitMaxCapacity)
+  }, [unitMaxCapacity, plantID, yearChanged, keycloak])
+
+  useEffect(() => {
+    fetchData()
+    if (lowerVertName == 'meg') fetchConfiguration()
+  }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
 
   const handleCalculateMeg = async () => {
     try {
@@ -914,8 +1409,6 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }
 
-  const defaultCustomHeight = { mainBox: '36vh', otherBox: '112%' }
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -945,11 +1438,35 @@ const ProductionvolumeData = ({ permissions }) => {
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       saveBtn: false,
       units: ['TPH', 'TPD'],
-
-      downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-
+      // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       showTitleNameBusiness: true,
       titleName: 'Max Achieved Capacity',
+
+      downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
+      ExcelName: `${lowerVertName}_Max Achieved Capacity`,
+    },
+    isOldYear,
+  )
+
+  const adjustedPermissionsGrid2 = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      allAction: permissions?.allAction ?? true,
+      addButton: permissions?.addButton ?? false,
+      deleteButton: permissions?.deleteButton ?? false,
+      editButton: permissions?.editButton ?? false,
+      showUnit: permissions?.showUnit ?? true,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      showRefreshBtn: permissions?.showRefreshBtn ?? true,
+      saveBtn: true,
+      units: ['TPH', 'TPD'],
+
+      // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
+      downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
+      ExcelName: `${lowerVertName}_Design Capacity`,
+
+      showTitleNameBusiness: true,
+      titleName: 'Design Capacity',
     },
     isOldYear,
   )
@@ -974,7 +1491,7 @@ const ProductionvolumeData = ({ permissions }) => {
           : false,
       downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       uploadExcelBtn: permissions?.hideUploadExcel ? false : true,
-      showTitleNameBusiness: lowerVertName === 'meg' ? false : true,
+      showTitleNameBusiness: true,
       titleName: 'Current Operating Capacity',
     },
     isOldYear,
@@ -982,12 +1499,11 @@ const ProductionvolumeData = ({ permissions }) => {
 
   var cols = permissions?.hideSummary ? colDefs1233 : productionColumns
   var rows1 = permissions?.hideSummary ? rows500 : rows
-  var rowsMaxCapacity = rows500
 
   const handleExcelUpload = (rawFile) => {
     saveExcelFile(rawFile)
   }
-  const downloadExcelForConfiguration = async () => {
+  const downloadExcelForConfiguration = async (gridType) => {
     setSnackbarOpen(true)
     setSnackbarData({
       message: 'Excel download started!',
@@ -995,7 +1511,13 @@ const ProductionvolumeData = ({ permissions }) => {
     })
 
     try {
-      await DataService.getProductionVolExcel(keycloak)
+      if (gridType === 'design') {
+        await DataService.getDesignCapacityExcel(keycloak)
+      } else if (gridType === 'max') {
+        await DataService.getMaxAchievedCapacityExcel(keycloak)
+      } else {
+        await DataService.getProductionVolExcel(keycloak)
+      }
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -1008,11 +1530,8 @@ const ProductionvolumeData = ({ permissions }) => {
         message: 'Failed to download Excel.',
         severity: 'error',
       })
-    } finally {
-      // optional cleanup or logging
     }
   }
-
   const saveExcelFile = async (rawFile) => {
     setLoading(true)
     try {
@@ -1034,7 +1553,22 @@ const ProductionvolumeData = ({ permissions }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        setLoading(false)
+        if (lowerVertName == 'meg') {
+          const responseForNorms =
+            await DataService.calculateNormsHistorianValues(
+              plantId,
+              localStorage.getItem('year'),
+              startDate,
+              endDate,
+              keycloak,
+            )
+
+          if (responseForNorms?.code == 200) setLoading(false)
+        } else {
+          setLoading(false)
+        }
+
+        // setLoading(false)
 
         fetchData()
       } else if (response?.code === 400 && response?.data) {
@@ -1078,7 +1612,7 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }
 
-  const conditionForFirst = false
+  const conditionForFirst = lowerVertName == 'meg' && !permissions?.hideSummary
 
   return (
     <div>
@@ -1091,21 +1625,51 @@ const ProductionvolumeData = ({ permissions }) => {
 
       {conditionForFirst && (
         <KendoDataTables
-          setRows={setRows2}
+          modifiedCells={modifiedCellsDesignCapacity}
+          setModifiedCells={setModifiedCellsDesignCapacity}
+          enableSaveAddBtn={enableSaveAddBtnDesignCapacity}
+          setRows={setRowsDesignCapacity}
           columns={colDefsDesignCapacity}
-          rows={rows1}
-          fetchData={fetchData}
+          rows={rowsDesignCapacity}
+          paginationOptions={[100, 200, 300]}
+          saveChanges={saveChangesDesignCapacity}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRef}
+          fetchData={fetchDesignCapacityData}
+          handleUnitChange={handleUnitChangeDesignCapacity}
+          handleRemarkCellClick={handleRemarkCellClickDesignCapacity}
+          experimentalFeatures={{ newEditingApi: true }}
+          remarkDialogOpen={remarkDialogOpenDesignCapacity}
+          setRemarkDialogOpen={setRemarkDialogOpenDesignCapacity}
+          currentRemark={currentRemarkDesignCapacity}
+          setCurrentRemark={setCurrentRemarkDesignCapacity}
+          currentRowId={currentRowIdDesignCapacity}
+          setEnableSaveAddBtn={setEnableSaveAddBtnDesignCapacity}
           permissions={adjustedPermissionsGrid2}
+          selectedUnit={unitDesignCapacity}
+          setSelectedUnit={setUnitDesignCapacity}
+          downloadExcelForConfiguration={() =>
+            downloadExcelForConfiguration('design')
+          }
         />
       )}
 
       {conditionForFirst && (
         <KendoDataTables
-          setRows={setRows2}
-          columns={colDefsDesignCapacity}
+          setRows={setRowsMaxCapacity}
+          columns={max_achieved_capacity}
           rows={rowsMaxCapacity}
-          fetchData={fetchData}
+          fetchData={fetchMaxCapacityData}
           permissions={adjustedPermissionsGrid1}
+          selectedUnit={unitMaxCapacity}
+          setSelectedUnit={setUnitMaxCapacity}
+          handleUnitChange={handleUnitChangeMaxCapacity}
+          downloadExcelForConfiguration={() =>
+            downloadExcelForConfiguration('max')
+          }
         />
       )}
 
@@ -1116,7 +1680,6 @@ const ProductionvolumeData = ({ permissions }) => {
         setRows={setRows}
         columns={cols}
         rows={rows1}
-        title='Production Volume Data'
         paginationOptions={[100, 200, 300]}
         saveChanges={saveChanges}
         snackbarData={snackbarData}
@@ -1125,7 +1688,7 @@ const ProductionvolumeData = ({ permissions }) => {
         setSnackbarData={setSnackbarData}
         apiRef={apiRef}
         fetchData={fetchData}
-        handleUnitChange={handleUnitChange}
+        handleUnitChange={handleUnitChangeMain}
         handleRemarkCellClick={handleRemarkCellClick}
         experimentalFeatures={{ newEditingApi: true }}
         remarkDialogOpen={remarkDialogOpen}
@@ -1138,7 +1701,9 @@ const ProductionvolumeData = ({ permissions }) => {
         selectedUnit={selectedUnit}
         setSelectedUnit={setSelectedUnit}
         handleExcelUpload={handleExcelUpload}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        downloadExcelForConfiguration={() =>
+          downloadExcelForConfiguration('main')
+        }
       />
 
       {!permissions?.hideSummary && (

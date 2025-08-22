@@ -661,6 +661,18 @@ const KendoDataTables = ({
     return Math.round(Math.min(needed, maxVH, available))
   }, [rows?.length])
 
+  const handleSelectionChange = (event) => {
+    const selectedRow = event.dataItem
+    const isSelected = event.nativeEvent.target.checked
+
+    console.log('Row changed:', selectedRow, 'Checked:', isSelected)
+  }
+
+  const handleHeaderSelectionChange = (event) => {
+    const checked = event.nativeEvent.target.checked
+    console.log('Header checkbox changed. Checked:', checked)
+  }
+
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -712,6 +724,35 @@ const KendoDataTables = ({
                 </Typography>
               )}
 
+              {permissions?.showMonthlyDropdown && (
+                <TextField
+                  select
+                  // value={selectedMonthly || ''}
+                  onChange={(e) => {
+                    const selectedValue = e.target.value
+                    // setSelectedMonthly(selectedValue)
+                    // optional: if you need a callback
+                    // handleMonthlyChange?.(selectedValue)
+                  }}
+                  sx={{
+                    width: '220px',
+                    backgroundColor: '#FFFFFF',
+                    mr: 1,
+                  }}
+                  variant='outlined'
+                  label='Norm Type'
+                >
+                  <MenuItem value='' disabled>
+                    Select Norm Type
+                  </MenuItem>
+                  <MenuItem value='monthly1'>Best Achieved (Min CC)</MenuItem>
+                  <MenuItem value='monthly2'>
+                    Best Achieved (Individual)
+                  </MenuItem>
+                  <MenuItem value='monthly3'>Expression (Norms)</MenuItem>
+                </TextField>
+              )}
+
               {permissions?.showG && (
                 <TextField
                   select
@@ -724,7 +765,7 @@ const KendoDataTables = ({
                     setSelectedGrade(selectedGradeId)
                     handleGradeChange(selectedGradeObj?.gradeId)
                   }}
-                  sx={{ width: '165px', backgroundColor: '#FFFFFF' }}
+                  className='dropdown-select'
                   variant='outlined'
                   label={permissions?.dropdownLabel || 'Select'}
                 >
@@ -865,7 +906,7 @@ const KendoDataTables = ({
                     setSelectedUnit(e.target.value)
                     handleUnitChange(e.target.value)
                   }}
-                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                  className='dropdown-select'
                   variant='outlined'
                   label='Select UOM'
                 >
@@ -890,7 +931,7 @@ const KendoDataTables = ({
                     setSelectMode(e.target.value)
                     // fetchData()
                   }}
-                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                  className='dropdown-select'
                   variant='outlined'
                   label='Select Modes'
                 >
@@ -937,6 +978,12 @@ const KendoDataTables = ({
                 // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
                 // height: `${calculatedVH}vh`,
               }}
+              selectable={{
+                enabled: true,
+                drag: false,
+                cell: false,
+                mode: 'multiple',
+              }}
               modifiedCells={modifiedCells}
               autoProcessData={true}
               defaultGroup={initialGroup}
@@ -952,7 +999,7 @@ const KendoDataTables = ({
               onItemChange={itemChange}
               resizable={true}
               defaultSkip={0}
-              defaultTake={500}
+              defaultTake={200}
               contextMenu={true}
               grade={grades}
               onRowClick={handleRowClick}
@@ -969,8 +1016,13 @@ const KendoDataTables = ({
                     }
                   : false
               }
+              onSelectionChange={handleSelectionChange}
             >
               {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
+
+              {permissions?.showMonthlyDropdown && (
+                <GridColumn columnType='checkbox' width='50px' />
+              )}
 
               {columns?.map((col) => {
                 const isActive = isColumnActive(col?.field, filter, sort)
