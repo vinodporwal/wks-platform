@@ -183,20 +183,16 @@ const ProductionvolumeData = ({ permissions }) => {
         })
         setModifiedCells({})
 
-        if (lowerVertName == 'meg') {
-          const responseForNorms =
-            await DataService.calculateNormsHistorianValues(
-              plantId,
-              localStorage.getItem('year'),
-              startDate,
-              endDate,
-              keycloak,
-            )
+        const responseForNorms =
+          await DataService.calculateNormsHistorianValues(
+            plantId,
+            localStorage.getItem('year'),
+            startDate,
+            endDate,
+            keycloak,
+          )
 
-          if (responseForNorms?.code == 200) setLoading(false)
-        } else {
-          setLoading(false)
-        }
+        setLoading(false)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1172,7 +1168,7 @@ const ProductionvolumeData = ({ permissions }) => {
   useEffect(() => {
     fetchData()
 
-    if (lowerVertName == 'meg') fetchConfiguration()
+    fetchConfiguration()
   }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
 
   const productionColumns = getEnhancedProductionColDefs({
@@ -1363,7 +1359,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-    if (lowerVertName == 'meg') fetchConfiguration()
+    fetchConfiguration()
   }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
 
   const handleCalculateMeg = async () => {
@@ -1553,20 +1549,17 @@ const ProductionvolumeData = ({ permissions }) => {
           severity: 'success',
         })
         setModifiedCells({})
-        if (lowerVertName == 'meg') {
-          const responseForNorms =
-            await DataService.calculateNormsHistorianValues(
-              plantId,
-              localStorage.getItem('year'),
-              startDate,
-              endDate,
-              keycloak,
-            )
 
-          if (responseForNorms?.code == 200) setLoading(false)
-        } else {
-          setLoading(false)
-        }
+        const responseForNorms =
+          await DataService.calculateNormsHistorianValues(
+            plantId,
+            localStorage.getItem('year'),
+            startDate,
+            endDate,
+            keycloak,
+          )
+
+        setLoading(false)
 
         // setLoading(false)
 
@@ -1612,7 +1605,7 @@ const ProductionvolumeData = ({ permissions }) => {
     }
   }
 
-  const conditionForFirst = lowerVertName == 'meg' && !permissions?.hideSummary
+  const conditionForFirst = !permissions?.hideSummary
 
   return (
     <div>
