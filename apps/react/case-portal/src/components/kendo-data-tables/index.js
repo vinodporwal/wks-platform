@@ -48,6 +48,7 @@ import {
   ExcelExportColumn,
 } from '../../../node_modules/@progress/kendo-react-excel-export/index'
 import { useSelector } from 'react-redux'
+import { Checkbox } from '../../../node_modules/@progress/kendo-react-inputs/index'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -1448,29 +1449,14 @@ const KendoDataTables = ({
                       width={col.widthT}
                       hidden={col.hidden}
                       editable={true}
-                      headerClassName={
-                        isColumnActive(col?.field, filter, sort)
-                          ? 'active-column'
-                          : ''
-                      }
-                      sortable={col?.filter}
                       cells={{
                         data: (props) => (
                           <td style={{ textAlign: 'center' }}>
-                            <input
-                              type='checkbox'
+                            <Checkbox
                               checked={!!props.dataItem[props.field]}
                               onChange={(e) =>
-                                handleCheckboxChange(props, e.target.checked)
+                                handleCheckboxChange(props, e.value)
                               }
-                              style={{
-                                width: '18px',
-                                height: '15px',
-                                accentColor: 'black',
-                                backgroundColor: 'transparent',
-                                border: '1px solid black',
-                                cursor: 'pointer',
-                              }}
                             />
                           </td>
                         ),

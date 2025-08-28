@@ -1228,8 +1228,7 @@ const NormalOpNormsScreen = () => {
         />
       )}
 
-      {selectedTab === 0 &&
-        (lowerVertName === 'cracker' || lowerVertName === 'meg') && (
+      {selectedTab === 0 && lowerVertName === 'meg' && (
           <Box sx={{ width: '100%', marginTop: 1 }}>
             <CustomAccordion defaultExpanded disableGutters>
               <CustomAccordionSummary
