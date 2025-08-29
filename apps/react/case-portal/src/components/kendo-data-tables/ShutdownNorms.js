@@ -178,6 +178,7 @@ const ShutdownNorms = () => {
           }
         } catch (error) {
           setGrades([])
+          setGradeId(null)
           console.error('Error fetching grades:', error)
         }
       }
@@ -186,6 +187,7 @@ const ShutdownNorms = () => {
   }, [plantID, yearChanged, keycloak])
 
   // 2) Fetch main data when gradeId or other deps change
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -195,8 +197,14 @@ const ShutdownNorms = () => {
         } else {
           await fetchData()
         }
+        let data
+        if (['pe', 'pp'].includes(lowerVertName)) {
+          if (!gradeId) return // wait until user selects grade
 
-        const data = await DataService.getShutdownMonths(keycloak, null)
+          data = await DataService.getShutdownMonths(keycloak, gradeId)
+        } else {
+          data = await DataService.getShutdownMonths(keycloak, null)
+        }
         setShutdownMonths(data)
       } catch (error) {
         console.error('Error in loadData:', error)
@@ -352,7 +360,6 @@ const ShutdownNorms = () => {
   const [calculationObject, setCalculationObject] = useState([])
 
   const fetchData = async (gradeId) => {
-    console.log('gradeID', gradeId)
     try {
       setLoading(true)
       setRows([])
@@ -436,7 +443,41 @@ const ShutdownNorms = () => {
     console.log(error)
   }, [])
 
+  const loadGradesAfterCalculation = async () => {
+    if (['pe', 'pp'].includes(lowerVertName)) {
+      try {
+        const response =
+          await NormalOperationNormsApiService.getGradesForShutdownNorms(
+            keycloak,
+          )
+
+        if (response?.code === 200) {
+          setGrades(response?.data)
+          if (Array.isArray(response?.data) && response?.data?.length === 0) {
+            setLoading(false)
+            return
+          }
+        }
+
+        setGradeId(gradeId)
+        fetchData(gradeId)
+      } catch (error) {
+        setGrades([])
+        console.error('Error fetching grades:', error)
+      }
+    } else {
+      fetchData(null)
+      data = await DataService.getShutdownMonths(keycloak, null)
+      setShutdownMonths(data)
+    }
+  }
+
   const handleCalculatePe = async () => {
+    setRows([])
+    setGrades([])
+    setGradeId(null)
+    setShutdownMonths([])
+
     setCalculatebtnClicked(true)
     setLoading(true)
     try {
@@ -461,7 +502,8 @@ const ShutdownNorms = () => {
           severity: 'success',
         })
         setLoading(false)
-        fetchData(gradeId)
+
+        loadGradesAfterCalculation()
       }
 
       // dispatch(setIsBlocked(true))
@@ -536,8 +578,6 @@ const ShutdownNorms = () => {
   )
 
   const handleGradeChange = (gradeId) => {
-    console.log('gradeIdgradeId', gradeId)
-
     setGradeId(gradeId)
   }
 
