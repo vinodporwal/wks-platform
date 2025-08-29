@@ -232,6 +232,22 @@ public class FetchRecordsServiceImpl {
 		return null;
 	}
 	
+	public List<FunctionalLocation> getFunctionalLocations(String dbName) {
+		try {
+			 String sql = "SELECT DISTINCT Description FROM [" + dbName + "].[dbo].Equipments WHERE Description NOT IN ('', 'FL Not Available') ORDER BY Description";
+			    
+			return jdbcTemplate.query(sql, new Object[]{}, (rs, rowNum) -> {
+				FunctionalLocation fl = new FunctionalLocation();
+				fl.setParentFLName(rs.getString("Description"));
+				fl.setAssetFL(rs.getString("Description"));
+				return fl;
+			});
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 	public List<FunctionalLocation> getAllFunctionalLocations() {
 	    try {
 	        String sql = "SELECT * FROM functional_location";

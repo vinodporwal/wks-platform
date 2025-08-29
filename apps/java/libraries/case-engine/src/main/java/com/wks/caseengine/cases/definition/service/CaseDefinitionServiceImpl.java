@@ -322,7 +322,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	        
 	        List<HierarchyNodesModel> hierarchyNodesModels = fetchRecords.getParentHierarchyNode(faultHistory.getFaultVisualisationData());
         	System.out.println("Main Asset ******************************************************************************");
-        	System.out.println("Main Asset " + hierarchyNodesModels.size());
+        	//System.out.println("Main Asset " + hierarchyNodesModels.size());
 	        if (!Objects.isNull(hierarchyNodesModels) && !hierarchyNodesModels.isEmpty() && hierarchyNodesModels.size() > 0) {
 	        	HierarchyNodesModel hierarchyNodesModel = hierarchyNodesModels.get(0);
 	        	System.out.println("Main Asset " + hierarchyNodesModel.getLocalizedDisplayName());
@@ -914,18 +914,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<FunctionalLocation> getFunctionalLocations(String assetName) {
 		List<FunctionalLocation> locations = new ArrayList<FunctionalLocation>();
 		System.out.println("IN Functiona location record fetching block");
-		if(assetName!=null && assetName.length()!=0) {
-			List<FunctionalLocation> flList = fetchRecords.getParentFunctionalLocation(assetName); 
-//			if(flList.size()>0 && flList.get(0).getParentFLName()!=null && flList.get(0).getParentFLName().length()!=0) {
-//				return fetchRecords.getFunctionaLocationsByFLName(flList.get(0).getParentFLName()); 
-	        if (flList != null && !flList.isEmpty()) {
-	            FunctionalLocation firstFL = flList.get(0);
-	            if (firstFL.getParentFLName() != null && !firstFL.getParentFLName().isEmpty()) {
-	                return fetchRecords.getFunctionaLocationsByFLName(firstFL.getParentFLName());
-	            }
-			}
-		}
-		return fetchRecords.getAllFunctionalLocations(); 
+		// if(assetName!=null && assetName.length()!=0) {
+		// 	List<FunctionalLocation> flList = fetchRecords.getParentFunctionalLocation(assetName); 
+	    //     if (flList != null && !flList.isEmpty()) {
+	    //         FunctionalLocation firstFL = flList.get(0);
+	    //         if (firstFL.getParentFLName() != null && !firstFL.getParentFLName().isEmpty()) {
+	    //             return fetchRecords.getFunctionaLocationsByFLName(firstFL.getParentFLName());
+	    //         }
+		// 	}
+		// }
+		// return fetchRecords.getAllFunctionalLocations(); 
+		return fetchRecords.getFunctionalLocations(db1Name);
 	}
 	
 	
