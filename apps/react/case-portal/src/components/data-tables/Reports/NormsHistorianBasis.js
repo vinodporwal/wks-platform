@@ -220,17 +220,17 @@ const NormsHistorianBasis = () => {
     lowerVertName === 'cracker'
       ? [
           {
-            label: 'Best Achieved',
+            label: 'Norms (Best Achieved-Min CC)',
             rows: rowsBestAchieved,
             cols: colsBestAchieved,
           },
           {
-            label: 'Expression Based',
+            label: 'Norms (Expression)',
             rows: rowsExpressionBased,
             cols: colsExpressionBased,
           },
           {
-            label: 'Current Year',
+            label: 'Norms (Individual Best Achieved)',
             rows: rowsCurrentYear,
             cols: colsCurrentYear,
           },
@@ -293,7 +293,7 @@ const NormsHistorianBasis = () => {
         ))}
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
+      <Box display='flex' justifyContent='flex-end' gap={2}>
         {!isOldYear && (
           <Button
             variant='contained'
@@ -309,11 +309,7 @@ const NormsHistorianBasis = () => {
             select
             value={selectedUnit}
             onChange={(e) => handleUnitChange(e.target.value)}
-            sx={{
-              width: '150px',
-              backgroundColor: '#FFFFFF',
-              marginLeft: '12px',
-            }}
+            className='dropdown-select'
             variant='outlined'
             label={lowerVertName === 'cracker' ? 'Select Mode.' : 'Select UOM.'}
           >

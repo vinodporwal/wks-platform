@@ -16,13 +16,17 @@ import { validateFields } from 'utils/validationUtils'
 // import { setIsBlocked } from 'store/reducers/dataGridStore'
 import getShutdownConsumptionColDef from 'components/data-tables/CommonHeader/getShutdownConsumptionColDef'
 import KendoDataTables from './index'
+import { NormalOperationNormsApiService } from 'services/NormalOperationNormsApiService'
+import { GradientRounded } from '../../../node_modules/@mui/icons-material/index'
 
 const ShutdownNorms = () => {
+  const [gradeId, setGradeId] = useState(null)
+
   const [modifiedCells, setModifiedCells] = React.useState({})
 
   const [loading, setLoading] = useState(false)
   const menu = useSelector((state) => state.dataGridStore)
-  const [allProducts, setAllProducts] = useState([])
+  // const [allProducts, setAllProducts] = useState([])
   const [shutdownMonths, setShutdownMonths] = useState([])
   const { sitePlantChange, yearChanged, oldYear, plantID } = menu
 
@@ -156,36 +160,59 @@ const ShutdownNorms = () => {
     }
   }, [apiRef, selectedUnit, calculatebtnClicked, modifiedCells])
 
+  // 1) Load grades list if vertical requires it
   useEffect(() => {
-    const getAllProducts = async () => {
-      try {
-        const data = await DataService.getAllProducts(keycloak, null)
-        const productList = data.map((product) => ({
-          id: product.id.toLowerCase(),
-          displayName: product.displayName,
-        }))
-        setAllProducts(productList)
-      } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        // handleMenuClose();
+    const loadGrades = async () => {
+      if (['pe', 'pp'].includes(lowerVertName)) {
+        try {
+          const response =
+            await NormalOperationNormsApiService.getGradesForShutdownNorms(
+              keycloak,
+            )
+
+          if (response?.code === 200) {
+            setGrades(response?.data)
+            if (Array.isArray(response?.data) && response?.data?.length === 0) {
+              setLoading(false)
+            }
+          }
+        } catch (error) {
+          setGrades([])
+          console.error('Error fetching grades:', error)
+        }
       }
     }
-    const getShutdownMonths = async () => {
+    loadGrades()
+  }, [plantID, yearChanged, keycloak])
+
+  // 2) Fetch main data when gradeId or other deps change
+  useEffect(() => {
+    const loadData = async () => {
       try {
+        if (['pe', 'pp'].includes(lowerVertName)) {
+          if (!gradeId) return // wait until user selects grade
+          await fetchData(gradeId)
+        } else {
+          await fetchData()
+        }
+
         const data = await DataService.getShutdownMonths(keycloak, null)
         setShutdownMonths(data)
-        // console.log('setShutdownMonths', data)
       } catch (error) {
-        console.error('Error fetching months:', error)
-      } finally {
-        // handleMenuClose();
+        console.error('Error in loadData:', error)
       }
     }
-    fetchData()
-    getAllProducts()
-    getShutdownMonths()
-  }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
+
+    loadData()
+  }, [
+    oldYear,
+    yearChanged,
+    keycloak,
+    selectedUnit,
+    plantID,
+    gradeId,
+    lowerVertName,
+  ])
 
   const isCellEditable = (params) => {
     return params.row.isEditable
@@ -275,6 +302,7 @@ const ShutdownNorms = () => {
         verticalFkId: row.verticalFkId || null,
         unit: row.unit || null,
         normParameterTypeId: row.normParameterTypeId || null,
+        gradeFkId: gradeId || null,
       }))
       if (businessData.length > 0) {
         // console.log(title)
@@ -315,7 +343,7 @@ const ShutdownNorms = () => {
       console.error(`Error saving Data`, error)
       setLoading(false)
     } finally {
-      fetchData()
+      fetchData(gradeId)
       setCalculatebtnClicked(false)
       setLoading(false)
     }
@@ -323,11 +351,24 @@ const ShutdownNorms = () => {
 
   const [calculationObject, setCalculationObject] = useState([])
 
-  const fetchData = async () => {
+  const fetchData = async (gradeId) => {
+    console.log('gradeID', gradeId)
     try {
       setLoading(true)
       setRows([])
-      const data = await DataService.getShutdownNormsData(keycloak)
+
+      const verticalsRequiringGrade = ['pe', 'pp']
+      if (verticalsRequiringGrade.includes(lowerVertName) && !gradeId) {
+        setLoading(false)
+        return
+      }
+
+      // let gradeId = null
+      // if (lowerVertName == 'pe' || lowerVertName == 'pp') {
+      //   gradeId = '0E39FD68-D4DC-4FA9-A686-6A265BC35580'
+      // }
+
+      const data = await DataService.getShutdownNormsData(keycloak, gradeId)
 
       if (data?.code != 200) {
         setRows([])
@@ -385,6 +426,7 @@ const ShutdownNorms = () => {
       setLoading(false)
     }
   }
+  const [grades, setGrades] = useState([])
 
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
@@ -419,7 +461,7 @@ const ShutdownNorms = () => {
           severity: 'success',
         })
         setLoading(false)
-        fetchData()
+        fetchData(gradeId)
       }
 
       // dispatch(setIsBlocked(true))
@@ -480,12 +522,24 @@ const ShutdownNorms = () => {
           ? true
           : false,
       // noColor: true,
+
+      showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      dropdownLabel:
+        lowerVertName === 'pe' || lowerVertName === 'pp'
+          ? 'Select Grade'
+          : 'Select Mode',
       allAction: true,
       downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_Shutdown Consumption (Quantity)`,
     },
     isOldYear,
   )
+
+  const handleGradeChange = (gradeId) => {
+    console.log('gradeIdgradeId', gradeId)
+
+    setGradeId(gradeId)
+  }
 
   return (
     <div>
@@ -520,7 +574,7 @@ const ShutdownNorms = () => {
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
         onProcessRowUpdateError={onProcessRowUpdateError}
-        fetchData={fetchData}
+        // fetchData={fetchData}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}
@@ -531,6 +585,9 @@ const ShutdownNorms = () => {
         handleCalculate={handleCalculate}
         groupBy='Particulars'
         permissions={adjustedPermissions}
+        handleGradeChange={handleGradeChange}
+        plantID={plantID}
+        grades={grades}
       />
     </div>
   )

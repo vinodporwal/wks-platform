@@ -48,6 +48,7 @@ import {
   ExcelExportColumn,
 } from '../../../node_modules/@progress/kendo-react-excel-export/index'
 import { useSelector } from 'react-redux'
+import { Checkbox } from '../../../node_modules/@progress/kendo-react-inputs/index'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -114,6 +115,8 @@ const KendoDataTables = ({
   groupBy = null,
   note = '',
   titleName = '',
+  gridName,
+  onGlobalCheckboxChange,
 
   allProducts = [],
   allMonths = [],
@@ -242,8 +245,16 @@ const KendoDataTables = ({
           return result
         })
       } else {
+        const uniqueItemId = permissions?.showCheckbox
+          ? `${gridName}-${itemId}`
+          : itemId
+
         setModifiedCells((prev) => {
-          const base = { ...dataItem, [field]: value }
+          const base = {
+            ...(prev[uniqueItemId] || {}),
+            ...dataItem,
+            [field]: value,
+          }
           if (
             'maintStartDateTime' in base &&
             'maintEndDateTime' in base &&
@@ -263,7 +274,7 @@ const KendoDataTables = ({
             }
           }
 
-          return { ...prev, [itemId]: base }
+          return { ...prev, [uniqueItemId]: base }
         })
       }
       setCustomModifiedCells((prev) => ({
@@ -540,6 +551,19 @@ const KendoDataTables = ({
       </th>
     )
   }
+  const BlankHeader = (props) => {
+    const { ariaSort, ...restThProps } = props.thProps || {}
+
+    return (
+      <th
+        {...restThProps}
+        aria-sort={ariaSort}
+        title=''
+        style={{ padding: '0px', borderRight: '1px solid #b4b4b4ff' }}
+      ></th>
+    )
+  }
+
   const triggerFileUpload = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click()
@@ -661,6 +685,33 @@ const KendoDataTables = ({
     return Math.round(Math.min(needed, maxVH, available))
   }, [rows?.length])
 
+  const handleHeaderSelectionChange = (event) => {
+    const checked = event.nativeEvent.target.checked
+    console.log('Header checkbox changed. Checked:', checked)
+  }
+
+  const onSelectionChange = (event) => {
+    // const checkbox = event.nativeEvent.target
+    // if (!checkbox || checkbox.type !== 'checkbox') return // only handle checkbox clicks
+    // const selectedRow = event.dataItem
+    // const isSelected = event.nativeEvent.target.checked
+    // setRows((prevRows) =>
+    //   prevRows.map((row) =>
+    //     row.id === selectedRow.id
+    //       ? { ...row, isChecked: isSelected, inEdit: true }
+    //       : row,
+    //   ),
+    // )
+    // setModifiedCells((prev) => ({
+    //   ...prev,
+    //   [selectedRow.id]: {
+    //     ...selectedRow,
+    //     isChecked: isSelected,
+    //     inEdit: true,
+    //   },
+    // }))
+  }
+
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -706,8 +757,15 @@ const KendoDataTables = ({
                   {titleName}
                 </Typography>
               )}
+
               {permissions?.showTitleNameBusiness && (
-                <Typography component='div' className='grid-title'>
+                <Typography
+                  component='div'
+                  className='grid-title'
+                  sx={{
+                    ...(permissions?.marginBottom && { marginBottom: '10px' }),
+                  }}
+                >
                   {permissions?.titleName}
                 </Typography>
               )}
@@ -724,7 +782,7 @@ const KendoDataTables = ({
                     setSelectedGrade(selectedGradeId)
                     handleGradeChange(selectedGradeObj?.gradeId)
                   }}
-                  sx={{ width: '165px', backgroundColor: '#FFFFFF' }}
+                  className='dropdown-select'
                   variant='outlined'
                   label={permissions?.dropdownLabel || 'Select'}
                 >
@@ -865,7 +923,7 @@ const KendoDataTables = ({
                     setSelectedUnit(e.target.value)
                     handleUnitChange(e.target.value)
                   }}
-                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                  className='dropdown-select'
                   variant='outlined'
                   label='Select UOM'
                 >
@@ -890,7 +948,7 @@ const KendoDataTables = ({
                     setSelectMode(e.target.value)
                     // fetchData()
                   }}
-                  sx={{ width: '150px', backgroundColor: '#FFFFFF' }}
+                  className='dropdown-select'
                   variant='outlined'
                   label='Select Modes'
                 >
@@ -952,7 +1010,7 @@ const KendoDataTables = ({
               onItemChange={itemChange}
               resizable={true}
               defaultSkip={0}
-              defaultTake={500}
+              defaultTake={200}
               contextMenu={true}
               grade={grades}
               onRowClick={handleRowClick}
@@ -971,6 +1029,10 @@ const KendoDataTables = ({
               }
             >
               {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
+
+              {/* {permissions?.showCheckbox && (
+                <GridColumn columnType='checkbox' width='50px' />
+              )} */}
 
               {columns?.map((col) => {
                 const isActive = isColumnActive(col?.field, filter, sort)
@@ -1166,6 +1228,7 @@ const KendoDataTables = ({
                       width={col?.widthT}
                       editable={false}
                       columnMenu={ColumnMenuCheckboxFilter}
+                      headerClassName={isActive ? 'active-column' : ''}
                       hidden={col.hidden}
                       cells={{
                         data: toolTipRenderer,
@@ -1359,6 +1422,48 @@ const KendoDataTables = ({
                       columnMenu={ColumnMenuCheckboxFilter}
                       filter='numeric'
                       format={col.format}
+                    />
+                  )
+                }
+
+                // ...
+
+                if (col.type === 'switch') {
+                  const handleCheckboxChange = (props, value) => {
+                    const { dataItem, field } = props
+                    const { materialName, id } = dataItem
+
+                    onGlobalCheckboxChange(
+                      gridName,
+                      id,
+                      materialName,
+                      field,
+                      value,
+                      dataItem,
+                    )
+                  }
+
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title='.'
+                      width={col.widthT}
+                      hidden={col.hidden}
+                      editable={true}
+                      cells={{
+                        data: (props) => (
+                          <td style={{ textAlign: 'center' }}>
+                            <Checkbox
+                              checked={!!props.dataItem[props.field]}
+                              onChange={(e) =>
+                                handleCheckboxChange(props, e.value)
+                              }
+                            />
+                          </td>
+                        ),
+                        headerCell: BlankHeader,
+                      }}
                     />
                   )
                 }

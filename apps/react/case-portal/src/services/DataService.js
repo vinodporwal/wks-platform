@@ -4,7 +4,7 @@ export const DataService = {
   getProductById,
   getYearWiseProduct,
   getAllSites,
-  getNormTransactions,
+
   getShutDownPlantData,
   getAllProducts,
   getAllProductsAll,
@@ -45,10 +45,11 @@ export const DataService = {
   saveSpyroOutput,
   getSpyroOutputData,
   getCrackerMaintenanceData,
-  saveNormalOperationNormsData,
+
   saveShutDownNormsData,
   saveSlowdownNormsData,
   editAOPMCCalculatedData,
+  editDesignCapacityData,
   updateSlowdownData,
   updateShutdownData,
   updateTurnAroundData,
@@ -81,13 +82,12 @@ export const DataService = {
   calculateAnnualProductionPlanData,
   calculatePlantContributionReportData,
   handleCalculateMaintenance,
-  getNormalOperationNormsData,
-  getIntermediateValues,
+
   getShutdownNormsData,
   getSlowdownNormsData,
   handleCalculateConsumptionNorm1,
   handleCalculateNormalOpsNorms1,
-  handleCalculateNormalOperationNorms,
+
   handleCalculateShutdownNorms,
   handleCalculateSlowdownNorms,
   updatePeConfigData,
@@ -122,27 +122,32 @@ export const DataService = {
   getExcel,
   saveConfigurationExcel,
   saveConfigurationExcelConstants,
-  saveNormalOpsNormsExcel,
+
   importSpyroOutputExcel,
   exportSpyroOutputExcel,
   importSpyroInputExcel,
   exportSpyroInputExcel,
   getConfigurationExcel,
-  getNormalOpsNormsExcel,
+
   executeConfiguration,
   getConfigurationExecutionDetails,
+  getMaxAchievedCapacityData,
+  getDesignCapacityData,
   saveProductionVolDataExcel,
   getProductionVolExcel,
+  getMaxAchievedCapacityExcel,
+  getDesignCapacityExcel,
   getConfigurationExcelConstants,
-  handleCalculateNormalOperationNormsPe,
+
   savePlantContributionData,
   getProductionVolDataBasisPe,
+  getBestAchievedNorms,
   getProductionVolDataBasisMode,
   saveCrackerMaintenance,
   saveSlowdownConfigData,
   // saveConfigurationExcelConstants,
   // getConfigurationExcelConstants,
-  getNormalOperationNormsGrades,
+
   deleteTurnArondReportItem,
   getIbr,
   getConsumptionAOPNormsGrades,
@@ -229,55 +234,7 @@ async function handleCalculateNormalOpsNorms1(plantId, year, keycloak) {
     return Promise.reject(e)
   }
 }
-async function handleCalculateNormalOperationNorms(plantId, year, keycloak) {
-  const year1 = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/handleCalculateNormalOpsNorms?year=${year1}&plantId=${plantId}`
-  const headers = {
-    Accept: 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'GET',
-      headers,
-    })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    const data = await resp.json() // Parse JSON response
-    return data
-  } catch (e) {
-    console.error('Error fetching calculation data:', e)
-    return Promise.reject(e)
-  }
-}
-async function handleCalculateNormalOperationNormsPe(
-  plantId,
-  siteId,
-  verticalId,
-  year,
-  keycloak,
-) {
-  const url = `${Config.CaseEngineUrl}/task/calculate-normal-ops-norms?plantId=${plantId}&siteId=${siteId}&verticalId=${verticalId}&aopYear=${year}`
-  const headers = {
-    Accept: 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'GET',
-      headers,
-    })
-    if (!resp.ok) {
-      throw new Error(`HTTP error! Status: ${resp.status}`)
-    }
-    const data = await resp.json() // Parse JSON response
-    return data
-  } catch (e) {
-    console.error('Error fetching calculation data:', e)
-    return Promise.reject(e)
-  }
-}
+
 async function handleCalculateShutdownNorms(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
   //  const url = `${Config.CaseEngineUrl}/task/getCalculatedShutdownNorms?year=${year1}&plantId=${plantId}`
@@ -1074,6 +1031,32 @@ async function getProductionVolDataBasisPe(
     return Promise.reject(e)
   }
 }
+async function getBestAchievedNorms(
+  keycloak,
+  reportType,
+  periodFrom,
+  periodTo,
+  mode,
+) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+
+  let url = `${Config.CaseEngineUrl}/task/report/best-achieved?plantId=${plantId}&year=${year}&reportType=${reportType}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
 async function getProductionVolDataBasisMode(
   keycloak,
   reportType,
@@ -1325,75 +1308,25 @@ async function getMaintenanceData(keycloak) {
     return await Promise.reject(e)
   }
 }
-async function getNormalOperationNormsData(
-  keycloak,
-  gradeId,
-  isCracker = false,
-) {
-  const year = localStorage.getItem('year') || ''
+
+async function getShutdownNormsData(keycloak, gradeId) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
-  const plantId = storedPlant ? JSON.parse(storedPlant)?.id || '' : ''
-  // Construct URL based on presence of gradeId
-  const baseUrl = `${Config.CaseEngineUrl}/task/normalOperationNorms`
-  const queryParams = new URLSearchParams({
-    year,
-    plantId,
-  })
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  // let siteID =
+  //   JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
+
+  let url
   if (gradeId) {
-    isCracker
-      ? queryParams.append('mode', gradeId)
-      : queryParams.append('gradeId', gradeId)
+    url = `${Config.CaseEngineUrl}/task/shutdownNorms?year=${year}&plantId=${plantId}&gradeId=${gradeId}`
+  } else {
+    url = `${Config.CaseEngineUrl}/task/shutdownNorms?year=${year}&plantId=${plantId}`
   }
-  const url = `${baseUrl}?${queryParams.toString()}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-async function getIntermediateValues(keycloak) {
-  var year = localStorage.getItem('year')
-  var plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
-  // let siteID =
-  //   JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
-  // value = '/get/configuration/intermediate-values'
-  const url = `${Config.CaseEngineUrl}/task/get/configuration/intermediate-values?year=${year}&plantFKId=${plantId}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
-async function getShutdownNormsData(keycloak) {
-  var year = localStorage.getItem('year')
-  var plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
-  // let siteID =
-  //   JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
-  const url = `${Config.CaseEngineUrl}/task/shutdownNorms?year=${year}&plantId=${plantId}`
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2234,38 +2167,16 @@ async function getSpyroOutputData(keycloak, mode, type) {
   }
 }
 
-async function saveNormalOperationNormsData(
-  plantId,
-  turnAroundDetails,
-  keycloak,
-  gradeId,
-  lowerVertName,
-) {
-  const year = localStorage.getItem('year')
-  const queryParams = new URLSearchParams({ year, plantId })
-  if (lowerVertName === 'pe' || lowerVertName === 'pp') {
-    queryParams.append('gradeId', gradeId)
-  }
-  const url = `${Config.CaseEngineUrl}/task/normalOperationNorms?${queryParams.toString()}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(turnAroundDetails),
-    })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
 async function saveShutDownNormsData(plantId, turnAroundDetails, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/shutdownNorms`
+  const year = localStorage.getItem('year')
+
+  let plantId1 = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId1 = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/shutdownNorms?plantId=${plantId1}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2285,6 +2196,49 @@ async function saveShutDownNormsData(plantId, turnAroundDetails, keycloak) {
 }
 async function saveSlowdownNormsData(plantId, turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/slowdownNorms`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(turnAroundDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function editDesignCapacityData(plantId, designCapacityData, keycloak) {
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/design/capacity?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(designCapacityData),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+//editDesignCapacityData
+async function editDesignCapacityData1(plantId, turnAroundDetails, keycloak) {
+  const year = localStorage.getItem('year')
+
+  const url = `${Config.CaseEngineUrl}/task/design/capacity?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2372,25 +2326,7 @@ async function getAllSites(keycloak) {
     return await Promise.reject(e)
   }
 }
-async function getNormTransactions(keycloak) {
-  var year = localStorage.getItem('year')
-  const storedPlant = localStorage.getItem('selectedPlant')
-  const parsedPlant = JSON.parse(storedPlant)
-  const url = `${Config.CaseEngineUrl}/task/norms-transactions?plantId=${parsedPlant?.id}&year=${year}`
-  // const url = `${Config.CaseEngineUrl}/task/getPlantAndSite`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
+
 async function getAopyears(keycloak) {
   // const storedPlant = localStorage.getItem('selectedPlant')
   // const parsedPlant = JSON.parse(storedPlant)
@@ -2900,28 +2836,6 @@ async function saveConfigurationExcel(file, keycloak) {
   }
 }
 
-async function saveNormalOpsNormsExcel(file, keycloak) {
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/norms-import-excel?plantId=${plantId}&year=${year}`
-  const formData = new FormData()
-  formData.append('file', file)
-  const headers = {
-    Accept: 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: formData,
-    })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
 async function saveProductionVolDataExcel(file, keycloak) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
@@ -3152,7 +3066,8 @@ async function getConfigurationExcelConstants(keycloak) {
     return Promise.reject(e)
   }
 }
-async function getNormalOpsNormsExcel(keycloak, gradeId) {
+
+async function getDesignCapacityExcel(keycloak) {
   var year = localStorage.getItem('year')
   var plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -3160,12 +3075,7 @@ async function getNormalOpsNormsExcel(keycloak, gradeId) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
-
-  var url = `${Config.CaseEngineUrl}/task/norms-export-excel?year=${year}&plantId=${plantId}`
-
-  if (gradeId) {
-    url += `&gradeId=${gradeId}`
-  }
+  const url = `${Config.CaseEngineUrl}/task/production-volume-data/export/excel?year=${year}&plantId=${plantId}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -3183,7 +3093,7 @@ async function getNormalOpsNormsExcel(keycloak, gradeId) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Steady State Norms.xlsx'
+    a.download = 'Design Capacity.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -3193,6 +3103,44 @@ async function getNormalOpsNormsExcel(keycloak, gradeId) {
     return Promise.reject(e)
   }
 }
+
+async function getMaxAchievedCapacityExcel(keycloak) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/production-volume-data/export/excel?year=${year}&plantId=${plantId}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'max_achieved_capacity.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing data:', e)
+    return Promise.reject(e)
+  }
+}
+
 async function getProductionVolExcel(keycloak) {
   var year = localStorage.getItem('year')
   var plantId = ''
@@ -3250,6 +3198,42 @@ async function executeConfiguration(executionDetailDtoList, keycloak) {
   } catch (e) {
     console.error('Error saving configuration execution:', e)
     return Promise.reject(e)
+  }
+}
+
+async function getDesignCapacityData(keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/design/capacity?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getMaxAchievedCapacityData(keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/max-achieved/capacity?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 async function getConfigurationExecutionDetails(keycloak) {
@@ -3335,28 +3319,7 @@ async function saveCrackerMaintenance(
     return await Promise.reject(e)
   }
 }
-async function getNormalOperationNormsGrades(keycloak) {
-  var year = localStorage.getItem('year')
-  var plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
-  const url = `${Config.CaseEngineUrl}/task/normal-operation/norms/grades?year=${year}&plantId=${plantId}`
-  const headers = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${keycloak.token}`,
-  }
-  try {
-    const resp = await fetch(url, { method: 'GET', headers })
-    return json(keycloak, resp)
-  } catch (e) {
-    console.log(e)
-    return await Promise.reject(e)
-  }
-}
+
 async function deleteTurnArondReportItem(maintenanceId, keycloak) {
   var plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -3705,35 +3668,6 @@ async function saveSpyroOutputYield(payload, keycloak) {
     return await Promise.reject(e)
   }
 }
-
-// async function getCrackerNextYearParameters(keycloak) {
-//   const year = localStorage.getItem('year')
-//   let plantId = ''
-//   const storedPlant = localStorage.getItem('selectedPlant')
-//   if (storedPlant) {
-//     const parsedPlant = JSON.parse(storedPlant)
-//     plantId = parsedPlant.id
-//   }
-
-//   const url =
-//     `${Config.CaseEngineUrl}/task/next-year/configuration` +
-//     `?year=${encodeURIComponent(year)}` +
-//     `&plantId=${encodeURIComponent(plantId)}`
-
-//   const headers = {
-//     Accept: 'application/json',
-//     'Content-Type': 'application/json',
-//     Authorization: `Bearer ${keycloak.token}`,
-//   }
-
-//   try {
-//     const resp = await fetch(url, { method: 'GET', headers })
-//     return json(keycloak, resp)
-//   } catch (e) {
-//     console.error('Failed to fetch spyro-output data', e)
-//     return Promise.reject(e)
-//   }
-// }
 
 async function getCrackerNextYearParameters(keycloak, date) {
   const year = localStorage.getItem('year')

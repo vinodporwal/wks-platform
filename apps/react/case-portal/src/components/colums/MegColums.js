@@ -20,13 +20,13 @@ export const BusinessDemandMegColumns = [
     field: 'displayName',
     title: 'Particulars',
     editable: false,
-    widthT: 120,
+    widthT: 80,
   },
   {
     field: 'UOM',
     title: 'UOM',
     editable: false,
-    widthT: 75,
+    widthT: 55,
   },
   {
     field: 'april',
@@ -141,7 +141,7 @@ export const BusinessDemandMegColumns = [
     field: 'remark',
     title: 'Remark',
     editable: false,
-    widthT: 160,
+    widthT: 135,
     type: 'string',
   },
   {
@@ -244,7 +244,7 @@ export const NormalOpNormMegColumns = [
     editable: true,
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -254,7 +254,7 @@ export const NormalOpNormMegColumns = [
 
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -264,7 +264,7 @@ export const NormalOpNormMegColumns = [
 
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -274,7 +274,7 @@ export const NormalOpNormMegColumns = [
 
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
 
@@ -285,7 +285,7 @@ export const NormalOpNormMegColumns = [
 
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -295,7 +295,7 @@ export const NormalOpNormMegColumns = [
 
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -305,7 +305,7 @@ export const NormalOpNormMegColumns = [
 
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -315,7 +315,7 @@ export const NormalOpNormMegColumns = [
 
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -324,7 +324,7 @@ export const NormalOpNormMegColumns = [
     editable: true,
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -333,7 +333,7 @@ export const NormalOpNormMegColumns = [
     editable: true,
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -342,7 +342,7 @@ export const NormalOpNormMegColumns = [
     editable: true,
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -351,7 +351,174 @@ export const NormalOpNormMegColumns = [
     editable: true,
     width: 120,
     align: 'right',
-    format: '{0:#.#####}',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'remarks',
+    title: 'Remark',
+    widthT: 160,
+    editable: true,
+  },
+
+  {
+    field: 'idFromApi',
+    title: 'idFromApi',
+    hidden: true,
+  },
+  {
+    field: 'isEditable',
+    title: 'isEditable',
+    hidden: true,
+  },
+]
+export const CrackerColums = [
+  {
+    field: 'Particulars',
+    title: 'Type',
+    widthT: 220,
+    groupable: true,
+    editable: false,
+    hidden: true,
+  },
+  {
+    widthT: 220,
+
+    columnType: 'checkbox',
+  },
+  {
+    field: 'materialFkId',
+    title: 'Particulars',
+    width: 120,
+    hidden: true,
+  },
+  {
+    field: 'productName',
+    title: 'Particulars',
+    widthT: 130,
+  },
+
+  {
+    field: 'UOM',
+    title: 'UOM / MT',
+    widthT: 60,
+    editable: false,
+  },
+
+  {
+    field: 'april',
+    title: 4,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'may',
+    title: 5,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'june',
+    title: 6,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'july',
+    title: 7,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+
+  {
+    field: 'august',
+    title: 8,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'september',
+    title: 9,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'october',
+    title: 10,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'november',
+    title: 11,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'december',
+    title: 12,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'january',
+    title: 1,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'february',
+    title: 2,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'march',
+    title: 3,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
     type: 'number',
   },
   {
@@ -406,7 +573,7 @@ export const ShutdownConsumptionMegColumns = [
       field: monthField,
       width: 120,
       type: 'number',
-      format: '{0:#.#####}',
+      format: '{0:#.###}',
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,
@@ -459,7 +626,7 @@ export const SlowdownNormsMegColumns = [
       field: monthField,
       width: 120,
       type: 'number',
-      format: '{0:#.#####}',
+      format: '{0:#.###}',
       editable: false,
       isDisabled: true,
       monthNumber: monthIndex,

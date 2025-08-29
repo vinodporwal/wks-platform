@@ -90,4 +90,7 @@ public class MCUNormsValue {
     
     @Column(name = "UpdatedBy")
     private String updatedBy;
+    
+    @Column(name="isChecked")
+    private Boolean isChecked;
 }

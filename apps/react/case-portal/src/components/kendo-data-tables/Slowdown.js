@@ -836,7 +836,7 @@ const SlowDown = ({ permissions }) => {
               borderBottom: '0px solid #ccc',
               '.MuiTabs-indicator': { display: 'none' },
               margin: '0px 0px 0px 0px',
-              minHeight: '35px',
+              minHeight: '28px',
             }}
           >
             <Tab
@@ -844,8 +844,9 @@ const SlowDown = ({ permissions }) => {
               sx={{
                 border: '1px solid #ADD8E6',
                 borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
                 padding: '9px',
-                minHeight: '10px',
+                minHeight: '12px',
               }}
             />
 
@@ -854,8 +855,9 @@ const SlowDown = ({ permissions }) => {
               sx={{
                 border: '1px solid #ADD8E6',
                 borderBottom: '1px solid #ADD8E6',
-                p: '9px',
-                minHeight: 10,
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
               }}
             />
           </Tabs>
