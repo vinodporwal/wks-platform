@@ -183,7 +183,7 @@ const ProductionvolumeData = ({ permissions }) => {
         setModifiedCells({})
 
         const responseForNorms =
-          await ProductionVolumeDataApiService.calculateNormsHistorianValues(
+          await DataService.calculateNormsHistorianValues(
             plantId,
             localStorage.getItem('year'),
             startDate,
