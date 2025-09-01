@@ -19,7 +19,7 @@ export const BusinessDemandPeColumns = [
     field: 'displayName',
     title: 'Particulars',
     editable: false,
-    widthT: 110,
+    widthT: 100,
   },
   {
     field: 'april',
@@ -132,7 +132,7 @@ export const BusinessDemandPeColumns = [
   {
     field: 'remark',
     title: 'Remark',
-    widthT: 180,
+    widthT: 80,
     editable: false,
   },
   {
@@ -345,7 +345,7 @@ export const NormalOpNormPeColumns = [
   {
     field: 'remarks',
     title: 'Remark',
-    widthT: 140,
+    widthT: 80,
     editable: true,
   },
 
@@ -396,17 +396,11 @@ export const ShutdownConsumptionPeColumns = [
       type: 'number',
       format: '{0:#.###}',
       editable: false,
-      isDisabled: true,
+
       monthNumber: monthIndex,
     }
   }),
 
-  {
-    field: 'remarks',
-    headerName: 'Remark',
-    widthT: 120,
-    editable: false,
-  },
   {
     field: 'idFromApi',
     headerName: 'idFromApi',

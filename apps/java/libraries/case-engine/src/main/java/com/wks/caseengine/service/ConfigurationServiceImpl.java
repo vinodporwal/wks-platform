@@ -145,9 +145,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						list.add(dto.getConfigTypeDisplayName());
 						list.add(dto.getTypeDisplayName());
 					}
-					
+					if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER") || verticalName.equalsIgnoreCase("CRACKER")) {
+						list.add(dto.getNormType());
+					}
 					
 					list.add(dto.getProductName());
+					list.add(dto.getUOM());
 					list.add(dto.getApr());
 					list.add(dto.getMay());
 					list.add(dto.getJun());
@@ -161,6 +164,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					list.add(dto.getFeb());
 					list.add(dto.getMar());
 					list.add(dto.getRemarks());
+					
 					list.add(dto.getNormParameterFKId());
 					isEditable.add(dto.getIsEditable());
 					//list.add(dto.getIsEditable());
@@ -174,15 +178,15 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<String> innerHeaders = new ArrayList<>();
 			if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")) {
 				innerHeaders.add("Category");
-				innerHeaders.add("Type");
-				
+					
 			}
-			
-			
+			innerHeaders.add("Type");
 			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
 			innerHeaders.add("Remarks");
+			
 			innerHeaders.add("NormParameterId");
 			//innerHeaders.add("IsEditable");
 			
@@ -233,9 +237,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			}
 			
 			if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP")) {
-				sheet.setColumnHidden(16, true);
+				sheet.setColumnHidden(17, true);
 			}else {
-				sheet.setColumnHidden(14, true);
+				sheet.setColumnHidden(16, true);
 			}
 			
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
@@ -544,7 +548,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				map.put("Name", row[2]);
 				map.put("DisplayName", row[3]);
 				map.put("UOM", row[4]);
-				map.put("ConstantValue", row[5]);
+				map.put("ConstantValue", Double.parseDouble(row[5].toString()));
 				map.put("AuditYear", row[6]);
 				map.put("Remarks", row[7]);
 				boolean isEditable;
@@ -906,9 +910,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			//normAttributeTransactions.setAuditYear(configurationDTO.getAuditYear());
 			normAttributeTransactions.setAuditYear(year);
 		}
-		
-		
-
 		normAttributeTransactions.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
 		normAttributeTransactions.setRemarks(configurationDTO.getRemarks());
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
@@ -1293,6 +1294,26 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						dto.setConfigTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 						dto.setTypeDisplayName(getStringCellValue(row.getCell(1), dto));
 						dto.setProductName(getStringCellValue(row.getCell(2), dto));
+						dto.setUOM(getStringCellValue(row.getCell(3), dto));
+						dto.setAuditYear(year);
+						dto.setApr(getNumericCellValue(row.getCell(4), dto));
+						dto.setMay(getNumericCellValue(row.getCell(5), dto));
+						dto.setJun(getNumericCellValue(row.getCell(6), dto));
+						dto.setJul(getNumericCellValue(row.getCell(7), dto));
+						dto.setAug(getNumericCellValue(row.getCell(8), dto));
+						dto.setSep(getNumericCellValue(row.getCell(9), dto));
+						dto.setOct(getNumericCellValue(row.getCell(10), dto));
+						dto.setNov(getNumericCellValue(row.getCell(11), dto));
+						dto.setDec(getNumericCellValue(row.getCell(12), dto));
+						dto.setJan(getNumericCellValue(row.getCell(13), dto));
+						dto.setFeb(getNumericCellValue(row.getCell(14), dto));
+						dto.setMar(getNumericCellValue(row.getCell(15), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+						dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
+					}else {
+						dto.setNormType(getStringCellValue(row.getCell(0), dto));
+						dto.setProductName(getStringCellValue(row.getCell(1), dto));
+						dto.setUOM(getStringCellValue(row.getCell(2), dto));
 						dto.setAuditYear(year);
 						dto.setApr(getNumericCellValue(row.getCell(3), dto));
 						dto.setMay(getNumericCellValue(row.getCell(4), dto));
@@ -1308,24 +1329,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						dto.setMar(getNumericCellValue(row.getCell(14), dto));
 						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
 						dto.setNormParameterFKId(getStringCellValue(row.getCell(16), dto));
-					}else {
-						
-						dto.setProductName(getStringCellValue(row.getCell(0), dto));
-						dto.setAuditYear(year);
-						dto.setApr(getNumericCellValue(row.getCell(1), dto));
-						dto.setMay(getNumericCellValue(row.getCell(2), dto));
-						dto.setJun(getNumericCellValue(row.getCell(3), dto));
-						dto.setJul(getNumericCellValue(row.getCell(4), dto));
-						dto.setAug(getNumericCellValue(row.getCell(5), dto));
-						dto.setSep(getNumericCellValue(row.getCell(6), dto));
-						dto.setOct(getNumericCellValue(row.getCell(7), dto));
-						dto.setNov(getNumericCellValue(row.getCell(8), dto));
-						dto.setDec(getNumericCellValue(row.getCell(9), dto));
-						dto.setJan(getNumericCellValue(row.getCell(10), dto));
-						dto.setFeb(getNumericCellValue(row.getCell(11), dto));
-						dto.setMar(getNumericCellValue(row.getCell(12), dto));
-						dto.setRemarks(getStringCellValue(row.getCell(13), dto));
-						dto.setNormParameterFKId(getStringCellValue(row.getCell(14), dto));
 					}
 					
 				} catch (Exception e) {

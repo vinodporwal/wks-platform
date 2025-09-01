@@ -239,6 +239,7 @@ const CrackerConfig = () => {
             remarks: item.Remarks,
             originalRemark: item.Remarks,
             ParticularsType: item.Type,
+
             ...item,
           }))
         }

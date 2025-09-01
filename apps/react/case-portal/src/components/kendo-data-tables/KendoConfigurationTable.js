@@ -206,21 +206,27 @@ const ConfigurationTable = () => {
         setProductionRowsConstants([])
         return
       }
+
       var data = constantsRes?.data
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.Remarks,
-        srNo: index + 1,
-        Particulars: item.NormTypeName,
-        remarks: item.Remarks,
-      }))
+
+      const formattedData = data.map((item, index) => {
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.Remarks,
+          srNo: index + 1,
+          Particulars: item.NormTypeName,
+          remarks: item.Remarks,
+        }
+      })
+
       setProductionRowsConstants(formattedData)
     } catch (error) {
       console.error('Error fetching data:', error)
     }
   }
+
   const fetchDataConstantsMnnualEntry = async () => {
     setProductionRowsConstantsMannualEntry([])
     try {

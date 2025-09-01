@@ -1,78 +1,28 @@
-import { DataService } from 'services/DataService'
 //import DataGridTable from './ASDataGrid'
-import React, { useEffect, useState } from 'react'
-import { useSession } from 'SessionStoreContext'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useSelector } from 'react-redux'
-import { useGridApiRef } from '@mui/x-data-grid'
-import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
-import { validateFields } from 'utils/validationUtils'
-import TextField from '@mui/material/TextField'
-import { useDispatch } from 'react-redux'
+import { useGridApiRef } from '@mui/x-data-grid'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useSession } from 'SessionStoreContext'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { validateFields } from 'utils/validationUtils'
+import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 
-import Typography from '@mui/material/Typography'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { Box } from '@mui/material'
-import { Button } from '@mui/material'
 //import './data-grid-css.css'
 //import './extra-css.css'
 
-import { styled } from '@mui/material/styles'
-import MuiAccordion from '@mui/material/Accordion'
-import MuiAccordionSummary from '@mui/material/AccordionSummary'
-import MuiAccordionDetails from '@mui/material/AccordionDetails'
 import KendoDataTables from './index'
-
-// Customized Accordion
-const CustomAccordion = styled((props) => (
-  <MuiAccordion disableGutters elevation={0} square {...props} />
-))(() => ({
-  position: 'unset',
-  border: 'none',
-  boxShadow: 'none',
-  margin: '0px',
-  '&:before': {
-    display: 'none',
-  },
-}))
-
-// Customized Accordion Summary
-const CustomAccordionSummary = styled((props) => (
-  <MuiAccordionSummary expandIcon={<ExpandMoreIcon />} {...props} />
-))(() => ({
-  backgroundColor: '#fff',
-  padding: '0px 12px',
-  minHeight: '40px',
-  '& .MuiAccordionSummary-content': {
-    margin: '8px 0',
-  },
-}))
-
-// Customized Accordion Details
-const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
-  padding: '0px 0px 12px',
-  backgroundColor: '#F2F3F8',
-}))
+import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
-  const [summary, setSummary] = useState('')
-
   const [calculationObject, setCalculationObject] = useState([])
-
   const keycloak = useSession()
-  const [allProducts, setAllProducts] = useState([])
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
-  // const [rowModesModel, setRowModesModel] = useState({})
-
   const [isAccordionExpanded, setIsAccordionExpanded] = useState(true)
-
-  const handleAccordionChange = (event, isExpanded) => {
-    setIsAccordionExpanded(isExpanded)
-  }
 
   const [open1, setOpen1] = useState(false)
 
@@ -158,7 +108,7 @@ const ConsumptionNorms = () => {
         aopCaseId: '2025-26-NormsAOP',
         aopStatus: 'Saved',
       }))
-      const response = await DataService.saveAOPConsumptionNorm(
+      const response = await ConsumptionNormsApiService.saveAOPConsumptionNorm(
         plantId,
         businessData,
         keycloak,
@@ -285,12 +235,44 @@ const ConsumptionNorms = () => {
   const fetchGradeDropdowns = async () => {
     try {
       setGrades([])
-      // const response = await DataService.getNormalOperationNormsGrades(keycloak)
-      const response = await DataService.getConsumptionAOPNormsGrades(keycloak)
+      const response =
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(keycloak)
 
       if (response?.code == 200) {
         setGrades(response?.data)
       }
+
+      fetchData(gradeId)
+    } catch (error) {
+      setGrades([])
+      console.error('Error fetching Business Demand data:', error)
+    }
+  }
+
+  const fetchGradeDropdownsAfterCalc = async () => {
+    try {
+      setGrades([])
+      const response =
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(keycloak)
+
+      if (response?.code == 200) {
+        setGrades(response?.data)
+      }
+
+      if (response?.data?.length === 0) {
+        // no grades — clear selection and fetch blank data
+        setGradeId(null)
+        await fetchData(null)
+        return
+      }
+
+      const firstGrade = response?.data[0]
+      const firstId =
+        firstGrade?.id ?? firstGrade?.gradeId ?? firstGrade?.gradeFkId ?? null
+
+      setGradeId(firstId)
+
+      fetchData(firstId)
     } catch (error) {
       setGrades([])
       console.error('Error fetching Business Demand data:', error)
@@ -301,10 +283,18 @@ const ConsumptionNorms = () => {
     if ((lowerVertName === 'pe' || lowerVertName === 'pp') && !gradeId) return
     setLoading(true)
     try {
-      var response = await DataService.getConsumptionNormsData(
-        keycloak,
-        gradeId,
-      )
+      var response
+      if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+        response = await ConsumptionNormsApiService.getConsumptionNormsData(
+          keycloak,
+          gradeId,
+        )
+      } else {
+        response = await ConsumptionNormsApiService.getConsumptionNormsData(
+          keycloak,
+          null,
+        )
+      }
 
       if (response?.code != 200) {
         setRows([])
@@ -318,9 +308,7 @@ const ConsumptionNorms = () => {
 
         return
       }
-
       setCalculationObject(response?.data?.aopCalculation)
-
       const formattedData = response?.data?.aopConsumptionNormDTOList?.map(
         (item, index) => ({
           ...item,
@@ -332,14 +320,11 @@ const ConsumptionNorms = () => {
           Particulars: item.normParameterTypeDisplayName,
         }),
       )
-
       setRows(formattedData)
-
       setLoading(false)
       setCalculatebtnClicked(false)
     } catch (error) {
       console.error('Error fetching data:', error)
-
       setLoading(false)
       setCalculatebtnClicked(false)
     }
@@ -348,7 +333,7 @@ const ConsumptionNorms = () => {
   // const getAopSummary = async () => {
   //   setLoading(true)
   //   try {
-  //     var res = await DataService.getAopSummary(keycloak)
+  //     var res = await ConsumptionNormsApiService.getAopSummary(keycloak)
 
   //     if (res?.code == 200) {
   //       setSummary(res?.data?.summary)
@@ -370,7 +355,6 @@ const ConsumptionNorms = () => {
     if (lowerVertName === 'pe' || lowerVertName === 'pp') {
       fetchGradeDropdowns()
     }
-    // getAopSummary()
   }, [plantID, oldYear, yearChanged, keycloak, selectedUnit, gradeId])
 
   const productionColumns = getEnhancedColDefs({
@@ -395,11 +379,12 @@ const ConsumptionNorms = () => {
       }
 
       var plantId = plantId
-      const data = await DataService.handleCalculateonsumptionNorms(
-        plantId,
-        year,
-        keycloak,
-      )
+      const data =
+        await ConsumptionNormsApiService.handleCalculateonsumptionNorms(
+          plantId,
+          year,
+          keycloak,
+        )
 
       if (data || data == 0) {
         // dispatch(setIsBlocked(true))
@@ -408,7 +393,12 @@ const ConsumptionNorms = () => {
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        fetchData(gradeId)
+
+        if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+          fetchGradeDropdownsAfterCalc()
+        } else {
+          fetchData(null)
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -428,86 +418,6 @@ const ConsumptionNorms = () => {
     }
   }
 
-  const handleCalculatePe = async () => {
-    try {
-      setCalculatebtnClicked(true)
-
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const year = localStorage.getItem('year')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
-      var plantId = plantId
-      var data = await DataService.handleCalculateConsumptionNorm1(
-        plantId,
-        year,
-        keycloak,
-      )
-
-      if (data) {
-        const groupedRows = []
-        const groups = new Map()
-        let groupId = 0
-
-        data.forEach((item) => {
-          const groupKey = item.normParameterTypeDisplayName
-
-          if (!groups.has(groupKey)) {
-            groups.set(groupKey, [])
-            groupedRows.push({
-              id: groupId++,
-              Particulars: groupKey,
-              isGroupHeader: true,
-            })
-          }
-          const formattedItem = {
-            ...item,
-            idFromApi: item.id,
-            NormParametersId: item.materialFkId.toLowerCase(),
-            id: groupId++,
-            aopRemarks: item?.aopRemarks?.trim() || null,
-            originalRemark: item.aopRemarks?.trim() || null,
-            UOM: item?.uom,
-          }
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Data refreshed successfully!',
-            severity: 'success',
-          })
-
-          groups.get(groupKey).push(formattedItem)
-          groupedRows.push(formattedItem)
-        })
-
-        setRows(groupedRows)
-
-        // setLoading(false)
-        //IF saveBtn IS SET TO --> FALSE
-        saveChanges()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Refresh Falied!',
-          severity: 'error',
-        })
-
-        setLoading(false)
-      }
-
-      return data
-    } catch (error) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: error.message || 'An error occurred',
-        severity: 'error',
-      })
-      console.error('Error!', error)
-
-      setLoading(false)
-    }
-  }
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -623,6 +533,7 @@ const ConsumptionNorms = () => {
               groupBy='Particulars'
               grades={grades}
               handleGradeChange={handleGradeChange}
+              calculatebtnClicked={calculatebtnClicked}
             />
           </Box>
           // </CustomAccordionDetails>

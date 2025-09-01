@@ -33,7 +33,7 @@ public class ConfigurationController {
 	@Autowired
 	private ConfigurationService configurationService;
 	
-	@GetMapping(value="/getConfigurationData")
+	@GetMapping(value="/production-norms")
 	public List<ConfigurationDTO> getConfigurationData(@RequestParam String year,@RequestParam UUID plantFKId) {
 		return configurationService.getConfigurationData(year,plantFKId);
 	}
@@ -43,12 +43,12 @@ public class ConfigurationController {
 		return configurationService.getConfigurationIntermediateValues(year,plantFKId);
 	}
 	
-	@GetMapping(value="/get/configuration/intermediate-values")
+	@GetMapping(value="/intermediate-values")
 	public AOPMessageVM getConfigurationIntermediateValuesData(@RequestParam String year,@RequestParam String plantFKId) {
 		return configurationService.getConfigurationIntermediateValuesData(year,plantFKId);
 	}
 	
-	@PostMapping(value="/saveConfigurationData")
+	@PostMapping(value="/production-norms")
 	public List<ConfigurationDTO> saveConfigurationData(@RequestParam String year,@RequestParam String plantFKId, @RequestBody List<ConfigurationDTO> configurationDTOList) {
 		configurationService.saveConfigurationData(year,plantFKId,configurationDTOList);
 		return configurationDTOList;

@@ -31,7 +31,6 @@ export default function getKendoNormsHistorianBasisPe({ headerMap, type }) {
 
   return rawCols.map((colDef) => {
     const field = colDef.field
-    // console.log('field', field)
     const title = String(headerMap[colDef.headerName] || colDef.headerName)
     const isTextCol = !(colDef.type == 'number')
 
@@ -41,8 +40,8 @@ export default function getKendoNormsHistorianBasisPe({ headerMap, type }) {
       filterable: true,
       filter: isTextCol ? 'text' : 'numeric',
       isRightAlligned: isTextCol ? 'text' : 'numeric',
-      format: isTextCol ? undefined : '{0:#.###}',
-      ...(isTextCol ? {} : { format: '{0:#.###}' }),
+      format: isTextCol ? undefined : '{0:#.##}',
+      ...(isTextCol ? {} : { format: '{0:#.##}' }),
       editable: false,
       align: isTextCol ? 'left' : 'right',
     }
