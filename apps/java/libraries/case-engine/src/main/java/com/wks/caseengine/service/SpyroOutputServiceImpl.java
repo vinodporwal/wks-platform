@@ -83,10 +83,11 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	@Override
 	public AOPMessageVM getSpyroOutputData(String year, String plantId,String Mode,String type) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<Map<String, Object>> spyroOutputDataList = new ArrayList<>();
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
         Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
         Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-        List<SpyroOutputDTO> spyroOutputDTOList = new ArrayList<>();
+
         String siteId = site.getId().toString();
         String verticalId = vertical.getId().toString();
         String procedureName=vertical.getName()+"_"+site.getName()+"_GetSpyroOutput";
@@ -97,33 +98,31 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
 				
 				if(row[4].toString().contains(type)) {	
-					SpyroOutputDTO spyroOutputDTO = new SpyroOutputDTO();
-					spyroOutputDTO.setNormParameterFKID(row[2] != null ? row[2].toString() : null);
-					spyroOutputDTO.setParticulars(row[3] != null ? row[3].toString() : null);
-					spyroOutputDTO.setNormParameterDisplayName(row[4] != null ? row[4].toString() : null);
-					spyroOutputDTO.setUom(row[7] != null ? row[7].toString() : null);
-					spyroOutputDTO.setRemarks(row[9] != null ? row[9].toString() : null);
-					spyroOutputDTO.setJan(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
-					spyroOutputDTO.setFeb(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
-					spyroOutputDTO.setMar(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
-					spyroOutputDTO.setApr(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
-					spyroOutputDTO.setMay(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
-					spyroOutputDTO.setJun(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
-					spyroOutputDTO.setJul(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
-					spyroOutputDTO.setAug(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0);
-					spyroOutputDTO.setSep(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0);
-					spyroOutputDTO.setOct(row[19] != null ? Double.parseDouble(row[19].toString()) : 0.0);
-					spyroOutputDTO.setNov(row[20] != null ? Double.parseDouble(row[20].toString()) : 0.0);
-					spyroOutputDTO.setDec(row[21] != null ? Double.parseDouble(row[21].toString()) : 0.0);
-					spyroOutputDTO.setIsEditable(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
-					spyroOutputDTOList.add(spyroOutputDTO);
 					
-					
+					map.put("normParameterFKID", row[2]);
+					map.put("particulars", row[3]);
+					map.put("normParameterDisplayName", row[4]);
+					map.put("uom", row[7]);
+					map.put("remarks", row[9]);
+					map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
+					map.put("feb", (row[11] == null || row[11].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[11].toString()));
+					map.put("mar", (row[12] == null || row[12].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[12].toString()));
+					map.put("apr", (row[13] == null || row[13].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[13].toString()));
+					map.put("may", (row[14] == null || row[14].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[14].toString()));
+					map.put("jun", (row[15] == null || row[15].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[15].toString()));
+					map.put("jul", (row[16] == null || row[16].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[16].toString()));
+					map.put("aug", (row[17] == null || row[17].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[17].toString()));
+					map.put("sep", (row[18] == null || row[18].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[18].toString()));
+					map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
+					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
+					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
+					map.put("isEditable", row[22]);
+					spyroOutputDataList.add(map); // Add the map to the list here
 				}
 			}
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
-			aopMessageVM.setData(spyroOutputDTOList);
+			aopMessageVM.setData(spyroOutputDataList);
 			return aopMessageVM;
 
 		} catch (IllegalArgumentException e) {
@@ -178,14 +177,28 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		}
 	}
 
-
 	@Override
 	public AOPMessageVM updateSpyroOutputData(String year,String plantId,List<SpyroOutputDTO> spyroOutputDTOList) {
 		AOPMessageVM aopMessageVM=new AOPMessageVM();
-		
+		List<SpyroOutputDTO> failedList = new ArrayList<>();
 		try {
 			for (SpyroOutputDTO spyroOutputDTO : spyroOutputDTOList) {
+				if (spyroOutputDTO.getSaveStatus() != null
+						&& spyroOutputDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(spyroOutputDTO);
+					continue;
+				}
 				UUID normParameterFKId = UUID.fromString(spyroOutputDTO.getNormParameterFKID());
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					spyroOutputDTO.setSaveStatus("Failed");
+					spyroOutputDTO.setErrDescription("Norm Paramter not found");
+					failedList.add(spyroOutputDTO);
+					continue;
+				}
+				if (optionNormParameters.isPresent() && !optionNormParameters.get().getIsEditable()) {
+					continue;
+				}
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(spyroOutputDTO, i);
 		
@@ -204,10 +217,8 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			}
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data updated successfully");
-			aopMessageVM.setData(spyroOutputDTOList);
+			aopMessageVM.setData(failedList);
 			return aopMessageVM;
-		
-		
 
 	} catch (IllegalArgumentException e) {
 		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
@@ -295,7 +306,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("name", row[1]);
 					map.put("displayName", row[2]);
 					map.put("uom", row[3]);
-					map.put("attributeValue", row[4]);
+					map.put("attributeValue", (row[4] == null || row[4].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[4].toString()));
 					map.put("remarks", row[5]);
 					map.put("operation", row[6]);
 					map.put("type", row[7]);
@@ -415,6 +426,11 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								list.add(value);
 							}
 							list.add(tableId);
+							UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKID());
+							Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+							if(optionNormParameters.isPresent()) {
+								list.add(optionNormParameters.get().getIsEditable());
+							}
 							dataList.add(list);
 						}
 
@@ -446,6 +462,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								list.add(map.get(header));
 							}
 							list.add(tableId);
+							list.add(map.get("isEditable"));
 							dataList.add(list);
 						}
 
