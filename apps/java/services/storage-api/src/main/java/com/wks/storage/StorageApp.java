@@ -15,7 +15,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
+@CrossOrigin(origins ="http://localhost:3001")
 @SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 @ComponentScan(basePackages = { "com.wks.storage", "com.wks.api.security" })
 public class StorageApp {
