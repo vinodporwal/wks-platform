@@ -908,7 +908,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                 (file, index) => `
                   <li style="margin-bottom: 16px;">
                     <img 
-                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      src="${Config.StorageUrl}/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
                       alt="${file.name}"
                       style="max-width: 100%; height: auto;"
                     />
@@ -958,7 +958,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
                 (file, index) => `
                   <li style="margin-bottom: 16px;">
                     <img 
-                      src="${Config.StorageUrl}/storage/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
+                      src="${Config.StorageUrl}/files1/cases/downloads/${encodeURIComponent(file.name)}?content-type=${encodeURIComponent(file.type)}"
                       alt="${file.name}"
                       style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; padding: 4px;"
                     />
