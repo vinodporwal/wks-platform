@@ -164,7 +164,7 @@ export default function AopBudget() {
         type: 'number',
         format: '{0:#.###}',
       },
-      { field: 'remarks', title: 'Remark', widthT: 220, editable: false },
+      { field: 'remarks', title: 'Remark', widthT: 60, editable: false },
     ],
     [plantID, yearChanged],
   )
