@@ -53,9 +53,11 @@ public class MinioUploadService implements UploadService {
 	private UploadFileUrl createPresigned(String dir, String fileName, String contentType) {
 		String bucketName = bucketService.createAssignedTenant();
 
+        System.out.println("bucketName"+bucketName);
 		String objectName = fileName;
 		if (dir != null && !dir.isBlank()) {
 			objectName = bucketService.createObjectWithPath(dir, fileName);
+            System.out.println("objectName"+objectName);
 		}
 
 		PostPolicy policy = new PostPolicy(bucketName, ZonedDateTime.now().plusMinutes(5));
@@ -64,13 +66,13 @@ public class MinioUploadService implements UploadService {
 		policy.addContentLengthRangeCondition(config.getUploadsFileMinSize(), config.getUploadsFileMaxSize());
 
 		Map<String, String> formData = client.getPresignedPostFormData(policy);
-
+        System.out.println("formData"+formData);
 		String port = config.getUploadsPort() > 0 ? ":" + config.getUploadsPort() : "";
-
+        System.out.println("port"+port);
 		String callBackUrl = String.format("%s://%s%s/%s", config.getUploadsProtocol(), config.getUploadsBackendUrl(),
 				port, bucketName);
 
-
+        System.out.println("callBackUrl"+callBackUrl);
 		return new UploadFileUrl(callBackUrl, formData);
 	}
 

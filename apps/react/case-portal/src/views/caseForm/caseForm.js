@@ -291,14 +291,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             }
 
             // Level 6: Hide add-more and final submit buttons
-            if (level6?.components) {
-              const [submitContainer, addMoreContainer] = level6.components;
-              const recommendationAddMore = addMoreContainer?.columns?.[0]?.components?.[0] ?? null;
-              const recommendationFinalSubmit = addMoreContainer?.columns?.[1]?.components?.[0] ?? null;
+            // if (level6?.components) {
+            //   const [submitContainer, addMoreContainer] = level6.components;
+            //   const recommendationAddMore = addMoreContainer?.columns?.[0]?.components?.[0] ?? null;
+            //   const recommendationFinalSubmit = addMoreContainer?.columns?.[1]?.components?.[0] ?? null;
 
-              recommendationAddMore && (recommendationAddMore.hidden = true);
-              recommendationFinalSubmit && (recommendationFinalSubmit.hidden = true);
-            }
+            //   recommendationAddMore && (recommendationAddMore.hidden = true);
+            //   recommendationFinalSubmit && (recommendationFinalSubmit.hidden = true);
+            // }
 
             // Value Realization Section: Hide value realization submit button
             if (valueRealizationSection?.components) {
@@ -351,7 +351,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           if (level1 && level1.components) {
             const level2 = level1.components[0]
             const level7 =
-              level1.components.length > 8 ? level1.components[8] : null
+              level1.components.length > 7 ? level1.components[7] : null
             if (level2 && level2.components) {
               const caseDescriptionField =
                 level2.components.length > 1 ? level2.components[1] : null
@@ -474,29 +474,29 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 }
               }
 
-              const level6 = level1.components[6] ?? null;
-              if (level6) {
-                const [submitContainer, addMoreContainer] = level6.components;
+              //const level6 = level1.components[6] ?? null;
+              // if (level6) {
+              //   const [submitContainer, addMoreContainer] = level6.components;
 
-                const recommendationSubmit = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[0]?.components?.[0] ?? null;
-                const recommendationDelete = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[1]?.components?.[0] ?? null;
-                const recommendationAddMore = addMoreContainer?.columns[0]?.components[0] ?? null;
-                const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
+              //   const recommendationSubmit = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[0]?.components?.[0] ?? null;
+              //   const recommendationDelete = submitContainer?.components?.[0]?.columns?.[4]?.components?.[0]?.columns?.[1]?.components?.[0] ?? null;
+              //   const recommendationAddMore = addMoreContainer?.columns[0]?.components[0] ?? null;
+              //   const recommendationFinalSubmit = addMoreContainer?.columns[1]?.components[0] ?? null;
 
-                if (shouldDisableAnalysis) {
-                  if (recommendationSubmit) recommendationSubmit.disabled = true;
-                  if (recommendationDelete) recommendationDelete.disabled = true;
-                }
+              //   if (shouldDisableAnalysis) {
+              //     if (recommendationSubmit) recommendationSubmit.disabled = true;
+              //     if (recommendationDelete) recommendationDelete.disabled = true;
+              //   }
 
-                if (recommendationAddMore && (isFinalRecommendationSubmitted || shouldDisableAnalysis)) {
-                  recommendationAddMore.disabled = true;
-                }
+              //   if (recommendationAddMore && (isFinalRecommendationSubmitted || shouldDisableAnalysis)) {
+              //     recommendationAddMore.disabled = true;
+              //   }
 
-                const recommendations = parsedAttributeValue.dataGrid1;
-                if (recommendationFinalSubmit && (isFinalRecommendationSubmitted || shouldDisableAnalysis || !recommendations || (recommendations?.length >= 1 && recommendations[0]?.recommendationNo1 === ''))) {
-                  recommendationFinalSubmit.disabled = true;
-                }
-              }
+              //   const recommendations = parsedAttributeValue.dataGrid1;
+              //   if (recommendationFinalSubmit && (isFinalRecommendationSubmitted || shouldDisableAnalysis || !recommendations || (recommendations?.length >= 1 && recommendations[0]?.recommendationNo1 === ''))) {
+              //     recommendationFinalSubmit.disabled = true;
+              //   }
+              // }
 
               const valueRealizationSection = level1.components[7] ?? null;
               if (valueRealizationSection && shouldDisableValueRealization) {
