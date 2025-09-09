@@ -119,7 +119,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         if (level1 && level1.components) {
           const level2 = level1.components[0]
           const level7 =
-            level1.components.length > 7 ? level1.components[7] : null
+            level1.components.length > 6 ? level1.components[6] : null
           if (level2 && level2.components) {
             if (level7 && level7.columns) {
               const saveAsDraft =
