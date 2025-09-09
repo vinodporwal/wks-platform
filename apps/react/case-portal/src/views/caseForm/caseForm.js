@@ -309,17 +309,18 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         } else {
           if (!isDraft) {
             const analysis = level1.components?.[4] ?? null;
-            const recommendationRadio = level1.components?.[5] ?? null;
-            const recommendation = level1.components?.[6] ?? null;
+           // const recommendationRadio = level1.components?.[5] ?? null;
+            //const recommendation = level1.components?.[6] ?? null;
             const caseDetails = level1.components?.[3] ?? null;
-            const valueRealization = level1.components?.[7] ?? null;
+            const valueRealization = level1.components?.[5] ?? null;
             level1.components?.forEach((component) => {
               if (
-                component.id !== recommendation?.id &&
+               // component.id !== recommendation?.id &&
                 component.id !== caseDetails?.id &&
                 component.id !== analysis?.id &&
-                component.id !== valueRealization?.id &&
-                component.id !== recommendationRadio.id
+                component.id !== valueRealization?.id 
+                //&&
+                //component.id !== recommendationRadio.id
               ) {
                 component.disabled = true;
               }
@@ -498,7 +499,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               //   }
               // }
 
-              const valueRealizationSection = level1.components[7] ?? null;
+              const valueRealizationSection = level1.components[5] ?? null;
               if (valueRealizationSection && shouldDisableValueRealization) {
                 valueRealizationSection.disabled = true;
                 const valueRealizationSubmit = valueRealizationSection?.components?.[3] ?? null;
