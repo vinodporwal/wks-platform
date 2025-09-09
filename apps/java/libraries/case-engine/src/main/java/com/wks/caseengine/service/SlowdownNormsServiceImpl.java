@@ -110,7 +110,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 
-			if (vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+			if (vertical.getName().equalsIgnoreCase("MEG")) {
 				String storedProcedure = vertical.getName() + "_" + site.getName() + "_SlowdownNormCalculation";
 
 				int spResult = getSlowdownNormsSPData(
@@ -121,6 +121,10 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 						vertical.getId().toString());
 
 				objList = getSlowdownNorms(year, plant.getId(), "vwScrnSlowdownNorms");
+			} else if (vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+				String storedProcedure = "vwScrn"+vertical.getName() + "SlowdownNorms";
+
+				objList = getSlowdownNorms(year, plant.getId(), storedProcedure);
 			} else {
 				String viewName = "vwScrn" + vertical.getName() + "SlowdownNorms";
 				
@@ -373,7 +377,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 					+ "[NormParameterTypeDisplayName], [NormTypeDisplayOrder], [MaterialDisplayOrder], [UOM],[isEditable],[DisplayName] "
 					+ "FROM " + viewName + " "
 					+ "WHERE Plant_FK_Id = :plantId AND (FinancialYear = :year OR FinancialYear IS NULL) "
-					+ "ORDER BY NormTypeDisplayOrder";
+					+ "ORDER BY NormTypeDisplayOrder,MaterialDisplayOrder";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
@@ -411,6 +415,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
 
 	@Override
 	@Transactional

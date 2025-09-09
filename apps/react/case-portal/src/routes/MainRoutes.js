@@ -50,6 +50,7 @@ import PlantTeam from 'components/kendo-data-tables/PlantTeam'
 import RelPerf from 'components/kendo-data-tables/RelPerf'
 import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
 import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
+import RawDataSet from 'components/data-tables/Reports/RawDataSet'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -416,6 +417,15 @@ export const MainRoutes = (
           },
 
           {
+            path: 'raw-data',
+            element: (
+              <PrivateRoute routeId='raw-data'>
+                <RawDataSet />
+              </PrivateRoute>
+            ),
+          },
+
+          {
             path: 'monthwise-raw-material',
             element: <MonthwiseRawMaterial />,
           },
@@ -442,60 +452,17 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'reliability-performance',
+            element: (
+              <PrivateRoute routeId='reliability-performance'>
+                <RelPerf />
+              </PrivateRoute>
+            ),
+          },
         ],
       },
-
-      // {
-      //   path: 'functional-aop',
-      //   children: [
-      //     {
-      //       path: 'aop-budget',
-      //       element: (
-      //         <PrivateRoute routeId='aop-budget'>
-      //           <AopBudget />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //     {
-      //       path: 'monthly-template-plants',
-      //       element: (
-      //         <PrivateRoute routeId='monthly-template-plants'>
-      //           <MonthlyTemplatePlants />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //     {
-      //       path: 'aop-summary',
-      //       element: (
-      //         <PrivateRoute routeId='aop-summary'>
-      //           <AopSummary />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //   ],
-      // },
-
-      // {
-      //   path: 'manufacturing-division',
-      //   children: [
-      //     {
-      //       path: 'plant-team',
-      //       element: (
-      //         <PrivateRoute routeId='plant-team'>
-      //           <PlantTeam />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //     {
-      //       path: 'plant-safety-performance-target',
-      //       element: (
-      //         <PrivateRoute routeId='plant-safety-performance-target'>
-      //           <PlantSafetyPerformanceTarget />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //   ],
-      // },
 
       {
         path: 'plant-team',
@@ -505,14 +472,7 @@ export const MainRoutes = (
           </PrivateRoute>
         ),
       },
-      {
-        path: 'reliability-performance',
-        element: (
-          <PrivateRoute routeId='reliability-performance'>
-            <RelPerf />
-          </PrivateRoute>
-        ),
-      },
+
       {
         path: 'plant-safety-performance-target',
         element: (
