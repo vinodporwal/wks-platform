@@ -196,7 +196,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
 
   const getCaseInfo = async (aCase) => {
     await loadOptions(keycloak);
-    console.log('Fetching EED case data of ', aCase)
+    console.log('Fetching SOCAR case data of ', aCase)
     // setLoading(true)
     CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
       .then(async (data) => {
@@ -1412,7 +1412,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">EED Case Management System</h2>
+        <h2 style="text-align: center; margin: 0;">SOCAR Case Management System</h2>
       </div>
 
       <!-- Case Information Panel -->

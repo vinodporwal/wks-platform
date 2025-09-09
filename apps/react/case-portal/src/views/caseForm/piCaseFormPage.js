@@ -843,7 +843,7 @@ export const PICaseFormPage = ({ open, handleClose, aCase, keycloak }) => {
     let content = `
     <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #333;">
       <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-        <h2 style="text-align: center; margin: 0;">EED Case Management System</h2>
+        <h2 style="text-align: center; margin: 0;">SOCAR Case Management System</h2>
       </div>
 
       <!-- Case Information Panel -->
