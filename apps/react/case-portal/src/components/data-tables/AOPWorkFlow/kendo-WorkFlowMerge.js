@@ -669,7 +669,7 @@ const WorkFlowMerge = () => {
         </Stack>
 
         {/* For OTHER verticals */}
-        {lowerVertName !== 'cracker' && lowerVertName !== 'elastomer' && (
+        {lowerVertName == 'meg' && (
           <>
             {tabIndex === 0 && (
               <ProductionAopView
@@ -819,8 +819,14 @@ const WorkFlowMerge = () => {
                 setText={setText}
               />
             )}
+
             {tabIndex === 1 && <PlantsProductionSummary />}
             {tabIndex === 2 && <MonthwiseProduction />}
+            {tabIndex === 3 && <MonthwiseRawMaterial />}
+            {tabIndex === 4 && <TurnaroundReport />}
+            {tabIndex === 5 && <AnnualProductionPlan />}
+            {tabIndex === 6 && <PlantContribution />}
+            {tabIndex === 7 && <PlantContributionLastFourYears />}
 
             <Notification
               open={snackbarOpen}
