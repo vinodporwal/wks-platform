@@ -503,6 +503,17 @@ const WorkFlowMerge = () => {
     'Turnaround Report',
     'Annual Production Plan',
     'Plant Contribution',
+    'Plant Contribution Summary (T-22)',
+  ]
+
+  const PEOrPPTabs = [
+    'Annual AOP Cost',
+    'Plant Production Summary',
+    'Month Wise Production Plan',
+    'Month Wise Raw Data',
+    'Turnaround Report',
+    'Annual Production Plan',
+    'Plant Contribution',
   ]
 
   const crackerTabs = [
@@ -515,6 +526,11 @@ const WorkFlowMerge = () => {
     'Annual AOP Cost',
     'Plant Production Summary',
     'Month Wise Production Plan',
+    'Month Wise Raw Data',
+    'Turnaround Report',
+    'Annual Production Plan',
+    'Plant Contribution',
+    'Plant Contribution Summary (T-22)',
   ]
 
   // Pick tabs based on vertical
@@ -524,6 +540,8 @@ const WorkFlowMerge = () => {
     activeTabs = crackerTabs
   } else if (lowerVertName === 'elastomer') {
     activeTabs = elastomerTabs
+  } else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+    activeTabs = PEOrPPTabs
   }
   return (
     <div
@@ -715,7 +733,7 @@ const WorkFlowMerge = () => {
             {tabIndex === 4 && <TurnaroundReport />}
             {tabIndex === 5 && <AnnualProductionPlan />}
             {tabIndex === 6 && <PlantContribution />}
-            {/* {tabIndex === 7 && <PlantContributionLastFourYears />} */}
+            {tabIndex === 7 && <PlantContributionLastFourYears />}
 
             <Notification
               open={snackbarOpen}
