@@ -60,7 +60,8 @@ const defs = {
     annualAopCostReport: 'Annual AOP Cost', // New addition
     productionVolumeDataBasis: 'Production Volume Data', // New addition
     normsHistorianBasis: 'Norms Historian',
-    bestAchievedBasis: 'Best Achieved Basis (Min CC)',
+    steadyStateNormsHistorianBasis: 'Steady State Norm Basis',
+    consumptionNormsHistorianBasis: 'Overall Consumption Norm Basis',
     intermediateValuesDataSet: 'Intermediate Values',
     rawDataSet: 'Raw Data',
     plantsProduction: 'Plants Production Summary', // New addition
@@ -71,6 +72,7 @@ const defs = {
     workflow: 'AOP Approval Flow', // New addition
     userManage: 'User Management', // New addition
     valueHistory: 'Value History', // New addition
+    rawData: 'Raw Data',
 
     //FUNCTIONAL AOP
     functionalAop: 'CES',
@@ -82,6 +84,8 @@ const defs = {
     allSiteSummaryAop: 'Summary',
     plantTeam: 'People',
     plantSafetyPerformanceTarget: 'S&OR',
+
+    bestAchievedBasis: 'Best Achieved Basis (Min CC)',
   },
   pages: {
     dashboard: {
@@ -237,6 +241,8 @@ const defs = {
         annualAopCostReport: 'Annual AOP Cost Basis', // New addition
         productionVolumeDataBasis: 'Production Volume Data Basis', // New addition
         normsHistorianBasis: 'Norms Historian Basis', // New addition
+        steadyStateNormsHistorianBasis: 'Steady State Norm Basis', // New addition
+        consumptionNormsHistorianBasis: 'Overall Consumption Norm Basis', // New addition
 
         plantsProduction: 'Plants Production Summary',
         monthwise: 'Monthwise Production Plan',
@@ -259,6 +265,10 @@ const defs = {
         manufacturingDivision: 'Manufacturing Division',
         plantSafetyPerformanceTarget: 'S&OR',
         plantTeam: 'People',
+
+        bestAchievedBasis: 'Best Achieved Basis (Min CC)',
+        intermediateValuesDataSet: 'Intermediate Values',
+        rawData: 'Raw Data',
       },
     },
   },

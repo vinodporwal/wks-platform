@@ -190,14 +190,14 @@ const planCracker = {
         //    icon: icons.IconFileText,
         //    breadcrumbs: true,
         //  },
-        {
-          id: 'norms-historian-basis',
-          title: i18n.t('menu.normsHistorianBasis'),
-          type: 'item',
-          url: '/reports/norms-historian-basis',
-          icon: icons.IconReport,
-          breadcrumbs: true,
-        },
+        // {
+        //   id: 'norms-historian-basis',
+        //   title: i18n.t('menu.normsHistorianBasis'),
+        //   type: 'item',
+        //   url: '/reports/norms-historian-basis',
+        //   icon: icons.IconReport,
+        //   breadcrumbs: true,
+        // },
 
         {
           id: 'best-achieved-basis',
@@ -216,10 +216,9 @@ const planCracker = {
           icon: icons.IconReport,
           breadcrumbs: true,
         },
-
         {
           id: 'raw-data',
-          title: i18n.t('menu.rawDataSet'),
+          title: i18n.t('menu.rawData'),
           type: 'item',
           url: '/reports/raw-data',
           icon: icons.IconReport,

@@ -51,6 +51,8 @@ import RelPerf from 'components/kendo-data-tables/RelPerf'
 import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
 import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
 import RawDataSet from 'components/data-tables/Reports/RawDataSet'
+import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
+import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -74,9 +76,7 @@ export const MainRoutes = (
       <ProductionVolumeDataBasis />
     )
   const NormsHistorianBasisElement =
-    verticalName == 'PE' ||
-    verticalName == 'ELASTOMER' ||
-    verticalName == 'PP' ? (
+    verticalName == 'ELASTOMER' ? (
       <NormsHistorianBasisPe />
     ) : (
       <NormsHistorianBasis />
@@ -382,6 +382,24 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'steady-state-norms-historian-basis',
+            element: (
+              <PrivateRoute routeId='steady-state-norms-historian-basis'>
+                <SteadyStateNormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'consumption-norms-historian-basis',
+            element: (
+              <PrivateRoute routeId='consumption-norms-historian-basis'>
+                <ConsumptionNormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+
           {
             path: 'best-achieved-basis',
             element: (
