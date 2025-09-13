@@ -53,6 +53,7 @@ import IntermediateValuesDataSet from 'components/data-tables/Reports/Intermedia
 import RawDataSet from 'components/data-tables/Reports/RawDataSet'
 import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
 import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
+import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -76,7 +77,9 @@ export const MainRoutes = (
       <ProductionVolumeDataBasis />
     )
   const NormsHistorianBasisElement =
-    verticalName == 'ELASTOMER' ? (
+    verticalName == 'ELASTOMER' ||
+    verticalName == 'PE' ||
+    verticalName == 'PP' ? (
       <NormsHistorianBasisPe />
     ) : (
       <NormsHistorianBasis />
@@ -408,6 +411,16 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'best-achieved-individual-basis',
+            element: (
+              <PrivateRoute routeId='best-achieved-individual-basis'>
+                <BestAchievedIndividualNorms />
+              </PrivateRoute>
+            ),
+          },
+
           {
             path: 'plants-production',
             element: (
