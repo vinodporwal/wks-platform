@@ -36,7 +36,7 @@ const LimitCellEditor = (props) => {
         value={currentValueObj}
         onChange={handleChange}
         style={{ width: '100%' }}
-        disabled={dataItem?.uom === '%'} // 🔒 disable if uom is %
+        disabled={dataItem?.uom != '%'}
       />
     )
   }
