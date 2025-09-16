@@ -1,19 +1,14 @@
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { Box, Button } from '@mui/material'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import Typography from '@mui/material/Typography'
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Backdrop,
-  Box,
-  Button,
-  CircularProgress,
-  Typography,
-} from '@mui/material'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSelector } from 'react-redux'
-
+  ExcelExport,
+  ExcelExportColumn,
+} from '@progress/kendo-react-excel-export'
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import {
@@ -21,141 +16,77 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
-import {
-  ExcelExport,
-  ExcelExportColumn,
-} from '@progress/kendo-react-excel-export'
 
-/* ------------------------
-   small helpers (kept your style)
-   ------------------------ */
-const parseDDMMYYYY = (dateStr) => {
-  if (!dateStr) return null
-  const [day, month, year] = dateStr.split('-')
-  return new Date(`${year}-${month}-${day}`)
-}
+const CALL_DELAY_MS = 50
 
-const formatCurrentDateTime = () =>
-  new Date().toISOString().replace(/T/, ' ').replace(/:/g, '-').split('.')[0]
-
-const toTitleCase = (s = '') =>
-  s
-    .toLowerCase()
-    .split(' ')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
-
-/* ------------------------
-   small presentational components
-   ------------------------ */
-const DataAccordion = React.memo(({ title, rows, columns }) => (
-  <CustomAccordion defaultExpanded disableGutters>
-    <CustomAccordionSummary expandIcon={<ExpandMoreIcon />}>
-      <Typography component='span' className='grid-title'>
-        {title}
-      </Typography>
-    </CustomAccordionSummary>
-    <CustomAccordionDetails>
-      <Box sx={{ width: '100%', margin: 0 }}>
-        <KendoDataGrid
-          rows={rows}
-          columns={columns}
-          permissions={{
-            allAction: false,
-            isHeight: rows?.length > 15,
-          }}
-        />
-      </Box>
-    </CustomAccordionDetails>
-  </CustomAccordion>
-))
-DataAccordion.displayName = 'DataAccordion'
-
-const ExcelExportComponent = React.memo(
-  ({ data, columns, exportRef, fileName }) => (
-    <ExcelExport data={data} ref={exportRef} fileName={fileName}>
-      {columns.map((col) => (
-        <ExcelExportColumn
-          key={col.field}
-          field={col.field}
-          title={col.title}
-        />
-      ))}
-    </ExcelExport>
-  ),
-)
-ExcelExportComponent.displayName = 'ExcelExportComponent'
-
-/* ------------------------
-   Main component (dynamic)
-   ------------------------ */
 const ProductionVolumeDataBasisPe = () => {
   const keycloak = useSession()
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
 
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = useMemo(
-    () => vertName?.toLowerCase() || 'meg',
-    [vertName],
-  )
-  const isOldYear = useMemo(() => oldYear?.oldYear === 1, [oldYear])
-  const year = useMemo(
-    () => localStorage.getItem('year'),
-    [plantID, yearChanged],
-  )
-  const headerMap = useMemo(() => generateHeaderNames(year), [year])
-
-  // dynamic state:
-  // gridNames: array of strings returned by TYPE_LIST call
-  // columnsMap: { [gridName]: [cols...] }
-  // rowsMap: { [gridName]: [rows...] }
+  const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
-  const [columnsMap, setColumnsMap] = useState({})
-  const [rowsMap, setRowsMap] = useState({})
   const [loading, setLoading] = useState(false)
 
-  // dynamic refs for exports
-  // exportRefs.current = { [gridNameNormalized]: workbookRef }
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const { plantID, yearChanged, oldYear, verticalChange } = dataGridStore
+  const [tabIndex, setTabIndex] = useState(0)
+  const vertName = verticalChange?.selectedVertical
+
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+
+  const timeoutIdsRef = useRef([])
+  const activeRequestsRef = useRef(0)
+  const isMountedRef = useRef(true)
   const exportRefs = useRef({})
 
-  // fetch columns + rows for a single reportType (gridName)
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      timeoutIdsRef.current.forEach((t) => clearTimeout(t))
+      timeoutIdsRef.current = []
+    }
+  }, [])
+
+  function parseDDMMYYYY(dateStr) {
+    if (!dateStr) return null
+    const [day, month, year] = dateStr.split('-')
+    return new Date(`${year}-${month}-${day}`)
+  }
+
+  const enrichColumns = useCallback((backendCols = []) => {
+    return backendCols.map((col) => {
+      const isTextCol = col.type === 'string'
+      const isNumberCol = col.type === 'number'
+      return {
+        ...col,
+        title: col.title || col.field,
+        filterable: true,
+        filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
+        align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
+        ...(isNumberCol ? { format: '{0:#.##}' } : {}),
+        editable: false,
+        isRightAlligned: isNumberCol ? 'numeric' : undefined,
+      }
+    })
+  }, [])
+
   const fetchDataForGrid = useCallback(
     async (reportType, StartDate, EndDate) => {
       try {
-        const result = await DataService.getProductionVolDataBasisPe(
+        const apiResponse = await DataService.getProductionVolDataBasisPe(
           keycloak,
           reportType,
           StartDate,
           EndDate,
         )
 
-        if (result?.code !== 200) {
-          console.error(`Error fetching ${reportType} data`)
+        if (apiResponse?.code !== 200) {
           return { rows: [], columns: [] }
         }
 
-        const backendCols = result.data.columns || []
+        const backendCols = apiResponse.data.columns || []
+        const enrichedCols = enrichColumns(backendCols)
 
-        // Enrich backend columns with UI props
-        const enrichedCols = backendCols.map((col) => {
-          const isTextCol = col.type === 'string'
-          const isNumberCol = col.type === 'number'
-          // const isDateCol = col.type === 'date'
-
-          return {
-            ...col,
-            title: col.title || col.field,
-            filterable: true,
-            filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
-            align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-            ...(isNumberCol ? { format: '{0:#.##}' } : {}),
-            editable: false,
-            isRightAlligned: isNumberCol ? 'numeric' : undefined,
-          }
-        })
-
-        // detect fields to parse
         const dateFields = enrichedCols
           .filter((c) => c.type === 'date')
           .map((c) => c.field)
@@ -163,9 +94,8 @@ const ProductionVolumeDataBasisPe = () => {
           .filter((c) => c.type === 'number')
           .map((c) => c.field)
 
-        // parse rows
-        const rowsWithId = (result.data.data || []).map((item, index) => {
-          let parsedItem = { ...item }
+        const rowsWithId = (apiResponse.data.data || []).map((item, index) => {
+          const parsedItem = { ...item }
           dateFields.forEach((f) => {
             parsedItem[f] = item?.[f] ? parseDDMMYYYY(item[f]) : null
           })
@@ -184,16 +114,62 @@ const ProductionVolumeDataBasisPe = () => {
         return { rows: [], columns: [] }
       }
     },
-    [keycloak],
+    [keycloak, enrichColumns],
   )
 
-  // fetch all: get TYPE_LIST then fetch each grid
-  const fetchAllData = useCallback(async () => {
-    setLoading(true)
+  const scheduleAndRunFetch = useCallback(
+    (reportType, delayMs) => {
+      const id = setTimeout(async () => {
+        activeRequestsRef.current += 1
+        if (isMountedRef.current) setLoading(true)
+
+        try {
+          // get config before fetching grid (so we have StartDate/EndDate)
+          const configData =
+            await DataService.getConfigurationExecutionDetails(keycloak)
+          if (configData?.code !== 200) return
+
+          const StartDate = configData.data.find(
+            (d) => d.Name === 'StartDate',
+          )?.AttributeValue
+          const EndDate = configData.data.find(
+            (d) => d.Name === 'EndDate',
+          )?.AttributeValue
+          if (!StartDate || !EndDate) return
+
+          const { rows, columns } = await fetchDataForGrid(
+            reportType,
+            StartDate,
+            EndDate,
+          )
+
+          if (!isMountedRef.current) return
+          setDataMap((prev) => ({ ...prev, [reportType]: { rows, columns } }))
+        } catch (err) {
+          console.error(`Scheduled fetch failed for ${reportType}:`, err)
+        } finally {
+          activeRequestsRef.current -= 1
+          if (activeRequestsRef.current <= 0 && isMountedRef.current) {
+            activeRequestsRef.current = 0
+            setLoading(false)
+          }
+        }
+      }, delayMs)
+
+      timeoutIdsRef.current.push(id)
+    },
+    [fetchDataForGrid, keycloak],
+  )
+
+  const fetchAllGrids = useCallback(async () => {
+    timeoutIdsRef.current.forEach((t) => clearTimeout(t))
+    timeoutIdsRef.current = []
+
     try {
+      setLoading(true)
       const configData =
         await DataService.getConfigurationExecutionDetails(keycloak)
-      if (configData.code !== 200) {
+      if (configData?.code !== 200) {
         setLoading(false)
         return
       }
@@ -203,32 +179,20 @@ const ProductionVolumeDataBasisPe = () => {
       const EndDate = configData.data.find(
         (d) => d.Name === 'EndDate',
       )?.AttributeValue
-
       if (!StartDate || !EndDate) {
         setGridNames([])
-        setColumnsMap({})
-        setRowsMap({})
+        setDataMap({})
         setLoading(false)
         return
       }
 
-      // first call TYPE_LIST to get the available grids
+      // request TYPE_LIST
       const typeListResult = await DataService.getProductionVolDataBasisPe(
         keycloak,
         'TYPE LIST1',
         StartDate,
         EndDate,
       )
-
-      // const types = Array.isArray(typeListResult?.data)
-      //   ? typeListResult.data
-      //   : [
-      //       'RAW MCU',
-      //       'MCU WITHIN RANGE',
-      //       'MCU RANGE',
-      //       'PRODUCTION VOLUME BASIS',
-      //     ]
-      // // normalize to unique names
 
       let types = []
       if (typeListResult?.code == 200) {
@@ -237,62 +201,45 @@ const ProductionVolumeDataBasisPe = () => {
         return
       }
 
-      const normalizedTypes = [...new Set(types)]
+      const normalized = [...new Set(types)] // unique, preserve order as returned
+      setGridNames(normalized)
 
-      setGridNames(normalizedTypes)
-
-      // fetch all grid data in parallel
-      const promises = normalizedTypes.map((type) =>
-        fetchDataForGrid(type, StartDate, EndDate).then((res) => ({
-          type,
-          ...res,
-        })),
-      )
-
-      const resolved = await Promise.all(promises)
-
-      const nextColumns = {}
-      const nextRows = {}
-      resolved.forEach((r) => {
-        nextColumns[r.type] = r.columns || []
-        nextRows[r.type] = r.rows || []
+      // schedule fetch for each grid with delay to throttle
+      normalized.forEach((type, idx) => {
+        const delay = idx * CALL_DELAY_MS
+        scheduleAndRunFetch(type, delay)
       })
-
-      setColumnsMap(nextColumns)
-      setRowsMap(nextRows)
-      setLoading(false)
     } catch (err) {
-      console.error('Error fetching configuration or grids:', err)
+      console.error('Error fetching TYPE_LIST or config:', err)
       setLoading(false)
     }
-  }, [fetchDataForGrid, keycloak])
+  }, [keycloak, scheduleAndRunFetch])
 
   useEffect(() => {
-    fetchAllData()
-    // include plantID etc. so it refetches on relevant changes
-  }, [fetchAllData, plantID, oldYear, yearChanged, lowerVertName])
+    setTabIndex(0)
+    fetchAllGrids()
+    return () => {
+      timeoutIdsRef.current.forEach((t) => clearTimeout(t))
+      timeoutIdsRef.current = []
+    }
+  }, [fetchAllGrids, plantID, oldYear, yearChanged])
 
-  // Export: merge sheets from each individual exporter
   const exportAllGrids = useCallback(() => {
     const keys = Object.keys(exportRefs.current || {})
     if (!keys.length) return
 
-    // pick first available ref as base
+    // find first available ref
     const firstKey = keys.find((k) => exportRefs.current[k])
     if (!firstKey) return
-
     const baseRef = exportRefs.current[firstKey]
-    const baseOptions = baseRef.workbookOptions
-      ? baseRef.workbookOptions()
-      : null
+    const baseOptions = baseRef?.workbookOptions?.()
     if (!baseOptions) return
 
-    // collect sheet objects (first sheet from each export)
-    const sheets = keys
-      .map((k) => {
+    const sheets = gridNames
+      .map((name) => {
+        const ref = exportRefs.current[name]
         try {
-          const ref = exportRefs.current[k]
-          const opts = ref?.workbookOptions?.() // safe-call
+          const opts = ref?.workbookOptions?.()
           return opts?.sheets?.[0] ? { ...opts.sheets[0] } : null
         } catch {
           return null
@@ -302,59 +249,67 @@ const ProductionVolumeDataBasisPe = () => {
 
     if (!sheets.length) return
 
-    // assign readable titles (use original grid name if available)
     sheets.forEach((s, idx) => {
-      s.title = toTitleCase(keys[idx])
+      s.title = gridNames[idx] || s.title || `Sheet${idx + 1}`
     })
 
-    // replace base sheets with our combined sheets
     baseOptions.sheets = sheets
-
-    // save using the first ref
     baseRef.save(baseOptions)
-  }, [])
+  }, [gridNames])
 
-  const fileName = useMemo(
-    () => `Production Volume Data Basis ${formatCurrentDateTime()}.xlsx`,
-    [],
-  )
+  const currentDateTime = new Date()
+    .toISOString()
+    .replace(/T/, ' ')
+    .replace(/:/g, '-')
+    .split('.')[0]
+  const fileName = `Norms Historian Data Basis ${currentDateTime}.xlsx`
 
-  /* ------------------------
-     Render
-     ------------------------ */
+  const renderTitle = (t) => t
+
+  const PETabs = ['Steady State Norm Basis', 'Overall Consumption Norm Basis']
+  const defaultTabs = ['Steady State Norm Basis']
+
+  let activeTabs = defaultTabs
+  if (lowerVertName === 'pe') {
+    activeTabs = PETabs
+  }
+
   return (
     <div>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
+        open={!!loading}
       >
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {/* Hidden Excel Export Components (one per grid) */}
       <div style={{ display: 'none' }}>
         {gridNames.map((name) => {
-          const key = name
-          const cols = columnsMap[key] || []
-          const rows = rowsMap[key] || []
-          // use function ref to store the export instance
-          const setter = (ref) => {
-            if (ref) exportRefs.current[key] = ref
+          const data = dataMap[name] || { rows: [], columns: [] }
+          // function ref to capture the export instance
+          const setRef = (ref) => {
+            if (ref) exportRefs.current[name] = ref
           }
           return (
-            <ExcelExportComponent
-              key={`excel-${key}`}
-              data={rows}
-              columns={cols}
-              exportRef={setter}
+            <ExcelExport
+              key={`excel-${name}`}
+              data={data.rows}
+              ref={setRef}
               fileName={fileName}
-            />
+            >
+              {(data.columns || []).map((col) => (
+                <ExcelExportColumn
+                  key={col.field}
+                  field={col.field}
+                  title={col.title || col.field}
+                />
+              ))}
+            </ExcelExport>
           )
         })}
       </div>
 
-      {/* Export button */}
-      {!isOldYear && (
+      {tabIndex === 0 && (
         <Box display='flex' justifyContent='flex-end' mb='2px'>
           <Button
             variant='contained'
@@ -366,25 +321,31 @@ const ProductionVolumeDataBasisPe = () => {
         </Box>
       )}
 
-      {/* dynamic grids */}
       <Box display='flex' flexDirection='column' gap={2}>
-        {gridNames.length === 0 && !loading && (
-          <Typography>
-            No data grids available for the selected period.
-          </Typography>
-        )}
-
         {gridNames.map((name) => {
-          const visibleTitle = toTitleCase(name)
-          const cols = columnsMap[name] || []
-          const rows = rowsMap[name] || []
+          const d = dataMap[name] || { rows: [], columns: [] }
           return (
-            <DataAccordion
-              key={name}
-              title={visibleTitle}
-              rows={rows}
-              columns={cols}
-            />
+            <div key={name}>
+              <CustomAccordion defaultExpanded disableGutters>
+                <CustomAccordionSummary
+                  aria-controls={`${name}-content`}
+                  id={`${name}-header`}
+                >
+                  <Typography component='span' className='grid-title'>
+                    {renderTitle(name)}
+                  </Typography>
+                </CustomAccordionSummary>
+                <CustomAccordionDetails>
+                  <Box sx={{ width: '100%', margin: 0 }}>
+                    <KendoDataGrid
+                      rows={d.rows}
+                      columns={d.columns}
+                      permissions={{ isHeight: d?.rows?.length > 15 }}
+                    />
+                  </Box>
+                </CustomAccordionDetails>
+              </CustomAccordion>
+            </div>
           )
         })}
       </Box>
