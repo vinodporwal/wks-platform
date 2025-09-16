@@ -1,5 +1,6 @@
 import { ShutdownConsumptionElastomerColumns } from 'components/colums/ElastomerColums'
 import { ShutdownConsumptionMegColumns } from 'components/colums/MegColums'
+import { ShutdownConsumptionCrackerColumns } from 'components/colums/CrackerColums'
 import { ShutdownConsumptionPeColumns } from 'components/colums/PeColums'
 import { ShutdownConsumptionPpColumns } from 'components/colums/PpColums'
 import { ShutdownConsumptionPtaColumns } from 'components/colums/PtaColums'
@@ -14,6 +15,7 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.PTA]: ShutdownConsumptionPtaColumns,
   [verticalEnums.ELASTOMER]: ShutdownConsumptionElastomerColumns,
   [verticalEnums.MEG]: ShutdownConsumptionMegColumns,
+  [verticalEnums.CRACKER]: ShutdownConsumptionCrackerColumns,
 }
 
 const getShutdownConsumptionColDef = ({ headerMap, shutdownMonths }) => {
@@ -21,7 +23,9 @@ const getShutdownConsumptionColDef = ({ headerMap, shutdownMonths }) => {
   const vertName = dataGridStore.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
 
-  const cacheKey = `${lowerVertName}_${JSON.stringify(headerMap)}_${shutdownMonths.join(',')}`
+  let safeShutdownMonths = Array.isArray(shutdownMonths) ? shutdownMonths : []
+
+  const cacheKey = `${lowerVertName}_${JSON.stringify(headerMap)}_${safeShutdownMonths.join(',')}`
 
   if (colDefsCache.has(cacheKey)) {
     return colDefsCache.get(cacheKey)
@@ -32,11 +36,18 @@ const getShutdownConsumptionColDef = ({ headerMap, shutdownMonths }) => {
   const enhancedColDefs = cols.map((col) => {
     if (col.monthNumber) {
       const monthNum = col.monthNumber
+      const isPEorPP = ['pe', 'pp'].includes(lowerVertName)
+
       return {
         ...col,
         headerName: headerMap?.[monthNum] || col.field,
-        editable: shutdownMonths.includes(monthNum),
-        isDisabled: !shutdownMonths.includes(monthNum),
+        editable: isPEorPP ? false : safeShutdownMonths.includes(monthNum),
+        ...(!isPEorPP && {
+          isDisabled: !safeShutdownMonths.includes(monthNum),
+        }),
+        ...(isPEorPP && {
+          isBold: safeShutdownMonths.includes(monthNum),
+        }),
       }
     }
 

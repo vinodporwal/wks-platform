@@ -256,10 +256,12 @@ const CrackerConfig = () => {
               id: item.NormParameterFKID || `row_${index}`,
               particulars: item.Particulars,
               uom: item.UOM,
-              remarks: item.Remarks,
-              originalRemark: item.Remarks,
+              remarks: item.remarks ?? item.Remarks ?? '',
+              originalRemark: item.remarks ?? item.Remarks ?? '',
               ParticularsType: item.NormParameterTypeName,
-              april: item.Apr,
+
+              april:
+                item.Apr && item.Apr.trim() !== '' ? Number(item.Apr) : null,
               NormParameterFKID: item.NormParameterFKID,
               ...item,
             }))
@@ -279,22 +281,12 @@ const CrackerConfig = () => {
               id: item.NormParameterFKID || `row_${index}`,
               particulars: item.Particulars,
               uom: item.UOM,
-              remarks: item.Remarks,
-              originalRemark: item.Remarks,
+              remarks: item.remarks ?? item.Remarks ?? '',
+              originalRemark: item.remarks ?? item.Remarks ?? '',
               ParticularsType: item.normParameterTypeName,
-              jan: item.Jan,
-              feb: item.Feb,
-              march: item.Mar,
-              april: item.Apr,
-              may: item.May,
-              june: item.Jun,
-              july: item.Jul,
-              aug: item.Aug,
-              sep: item.Sep,
-              oct: item.Oct,
-              nov: item.Nov,
-              dec: item.Dec,
+
               NormParameterFKID: item.NormParameterFKID,
+
               ...item,
             }))
           }

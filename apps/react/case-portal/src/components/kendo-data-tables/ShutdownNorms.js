@@ -1,66 +1,47 @@
-import { useGridApiRef } from '@mui/x-data-grid'
-import { useSession } from 'SessionStoreContext'
-import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-// import DataGridTable from '../ASDataGrid'
-// import { GridRowModes } from '@mui/x-data-grid'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { DataService } from 'services/DataService'
-// import NumericInputOnly from 'utils/NumericInputOnly'
-
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
-import { validateFields } from 'utils/validationUtils'
-// import TextField from '@mui/material/TextField'
-// import { useDispatch } from 'react-redux'
-// import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { useGridApiRef } from '@mui/x-data-grid'
+import { useSession } from 'SessionStoreContext'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getShutdownConsumptionColDef from 'components/data-tables/CommonHeader/getShutdownConsumptionColDef'
+import React, { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
+
+import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
+import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
+import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
 
 const ShutdownNorms = () => {
+  const [gradeId, setGradeId] = useState(null)
   const [modifiedCells, setModifiedCells] = React.useState({})
-
   const [loading, setLoading] = useState(false)
   const menu = useSelector((state) => state.dataGridStore)
-  const [allProducts, setAllProducts] = useState([])
   const [shutdownMonths, setShutdownMonths] = useState([])
-  const { sitePlantChange, yearChanged, oldYear, plantID } = menu
-
+  const { yearChanged, oldYear, plantID } = menu
   const isOldYear = oldYear?.oldYear
-
   const [open1, setOpen1] = useState(false)
-
   const apiRef = useGridApiRef()
-  // const dispatch = useDispatch()
   const [rows, setRows] = useState([])
-
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
-
   const [_plantID, set_PlantID] = useState('')
-
   const headerMap = generateHeaderNames(localStorage.getItem('year'))
-
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
-  const [rowModesModel, setRowModesModel] = useState({}) // Track row edit state
-
+  const [rowModesModel, setRowModesModel] = useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
-
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('TPH')
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
-  const unsavedChangesRef = React.useRef({
-    unsavedRows: {},
-    rowsBeforeChange: {},
-  })
+  const [calculationObject, setCalculationObject] = useState([])
+  const [grades, setGrades] = useState([])
 
   useEffect(() => {
     if (plantID?.plantId) {
@@ -68,124 +49,103 @@ const ShutdownNorms = () => {
     }
   }, [plantID])
 
-  // const getProductDisplayName = (id) => {
-  //   if (!id) return
-  //   const product = allProducts.find((p) => p.id === id)
-  //   return product ? product.displayName : ''
-  // }
-
   const keycloak = useSession()
 
   const saveChanges = React.useCallback(async () => {
-    if (lowerVertName == 'meg') {
-      try {
-        var data = Object.values(modifiedCells)
+    try {
+      var data = Object.values(modifiedCells)
 
-        if (data.length == 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          setLoading(false)
-          return
-        }
-
-        const requiredFields = ['remarks']
-        const validationMessage = validateFields(data, requiredFields)
-        if (validationMessage) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: validationMessage,
-            severity: 'error',
-          })
-          setLoading(false)
-          return
-        }
-
-        saveShutDownNormsData(data)
-      } catch (error) {
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
         setLoading(false)
+        return
       }
-    }
-    if (lowerVertName == 'pe' || lowerVertName == 'pp') {
-      try {
-        var editedData = Object.values(modifiedCells)
-        if (editedData.length === 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
 
-        const requiredFields = ['remarks']
-
-        const validationMessage = validateFields(editedData, requiredFields)
-        if (validationMessage) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: validationMessage,
-            severity: 'error',
-          })
-          setLoading(false)
-          return
-        }
-
-        if (calculatebtnClicked == false) {
-          if (editedData.length === 0) {
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: 'No Records to Save!',
-              severity: 'info',
-            })
-            setCalculatebtnClicked(false)
-            return
-          }
-
-          saveShutDownNormsData(editedData)
-        } else {
-          saveShutDownNormsData(editedData)
-        }
-      } catch (error) {
-        console.log('Error saving changes:', error)
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
         setLoading(false)
-        setCalculatebtnClicked(false)
+        return
       }
+
+      saveShutDownNormsData(data)
+    } catch (error) {
+      setLoading(false)
     }
   }, [apiRef, selectedUnit, calculatebtnClicked, modifiedCells])
 
+  // 1) Load grades list if vertical requires it
   useEffect(() => {
-    const getAllProducts = async () => {
-      try {
-        const data = await DataService.getAllProducts(keycloak, null)
-        const productList = data.map((product) => ({
-          id: product.id.toLowerCase(),
-          displayName: product.displayName,
-        }))
-        setAllProducts(productList)
-      } catch (error) {
-        console.error('Error fetching product:', error)
-      } finally {
-        // handleMenuClose();
+    const loadGrades = async () => {
+      if (['pe', 'pp'].includes(lowerVertName)) {
+        try {
+          const response =
+            await NormalOperationNormsApiService.getGradesForShutdownNorms(
+              keycloak,
+            )
+
+          if (response?.code === 200) {
+            setGrades(response?.data)
+            if (Array.isArray(response?.data) && response?.data?.length === 0) {
+              setLoading(false)
+            }
+          }
+        } catch (error) {
+          setGrades([])
+          setGradeId(null)
+          console.error('Error fetching grades:', error)
+        }
       }
     }
-    const getShutdownMonths = async () => {
+    loadGrades()
+  }, [plantID, yearChanged, keycloak])
+
+  // 2) Fetch main data when gradeId or other deps change
+
+  useEffect(() => {
+    const loadData = async () => {
       try {
-        const data = await DataService.getShutdownMonths(keycloak, null)
+        if (['pe', 'pp'].includes(lowerVertName)) {
+          if (!gradeId) return
+          await fetchData(gradeId)
+        } else {
+          await fetchData()
+        }
+        let data
+        if (['pe', 'pp'].includes(lowerVertName)) {
+          if (!gradeId) return
+          data = await ShutdownNormsApiService.getShutdownMonths(
+            keycloak,
+            gradeId,
+          )
+        } else {
+          data = await ShutdownNormsApiService.getShutdownMonths(keycloak, null)
+        }
         setShutdownMonths(data)
-        // console.log('setShutdownMonths', data)
       } catch (error) {
-        console.error('Error fetching months:', error)
-      } finally {
-        // handleMenuClose();
+        console.error('Error in loadData:', error)
       }
     }
-    fetchData()
-    getAllProducts()
-    getShutdownMonths()
-  }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
+
+    loadData()
+  }, [
+    oldYear,
+    yearChanged,
+    keycloak,
+    selectedUnit,
+    plantID,
+    gradeId,
+    lowerVertName,
+  ])
 
   const isCellEditable = (params) => {
     return params.row.isEditable
@@ -200,68 +160,29 @@ const ShutdownNorms = () => {
     setRemarkDialogOpen(true)
   }
 
-  const processRowUpdate = React.useCallback((newRow, oldRow) => {
-    const rowId = newRow.id
-    const updatedFields = []
-    for (const key in newRow) {
-      if (
-        Object.prototype.hasOwnProperty.call(newRow, key) &&
-        newRow[key] !== oldRow[key]
-      ) {
-        updatedFields.push(key)
-      }
-    }
-
-    unsavedChangesRef.current.unsavedRows[rowId || 0] = newRow
-
-    if (!unsavedChangesRef.current.rowsBeforeChange[rowId]) {
-      unsavedChangesRef.current.rowsBeforeChange[rowId] = oldRow
-    }
-
-    setRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === newRow.id ? { ...newRow, isNew: false } : row,
-      ),
-    )
-
-    if (updatedFields.length > 0) {
-      setModifiedCells((prevModifiedCells) => ({
-        ...prevModifiedCells,
-        [rowId]: [...(prevModifiedCells[rowId] || []), ...updatedFields],
-      }))
-    }
-
-    return newRow
-  }, [])
-
-  const saveShutDownNormsData = async (newRows) => {
+  const saveShutDownNormsData = async (rows) => {
     setLoading(true)
     try {
       let plantId = ''
       const storedPlant = localStorage.getItem('selectedPlant')
-      const isTPH = selectedUnit == 'TPD'
       if (storedPlant) {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
 
-      const businessData = newRows.map((row) => ({
-        april: isTPH && row.april ? row.april * 24 : row.april || null,
-        may: isTPH && row.may ? row.may * 24 : row.may || null,
-        june: isTPH && row.june ? row.june * 24 : row.june || null,
-        july: isTPH && row.july ? row.july * 24 : row.july || null,
-        august: isTPH && row.august ? row.august * 24 : row.august || null,
-        september:
-          isTPH && row.september ? row.september * 24 : row.september || null,
-        october: isTPH && row.october ? row.october * 24 : row.october || null,
-        november:
-          isTPH && row.november ? row.november * 24 : row.november || null,
-        december:
-          isTPH && row.december ? row.december * 24 : row.december || null,
-        january: isTPH && row.january ? row.january * 24 : row.january || null,
-        february:
-          isTPH && row.february ? row.february * 24 : row.february || null,
-        march: isTPH && row.march ? row.march * 24 : row.march || null,
+      const payload = rows.map((row) => ({
+        april: row.april || null,
+        may: row.may || null,
+        june: row.june || null,
+        july: row.july || null,
+        august: row.august || null,
+        september: row.september || null,
+        october: row.october || null,
+        november: row.november || null,
+        december: row.december || null,
+        january: row.january || null,
+        february: row.february || null,
+        march: row.march || null,
         remark: row.remarks,
         remarks: row.remarks,
         financialYear: localStorage.getItem('year'),
@@ -275,13 +196,12 @@ const ShutdownNorms = () => {
         verticalFkId: row.verticalFkId || null,
         unit: row.unit || null,
         normParameterTypeId: row.normParameterTypeId || null,
+        gradeFkId: gradeId || null,
       }))
-      if (businessData.length > 0) {
-        // console.log(title)
-
-        const response = await DataService.saveShutDownNormsData(
+      if (payload.length > 0) {
+        const response = await ShutdownNormsApiService.saveShutDownNormsData(
           plantId,
-          businessData,
+          payload,
           keycloak,
         )
         // dispatch(setIsBlocked(true))
@@ -292,15 +212,8 @@ const ShutdownNorms = () => {
           severity: 'success',
         })
         setModifiedCells({})
-
-        unsavedChangesRef.current = {
-          unsavedRows: {},
-          rowsBeforeChange: {},
-        }
-
         setLoading(false)
         setCalculatebtnClicked(false)
-
         return response
       } else {
         setSnackbarOpen(true)
@@ -315,19 +228,35 @@ const ShutdownNorms = () => {
       console.error(`Error saving Data`, error)
       setLoading(false)
     } finally {
-      fetchData()
+      fetchData(gradeId)
       setCalculatebtnClicked(false)
       setLoading(false)
     }
   }
 
-  const [calculationObject, setCalculationObject] = useState([])
-
-  const fetchData = async () => {
+  const fetchData = async (gradeId) => {
     try {
       setLoading(true)
       setRows([])
-      const data = await DataService.getShutdownNormsData(keycloak)
+
+      const verticalsRequiringGrade = ['pe', 'pp']
+      if (verticalsRequiringGrade.includes(lowerVertName) && !gradeId) {
+        setLoading(false)
+        return
+      }
+      let data = []
+
+      if (lowerVertName != 'cracker') {
+        data = await ShutdownNormsApiService.getShutdownNormsData(
+          keycloak,
+          gradeId,
+        )
+      } else {
+        data = await ShutdownNormsApiService.shutdownConsumptionHistoryData(
+          keycloak,
+          gradeId,
+        )
+      }
 
       if (data?.code != 200) {
         setRows([])
@@ -337,10 +266,13 @@ const ShutdownNorms = () => {
 
       setCalculationObject(data?.data?.aopCalculation)
 
-      const isTPD = selectedUnit === 'TPD'
+      let formattedData = []
 
-      const formattedData = data?.data?.mcuNormsValueDTOList?.map(
-        (item, index) => {
+      const isPEorPP = ['pe', 'pp'].includes(lowerVertName)
+      const isElastomer = ['elastomer'].includes(lowerVertName)
+
+      if (lowerVertName != 'cracker') {
+        formattedData = data?.data?.mcuNormsValueDTOList?.map((item, index) => {
           const baseItem = {
             ...item,
             idFromApi: item.id,
@@ -348,35 +280,30 @@ const ShutdownNorms = () => {
             remarks: item?.remarks?.trim() || null,
             originalRemark: item?.remarks?.trim(),
             materialFkId: item?.materialFkId?.toLowerCase(),
-            Particulars: item.normParameterTypeDisplayName || 'By Products',
-            isEditable: true,
-          }
-
-          if (isTPD) {
-            const months = [
-              'april',
-              'may',
-              'june',
-              'july',
-              'august',
-              'september',
-              'october',
-              'november',
-              'december',
-              'january',
-              'february',
-              'march',
-            ]
-
-            months.forEach((month) => {
-              const value = item[month]
-              baseItem[month] = value ? (value / 24).toFixed(2) : value || null
-            })
+            Particulars: item.normParameterTypeDisplayName || 'Particulars',
+            isEditable: isPEorPP
+              ? false
+              : isElastomer
+                ? item?.isEditable
+                : true,
           }
 
           return baseItem
-        },
-      )
+        })
+      } else {
+        formattedData = data?.data?.map((item, index) => {
+          const baseItem = {
+            ...item,
+            idFromApi: item.id,
+            id: index,
+            materialFkId: item?.materialFkId?.toLowerCase(),
+            Particulars: item.normParameterTypeDisplayName || 'Particulars',
+            isEditable: false,
+          }
+
+          return baseItem
+        })
+      }
 
       setRows(formattedData)
       setLoading(false)
@@ -390,55 +317,113 @@ const ShutdownNorms = () => {
     setSelectedUnit(unit)
   }
 
-  const onProcessRowUpdateError = React.useCallback((error) => {
-    console.log(error)
-  }, [])
+  // --- handleCalculateData (call loadGradesAfterCalculation after success) ---
+  const handleCalculateData = async () => {
+    setRows([])
+    setGrades([])
+    setGradeId(null)
+    setShutdownMonths([])
 
-  const handleCalculatePe = async () => {
     setCalculatebtnClicked(true)
     setLoading(true)
     try {
       const year = localStorage.getItem('year')
       const storedPlant = localStorage.getItem('selectedPlant')
+      let plantId = ''
       if (storedPlant) {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
 
-      var plantId = plantId
-      const responce = await DataService.handleCalculateShutdownNorms(
-        plantId,
-        year,
-        keycloak,
-      )
+      const response =
+        await ShutdownNormsApiService.handleCalculateShutdownNorms(
+          plantId,
+          year,
+          keycloak,
+        )
 
-      if (responce?.code == 200) {
+      if (response?.code == 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
           severity: 'success',
         })
-        setLoading(false)
-        fetchData()
-      }
 
-      // dispatch(setIsBlocked(true))
-      else {
+        // load grades and pick the 0th index
+        await loadGradesAfterCalculation()
+      } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Data Refresh Falied!',
+          message: 'Data Refresh Failed!',
           severity: 'error',
         })
-        setLoading(false)
       }
     } catch (error) {
       console.error('Error saving refresh data:', error)
+    } finally {
       setLoading(false)
+      setCalculatebtnClicked(false)
+    }
+  }
+
+  // --- loadGradesAfterCalculation (always pick the first returned grade) ---
+  const loadGradesAfterCalculation = async () => {
+    if (['pe', 'pp'].includes(lowerVertName)) {
+      try {
+        const response =
+          await NormalOperationNormsApiService.getGradesForShutdownNorms(
+            keycloak,
+          )
+
+        if (response?.code === 200) {
+          const fetchedGrades = response?.data || []
+          setGrades(fetchedGrades)
+
+          if (fetchedGrades.length === 0) {
+            // no grades — clear selection and fetch blank data
+            setGradeId(null)
+            await fetchData(null)
+            return
+          }
+
+          // pick the 0th index (use the correct id field from your grade object)
+          const firstGrade = fetchedGrades[0]
+          const firstId =
+            firstGrade?.id ??
+            firstGrade?.gradeId ??
+            firstGrade?.gradeFkId ??
+            null
+
+          setGradeId(firstId)
+          await fetchData(firstId)
+        } else {
+          setGrades([])
+          setGradeId(null)
+          await fetchData(null)
+        }
+      } catch (error) {
+        console.error('Error fetching grades:', error)
+        setGrades([])
+        setGradeId(null)
+        await fetchData(null)
+      }
+    } else {
+      // non PE/PP flow
+      await fetchData(null)
+      try {
+        const months = await ShutdownNormsApiService.getShutdownMonths(
+          keycloak,
+          null,
+        )
+        setShutdownMonths(months)
+      } catch (err) {
+        console.error('Error fetching shutdown months:', err)
+      }
     }
   }
 
   const handleCalculate = () => {
-    handleCalculatePe()
+    handleCalculateData()
   }
 
   const onRowModesModelChange = (newRowModesModel) => {
@@ -458,7 +443,6 @@ const ShutdownNorms = () => {
       saveBtn: false,
       isOldYear: isOldYear,
       showCalculate: false,
-      // noColor: true,
       allAction: true,
     }
   }
@@ -472,20 +456,39 @@ const ShutdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
-      saveBtn: true,
-      showCalculate: lowerVertName == 'meg' ? false : true,
+      saveBtn:
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'cracker'
+          ? false
+          : true,
+      showCalculate:
+        lowerVertName == 'meg' ||
+        lowerVertName == 'elastomer' ||
+        lowerVertName === 'cracker'
+          ? false
+          : true,
       showCalculateVisibility:
         lowerVertName != 'meg' &&
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
-      // noColor: true,
+
+      showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      dropdownLabel:
+        lowerVertName === 'pe' || lowerVertName === 'pp'
+          ? 'Select Grade'
+          : 'Select Mode',
       allAction: true,
       downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_Shutdown Consumption (Quantity)`,
     },
     isOldYear,
   )
+
+  const handleGradeChange = (gradeId) => {
+    setGradeId(gradeId)
+  }
 
   return (
     <div>
@@ -507,7 +510,6 @@ const ShutdownNorms = () => {
         onDeleteRow={(id) => console.log('Row Deleted:', id)}
         onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
         paginationOptions={[100, 200, 300]}
-        processRowUpdate={processRowUpdate}
         handleUnitChange={handleUnitChange}
         onRowModesModelChange={onRowModesModelChange}
         saveChanges={saveChanges}
@@ -519,18 +521,19 @@ const ShutdownNorms = () => {
         setOpen1={setOpen1}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        onProcessRowUpdateError={onProcessRowUpdateError}
-        fetchData={fetchData}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}
         setCurrentRemark={setCurrentRemark}
         currentRowId={currentRowId}
-        unsavedChangesRef={unsavedChangesRef}
         handleRemarkCellClick={handleRemarkCellClick}
         handleCalculate={handleCalculate}
         groupBy='Particulars'
         permissions={adjustedPermissions}
+        handleGradeChange={handleGradeChange}
+        calculatebtnClicked={calculatebtnClicked}
+        plantID={plantID}
+        grades={grades}
       />
     </div>
   )

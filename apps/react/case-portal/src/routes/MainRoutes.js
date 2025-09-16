@@ -8,7 +8,7 @@ import PlantsProductionSummary from 'components/data-tables/Reports-kendo/kendo-
 import ProductionVolumeDataBasis from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasis'
 import AnnualAopCost from 'components/data-tables/Reports/AnnualAopCost'
 import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
-// import BestAchievedNorms from 'components/data-tables/Reports/BestAchievedNorms'
+import BestAchievedNorms from 'components/data-tables/Reports/BestAchievedNorms'
 import TurnaroundPlanTable from 'components/data-tables/TurnaroundPlanTable'
 import BusinessDemand from 'components/kendo-data-tables/BusinessDemand'
 import ConsumptionNorms from 'components/kendo-data-tables/ConsumptionNorms'
@@ -49,6 +49,12 @@ import AopSummary from 'components/kendo-data-tables/AopSummary'
 import PlantTeam from 'components/kendo-data-tables/PlantTeam'
 import RelPerf from 'components/kendo-data-tables/RelPerf'
 import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
+import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
+import RawDataSet from 'components/data-tables/Reports/RawDataSet'
+import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
+import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
+import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
+import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -64,13 +70,21 @@ export const MainRoutes = (
   )?.name
 
   const ProductionVolumeDataBasisElement =
-    verticalName == 'PE' ? (
+    verticalName == 'PE' ||
+    verticalName == 'ELASTOMER' ||
+    verticalName == 'PP' ? (
       <ProductionVolumeDataBasisPe />
     ) : (
       <ProductionVolumeDataBasis />
     )
   const NormsHistorianBasisElement =
-    verticalName == 'PE' ? <NormsHistorianBasisPe /> : <NormsHistorianBasis />
+    verticalName == 'ELASTOMER' ||
+    verticalName == 'PE' ||
+    verticalName == 'PP' ? (
+      <NormsHistorianBasisPe />
+    ) : (
+      <NormsHistorianBasis />
+    )
 
   let routes = {
     path: '/',
@@ -372,14 +386,42 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-          // {
-          //   path: 'best-achieved-basis',
-          //   element: (
-          //     <PrivateRoute routeId='best-achieved-basis'>
-          //       <BestAchievedNorms />
-          //     </PrivateRoute>
-          //   ),
-          // },
+          {
+            path: 'steady-state-norms-historian-basis',
+            element: (
+              <PrivateRoute routeId='steady-state-norms-historian-basis'>
+                <SteadyStateNormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'consumption-norms-historian-basis',
+            element: (
+              <PrivateRoute routeId='consumption-norms-historian-basis'>
+                <ConsumptionNormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'best-achieved-basis',
+            element: (
+              <PrivateRoute routeId='best-achieved-basis'>
+                <BestAchievedNorms />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'best-achieved-individual-basis',
+            element: (
+              <PrivateRoute routeId='best-achieved-individual-basis'>
+                <BestAchievedIndividualNorms />
+              </PrivateRoute>
+            ),
+          },
+
           {
             path: 'plants-production',
             element: (
@@ -396,6 +438,34 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'intermediate-values',
+            element: (
+              <PrivateRoute routeId='intermediate-values'>
+                <IntermediateValuesDataSet />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'raw-data',
+            element: (
+              <PrivateRoute routeId='raw-data'>
+                <RawDataSet />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'run-length',
+            element: (
+              <PrivateRoute routeId='run-length'>
+                <RunLengthDataSet />
+              </PrivateRoute>
+            ),
+          },
+
           {
             path: 'monthwise-raw-material',
             element: <MonthwiseRawMaterial />,
@@ -423,60 +493,17 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'reliability-performance',
+            element: (
+              <PrivateRoute routeId='reliability-performance'>
+                <RelPerf />
+              </PrivateRoute>
+            ),
+          },
         ],
       },
-
-      // {
-      //   path: 'functional-aop',
-      //   children: [
-      //     {
-      //       path: 'aop-budget',
-      //       element: (
-      //         <PrivateRoute routeId='aop-budget'>
-      //           <AopBudget />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //     {
-      //       path: 'monthly-template-plants',
-      //       element: (
-      //         <PrivateRoute routeId='monthly-template-plants'>
-      //           <MonthlyTemplatePlants />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //     {
-      //       path: 'aop-summary',
-      //       element: (
-      //         <PrivateRoute routeId='aop-summary'>
-      //           <AopSummary />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //   ],
-      // },
-
-      // {
-      //   path: 'manufacturing-division',
-      //   children: [
-      //     {
-      //       path: 'plant-team',
-      //       element: (
-      //         <PrivateRoute routeId='plant-team'>
-      //           <PlantTeam />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //     {
-      //       path: 'plant-safety-performance-target',
-      //       element: (
-      //         <PrivateRoute routeId='plant-safety-performance-target'>
-      //           <PlantSafetyPerformanceTarget />
-      //         </PrivateRoute>
-      //       ),
-      //     },
-      //   ],
-      // },
 
       {
         path: 'plant-team',
@@ -486,14 +513,7 @@ export const MainRoutes = (
           </PrivateRoute>
         ),
       },
-      {
-        path: 'reliability-performance',
-        element: (
-          <PrivateRoute routeId='reliability-performance'>
-            <RelPerf />
-          </PrivateRoute>
-        ),
-      },
+
       {
         path: 'plant-safety-performance-target',
         element: (

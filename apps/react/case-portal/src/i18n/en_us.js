@@ -30,6 +30,7 @@ const defs = {
     dataForm2: 'WKS Form2',
     // New menu items for "Production / Norms Plan"
     productionNormsPlan: 'Production / Norms Plan',
+    process: 'Process',
     productMCUVal: 'Production Target',
     spyroInput: 'Spyro Input',
     spyroOutput: 'Spyro Output',
@@ -58,7 +59,12 @@ const defs = {
     reports: 'Data Set', // New addition
     annualAopCostReport: 'Annual AOP Cost', // New addition
     productionVolumeDataBasis: 'Production Volume Data', // New addition
-    normsHistorianBasis: 'Norms Historian', // New addition
+    normsHistorianBasis: 'Norms Historian',
+    steadyStateNormsHistorianBasis: 'Steady State Norm Basis',
+    consumptionNormsHistorianBasis: 'Overall Consumption Norm Basis',
+    intermediateValuesDataSet: 'Norms (Expression) Basis',
+
+    rawDataSet: 'Steam Norms Basis',
     plantsProduction: 'Plants Production Summary', // New addition
     monthwise: 'Monthwise Production Plan',
     monthwiseRawMaterial: 'Monthwise Raw Material',
@@ -67,17 +73,25 @@ const defs = {
     workflow: 'AOP Approval Flow', // New addition
     userManage: 'User Management', // New addition
     valueHistory: 'Value History', // New addition
+    rawData: 'Steam Norms Basis',
+
+    runlengthData: 'Run Length Data Set ',
 
     //FUNCTIONAL AOP
-    functionalAop: 'Maintenance',
+    functionalAop: 'CES',
+
     manufacturingDivision: 'Manufacturing Division',
     reliabilityPerformance: 'Reliability Performance',
-    monthlyAop: 'Monthly Budget',
+    monthlyAop: 'Maintenance',
     siteWiseAop: 'Consumption Summary (Sites)',
     allSiteSummaryAop: 'Summary',
-
     plantTeam: 'People',
     plantSafetyPerformanceTarget: 'S&OR',
+    bestAchievedBasis: 'Best Achieved Basis (Min CC)',
+
+    bestAchievedIndividualBasis: 'Best Achieved (Individual)',
+
+    furnaceModeAndRunLength: 'Furnace Mode And Run Length',
   },
   pages: {
     dashboard: {
@@ -233,6 +247,8 @@ const defs = {
         annualAopCostReport: 'Annual AOP Cost Basis', // New addition
         productionVolumeDataBasis: 'Production Volume Data Basis', // New addition
         normsHistorianBasis: 'Norms Historian Basis', // New addition
+        steadyStateNormsHistorianBasis: 'Steady State Norm Basis', // New addition
+        consumptionNormsHistorianBasis: 'Overall Consumption Norm Basis', // New addition
 
         plantsProduction: 'Plants Production Summary',
         monthwise: 'Monthwise Production Plan',
@@ -242,11 +258,12 @@ const defs = {
         userManage: 'User Management', // New addition
         workflow: 'AOP Approval Flow', // New addition
         valueHistory: 'Value History', // New addition
+        process: 'Process',
 
         //FUNCTIONAL AOP
-        functionalAop: 'Maintenance',
+        functionalAop: 'CES',
 
-        monthlyAop: 'Monthly Budget',
+        monthlyAop: 'Maintenance',
         reliabilityPerformance: 'Reliability Performance',
         siteWiseAop: 'Consumption Summary (Sites)',
         allSiteSummaryAop: 'Summary',
@@ -254,6 +271,15 @@ const defs = {
         manufacturingDivision: 'Manufacturing Division',
         plantSafetyPerformanceTarget: 'S&OR',
         plantTeam: 'People',
+
+        bestAchievedBasis: 'Best Achieved Basis (Min CC)',
+        bestAchievedIndividualBasis: 'Best Achieved (Individual)',
+
+        intermediateValuesDataSet: 'Norms (Expression) Basis',
+        rawData: 'Steam Norms Basis',
+        runlengthData: 'Run Length Data Set ',
+
+        furnaceModeAndRunLength: 'Furnace Mode And Run Length',
       },
     },
   },

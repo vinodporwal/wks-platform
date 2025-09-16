@@ -49,18 +49,26 @@ import {
 } from '../../../node_modules/@progress/kendo-react-excel-export/index'
 import { useSelector } from 'react-redux'
 import { Checkbox } from '../../../node_modules/@progress/kendo-react-inputs/index'
+import LimitCellEditor from './Utilities-Kendo/LimitCellEditor'
 
 export const dateFields = [
   'maintStartDateTime',
   'maintEndDateTime',
   'periodTo',
   'periodFrom',
-
   'toDateReport',
   'fromDateReport',
 ]
 export const dateFields2 = ['fromDate', 'toDate']
-export const dateFields1 = ['ibrSD', 'ibrED', 'taSD', 'taED', 'sdED', 'sdSD']
+export const dateFields1 = [
+  'ibrSD',
+  'ibrED',
+  'taSD',
+  'taED',
+  'sdED',
+  'sdSD',
+  'targetDate',
+]
 
 export const hiddenFields = []
 export const monthMap = {
@@ -111,6 +119,7 @@ const KendoDataTables = ({
   handleUnitChange = () => {},
   handleGradeChange = () => {},
   handleRemarkCellClick = () => {},
+  calculatebtnClicked = () => {},
   selectedUsers = [],
   groupBy = null,
   note = '',
@@ -380,6 +389,7 @@ const KendoDataTables = ({
     }, 500)
   }
   const handleCalculateBtn = async () => {
+    setSelectedGrade('')
     setIsButtonDisabled(true)
     handleCalculate()
     setTimeout(() => {
@@ -400,6 +410,8 @@ const KendoDataTables = ({
       isColumnMenuSortActive(field, sort)
     )
   }
+
+  // console.log('rows?.length', rows?.length)
 
   const CustomRow = useCallback(({ dataItem, className, ...rest }) => {
     const isDisabled =
@@ -658,6 +670,7 @@ const KendoDataTables = ({
       handleGradeChange(firstGrade.gradeId)
     }
   }, [grades, permissions?.showG, selectedGrade])
+
   useEffect(() => {
     setSelectedGrade(null)
   }, [plantID])
@@ -689,6 +702,13 @@ const KendoDataTables = ({
     const checked = event.nativeEvent.target.checked
     console.log('Header checkbox changed. Checked:', checked)
   }
+
+  // console.log(
+  //   'grades[0].gradeId',
+  //   grades?.[0]?.gradeId,
+  //   typeof grades?.[0]?.gradeId,
+  // )
+  // console.log('selectedGrade', selectedGrade, typeof selectedGrade)
 
   const onSelectionChange = (event) => {
     // const checkbox = event.nativeEvent.target
@@ -1126,6 +1146,7 @@ const KendoDataTables = ({
                             'taED',
                             'sdED',
                             'sdSD',
+                            'targetDate',
                           ].includes(col.field)
                             ? DateOnlyPicker
                             : DateOnlyPicker,
@@ -1148,6 +1169,7 @@ const KendoDataTables = ({
                           'taED',
                           'sdED',
                           'sdSD',
+                          'targetDate',
                         ].includes(col.field)
                           ? '{0:dd-MM-yyyy}'
                           : '{0:dd-MM-yyyy}'
@@ -1155,6 +1177,23 @@ const KendoDataTables = ({
                       editor='date'
                       hidden={col.hidden}
                       columnMenu={DateColumnMenu}
+                    />
+                  )
+                }
+                if (col?.field === 'limit') {
+                  return (
+                    <GridColumn
+                      key='limit'
+                      field='limit'
+                      width={80}
+                      title={col.title}
+                      editable={col.editable || true}
+                      cells={{
+                        data: (cellProps) => <LimitCellEditor {...cellProps} />,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      headerClassName={isActive ? 'active-column' : ''}
                     />
                   )
                 }
@@ -1392,6 +1431,7 @@ const KendoDataTables = ({
                     />
                   )
                 }
+
                 if (col.type === 'number') {
                   return (
                     <GridColumn
@@ -1400,11 +1440,10 @@ const KendoDataTables = ({
                       title={col.title || col.headerName}
                       width={col.widthT}
                       hidden={col.hidden}
-                      className={
-                        col?.isDisabled
-                          ? 'k-number-right-disabled'
-                          : 'k-number-right'
-                      }
+                      className={`
+                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                  ${col?.isBold ? 'bold-text' : ''}
+                `}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
@@ -1425,6 +1464,8 @@ const KendoDataTables = ({
                     />
                   )
                 }
+
+                // ...
 
                 if (col.type === 'switch') {
                   const handleCheckboxChange = (props, value) => {

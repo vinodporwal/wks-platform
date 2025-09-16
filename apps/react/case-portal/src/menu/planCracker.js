@@ -24,6 +24,7 @@ import {
   IconTools,
   IconTrafficCone, // For shutdown-related items
   IconTrendingDown, // For slowdown
+  IconSettingsAutomation,
 } from '@tabler/icons-react'
 // import { useSelector } from 'react-redux'
 import i18n from '../i18n'
@@ -44,6 +45,7 @@ const icons = {
   IconShield,
   IconFunction,
   IconReport,
+  IconSettingsAutomation,
   IconFile,
   IconFileText,
   IconCalendarCog,
@@ -66,20 +68,20 @@ const planCracker = {
       type: 'collapse',
       icon: icons.IconArchive,
       children: [
-        // {
-        //   id: 'business-demand',
-        //   title: i18n.t('menu.productDemand'),
-        //   type: 'item',
-        //   url: '/production-norms-plan/business-demand',
-        //   icon: icons.IconChartBar,
-        //   breadcrumbs: true,
-        // },
         {
           id: 'configuration',
           title: i18n.t('menu.catalystSelectivity'),
           type: 'item',
           url: '/production-norms-plan/configuration',
           icon: icons.IconFilter,
+          breadcrumbs: true,
+        },
+        {
+          id: 'business-demand',
+          title: i18n.t('menu.productDemand'),
+          type: 'item',
+          url: '/production-norms-plan/business-demand',
+          icon: icons.IconChartBar,
           breadcrumbs: true,
         },
         {
@@ -166,38 +168,73 @@ const planCracker = {
         },
       ],
     },
-   {
-         id: 'reports',
-         title: i18n.t('menu.reports'),
-         type: 'collapse',
-         icon: icons.IconReport, // You can choose an appropriate icon
-         children: [
-          //  {
-          //    id: 'aop-annual-cost-report',
-          //    title: i18n.t('menu.annualAopCostReport'),
-          //    type: 'item',
-          //    url: '/reports/aop-annual-cost-report',
-          //    icon: icons.IconFile,
-          //    breadcrumbs: true,
-          //  },
-          //  {
-          //    id: 'production-volume-basis',
-          //    title: i18n.t('menu.productionVolumeDataBasis'),
-          //    type: 'item',
-          //    url: '/reports/production-volume-basis',
-          //    icon: icons.IconFileText,
-          //    breadcrumbs: true,
-          //  },
-           {
-             id: 'norms-historian-basis',
-             title: i18n.t('menu.normsHistorianBasis'),
-             type: 'item',
-             url: '/reports/norms-historian-basis',
-             icon: icons.IconReport,
-             breadcrumbs: true,
-           },
-         ],
-       },
+    {
+      id: 'reports',
+      title: i18n.t('menu.reports'),
+      type: 'collapse',
+      icon: icons.IconReport, // You can choose an appropriate icon
+      children: [
+        //  {
+        //    id: 'aop-annual-cost-report',
+        //    title: i18n.t('menu.annualAopCostReport'),
+        //    type: 'item',
+        //    url: '/reports/aop-annual-cost-report',
+        //    icon: icons.IconFile,
+        //    breadcrumbs: true,
+        //  },
+        //  {
+        //    id: 'production-volume-basis',
+        //    title: i18n.t('menu.productionVolumeDataBasis'),
+        //    type: 'item',
+        //    url: '/reports/production-volume-basis',
+        //    icon: icons.IconFileText,
+        //    breadcrumbs: true,
+        //  },
+        // {
+        //   id: 'norms-historian-basis',
+        //   title: i18n.t('menu.normsHistorianBasis'),
+        //   type: 'item',
+        //   url: '/reports/norms-historian-basis',
+        //   icon: icons.IconReport,
+        //   breadcrumbs: true,
+        // },
+
+        {
+          id: 'best-achieved-basis',
+          title: i18n.t('menu.bestAchievedBasis'),
+          type: 'item',
+          url: '/reports/best-achieved-basis',
+          icon: icons.IconReport,
+          breadcrumbs: true,
+        },
+
+        {
+          id: 'intermediate-values',
+          title: i18n.t('menu.intermediateValuesDataSet'),
+          type: 'item',
+          url: '/reports/intermediate-values',
+          icon: icons.IconReport,
+          breadcrumbs: true,
+        },
+        {
+          id: 'raw-data',
+          title: i18n.t('menu.rawData'),
+          type: 'item',
+          url: '/reports/raw-data',
+          icon: icons.IconReport,
+          breadcrumbs: true,
+        },
+      ],
+    },
+
+    {
+      id: 'workflow',
+      title: i18n.t('menu.workflow'),
+      type: 'item',
+      url: '/workflow',
+      icon: icons?.IconSettingsAutomation,
+      breadcrumbs: true,
+    },
   ],
 }
 

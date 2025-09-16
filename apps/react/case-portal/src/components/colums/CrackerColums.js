@@ -5,6 +5,13 @@ export const CrackerColums = [
     widthT: 30,
     filter: false,
   },
+
+  {
+    field: 'sapMaterialCode',
+    title: 'SAP MAT Code',
+    widthT: 120,
+    editable: false,
+  },
   {
     field: 'materialDisplayName',
     title: 'Particulars',
@@ -163,4 +170,31 @@ export const CrackerColumsForYearlyNorms = [
     format: '{0:#.###}',
     type: 'number',
   },
+]
+
+export const ShutdownConsumptionCrackerColumns = [
+  {
+    field: 'material',
+    headerName: 'Particulars',
+    widthT: 130,
+    editable: false,
+  },
+  { field: 'uom', headerName: 'UOM', widthT: 60, editable: false },
+
+  ...Array.from({ length: 12 }, (_, i) => {
+    const monthIndex = (i + 4) % 12 || 12
+    const monthField = new Date(2000, monthIndex - 1)
+      .toLocaleString('en-US', { month: 'long' })
+      .toLowerCase()
+
+    return {
+      field: monthField,
+
+      type: 'number',
+      format: '{0:#.###}',
+      editable: false,
+      isDisabled: true,
+      monthNumber: monthIndex,
+    }
+  }),
 ]

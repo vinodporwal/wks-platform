@@ -15,33 +15,30 @@
   {
     "field": "fiveF",
     "title": "5F",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 70
+    "widthT": 100
   },
   {
     "field": "fourF",
     "title": "4F",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 70
+    "widthT": 100
   },
 
   {
     "field": "fourFD",
     "title": "4F with Demo",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
@@ -52,8 +49,7 @@
   {
     "field": "demoHSS",
     "title": "Demo HSS",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
@@ -64,8 +60,7 @@
   {
     "field": "demoBBU",
     "title": "Demo BBU/BBD",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
@@ -76,8 +71,7 @@
   {
     "field": "demoSAD",
     "title": "Demo SAD",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
@@ -88,8 +82,7 @@
   {
     "field": "demoSD",
     "title": "Demo SD",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
@@ -112,94 +105,87 @@
   {
     "field": "coilReplacement",
     "title": "IBR/Coil Replacement",
-    "editable": false,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-
-    "isDisabled": true,
     "widthT": 125
   },
   {
     "field": "shutdown",
     "title": "Shutdown",
-    "editable": false,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
-    "isDisabled": true,
     "hideSort": true,
-    "widthT": 90
+    "widthT": 100
   },
   {
     "field": "slowdown",
     "title": "Slowdown",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 90
+    "widthT": 100
   },
   {
     "field": "sad",
     "title": "SAD",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 70
+    "widthT": 100
   },
   {
     "field": "bbu",
     "title": "BBU",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 70
+    "widthT": 100
   },
   {
     "field": "bbd",
     "title": "BBD",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 70
+    "widthT": 100
   },
 
   {
     "field": "total",
     "title": "Total",
     "editable": false,
-    "isDisabled": true,
+
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
     "hideFilter": true,
     "hideSort": true,
-    "widthT": 70
+    "widthT": 100
   },
   {
     "field": "numberOfDays",
     "title": "No of Days",
     "editable": false,
-    "isDisabled": true,
+
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
@@ -211,7 +197,7 @@
     "field": "totalSAD",
     "title": "No of SADs",
     "editable": false,
-    "isDisabled": true,
+
     "type": "number",
     "format": "{0:#.##}",
     "hidden": false,
@@ -223,8 +209,7 @@
   {
     "field": "fourFHours",
     "title": "4F Hours",
-    "editable": false,
-    "isDisabled": true,
+    "editable": true,
     "type": "number",
     "format": "{0:#.##}",
     "hidden": true,

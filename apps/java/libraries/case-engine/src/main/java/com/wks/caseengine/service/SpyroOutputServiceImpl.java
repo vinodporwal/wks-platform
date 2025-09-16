@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -104,18 +105,18 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("normParameterDisplayName", row[4]);
 					map.put("uom", row[7]);
 					map.put("remarks", row[9]);
-					map.put("jan", row[10]);
-					map.put("feb", row[11]);
-					map.put("mar", row[12]);
-					map.put("apr", row[13]);
-					map.put("may", row[14]);
-					map.put("jun", row[15]);
-					map.put("jul", row[16]);
-					map.put("aug", row[17]);
-					map.put("sep", row[18]);
-					map.put("oct", row[19]);
-					map.put("nov", row[20]);
-					map.put("dec", row[21]);
+					map.put("jan", (row[10] == null || row[10].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[10].toString()));
+					map.put("feb", (row[11] == null || row[11].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[11].toString()));
+					map.put("mar", (row[12] == null || row[12].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[12].toString()));
+					map.put("apr", (row[13] == null || row[13].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[13].toString()));
+					map.put("may", (row[14] == null || row[14].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[14].toString()));
+					map.put("jun", (row[15] == null || row[15].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[15].toString()));
+					map.put("jul", (row[16] == null || row[16].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[16].toString()));
+					map.put("aug", (row[17] == null || row[17].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[17].toString()));
+					map.put("sep", (row[18] == null || row[18].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[18].toString()));
+					map.put("oct", (row[19] == null || row[19].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[19].toString()));
+					map.put("nov", (row[20] == null || row[20].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[20].toString()));
+					map.put("dec", (row[21] == null || row[21].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[21].toString()));
 					map.put("isEditable", row[22]);
 					spyroOutputDataList.add(map); // Add the map to the list here
 				}
@@ -177,14 +178,28 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		}
 	}
 
-
 	@Override
 	public AOPMessageVM updateSpyroOutputData(String year,String plantId,List<SpyroOutputDTO> spyroOutputDTOList) {
 		AOPMessageVM aopMessageVM=new AOPMessageVM();
-		
+		List<SpyroOutputDTO> failedList = new ArrayList<>();
 		try {
 			for (SpyroOutputDTO spyroOutputDTO : spyroOutputDTOList) {
+				if (spyroOutputDTO.getSaveStatus() != null
+						&& spyroOutputDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(spyroOutputDTO);
+					continue;
+				}
 				UUID normParameterFKId = UUID.fromString(spyroOutputDTO.getNormParameterFKID());
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					spyroOutputDTO.setSaveStatus("Failed");
+					spyroOutputDTO.setErrDescription("Norm Paramter not found");
+					failedList.add(spyroOutputDTO);
+					continue;
+				}
+				if (optionNormParameters.isPresent() && !optionNormParameters.get().getIsEditable()) {
+					continue;
+				}
 				for (int i = 1; i <= 12; i++) {
 					Double attributeValue = getAttributeValue(spyroOutputDTO, i);
 		
@@ -201,12 +216,14 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
 			}
+			// Filter only failed records using Stream API
+	         failedList = spyroOutputDTOList.stream()
+	            .filter(dto -> "Failed".equalsIgnoreCase(dto.getSaveStatus()))
+	            .collect(Collectors.toList());
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data updated successfully");
-			aopMessageVM.setData(spyroOutputDTOList);
+			aopMessageVM.setData(failedList);
 			return aopMessageVM;
-		
-		
 
 	} catch (IllegalArgumentException e) {
 		throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
@@ -247,33 +264,64 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		return spyroOutputDTO.getJan();
 	}
 	
-	void saveData(UUID normParameterFKId, Integer i, Double attributeValue,SpyroOutputDTO spyroOutputDTO,String year) {
-		
-		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
-				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+	public void saveData(UUID normParameterFKId, Integer i, Double attributeValue, SpyroOutputDTO spyroOutputDTO, String year) {
+	    // 1. Add null check for the DTO
+	    if (spyroOutputDTO == null) {
+	        throw new IllegalArgumentException("SpyroOutputDTO cannot be null");
+	    }
 
-		NormAttributeTransactions normAttributeTransactions;
+	    // 2. Get the new remarks and value, handling potential nulls
+	    String newRemarks = Optional.ofNullable(spyroOutputDTO.getRemarks()).orElse("").trim();
+	    String newValue = attributeValue != null ? attributeValue.toString() : "0.0";
 
-		if (existingRecord.isPresent()) {
+	    // 3. Find the existing record
+	    Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+	        .findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
 
-			normAttributeTransactions = existingRecord.get();
-			normAttributeTransactions.setModifiedOn(new Date());
-		} else {
+	    if (existingRecord.isPresent()) {
+	        // ----- Updating existing record -----
+	        NormAttributeTransactions normAttributeTransactions = existingRecord.get();
 
-			normAttributeTransactions = new NormAttributeTransactions();
-			normAttributeTransactions.setCreatedOn(new Date());
-			normAttributeTransactions.setAttributeValueVersion("V1");
-			normAttributeTransactions.setUserName(Utility.getUserName());
-			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
-			normAttributeTransactions.setAopMonth(i);
-			normAttributeTransactions.setAuditYear(year);
-		}
+	        // Get existing remarks and value, handling potential nulls
+	        String existingRemarks = Optional.ofNullable(normAttributeTransactions.getRemarks()).orElse("").trim();
+	        String existingValue = Optional.ofNullable(normAttributeTransactions.getAttributeValue()).orElse("").trim();
+	        
+	        // 4. Add the same condition as the SpyroInputDTO method
+	        if (existingRemarks.equalsIgnoreCase(newRemarks) && !existingValue.equalsIgnoreCase(newValue)) {
+	            spyroOutputDTO.setSaveStatus("Failed");
+	            spyroOutputDTO.setErrDescription("Please add/update remark");
+	            return;
+	        }
+	        
+	        // Proceed to update
+	        normAttributeTransactions.setRemarks(newRemarks);
+	        normAttributeTransactions.setAttributeValue(newValue);
+	        normAttributeTransactions.setModifiedOn(new Date());
+	        normAttributeTransactions.setUserName(Utility.getUserName());
+	        
+	        normAttributeTransactionsRepository.save(normAttributeTransactions);
 
-		normAttributeTransactions
-				.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
-		normAttributeTransactions.setRemarks(spyroOutputDTO.getRemarks());
+	    } else {
+	        // ----- Creating a new record -----
+	        // 5. Add the same condition for new records
+	        if (newRemarks.isEmpty()) {
+	            spyroOutputDTO.setSaveStatus("Failed");
+	            spyroOutputDTO.setErrDescription("Please add/update remark");
+	            return;
+	        }
 
-		normAttributeTransactionsRepository.save(normAttributeTransactions);
+	        NormAttributeTransactions newRecord = new NormAttributeTransactions();
+	        newRecord.setCreatedOn(new Date());
+	        newRecord.setAttributeValueVersion("V1");
+	        newRecord.setUserName(Utility.getUserName());
+	        newRecord.setNormParameterFKId(normParameterFKId);
+	        newRecord.setAopMonth(i);
+	        newRecord.setAuditYear(year);
+	        newRecord.setRemarks(newRemarks);
+	        newRecord.setAttributeValue(newValue);
+
+	        normAttributeTransactionsRepository.save(newRecord);
+	    }
 	}
 
 	@Override
@@ -294,7 +342,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 					map.put("name", row[1]);
 					map.put("displayName", row[2]);
 					map.put("uom", row[3]);
-					map.put("attributeValue", row[4]);
+					map.put("attributeValue", (row[4] == null || row[4].toString().isEmpty()) ? 0.0 : Double.parseDouble(row[4].toString()));
 					map.put("remarks", row[5]);
 					map.put("operation", row[6]);
 					map.put("type", row[7]);
@@ -414,6 +462,11 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								list.add(value);
 							}
 							list.add(tableId);
+							UUID normParameterFKId = UUID.fromString(dto.getNormParameterFKID());
+							Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+							if(optionNormParameters.isPresent()) {
+								list.add(optionNormParameters.get().getIsEditable());
+							}
 							dataList.add(list);
 						}
 
@@ -445,6 +498,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 								list.add(map.get(header));
 							}
 							list.add(tableId);
+							list.add(map.get("isEditable"));
 							dataList.add(list);
 						}
 
@@ -489,7 +543,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			System.out.println("Ended Save spyroOutput in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
-				byte[] fileByteArray = createExcel(year, plantFKId, mode, true, map);
+				byte[] fileByteArray = createExcel(year, plantFKId, mode, true, mapForExcel);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
@@ -671,7 +725,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						"                    \"UOM\",\r\n" + //
 						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"hiddenColumns\":[15,16,18],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -716,7 +770,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						"                    \"UOM\",\r\n" + //
 						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"hiddenColumns\":[15,16,18],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //
@@ -761,7 +815,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 						"                    \"UOM\",\r\n" + //
 						"                    \"Remark\",\"NormParameterFKID\"]],\r\n" + //
 						"                \"rows\": [],\r\n" + //
-						"                \"hiddenColumns\":[15,16],\r\n" + //
+						"                \"hiddenColumns\":[15,16,18],\r\n" + //
 						"                \"styles\": {\r\n" + //
 						"                    \"boldColumns\": [\r\n" + //
 						"                        0\r\n" + //

@@ -18,6 +18,8 @@ import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
+import { Tab, Tabs } from '../../../../node_modules/@mui/material/index'
+import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 
 const CALL_DELAY_MS = 200
 
@@ -31,7 +33,12 @@ const ProductionVolumeDataBasisPe = () => {
   const [loading, setLoading] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear } = dataGridStore
+
+  const { plantID, yearChanged, oldYear, verticalChange } = dataGridStore
+  const [tabIndex, setTabIndex] = useState(0)
+  const vertName = verticalChange?.selectedVertical
+
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
 
   const timeoutIdsRef = useRef([])
   const activeRequestsRef = useRef(0)
@@ -64,7 +71,7 @@ const ProductionVolumeDataBasisPe = () => {
         filterable: true,
         filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
         align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-        ...(isNumberCol ? { format: '{0:#.###}' } : {}),
+        ...(isNumberCol ? { format: '{0:#.##}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
       }
@@ -221,6 +228,7 @@ const ProductionVolumeDataBasisPe = () => {
   }, [keycloak, scheduleAndRunFetch])
 
   useEffect(() => {
+    setTabIndex(0)
     fetchAllGrids()
     // cleanup timers on dependency change
     return () => {
@@ -275,6 +283,14 @@ const ProductionVolumeDataBasisPe = () => {
   // helper to render Title exactly as API sent (or tweak)
   const renderTitle = (t) => t
 
+  const PETabs = ['Steady State Norm Basis', 'Overall Consumption Norm Basis']
+  const defaultTabs = ['Steady State Norm Basis']
+
+  let activeTabs = defaultTabs
+  if (lowerVertName === 'pe') {
+    activeTabs = PETabs
+  }
+
   return (
     <div>
       <Backdrop
@@ -310,48 +326,86 @@ const ProductionVolumeDataBasisPe = () => {
           )
         })}
       </div>
-
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
-        <Button
-          variant='contained'
-          onClick={exportAllGrids}
-          className='btn-save'
+      {activeTabs?.length > 1 && (
+        <Tabs
+          value={tabIndex}
+          onChange={(e, newIndex) => setTabIndex(newIndex)}
+          variant='scrollable'
+          scrollButtons='auto'
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 10px 0px',
+            minHeight: '28px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
         >
-          Export
-        </Button>
-      </Box>
+          {activeTabs.map((label, idx) => (
+            <Tab
+              key={idx}
+              label={label}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          ))}
+        </Tabs>
+      )}
+
+      {tabIndex === 0 && (
+        <Box display='flex' justifyContent='flex-end' mb='2px'>
+          <Button
+            variant='contained'
+            onClick={exportAllGrids}
+            className='btn-save'
+          >
+            Export
+          </Button>
+        </Box>
+      )}
 
       <Box display='flex' flexDirection='column' gap={2}>
-        {gridNames.length === 0 && !loading && (
+        {/* {gridNames.length === 0 && !loading && (
           <Typography>No grids available for the selected period.</Typography>
+        )} */}
+
+        {tabIndex === 0 && (
+          <>
+            {gridNames.map((name) => {
+              const d = dataMap[name] || { rows: [], columns: [] }
+              return (
+                <div key={name}>
+                  <CustomAccordion defaultExpanded disableGutters>
+                    <CustomAccordionSummary
+                      aria-controls={`${name}-content`}
+                      id={`${name}-header`}
+                    >
+                      <Typography component='span' className='grid-title'>
+                        {renderTitle(name)}
+                      </Typography>
+                    </CustomAccordionSummary>
+                    <CustomAccordionDetails>
+                      <Box sx={{ width: '100%', margin: 0 }}>
+                        <KendoDataGrid
+                          rows={d.rows}
+                          columns={d.columns}
+                          permissions={{ isHeight: d?.rows?.length > 15 }}
+                        />
+                      </Box>
+                    </CustomAccordionDetails>
+                  </CustomAccordion>
+                </div>
+              )
+            })}
+          </>
         )}
 
-        {gridNames.map((name) => {
-          const d = dataMap[name] || { rows: [], columns: [] }
-          return (
-            <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters>
-                <CustomAccordionSummary
-                  aria-controls={`${name}-content`}
-                  id={`${name}-header`}
-                >
-                  <Typography component='span' className='grid-title'>
-                    {renderTitle(name)}
-                  </Typography>
-                </CustomAccordionSummary>
-                <CustomAccordionDetails>
-                  <Box sx={{ width: '100%', margin: 0 }}>
-                    <KendoDataGrid
-                      rows={d.rows}
-                      columns={d.columns}
-                      permissions={{ isHeight: d?.rows?.length > 15 }}
-                    />
-                  </Box>
-                </CustomAccordionDetails>
-              </CustomAccordion>
-            </div>
-          )
-        })}
+        {tabIndex === 1 && <ConsumptionNormsHistorianBasis />}
       </Box>
     </div>
   )
