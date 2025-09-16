@@ -75,19 +75,19 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 	@Autowired
 	private DecokePlanningRepository decokePlanningRepository;
-
+	
 	@Autowired
 	private DecokeMaintenanceRepository decokeMaintenanceRepository;
-
+	
 	@Autowired
 	private ScreenMappingRepository screenMappingRepository;
-
+	
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
-
+	
 	@Autowired
 	private BudgetMaintenanceRepository budgetMaintenanceRepository;
-
+	
 	@Autowired
 	private ExcelUtilityService excelUtilityService;
 
@@ -295,22 +295,22 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	}
 
 	@Override
-	public AOPMessageVM getBudgetMaintenance(String plantId, String year, String budgetCategory) {
+	public AOPMessageVM getBudgetMaintenance(String plantId, String year,String budgetCategory) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		List<BudgetMaintenance> budgetMaintenanceList = null;
-
-		UUID plant = null;
-		if (plantId != null && (!plantId.equalsIgnoreCase("ALL"))) {
-			plant = UUID.fromString(plantId);
-			budgetMaintenanceList = budgetMaintenanceRepository.findByPlantIdAndAOPYear(plant, year, budgetCategory);
-		} else {
-			budgetMaintenanceList = budgetMaintenanceRepository.findByAOPYear(year, budgetCategory);
-
+		List<BudgetMaintenance> budgetMaintenanceList=null;
+		
+		UUID plant=null;
+		if(plantId!=null && (!plantId.equalsIgnoreCase("ALL"))) {
+			plant=UUID.fromString(plantId);
+			 budgetMaintenanceList	= budgetMaintenanceRepository.findByPlantIdAndAOPYear(plant,year,budgetCategory);
+		}else {
+			 budgetMaintenanceList	= budgetMaintenanceRepository.findByAOPYear(year,budgetCategory);
+			
 		}
 		List<BudgetMaintenanceDto> budgetMaintenanceDtoList = new ArrayList<BudgetMaintenanceDto>();
 		try {
-
-			for (BudgetMaintenance budgetMaintenance : budgetMaintenanceList) {
+			
+			for(BudgetMaintenance budgetMaintenance:budgetMaintenanceList) {
 				BudgetMaintenanceDto budgetMaintenanceDto = new BudgetMaintenanceDto();
 				budgetMaintenanceDto.setAopYear(budgetMaintenance.getAopYear());
 				budgetMaintenanceDto.setApr(budgetMaintenance.getApr());
@@ -335,117 +335,116 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 				budgetMaintenanceDto.setIsEditable(budgetMaintenance.getIsEditable());
 				budgetMaintenanceDtoList.add(budgetMaintenanceDto);
 			}
-		} catch (IllegalArgumentException e) {
+		}catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to get data", ex);
 		}
-
+		
 		aopMessageVM.setCode(200);
 		aopMessageVM.setData(budgetMaintenanceDtoList);
 		aopMessageVM.setMessage("Data fetched successfully");
 		return aopMessageVM;
 	}
-
+	
 	public byte[] createExcel(String year, String plantId, boolean isAfterSave,
-			Map<String, List<BudgetMaintenanceDto>> mapForExcel) {
-		try {
-			String structureJson = getJson();
-			ObjectMapper mapper = new ObjectMapper();
-			Map<String, List<List<Object>>> data = new HashMap<>();
-			Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
-			Map<String, List<BudgetMaintenanceDto>> budgetMaintenanceListMap = new HashMap<>();
+	        Map<String, List<BudgetMaintenanceDto>> mapForExcel) {
+	    try {
+	        String structureJson = getJson();
+	        ObjectMapper mapper = new ObjectMapper();
+	        Map<String, List<List<Object>>> data = new HashMap<>();
+	        Map<String, Object> structure = mapper.readValue(structureJson, Map.class);
+	        Map<String, List<BudgetMaintenanceDto>> budgetMaintenanceListMap = new HashMap<>();
 
-			// Fetch and populate data from the database before iterating through tables
-			if (!isAfterSave) {
-				// Fetch data for ConsumptionBudget
-				AOPMessageVM consumptionVm = getBudgetMaintenance(plantId, year, "ConsumptionBudget");
-				List<BudgetMaintenanceDto> consumptionData = (List<BudgetMaintenanceDto>) consumptionVm.getData();
-				if (consumptionData != null) {
-					budgetMaintenanceListMap.put("ConsumptionBudget", consumptionData);
-				}
+	        // Fetch and populate data from the database before iterating through tables
+	        if (!isAfterSave) {
+	            // Fetch data for ConsumptionBudget
+	            AOPMessageVM consumptionVm = getBudgetMaintenance(plantId, year, "ConsumptionBudget");
+	            List<BudgetMaintenanceDto> consumptionData = (List<BudgetMaintenanceDto>) consumptionVm.getData();
+	            if (consumptionData != null) {
+	                budgetMaintenanceListMap.put("ConsumptionBudget", consumptionData);
+	            }
 
-				// Fetch data for ProcurementBudget
-				AOPMessageVM procurementVm = getBudgetMaintenance(plantId, year, "ProcurementBudget");
-				List<BudgetMaintenanceDto> procurementData = (List<BudgetMaintenanceDto>) procurementVm.getData();
-				if (procurementData != null) {
-					budgetMaintenanceListMap.put("ProcurmentBudget", procurementData);
-				}
-			}
+	            // Fetch data for ProcurementBudget
+	            AOPMessageVM procurementVm = getBudgetMaintenance(plantId, year, "ProcurementBudget");
+	            List<BudgetMaintenanceDto> procurementData = (List<BudgetMaintenanceDto>) procurementVm.getData();
+	            if (procurementData != null) {
+	                budgetMaintenanceListMap.put("ProcurmentBudget", procurementData);
+	            }
+	        }
+	        
+	        Map<String, Object> sheetData = (Map<String, Object>) structure.get("BudgetMaintenance");
+	        List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get("tables");
 
-			Map<String, Object> sheetData = (Map<String, Object>) structure.get("BudgetMaintenance");
-			List<Map<String, Object>> tables = (List<Map<String, Object>>) sheetData.get("tables");
+	        for (Map<String, Object> table : tables) {
+	            String title = (String) table.get("title");
+	            String tableId = (String) table.get("tableId");
+	            List<String> headers = (List<String>) table.get("headers");
+	            Integer startingIndexofMonths = (Integer) table.get("startingIndexOfMonths");
+	            List<List<String>> headersOuterTitles = (List<List<String>>) table.get("headersTitles");
 
-			for (Map<String, Object> table : tables) {
-				String title = (String) table.get("title");
-				String tableId = (String) table.get("tableId");
-				List<String> headers = (List<String>) table.get("headers");
-				Integer startingIndexofMonths = (Integer) table.get("startingIndexOfMonths");
-				List<List<String>> headersOuterTitles = (List<List<String>>) table.get("headersTitles");
+	            // Add months to the header titles
+	            headersOuterTitles.get(0).addAll(startingIndexofMonths, excelUtilityService.getAcademicYearMonths(year));
 
-				// Add months to the header titles
-				headersOuterTitles.get(0).addAll(startingIndexofMonths,
-						excelUtilityService.getAcademicYearMonths(year));
+	            List<List<Object>> dataList = new ArrayList<>();
+	            List<BudgetMaintenanceDto> sourceData = null;
 
-				List<List<Object>> dataList = new ArrayList<>();
-				List<BudgetMaintenanceDto> sourceData = null;
+	            if (isAfterSave) {
+	                if (mapForExcel.containsKey(tableId)) {
+	                    sourceData = mapForExcel.get(tableId);
+	                    // Add saveStatus and errDescription headers for the after-save scenario
+	                    headers.add("saveStatus");
+	                    headers.add("errDescription");
+	                    headersOuterTitles.get(0).add("SaveStatus");
+	                    headersOuterTitles.get(0).add("ErrDescription");
+	                }
+	            } else {
+	                sourceData = budgetMaintenanceListMap.get(tableId);
+	            }
 
-				if (isAfterSave) {
-					if (mapForExcel.containsKey(tableId)) {
-						sourceData = mapForExcel.get(tableId);
-						// Add saveStatus and errDescription headers for the after-save scenario
-						headers.add("saveStatus");
-						headers.add("errDescription");
-						headersOuterTitles.get(0).add("SaveStatus");
-						headersOuterTitles.get(0).add("ErrDescription");
-					}
-				} else {
-					sourceData = budgetMaintenanceListMap.get(tableId);
-				}
+	            // If no data is available for the current table, continue to the next one
+	            if (sourceData == null || sourceData.isEmpty()) {
+	                table.put("hideTable", true);
+	                continue;
+	            }
 
-				// If no data is available for the current table, continue to the next one
-				if (sourceData == null || sourceData.isEmpty()) {
-					table.put("hideTable", true);
-					continue;
-				}
+	            // Populate the data rows using reflection
+	            for (BudgetMaintenanceDto dto : sourceData) {
+	                List<Object> row = new ArrayList<>();
+	                for (String fieldName : headers) {
+	                    try {
+	                        String methodName = "get" + capitalize(fieldName);
+	                        Method method = dto.getClass().getMethod(methodName);
+	                        Object value = method.invoke(dto);
+	                        row.add(value);
+	                    } catch (NoSuchMethodException e) {
+	                        // Handle cases where a method for a header doesn't exist, e.g., for "saveStatus" or "errDescription"
+	                        row.add(null);
+	                    }
+	                }
+	                row.add(tableId);
+	                dataList.add(row);
+	            }
+	            
+	            data.put(tableId, dataList);
+	        }
 
-				// Populate the data rows using reflection
-				for (BudgetMaintenanceDto dto : sourceData) {
-					List<Object> row = new ArrayList<>();
-					for (String fieldName : headers) {
-						try {
-							String methodName = "get" + capitalize(fieldName);
-							Method method = dto.getClass().getMethod(methodName);
-							Object value = method.invoke(dto);
-							row.add(value);
-						} catch (NoSuchMethodException e) {
-							// Handle cases where a method for a header doesn't exist, e.g., for
-							// "saveStatus" or "errDescription"
-							row.add(null);
-						}
-					}
-					row.add(tableId);
-					dataList.add(row);
-				}
+	        return excelUtilityService.generateFlexibleExcelForBudgetMaintenance(structure, data);
 
-				data.put(tableId, dataList);
-			}
-
-			return excelUtilityService.generateFlexibleExcelForBudgetMaintenance(structure, data);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			// You might want to log the exception more professionally here
-			return null;
-		}
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        // You might want to log the exception more professionally here
+	        return null;
+	    }
 	}
 
+	
 	private static String capitalize(String str) {
 		if (str == null || str.isEmpty())
 			return str;
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
 	}
-
+	
 	private CellStyle createBorderedStyle(Workbook wb) {
 		CellStyle style = wb.createCellStyle();
 		style.setBorderBottom(BorderStyle.THIN);
@@ -471,41 +470,42 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		return style;
 	}
 
+
+
 	@Override
 	public AOPMessageVM updateBudgetMaintenance(List<BudgetMaintenanceDto> budgetMaintenanceDtos) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-		List<BudgetMaintenanceDto> failedList = new ArrayList<BudgetMaintenanceDto>();
-		List<BudgetMaintenance> budgetMaintenanceList = new ArrayList<BudgetMaintenance>();
+		List<BudgetMaintenanceDto> failedList= new ArrayList<BudgetMaintenanceDto>();
+		List<BudgetMaintenance> budgetMaintenanceList=new ArrayList<BudgetMaintenance>();
 		try {
-			for (BudgetMaintenanceDto budgetMaintenanceDto : budgetMaintenanceDtos) {
-				BudgetMaintenance budgetMaintenance = null;
-				if (budgetMaintenanceDto.getId() == null) {
-					budgetMaintenance = new BudgetMaintenance();
-					budgetMaintenanceList.add(saveData(budgetMaintenance, budgetMaintenanceDto));
-				} else {
-					Optional<BudgetMaintenance> budgetMaintenanceOpt = budgetMaintenanceRepository
-							.findById(budgetMaintenanceDto.getId());
-					if (budgetMaintenanceOpt.isPresent()) {
-						budgetMaintenance = budgetMaintenanceOpt.get();
+			for(BudgetMaintenanceDto budgetMaintenanceDto:budgetMaintenanceDtos) {
+				BudgetMaintenance budgetMaintenance=null;
+				if(budgetMaintenanceDto.getId()==null) {
+					budgetMaintenance=new BudgetMaintenance();
+					budgetMaintenanceList.add(saveData(budgetMaintenance,budgetMaintenanceDto));
+				}else {
+					Optional<BudgetMaintenance> budgetMaintenanceOpt=budgetMaintenanceRepository.findById(budgetMaintenanceDto.getId());
+					if(budgetMaintenanceOpt.isPresent()) {
+						budgetMaintenance=budgetMaintenanceOpt.get();
 						budgetMaintenanceDto.setPlantId(budgetMaintenance.getPlantId());
 						budgetMaintenanceDto.setBudgetCategory(budgetMaintenance.getBudgetCategory());
 						budgetMaintenanceDto.setBudgetType(budgetMaintenance.getBudgetType());
 						budgetMaintenanceDto.setIsEditable(budgetMaintenance.getIsEditable());
-						if (budgetMaintenance.getIsEditable()) {
-							budgetMaintenanceList.add(saveData(budgetMaintenance, budgetMaintenanceDto));
+						if(budgetMaintenance.getIsEditable()) {
+							budgetMaintenanceList.add(saveData(budgetMaintenance,budgetMaintenanceDto));
 						}
-					} else {
+					}else {
 						budgetMaintenanceDto.setSaveStatus("Failed");
 						budgetMaintenanceDto.setErrDescription("No record found with given id");
 						failedList.add(budgetMaintenanceDto);
 					}
 				}
-
+					
 			}
-		} catch (Exception e) {
+		}catch(Exception e) {
 			throw new RuntimeException("Failed to update data", e);
 		}
-		Map<String, Object> map = new HashMap<>();
+		Map<String,Object> map=new HashMap<>();
 		map.put("Success", budgetMaintenanceList);
 		map.put("Failed", failedList);
 		aopMessageVM.setCode(200);
@@ -514,8 +514,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		// TODO Auto-generated method stub
 		return aopMessageVM;
 	}
-
-	public BudgetMaintenance saveData(BudgetMaintenance budgetMaintenance, BudgetMaintenanceDto budgetMaintenanceDto) {
+	
+	public BudgetMaintenance saveData(BudgetMaintenance budgetMaintenance,BudgetMaintenanceDto budgetMaintenanceDto) {
 		budgetMaintenance.setApr(budgetMaintenanceDto.getApr());
 		budgetMaintenance.setMay(budgetMaintenanceDto.getMay());
 		budgetMaintenance.setJun(budgetMaintenanceDto.getJun());
@@ -539,7 +539,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		budgetMaintenance.setUpdatedBy(Utility.getUserName());
 		return budgetMaintenanceRepository.save(budgetMaintenance);
 	}
-
+	
 	@Override
 	public AOPMessageVM importExcel(String year, String plantFKId, String budgetCategory, MultipartFile file) {
 		// TODO Auto-generated method stub
@@ -548,34 +548,31 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		}
 
 		try {
-
-			System.out.println("started Read spyroOutput in importExcel");
+			
 			Map<String, List<BudgetMaintenanceDto>> map = readBudgetMaintenanceExcel(file.getInputStream(), year);
-			System.out.println("Ended Read spyroOutput in importExcel");
-			System.out.println("Started Save spyroOutput in importExcel");
+			
 			Map<String, List<BudgetMaintenanceDto>> mapForExcel = new HashMap<>();
 			List<BudgetMaintenanceDto> failedRecords = new ArrayList<>();
 			for (String key : map.keySet()) {
-				AOPMessageVM vm = updateBudgetMaintenance(map.get(key));
-				Object dataObj = vm.getData();
-				if (dataObj instanceof Map) {
-					@SuppressWarnings("unchecked")
-					Map<String, Object> dataMap = (Map<String, Object>) dataObj;
-					Object failedObj = dataMap.get("Failed");
-					if (failedObj instanceof List) {
-						@SuppressWarnings("unchecked")
-						List<BudgetMaintenanceDto> failedList = (List<BudgetMaintenanceDto>) failedObj;
-						failedRecords.addAll(failedList);
-						mapForExcel.put(key, failedList);
-					} else {
-						mapForExcel.put(key, Collections.emptyList());
-					}
-				} else {
-					mapForExcel.put(key, Collections.emptyList());
-				}
+			    AOPMessageVM vm = updateBudgetMaintenance(map.get(key));
+			    Object dataObj = vm.getData();
+			    if (dataObj instanceof Map) {
+			        @SuppressWarnings("unchecked")
+			        Map<String, Object> dataMap = (Map<String, Object>) dataObj;
+			        Object failedObj = dataMap.get("Failed");
+			        if (failedObj instanceof List) {
+			            @SuppressWarnings("unchecked")
+			            List<BudgetMaintenanceDto> failedList = (List<BudgetMaintenanceDto>) failedObj;
+			            failedRecords.addAll(failedList);
+			            mapForExcel.put(key, failedList);
+			        } else {
+			            mapForExcel.put(key, Collections.emptyList());
+			        }
+			    } else {
+			        mapForExcel.put(key, Collections.emptyList());
+			    }
 			}
 
-			System.out.println("Ended Save spyroOutput in importExcel");
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = createExcel(year, plantFKId, true, mapForExcel);
@@ -596,61 +593,61 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
+	
 	public Map<String, List<BudgetMaintenanceDto>> readBudgetMaintenanceExcel(InputStream inputStream, String year) {
 
 		Map<String, List<BudgetMaintenanceDto>> map = new HashMap<>();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 
-			Sheet sheet = workbook.getSheetAt(0);
-			Iterator<Row> rowIterator = sheet.iterator();
-			List<BudgetMaintenanceDto> budgetMaintenanceDto = new ArrayList<BudgetMaintenanceDto>();
-			if (rowIterator.hasNext())
-				rowIterator.next(); // Skip header
+				Sheet sheet = workbook.getSheetAt(0);
+				Iterator<Row> rowIterator = sheet.iterator();
+				List<BudgetMaintenanceDto> budgetMaintenanceDto = new ArrayList<BudgetMaintenanceDto>();
+				if (rowIterator.hasNext())
+					rowIterator.next(); // Skip header
 
-			while (rowIterator.hasNext()) {
-				Row row = rowIterator.next();
-				Cell tableIdCell = row.getCell(17, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-				if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
-					continue;
-				}
+				while (rowIterator.hasNext()) {
+					Row row = rowIterator.next();
+					Cell tableIdCell = row.getCell(18, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                	if (tableIdCell == null || tableIdCell.getCellType() != CellType.STRING) {
+                    	continue;
+                	}
 
-				BudgetMaintenanceDto dto = new BudgetMaintenanceDto();
+                	BudgetMaintenanceDto dto = new BudgetMaintenanceDto();
 
-				try {
+					try {
+						dto.setBudgetType(getStringCellValue(row.getCell(0), dto));
+						dto.setPlantName(getStringCellValue(row.getCell(1), dto));
+						dto.setCostName(getStringCellValue(row.getCell(2), dto));
+						dto.setAopYear(year);
+						dto.setApr(getNumericCellValue(row.getCell(3), dto));
+						dto.setMay(getNumericCellValue(row.getCell(4), dto));
+						dto.setJun(getNumericCellValue(row.getCell(5), dto));
+						dto.setJul(getNumericCellValue(row.getCell(6), dto));
+						dto.setAug(getNumericCellValue(row.getCell(7), dto));
+						dto.setSep(getNumericCellValue(row.getCell(8), dto));
+						dto.setOct(getNumericCellValue(row.getCell(9), dto));
+						dto.setNov(getNumericCellValue(row.getCell(10), dto));
+						dto.setDec(getNumericCellValue(row.getCell(11), dto));
+						dto.setJan(getNumericCellValue(row.getCell(12), dto));
+						dto.setFeb(getNumericCellValue(row.getCell(13), dto));
+						dto.setMar(getNumericCellValue(row.getCell(14), dto));
+						dto.setRemark(getStringCellValue(row.getCell(15), dto));
+						String id=getStringCellValue(row.getCell(16), dto);
+						if(id!=null) {
+							dto.setId(UUID.fromString(id));
+						}
+						
+						dto.setTableId(getStringCellValue(row.getCell(18), dto));
 
-					dto.setPlantName(getStringCellValue(row.getCell(0), dto));
-					dto.setCostName(getStringCellValue(row.getCell(1), dto));
-					dto.setAopYear(year);
-					dto.setApr(getNumericCellValue(row.getCell(2), dto));
-					dto.setMay(getNumericCellValue(row.getCell(3), dto));
-					dto.setJun(getNumericCellValue(row.getCell(4), dto));
-					dto.setJul(getNumericCellValue(row.getCell(5), dto));
-					dto.setAug(getNumericCellValue(row.getCell(6), dto));
-					dto.setSep(getNumericCellValue(row.getCell(7), dto));
-					dto.setOct(getNumericCellValue(row.getCell(8), dto));
-					dto.setNov(getNumericCellValue(row.getCell(9), dto));
-					dto.setDec(getNumericCellValue(row.getCell(10), dto));
-					dto.setJan(getNumericCellValue(row.getCell(11), dto));
-					dto.setFeb(getNumericCellValue(row.getCell(12), dto));
-					dto.setMar(getNumericCellValue(row.getCell(13), dto));
-					dto.setRemark(getStringCellValue(row.getCell(14), dto));
-					String id = getStringCellValue(row.getCell(15), dto);
-					if (id != null) {
-						dto.setId(UUID.fromString(id));
+					} catch (Exception e) {
+						e.printStackTrace();
+						dto.setErrDescription(e.getMessage());
+						dto.setSaveStatus("Failed");
 					}
+					map.putIfAbsent(dto.getTableId(), new ArrayList<>());
 
-					dto.setTableId(getStringCellValue(row.getCell(17), dto));
-
-				} catch (Exception e) {
-					e.printStackTrace();
-					dto.setErrDescription(e.getMessage());
-					dto.setSaveStatus("Failed");
+					map.get(dto.getTableId()).add(dto);
 				}
-				map.putIfAbsent(dto.getTableId(), new ArrayList<>());
-
-				map.get(dto.getTableId()).add(dto);
-			}
 
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to read Data", e);
@@ -658,7 +655,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 		return map;
 	}
-
+	
 	private static String getStringCellValue(Cell cell, BudgetMaintenanceDto dto) {
 		try {
 			if (cell == null)
@@ -723,15 +720,18 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		}
 	}
 
-	@Override
-	public AOPMessageVM getMacroData(Double value, String year, String plantId) {
-		AOPMessageVM aopMessageVM = new AOPMessageVM();
 
-		Map<String, Object> map = new HashMap<String, Object>();
+
+
+	@Override
+	public AOPMessageVM getMacroData(Double value, String year,String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		
+		Map<String,Object> map=new HashMap<String,Object>();
 		try {
-			Double obj = getData(value, year, plantId);
-			map.put("macroValue", obj);
-		} catch (IllegalArgumentException e) {
+			Double obj=getData( value,  year, plantId);
+				map.put("macroValue",obj);
+		}catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
@@ -742,149 +742,154 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		// TODO Auto-generated method stub
 		return aopMessageVM;
 	}
-
+	
 	public Double getData(Double value, String aopYear, String plantId) {
-		try {
-			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+	    try {
+	    	String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-
-			String storedProcedure = "MacroTest";
-			if (!"MEG".equalsIgnoreCase(verticalName)) {
-				storedProcedure = verticalName + "_" + site.getName() + "_MacroTest";
-			}
-
-			String sql = "EXEC " + storedProcedure
-					+ " @value = :value, @aopYear = :aopYear";
-
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("value", value);
-			query.setParameter("aopYear", aopYear);
-
-			Object singleResult = query.getSingleResult(); // expect exactly one result
-
-			if (singleResult == null) {
-				return null;
-			}
-
-			// Depending on what your database/stored proc returns, it may be a BigDecimal,
-			// Double, Number etc.
-			if (singleResult instanceof Number) {
-				return ((Number) singleResult).doubleValue();
-			} else {
-				// Unexpected type; try converting
-				return Double.parseDouble(singleResult.toString());
-			}
-
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to fetch data", ex);
-		}
+	        
+	        String storedProcedure = "MacroTest";
+	        if (!"MEG".equalsIgnoreCase(verticalName)) {
+	            storedProcedure = verticalName + "_" + site.getName() + "_MacroTest";
+	        }
+	        
+	        String sql = "EXEC " + storedProcedure
+	                     + " @value = :value, @aopYear = :aopYear";
+	        
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("value", value);
+	        query.setParameter("aopYear", aopYear);
+	        
+	        Object singleResult = query.getSingleResult();  // expect exactly one result
+	        
+	        if (singleResult == null) {
+	            return null;
+	        }
+	        
+	        // Depending on what your database/stored proc returns, it may be a BigDecimal, Double, Number etc.
+	        if (singleResult instanceof Number) {
+	            return ((Number) singleResult).doubleValue();
+	        } else {
+	            // Unexpected type; try converting
+	            return Double.parseDouble(singleResult.toString());
+	        }
+	        
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
 	}
 
 	String getJson() {
-		return "{\r\n" + //
-				"    \"BudgetMaintenance\": {\r\n" + //
-				"        \"columnCount\":18,\r\n" + //
-				"        \"tables\": [\r\n" + //
-				"            {\r\n" + //
-				"                \"startRow\": 0,\r\n" + //
-				"                \"headers\": [\r\n" + //
-				"\t\t\t\t\t \r\n" + //
-				"\t\t\t\t\t\"plantName\", \r\n" + //
-				"\t\t\t\t\t\"costName\", \r\n" + //
-				"\t\t\t\t\t\"apr\", \r\n" + //
-				"\t\t\t\t\t\"may\", \r\n" + //
-				"\t\t\t\t\t\"jun\", \r\n" + //
-				"\t\t\t\t\t\"jul\", \r\n" + //
-				"\t\t\t\t\t\"aug\", \r\n" + //
-				"\t\t\t\t\t\"sep\", \r\n" + //
-				"\t\t\t\t\t\"oct\", \r\n" + //
-				"\t\t\t\t\t\"nov\", \r\n" + //
-				"\t\t\t\t\t\"dec\",\r\n" + //
-				"\t\t\t\t\t\"jan\", \r\n" + //
-				"\t\t\t\t\t\"feb\", \r\n" + //
-				"\t\t\t\t\t\"mar\", \r\n" + //
-				"\t\t\t\t\t\"remark\",\r\n" + //
-				"\t\t\t\t\t\"id\",\r\n" + //
-				"\t\t\t\t\t\"isEditable\"\r\n" + //
-				"                ],\r\n" + //
-				"                \"startingIndexOfMonths\":2,\r\n" + //
-				"                \"hideTable\":false,\r\n" + //
-				"                \"textBeforeTitle\":\"\",\r\n" + //
+	    return "{\r\n" + //
+	            "    \"BudgetMaintenance\": {\r\n" + //
+	            "        \"columnCount\":19,\r\n" + //
+	            "        \"tables\": [\r\n" + //
+	            "            {\r\n" + //
+	            "                \"startRow\": 0,\r\n" + //
+	            "                \"headers\": [\r\n" + //
+	            "\t\t\t\t\t \r\n" + //
+	            "\t\t\t\t\t\"budgetType\", \r\n" + //
+	            "\t\t\t\t\t\"plantName\", \r\n" + //
+	            "\t\t\t\t\t\"costName\", \r\n" + //
+	            "\t\t\t\t\t\"apr\", \r\n" + //
+	            "\t\t\t\t\t\"may\", \r\n" + //
+	            "\t\t\t\t\t\"jun\", \r\n" + //
+	            "\t\t\t\t\t\"jul\", \r\n" + //
+	            "\t\t\t\t\t\"aug\", \r\n" + //
+	            "\t\t\t\t\t\"sep\", \r\n" + //
+	            "\t\t\t\t\t\"oct\", \r\n" + //
+	            "\t\t\t\t\t\"nov\", \r\n" + //
+	            "\t\t\t\t\t\"dec\",\r\n" + //
+	            "\t\t\t\t\t\"jan\", \r\n" + //
+	            "\t\t\t\t\t\"feb\", \r\n" + //
+	            "\t\t\t\t\t\"mar\", \r\n" + //
+	            "\t\t\t\t\t\"remark\",\r\n" + //
+	            "\t\t\t\t\t\"id\",\r\n" + //
+	            "\t\t\t\t\t\"isEditable\"\r\n" + //
+	            "                ],\r\n" + //
+	            "                \"startingIndexOfMonths\":3,\r\n" + //
+	            "                \"hideTable\":false,\r\n" + //
+	            "                \"textBeforeTitle\":\"\",\r\n" + //
 				"                \"title\":\"Consumption Budget\",\r\n" + //
-				"                \"tableId\":\"ConsumptionBudget\",\r\n" + //
-				"                \"dataInput\":\"Consumption Budget\",\r\n" + //
-				"                \"isColumnMergeRequired\":false,\r\n" + //
-				"                \"isRowMergeRequired\":false,\r\n" + //
-				"                \"headersTitles\":[[\r\n" + //
-				"                    \"Plant\",\r\n" + //
-				"                    \"Cost\",\r\n" + //
-				"                    \"Remark\",\"Id\",\"Is Editable\"]],\r\n" + //
-				"                \"rows\": [],\r\n" + //
-				"                \"hiddenColumns\":[15,16,17],\r\n" + //
-				"                \"styles\": {\r\n" + //
-				"                    \"boldColumns\": [\r\n" + //
-				"                        0\r\n" + //
-				"                    ],\r\n" + //
-				"                    \"borders\": true\r\n" + //
-				"                },\r\n" + //
-				"                \"autoMerge\": {\r\n" + //
-				"                    \"columns\": [],\r\n" + //
-				"                    \"rows\": []\r\n" + //
-				"                }\r\n" + //
-				"            },\r\n" + //
-				"            {\r\n" + //
-				"                \"startRow\": 0,\r\n" + //
-				"                \"headers\": [\r\n" + //
-
-				"\t\t\t\t\t\"plantName\", \r\n" + //
-				"\t\t\t\t\t\"costName\", \r\n" + //
-				"\t\t\t\t\t\"apr\", \r\n" + //
-				"\t\t\t\t\t\"may\", \r\n" + //
-				"\t\t\t\t\t\"jun\", \r\n" + //
-				"\t\t\t\t\t\"jul\", \r\n" + //
-				"\t\t\t\t\t\"aug\", \r\n" + //
-				"\t\t\t\t\t\"sep\", \r\n" + //
-				"\t\t\t\t\t\"oct\", \r\n" + //
-				"\t\t\t\t\t\"nov\", \r\n" + //
-				"\t\t\t\t\t\"dec\",\r\n" + //
-				"\t\t\t\t\t\"jan\",\r\n" + //
-				"\t\t\t\t\t\"feb\", \r\n" + //
-				"\t\t\t\t\t\"mar\", \r\n" + //
-				"\t\t\t\t\t\"remark\",\r\n" + //
-				"\t\t\t\t\t\"id\",\r\n" + //
-				"\t\t\t\t\t\"isEditable\"\r\n" + //
-				"                ],\r\n" + //
-				"                \"startingIndexOfMonths\":2,\r\n" + //
-				"                \"hideTable\":false,\r\n" + //
-				"                \"textBeforeTitle\":\"\",\r\n" + //
-				"                \"title\":\"Procurement Budget\",\r\n" + //
-				"                \"tableId\":\"ProcurmentBudget\",\r\n" + //
-				"                \"dataInput\":\"Procurement Budget\",\r\n" + //
-				"                \"isColumnMergeRequired\":false,\r\n" + //
-				"                \"isRowMergeRequired\":false,\r\n" + //
-				"                \"headersTitles\":[[\r\n" + //
-				"                    \"Plant\",\r\n" + //
-				"                    \"Cost\",\r\n" + //
-				"                    \"Remark\",\"Id\",\"Is Editable\"]],\r\n" + //
-				"                \"rows\": [],\r\n" + //
-				"                \"hiddenColumns\":[15,16,17],\r\n" + //
-				"                \"styles\": {\r\n" + //
-				"                    \"boldColumns\": [\r\n" + //
-				"                        0\r\n" + //
-				"                    ],\r\n" + //
-				"                    \"borders\": true\r\n" + //
-				"                },\r\n" + //
-				"                \"autoMerge\": {\r\n" + //
-				"                    \"columns\": [],\r\n" + //
-				"                    \"rows\": []\r\n" + //
-				"                }\r\n" + //
-				"            }\r\n" + //
-				"        ]\r\n" + //
-				"    }\r\n" + //
-				"    \r\n" + //
-				"}";
+	            "                \"tableId\":\"ConsumptionBudget\",\r\n" + //
+	            "                \"dataInput\":\"Consumption Budget\",\r\n" + //
+	            "                \"isColumnMergeRequired\":false,\r\n" + //
+	            "                \"isRowMergeRequired\":false,\r\n" + //
+	            "                \"headersTitles\":[[\r\n" + //
+	            "                    \"Type\",\r\n" + //
+	            "                    \"Plant\",\r\n" + //
+	            "                    \"Cost\",\r\n" + //
+	            "                    \"Remark\",\"Id\",\"Is Editable\"]],\r\n" + //
+	            "                \"rows\": [],\r\n" + //
+	            "                \"hiddenColumns\":[16,17,18],\r\n" + //
+	            "                \"styles\": {\r\n" + //
+	            "                    \"boldColumns\": [\r\n" + //
+	            "                        0\r\n" + //
+	            "                    ],\r\n" + //
+	            "                    \"borders\": true\r\n" + //
+	            "                },\r\n" + //
+	            "                \"autoMerge\": {\r\n" + //
+	            "                    \"columns\": [],\r\n" + //
+	            "                    \"rows\": []\r\n" + //
+	            "                }\r\n" + //
+	            "            },\r\n" + //
+	            "            {\r\n" + //
+	            "                \"startRow\": 0,\r\n" + //
+	            "                \"headers\": [\r\n" + //
+	            "\t\t\t\t\t\"budgetType\", \r\n" + //
+	            "\t\t\t\t\t\"plantName\", \r\n" + //
+	            "\t\t\t\t\t\"costName\", \r\n" + //
+	            "\t\t\t\t\t\"apr\", \r\n" + //
+	            "\t\t\t\t\t\"may\", \r\n" + //
+	            "\t\t\t\t\t\"jun\", \r\n" + //
+	            "\t\t\t\t\t\"jul\", \r\n" + //
+	            "\t\t\t\t\t\"aug\", \r\n" + //
+	            "\t\t\t\t\t\"sep\", \r\n" + //
+	            "\t\t\t\t\t\"oct\", \r\n" + //
+	            "\t\t\t\t\t\"nov\", \r\n" + //
+	            "\t\t\t\t\t\"dec\",\r\n" + //
+	            "\t\t\t\t\t\"jan\",\r\n" + //
+	            "\t\t\t\t\t\"feb\", \r\n" + //
+	            "\t\t\t\t\t\"mar\", \r\n" + //
+	            "\t\t\t\t\t\"remark\",\r\n" + //
+	            "\t\t\t\t\t\"id\",\r\n" + //
+	            "\t\t\t\t\t\"isEditable\"\r\n" + //
+	            "                ],\r\n" + //
+	            "                \"startingIndexOfMonths\":3,\r\n" + //
+	            "                \"hideTable\":false,\r\n" + //
+	            "                \"textBeforeTitle\":\"\",\r\n" + //
+	            "                \"title\":\"Procurement Budget\",\r\n" + //
+	            "                \"tableId\":\"ProcurmentBudget\",\r\n" + //
+	            "                \"dataInput\":\"Procurement Budget\",\r\n" + //
+	            "                \"isColumnMergeRequired\":false,\r\n" + //
+	            "                \"isRowMergeRequired\":false,\r\n" + //
+	            "                \"headersTitles\":[[\r\n" + //
+	            "                    \"Type\",\r\n" + //
+	            "                    \"Plant\",\r\n" + //
+	            "                    \"Cost\",\r\n" + //
+	            "                    \"Remark\",\"Id\",\"Is Editable\"]],\r\n" + //
+	            "                \"rows\": [],\r\n" + //
+	            "                \"hiddenColumns\":[16,17,18],\r\n" + //
+	            "                \"styles\": {\r\n" + //
+	            "                    \"boldColumns\": [\r\n" + //
+	            "                        0\r\n" + //
+	            "                    ],\r\n" + //
+	            "                    \"borders\": true\r\n" + //
+	            "                },\r\n" + //
+	            "                \"autoMerge\": {\r\n" + //
+	            "                    \"columns\": [],\r\n" + //
+	            "                    \"rows\": []\r\n" + //
+	            "                }\r\n" + //
+	            "            }\r\n" + //
+	            "        ]\r\n" + //
+	            "    }\r\n" + //
+	            "    \r\n" + //
+	            "}";
 	}
+	
+	
+	
 
 }

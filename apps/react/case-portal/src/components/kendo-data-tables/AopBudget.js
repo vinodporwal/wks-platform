@@ -431,6 +431,10 @@ export default function AopBudget() {
   const handleExcelUpload = (rawFile) => {
     budgetMaintenanceExcelFile(rawFile)
   }
+
+  const plantObject = JSON.parse(localStorage.getItem('selectedPlant'))
+  const plantName = plantObject?.name
+
   return (
     <Box>
       <Backdrop
@@ -439,10 +443,13 @@ export default function AopBudget() {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-      <Typography component='div' className='grid-title'>
-        <div>40N0 = Planning Plant</div>
-        <div>40N3 = Maintenance Plant</div>
-      </Typography>
+
+      {plantName?.toLowerCase() === 'eoeg' && (
+        <Typography component='div' className='grid-title'>
+          <div>Planning Plant : 40N0 </div>
+          <div>Maintenance Plant : 40N3</div>
+        </Typography>
+      )}
 
       <KendoDataTables
         title='Consumption Budget'
