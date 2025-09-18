@@ -8,6 +8,10 @@ import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
 import formPayload from './createFormJSON.json'
+import dtrPayload from './DTR.json'
+import rejectPayload from './Reject.json'
+import assetTrainCreateCasePayload from './AssetTrainCreateCase.json'
+import caseManagementPayload from './CaseManagement.json'
 import Config from './consts'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
@@ -50,8 +54,12 @@ const App = () => {
       forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
 
       if (!formChecked) {
-        checkAndPostForm(keycloak)
-        setFormChecked(true) // Ensure it runs only once per session
+          checkAndPostForm(keycloak);
+          checkAndPostDTR(keycloak);
+          checkAndPostReject(keycloak);
+          checkAndPostAssetTrainCreateCase(keycloak); 
+          checkAndPostCaseManagement(keycloak);
+          setFormChecked(true) // Ensure it runs only once per session
       }
     })
 
@@ -168,6 +176,125 @@ const App = () => {
     }
   }
 
+  async function checkAndPostDTR(keycloak) {
+  if (localStorage.getItem('dtrCreated')) {
+    console.log('DTR "Daily Time Record" form already exists.');
+    return;
+  }
+
+  try {
+    const data = await FormService.getAll(keycloak);
+
+    const dtrExists = data.some(
+      (form) => form.title === 'Daily Time Record'
+    );
+
+    if (dtrExists) {
+      console.log('"DTR Case Management System" already exists.');
+    } else {
+      console.log('"DTR Case Management System" does not exist. Creating now...');
+      await createDTR(keycloak);
+    }
+  } catch (error) {
+    console.error('Error checking DTR existence:', error);
+  }
+}
+
+
+async function checkAndPostReject(keycloak) {
+  if (localStorage.getItem('rejectCreated')) {
+    console.log('Reject "Reject Case Management System" already exists.');
+    return;
+  }
+
+  try {
+    const data = await FormService.getAll(keycloak);
+
+    const rejectExists = data.some(
+      (form) => form.title === 'Reject Case Management System'
+    );
+
+    if (rejectExists) {
+      console.log('"Reject Case Management System" already exists.');
+    } else {
+      console.log('"Reject Case Management System" does not exist. Creating now...');
+      await createReject(keycloak);
+    }
+  } catch (error) {
+    console.error('Error checking Reject existence:', error);
+  }
+}
+
+async function createReject(keycloak) {
+  try {
+    console.log('Reject Payload:', rejectPayload);
+
+    const response = await FormService.create(keycloak, rejectPayload);
+
+    if (!response.ok) {
+      throw new Error('Failed to create Reject');
+    }
+
+    console.log('Reject created successfully');
+    localStorage.setItem('rejectCreated', 'true');
+  } catch (error) {
+    console.error('Error creating Reject:', error);
+  }
+}
+
+
+async function checkAndPostAssetTrainCreateCase(keycloak) {
+  if (localStorage.getItem('assetTrainCaseCreated')) {
+    console.log('AssetTrainCreateCase "Reject Case Management System" already exists.');
+    return;
+  }
+
+  try {
+    const data = await FormService.getAll(keycloak);
+
+    const assetTrainCaseExists = data.some(
+      (form) => form.title === 'Asset Train Create Case'
+    );
+
+    if (assetTrainCaseExists) {
+      console.log('"Reject Case Management System" already exists.');
+    } else {
+      console.log('"Reject Case Management System" does not exist. Creating now...');
+      await createAssetTrainCreateCase(keycloak);
+    }
+  } catch (error) {
+    console.error('Error checking AssetTrainCreateCase existence:', error);
+  }
+}
+
+
+async function checkAndPostCaseManagement(keycloak) {
+  if (localStorage.getItem('caseManagementCreated')) {
+    console.log('Case Management "Case Management System" already exists.');
+    return;
+  }
+
+  try {
+    const data = await FormService.getAll(keycloak);
+
+    const caseManagementExists = data.some(
+      (form) => form.title === 'Case Management System'
+    );
+
+    if (caseManagementExists) {
+      console.log('"Case Management System" already exists.');
+    } else {
+      console.log('"Case Management System" does not exist. Creating now...');
+      await createCaseManagement(keycloak);
+    }
+  } catch (error) {
+    console.error('Error checking Case Management existence:', error);
+  }
+}
+
+
+
+
   async function createForm(keycloak) {
     try {
       // Use FormService to create a new form with the JSON payload
@@ -182,6 +309,59 @@ const App = () => {
       console.error('Error creating form:', error)
     }
   }
+
+async function createDTR(keycloak) {
+  try {
+    console.log('DTR Payload:', dtrPayload);  // Debug: make sure payload is loaded
+
+    const response = await FormService.create(keycloak, dtrPayload);
+
+    if (!response.ok) {
+      throw new Error('Failed to create DTR');
+    }
+
+    console.log('DTR created successfully');
+    localStorage.setItem('dtrCreated', 'true');
+  } catch (error) {
+    console.error('Error creating DTR:', error);
+  }
+}
+
+async function createAssetTrainCreateCase(keycloak) {
+  try {
+    console.log('AssetTrainCreateCase Payload:', assetTrainCreateCasePayload);
+
+    const response = await FormService.create(keycloak, assetTrainCreateCasePayload);
+
+    if (!response.ok) {
+      throw new Error('Failed to create Asset Train Create Case');
+    }
+
+    console.log('Asset Train Create Case created successfully');
+    localStorage.setItem('assetTrainCaseCreated', 'true');
+  } catch (error) {
+    console.error('Error creating Asset Train Create Case:', error);
+  }
+}
+
+
+async function createCaseManagement(keycloak) {
+  try {
+    console.log('Case Management Payload:', caseManagementPayload);
+
+    const response = await FormService.create(keycloak, caseManagementPayload);
+
+    if (!response.ok) {
+      throw new Error('Failed to create Case Management');
+    }
+
+    console.log('Case Management created successfully');
+    localStorage.setItem('caseManagementCreated', 'true');
+  } catch (error) {
+    console.error('Error creating Case Management:', error);
+  }
+}
+
 
   return (
     keycloak &&
