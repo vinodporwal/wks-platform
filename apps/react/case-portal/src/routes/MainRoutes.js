@@ -54,6 +54,7 @@ import RawDataSet from 'components/data-tables/Reports/RawDataSet'
 import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
 import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
 import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
+import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -452,6 +453,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='raw-data'>
                 <RawDataSet />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'run-length',
+            element: (
+              <PrivateRoute routeId='run-length'>
+                <RunLengthDataSet />
               </PrivateRoute>
             ),
           },

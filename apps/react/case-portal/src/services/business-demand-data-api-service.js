@@ -2,17 +2,11 @@ import Config from '../consts'
 import { json } from './request'
 export const BusinessDemandDataApiService = {
   getBDData,
+
   saveBusinessDemandData,
   deleteBusinessDemandData,
 }
-async function getBDData(keycloak) {
-  var year = localStorage.getItem('year')
-  var plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
+async function getBDData(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/business-demand?year=${year}&plantId=${plantId}`
   const headers = {
     Accept: 'application/json',
@@ -27,7 +21,8 @@ async function getBDData(keycloak) {
     return await Promise.reject(e)
   }
 }
-async function saveBusinessDemandData(plantId, turnAroundDetails, keycloak) {
+
+async function saveBusinessDemandData(payloadData, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/business-demand`
   const headers = {
     Accept: 'application/json',
@@ -38,7 +33,7 @@ async function saveBusinessDemandData(plantId, turnAroundDetails, keycloak) {
     const resp = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify(turnAroundDetails),
+      body: JSON.stringify(payloadData),
     })
     return json(keycloak, resp)
   } catch (e) {

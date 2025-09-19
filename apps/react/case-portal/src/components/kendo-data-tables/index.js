@@ -49,18 +49,26 @@ import {
 } from '../../../node_modules/@progress/kendo-react-excel-export/index'
 import { useSelector } from 'react-redux'
 import { Checkbox } from '../../../node_modules/@progress/kendo-react-inputs/index'
+import LimitCellEditor from './Utilities-Kendo/LimitCellEditor'
 
 export const dateFields = [
   'maintStartDateTime',
   'maintEndDateTime',
   'periodTo',
   'periodFrom',
-
   'toDateReport',
   'fromDateReport',
 ]
 export const dateFields2 = ['fromDate', 'toDate']
-export const dateFields1 = ['ibrSD', 'ibrED', 'taSD', 'taED', 'sdED', 'sdSD']
+export const dateFields1 = [
+  'ibrSD',
+  'ibrED',
+  'taSD',
+  'taED',
+  'sdED',
+  'sdSD',
+  'targetDate',
+]
 
 export const hiddenFields = []
 export const monthMap = {
@@ -127,6 +135,7 @@ const KendoDataTables = ({
   downloadExcelForConfiguration = () => {},
   onLoad = () => {},
   disableRedHighlight = false,
+  showThreeColors = false,
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -151,7 +160,19 @@ const KendoDataTables = ({
   const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
-
+  const ParticularsRedCell = (props) => {
+    const { dataItem, field } = props
+    // Common condition for red highlight
+    const isRed =
+      (field === 'materialDisplayName' || field === 'Particulars') &&
+      (dataItem.isRedParticulars ||
+        dataItem.normParameterTypeId === '5859D066-F475-461E-9D60-7B781C604FF2')
+    return (
+      <td style={{ color: isRed ? 'red' : undefined }}>
+        {dataItem.materialDisplayName}
+      </td>
+    )
+  }
   const initialGroup = groupBy
     ? [
         {
@@ -441,6 +462,7 @@ const KendoDataTables = ({
     )
   }
   //
+
   const RedHighlightCell = (props) => {
     const {
       dataItem,
@@ -461,14 +483,12 @@ const KendoDataTables = ({
       )
     }
 
-    // Check if edited (local edits)
     const isEdited = Object.prototype.hasOwnProperty.call(
       customModifiedCells?.[rowId] || {},
       field,
     )
 
-    // Backend red highlight (allRedCell logic)
-    const month = field // Using field name as month
+    const month = field
     const normId = dataItem.materialFkId || dataItem.NormParameter_FK_Id
 
     const isRedFromAllRedCell = allRedCell?.some(
@@ -477,7 +497,6 @@ const KendoDataTables = ({
         cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
     )
 
-    // Final highlight condition
     const shouldHighlight = isEdited || isRedFromAllRedCell
 
     return (
@@ -494,7 +513,64 @@ const KendoDataTables = ({
     )
   }
 
-  //
+  const RedHighlightCell2 = (props) => {
+    const {
+      dataItem,
+      field,
+      tdProps,
+      children,
+      customModifiedCells,
+      allRedCell,
+    } = props
+
+    const rowId = dataItem.id
+    const value = dataItem[field]
+
+    if (disableRedHighlight) {
+      return (
+        <td {...tdProps} title={value}>
+          {children}
+        </td>
+      )
+    }
+
+    const isEdited = Object.prototype.hasOwnProperty.call(
+      customModifiedCells?.[rowId] || {},
+      field,
+    )
+
+    const month = field
+    const normId = dataItem.materialFKId || dataItem.NormParameter_FK_Id
+
+    const matchedCell = allRedCell?.find(
+      (cell) =>
+        cell.month?.toLowerCase() === month?.toLowerCase() &&
+        cell.NormParameter_FK_Id?.toLowerCase() === normId?.toLowerCase(),
+    )
+
+    let highlightColor
+    if (isEdited) {
+      highlightColor = 'orange'
+    } else if (matchedCell?.mode === 'Propane(1Z)') {
+      highlightColor = 'red'
+    } else if (matchedCell?.mode === 'Propane(2Z)') {
+      highlightColor = 'green'
+    }
+
+    return (
+      <td
+        {...tdProps}
+        title={value}
+        style={{
+          color: highlightColor,
+          fontWeight: highlightColor ? 'bold' : undefined,
+        }}
+      >
+        {children}
+      </td>
+    )
+  }
+
   const toolTipRenderer = (props) => {
     const value = props.dataItem[props.field]
     const month = props.field
@@ -659,7 +735,7 @@ const KendoDataTables = ({
     if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
       const firstGrade = grades[0]
       setSelectedGrade(firstGrade.gradeId)
-      handleGradeChange(firstGrade.gradeId)
+      handleGradeChange(firstGrade.gradeId, firstGrade?.displayName)
     }
   }, [grades, permissions?.showG, selectedGrade])
 
@@ -792,7 +868,10 @@ const KendoDataTables = ({
                       (g) => g.gradeId === selectedGradeId,
                     )
                     setSelectedGrade(selectedGradeId)
-                    handleGradeChange(selectedGradeObj?.gradeId)
+                    handleGradeChange(
+                      selectedGradeObj?.gradeId,
+                      selectedGradeObj?.displayName,
+                    ) // ✅ Pass both id & name
                   }}
                   className='dropdown-select'
                   variant='outlined'
@@ -1138,6 +1217,7 @@ const KendoDataTables = ({
                             'taED',
                             'sdED',
                             'sdSD',
+                            'targetDate',
                           ].includes(col.field)
                             ? DateOnlyPicker
                             : DateOnlyPicker,
@@ -1160,6 +1240,7 @@ const KendoDataTables = ({
                           'taED',
                           'sdED',
                           'sdSD',
+                          'targetDate',
                         ].includes(col.field)
                           ? '{0:dd-MM-yyyy}'
                           : '{0:dd-MM-yyyy}'
@@ -1167,6 +1248,23 @@ const KendoDataTables = ({
                       editor='date'
                       hidden={col.hidden}
                       columnMenu={DateColumnMenu}
+                    />
+                  )
+                }
+                if (col?.field === 'limit') {
+                  return (
+                    <GridColumn
+                      key='limit'
+                      field='limit'
+                      width={80}
+                      title={col.title}
+                      editable={col.editable || true}
+                      cells={{
+                        data: (cellProps) => <LimitCellEditor {...cellProps} />,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      headerClassName={isActive ? 'active-column' : ''}
                     />
                   )
                 }
@@ -1421,14 +1519,22 @@ const KendoDataTables = ({
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: NoSpinnerNumericEditor },
-                        data: (props) => (
-                          <RedHighlightCell
-                            {...props}
-                            customModifiedCells={customModifiedCells}
-                            allRedCell={allRedCell}
-                            disableRedHighlight={disableRedHighlight}
-                          />
-                        ),
+                        data: (props) =>
+                          showThreeColors ? (
+                            <RedHighlightCell2
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          ) : (
+                            <RedHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
