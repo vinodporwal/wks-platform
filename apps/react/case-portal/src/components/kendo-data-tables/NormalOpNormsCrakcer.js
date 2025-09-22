@@ -204,7 +204,7 @@ const NormalOpNormsScreenCracker = () => {
       marginBottom: false,
       showTitleNameBusiness: true,
       dropdownLabel: 'Select Mode',
-      showCalculateVisibility: Object.keys(calculationObject || {}).length > 0,
+      showCalculateVisibility: true,
       titleName: 'Best Achieved (Min CC)',
       isHeight: (rows?.length || 0) > 10,
     }),
@@ -252,6 +252,7 @@ const NormalOpNormsScreenCracker = () => {
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: true,
+      showCalculateVisibility: true,
     }),
     [lowerVertName],
   )
