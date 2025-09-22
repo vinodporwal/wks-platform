@@ -1048,11 +1048,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 
  	    System.out.println("Truststore Password-------------: " + System.getProperty("javax.net.ssl.trustStorePassword"));  
  	    
-	    String geAPMAcsessToken = geLogin();
+	   // String geAPMAcsessToken = geLogin();
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
 	    headers.setContentType(MediaType.APPLICATION_JSON);
-	    headers.add("MeridiumToken", geAPMAcsessToken);
+	   // headers.add("MeridiumToken", geAPMAcsessToken);
  	    Map<String, Object> inputsingleParams = new HashMap<>();
  	    inputsingleParams.put("Domain", "");
  	    Map<String, Object> requestBody = new HashMap<>();
@@ -1096,11 +1096,11 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 	
 	@Override
-	@Scheduled(cron = "0 */5 * * * ?")
-	public List<Case> updateRecommendationStatus() throws Exception {
+    @Scheduled(cron = "0 0 0 ? * SUN")
+    public List<Case> updateRecommendationStatus() throws Exception {
 	    LocalDate today = LocalDate.now();
 	    LocalDate oneMonthBefore = today.minusDays(10); //.minusMonths(1);
-	    String geAPMAcsessToken = geLogin();
+	 //   String geAPMAcsessToken = geLogin();
 	    List<Case> cases = getCaseDetails(oneMonthBefore, today, "Open");
 	    System.out.println("Cases size: " + cases.size());
 	    ObjectMapper objectMapper = new ObjectMapper();
@@ -1115,12 +1115,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	                for (JsonNode node : recommendationNode) {
 	                    if (node.has("recommendationNo1") && node.isObject()) {
 	                        String recommendationNo = node.get("recommendationNo1").asText();
-							String recommendationStatus = getGEAPMRecommendationStatusAndUpdateRecommendationStatus(
-									geAPMAcsessToken, recommendationNo);
-	                        if (recommendationStatus != null && !recommendationStatus.isEmpty()) {
-	                            ((ObjectNode) node).put("recommendationStatus", recommendationStatus);
-	                            updated = true; // Mark that an update occurred
-	                        }
+						//	String recommendationStatus = getGEAPMRecommendationStatusAndUpdateRecommendationStatus(
+						//			geAPMAcsessToken, recommendationNo);
+//	                        if (recommendationStatus != null && !recommendationStatus.isEmpty()) {
+//	                            ((ObjectNode) node).put("recommendationStatus", recommendationStatus);
+//	                            updated = true; // Mark that an update occurred
+//	                        }
 	                    }
 	                }
 	                if (updated) { // Only update attribute if changes were made
