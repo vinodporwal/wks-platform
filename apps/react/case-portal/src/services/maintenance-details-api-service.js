@@ -29,10 +29,12 @@ async function getCrackerMaintenanceData(keycloak) {
   }
 }
 async function saveCrackerMaintenance(
-  { plantId, year, decokePlanningDTOList },
+  PLANT_ID,
+  AOP_YEAR,
+  decokePlanningDTOList,
   keycloak,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/maintenance?plantId=${plantId}&year=${year}`
+  const url = `${Config.CaseEngineUrl}/task/maintenance?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

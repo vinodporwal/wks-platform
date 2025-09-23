@@ -17,13 +17,15 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 
-const CALL_DELAY_MS = 50
+const CALL_DELAY_MS = 200
 
 const ProductionVolumeDataBasisPe = () => {
   const keycloak = useSession()
 
+  // Dynamic data map keyed by exact grid name from API
+  // dataMap = { [gridName]: { rows: [], columns: [] } }
   const [dataMap, setDataMap] = useState({})
-  const [gridNames, setGridNames] = useState([])
+  const [gridNames, setGridNames] = useState([]) // ordered list from API
   const [loading, setLoading] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -37,6 +39,7 @@ const ProductionVolumeDataBasisPe = () => {
   const timeoutIdsRef = useRef([])
   const activeRequestsRef = useRef(0)
   const isMountedRef = useRef(true)
+  // dynamic refs for excel exports: exportRefs.current[gridName] = ExcelExportInstance
   const exportRefs = useRef({})
 
   useEffect(() => {
@@ -57,6 +60,7 @@ const ProductionVolumeDataBasisPe = () => {
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
       const isNumberCol = col.type === 'number'
+      // const isDateCol = col.type === 'date' // unused but available
       return {
         ...col,
         title: col.title || col.field,
@@ -70,6 +74,7 @@ const ProductionVolumeDataBasisPe = () => {
     })
   }, [])
 
+  // Fetch columns + rows for one grid type. Returns { rows, columns }
   const fetchDataForGrid = useCallback(
     async (reportType, StartDate, EndDate) => {
       try {
@@ -117,6 +122,7 @@ const ProductionVolumeDataBasisPe = () => {
     [keycloak, enrichColumns],
   )
 
+  // Schedule and run a single fetch (keeps loading state correct)
   const scheduleAndRunFetch = useCallback(
     (reportType, delayMs) => {
       const id = setTimeout(async () => {
@@ -161,7 +167,9 @@ const ProductionVolumeDataBasisPe = () => {
     [fetchDataForGrid, keycloak],
   )
 
+  // Main: fetch TYPE_LIST then schedule fetching each grid in order
   const fetchAllGrids = useCallback(async () => {
+    // clear previous timers
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
     timeoutIdsRef.current = []
 
@@ -218,52 +226,116 @@ const ProductionVolumeDataBasisPe = () => {
   useEffect(() => {
     setTabIndex(0)
     fetchAllGrids()
+    // cleanup timers on dependency change
     return () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
   }, [fetchAllGrids, plantID, oldYear, yearChanged])
 
-  const exportAllGrids = useCallback(() => {
-    const keys = Object.keys(exportRefs.current || {})
-    if (!keys.length) return
+  // eslint-disable-next-line no-useless-escape
+  const INVALID_SHEET_CHARS_RE = /[\\\/\?\*\[\]\:]/g
 
-    // find first available ref
+  function sanitizeSheetName(name = '', fallback = 'Sheet') {
+    let s = String(name || '')
+      .replace(INVALID_SHEET_CHARS_RE, ' ')
+      .trim()
+    if (s.length === 0) s = fallback
+    if (s.length > 31) s = s.slice(0, 31) // Excel limit
+    return s
+  }
+
+  function normalizeCellValue(v) {
+    if (v === undefined || v === null) return ''
+    // If it's a Date object, keep as Date (Kendo/Excel accepts Date) — but fallback to ISO if not supported
+    if (v instanceof Date) return v
+    // If it's an object or array, convert to string (avoid injecting nested objects)
+    if (typeof v === 'object') {
+      try {
+        return JSON.stringify(v)
+      } catch {
+        return String(v)
+      }
+    }
+    return v
+  }
+
+  // Replace your existing exportAllGrids with this improved implementation
+  const exportAllGrids = useCallback(() => {
+    // find any existing ExcelExport ref to use as base for saving
+    const keys = Object.keys(exportRefs.current || {})
     const firstKey = keys.find((k) => exportRefs.current[k])
     if (!firstKey) return
     const baseRef = exportRefs.current[firstKey]
-    const baseOptions = baseRef?.workbookOptions?.()
-    if (!baseOptions) return
+    if (!baseRef || typeof baseRef.save !== 'function') return
 
+    // build sheets from gridNames & dataMap (preserve gridNames order)
     const sheets = gridNames
-      .map((name) => {
-        const ref = exportRefs.current[name]
-        try {
-          const opts = ref?.workbookOptions?.()
-          return opts?.sheets?.[0] ? { ...opts.sheets[0] } : null
-        } catch {
-          return null
+      .map((gridName, idx) => {
+        const d = dataMap[gridName] || { rows: [], columns: [] }
+        const cols = d.columns || []
+        const rows = d.rows || []
+
+        // if no columns and no rows, skip this sheet
+        if (!cols.length && !rows.length) return null
+
+        // Build columns for the workbook. Keep autoWidth for nice sizing.
+        const sheetColumns = cols.map((c) => ({
+          autoWidth: true,
+          // Kendo workbook column title isn't used here to render the header row,
+          // but we keep title for clarity and potential use.
+          title: c.title || c.field || '',
+        }))
+
+        // Build an explicit header row so Excel has column headers
+        const headerRow = {
+          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+        }
+
+        // Build the data rows
+        const dataRows = rows.map((r) => {
+          return {
+            cells: cols.map((c) => {
+              const raw = r?.[c.field]
+              const value = normalizeCellValue(raw)
+              // Kendo workbook accepts JS Date objects as cell.value for date cells
+              return { value }
+            }),
+          }
+        })
+
+        // Combine header + data rows (header first)
+        const sheetRows = [headerRow, ...dataRows]
+
+        return {
+          title: sanitizeSheetName(gridName, `Sheet${idx + 1}`),
+          columns: sheetColumns,
+          rows: sheetRows,
         }
       })
       .filter(Boolean)
 
     if (!sheets.length) return
 
-    sheets.forEach((s, idx) => {
-      s.title = gridNames[idx] || s.title || `Sheet${idx + 1}`
-    })
+    const workbookOptions = {
+      sheets,
+    }
 
-    baseOptions.sheets = sheets
-    baseRef.save(baseOptions)
-  }, [gridNames])
+    try {
+      baseRef.save(workbookOptions)
+    } catch (err) {
+      console.error('Export save failed:', err)
+    }
+  }, [gridNames, dataMap])
 
   const currentDateTime = new Date()
     .toISOString()
     .replace(/T/, ' ')
     .replace(/:/g, '-')
     .split('.')[0]
-  const fileName = `Norms Historian Data Basis ${currentDateTime}.xlsx`
+  const fileName = `Production Target Data Basis ${currentDateTime}.xlsx`
 
+  // helper to render Title exactly as API sent (or tweak)
   const renderTitle = (t) => t
 
   const PETabs = ['Steady State Norm Basis', 'Overall Consumption Norm Basis']
@@ -283,6 +355,7 @@ const ProductionVolumeDataBasisPe = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
+      {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
         {gridNames.map((name) => {
           const data = dataMap[name] || { rows: [], columns: [] }
@@ -322,32 +395,40 @@ const ProductionVolumeDataBasisPe = () => {
       )}
 
       <Box display='flex' flexDirection='column' gap={2}>
-        {gridNames.map((name) => {
-          const d = dataMap[name] || { rows: [], columns: [] }
-          return (
-            <div key={name}>
-              <CustomAccordion defaultExpanded disableGutters>
-                <CustomAccordionSummary
-                  aria-controls={`${name}-content`}
-                  id={`${name}-header`}
-                >
-                  <Typography component='span' className='grid-title'>
-                    {renderTitle(name)}
-                  </Typography>
-                </CustomAccordionSummary>
-                <CustomAccordionDetails>
-                  <Box sx={{ width: '100%', margin: 0 }}>
-                    <KendoDataGrid
-                      rows={d.rows}
-                      columns={d.columns}
-                      permissions={{ isHeight: d?.rows?.length > 15 }}
-                    />
-                  </Box>
-                </CustomAccordionDetails>
-              </CustomAccordion>
-            </div>
-          )
-        })}
+        {/* {gridNames.length === 0 && !loading && (
+          <Typography>No grids available for the selected period.</Typography>
+        )} */}
+
+        {tabIndex === 0 && (
+          <>
+            {gridNames.map((name) => {
+              const d = dataMap[name] || { rows: [], columns: [] }
+              return (
+                <div key={name}>
+                  <CustomAccordion defaultExpanded disableGutters>
+                    <CustomAccordionSummary
+                      aria-controls={`${name}-content`}
+                      id={`${name}-header`}
+                    >
+                      <Typography component='span' className='grid-title'>
+                        {renderTitle(name)}
+                      </Typography>
+                    </CustomAccordionSummary>
+                    <CustomAccordionDetails>
+                      <Box sx={{ width: '100%', margin: 0 }}>
+                        <KendoDataGrid
+                          rows={d.rows}
+                          columns={d.columns}
+                          permissions={{ isHeight: d?.rows?.length > 15 }}
+                        />
+                      </Box>
+                    </CustomAccordionDetails>
+                  </CustomAccordion>
+                </div>
+              )
+            })}
+          </>
+        )}
       </Box>
     </div>
   )

@@ -4,7 +4,7 @@ import { useGridApiRef } from '@mui/x-data-grid'
 import { useSession } from 'SessionStoreContext'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getEnhancedColDefsByProducts from 'components/data-tables/CommonHeader/Kendo_ProductionAopHeaderByProducts'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { setIsBlocked } from 'store/reducers/dataGridStore'
@@ -682,28 +682,33 @@ const ProductionNorms = ({ permissions }) => {
     }
   }
 
-  const adjustedPermissions = getAdjustedPermissions(
-    {
-      showAction: permissions?.showAction ?? false,
-      addButton: permissions?.addButton ?? false,
-      deleteButton: permissions?.deleteButton ?? false,
-      editButton: permissions?.editButton ?? false,
-      showUnit: permissions?.showUnit ?? true,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
-      showCalculate: permissions?.showCalculate ?? true,
-      allAction: permissions?.allAction ?? true,
-      showNote: true,
-      showCalculateVisibility:
-        calculationObject && Object.keys(calculationObject).length > 0
-          ? permissions?.showCalculate ?? true
-          : false,
-      saveBtn: permissions?.saveBtn ?? false,
-      units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
-      customHeight: permissions?.customHeight,
-      downloadExcelBtnFromUI: !permissions?.hideExportBtn,
-      ExcelName: `${lowerVertName}_Production Target`,
-    },
-    isOldYear,
+  const adjustedPermissions = useMemo(
+    () =>
+      getAdjustedPermissions(
+        {
+          showAction: permissions?.showAction ?? false,
+          addButton: permissions?.addButton ?? false,
+          deleteButton: permissions?.deleteButton ?? false,
+          editButton: permissions?.editButton ?? false,
+          showUnit: permissions?.showUnit ?? true,
+          saveWithRemark: permissions?.saveWithRemark ?? true,
+          showCalculate: permissions?.showCalculate ?? true,
+          allAction: permissions?.allAction ?? true,
+          showNote: true,
+          showCalculateVisibility:
+            calculationObject && Object.keys(calculationObject).length > 0
+              ? permissions?.showCalculate ?? true
+              : false,
+          saveBtn: permissions?.saveBtn ?? false,
+          units:
+            lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
+          customHeight: permissions?.customHeight,
+          downloadExcelBtnFromUI: !permissions?.hideExportBtn,
+          ExcelName: `${lowerVertName}_Production Target(${selectedUnit})`,
+        },
+        isOldYear,
+      ),
+    [permissions, calculationObject, lowerVertName, selectedUnit, isOldYear],
   )
 
   const adjustedPermissionsByProducts = getAdjustedPermissions(
@@ -723,7 +728,7 @@ const ProductionNorms = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       downloadExcelBtnFromUI: !permissions?.hideExportBtn,
-      ExcelName: `${lowerVertName}_Production Target`,
+      ExcelName: `${lowerVertName}_${selectedUnit}_Production Target`,
       customHeight: permissions?.customHeight,
     },
     isOldYear,

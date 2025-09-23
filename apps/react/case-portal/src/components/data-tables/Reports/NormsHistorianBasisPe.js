@@ -1,23 +1,21 @@
-import { Box } from '@mui/material'
+import { Box, Button } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import {
+  ExcelExport,
+  ExcelExportColumn,
+} from '@progress/kendo-react-excel-export'
+import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import {
   CustomAccordion,
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
-import { Button } from '@mui/material'
-import {
-  ExcelExport,
-  ExcelExportColumn,
-} from '@progress/kendo-react-excel-export'
 import { Tab, Tabs } from '../../../../node_modules/@mui/material/index'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 
@@ -237,48 +235,107 @@ const ProductionVolumeDataBasisPe = () => {
     }
   }, [fetchAllGrids, plantID, oldYear, yearChanged])
 
-  // Export: gather sheets from each ExcelExport instance and combine into one workbook
-  const exportAllGrids = useCallback(() => {
-    const keys = Object.keys(exportRefs.current || {})
-    if (!keys.length) return
+  // eslint-disable-next-line no-useless-escape
+  const INVALID_SHEET_CHARS_RE = /[\\\/\?\*\[\]\:]/g
 
-    // find first available ref
+  function sanitizeSheetName(name = '', fallback = 'Sheet') {
+    let s = String(name || '')
+      .replace(INVALID_SHEET_CHARS_RE, ' ')
+      .trim()
+    if (s.length === 0) s = fallback
+    if (s.length > 31) s = s.slice(0, 31) // Excel limit
+    return s
+  }
+
+  function normalizeCellValue(v) {
+    if (v === undefined || v === null) return ''
+    // If it's a Date object, keep as Date (Kendo/Excel accepts Date) — but fallback to ISO if not supported
+    if (v instanceof Date) return v
+    // If it's an object or array, convert to string (avoid injecting nested objects)
+    if (typeof v === 'object') {
+      try {
+        return JSON.stringify(v)
+      } catch {
+        return String(v)
+      }
+    }
+    return v
+  }
+
+  // Replace your existing exportAllGrids with this improved implementation
+  const exportAllGrids = useCallback(() => {
+    // find any existing ExcelExport ref to use as base for saving
+    const keys = Object.keys(exportRefs.current || {})
     const firstKey = keys.find((k) => exportRefs.current[k])
     if (!firstKey) return
     const baseRef = exportRefs.current[firstKey]
-    const baseOptions = baseRef?.workbookOptions?.()
-    if (!baseOptions) return
+    if (!baseRef || typeof baseRef.save !== 'function') return
 
-    // collect first sheet from each ref (preserves order of gridNames when possible)
+    // build sheets from gridNames & dataMap (preserve gridNames order)
     const sheets = gridNames
-      .map((name) => {
-        const ref = exportRefs.current[name]
-        try {
-          const opts = ref?.workbookOptions?.()
-          return opts?.sheets?.[0] ? { ...opts.sheets[0] } : null
-        } catch {
-          return null
+      .map((gridName, idx) => {
+        const d = dataMap[gridName] || { rows: [], columns: [] }
+        const cols = d.columns || []
+        const rows = d.rows || []
+
+        // if no columns and no rows, skip this sheet
+        if (!cols.length && !rows.length) return null
+
+        // Build columns for the workbook. Keep autoWidth for nice sizing.
+        const sheetColumns = cols.map((c) => ({
+          autoWidth: true,
+          // Kendo workbook column title isn't used here to render the header row,
+          // but we keep title for clarity and potential use.
+          title: c.title || c.field || '',
+        }))
+
+        // Build an explicit header row so Excel has column headers
+        const headerRow = {
+          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+        }
+
+        // Build the data rows
+        const dataRows = rows.map((r) => {
+          return {
+            cells: cols.map((c) => {
+              const raw = r?.[c.field]
+              const value = normalizeCellValue(raw)
+              // Kendo workbook accepts JS Date objects as cell.value for date cells
+              return { value }
+            }),
+          }
+        })
+
+        // Combine header + data rows (header first)
+        const sheetRows = [headerRow, ...dataRows]
+
+        return {
+          title: sanitizeSheetName(gridName, `Sheet${idx + 1}`),
+          columns: sheetColumns,
+          rows: sheetRows,
         }
       })
       .filter(Boolean)
 
     if (!sheets.length) return
 
-    // set readable titles (use the original grid name)
-    sheets.forEach((s, idx) => {
-      s.title = gridNames[idx] || s.title || `Sheet${idx + 1}`
-    })
+    const workbookOptions = {
+      sheets,
+    }
 
-    baseOptions.sheets = sheets
-    baseRef.save(baseOptions)
-  }, [gridNames])
+    try {
+      baseRef.save(workbookOptions)
+    } catch (err) {
+      console.error('Export save failed:', err)
+    }
+  }, [gridNames, dataMap])
 
   const currentDateTime = new Date()
     .toISOString()
     .replace(/T/, ' ')
     .replace(/:/g, '-')
     .split('.')[0]
-  const fileName = `Norms Historian Data Basis ${currentDateTime}.xlsx`
+  const fileName = `Norms Historian Basis.xlsx`
 
   // helper to render Title exactly as API sent (or tweak)
   const renderTitle = (t) => t

@@ -76,9 +76,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	public ShutdownNormsServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
-	
-	
-
 
 	@Override
 	public AOPMessageVM getShutdownNormsData(String year, String plantId,String gradeId) {
@@ -89,10 +86,14 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			if (vertical.getName().equalsIgnoreCase("MEG")) {
 				objList = getShutdownNormsMEG(year, plant.getId(), "vwScrnShutdownNorms");
-			}else if (vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+			}else if (vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
 				String viewName="vwScrn"+vertical.getName()+"ShutdownNorms";
 				objList = getShutdownNormsMEG(year, plant.getId(), viewName);
-			}else {
+			}else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+				List<Object[]> obj=getShutdownConsumptionData(plantId,year);
+				return getData(obj, plantId, year);
+			}
+			else {
 				String viewName="vwScrn"+vertical.getName()+"ShutdownNorms";
 				objList = getShutdownNorms(year, plant.getId(), viewName,UUID.fromString(gradeId));
 			} 
@@ -589,6 +590,75 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	public List<Object[]> getShutdownConsumptionData(String plantId, String aopYear) {
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			
+			 String storedProcedure = verticalName + "_" + site.getName() + "_ShutdownConsumtion";
+			
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @aopYear = :aopYear, @siteId = :siteId, @verticalId = :verticalId";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("siteId", site.getId());
+			query.setParameter("verticalId", vertical.getId());
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public AOPMessageVM getData(List<Object[]> obj,String plantId,String year){
+		List<ShutdownNormsValueDTO> shutdownNormsValueDTOs = new ArrayList<ShutdownNormsValueDTO>();
+		for(Object[] row:obj) {
+			ShutdownNormsValueDTO shutdownNormsValueDTO = new ShutdownNormsValueDTO();
+			
+			shutdownNormsValueDTO.setId(row[0] != null ? row[0].toString() : null);
+			shutdownNormsValueDTO.setProductName(row[1] != null ? row[1].toString() : null);
+			shutdownNormsValueDTO.setUOM(row[2] != null ? row[2].toString() : null);
+			shutdownNormsValueDTO.setMaterialFkId(row[6] != null ? row[6].toString() : null);
+			shutdownNormsValueDTO.setApril(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+			shutdownNormsValueDTO.setMay(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+			shutdownNormsValueDTO.setJune(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+			shutdownNormsValueDTO.setJuly(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+			shutdownNormsValueDTO.setAugust(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+			shutdownNormsValueDTO.setSeptember(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+			shutdownNormsValueDTO.setOctober(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+			shutdownNormsValueDTO.setNovember(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+			shutdownNormsValueDTO.setDecember(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+			shutdownNormsValueDTO.setJanuary(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
+			shutdownNormsValueDTO.setFebruary(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0);
+			shutdownNormsValueDTO.setMarch(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0);
+			shutdownNormsValueDTO.setRemarks(row[20] != null ? row[20].toString() : null);
+			shutdownNormsValueDTO.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
+			shutdownNormsValueDTOs.add(shutdownNormsValueDTO);
+		}
+		Map<String, Object> map = new HashMap<>();
+
+		List<AopCalculation> aopCalculation = aopCalculationRepository
+				.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "shutdown-norms");
+		map.put("mcuNormsValueDTOList", shutdownNormsValueDTOs);
+		map.put("aopCalculation", aopCalculation);
+		
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(map);
+		aopMessageVM.setMessage("Data fetched successfully");
+
+		return aopMessageVM;
+	}
+	
+
 
 
 }
