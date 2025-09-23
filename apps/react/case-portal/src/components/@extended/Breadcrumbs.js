@@ -237,7 +237,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
         </Typography>
       )
     } else if (
-      (['workflow'].includes(normalizedTitle) &&
+      (['aopapprovalflow'].includes(normalizedTitle) &&
         VERTICAL_NAME?.toLowerCase() === 'pe') ||
       VERTICAL_NAME?.toLowerCase() === 'pp'
     ) {
