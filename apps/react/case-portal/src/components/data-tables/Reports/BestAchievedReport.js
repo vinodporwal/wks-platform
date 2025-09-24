@@ -7,6 +7,7 @@ import {
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
+import Notification from 'components/Utilities/Notification'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { CrackerReportsApiDataService } from 'services/cracker-reports-api-service'
@@ -398,37 +399,53 @@ const BestAchievedReport = () => {
   }, [fetchAllGrids, plantID, oldYear, yearChanged])
 
   // Export: gather sheets from each ExcelExport instance and combine into one workbook
-  const exportAllGrids = useCallback(() => {
-    const keys = Object.keys(exportRefs.current || {})
-    if (!keys.length) return
 
-    const firstKey = keys.find((k) => exportRefs.current[k])
-    if (!firstKey) return
-    const baseRef = exportRefs.current[firstKey]
-    const baseOptions = baseRef?.workbookOptions?.()
-    if (!baseOptions) return
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
 
-    const sheets = gridNames
-      .map((name) => {
-        const ref = exportRefs.current[name]
-        try {
-          const opts = ref?.workbookOptions?.()
-          return opts?.sheets?.[0] ? { ...opts.sheets[0] } : null
-        } catch {
-          return null
-        }
+  const exportAllGrids = async () => {
+    try {
+      setLoading(true)
+
+      const storedPlant = localStorage.getItem('selectedPlant')
+      const year = localStorage.getItem('year')
+      let plantId = null
+
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      if (!plantId || !year) {
+        throw new Error('Plant ID or year not found in localStorage')
+      }
+
+      const payload = []
+
+      // Await the API call here to ensure completion
+      const data = await DataService.getExcel(keycloak, payload)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Report downloaded successfully!',
+        severity: 'success',
       })
-      .filter(Boolean)
 
-    if (!sheets.length) return
-
-    sheets.forEach((s, idx) => {
-      s.title = gridNames[idx] || s.title || `Sheet${idx + 1}`
-    })
-
-    baseOptions.sheets = sheets
-    baseRef.save(baseOptions)
-  }, [gridNames])
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const currentDateTime = new Date()
     .toISOString()
@@ -474,7 +491,7 @@ const BestAchievedReport = () => {
         })}
       </div>
 
-      {/* <Box display='flex' justifyContent='flex-end' mb='2px'>
+      <Box display='flex' justifyContent='flex-end' mb='2px'>
         <Button
           variant='contained'
           onClick={exportAllGrids}
@@ -482,7 +499,7 @@ const BestAchievedReport = () => {
         >
           Export
         </Button>
-      </Box> */}
+      </Box>
 
       <Box display='flex' flexDirection='column' gap={2}>
         {gridNames.length === 0 && !loading && (
@@ -516,6 +533,13 @@ const BestAchievedReport = () => {
           )
         })}
       </Box>
+
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
+        onClose={() => setSnackbarOpen(false)}
+      />
     </div>
   )
 }
