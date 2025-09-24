@@ -416,15 +416,15 @@ const CrackerConfig = () => {
     try {
       const SpyroOutputYield = newRows.map((row) => ({
         particulars: row.particulars,
-        fourFPropane: row.fourFPropane,
-        fiveFC2C3: row.fiveFC2C3,
-        fiveFEthane: row.fiveFEthane,
-        fiveFPropane: row.fiveFPropane,
-        fourFC2C3: row.fourFC2C3,
-        fourFDC2C3: row.fourFDC2C3,
-        fourFDEthane: row.fourFDEthane,
-        fourFDPropane: row.fourFDPropane,
-        fourFEthane: row.fourFEthane,
+        fourFPropane: row.fourFPropane || 0,
+        fiveFC2C3: row.fiveFC2C3 || 0,
+        fiveFEthane: row.fiveFEthane || 0,
+        fiveFPropane: row.fiveFPropane || 0,
+        fourFC2C3: row.fourFC2C3 || 0,
+        fourFDC2C3: row.fourFDC2C3 || 0,
+        fourFDEthane: row.fourFDEthane || 0,
+        fourFDPropane: row.fourFDPropane || 0,
+        fourFEthane: row.fourFEthane || 0,
       }))
 
       const response = await DataService.saveSpyroOutputYield(

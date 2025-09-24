@@ -279,25 +279,8 @@ const DecokingConfig = () => {
         return
       }
       var rawData = Object.values(modifiedCellsSdTa)
-      const yearStr = localStorage.getItem('year') // e.g. "2025-26"
-      let startLimit, endLimit
-      if (yearStr) {
-        const [startYear, endYear] = yearStr
-          .split('-')
-          .map((y) => parseInt(y.trim(), 10))
-        if (!isNaN(startYear) && !isNaN(endYear)) {
-          startLimit = new Date(`${startYear}-04-01T00:00:00`)
-          endLimit = new Date(`20${endYear}-03-31T23:59:59`)
-        }
-      }
-      const dateFields = [
-        'ibrStartDate',
-        'ibrEndDate',
-        'taStartDate',
-        'taEndDate',
-        'shutDownStartDate',
-        'shutDownEndDate',
-      ]
+
+      const dateFields = ['ibrStartDate', 'ibrEndDate']
       const allRows = [...ibrScreen2Rows] // get all rows, not just modified
       let hasDateError = false
 
@@ -320,31 +303,32 @@ const DecokingConfig = () => {
               dateValue = null
             }
           }
-          if (
-            startLimit &&
-            endLimit &&
-            (!dateValue || dateValue < startLimit || dateValue > endLimit)
-          ) {
-            record.isError = true
-            hasDateError = true
-          }
+
+          // if (
+          //   startLimit &&
+          //   endLimit &&
+          //   (!dateValue || dateValue < startLimit || dateValue > endLimit)
+          // ) {
+          //   record.isError = true
+          //   hasDateError = true
+          // }
         }
       }
 
-      if (hasDateError) {
-        setRowsForTab('IBR Plan', [...allRows], 2) // update all rows
-        const formatDate = (date) =>
-          `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1)
-            .toString()
-            .padStart(2, '0')}-${date.getFullYear()}`
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `All dates must be between ${formatDate(startLimit)} and ${formatDate(endLimit)} for selected year.`,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
+      // if (hasDateError) {
+      //   setRowsForTab('IBR Plan', [...allRows], 2) // update all rows
+      //   const formatDate = (date) =>
+      //     `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1)
+      //       .toString()
+      //       .padStart(2, '0')}-${date.getFullYear()}`
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: `All dates must be between ${formatDate(startLimit)} and ${formatDate(endLimit)} for selected year.`,
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
       const requiredFields = ['idFromApi', 'remarks']
 
       var rawData1 = getRows('IBR Plan')[2]
@@ -674,24 +658,6 @@ const DecokingConfig = () => {
       </Backdrop>
       <>
         <>
-          <>
-            <CustomAccordion defaultExpanded disableGutters>
-              <CustomAccordionSummary
-                aria-controls='meg-grid-content'
-                id='meg-grid-header'
-              >
-                <Typography component='span' className='grid-title'>
-                  Process
-                </Typography>
-              </CustomAccordionSummary>
-              <CustomAccordionDetails>
-                <Box sx={{ width: '100%', margin: 0 }}>
-                  <MaintenanceProcessTable viewOnly={true} />
-                </Box>
-              </CustomAccordionDetails>
-            </CustomAccordion>
-          </>
-
           <SDTAActivitiesGrid
             columns={ibrPlanColumns}
             rows={getRows('IBR Plan')[2]}
@@ -739,6 +705,24 @@ const DecokingConfig = () => {
             downloadExcelForConfiguration={downloadExcelForConfiguration}
             handleCalculate={handleCalculate}
           />
+
+          <>
+            <CustomAccordion defaultExpanded disableGutters>
+              <CustomAccordionSummary
+                aria-controls='meg-grid-content'
+                id='meg-grid-header'
+              >
+                <Typography component='span' className='grid-title'>
+                  Summary
+                </Typography>
+              </CustomAccordionSummary>
+              <CustomAccordionDetails>
+                <Box sx={{ width: '100%', margin: 0 }}>
+                  <MaintenanceProcessTable viewOnly={true} />
+                </Box>
+              </CustomAccordionDetails>
+            </CustomAccordion>
+          </>
         </>
       </>
     </Box>

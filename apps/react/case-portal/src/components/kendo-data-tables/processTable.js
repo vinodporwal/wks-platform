@@ -211,20 +211,20 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const handleCalculate = useCallback(async () => {
     try {
       const result =
-        await MaintenanceDetailsApiService.handleCalculateMaintenance(
+        await MaintenanceDetailsApiService.handleCalculateMaintenanceCracker(
           PLANT_ID,
           AOP_YEAR,
           keycloak,
         )
       setSnackbarData({
         message:
-          result === 0
+          result?.code == 200
             ? 'Data refreshed successfully!'
             : 'Data Refresh Failed!',
-        severity: result === 0 ? 'success' : 'error',
+        severity: result?.code == 200 ? 'success' : 'error',
       })
       setSnackbarOpen(true)
-      if (result === 0) fetchData()
+      if (result?.code == 200) fetchData()
     } catch (err) {
       console.error(err)
       setSnackbarData({ message: err.message || 'Error!', severity: 'error' })
@@ -304,7 +304,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           downloadExcelBtnFromUI: viewOnly ? false : true,
           ExcelName: `CRAKCER_Maintenance Details`,
           showRefresh: false,
-          showCalculate: false,
+          showCalculate: viewOnly ? false : true,
           showCalculateVisibility: true,
           showNote: true,
         },
