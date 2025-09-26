@@ -129,8 +129,6 @@ const KendoDataGrid = ({
   }
 
   const RedHighlightCell2 = (props) => {
-    console.log(1)
-
     const {
       dataItem,
       field,
