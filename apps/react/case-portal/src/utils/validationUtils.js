@@ -11,13 +11,24 @@ export const validateFields = (data, requiredFields) => {
     normParametersFKId: 'Particular',
     aopRemarks: 'Remark',
     remarks: 'Remark',
+    ThroughputActual: 'Actual Throughput',
+    attributeValue: 'Run Length',
+    rateEO: 'EO Rate',
+    rateEOE: 'EOE Rate',
+    productName1: 'Particular',
   }
 
   const invalidRows = data.filter((row) => {
     // Check for required fields
     const hasMissingField = requiredFields.some((field) => {
       const value = row[field]
-      if (field === 'remark' || field === 'aopRemarks' || field === 'remarks') {
+      if (
+        field === 'remark' ||
+        field === 'aopRemarks' ||
+        field === 'remarks' ||
+        field === 'Remarks' ||
+        field === 'Remark'
+      ) {
         return (
           value === undefined ||
           value === null ||
@@ -49,7 +60,9 @@ export const validateFields = (data, requiredFields) => {
           if (
             field === 'remark' ||
             field === 'aopRemarks' ||
-            field === 'remarks'
+            field === 'remarks' ||
+            field === 'Remarks' ||
+            field === 'Remark'
           ) {
             if (
               value === undefined ||
@@ -66,12 +79,14 @@ export const validateFields = (data, requiredFields) => {
           }
         })
 
-        // Add End Date check message
-        const startDate = new Date(row.maintStartDateTime)
-        const endDate = new Date(row.maintEndDateTime)
-        if (startDate && endDate && endDate <= startDate) {
-          missingFieldsMessage.push('End Date must be after Start Date')
-        }
+        // // Add End Date check message
+        // const startDate = new Date(row.maintStartDateTime).getTime()
+        // const endDate = new Date(row.maintEndDateTime).getTime()
+        // if (startDate && endDate && endDate <= startDate) {
+        //   missingFieldsMessage.push(
+        //     'Start Date and End Date are in the wrong order. Please adjust the range.',
+        //   )
+        // }
 
         return missingFieldsMessage.join(', ')
       })

@@ -125,7 +125,7 @@ const getEnhancedColDefs = ({
                   whiteSpace: 'nowrap',
                   width: ' 100%',
                 }}
-                onClick={() => handleRemarkCellClick(params.row)}
+                onDoubleClick={() => handleRemarkCellClick(params.row)}
               >
                 {displayText || (isEditable ? 'Click to add remark' : '')}
               </div>
@@ -141,6 +141,14 @@ const getEnhancedColDefs = ({
         renderEditCell: NumericInputOnly,
         valueFormatter: formatValueToFiveDecimals,
         align: 'right',
+        renderCell: (params) => (
+          <Tooltip
+            title={params.value != null ? params.value.toString() : ''}
+            arrow
+          >
+            <span>{formatValueToFiveDecimals(params.value)}</span>
+          </Tooltip>
+        ),
       }
     }
     if (col.field === 'Particulars') {

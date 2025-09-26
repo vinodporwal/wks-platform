@@ -7,14 +7,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wks.caseengine.dto.AnnualProductionPlanReportDto;
+import com.wks.caseengine.dto.MonthWiseConsumptionSummaryDTO;
 import com.wks.caseengine.dto.MonthWiseProductionPlanDTO;
 import com.wks.caseengine.dto.PlantProductionDataDTO;
 import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
+import com.wks.caseengine.dto.YearWiseContributionDataDTO;
+import com.wks.caseengine.entity.AnnualProductionPlanReport;
 import com.wks.caseengine.entity.MonthWiseProductionPlan;
+import com.wks.caseengine.entity.MonthwiseConsumptionReport;
+import com.wks.caseengine.entity.PlantContribution;
 import com.wks.caseengine.entity.PlantProductionSummary;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
@@ -22,7 +30,11 @@ import com.wks.caseengine.entity.TurnAroundPlan;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AnnualAOPCostRepository;
+import com.wks.caseengine.repository.AnnualProductionPlanReportRepository;
 import com.wks.caseengine.repository.MonthWiseProductionPlanRepository;
+import com.wks.caseengine.repository.MonthwiseConsumptionReportRepository;
+import com.wks.caseengine.repository.PlantContributionRepository;
 import com.wks.caseengine.repository.PlantProductionSummaryRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
@@ -32,6 +44,9 @@ import com.wks.caseengine.repository.VerticalsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import java.sql.CallableStatement;
+import java.sql.SQLException;
+import java.sql.Connection;
 
 @Service
 public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDataReportService {
@@ -55,6 +70,25 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 
 	@Autowired
 	private MonthWiseProductionPlanRepository monthWiseProductionPlanRepository;
+
+	@Autowired
+	private MonthwiseConsumptionReportRepository monthwiseConsumptionReportRepository;
+
+	private DataSource dataSource;
+
+	@Autowired
+	private AnnualAOPCostRepository annualAOPCostRepository;
+
+	@Autowired
+	private PlantContributionRepository plantContributionRepository;
+
+	@Autowired
+	private AnnualProductionPlanReportRepository annualProductionPlanReportRepository;
+
+	// Inject or set your DataSource (e.g., via constructor or setter)
+	public ProductionVolumeDataReportServiceImpl(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
 
 	@Override
 	public AOPMessageVM getReportForProductionVolumnData(String plantId, String year) {
@@ -89,7 +123,12 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	public List<Object[]> getProductionVolumnDataReport(String plantId, String year) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = "PlantProductionSummaryReport";
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				storedProcedure = verticalName + "_" + site.getName() + "_PlantProductionSummaryReport";
+			}
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @year = :year";
 
@@ -112,26 +151,46 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> typeOneDataList = new ArrayList<>();
 			List<Map<String, Object>> typeSecondDataList = new ArrayList<>();
-
-			List<Object[]> obj = getMonthWiseProductionData(plantId, year);
+			List<Object[]> obj=null;
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			obj = getMonthWiseProductionData(plantId, year);
+			
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>();
-				map.put("RowNo", row[0]);
-				map.put("Month", row[1]);
-				map.put("EOEProdBudget", row[2]);
-				map.put("EOEProdActual", row[3]);
-				map.put("OpHrsBudget", row[4]);
-				map.put("OpHrsActual", row[5]);
-				map.put("ThroughputBudget", row[6]);
-				map.put("ThroughputActual", row[7]);
-				map.put("OperatingHours", row[8]);
-				map.put("MEGThroughput", row[9]);
-				map.put("EOThroughput", row[10]);
-				map.put("EOEThroughput", row[11]);
-				map.put("TotalEOE", row[12]);
-				// map.put("Remark", row[13]);
-				map.put("Remark", row[13] != null ? row[13] : "");
-				map.put("Id", row[14]);
+				if ("MEG".equalsIgnoreCase(verticalName)) {
+					map.put("RowNo", row[0]);
+					map.put("Month", row[1]);
+					map.put("EOEProdBudget", row[2]);
+					map.put("EOEProdActual", row[3]);
+					map.put("OpHrsBudget", row[4]);
+					map.put("OpHrsActual", row[5]);
+					map.put("ThroughputBudget", row[6]);
+					map.put("ThroughputActual", row[7]);
+					map.put("OperatingHours", row[8]);
+					map.put("MEGThroughput", row[9]);
+					map.put("EOThroughput", row[10]);
+					map.put("EOEThroughput", row[11]);
+					map.put("TotalEOE", row[12]);
+					// map.put("Remark", row[13]);
+					map.put("Remark", row[13] != null ? row[13] : "");
+					map.put("Id", row[14]);
+				}else {
+					map.put("RowNo", row[0]);
+					map.put("Month", row[1]);
+					map.put("ProdActual", row[2]);
+					map.put("ProdBudget", row[3]);
+					map.put("OpHrsActual", row[4]);
+					map.put("OpHrsBudget", row[5]);
+					map.put("ThroughputActual", row[6]);
+					map.put("ThroughputBudget", row[7]);
+					map.put("Throughput", row[8]);
+					map.put("Total", row[9]);
+					map.put("OperatingHours", row[10]);
+					map.put("Remark", row[11]);
+					map.put("Id", row[12]);
+					map.put("PlantFKId", row[13]);
+					map.put("AOPYear", row[14]);
+				}
 				typeOneDataList.add(map);
 			}
 
@@ -155,10 +214,16 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	public List<Object[]> getMonthWiseProductionData(String plantId, String aopYear) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = "MonthWiseProductionPlanReport";
+			
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				storedProcedure = verticalName + "_"+site.getName()+"_MonthWiseProductionPlanReport";	 
+		    }
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear";
-
 			Query query = entityManager.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
@@ -173,28 +238,54 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	public AOPMessageVM getReportForMonthWiseConsumptionSummaryData(String plantId, String year) {
+	public AOPMessageVM getReportForMonthWiseConsumptionSummaryData(String plantId, String year, String reportType) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> summaryData = new ArrayList<>();
 
-			List<Object[]> obj = getMonthWiseConsumptionData(plantId, year);
+			List<Object[]> obj = getMonthWiseConsumptionData(plantId, year, reportType);
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>();
-				map.put("parameter", row[0]);
-				map.put("april", row[1]);
-				map.put("may", row[2]);
-				map.put("june", row[3]);
-				map.put("july", row[4]);
-				map.put("aug", row[5]);
-				map.put("sep", row[6]);
-				map.put("oct", row[7]);
-				map.put("nov", row[8]);
-				map.put("dec", row[9]);
-				map.put("jan", row[10]);
-				map.put("feb", row[11]);
-				map.put("march", row[12]);
-				summaryData.add(map);
+				if (reportType.equalsIgnoreCase("Selectivity")) {
+					map.put("material", row[0]);
+					map.put("april", row[1]);
+					map.put("may", row[2]);
+					map.put("june", row[3]);
+					map.put("july", row[4]);
+					map.put("aug", row[5]);
+					map.put("sep", row[6]);
+					map.put("oct", row[7]);
+					map.put("nov", row[8]);
+					map.put("dec", row[9]);
+					map.put("jan", row[10]);
+					map.put("feb", row[11]);
+					map.put("march", row[12]);
+					map.put("id", row[13]);
+					map.put("Remark", row[14]);
+					summaryData.add(map);
+				} else if (reportType.equalsIgnoreCase("NormQuantity")) {
+					map.put("normType", row[0]);
+					map.put("material", row[1]);
+					map.put("UOM", row[2]);
+					map.put("spec", row[3]);
+					map.put("april", row[4]);
+					map.put("may", row[5]);
+					map.put("june", row[6]);
+					map.put("july", row[7]);
+					map.put("aug", row[8]);
+					map.put("sep", row[9]);
+					map.put("oct", row[10]);
+					map.put("nov", row[11]);
+					map.put("dec", row[12]);
+					map.put("jan", row[13]);
+					map.put("feb", row[14]);
+					map.put("march", row[15]);
+					map.put("total", row[16]);
+					map.put("id", row[17]);
+					map.put("Remark", row[18]);
+					summaryData.add(map);
+
+				}
 			}
 			// Combine both into a result map
 			Map<String, Object> finalResult = new HashMap<>();
@@ -213,17 +304,24 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 
 	}
 
-	public List<Object[]> getMonthWiseConsumptionData(String plantId, String year) {
+	public List<Object[]> getMonthWiseConsumptionData(String plantId, String year, String ReportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = "PlantConsumptionSummaryReport";
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				storedProcedure = verticalName + "_" + site.getName() + "_PlantConsumptionSummaryReport";
+			}
 			String sql = "EXEC " + storedProcedure
-					+ " @plantId = :plantId, @year = :year";
+					+ " @plantId = :plantId, @year = :year, @ReportType = :ReportType";
 
 			Query query = entityManager.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("year", year);
+			query.setParameter("ReportType", ReportType);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
@@ -244,7 +342,8 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 				for (Object[] row : obj) {
 					Map<String, Object> map = new HashMap<>();
 					map.put("sno", row[0]);
-					map.put("part1", row[1]);
+					map.put("activity", row[1]);
+					map.put("id", row[2]);
 					plantProductionData.add(map);
 				}
 			}
@@ -252,9 +351,10 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 				for (Object[] row : obj) {
 					Map<String, Object> map = new HashMap<>();
 					map.put("sno", row[0]);
-					map.put("part1", row[1]);
-					map.put("part2", row[2]);
-					map.put("part3", row[3]);
+					map.put("activity", row[1]);
+					map.put("maxHourlyRateValue", row[2]);
+					map.put("uom", row[3]);
+					map.put("id", row[4]);
 					plantProductionData.add(map);
 				}
 			}
@@ -262,9 +362,10 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 				for (Object[] row : obj) {
 					Map<String, Object> map = new HashMap<>();
 					map.put("sno", row[0]);
-					map.put("part1", row[1]);
-					map.put("part2", row[2]);
-					map.put("part3", row[3]);
+					map.put("activity", row[1]);
+					map.put("rateValue", row[2]);
+					map.put("uom", row[3]);
+					map.put("id", row[4]);
 					plantProductionData.add(map);
 				}
 			}
@@ -272,11 +373,12 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 				for (Object[] row : obj) {
 					Map<String, Object> map = new HashMap<>();
 					map.put("sno", row[0]);
-					map.put("Throughput", row[1]);
-					map.put("HourlyRate", row[2]);
-					map.put("OperatingHrs", row[3]);
-					map.put("PeriodFrom", row[4]);
-					map.put("PeriodTo", row[5]);
+					map.put("activity", row[1]);
+					map.put("durationHours", row[2]);
+					map.put("rateValue", row[3]);
+					map.put("periodFrom", row[4]);
+					map.put("periodTo", row[5]);
+					map.put("id", row[6]);
 					plantProductionData.add(map);
 				}
 			}
@@ -292,6 +394,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 					map.put("Budget3", row[6]);
 					map.put("Actual3", row[7]);
 					map.put("Budget4", row[8]);
+					// map.put("Remark", row[9]);
 					plantProductionData.add(map);
 				}
 			}
@@ -314,7 +417,13 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	public List<Object[]> getPlantProductionData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-			String storedProcedure = "annualProductionPlan";
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure = "AnnualProductionPlan";
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				storedProcedure = verticalName + "_" + site.getName() + "_AnnualProductionPlan";
+			}
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
@@ -373,12 +482,14 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 			} else if (reportType.equalsIgnoreCase("OtherVariableCost")) {
 				for (Object[] row : obj) {
 					Map<String, Object> map = new HashMap<>();
-					map.put("SrNo", row[0]);
-					map.put("OtherCost", row[1]);
-					map.put("Unit", row[2]);
-					map.put("PrevYearBudget", row[3]);
-					map.put("PrevYearActual", row[4]);
-					map.put("CurrentYearBudget", row[5]);
+					map.put("id", row[0]);
+					map.put("SrNo", row[1]);
+					map.put("OtherCost", row[2]);
+					map.put("Unit", row[3]);
+					map.put("PrevYearBudget", row[4]);
+					map.put("PrevYearActual", row[5]);
+					map.put("CurrentYearBudget", row[6]);
+					map.put("Remark", row[7]);
 					plantProductionData.add(map);
 				}
 			} else if (reportType.equalsIgnoreCase("ProductionCostCalculations")) {
@@ -417,7 +528,13 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	public List<Object[]> getPlantContributionData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			String storedProcedure = "PlantContributionReport";
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				storedProcedure = verticalName + "_" + site.getName() + "_PlantContributionReport";
+			}
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
@@ -438,17 +555,26 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	@Override
 	@Transactional
 	public AOPMessageVM savePlantProductionData(String plantId, String year, List<PlantProductionDataDTO> dataList) {
-		for (PlantProductionDataDTO dto : dataList) {
-			Optional<PlantProductionSummary> optional = plantProductionSummaryRepository
-					.findById(UUID.fromString(dto.getId()));
+		try {
+			for (PlantProductionDataDTO dto : dataList) {
+				Optional<PlantProductionSummary> optional = plantProductionSummaryRepository
+						.findById(UUID.fromString(dto.getId()));
 
-			optional.get().setRemark(dto.getRemark());
-			plantProductionSummaryRepository.save(optional.get());
+				optional.get().setRemark(dto.getRemark());
+				if (dto.getActualPrevYear() != null) {
+					optional.get().setActualPrevYear(dto.getActualPrevYear());
+				}
+				plantProductionSummaryRepository.save(optional.get());
+			}
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setMessage("Remarks updated successfully.");
+			return response;
 		}
-		AOPMessageVM response = new AOPMessageVM();
-		response.setCode(200);
-		response.setMessage("Remarks updated successfully.");
-		return response;
+
+		catch (Exception ex) {
+			throw new RuntimeException("Failed to update data", ex);
+		}
 	}
 
 	@Override
@@ -468,13 +594,55 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 
 	@Override
 	@Transactional
-	public AOPMessageVM saveMonthWiseProductionPlanData(String plantId, String year,
-			List<MonthWiseProductionPlanDTO> dataList) {
-		for (MonthWiseProductionPlanDTO dto : dataList) {
-			Optional<MonthWiseProductionPlan> optional = monthWiseProductionPlanRepository
+	public AOPMessageVM updateReportForMonthWiseConsumptionSummaryData(String plantId, String year,
+			List<MonthWiseConsumptionSummaryDTO> dataList) {
+		for (MonthWiseConsumptionSummaryDTO dto : dataList) {
+			Optional<MonthwiseConsumptionReport> optional = monthwiseConsumptionReportRepository
 					.findById(UUID.fromString(dto.getId()));
-			optional.get().setRemark(dto.getRemark());
-			monthWiseProductionPlanRepository.save(optional.get());
+			// optional.get().setRemark(dto.getRemark());
+			if (dto.getApril() != null) {
+				optional.get().setApril(dto.getApril());
+			}
+			if (dto.getMay() != null) {
+				optional.get().setMay(dto.getMay());
+			}
+			if (dto.getJune() != null) {
+				optional.get().setJune(dto.getJune());
+			}
+			if (dto.getJuly() != null) {
+				optional.get().setJuly(dto.getJuly());
+			}
+			if (dto.getAug() != null) {
+				optional.get().setAugust(dto.getAug());
+			}
+			if (dto.getSep() != null) {
+				optional.get().setSeptember(dto.getSep());
+			}
+			if (dto.getOct() != null) {
+				optional.get().setOctober(dto.getOct());
+			}
+			if (dto.getNov() != null) {
+				optional.get().setNovember(dto.getNov());
+			}
+			if (dto.getDec() != null) {
+				optional.get().setDecember(dto.getDec());
+			}
+			if (dto.getDec() != null) {
+				optional.get().setDecember(dto.getDec());
+			}
+			if (dto.getJan() != null) {
+				optional.get().setJanuary(dto.getJan());
+			}
+			if (dto.getFeb() != null) {
+				optional.get().setFebruary(dto.getFeb());
+			}
+			if (dto.getMarch() != null) {
+				optional.get().setMarch(dto.getMarch());
+			}
+			if (dto.getRemark() != null) {
+				optional.get().setRemarks(dto.getRemark());
+			}
+			monthwiseConsumptionReportRepository.save(optional.get());
 		}
 		AOPMessageVM response = new AOPMessageVM();
 		response.setCode(200);
@@ -484,6 +652,41 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 
 	@Override
 	@Transactional
+	public AOPMessageVM saveMonthWiseProductionPlanData(String plantId, String year,
+			List<MonthWiseProductionPlanDTO> dataList) {
+		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String tableName=verticalName + "_" + site.getName() + "_MonthWiseProductionPlan";
+		if ("MEG".equalsIgnoreCase(verticalName)) {
+			for (MonthWiseProductionPlanDTO dto : dataList) {
+				Optional<MonthWiseProductionPlan> optional = monthWiseProductionPlanRepository
+						.findById(UUID.fromString(dto.getId()));
+				optional.get().setRemark(dto.getRemark());
+				System.out.println("dto.getOpHrsActual()" + dto.getOpHrsActual());
+				if (dto.getOpHrsActual() != null) {
+					optional.get().setOpHrsActual(dto.getOpHrsActual());
+				}
+				monthWiseProductionPlanRepository.save(optional.get());
+			}
+		}else {
+			for (MonthWiseProductionPlanDTO dto : dataList) {
+				String sql = "UPDATE " + tableName + " SET Remark = :Remark WHERE Id = :Id";              
+	            Query q = entityManager.createNativeQuery(sql);
+	            q.setParameter("Remark", dto.getRemark());
+	            q.setParameter("Id", UUID.fromString(dto.getId()));
+	            q.executeUpdate();
+	        
+			}
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		
+		response.setMessage("Remarks updated successfully.");
+		return response;
+	}
+
+	@Override
 	public AOPMessageVM calculateProductionSummary(String year, String plantId) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -506,7 +709,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional
 	public AOPMessageVM calculateMonthwiseProductionData(String year, String plantId) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -529,7 +731,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional
 	public AOPMessageVM calculatePlantConsumptionSummaryReportData(String year, String plantId) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -552,7 +753,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional
 	public AOPMessageVM calculateTurnAroundPlanReportData(String year, String plantId) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -575,7 +775,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional
 	public AOPMessageVM calculateAnnualProductionPlanData(String year, String plantId) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -598,7 +797,6 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional
 	public AOPMessageVM calculatePlantContributionReportData(String year, String plantId) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -620,20 +818,118 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 
 	}
 
-	@Transactional
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId,
 			String aopYear) {
 		try {
-			String sql = "EXEC " + procedureName
-					+ " @plantId = :plantId, @aopYear = :aopYear";
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("plantId", plantId);
-			query.setParameter("aopYear", aopYear);
 
-			return query.executeUpdate();
+			String callSql = "{call " + procedureName + "(?, ?)}";
+
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+
+				// Set parameters in the correct order
+				stmt.setString(1, plantId);
+				stmt.setString(2, aopYear);
+
+				// Execute the stored procedure
+				int rowsAffected = stmt.executeUpdate();
+
+				// Optional: commit if auto-commit is off
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
+
+				return rowsAffected;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return 0;
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return 0;
+	}
+
+	@Override
+	public AOPMessageVM updateReportForPlantProductionPlanData(String plantId, String year,
+			List<AnnualProductionPlanReportDto> dataList, String reportType) {
+		for (AnnualProductionPlanReportDto dto : dataList) {
+			Optional<AnnualProductionPlanReport> optional = annualProductionPlanReportRepository
+					.findById(dto.getId());
+			if (optional.isPresent()) {
+				AnnualProductionPlanReport annualProductionPlanReport = optional.get();
+				if (reportType.equalsIgnoreCase("assumptions")) {
+					annualProductionPlanReport.setActivity(dto.getActivity());
+					annualProductionPlanReport.setRemark(dto.getRemark());
+					annualProductionPlanReportRepository.save(annualProductionPlanReport);
+				}
+				if (reportType.equalsIgnoreCase("maxRate")) {
+					annualProductionPlanReport.setActivity(dto.getActivity());
+					annualProductionPlanReport.setMaxHourlyRateValue(dto.getMaxHourlyRateValue());
+					annualProductionPlanReport.setUom(dto.getUom());
+					annualProductionPlanReport.setRemark(dto.getRemark());
+					annualProductionPlanReportRepository.save(annualProductionPlanReport);
+				}
+				if (reportType.equalsIgnoreCase("OperatingHrs")) {
+					annualProductionPlanReport.setActivity(dto.getActivity());
+					annualProductionPlanReport.setRateValue(dto.getRateValue());
+					annualProductionPlanReport.setUom(dto.getUom());
+					annualProductionPlanReport.setRemark(dto.getRemark());
+					annualProductionPlanReportRepository.save(annualProductionPlanReport);
+				}
+				if (reportType.equalsIgnoreCase("AverageHourlyRate")) {
+					annualProductionPlanReport.setActivity(dto.getActivity());
+					annualProductionPlanReport.setDurationHours(dto.getDurationHours());
+					annualProductionPlanReport.setRateValue(dto.getRateValue());
+					annualProductionPlanReport.setPeriodTo(dto.getPeriodTo());
+					annualProductionPlanReport.setPeriodFrom(dto.getPeriodFrom());
+					annualProductionPlanReport.setRemark(dto.getRemark());
+					annualProductionPlanReportRepository.save(annualProductionPlanReport);
+				}
+			}
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Remarks updated successfully.");
+		return response;
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public AOPMessageVM updateReportForPlantContributionYearWise(String plantId, String year,
+			List<YearWiseContributionDataDTO> dataList) {
+
+		List<PlantContribution> plantContributionList = new ArrayList<>();
+		for (YearWiseContributionDataDTO dto : dataList) {
+			PlantContribution plantContribution = null;
+			if (dto.getId() != null) {
+				plantContribution = plantContributionRepository
+						.findById(UUID.fromString(dto.getId())).get();
+			} else {
+				plantContribution = new PlantContribution();
+			}
+
+			if (dto.getPrevYearActual() != null) {
+				plantContribution.setActualPrevYear(dto.getPrevYearActual());
+			}
+			if (dto.getCurrentYearBudget() != null) {
+				plantContribution.setBudgetCurrentYear(dto.getCurrentYearBudget());
+			}
+			if (dto.getPrevYearBudget() != null) {
+				plantContribution.setBudgetPrevYear(dto.getPrevYearBudget());
+			}
+			if (dto.getRemarks() != null) {
+				plantContribution.setRemark(dto.getRemarks());
+			}
+			plantContributionList.add(plantContributionRepository.save(plantContribution));
+
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Remarks updated successfully.");
+		response.setData(plantContributionList);
+		return response;
 	}
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 
 	    Map<String, Object> result = new HashMap<String, Object>();
 	    List<String> userScreens = userScreenMappingRepository.findByVerticalFKIdAndPlantFKIdandUserId(verticalId, plantId, userId);
-
+	    List<String> permissions= userScreenMappingRepository.findPermissionsByVerticalFKIdAndPlantFKIdandUserId(verticalId, plantId, userId);
 	    Map<String, Object> verticalData = new HashMap<>();
 	    List<Map<String, Object>> children = new ArrayList<>();
 
@@ -90,35 +91,63 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 	        verticalData.put("id", verticalCode.toLowerCase().replace(" ", "-")); // Example: "Production Norms Plan" -> "production-norms-plan"
 	        verticalData.put("title", verticalTitle);
 	        verticalData.put("type", "group");
-
+	        
+	        
 	        Map<UUID, Map<String, Object>> groupWiseScreens = new HashMap<>();
+	        Map<UUID, Map<String, Object>> childScreenItems = new HashMap<>();
 
 	        finalResult.forEach(mapping -> {
-	            if ("collapse".equals(mapping.getType())) {
-	                // Treat as a parent group directly under the vertical
-	                Map<String, Object> parentGroup = new HashMap<>();
-	                parentGroup.put("id", mapping.getScreenCode()); // Assuming ScreenCode can act as a unique ID
-	                parentGroup.put("title", mapping.getScreenDisplayName());
-	                parentGroup.put("type",mapping.getType());
-	                parentGroup.put("icon", mapping.getIcon());
-					  parentGroup.put("url", mapping.getRoute());
-					    parentGroup.put("breadcrumbs", mapping.getBreadCrumbs());
-	                // parentGroup.put("children", new ArrayList<>());
-	                children.add(parentGroup); // Add directly to the vertical's children
-	            } else {
-	                // Treat as a regular screen item
-	                Map<String, Object> screenItem = new HashMap<>();
-	                screenItem.put("id", mapping.getScreenCode());
-	                screenItem.put("title", mapping.getScreenDisplayName());
-	                screenItem.put("type", mapping.getType());
-	                screenItem.put("url", mapping.getRoute());
-	                screenItem.put("icon", mapping.getIcon());
-	                screenItem.put("breadcrumbs", mapping.getBreadCrumbs());
+	            // Create a regular screen item
+	            Map<String, Object> screenItem = new HashMap<>();
+	            screenItem.put("id", mapping.getScreenCode());
+	            screenItem.put("title", mapping.getScreenDisplayName());
+	            screenItem.put("type", mapping.getType());
+	            screenItem.put("url", mapping.getRoute());
+	            screenItem.put("icon", mapping.getIcon());
+	            screenItem.put("breadcrumbs", mapping.getBreadCrumbs());
 
-	                if (mapping.getGroupId() != null) {
-	                    GroupMaster group = groupMap.get(mapping.getGroupId());
-	                    if (group != null) {
-	                        UUID groupId = group.getId();
+	            if (mapping.getGroupId() != null) {
+	                GroupMaster group = groupMap.get(mapping.getGroupId());
+	                if (group != null) {
+	                    UUID groupId = group.getId();
+	                    UUID parentGroupId = group.getParentId();
+
+	                    if (parentGroupId != null) {
+	                        // If group has a parent, it's a third level item
+	                        if (!groupWiseScreens.containsKey(parentGroupId)) {
+	                            // Ensure parent group structure exists
+	                            GroupMaster parentGroup = groupMap.get(parentGroupId);
+	                            Map<String, Object> parentData = new HashMap<>();
+	                            parentData.put("id", parentGroup.getGroupCode());
+	                            parentData.put("title", parentGroup.getGroupName());
+	                            parentData.put("type", "collapse");
+	                            parentData.put("icon", parentGroup.getIcon());
+	                            parentData.put("children", new ArrayList<>());
+	                            groupWiseScreens.put(parentGroupId, parentData);
+	                            children.add(parentData);
+	                        }
+	                        Map<String, Object> groupData = groupWiseScreens.get(parentGroupId);
+	                        List<Map<String, Object>> childrenList = (List<Map<String, Object>>) groupData.get("children");
+	                        
+	                        // Check for existing groupData
+	                        Map<String, Object> childData = childScreenItems.computeIfAbsent(groupId, k -> {
+	                            Map<String, Object> newChildData = new HashMap<>();
+	                            newChildData.put("id", group.getGroupCode());
+	                            newChildData.put("title", group.getGroupName());
+	                            newChildData.put("type", "collapse");
+	                            newChildData.put("icon", group.getIcon());
+	                            newChildData.put("children", new ArrayList<>());
+	                            childrenList.add(newChildData);
+	                            return newChildData;
+	                        });
+	                        
+	                        List<Map<String, Object>> childChildren = (List<Map<String, Object>>) childData.get("children");
+	                        if (!childChildren.contains(screenItem)) {
+	                            childChildren.add(screenItem);
+	                        }
+
+	                    } else {
+	                        // If no parent, it's a second level item
 	                        if (!groupWiseScreens.containsKey(groupId)) {
 	                            Map<String, Object> groupData = new HashMap<>();
 	                            groupData.put("id", group.getGroupCode());
@@ -129,15 +158,25 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 	                            groupWiseScreens.put(groupId, groupData);
 	                            children.add(groupData);
 	                        }
-	                        ((List<Map<String, Object>>) groupWiseScreens.get(groupId).get("children")).add(screenItem);
-	                    } else {
-	                        children.add(screenItem); // If no group, add directly to the vertical's children
+	                        Map<String, Object> groupData = groupWiseScreens.get(groupId);
+	                        List<Map<String, Object>> groupChildren = (List<Map<String, Object>>) groupData.get("children");
+	                        if (!groupChildren.contains(screenItem)) {
+	                            groupChildren.add(screenItem);
+	                        }
 	                    }
 	                } else {
-	                    children.add(screenItem); // If no group ID, add directly to the vertical's children
+	                    // If there's no group object, it's a standalone item (first level)
+	                    if (!children.contains(screenItem)) {
+	                        children.add(screenItem);
+	                    }
+	                }
+	            } else {
+	                // If no groupId, it's a standalone item (first level)
+	                if (!children.contains(screenItem)) {
+	                    children.add(screenItem);
 	                }
 	            }
-	        });
+	        });	        
 	        if (!children.isEmpty()) {
 	            verticalData.put("children", children);
 	        }
@@ -145,6 +184,9 @@ public class UserScreenMappingServiceImpl implements UserScreenMappingService {
 	        result.put("status", 200);
 	        result.put("message", "Screens list by verticalId " + verticalId + ".");
 	        result.put("data", Arrays.asList(verticalData)); // Wrap the verticalData in a list to match the outer structure
+	        if (!permissions.isEmpty()) {
+	            result.put("permission", permissions.get(0));
+	        } 
 	    } catch (Exception ex) {
 	        ex.printStackTrace();
 	        throw new Exception("Failed to fetch screens by vertical: " + ex.getMessage(), ex);

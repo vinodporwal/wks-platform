@@ -14,6 +14,7 @@ const getEnhancedColDefs = ({
   headerMap,
   handleRemarkCellClick,
   findSum,
+  roundOffDecimals,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange } = dataGridStore
@@ -30,11 +31,17 @@ const getEnhancedColDefs = ({
     params ? parseFloat(params).toFixed(3) : ''
 
   const formatValueToTwoDecimals = (params) =>
-    params ? parseFloat(params).toFixed(2) : ''
+    roundOffDecimals
+      ? params
+        ? parseFloat(params).toFixed(0)
+        : ''
+      : params
+        ? parseFloat(params).toFixed(2)
+        : ''
 
   let cols
 
-  if (lowerVertName == 'pe') {
+  if (lowerVertName == 'pe' || lowerVertName == 'pp') {
     cols = productionColDefsPE
   } else {
     cols = productionColDefs
@@ -153,7 +160,7 @@ const getEnhancedColDefs = ({
                   whiteSpace: 'nowrap',
                   width: ' 100%',
                 }}
-                onClick={() => handleRemarkCellClick(params.row)}
+                onDoubleClick={() => handleRemarkCellClick(params.row)}
               >
                 {displayText || (isEditable ? 'Click to add remark' : '')}
               </div>
@@ -176,6 +183,14 @@ const getEnhancedColDefs = ({
         valueFormatter: formatValueToTwoDecimals,
         renderEditCell: NumericInputOnly,
         align: 'right',
+        renderCell: (params) => (
+          <Tooltip
+            title={params.value != null ? params.value.toString() : ''}
+            arrow
+          >
+            <span>{formatValueToTwoDecimals(params.value)}</span>
+          </Tooltip>
+        ),
       }
     }
 

@@ -2,14 +2,12 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import NavGroup from './NavGroup'
 
-import { useMenuContext } from 'menu/menuProvider'
+import useFilteredMenu from 'hooks/useFilteredMenu'
 
 const Navigation = () => {
   // const menu = useMenu()
-  const { items: menuItems } = useMenuContext()
-  const menu = { items: [...menuItems] }
-
-  const navGroups = menu?.items?.map((item, index) => {
+  const filteredMenu = useFilteredMenu()
+  const navGroups = filteredMenu?.items?.map((item, index) => {
     switch (item.type) {
       case 'group':
         return <NavGroup key={`${item.id}-${index}`} item={item} />
@@ -42,7 +40,6 @@ const Navigation = () => {
           overflowY: 'auto',
           overflowX: 'hidden',
           flex: 1,
-          pr: 1,
         }}
       >
         {navGroups}

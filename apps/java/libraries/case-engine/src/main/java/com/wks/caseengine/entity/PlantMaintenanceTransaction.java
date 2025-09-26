@@ -39,6 +39,12 @@ public class PlantMaintenanceTransaction {
 
     @Column(name = "Rate")
     private Double rate;
+    
+    @Column(name = "EO_OpsProdRate")
+    private Double rateEO;
+    
+    @Column(name = "EOE_OpsProdRate")
+    private Double rateEOE;
 
     @Column(name = "Remarks", length = 500)
     private String remarks;

@@ -1,0 +1,37 @@
+[
+  {
+    "field": "DisplayName",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 220,
+    "hidden": false
+  },
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 100
+  },
+  {
+    "field": "ConstantValue",
+    "title": "Value",
+    "editable": true,
+    "format": "{0:#.##}",
+
+    "type": "number"
+  },
+
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": false,
+    "widthT": 220,
+    "type": "string"
+  },
+  {
+    "field": "normParameterFKID",
+    "title": "normParameterFKID",
+    "filterable": false,
+    "hidden": true
+  }
+]

@@ -11,9 +11,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wks.caseengine.dto.AnnualProductionPlanReportDto;
+import com.wks.caseengine.dto.MonthWiseConsumptionSummaryDTO;
 import com.wks.caseengine.dto.MonthWiseProductionPlanDTO;
+import com.wks.caseengine.dto.PlantProductionDTO;
 import com.wks.caseengine.dto.PlantProductionDataDTO;
 import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
+import com.wks.caseengine.dto.YearWiseContributionDataDTO;
 import com.wks.caseengine.entity.PlantProductionRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ProductionVolumeDataReportService;
@@ -41,9 +45,16 @@ public class ProductionVolumeDataReportController {
 
 	@GetMapping(value = "/report/month-wise/consumption-summary")
 	public ResponseEntity<AOPMessageVM> getReportForMonthWiseConsumptionSummaryData(@RequestParam String plantId,
-			@RequestParam String year) {
+			@RequestParam String year,@RequestParam String reportType) {
 		AOPMessageVM response = productionVolumeDataReportService.getReportForMonthWiseConsumptionSummaryData(plantId,
-				year);
+				year,reportType);
+		return ResponseEntity.status(response.getCode()).body(response);
+	}
+	
+	@PostMapping(value = "/report/month-wise/consumption-summary")
+	public ResponseEntity<AOPMessageVM> updateReportForMonthWiseConsumptionSummaryData(@RequestParam String plantId,
+			@RequestParam String year,@RequestBody List<MonthWiseConsumptionSummaryDTO> dataList) {
+		AOPMessageVM response = productionVolumeDataReportService.updateReportForMonthWiseConsumptionSummaryData(plantId, year, dataList);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 
@@ -54,12 +65,27 @@ public class ProductionVolumeDataReportController {
 				reportType);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
+	
+	@PostMapping(value = "/report/plant/production/plan")
+	public ResponseEntity<AOPMessageVM> updateReportForPlantProductionPlanData(@RequestParam String plantId,
+			@RequestParam String year,@RequestParam(required = false) String reportType,
+			@RequestBody List<AnnualProductionPlanReportDto> dataList) {
+		AOPMessageVM response = productionVolumeDataReportService.updateReportForPlantProductionPlanData(plantId, year, dataList,reportType);
+		return ResponseEntity.status(response.getCode()).body(response);
+	}
 
 	@GetMapping(value = "/report/plant/contribution/year-wise/plan")
 	public ResponseEntity<AOPMessageVM> getReportForPlantContributionYearWise(@RequestParam String plantId,
 			@RequestParam String year, @RequestParam String reportType) {
 		AOPMessageVM response = productionVolumeDataReportService.getReportForPlantContributionYearWise(plantId, year,
 				reportType);
+		return ResponseEntity.status(response.getCode()).body(response);
+	}
+	
+	@PostMapping(value = "/report/plant/contribution/year-wise/plan")
+	public ResponseEntity<AOPMessageVM> updateReportForPlantContributionYearWise(@RequestParam String plantId,
+			@RequestParam String year,@RequestBody List<YearWiseContributionDataDTO> dataList) {
+		AOPMessageVM response = productionVolumeDataReportService.updateReportForPlantContributionYearWise(plantId, year, dataList);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 

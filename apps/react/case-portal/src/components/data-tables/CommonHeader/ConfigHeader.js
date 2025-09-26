@@ -3,6 +3,7 @@ import productionColumnsPE1 from '../../../assets/config_pe1.json'
 import productionColumnsPE2 from '../../../assets/config_pe2.json'
 import productionColumnsPE3 from '../../../assets/config_pe3.json'
 import productionColumnsPE4 from '../../../assets/config_pe4.json'
+import productionColumnsPE5 from '../../../assets/config_pe5.json'
 import NumericInputOnly from 'utils/NumericInputOnly'
 import Tooltip from '@mui/material/Tooltip'
 import { truncateRemarks } from 'utils/remarksUtils'
@@ -16,6 +17,8 @@ const getConfigByType = (configType) => {
       return productionColumns
     case 'StartupLosses':
       return productionColumnsPE1
+    case 'Configuration':
+      return productionColumnsPE1
     case 'Otherlosses':
       return productionColumnsPE2
     case 'ShutdownNorms':
@@ -26,6 +29,8 @@ const getConfigByType = (configType) => {
       return productionColumns
     case 'consumption':
       return productionColumns
+    case 'Constants':
+      return productionColumnsPE5
     default:
       return productionColumns
   }
@@ -63,6 +68,7 @@ const getEnhancedAOPColDefs = ({
         headerAlign: 'left',
         minWidth: 120,
         isGradeHeader: 'true',
+        type: 'number',
       })
     })
   } else {
@@ -182,7 +188,7 @@ const getEnhancedAOPColDefs = ({
                   whiteSpace: 'nowrap',
                   width: ' 100%',
                 }}
-                onClick={() => handleRemarkCellClick(params.row)}
+                onDoubleClick={() => handleRemarkCellClick(params.row)}
               >
                 {displayText || (isEditable ? 'Click to add remark' : '')}
               </div>
@@ -200,6 +206,14 @@ const getEnhancedAOPColDefs = ({
         valueFormatter: formatValueToThreeDecimals,
 
         align: 'right',
+        renderCell: (params) => (
+          <Tooltip
+            title={params.value != null ? params.value.toString() : ''}
+            arrow
+          >
+            <span>{formatValueToThreeDecimals(params.value)}</span>
+          </Tooltip>
+        ),
       }
     }
 

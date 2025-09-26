@@ -1,0 +1,354 @@
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSelector } from 'react-redux'
+
+import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
+import { useSession } from 'SessionStoreContext'
+import { validateFields } from 'utils/validationUtils'
+import crackercolumns from '../../assets/CrackerMaintenanceColumn.json'
+import KendoDataTables from './index'
+
+const MaintenanceProcessTable = ({ viewOnly }) => {
+  const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
+
+  const dataConfig = useMemo(
+    () => ({
+      serviceFn: MaintenanceDetailsApiService.getCrackerMaintenanceData,
+      editable: true,
+    }),
+    [plantID],
+  )
+
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [deleteId, setDeleteId] = useState(null)
+  const [open1, setOpen1] = useState(false)
+
+  const [modifiedCells, setModifiedCells] = useState({})
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
+  const handleRemarkCellClick = (row) => {
+    if (!row?.isEditable) return
+
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const saveChanges = useCallback(async () => {
+    try {
+      setLoading(true)
+      if (Object.keys(modifiedCells).length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+        setLoading(false)
+        return
+      }
+
+      const rawData = Object.values(modifiedCells)
+      const data = rawData.filter((row) => row.inEdit)
+      if (data.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+        setLoading(false)
+        return
+      }
+
+      const validationMessage = validateFields(data, ['remarks'])
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: validationMessage, severity: 'error' })
+        setLoading(false)
+        return
+      }
+
+      await saveCrackerMaintenanceData(data)
+    } catch (err) {
+      console.error('Save Cracker Data Error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells])
+
+  const saveCrackerMaintenanceData = async (newRows) => {
+    setLoading(true)
+    try {
+      const payload = newRows.map((row) => ({
+        fourFD: row.fourFD,
+        aopYear: AOP_YEAR,
+        totalSAD: row.totalSAD,
+        monthName: row.monthName ?? null,
+        plantId: PLANT_ID,
+        numberOfDays: row.numberOfDays,
+        demoBBU: row.demoBBU,
+        coilReplacement: row.coilReplacement,
+        ibr: row.coilReplacement,
+        demoSAD: row.demoSAD,
+        demoSD: row.demoSD,
+        fourF: row.fourF,
+        mnt: row.mnt,
+        total: row.total,
+        fourFHours: row.fourFHours,
+        bbu: row.bbu,
+        bbd: row.bbd,
+        sad: row.sad,
+        demoHSS: row.demoHSS,
+        fiveF: row.fiveF,
+        id: row.idFromApi || row.id,
+        shutdown: row.shutdown,
+        slowdown: row.slowdown,
+        remarks: row.remarks ?? row.remark ?? '',
+      }))
+
+      const response =
+        await MaintenanceDetailsApiService.saveCrackerMaintenance(
+          PLANT_ID,
+          AOP_YEAR,
+          payload,
+          keycloak,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Error saving data!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  const fetchData = useCallback(async () => {
+    setRows([])
+    setLoading(true)
+    try {
+      const resp = await dataConfig.serviceFn(keycloak)
+      const raw = resp.data
+      const formatted = (raw || []).map((item, idx) => ({
+        ...item,
+        idFromApi: item.id,
+        id: idx,
+        isEditable: viewOnly ? false : dataConfig.editable,
+        originalRemark: item.remarks,
+      }))
+
+      // Find all numeric columns
+      const numericKeys = Object.keys(formatted[0] || {}).filter(
+        (key) => typeof formatted[0][key] === 'number',
+      )
+
+      // Create the sum row
+      const sumRow = numericKeys.reduce(
+        (acc, key) => {
+          acc[key] = formatted.reduce((sum, row) => sum + (row[key] || 0), 0)
+          return acc
+        },
+        {
+          id: formatted.length,
+          idFromApi: 'SUM_ROW',
+          isEditable: false,
+          originalRemark: 'Total',
+          monthName: 'Total',
+          remarks: 'Total',
+        },
+      )
+
+      // Add the sum row at the bottom
+      const finalData = [...formatted, sumRow]
+
+      setRows(finalData)
+    } catch (err) {
+      console.error('Error fetching data:', err)
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [plantID, keycloak])
+
+  const handleCalculate = useCallback(async () => {
+    try {
+      const result =
+        await MaintenanceDetailsApiService.handleCalculateMaintenanceCracker(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+      setSnackbarData({
+        message:
+          result?.code == 200
+            ? 'Data refreshed successfully!'
+            : 'Data Refresh Failed!',
+        severity: result?.code == 200 ? 'success' : 'error',
+      })
+      setSnackbarOpen(true)
+      if (result?.code == 200) fetchData()
+    } catch (err) {
+      console.error(err)
+      setSnackbarData({ message: err.message || 'Error!', severity: 'error' })
+      setSnackbarOpen(true)
+    }
+  }, [keycloak, fetchData])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData, oldYear, yearChanged, plantID])
+
+  // Helper to generate monthly fields
+  const getMonthlyColumns = () => {
+    const months = [
+      { field: 'April', index: 4 },
+      { field: 'May', index: 5 },
+      { field: 'June', index: 6 },
+      { field: 'July', index: 7 },
+      { field: 'Aug', index: 8 },
+      { field: 'Sep', index: 9 },
+      { field: 'Oct', index: 10 },
+      { field: 'Nov', index: 11 },
+      { field: 'Dec', index: 12 },
+      { field: 'Jan', index: 1 },
+      { field: 'Feb', index: 2 },
+      { field: 'Mar', index: 3 },
+    ]
+
+    return months.map(({ field, index }) => ({
+      field,
+      title: headerMap[index],
+      type: 'number',
+      format: '{0:n2}',
+      editable: false,
+      align: 'right',
+      headerAlign: 'left',
+    }))
+  }
+
+  // Shared editable field
+  const isEditableField = {
+    field: 'isEditable',
+    title: 'isEditable',
+    hidden: true,
+  }
+
+  let basecols = crackercolumns
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      allAction: false,
+    }
+  }
+
+  const adjustedPermissions = useMemo(
+    () =>
+      getAdjustedPermissions(
+        {
+          showAction: false,
+          addButton: false,
+          deleteButton: false,
+          editButton: false,
+          showUnit: false,
+          saveWithRemark: false,
+          saveBtn: viewOnly ? false : true,
+          allAction: true,
+          downloadExcelBtnFromUI: viewOnly ? false : true,
+          ExcelName: `CRAKCER_Maintenance Details`,
+          showRefresh: false,
+          showCalculate: viewOnly ? false : true,
+          showCalculateVisibility: true,
+          showNote: true,
+        },
+        oldYear?.oldYear,
+      ),
+    [oldYear],
+  )
+
+  return (
+    <div>
+      <Backdrop
+        open={loading}
+        sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+      <KendoDataTables
+        columns={basecols}
+        rows={rows}
+        setRows={setRows}
+        fetchData={fetchData}
+        handleCalculate={handleCalculate}
+        deleteId={deleteId}
+        setDeleteId={setDeleteId}
+        open1={open1}
+        setOpen1={setOpen1}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        snackbarData={snackbarData}
+        setSnackbarData={setSnackbarData}
+        permissions={adjustedPermissions}
+        saveChanges={saveChanges}
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        handleRemarkCellClick={handleRemarkCellClick}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        note='*Unit of Measurement - Days'
+        supressGridHeight={true}
+      />
+    </div>
+  )
+}
+export default MaintenanceProcessTable

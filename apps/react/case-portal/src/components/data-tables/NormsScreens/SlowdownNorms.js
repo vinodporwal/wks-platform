@@ -20,6 +20,7 @@ import { setIsBlocked } from 'store/reducers/dataGridStore'
 
 const SlowdownNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const [loading, setLoading] = useState(false)
   const menu = useSelector((state) => state.dataGridStore)
   const [allProducts, setAllProducts] = useState([])
@@ -210,25 +211,10 @@ const SlowdownNorms = () => {
     return params.row.isEditable
   }
 
-  // const months = slowdownMonths
-
   const colDefs = [
     {
       field: 'Particulars',
       headerName: 'Type',
-      minWidth: 100,
-      groupable: true,
-      renderCell: (params) => (
-        <div
-          style={{
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-            lineHeight: 1.4,
-          }}
-        >
-          <strong>{params.value}</strong>
-        </div>
-      ),
     },
 
     {
@@ -236,78 +222,6 @@ const SlowdownNorms = () => {
       headerName: 'Particulars',
       minWidth: 150,
       editable: false,
-      valueGetter: (params) => params || '',
-      valueFormatter: (params) => {
-        const product = allProducts.find((p) => p.id === params)
-        return product ? product.displayName : ''
-      },
-
-      filterOperators: [
-        {
-          label: 'contains',
-          value: 'contains',
-          getApplyFilterFn: (filterItem) => {
-            if (!filterItem?.value) {
-              return
-            }
-            return (rowId) => {
-              const filterValue = filterItem.value.toLowerCase()
-              if (filterValue) {
-                const productName = getProductDisplayName(rowId)
-                if (productName) {
-                  return productName.toLowerCase().includes(filterValue)
-                }
-              }
-              return true
-            }
-          },
-          InputComponent: ({ item, applyValue, focusElementRef }) => (
-            <TextField
-              autoFocus
-              inputRef={focusElementRef}
-              size='small'
-              label='Contains'
-              value={item.value || ''}
-              onChange={(event) =>
-                applyValue({ ...item, value: event.target.value })
-              }
-              style={{ marginTop: '8px' }}
-            />
-          ),
-        },
-      ],
-
-      renderEditCell: (params) => {
-        const { value, id, api } = params
-        return (
-          <select
-            value={value || ''}
-            onChange={(event) => {
-              api.setEditCellValue({
-                id,
-                field: 'materialFkId',
-                value: event.target.value,
-              })
-            }}
-            style={{
-              width: '100%',
-              padding: '5px',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-            }}
-          >
-            <option value='' disabled>
-              Select
-            </option>
-            {allProducts.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.displayName}
-              </option>
-            ))}
-          </select>
-        )
-      },
     },
 
     { field: 'UOM', headerName: 'UOM', width: 100, editable: false },
@@ -316,168 +230,123 @@ const SlowdownNorms = () => {
       field: 'april',
       headerName: headerMap[4],
       editable: slowdownMonths?.includes(4),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(4),
-      columnClassName: 'first-column',
+      type: 'number',
+      format: '{0:#.###}',
     },
 
     {
       field: 'may',
       headerName: headerMap[5],
       editable: slowdownMonths?.includes(5),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(5),
-      columnClassName: 'first-column',
+      type: 'number',
+      format: '{0:#.###}',
     },
 
     {
       field: 'june',
       headerName: headerMap[6],
       editable: slowdownMonths?.includes(6),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(6),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'july',
       headerName: headerMap[7],
       editable: slowdownMonths?.includes(7),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(7),
+      type: 'number',
+      format: '{0:#.###}',
     },
 
     {
       field: 'august',
       headerName: headerMap[8],
       editable: slowdownMonths?.includes(8),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(8),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'september',
       headerName: headerMap[9],
       editable: slowdownMonths?.includes(9),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(9),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'october',
       headerName: headerMap[10],
       editable: slowdownMonths?.includes(10),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(10),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'november',
       headerName: headerMap[11],
       editable: slowdownMonths?.includes(11),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(11),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'december',
       headerName: headerMap[12],
       editable: slowdownMonths?.includes(12),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(12),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'january',
       headerName: headerMap[1],
       editable: slowdownMonths?.includes(1),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(1),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'february',
       headerName: headerMap[2],
       editable: slowdownMonths?.includes(2),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(2),
+      type: 'number',
+      format: '{0:#.###}',
     },
     {
       field: 'march',
       headerName: headerMap[3],
       editable: slowdownMonths?.includes(3),
-      renderEditCell: NumericInputOnly,
-      align: 'right',
-      headerAlign: 'left',
-      valueFormatter: formatValueToFiveDecimals,
       isDisabled: !slowdownMonths?.includes(3),
+      type: 'number',
     },
 
-    // remarks
     {
       field: 'remarks',
       headerName: 'Remark',
       minWidth: 125,
       editable: false,
-      renderCell: (params) => {
-        const displayText = truncateRemarks(params.value)
-        const isEditable = !params.row.Particulars
-
-        return (
-          <Tooltip title={params.value || ''} arrow>
-            <div
-              style={{
-                cursor: 'pointer',
-                color: params.value ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                width: ' 100%',
-              }}
-              onClick={() => handleRemarkCellClick(params.row)}
-            >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
-            </div>
-          </Tooltip>
-        )
-      },
     },
     {
       field: 'idFromApi',
       headerName: 'idFromApi',
+      hidden: true,
     },
-    // {
-    //   field: 'isEditable',
-    //   headerName: 'isEditable',
-    // },
   ]
 
   const handleRemarkCellClick = (row) => {
+    const rowsInEditMode = Object.keys(rowModesModel).filter(
+      (id) => rowModesModel[id]?.mode === 'edit',
+    )
+
+    rowsInEditMode.forEach((id) => {
+      apiRef.current.stopRowEditMode({ id })
+    })
+
     if (!row?.isEditable) return
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
@@ -579,6 +448,7 @@ const SlowdownNorms = () => {
           unsavedRows: {},
           rowsBeforeChange: {},
         }
+        setEnableSaveAddBtn(false)
         setModifiedCells({})
 
         setLoading(false)
@@ -608,7 +478,7 @@ const SlowdownNorms = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      // const data = await DataService.getShutdownNormsData(keycloak)
+
       const data = await DataService.getSlowdownNormsData(keycloak)
 
       // const customOrder = [
@@ -649,6 +519,7 @@ const SlowdownNorms = () => {
           remarks: item?.remarks?.trim() || null,
           originalRemark: item?.remarks?.trim(),
           materialFkId: item?.materialFkId.toLowerCase(),
+          isEditable: true,
 
           ...(isTPD && {
             april: item.april
@@ -782,6 +653,7 @@ const SlowdownNorms = () => {
 
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
+    setEnableSaveAddBtn(true)
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -828,6 +700,7 @@ const SlowdownNorms = () => {
       </Backdrop>
       <DataGridTable
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         isCellEditable={isCellEditable}
         title='Shutdown Norms'
         columns={colDefs}

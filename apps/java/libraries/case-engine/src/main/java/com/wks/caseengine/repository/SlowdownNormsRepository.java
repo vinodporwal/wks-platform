@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import com.wks.caseengine.entity.ShutdownNormsValue;
 import com.wks.caseengine.entity.SlowdownNormsValue;
 
 @Repository
@@ -61,7 +60,7 @@ public interface SlowdownNormsRepository extends JpaRepository<SlowdownNormsValu
                       @Param("materialId") UUID materialId,
                       @Param("financialYear") String financialYear);
 		
-		  @Query(value = "SELECT  DISTINCT MaintForMonth  FROM vwGetSlowdownMonths WHERE PlantId = :plantId AND MaintenanceName = :maintenanceName", nativeQuery = true)
-		 	List getSlowdownMonths(@Param("plantId") UUID plantId, @Param("maintenanceName") String maintenanceName);
+		  @Query(value = "SELECT  DISTINCT MaintForMonth  FROM vwGetSlowdownMonths WHERE PlantId = :plantId AND MaintenanceName = :maintenanceName AND AuditYear = :AuditYear", nativeQuery = true)
+		 	List getSlowdownMonths(@Param("plantId") UUID plantId, @Param("maintenanceName") String maintenanceName, @Param("AuditYear") String AuditYear);
 
 }

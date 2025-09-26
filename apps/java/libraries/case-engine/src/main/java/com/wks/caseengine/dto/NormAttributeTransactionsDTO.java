@@ -22,4 +22,7 @@ public class NormAttributeTransactionsDTO {
 	private String attributeValue;
 	private String auditYear;
 	private UUID normParameterFKId;
+	private UUID maintenanceId;
+	private String description;
+	private String normParameterName;
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.dto.ShutdownNormsValueDTO;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ShutdownNormsService;
 
 @RestController
@@ -20,19 +21,24 @@ public class ShutdownNormsController {
 	@Autowired
 	private ShutdownNormsService shutdownNormsService;
 	
-	@GetMapping(value="/shutdownNorms")
-	public List<ShutdownNormsValueDTO> getShutdownNormsData(@RequestParam String year,@RequestParam String plantId){
-		return	shutdownNormsService.getShutdownNormsData(year, plantId);
+	@GetMapping(value="/shutdown-consumption")
+	public AOPMessageVM getShutdownNormsData(@RequestParam String year,@RequestParam String plantId,@RequestParam(required=false) String gradeId){
+		return	shutdownNormsService.getShutdownNormsData(year,plantId,gradeId);
 	}
 	
-	@PostMapping(value="/shutdownNorms")
-	public List<ShutdownNormsValueDTO> saveShutdownNormsData(@RequestBody List<ShutdownNormsValueDTO> shutdownNormsValueDTOList){
-		return	shutdownNormsService.saveShutdownNormsData(shutdownNormsValueDTOList);
+	@PostMapping(value="/shutdown-consumption")
+	public AOPMessageVM saveShutdownNormsData(@RequestParam String plantId,@RequestBody List<ShutdownNormsValueDTO> shutdownNormsValueDTOList){
+		return	shutdownNormsService.saveShutDownNorms(plantId,shutdownNormsValueDTOList);
 	}
 	
-	@GetMapping(value="/getShutdownNormsSPData")
-	public List<ShutdownNormsValueDTO> getShutdownNormsSPData(@RequestParam String year,@RequestParam String plantId){
-		return	shutdownNormsService.getShutdownNormsSPData(year, plantId);
+	@GetMapping(value="/calculate-shutdown-consumption")
+	public AOPMessageVM getShutdownNormsSPData(@RequestParam String year,@RequestParam String plantId){
+		return	shutdownNormsService.getShutdownNormsSPData(year,plantId);
+	}
+	
+	@GetMapping(value="/unique/grades")
+	public AOPMessageVM getUniqueGrades(@RequestParam String year,@RequestParam String plantId){
+		return	shutdownNormsService.getUniqueGrades(year,plantId);
 	}
 
 }

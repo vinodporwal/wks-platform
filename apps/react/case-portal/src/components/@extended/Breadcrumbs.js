@@ -21,17 +21,18 @@ import { Box } from '../../../node_modules/@mui/material/index'
 const Breadcrumbs = ({ navigation, title, ...others }) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
-  const vertName = verticalChange?.selectedVertical
-  const plantName = JSON.parse(localStorage.getItem('selectedPlant'))?.name
-  const siteName = JSON.parse(localStorage.getItem('selectedSite'))?.name
-  const verticalId = localStorage.getItem('verticalId')
-  const verticalName = JSON.parse(
-    localStorage.getItem('selectedVertical'),
-  )?.name
+  const { verticalChange, plantObject, verticalObject, siteObject } =
+    dataGridStore
+
   const dispatch = useDispatch()
 
-  // const siteName = JSON.parse(localStorage.getItem('selectedSite'))?.name;
+  const PLANT_ID = plantObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const SITE_ID = siteObject?.id
+
+  const PLANT_NAME = plantObject?.name
+  const VERTICAL_NAME = verticalObject?.name
+  const SITE_NAME = siteObject?.name
 
   const [notification, setNotification] = useState({
     open: false,
@@ -39,54 +40,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     severity: 'info',
   })
 
-  function getRoleName(verticalId, screenId) {
-    const roleMapping = {
-      '5CC84A47-9717-4142-8E66-B60EBE0CF703': {
-        'product-demand': 'CTS Engineer',
-        'product-mcu-val': 'Plant Manager',
-
-        'shutdown-plan': 'Maintenance Engineer',
-        'slowdown-plan': 'Maintenance Engineer',
-        'maintenance-details': 'Maintenance Engineer',
-
-        'production-norms': 'Plant Manager',
-        'catalyst-selectivity': 'CTS Engineer',
-        'normal-op-norms': 'Plant Manager',
-        'shutdown-norms': 'Maintenance Engineer',
-        'slowdown-norms': 'Maintenance Engineer',
-        'consumption-norms': 'Plant Manager',
-        'feed-stock': 'Plant Manager',
-        workflow: 'Plant Manager',
-        'aop-annual-cost-report': 'Plant Manager',
-      },
-      'BF5D7508-96EB-496E-BEB0-4828CB1A1B11': {
-        'product-demand': 'CTS Engineer',
-        'product-mcu-val': 'Plant Manager',
-
-        'shutdown-plan': 'Maintenance Engineer',
-        'slowdown-plan': 'Maintenance Engineer',
-        'maintenance-details': 'Maintenance Engineer',
-
-        'production-norms': 'Plant Manager',
-        'catalyst-selectivity': 'CTS Engineer',
-        'normal-op-norms': 'Plant Manager',
-        'shutdown-norms': 'Maintenance Engineer',
-        'slowdown-norms': 'Maintenance Engineer',
-        'consumption-norms': 'Plant Manager',
-
-        workflow: 'Plant Manager',
-        'aop-annual-cost-report': 'Plant Manager',
-      },
-    }
-
-    const verticalRoleMap = roleMapping[verticalId]
-    return verticalRoleMap?.[screenId]
-      ? `Role : ${verticalRoleMap[screenId]}`
-      : ' '
-  }
-
   async function handleOpenPdf(title) {
-    const url = `${Config.StorageUrl}/storage/files/${vertName}/${siteName}/${plantName}/downloads/${title}.pdf?content-type=application/pdf`
+    const url = `${Config.StorageUrl}/storage/files/${VERTICAL_NAME}/${SITE_NAME}/${PLANT_NAME}/downloads/${title}.pdf?content-type=application/pdf`
     const headers = {
       Authorization: `Bearer ${keycloak.token}`,
     }
@@ -115,7 +70,13 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   }
 
   async function handleOpenPdfTemp(title) {
-    const url = `/files/${title}.pdf`
+    // console.log('titletitle', title)
+    var url = ''
+    if (title != 'production-aop')
+      url = `${window.location.origin}/files/DTC.xlsx`
+    else {
+      url = `${window.location.origin}/files/Blue Print.docx`
+    }
 
     try {
       const resp = await fetch(url, {
@@ -141,6 +102,20 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     }
   }
 
+  async function handleOpenPdfTempSSRS(title) {
+    try {
+      let url = ''
+      url =
+        'http://sjmnpb174/ReportServer/Pages/ReportViewer.aspx?%2fAOP&rs:Command=Render'
+
+      window.open(url, '_blank')
+      return true
+    } catch (e) {
+      console.error('Error opening link:', e)
+      return Promise.reject(e)
+    }
+  }
+
   const location = useLocation()
   const [main, setMain] = useState()
   const [item, setItem] = useState()
@@ -148,24 +123,12 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   useEffect(() => {
     let title = item?.title
 
-    const verticalName = JSON.parse(
-      localStorage.getItem('selectedVertical'),
-    )?.name?.toLowerCase()
-
-    // if (title === 'Business Demand') {
-    //   if (verticalName === 'meg') {
-    //     title = 'Business Demand (Percentage)'
-    //   } else if (verticalName === 'pe') {
-    //     title = 'Business Demand (Absolute)'
-    //   }
-    // }
-
     dispatch(
       setScreenTitle({
         title,
       }),
     )
-  }, [item, vertName])
+  }, [item, VERTICAL_NAME])
 
   // set active item state
   const getCollapse = (menu) => {
@@ -225,57 +188,107 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     var title1 = itemTitle
     if (
       title1 === 'Business Demand' &&
-      verticalChange?.selectedVertical?.toLowerCase() === 'meg'
+      VERTICAL_NAME?.toLowerCase() === 'meg'
     ) {
       title1 = 'Business Demand (Percentage)'
     }
 
-    if (
-      title1 === 'Business Demand' &&
-      verticalChange?.selectedVertical?.toLowerCase() === 'pe'
-    ) {
+    if (title1 === 'Business Demand' && VERTICAL_NAME?.toLowerCase() === 'pe') {
       title1 = 'Business Demand (Absolute)'
     }
 
-    itemContent = (
-      <Typography
-        variant='subtitle1'
-        color='textPrimary'
-        display='flex'
-        alignItems='center'
-      >
-        {/* HIDE THE TITLE NAME  */}
-        {/* {title1} */}
-        <Tooltip title={`Basis for ${itemTitle}`}>
-          <IconButton
-            size='medium'
-            sx={{
-              ml: 1,
-              backgroundColor: 'transparent',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.1)',
-              },
-              padding: '6px',
-            }}
-            onClick={() => handleOpenPdf(item?.id)}
-          >
-            <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
-          </IconButton>
-        </Tooltip>
-      </Typography>
-    )
+    const normalizedTitle = itemTitle?.toLowerCase().replace(/\s/g, '')
+
+    // console.log('normalizedTitle', normalizedTitle)
+
+    // if (['productionaop', 'consumptionaop'].includes(normalizedTitle)) {
+    if (
+      [
+        'monthwiseproductionplan',
+        'overallaopconsumption(norm/quantity)',
+      ].includes(normalizedTitle) &&
+      VERTICAL_NAME?.toLowerCase() == 'meg'
+    ) {
+      itemContent = (
+        <Typography
+          variant='subtitle1'
+          color='textPrimary'
+          display='flex'
+          alignItems='center'
+        >
+          {/* HIDE THE TITLE NAME  */}
+          {/* {title1} */}
+          <Tooltip title={`Basis for ${itemTitle}`}>
+            <IconButton
+              size='medium'
+              sx={{
+                ml: 1,
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+                padding: '6px',
+              }}
+              onClick={() => handleOpenPdfTemp(item?.id)}
+            >
+              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+      )
+    } else if (
+      (['aopapprovalflow'].includes(normalizedTitle) &&
+        VERTICAL_NAME?.toLowerCase() === 'pe') ||
+      VERTICAL_NAME?.toLowerCase() === 'pp'
+    ) {
+      itemContent = (
+        <Typography
+          variant='subtitle1'
+          color='textPrimary'
+          display='flex'
+          alignItems='center'
+        >
+          {/* HIDE THE TITLE NAME  */}
+          {/* {title1} */}
+          <Tooltip title={`Report`}>
+            <IconButton
+              size='medium'
+              sx={{
+                ml: 1,
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+                padding: '6px',
+              }}
+              onClick={() => handleOpenPdfTempSSRS(item?.id)}
+            >
+              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+      )
+    } else {
+      itemContent = null
+    }
+
+    // console.log('keycloak?.realmAccess?.roles', keycloak?.idTokenParsed)
 
     // main
-    if (item.breadcrumbs !== false) {
+    if (
+      item.breadcrumbs !== false &&
+      location?.pathname !== '/user-management' &&
+      location?.pathname !== '/user-form'
+    ) {
       breadcrumbContent = (
         <MainCard
           border={false}
-          sx={{ mb: 3, bgcolor: 'transparent' }}
+          sx={{ bgcolor: 'transparent' }}
           {...others}
           content={false}
         >
           {location?.pathname.startsWith('/production-norms-plan') && (
-            <Box sx={{ m: '10px -10px 16px' }}>
+            <Box>
               <StepperNav />
             </Box>
           )}
@@ -285,7 +298,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             justifyContent='flex-start'
             alignItems='flex-start'
             spacing={1}
-            sx={{ marginTop: '-18px' }}
+            // sx={{ marginTop: '-18px' }}
           >
             {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
             {/* <MuiBreadcrumbs aria-label='breadcrumb'> */}
@@ -331,14 +344,14 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                     textDecoration: 'none',
                     fontWeight: 800,
                     color: 'black',
-                    fontSize: '0.8rem',
+                    fontSize: '0.7rem',
                     display: 'flex',
                     alignItems: 'center',
                   }}
                 >
-                  {verticalName} / {siteName} / {plantName} |{' '}
+                  {VERTICAL_NAME} / {SITE_NAME} / {PLANT_NAME}{' '}
                   {/* {getRoleName(verticalId, item?.id)} */}
-                   {keycloak?.realmAccess?.roles[0]}
+                  {/* {keycloak?.realmAccess?.roles[0]} */}
                   {itemContent}
                 </Typography>
               </Grid>

@@ -19,8 +19,10 @@ const ConfigurationTable = () => {
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [startUpRows, setStartUpRows] = useState([])
+  const [configurationRows, setConfigurationRows] = useState([])
   const [otherLossRows, setOtherLossRows] = useState([])
   const [shutdownNormsRows, setShutdownRows] = useState([])
+  const [constantsRows, setConstantsRows] = useState([])
   const [productionRows, setProductionRows] = useState([])
   const [gradeData, setGradeData] = useState([])
   const [continiousGradeData, setContiniousGradeData] = useState([])
@@ -37,7 +39,6 @@ const ConfigurationTable = () => {
 
       if (tabs.length == 0) {
         setLoading(true)
-        // data = data.sort((a, b) => b.normType.localeCompare(a.normType))
         const groupedRows = []
         const groups = new Map()
         let groupId = 0
@@ -78,11 +79,13 @@ const ConfigurationTable = () => {
           normGroup.get(TypeName).push(item)
         })
         let groupId = 0
+        let configurationRows = []
         let shutdownRows = []
         let startUpRows = []
         let otherLossRows = []
         let continiousGradeRows = []
         let discontiniousGradeRows = []
+        let constantsRows = []
         groups.forEach((normGroup, ConfigTypeName) => {
           let rowsForThisCategory = []
           if (ConfigTypeName === 'ShutdownNorms') {
@@ -114,7 +117,10 @@ const ConfigurationTable = () => {
               })
             })
           })
-          if (ConfigTypeName == 'ShutdownNorms') {
+
+          if (ConfigTypeName == 'Configuration') {
+            configurationRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'ShutdownNorms') {
             shutdownRows = rowsForThisCategory
           } else if (ConfigTypeName == 'StartupLosses') {
             startUpRows = rowsForThisCategory
@@ -124,13 +130,17 @@ const ConfigurationTable = () => {
             continiousGradeRows = rowsForThisCategory
           } else if (ConfigTypeName == 'DisContineGradeChange') {
             discontiniousGradeRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Constants') {
+            constantsRows = rowsForThisCategory
           }
         })
+        setConfigurationRows(configurationRows)
         setShutdownRows(shutdownRows)
         setStartUpRows(startUpRows)
         setOtherLossRows(otherLossRows)
         setContiniousGradeData(continiousGradeRows)
         setDiscontiniousGradeData(discontiniousGradeRows)
+        setConstantsRows(constantsRows)
       }
       setLoading(false)
     } catch (error) {
@@ -189,7 +199,6 @@ const ConfigurationTable = () => {
     getConfigurationAvailableTabs()
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
 
-
   const getTheId = (name) => {
     const tab = availableTabs.find((tab) => tab.name === name)
     return tab ? tab.id : null
@@ -201,8 +210,8 @@ const ConfigurationTable = () => {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '5px',
-          marginTop: '20px',
+          gap: '0px',
+          marginTop: '0px',
         }}
       >
         <Box>
@@ -223,15 +232,16 @@ const ConfigurationTable = () => {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '5px',
-        marginTop: '20px',
+        gap: '0px',
+        marginTop: '0px',
       }}
     >
       <Tabs
         sx={{
           borderBottom: '0px solid #ccc',
           '.MuiTabs-indicator': { display: 'none' },
-          margin: '-35px 0px -8px 0%',
+          margin: '0px 0px 0px 0px',
+          minHeight: '28px',
         }}
         textColor='primary'
         indicatorColor='primary'
@@ -248,6 +258,9 @@ const ConfigurationTable = () => {
               sx={{
                 border: '1px solid #ADD8E6',
                 borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
               }}
               label={tabInfo?.displayName || 'N/A'}
             />
@@ -259,7 +272,17 @@ const ConfigurationTable = () => {
         {(() => {
           const currentTabId = tabs[tabIndex]?.toLowerCase()
           switch (currentTabId) {
-            // case 'ac3c9ad7-82b5-4550-b04d-fed0f1fb4908': // StartupLosses
+            // case 'ac3c9ad7-82b5-4550-b04d-fed0f1fb4908': // Configuration
+            case getTheId('Configuration'):
+              return (
+                <SelectivityData
+                  rows={configurationRows}
+                  loading={loading}
+                  fetchData={fetchData}
+                  setRows={setConfigurationRows}
+                  configType='Configuration'
+                />
+              )
             case getTheId('StartupLosses'):
               return (
                 <SelectivityData
@@ -290,6 +313,16 @@ const ConfigurationTable = () => {
                   configType='ShutdownNorms'
                 />
               )
+            case getTheId('Constants'): // ConstantsRows
+              return (
+                <SelectivityData
+                  rows={constantsRows}
+                  loading={loading}
+                  setRows={setConstantsRows}
+                  fetchData={fetchData}
+                  configType='Constants'
+                />
+              )
             case getTheId('Receipe'): // Receipe
               return (
                 <SelectivityData
@@ -309,7 +342,7 @@ const ConfigurationTable = () => {
                   configType='ContineGradeChange'
                 />
               )
-            case getTheId('DisContineGradeChange'): // DisContineGradeChange
+            case getTheId('DisContineGradeChange'): //
               return (
                 <SelectivityData
                   rows={discontiniousGradeData}

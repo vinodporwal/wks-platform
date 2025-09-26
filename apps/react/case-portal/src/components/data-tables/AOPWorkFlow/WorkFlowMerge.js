@@ -12,6 +12,8 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 // import { TaskService } from 'services/TaskService'
 import { useSession } from 'SessionStoreContext'
+import postmanData from '../../../assets/postmandata.json'
+
 import {
   Button,
   Dialog,
@@ -36,13 +38,14 @@ import './jio-grid-style.css'
 // import { useScreens } from 'menu/userscreen'
 // import { Box } from '../../../../node_modules/@mui/material/index'
 import ProductionAopView from 'components/data-tables-views/DataTable-production-aop'
-import PlantsProductionSummary from '../Reports/PlantsProductionData'
-import MonthwiseProduction from '../Reports/MonthwiseProduction'
-import MonthwiseRawMaterial from '../Reports/MonthwiseRawMaterial'
-import TurnaroundReport from '../Reports/TurnaroundReport'
-import AnnualProductionPlan from '../Reports/AnnualProductionPlan'
-import PlantContribution from '../Reports/PlantContribution'
+
 import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
+import PlantsProductionSummary from '../Reports-kendo/kendo-PlantsProductionData'
+import MonthwiseProduction from '../Reports-kendo/kendo-MonthwiseProduction'
+import MonthwiseRawMaterial from '../Reports-kendo/kendo-MonthwiseRawMaterial'
+import TurnaroundReport from '../Reports-kendo/kendo-TurnaroundReport'
+import AnnualProductionPlan from '../Reports-kendo/AnnualProductionPlan'
+import PlantContribution from '../Reports-kendo/kendo-PlantContribution'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -134,32 +137,56 @@ const WorkFlowMerge = () => {
   }, [sitePlantChange, oldYear, yearChanged, keycloak, lowerVertName])
   const handleCalculate = () => {
     if (lowerVertName == 'meg') {
-      handleCalculateMeg()
+      calculateAllScreen()
     } else {
       // handleCalculatePe()
     }
   }
+  const handleExport = () => {
+    handleExportAll()
+  }
   // const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
-  const handleCalculateMeg = async () => {
+  const calculateAllScreen = async () => {
     try {
       setLoading(true)
       const storedPlant = localStorage.getItem('selectedPlant')
       const year = localStorage.getItem('year')
+      let plantId = null
+
       if (storedPlant) {
         const parsedPlant = JSON.parse(storedPlant)
         plantId = parsedPlant.id
       }
 
-      var plantId = plantId
-      const data = await DataService.handleCalculateProductionVolData2(
-        plantId,
-        year,
-        keycloak,
+      if (!plantId || !year) {
+        throw new Error('Plant ID or year not found in localStorage')
+      }
+
+      // Wait for all API calls to complete
+      const [data, res1, res2, res3, res4, res5, res6] = await Promise.all([
+        DataService.handleCalculateProductionVolData2(plantId, year, keycloak),
+        DataService.handleCalculatePlantProductionData(plantId, year, keycloak),
+        DataService.handleCalculateMonthwiseProduction(plantId, year, keycloak),
+        DataService.calculateTurnAroundPlanReportData(plantId, year, keycloak),
+        DataService.calculateAnnualProductionPlanData(plantId, year, keycloak),
+        DataService.handleCalculatePlantConsumptionData(
+          plantId,
+          year,
+          keycloak,
+        ),
+        DataService.calculatePlantContributionReportData(
+          plantId,
+          year,
+          keycloak,
+        ),
+      ])
+
+      const allSuccess = [data, res1, res2, res3, res4, res5, res6].every(
+        (res) => res !== null && res !== undefined,
       )
 
-      if (data || data == 0) {
-        // dispatch(setIsBlocked(true))
+      if (allSuccess) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Data refreshed successfully!',
@@ -169,10 +196,51 @@ const WorkFlowMerge = () => {
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Data Refresh Falied!',
+          message: 'Data Refresh Failed!',
           severity: 'error',
         })
       }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExportAll = async () => {
+    try {
+      setLoading(true)
+
+      const storedPlant = localStorage.getItem('selectedPlant')
+      const year = localStorage.getItem('year')
+      let plantId = null
+
+      if (storedPlant) {
+        const parsedPlant = JSON.parse(storedPlant)
+        plantId = parsedPlant.id
+      }
+
+      if (!plantId || !year) {
+        throw new Error('Plant ID or year not found in localStorage')
+      }
+
+      const payload = postmanData
+
+      // Await the API call here to ensure completion
+      const data = await DataService.getExcel(keycloak, payload)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Report downloaded successfully!',
+        severity: 'success',
+      })
 
       return data
     } catch (error) {
@@ -262,7 +330,10 @@ const WorkFlowMerge = () => {
         ...(i === 0 && {
           renderHeader: (p) => <div>{p.colDef.headerName}</div>,
         }),
-        ...(numericKeys.includes(key) && { align: 'right' }),
+        ...(numericKeys.includes(key) && {
+          align: 'right',
+          format: '{0:#.###}',
+        }),
       }
     })
 
@@ -487,16 +558,37 @@ const WorkFlowMerge = () => {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '5px',
+        // gap: '5px',
         marginTop: '0px',
       }}
     >
       <Box>
-        <Stepper activeStep={activeStep} alternativeLabel>
+        <Stepper
+          activeStep={activeStep}
+          alternativeLabel
+          sx={{
+            '& .MuiStepLabel-label': {
+              fontWeight: 'normal',
+            },
+            '& .MuiStepLabel-label.Mui-active': {
+              fontWeight: 'bold',
+              color: '#000',
+            },
+            '& .MuiStepLabel-alternativeLabel': {
+              marginTop: '3px !important',
+            },
+          }}
+        >
           {masterSteps?.map((step) => (
             <Step
               key={step.displayName}
               completed={step.status === 'completed'}
+              sx={{
+                cursor: 'pointer',
+                '& .MuiStepIcon-root.Mui-active': {
+                  color: '#0100cb',
+                },
+              }}
             >
               <StepLabel
                 error={step.status === 'error'}
@@ -526,9 +618,10 @@ const WorkFlowMerge = () => {
             variant='scrollable'
             scrollButtons='auto'
             sx={{
-              borderBottom: 0,
+              borderBottom: '0px solid #ccc',
               '.MuiTabs-indicator': { display: 'none' },
-              maxWidth: '100%',
+              margin: '0px 0px 0px 0px',
+              minHeight: '28px',
             }}
             textColor='primary'
             indicatorColor='primary'
@@ -546,12 +639,11 @@ const WorkFlowMerge = () => {
                 key={idx}
                 label={label}
                 sx={{
-                  border: tabIndex === idx ? '1px solid' : 'none',
-                  borderBottom: '1px solid',
-                  mr: 0.5,
-                  minWidth: 'auto',
-                  paddingX: 1,
+                  border: '1px solid #ADD8E6',
+                  borderBottom: '1px solid #ADD8E6',
                   fontSize: '0.75rem',
+                  padding: '9px',
+                  minHeight: '10px',
                 }}
               />
             ))}
@@ -570,7 +662,8 @@ const WorkFlowMerge = () => {
                 Accept
               </Button>
             )}
-            <Button
+
+            {/* <Button
               variant='outlined'
               className='btn-save2'
               sx={{
@@ -582,7 +675,7 @@ const WorkFlowMerge = () => {
               onClick={handleAuditOpen}
             >
               Audit Trail
-            </Button>
+            </Button> */}
           </Stack>
         </Stack>
 
@@ -590,6 +683,7 @@ const WorkFlowMerge = () => {
           <div>
             <ProductionAopView
               handleCalculate={handleCalculate}
+              handleExport={handleExport}
               fetchSecondGridData={fetchData}
             />
 
@@ -620,6 +714,7 @@ const WorkFlowMerge = () => {
               rowModesModel={rowModesModel}
               onRowModesModelChange={onRowModesModelChange}
               handleCalculate={handleCalculate}
+              handleExport={handleExport}
               isCreatingCase={isCreatingCase}
               createCase={createCase}
               saveWorkflowData={saveWorkflowData}

@@ -17,7 +17,6 @@ const defs = {
     settings: 'Settings',
     casebuilder: 'Case Builder',
     documentation: 'Documentation',
-
     processes: 'Processes',
     caseDefinitions: 'Case Definitions',
     recordTypes: 'Record Types',
@@ -28,40 +27,61 @@ const defs = {
     dataTable2: 'Product Mix Entry',
     dataForm: 'WKS Form',
     dataForm2: 'WKS Form2',
-    // New menu items for "Production / Norms Plan"
     productionNormsPlan: 'Production / Norms Plan',
-    productMCUVal: 'Production Volume Data',
+    process: 'Process',
+    productMCUVal: 'Production Target',
+    spyroInput: 'Spyro Input',
+    spyroOutput: 'Spyro Output',
+    spyroMenu: 'Spyro Menu',
+    decokingActivities: 'Furnace Maintenance and SAD plan',
     maintenanceDetails: 'Maintenance Details',
-    consumptionNorms: 'Consumption AOP',
-    productionNorms: 'Production AOP',
-    catalystSelectivity: 'Configuration',
+    consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
+    productionNorms: 'Month wise Production plan',
+    catalystSelectivity: 'Production & Norms Basis',
     productDemand: 'Business Demand',
     shutdownPlan: 'Shutdown/TA Activities',
-    shutdownNorms: 'Shutdown Norms',
-    slowdownNorms: 'Slowdown Norms',
-    normalOpNorms: 'Normal Operation Norms',
+    shutdownNorms: 'Shutdown Consumption (Quantity)',
+    slowdownNorms: 'Slowdown Consumption (Norm/Quantity)',
+    normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
     slowdownPlan: 'Slowdown Activities',
     taPlan: 'Turnaround Activities',
     feedStock: 'Feed Stock Availability',
-
     productionNormsOutput: 'Production Norms (Output)',
     consumptionNormsOutput: 'Consumption Norms (Output)',
     shutdownNormsOutput: 'Shutdown Norms (Output)',
-    // Additional entries for functions
-    safety: 'Safety', // New addition
-    functions: 'Functions', // New addition
-    reliability: 'Reliability', // New addition
-    reports: 'Reports', // New addition
-    annualAopCostReport: 'Annual AOP Cost Basis', // New addition
-    productionVolumeDataBasis: 'Production Volume Data Basis', // New addition
-    normsHistorianBasis: 'Norms Historian Basis', // New addition
-    plantsProduction: 'Plants Production Summary', // New addition
+    safety: 'Safety',
+    functions: 'Functions',
+    reliability: 'Reliability',
+    reports: 'Data Set',
+    annualAopCostReport: 'Annual AOP Cost',
+    productionVolumeDataBasis: 'Production Volume Data',
+    normsHistorianBasis: 'Norms Historian',
+    steadyStateNormsHistorianBasis: 'Steady State Norm Basis',
+    consumptionNormsHistorianBasis: 'Overall Consumption Norm Basis',
+    intermediateValuesDataSet: 'Norms (Expression) Basis',
+    rawDataSet: 'Steam Norms Basis',
+    plantsProduction: 'Plants Production Summary',
     monthwise: 'Monthwise Production Plan',
     monthwiseRawMaterial: 'Monthwise Raw Material',
-    previousFYAOPResult: 'Previous FY AOP Result', // New addition
-    matBalSheet: 'MAT Bal Sheet', // New addition
-    workflow: 'AOP Approval Flow', // New addition
-    userManage: 'User Management', // New addition
+    previousFYAOPResult: 'Previous FY AOP Result',
+    matBalSheet: 'MAT Bal Sheet',
+    workflow: 'AOP Approval Flow',
+    userManage: 'User Management',
+    valueHistory: 'Value History',
+    rawData: 'Steam Norms Basis',
+    runlengthData: 'Furnace Run Length ',
+    functionalAop: 'CES',
+    manufacturingDivision: 'Manufacturing Division',
+    reliabilityPerformance: 'Reliability Performance',
+    monthlyAop: 'Maintenance',
+    siteWiseAop: 'Consumption Summary (Sites)',
+    allSiteSummaryAop: 'Summary',
+    plantTeam: 'People',
+    plantSafetyPerformanceTarget: 'S&OR',
+    bestAchievedBasis: 'Best Achieved Basis (Min CC)',
+    bestAchievedIndividualBasis: 'Best Achieved (Individual)',
+    furnaceModeAndRunLength: 'Furnace Mode And Run Length',
+    maintenanceProcess: 'Process',
   },
   pages: {
     dashboard: {
@@ -197,34 +217,52 @@ const defs = {
     productionNormsPlanPage: {
       title: 'Production / Norms Plan',
       subPages: {
-        productMCUVal: 'Production Volume Data',
+        productMCUVal: 'Production Target',
         maintenanceDetails: 'Maintenance Details',
-        consumptionNorms: 'Consumption AOP',
-        productionNorms: 'Production AOP',
-        catalystSelectivity: 'Configuration',
+        consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
+        productionNorms: 'Month wise Production plan',
+        catalystSelectivity: 'Production & Norms Basis',
         productDemand: 'Business Demand',
         shutdownPlan: 'Shutdown Activities',
-        shutdownNorms: 'Shutdown Norms',
-        normalOpNorms: 'Normal Operation Norms',
+        shutdownNorms: 'Shutdown Consumption (Quantity)',
+        normalOpNorms: 'Steady State Consumption (Norm/Quantity)',
         slowdownPlan: 'Slowdown Activities',
         taPlan: 'Turnaround Activities',
         productionNormsOutput: 'Production Norms (Output)',
         consumptionNormsOutput: 'Consumption Norms (Output)',
         shutdownNormsOutput: 'Shutdown Norms (Output)',
-        safety: 'Safety', // New addition
-        reliability: 'Reliability', // New addition
-        reports: 'Reports', // New addition
-        annualAopCostReport: 'Annual AOP Cost Basis', // New addition
-        productionVolumeDataBasis: 'Production Volume Data Basis', // New addition
-        normsHistorianBasis: 'Norms Historian Basis', // New addition
-
+        safety: 'Safety',
+        reliability: 'Reliability',
+        reports: 'Reports',
+        annualAopCostReport: 'Annual AOP Cost Basis',
+        productionVolumeDataBasis: 'Production Volume Data Basis',
+        normsHistorianBasis: 'Norms Historian Basis',
+        steadyStateNormsHistorianBasis: 'Steady State Norm Basis',
+        consumptionNormsHistorianBasis: 'Overall Consumption Norm Basis',
         plantsProduction: 'Plants Production Summary',
         monthwise: 'Monthwise Production Plan',
         monthwiseRawMaterial: 'Monthwise Raw Material',
-        previousFYAOPResult: 'Previous FY AOP Result', // New addition
-        matBalSheet: 'MAT Bal Sheet', // New addition
-        userManage: 'User Management', // New addition
-        workflow: 'AOP Approval Flow', // New addition
+        previousFYAOPResult: 'Previous FY AOP Result',
+        matBalSheet: 'MAT Bal Sheet',
+        userManage: 'User Management',
+        workflow: 'AOP Approval Flow',
+        valueHistory: 'Value History',
+        process: 'Process',
+        functionalAop: 'CES',
+        monthlyAop: 'Maintenance',
+        reliabilityPerformance: 'Reliability Performance',
+        siteWiseAop: 'Consumption Summary (Sites)',
+        allSiteSummaryAop: 'Summary',
+        manufacturingDivision: 'Manufacturing Division',
+        plantSafetyPerformanceTarget: 'S&OR',
+        plantTeam: 'People',
+        bestAchievedBasis: 'Best Achieved Basis (Min CC)',
+        bestAchievedIndividualBasis: 'Best Achieved (Individual)',
+        intermediateValuesDataSet: 'Norms (Expression) Basis',
+        rawData: 'Steam Norms Basis',
+        runlengthData: 'Furnace Run Length ',
+        furnaceModeAndRunLength: 'Furnace Mode And Run Length',
+        maintenanceProcess: 'Process',
       },
     },
   },

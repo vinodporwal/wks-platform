@@ -30,6 +30,8 @@ const defs = {
     dataForm2: 'WKS Form2',
     // Menu items for "Production / Norms Plan"
     productionNormsPlan: 'Plano de Produção / Normas',
+    process: 'Process',
+
     productMCUVal: 'Valor MCU Produto',
     maintenanceDetails: 'Maintenance Details',
     productDemand: 'Demanda de Produto',
@@ -52,6 +54,12 @@ const defs = {
     previousFYAOPResult: 'Resultado AOP do Ano Fiscal Anterior', // New addition
     matBalSheet: 'Balanço de MAT', // New addition
     workflow: 'Fluxo de Trabalho', // New addition
+    //FUNCTIONAL AOP
+    functionalAop: 'CES',
+
+    monthlyAop: 'Maintenance',
+    siteWiseAop: 'Consumption Summary (Sites)',
+    allSiteSummaryAop: 'Summary',
   },
   pages: {
     dashboard: {
@@ -207,6 +215,18 @@ const defs = {
         previousFYAOPResult: 'Resultado AOP do Ano Fiscal Anterior', // New addition
         matBalSheet: 'Balanço de MAT', // New addition
         workflow: 'Fluxo de Trabalho', // New addition
+
+        //FUNCTIONAL AOP
+        functionalAop: 'CES',
+        process: 'Process',
+
+        monthlyAop: 'Maintenance',
+        siteWiseAop: 'Consumption Summary (Sites)',
+        allSiteSummaryAop: 'Summary',
+
+        manufacturingDivision: 'Manufacturing Division',
+        plantSafetyPerformanceTarget: 'S&OR',
+        plantTeam: 'People',
       },
     },
   },

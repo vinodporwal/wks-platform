@@ -1,5 +1,7 @@
 // src/services/MockReportService.js
 
+import { Tooltip } from '../../../../node_modules/@mui/material/index'
+
 //  current FY
 // const currFY = localStorage.getItem('year') || ''
 
@@ -8,8 +10,17 @@
 export const MockReportService = {
   async getReport({ category, year }) {
     const currFY = year || ''
-    const formatValueToThreeDecimals = (params) => {
-      return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
+    const formatValueToThreeDecimalsTwo = (params) => {
+      return params === 0 ? 0 : params ? parseFloat(params).toFixed(2) : ''
+    }
+    const formatValueToThreeDecimalsZero = (params) => {
+      return params === 0 ? 0 : params ? parseFloat(params).toFixed(0) : ''
+    }
+    const formatValueToThreeDecimalsOne = (params) => {
+      return params === 0 ? 0 : params ? parseFloat(params).toFixed(1) : ''
+    }
+    const formatValueToThreeDecimalsFour = (params) => {
+      return params === 0 ? 0 : params ? parseFloat(params).toFixed(4) : ''
     }
 
     let prevFY = ''
@@ -22,7 +33,7 @@ export const MockReportService = {
       case 'ProductMixAndProduction':
         return {
           columns: [
-            { field: 'SrNo', headerName: 'SL.No', align: 'right' },
+            { field: 'SrNo', headerName: 'SL.No', align: 'right', widthT: 50 },
             { field: 'ByProductName', headerName: 'Product name', flex: 2 },
             { field: 'Unit', headerName: 'Unit' },
             {
@@ -30,28 +41,60 @@ export const MockReportService = {
               headerName: 'Rs/MT',
               flex: 2,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsTwo,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormBudget',
               headerName: 'Budget',
               flex: 2,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsTwo,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormActual',
               headerName: 'Actual',
               flex: 2,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsTwo,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsTwo(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearCostBudget',
               headerName: 'Budget',
               flex: 2,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
           ],
           columnGrouping: [
@@ -88,7 +131,13 @@ export const MockReportService = {
       case 'ByProducts':
         return {
           columns: [
-            { field: 'SrNo', headerName: 'SL.No', align: 'right', flex: 0.5 },
+            {
+              field: 'SrNo',
+              headerName: 'SL.No',
+              align: 'right',
+              flex: 0.5,
+              widthT: 50,
+            },
             { field: 'ByProductName', headerName: 'By product name', flex: 2 },
             { field: 'Unit', headerName: 'Unit', flex: 1 },
             {
@@ -96,49 +145,105 @@ export const MockReportService = {
               headerName: 'Rs/MT',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearNormActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearCostActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
           ],
           columnGrouping: [
@@ -193,7 +298,13 @@ export const MockReportService = {
       case 'RawMaterial':
         return {
           columns: [
-            { field: 'SrNo', headerName: 'SL.No', align: 'right', flex: 0.5 },
+            {
+              field: 'SrNo',
+              headerName: '',
+              align: 'right',
+              flex: 0.5,
+              widthT: 50,
+            },
             {
               field: 'ByProductName',
               headerName: 'Raw material name',
@@ -205,49 +316,105 @@ export const MockReportService = {
               headerName: 'Rs/MT',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearNormActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearCostActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
           ],
           columnGrouping: [
@@ -301,7 +468,13 @@ export const MockReportService = {
       case 'CatChem':
         return {
           columns: [
-            { field: 'SrNo', headerName: 'SL.No', align: 'right', flex: 0.5 },
+            {
+              field: 'SrNo',
+              headerName: 'SL.No',
+              align: 'right',
+              flex: 0.5,
+              widthT: 50,
+            },
             { field: 'ByProductName', headerName: 'Catalyst name', flex: 2 },
             { field: 'Unit', headerName: 'Unit', flex: 1 },
             {
@@ -309,49 +482,105 @@ export const MockReportService = {
               headerName: 'Rs/MT',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearNormActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearCostActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
           ],
           columnGrouping: [
@@ -405,7 +634,13 @@ export const MockReportService = {
       case 'Utilities':
         return {
           columns: [
-            { field: 'SrNo', headerName: 'SL.No', align: 'right', flex: 0.5 },
+            {
+              field: 'SrNo',
+              headerName: 'SL.No',
+              align: 'right',
+              flex: 0.5,
+              widthT: 50,
+            },
             { field: 'ByProductName', headerName: 'Utility name', flex: 2 },
             { field: 'Unit', headerName: 'Unit', flex: 1 },
             {
@@ -413,49 +648,105 @@ export const MockReportService = {
               headerName: 'Rs/MT',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearNormActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearNormActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsFour,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsFour(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearCostActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearCostActual',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsOne,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsOne(params.value)}</span>
+                </Tooltip>
+              ),
             },
           ],
           columnGrouping: [
@@ -509,29 +800,20 @@ export const MockReportService = {
       case 'OtherVariableCost':
         return {
           columns: [
-            { field: 'SrNo', headerName: 'SL.No', align: 'right' },
+            { field: 'SrNo', headerName: 'SL.No', align: 'right', widthT: 50 },
             { field: 'OtherCost', headerName: 'Other cost', flex: 2 },
             { field: 'Unit', headerName: 'Unit' },
             {
               field: 'PrevYearBudget',
               headerName: 'Budget',
-              flex: 1,
-              align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
             },
             {
               field: 'PrevYearActual',
               headerName: 'Actual',
-              flex: 1,
-              align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
             },
             {
               field: 'CurrentYearBudget',
               headerName: 'Budget',
-              flex: 1,
-              align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
             },
           ],
           columnGrouping: [
@@ -557,7 +839,7 @@ export const MockReportService = {
       case 'ProductionCostCalculations':
         return {
           columns: [
-            { field: 'SrNo', headerName: 'SL.No', align: 'right' },
+            { field: 'SrNo', headerName: 'SL.No', align: 'right', widthT: 50 },
             {
               field: 'ProductionCostCalculations',
               headerName: 'Production cost calculations',
@@ -568,21 +850,45 @@ export const MockReportService = {
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'PrevYearActual',
               headerName: 'Actual',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
             {
               field: 'NextYearBudget',
               headerName: 'Budget',
               flex: 1,
               align: 'right',
-              valueFormatter: formatValueToThreeDecimals,
+              valueFormatter: formatValueToThreeDecimalsZero,
+              renderCell: (params) => (
+                <Tooltip
+                  title={params.value != null ? params.value.toString() : ''}
+                  arrow
+                >
+                  <span>{formatValueToThreeDecimalsZero(params.value)}</span>
+                </Tooltip>
+              ),
             },
           ],
           columnGrouping: [

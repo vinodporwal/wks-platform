@@ -5,6 +5,8 @@ import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { truncateRemarks } from 'utils/remarksUtils'
+import { validateFields } from 'utils/validationUtils'
+
 import {
   Backdrop,
   CircularProgress,
@@ -12,15 +14,30 @@ import {
   Typography,
 } from '../../../../node_modules/@mui/material/index'
 import ProductionNorms from '../ProductionNorms'
+import NumericInputOnly from 'utils/NumericInputOnly'
 
 const MonthwiseProduction = () => {
   const keycloak = useSession()
-  const thisYear = localStorage.getItem('year')
+  const thisYear = AOP_YEAR
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = React.useState({})
-
+  const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+    const {
+      verticalChange,
+      yearChanged,
+      plantID,
+      plantObject,
+      siteObject,
+      verticalObject,
+      year,
+    } = dataGridStore
+    const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -45,117 +62,85 @@ const MonthwiseProduction = () => {
   }
 
   const formatValueToThreeDecimals = (params) => {
-    return params === 0 ? 0 : params ? parseFloat(params).toFixed(3) : ''
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(2) : ''
   }
-
+  const formatValueToThreeDecimalsZero = (params) => {
+    return params === 0 ? 0 : params ? parseFloat(params).toFixed(0) : ''
+  }
+  const isOldYear = oldYear?.oldYear === 1
   const columns = [
     {
       field: 'RowNo',
       headerName: 'SL.No',
-      flex: 1,
-      headerAlign: 'left',
-      align: 'left',
+      editable: false,
+      widthT: 50,
     },
     {
       field: 'Month',
       headerName: 'Month',
-      flex: 1,
-      headerAlign: 'left',
+      editable: false,
     },
 
     {
       field: 'EOEProdBudget', // was eoeBudgetCY
       headerName: 'Budget',
-      flex: 2,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
     {
       field: 'EOEProdActual', // was eoeActualCY
       headerName: 'Actual',
-      flex: 1,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
 
     // Current Year → Operating Hours
     {
       field: 'OpHrsBudget', // was opBudgetCY
       headerName: 'Budget',
-      flex: 1,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
     {
       field: 'OpHrsActual', // was opActualCY
       headerName: 'Actual',
-      flex: 1,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: true,
     },
 
     // Current Year → Throughput
     {
       field: 'ThroughputBudget', // was thrBudgetCY
       headerName: 'Budget',
-      flex: 1,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
     {
       field: 'ThroughputActual', // was thrActualCY
       headerName: 'Actual',
-      flex: 1,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
 
     // Budget Year single values
     {
       field: 'OperatingHours', // was opBudgetBY
       headerName: 'Operating Hours',
-      flex: 2,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
     {
       field: 'MEGThroughput', // was megTPH
-      headerName: 'MEG Throughput, TPH',
-      flex: 2,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      headerName: 'Throughput, TPH',
+      editable: false,
     },
     {
       field: 'EOThroughput', // was eoTPH
       headerName: 'EO Throughput, TPH',
-      flex: 2,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
     {
       field: 'EOEThroughput', // was eoeTPH
       headerName: 'EOE Throughput, TPH',
-      flex: 2,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
     {
       field: 'TotalEOE', // was totalEoeMT
       headerName: 'Total EOE, MT',
-      flex: 2,
-      headerAlign: 'left',
-      align: 'right',
-      valueFormatter: formatValueToThreeDecimals,
+      editable: false,
     },
 
     // (Optional) you can keep Remarks if you plan to add that later
@@ -164,28 +149,6 @@ const MonthwiseProduction = () => {
       headerName: 'Remark',
       minWidth: 150,
       editable: false,
-      renderCell: (params) => {
-        const displayText = truncateRemarks(params.value)
-        const isEditable = !params.row.Particulars
-
-        return (
-          <Tooltip title={params.value || ''} arrow>
-            <div
-              style={{
-                cursor: 'pointer',
-                color: params.value ? 'inherit' : 'gray',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                width: ' 100%',
-              }}
-              onClick={() => handleRemarkCellClick(params.row)}
-            >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
-            </div>
-          </Tooltip>
-        )
-      },
     },
   ]
 
@@ -196,7 +159,7 @@ const MonthwiseProduction = () => {
       children: [
         {
           groupId: 'cy-eoe',
-          headerName: 'EOE Production, MT',
+          headerName: 'Production, MT',
           children: [
             { field: 'EOEProdBudget' }, // was eoeBudgetCY
             { field: 'EOEProdActual' }, // was eoeActualCY
@@ -240,17 +203,17 @@ const MonthwiseProduction = () => {
   }
 
   const [loading, setLoading] = useState(false)
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const year = localStorage.getItem('year')
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
-      var res = await DataService.getMonthWiseSummary(keycloak)
+      var res = await DataService.getMonthWiseSummary(keycloak,PLANT_ID,AOP_YEAR) 
       if (res?.code == 200) {
         res = res?.data?.data.map((item, index) => ({
           ...item,
           id: index,
           isEditable: false,
+          originalRemark: item.Remark,
         }))
 
         setRows(res)
@@ -265,7 +228,7 @@ const MonthwiseProduction = () => {
   }
   useEffect(() => {
     fetchData()
-  }, [year, plantId])
+  }, [AOP_YEAR, PLANT_ID])
   const processRowUpdate = React.useCallback((newRow, oldRow) => {
     const rowId = newRow.id
     const updatedFields = []
@@ -315,11 +278,44 @@ const MonthwiseProduction = () => {
       const rowsToUpdate = data.map((row) => ({
         id: row.Id,
         remark: row.Remark,
+        ThroughputActual: row?.ThroughputActual,
       }))
+
+      // const hasEmptyThroughput = rowsToUpdate?.some(
+      //   (row) =>
+      //     row.ThroughputActual === null ||
+      //     row.ThroughputActual === undefined ||
+      //     row.ThroughputActual === '',
+      // )
+
+      // if (hasEmptyThroughput) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: 'Please fill in Actual Throughput before saving.',
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
+
+      // const requiredFields = ['remarks', 'ThroughputActual']
+
+      // const validationMessage = validateFields(data, requiredFields)
+      // if (validationMessage) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: validationMessage,
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
+
       const res = await DataService.saveMonthwiseProduction(
         keycloak,
         rowsToUpdate,
-        plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (res?.code == 200) {
@@ -353,16 +349,9 @@ const MonthwiseProduction = () => {
   const handleCalculateMonthwiseAndTurnaround = async () => {
     try {
       setLoading(true)
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const year = localStorage.getItem('year')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      var plantId = plantId
       const res = await DataService.handleCalculateMonthwiseProduction(
-        plantId,
-        year,
+        PLANT_ID,
+        AOP_YEAR,
         keycloak,
       )
 
@@ -399,15 +388,15 @@ const MonthwiseProduction = () => {
       <ReportDataGrid
         rows={rows}
         setRows={setRows}
-        title='Monthwise Production Plan'
+        title='Monthwise Production (T-16)'
         columns={columns}
         permissions={{
           customHeight: defaultCustomHeightGrid1,
           textAlignment: 'center',
           remarksEditable: true,
-          showCalculate: true,
+          showCalculate: false,
           saveBtnForRemark: true,
-          saveBtn: true,
+          saveBtn: !isOldYear,
           showWorkFlowBtns: true,
           showTitle: true,
         }}
@@ -425,6 +414,7 @@ const MonthwiseProduction = () => {
         currentRowId={currentRowId}
         setCurrentRowId={setCurrentRowId}
         modifiedCells={modifiedCells}
+        enableSaveAddBtn={enableSaveAddBtn}
         saveRemarkData={saveRemarkData}
         handleCalculate={handleCalculate}
 
@@ -442,11 +432,12 @@ const MonthwiseProduction = () => {
           editButton: false,
           showUnit: false,
           saveWithRemark: false,
-          saveBtn: false,
+          saveBtn: !isOldYear,
           showCalculate: false,
           customHeight: defaultCustomHeight,
           // dynamicGridHeight: true,
           needTotal: true,
+          roundOffDecimals: true,
         }}
       />
       <Notification

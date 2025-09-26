@@ -126,6 +126,14 @@ const getEnhancedProductionColDefs = ({
         valueFormatter: formatValueToThreeDecimals,
         headerName: headerMap[col.headerName],
         align: 'right',
+        renderCell: (params) => (
+          <Tooltip
+            title={params.value != null ? params.value.toString() : ''}
+            arrow
+          >
+            <span>{formatValueToThreeDecimals(params.value)}</span>
+          </Tooltip>
+        ),
       }
     }
 
@@ -144,7 +152,7 @@ const getEnhancedProductionColDefs = ({
                 whiteSpace: 'nowrap',
                 width: ' 100%',
               }}
-              onClick={() => handleRemarkCellClick(params.row)}
+              onDoubleClick={() => handleRemarkCellClick(params.row)}
             >
               {displayText || (isEditable ? 'Click to add remark' : '')}
             </div>

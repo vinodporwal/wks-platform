@@ -25,8 +25,14 @@ public class AOPReportController {
 	}
 	
 	@GetMapping(value="/report/production-volume-aop")
-	public ResponseEntity<AOPMessageVM> getReportForProductionVolumnData(@RequestParam String plantId,@RequestParam String year,@RequestParam String reportType){
-		AOPMessageVM response	=aopReportService.getReportForProductionVolumnData(plantId,year,reportType);
+	public ResponseEntity<AOPMessageVM> getReportForProductionVolumnData(@RequestParam String plantId,@RequestParam String year,@RequestParam String reportType,@RequestParam(value = "uom", required = false) String uom){
+		AOPMessageVM response	=aopReportService.getReportForProductionVolumnData(plantId,year,reportType,uom);
+		return ResponseEntity.status(response.getCode()).body(response);
+	}
+	
+	@GetMapping(value="/handle/calculate/miis-contribution")
+	public ResponseEntity<AOPMessageVM> getHandleCalculateMIISContribution(@RequestParam String plantId,@RequestParam String year){
+		AOPMessageVM response	=aopReportService.getHandleCalculateMIISContribution(plantId,year);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 

@@ -4,15 +4,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.TurnAroundPlan;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.TurnAroundPlanReportRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -26,6 +35,16 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 
     @Autowired
     private PlantsRepository plantsRepository;
+    
+    
+	@Autowired
+	private VerticalsRepository verticalRepository;
+
+	@Autowired
+	private SiteRepository siteRepository;
+    
+    @Autowired
+    private TurnAroundPlanReportRepository turnAroundPlanReportRepository;
 
     @Override
     public AOPMessageVM getReportForTurnAroundPlanData(String plantId, String year, String reportType) {
@@ -92,7 +111,13 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
     public List<Object[]> getPlantTurnAroundData(String plantId, String aopYear, String reportType) {
         try {
             String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
             String storedProcedure = "TurnAroundPlanReport";
+            if (!"MEG".equalsIgnoreCase(verticalName)) {
+            	storedProcedure = verticalName +"_"+site.getName()+ "_TurnAroundPlanReport";
+            }
             String sql = "EXEC " + storedProcedure
                     + " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
 
@@ -109,5 +134,69 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
             throw new RuntimeException("Failed to fetch data", ex);
         }
     }
+
+	@Override
+	public AOPMessageVM updateReportForTurnAroundData(String plantId, String year,
+			String reportType,List<TurnAroundPlanReportDTO> dataList) {
+		try {
+		List<TurnAroundPlan> turnAroundPlanList = new ArrayList<>();
+		for (TurnAroundPlanReportDTO dto : dataList) {
+			TurnAroundPlan turnAroundPlan=null;
+			if(dto.getId()!=null) {
+				turnAroundPlan = turnAroundPlanReportRepository
+						.findById(UUID.fromString(dto.getId())).get();
+			}else {
+				 turnAroundPlan=new TurnAroundPlan();
+				 turnAroundPlan.setPlantFkId(UUID.fromString(plantId));
+				 turnAroundPlan.setAopYear(year);
+				 turnAroundPlan.setReportType(reportType);
+			}
+			
+			//optional.get().setRemark(dto.getRemark());
+			if(dto.getActivity()!=null) {
+				turnAroundPlan.setActivity(dto.getActivity());
+			}
+			if(dto.getFromDate()!=null) {
+				turnAroundPlan.setFromDate(dto.getFromDate());
+			}
+			if(dto.getToDate()!=null) {
+				turnAroundPlan.setToDate(dto.getToDate());
+			}
+			if(dto.getDurationInHrs()!=null) {
+				turnAroundPlan.setDurationInHrs(dto.getDurationInHrs());
+			}
+			if(dto.getPeriodInMonths()!=null) {
+				turnAroundPlan.setPeriodInMonths(dto.getPeriodInMonths());
+			}
+			if(dto.getRemark()!=null) {
+				turnAroundPlan.setRemark(dto.getRemark());
+			}
+			
+			turnAroundPlanList.add(turnAroundPlanReportRepository.save(turnAroundPlan));
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Remarks updated successfully.");
+		response.setData(turnAroundPlanList);
+		return response;
+		}catch (Exception ex) {
+            throw new RuntimeException("Failed to save data", ex);
+        }
+	}
+
+	@Override
+	public AOPMessageVM deleteReportForTurnAroundData(String id) {
+		TurnAroundPlan turnAroundPlan=null;
+		Optional<TurnAroundPlan> turnAroundPlanOpt=turnAroundPlanReportRepository.findById(UUID.fromString(id));
+		if(turnAroundPlanOpt.isPresent()) {
+			turnAroundPlan = turnAroundPlanOpt.get();
+			turnAroundPlanReportRepository.delete(turnAroundPlan);
+		}
+		AOPMessageVM response = new AOPMessageVM();
+		response.setCode(200);
+		response.setMessage("Record deleted successfully.");
+		response.setData(turnAroundPlan);
+		return response;
+	}
 
 }

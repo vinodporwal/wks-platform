@@ -3,6 +3,8 @@ package com.wks.caseengine.service;
 import java.util.List;
 import java.util.UUID;
 
+
+
 import com.wks.caseengine.dto.MonthWiseDataDTO;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
@@ -15,9 +17,10 @@ public interface ShutDownPlanService {
 	public void saveShutdownData(PlantMaintenanceTransaction plantMaintenanceTransaction);
 	public UUID findIdByPlantIdAndMaintenanceTypeName(UUID plantId,String maintenanceTypeName);
 	public PlantMaintenanceTransaction editShutDownPlanData(UUID plantMaintenanceTransactionId);
-	public void deletePlanData(UUID plantMaintenanceTransactionId);
+	public void deletePlanData(UUID plantMaintenanceTransactionId,UUID plantId);
 	public List<ShutDownPlanDTO> editShutdownData(UUID plantMaintenanceTransactionId, List<ShutDownPlanDTO> shutDownPlanDTOList);
 	public List<MonthWiseDataDTO> getMonthlyShutdownHours(String auditYear,  UUID plantId);
+	
 	void deleteShutPlanData(UUID plantMaintenanceTransactionId, UUID plantId);
-
+	
 }

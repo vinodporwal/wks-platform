@@ -3,12 +3,10 @@ package com.wks.caseengine.service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-//import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,13 +15,12 @@ import com.wks.caseengine.entity.AnnualAOPCost;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
-import com.wks.caseengine.entity.BusinessDemand;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.entity.Workflow;
 import com.wks.caseengine.entity.WorkflowMaster;
-import com.wks.caseengine.entity.WorkflowStepsMaster;
+
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.process.instance.ProcessInstanceService;
@@ -33,7 +30,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.stereotype.Repository;
+
 import java.lang.reflect.Field;
 import javax.sql.DataSource;
 import java.sql.CallableStatement;
@@ -47,11 +44,9 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.wks.bpm.engine.model.spi.ActivityInstance;
 import com.wks.bpm.engine.model.spi.Task;
 import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.service.CaseInstanceService;
-import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.WorkflowDTO;
 import com.wks.caseengine.dto.WorkflowMasterDTO;
 import com.wks.caseengine.dto.WorkflowPageDTO;
@@ -59,14 +54,12 @@ import com.wks.caseengine.dto.WorkflowStepsMasterDTO;
 import com.wks.caseengine.dto.WorkflowSubmitDTO;
 import com.wks.caseengine.dto.WorkflowYearDTO;
 import com.wks.caseengine.repository.AnnualAOPCostRepository;
-import com.wks.caseengine.repository.BusinessDemandDataRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.repository.WorkflowMasterRepository;
 import com.wks.caseengine.repository.WorkflowRepository;
 import com.wks.caseengine.repository.WorkflowStepsMasterRepository;
-import com.wks.caseengine.rest.entity.OwnerDetails;
 import com.wks.caseengine.tasks.TaskService;
 
 @Service
@@ -318,9 +311,15 @@ public class WorkflowServiceImpl implements WorkflowService {
 
 	public List<Object[]> getData(String plantId, String aopYear) {
 		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String verticalName = vertical.getName();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			// Stored procedure name
 			String procedureName = "GetAnnualAOPCost";
-
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				procedureName = verticalName + "_" + site.getName() + "_GetAnnualAOPCost";
+			}
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
@@ -341,8 +340,18 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<Object[]> getProductionWorkflowData(String plantId, String aopYear) {
 		try {
 			// Stored procedure name
+			// Fetch plant and vertical to determine procedure name
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+					() -> new RuntimeException("Plant not found for ID: " + plantId));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+					() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			// Determine stored procedure name dynamically
+			String verticalName = vertical.getName();
 			String procedureName = "GetAnnualProductionCost";
-
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
+			}
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
 
@@ -363,8 +372,25 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<String> getHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
 
+		// Fetch plant and vertical to determine procedure name
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+				() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+				() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+
+		// Determine stored procedure name dynamically
+		String verticalName = vertical.getName();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		// Stored procedure name
+		String procedureName = "GetAnnualAOPCost";
+		if (!"MEG".equalsIgnoreCase(verticalName)) {
+			procedureName = verticalName + "_" + site.getName() + "_GetAnnualAOPCost";
+		}
+
+		String callableSql = "{call " + procedureName + "(?, ?)}";
+
 		try (Connection conn = dataSource.getConnection();
-				CallableStatement stmt = conn.prepareCall("{call GetAnnualAOPCost(?, ?)}")) {
+				CallableStatement stmt = conn.prepareCall(callableSql)) {
 
 			stmt.setString(1, plantId);
 			stmt.setString(2, aopYear);
@@ -398,8 +424,22 @@ public class WorkflowServiceImpl implements WorkflowService {
 	public List<String> getProductionWorkflowHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
 
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+				() -> new RuntimeException("Plant not found for ID: " + plantId));
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+				() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+
+		// Determine stored procedure name dynamically
+		String verticalName = vertical.getName();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		String procedureName = "GetAnnualProductionCost";
+		if (!"MEG".equalsIgnoreCase(verticalName)) {
+			procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
+		}
+		String callableSql = "{call " + procedureName + "(?, ?)}";
+
 		try (Connection conn = dataSource.getConnection();
-				CallableStatement stmt = conn.prepareCall("{call GetAnnualProductionCost(?, ?)}")) {
+				CallableStatement stmt = conn.prepareCall(callableSql)) {
 
 			stmt.setString(1, plantId);
 			stmt.setString(2, aopYear);
@@ -562,40 +602,52 @@ public class WorkflowServiceImpl implements WorkflowService {
 	}
 
 	@Override
-	@Transactional
-	public int calculateExpressionWorkFlow(String year, String plantId) {
-		int totalUpdates = 0;
+	public AOPMessageVM calculateExpressionWorkFlow(String year, String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-
-			// First SP _LoadAnnualAOPCost
-			String LoadAnnualAOPCost = vertical.getName() + "_" + site.getName() + "_LoadAnnualAOPCost";
-			totalUpdates += executeDynamicUpdateProcedure(LoadAnnualAOPCost, plantId, year);
-
-			// Second SP _LoadAnnualAOPCost_MIISContribution
-			String LoadAnnualAOPCost_MIISContribution = vertical.getName() + "_" + site.getName()
-					+ "_LoadAnnualAOPCost_MIISContribution";
-			totalUpdates += executeDynamicUpdateProcedure(LoadAnnualAOPCost_MIISContribution, plantId, year);
-
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadAnnualAOPCost";
+			System.out.println(storedProcedure);
+			Integer result = executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(result);
+			return aopMessageVM;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return totalUpdates;
+		return aopMessageVM;
 	}
 
-	@Transactional
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId,
 			String aopYear) {
 		try {
-			String sql = "EXEC " + procedureName
-					+ " @plantId = :plantId, @aopYear = :aopYear";
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("plantId", plantId);
-			query.setParameter("aopYear", aopYear);
+			String callSql = "{call " + procedureName + "(?, ?)}";
 
-			return query.executeUpdate();
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+
+				// Set parameters in the correct order
+				stmt.setString(1, plantId); // @finYear
+				stmt.setString(2, aopYear); // @plantId
+
+				// Execute the stored procedure
+				int rowsAffected = stmt.executeUpdate();
+
+				// Optional: commit if auto-commit is off
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
+
+				return rowsAffected;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return 0;
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

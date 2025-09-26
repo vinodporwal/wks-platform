@@ -1,29 +1,35 @@
-import { useState, useEffect } from 'react'
 import {
   Box,
-  Typography,
   FormControl,
-  Select,
   MenuItem,
+  Select,
   Stack,
+  Typography,
   useMediaQuery,
 } from '@mui/material'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { DataService } from 'services/DataService'
 import {
   setAopYear,
-  setYearChange,
-  setVerticalChange,
-  setSitePlantChange,
   setCurrentYear,
   setOldYear,
+  setPlantID,
+  setPlantObject,
+  setSiteID,
+  setSiteObject,
+  setSitePlantChange,
+  setVerticalChange,
+  setVerticalObject,
+  setYearChange,
 } from 'store/reducers/dataGridStore'
-import { DataService } from 'services/DataService'
-import Search from './Search'
-import Profile from './Profile/index'
 import MobileSection from './MobileSection'
+import Profile from './Profile/index'
+import Search from './Search'
 
 // import Logo from '../../../assets/images/ril-logo2.png'
 import Logo from 'assets/images/ril-logo2.png'
+import { Skeleton } from '../../../../../node_modules/@progress/kendo-react-indicators/index'
 
 // Utility to parse the Keycloak ?allowed? JSON
 function parseAllowed(raw) {
@@ -40,32 +46,32 @@ function parseAllowed(raw) {
 }
 
 export default function HeaderContent({ keycloak }) {
+  const [headerLoading, setHeaderLoading] = useState(false)
+  const getSelectedVerticalStorage = localStorage.getItem('selectedVertical')
+    ? JSON.parse(localStorage.getItem('selectedVertical'))
+    : null
   const dispatch = useDispatch()
   const matchesXs = useMediaQuery((theme) => theme.breakpoints.down('md'))
-  // const { drawerOpen } = useSelector((state) => state.menu) // Get drawer state
 
-  // --- 1. Year logic state
   const [aopYears, setAopYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
 
-  // --- 2. screenTitleName from Redux
   const screenTitle = useSelector((s) => s.dataGridStore.screenTitle)
-  const screenTitleName = screenTitle?.title || 'Digital AOP'
+  const screenTitleName = screenTitle?.title
 
-  // allowed/full data
   const [allowedMap, setAllowedMap] = useState({})
   const [fullDetails, setFullDetails] = useState([])
 
-  // dropdowns
   const [verticals, setVerticals] = useState([])
   const [sites, setSites] = useState([])
   const [plants, setPlants] = useState([])
 
-  const [selectedVertical, setSelectedVertical] = useState('')
+  const [selectedVertical, setSelectedVertical] = useState(
+    getSelectedVerticalStorage ? getSelectedVerticalStorage.id : '',
+  )
   const [selectedSite, setSelectedSite] = useState('')
   const [selectedPlant, setSelectedPlant] = useState('')
 
-  // 1?? parse Keycloak allowed once
   useEffect(() => {
     let parsed = []
     try {
@@ -77,37 +83,42 @@ export default function HeaderContent({ keycloak }) {
   }, [keycloak])
 
   // 2?? fetch full details once
+
+  const fetchAllSites = async () => {
+    setHeaderLoading(true)
+    try {
+      const data = await DataService.getAllSites(keycloak)
+      setFullDetails(data || [])
+    } catch (error) {
+      console.error('Error fetching sites', error)
+      setFullDetails([])
+    } finally {
+      setHeaderLoading(false)
+    }
+  }
   useEffect(() => {
-    DataService.getAllSites(keycloak)
-      .then((data) => setFullDetails(data || []))
-      .catch((err) => {
-        console.error('Error fetching sites', err)
-        setFullDetails([])
-      })
+    fetchAllSites()
   }, [keycloak])
 
-  // 3?? build verticals list & default ? localStorage + Redux
   useEffect(() => {
     if (!fullDetails.length || !Object.keys(allowedMap).length) return
 
     const avail = fullDetails
       .filter((v) => allowedMap[v.id])
       .map((v) => ({ id: v.id, name: v.displayName }))
-      .sort((a, b) => a.name.localeCompare(b.name))
+
     setVerticals(avail)
 
     if (!selectedVertical && avail.length) {
       const defV = avail[0]
       setSelectedVertical(defV.id)
 
-      // persist vertical default
       localStorage.setItem('verticalId', defV.id)
       localStorage.setItem(
         'selectedVertical',
         JSON.stringify({ id: defV.id, name: defV.name }),
       )
-      // console.log(defV.name)
-      // dispatch Redux
+
       dispatch(
         setVerticalChange({
           selectedVertical: defV.name,
@@ -115,10 +126,11 @@ export default function HeaderContent({ keycloak }) {
           selectedPlant: '',
         }),
       )
+
+      dispatch(setVerticalObject({ id: defV.id, name: defV.name }))
     }
   }, [fullDetails, allowedMap, selectedVertical, dispatch])
 
-  // 4?? update sites when vertical changes ? localStorage + Redux
   useEffect(() => {
     if (!selectedVertical) {
       setSites([])
@@ -141,11 +153,20 @@ export default function HeaderContent({ keycloak }) {
         JSON.stringify({ id: defS.id, name: defS.name }),
       )
       localStorage.setItem('selectedSiteId', JSON.stringify({ id: defS.id }))
+
+      dispatch(
+        setSiteObject({
+          id: defS.id,
+          name: defS.displayName ?? defS.name ?? '',
+        }),
+      )
+
+      dispatch(setSiteID({ siteId: defS.id }))
+
       dispatch(setSitePlantChange({ sitePlantChange: true }))
     }
   }, [selectedVertical, fullDetails, allowedMap, dispatch])
 
-  // 5?? update plants when site changes ? localStorage + Redux
   useEffect(() => {
     if (!selectedSite) {
       setPlants([])
@@ -153,28 +174,51 @@ export default function HeaderContent({ keycloak }) {
       return
     }
     const vertObj = fullDetails.find((v) => v.id === selectedVertical)
+
+    // console.log('vertObj', vertObj)
+
     const siteObj = vertObj?.sites.find((s) => s.id === selectedSite)
+
+    // console.log('siteObj', siteObj)
+
     const allowedPlants = allowedMap[selectedVertical]?.[selectedSite] || []
+
+    // console.log('allowedPlants', allowedPlants)
+
     const list = (siteObj?.plants || [])
       .filter((p) => allowedPlants.includes(p.id))
       .map((p) => ({ id: p.id, name: p.displayName }))
+
     setPlants(list)
+
+    // console.log('list', list)
 
     if (list.length) {
       const defP = list[0]
       setSelectedPlant(defP.id)
+      // console.log('defP.id', defP.id)
+      // console.log('defP.name', defP.name)
 
       localStorage.setItem(
         'selectedPlant',
         JSON.stringify({ id: defP.id, name: defP.name }),
       )
+
+      dispatch(
+        setPlantObject({
+          id: defP.id,
+          name: defP.displayName ?? defP.name ?? '',
+        }),
+      )
+
       dispatch(setSitePlantChange({ sitePlantChange: true }))
+      dispatch(setPlantID({ plantId: defP.id, plantName: defP.name }))
     }
   }, [selectedSite, selectedVertical, fullDetails, allowedMap, dispatch])
 
-  // 6?? fetch AOP years on mount ? localStorage + Redux
   useEffect(() => {
     async function fetchYears() {
+      setHeaderLoading(true)
       try {
         var resp = await DataService.getAopyears(keycloak)
         if (resp?.length) {
@@ -188,16 +232,18 @@ export default function HeaderContent({ keycloak }) {
             setSelectedYear(currentYear)
             localStorage.setItem('year', currentYear)
             dispatch(setAopYear({ selectedYear: currentYear }))
+            dispatch(setOldYear({ oldYear: 0 }))
           }
         }
       } catch (err) {
         console.error('Error fetching AOP years', err)
+      } finally {
+        setHeaderLoading(false)
       }
     }
     fetchYears()
   }, [keycloak, dispatch])
 
-  // Handler for year change ? localStorage + Redux
   const handleYearChange = (e) => {
     const newYear = e.target.value
     setSelectedYear(newYear)
@@ -206,7 +252,6 @@ export default function HeaderContent({ keycloak }) {
     dispatch(setYearChange({ yearChanged: true }))
     dispatch(setAopYear({ selectedYear: newYear }))
 
-    // Find the selected year object to determine if it's the current year
     const selectedYearObj = aopYears.find((y) => y.AOPYear === newYear)
     const isCurrentYear = selectedYearObj?.currentYear == 1
 
@@ -221,31 +266,45 @@ export default function HeaderContent({ keycloak }) {
     }
     dispatch(setOldYear({ oldYear: isOldYear }))
   }
-  // inside HeaderContent, above the return
+
   const handlePlantChange = (e) => {
     const newPlantId = e.target.value
     setSelectedPlant(newPlantId)
 
-    // find the selected plant object from your plants array
     const plantObj = plants.find((p) => p.id === newPlantId)
     if (plantObj) {
-      // persist exactly the same key & shape you've used elsewhere:
       localStorage.setItem(
         'selectedPlant',
         JSON.stringify({ id: plantObj.id, name: plantObj.name }),
       )
-      // notify Redux that plant (or site/plant combination) changed:
+
+      dispatch(
+        setPlantObject({
+          id: plantObj.id,
+          name: plantObj.name ?? plantObj.name ?? '',
+        }),
+      )
+
       dispatch(setSitePlantChange({ sitePlantChange: true }))
+      dispatch(setPlantID({ plantId: plantObj.id, plantName: plantObj.name }))
     }
   }
   const handleVertChange = (e) => {
     const newVId = e.target.value
+
+    // Immediately clear dependent selections
+    setSelectedSite('')
+    setSelectedPlant('')
+
     setSelectedVertical(newVId)
 
     const vert = verticals.find((v) => v.id === newVId)
     if (vert) {
       localStorage.setItem('verticalId', vert.id)
       localStorage.setItem('selectedVertical', JSON.stringify(vert))
+
+      dispatch(setVerticalObject({ id: vert.id, name: vert.name }))
+
       dispatch(
         setVerticalChange({
           selectedVertical: vert.name,
@@ -262,6 +321,9 @@ export default function HeaderContent({ keycloak }) {
 
     localStorage.setItem('verticalId', vert.id)
     localStorage.setItem('selectedVertical', JSON.stringify(vert))
+
+    dispatch(setVerticalObject({ id: vert.id, name: vert.name }))
+
     dispatch(
       setVerticalChange({
         selectedVertical: vert.name,
@@ -279,8 +341,16 @@ export default function HeaderContent({ keycloak }) {
         'selectedSite',
         JSON.stringify({ id: site.id, name: site.name }),
       )
-      // localStorage.setItem('selectedSiteId', site.id)
+
+      dispatch(
+        setSiteObject({ id: site.id, name: site.name ?? site.name ?? '' }),
+      )
+
       localStorage.setItem('selectedSiteId', JSON.stringify({ id: site?.id }))
+
+      dispatch(
+        setSiteObject({ id: site.id, name: site.name ?? site.name ?? '' }),
+      )
 
       setSelectedPlant('')
       dispatch(
@@ -295,106 +365,131 @@ export default function HeaderContent({ keycloak }) {
 
   return (
     <>
-      <Box sx={{ ml: 3, mt: 0 }}>
-        {true && <img src={Logo} alt='RIL Logo' style={{ height: 40 }} />}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+        }}
+      >
+        {/* LEFT SIDE: Logo + Title */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ ml: 2 }}>
+            <img src={Logo} alt='RIL Logo' style={{ height: 40 }} />
+          </Box>
+          <Box sx={{ ml: 1 }}>
+            <Typography
+              variant='body1'
+              color='white'
+              className='custom-title-font'
+            >
+              {screenTitleName}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* RIGHT SIDE: Dropdowns */}
+        <Stack direction='row' spacing={1} alignItems='center'>
+          {/* Year */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant='body1' className='custom-title-dropdown'>
+              Year:
+            </Typography>
+            {headerLoading ? (
+              <Skeleton variant='rectangle' width={100} height={40} />
+            ) : (
+              <FormControl sx={{ minWidth: 100 }}>
+                <Select
+                  value={selectedYear}
+                  onChange={handleYearChange}
+                  className='custom-title-dropdown-content'
+                >
+                  {aopYears.map((y) => (
+                    <MenuItem key={y.AOPYear} value={y.AOPYear}>
+                      {y.AOPDisplayYear}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Box>
+
+          {/* Vertical */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant='body1' className='custom-title-dropdown'>
+              Vertical:
+            </Typography>
+            {headerLoading ? (
+              <Skeleton variant='rectangle' width={100} height={40} />
+            ) : (
+              <FormControl sx={{ minWidth: 100 }}>
+                <Select
+                  value={selectedVertical}
+                  onChange={handleVertChange}
+                  className='custom-title-dropdown-content'
+                >
+                  {verticals.map((v) => (
+                    <MenuItem key={v.id} value={v.id}>
+                      {v.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Box>
+
+          {/* Site */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant='body1' className='custom-title-dropdown'>
+              Site:
+            </Typography>
+            {headerLoading ? (
+              <Skeleton variant='rectangle' width={100} height={40} />
+            ) : (
+              <FormControl sx={{ minWidth: 100 }}>
+                <Select
+                  value={selectedSite}
+                  onChange={handleSiteChange}
+                  disabled={!sites.length}
+                  className='custom-title-dropdown-content'
+                >
+                  {sites.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      {s.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Box>
+
+          {/* Plant */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant='body1' className='custom-title-dropdown'>
+              Plant:
+            </Typography>
+            {headerLoading ? (
+              <Skeleton variant='rectangle' width={100} height={40} />
+            ) : (
+              <FormControl sx={{ minWidth: 100 }}>
+                <Select
+                  value={selectedPlant}
+                  onChange={handlePlantChange}
+                  disabled={!plants.length}
+                  className='custom-title-dropdown-content'
+                >
+                  {plants.map((p) => (
+                    <MenuItem key={p.id} value={p.id}>
+                      {p.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+          </Box>
+        </Stack>
       </Box>
-      <Box sx={{ ml: 1, mt: 0 }}>
-        {true && (
-          <Typography
-            variant='body1'
-            color='white'
-            className='custom-title-font'
-          >
-            {screenTitleName}
-          </Typography>
-        )}
-      </Box>
-
-      {matchesXs ? <Search /> : <Box sx={{ width: '100%', ml: 1 }} />}
-
-      <Stack direction='row' spacing={2} alignItems='center'>
-        {/* Year Selector */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant='body1' className='custom-title-dropdown'>
-            Year:
-          </Typography>
-          <FormControl sx={{ minWidth: 100 }}>
-            <Select
-              value={selectedYear}
-              onChange={handleYearChange}
-              className='custom-title-dropdown-content'
-            >
-              {aopYears.map((y) => (
-                <MenuItem key={y.AOPYear} value={y.AOPYear}>
-                  {y.AOPDisplayYear}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Vertical */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant='body1' className='custom-title-dropdown'>
-            Vertical:
-          </Typography>
-          <FormControl sx={{ minWidth: 100 }}>
-            <Select
-              value={selectedVertical}
-              onChange={handleVertChange}
-              className='custom-title-dropdown-content'
-            >
-              {verticals.map((v) => (
-                <MenuItem key={v.id} value={v.id}>
-                  {v.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Site */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant='body1' className='custom-title-dropdown'>
-            Site:
-          </Typography>
-          <FormControl sx={{ minWidth: 100 }}>
-            <Select
-              value={selectedSite}
-              onChange={handleSiteChange}
-              disabled={!sites.length}
-              className='custom-title-dropdown-content'
-            >
-              {sites.map((s) => (
-                <MenuItem key={s.id} value={s.id}>
-                  {s.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Plant */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant='body1' className='custom-title-dropdown'>
-            Plant:
-          </Typography>
-          <FormControl sx={{ minWidth: 100 }}>
-            <Select
-              value={selectedPlant}
-              onChange={handlePlantChange}
-              disabled={!plants.length}
-              className='custom-title-dropdown-content'
-            >
-              {plants.map((p) => (
-                <MenuItem key={p.id} value={p.id}>
-                  {p.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </Stack>
 
       {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
     </>

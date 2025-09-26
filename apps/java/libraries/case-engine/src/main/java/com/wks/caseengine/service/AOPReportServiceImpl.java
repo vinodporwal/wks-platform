@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.AOPReportDTO;
-import com.wks.caseengine.dto.WorkflowYearDTO;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
@@ -27,6 +25,7 @@ import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -46,6 +45,9 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 	@Autowired
 	private SiteRepository siteRepository;
+
+	@Autowired
+	private VerticalsRepository verticalRepository;
 
 	@Override
 	public AOPMessageVM getAnnualAOPReport(String plantId, String year, String reportType, String AopYearFilter) {
@@ -84,19 +86,19 @@ public class AOPReportServiceImpl implements AOPReportService {
 					AOPReportDTO aOPReportDTO = new AOPReportDTO();
 					aOPReportDTO.setNorm(row[0] != null ? row[0].toString() : null);
 					aOPReportDTO.setParticulars(row[1] != null ? row[1].toString() : null);
-					aOPReportDTO.setApril(row[2] != null ? Float.parseFloat(row[2].toString()) : null);
-					aOPReportDTO.setMay(row[3] != null ? Float.parseFloat(row[3].toString()) : null);
-					aOPReportDTO.setJune(row[4] != null ? Float.parseFloat(row[4].toString()) : null);
-					aOPReportDTO.setJuly(row[5] != null ? Float.parseFloat(row[5].toString()) : null);
-					aOPReportDTO.setAugust(row[6] != null ? Float.parseFloat(row[6].toString()) : null);
-					aOPReportDTO.setSeptember(row[7] != null ? Float.parseFloat(row[7].toString()) : null);
-					aOPReportDTO.setOctober(row[8] != null ? Float.parseFloat(row[8].toString()) : null);
-					aOPReportDTO.setNovember(row[9] != null ? Float.parseFloat(row[9].toString()) : null);
-					aOPReportDTO.setDecember(row[10] != null ? Float.parseFloat(row[10].toString()) : null);
-					aOPReportDTO.setJanuary(row[11] != null ? Float.parseFloat(row[11].toString()) : null);
-					aOPReportDTO.setFebruary(row[12] != null ? Float.parseFloat(row[12].toString()) : null);
-					aOPReportDTO.setMarch(row[13] != null ? Float.parseFloat(row[13].toString()) : null);
-					aOPReportDTO.setTotal(row[14] != null ? Float.parseFloat(row[14].toString()) : null);
+					aOPReportDTO.setApril(row[2] != null ? Double.parseDouble(row[2].toString()) : null);
+					aOPReportDTO.setMay(row[3] != null ? Double.parseDouble(row[3].toString()) : null);
+					aOPReportDTO.setJune(row[4] != null ? Double.parseDouble(row[4].toString()) : null);
+					aOPReportDTO.setJuly(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+					aOPReportDTO.setAugust(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+					aOPReportDTO.setSeptember(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+					aOPReportDTO.setOctober(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+					aOPReportDTO.setNovember(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+					aOPReportDTO.setDecember(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+					aOPReportDTO.setJanuary(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+					aOPReportDTO.setFebruary(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+					aOPReportDTO.setMarch(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
+					aOPReportDTO.setTotal(row[14] != null ? Double.parseDouble(row[14].toString()) : null);
 					aopReportDTOList.add(aOPReportDTO);
 
 				} else if (reportType.equalsIgnoreCase("aopYearFilter")) {
@@ -145,8 +147,26 @@ public class AOPReportServiceImpl implements AOPReportService {
 			String AopYearFilter) {
 		List<String> headers = new ArrayList<>();
 
+		// Step 1: Resolve Plant, Vertical, and Site
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+		// Step 2: Determine which stored procedure to call
+		String storedProcedure;
+		if ("MEG".equalsIgnoreCase(vertical.getName())) {
+			storedProcedure = "AnnualCostAOPReport";
+		} else {
+			storedProcedure = vertical.getName() + "_" + site.getName() + "_AnnualAOPCostReport";
+		}
+
 		try (Connection conn = dataSource.getConnection();
-				CallableStatement stmt = conn.prepareCall("{call AnnualCostAopReport(?,?,?,?)}")) {
+				CallableStatement stmt = conn.prepareCall("{call " + storedProcedure + "(?,?,?,?)}")) {
 
 			stmt.setObject(1, UUID.fromString(plantId));
 			stmt.setString(2, aopYear);
@@ -155,12 +175,10 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 			boolean hasResultSet = stmt.execute();
 
-			// Move forward until we find a result set
 			while (!hasResultSet && stmt.getUpdateCount() != -1) {
 				hasResultSet = stmt.getMoreResults();
 			}
 
-			// If a result set is found, get metadata and headers
 			if (hasResultSet) {
 				try (ResultSet rs = stmt.getResultSet()) {
 					ResultSetMetaData metaData = rs.getMetaData();
@@ -173,7 +191,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 			}
 
 		} catch (SQLException e) {
-			throw new RuntimeException("Failed to fetch headers", e);
+			throw new RuntimeException("Failed to fetch headers for stored procedure: " + storedProcedure, e);
 		}
 
 		return headers;
@@ -182,9 +200,21 @@ public class AOPReportServiceImpl implements AOPReportService {
 	public List<Object[]> getAnnualAOPReportData(String plantId, String aopYear, String reportType,
 			String AopYearFilter) {
 		try {
-			String procedureName = "AnnualCostAopReport";
-			String sql = "EXEC " + procedureName +
-					" @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType, @aopYearFilter = :AopYearFilter";
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure;
+			if ("MEG".equalsIgnoreCase(vertical.getName())) {
+				storedProcedure = "AnnualCostAOPReport";
+			} else {
+				storedProcedure = vertical.getName() + "_" + site.getName() + "_AnnualAOPCostReport";
+			}
+
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType, @aopYearFilter = :AopYearFilter";
 
 			Query query = entityManager.createNativeQuery(sql);
 
@@ -208,19 +238,20 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	public List<Object[]> getProductionVolumnDataReport(String plantId, String aopYear, String reportType,
-			String verticalName) {
+			String verticalName, String uom) {
 		try {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
 			String procedureName = "ProductionVolumnDataReport";
-			String sql = "EXEC " + procedureName +
-					" @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType,@UOM = :uom";
 
 			Query query = entityManager.createNativeQuery(sql);
 
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
 			query.setParameter("reportType", reportType);
+			query.setParameter("uom", uom);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
@@ -231,13 +262,13 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
-	public AOPMessageVM getReportForProductionVolumnData(String plantId, String year, String reportType) {
+	public AOPMessageVM getReportForProductionVolumnData(String plantId, String year, String reportType, String uom) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		List<Map<String, Object>> productionVolumnDataReportList = new ArrayList<>();
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 
-			List<Object[]> results = getProductionVolumnDataReport(plantId, year, reportType, verticalName);
+			List<Object[]> results = getProductionVolumnDataReport(plantId, year, reportType, verticalName, uom);
 			List<String> headers = null;
 			List<String> keys = null;
 
@@ -312,5 +343,65 @@ public class AOPReportServiceImpl implements AOPReportService {
 		// TODO Auto-generated method stub
 
 	}
+	
+	@Override
+	public AOPMessageVM getHandleCalculateMIISContribution(String plantId, String year) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadAnnualAOPCost_MIISContribution";
+			System.out.println(storedProcedure);
+			Integer result=  executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+			
+			aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(result);
+	        return aopMessageVM;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return aopMessageVM;
+	}
+	
+	public int executeDynamicUpdateProcedure(String procedureName, String plantId,
+			String aopYear) {
+		try {
+			
+			String callSql = "{call " + procedureName + "(?, ?)}";
+
+	        try (Connection connection = dataSource.getConnection();
+	             CallableStatement stmt = connection.prepareCall(callSql)) {
+
+	            // Set parameters in the correct order
+	            stmt.setString(1, plantId); // @finYear
+	            stmt.setString(2, aopYear); // @siteId
+
+	            // Execute the stored procedure
+	            int rowsAffected = stmt.executeUpdate();
+
+	            // Optional: commit if auto-commit is off
+	            if (!connection.getAutoCommit()) {
+	                connection.commit();
+	            }
+
+	            return rowsAffected;
+
+	        } catch (SQLException e) {
+	            e.printStackTrace();
+	            return 0;
+	        }
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+
+	
+
 
 }

@@ -1,45 +1,61 @@
-import { lazy } from 'react'
-import Loadable from 'components/Loadable'
-import MainLayout from 'layout/MainLayout'
-import TurnaroundPlanTable from 'components/data-tables/TurnaroundPlanTable'
-// import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
-import ProductionvolumeData from 'components/data-tables/ProductionVoluemData'
-import BusinessDemand from 'components/data-tables/BusinessDemand'
-import ShutDown from 'components/data-tables/ShutDown'
-import SlowDown from 'components/data-tables/Slowdown'
-
 import { CaseStatus } from 'common/caseStatus'
-import { CaseList } from 'views/caseList/caseList'
-// import { RecordList } from 'views/record/recordList'
-import { TaskList } from 'views/taskList/taskList'
-import { CaseDefList } from 'views/management/caseDef/caseDefList/caseDefList'
-import { ProcessDefList } from 'views/management/processDef/processDefList'
-import { FormList } from 'views/management/form/formList'
-import { RecordTypeList } from 'views/management/recordType/recordTypeList'
-import { QueueList } from 'views/management/queue/queueList'
+import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/kendo-WorkFlowMerge'
+import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
 import FeedStockAvailability from 'components/data-tables/FeedStockavailability'
-import NormalOpNormsScreen from 'components/data-tables/NormsScreens/NormalOpNorms'
-import ShutdownNorms from 'components/data-tables/NormsScreens/ShutdownNorms'
-import MaintenanceTable from 'components/data-tables/MaintenanceTable'
-import ConsumptionNorms from 'components/data-tables/ConsumptionNorms'
-import ProductionNorms from 'components/data-tables/ProductionNorms'
-// import SelectivityData from 'components/data-tables/SelectivityData'
-// import FiveTables from 'components/data-tables/AOPWorkFlow/ProductMixTable'
-import ConfigurationTable from 'components/data-tables/ConfigurationTable/index'
-// import UserManagement from 'components/user-management/UserManagementTable'
+import MonthwiseProduction from 'components/data-tables/Reports-kendo/kendo-MonthwiseProduction'
+import MonthwiseRawMaterial from 'components/data-tables/Reports-kendo/kendo-MonthwiseRawMaterial'
+import PlantsProductionSummary from 'components/data-tables/Reports-kendo/kendo-PlantsProductionData'
+import ProductionVolumeDataBasis from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasis'
+import AnnualAopCost from 'components/data-tables/Reports/AnnualAopCost'
+import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
+import BestAchievedNorms from 'components/data-tables/Reports/BestAchievedNorms'
+import TurnaroundPlanTable from 'components/data-tables/TurnaroundPlanTable'
+import BusinessDemand from 'components/kendo-data-tables/BusinessDemand'
+import ConsumptionNorms from 'components/kendo-data-tables/ConsumptionNorms'
+import DecokingConfig from 'components/kendo-data-tables/KendoConfigCrackerActivities'
+import CrackerConfig from 'components/kendo-data-tables/KendoConfigCrackerInput'
+import CrackerConfigOutput from 'components/kendo-data-tables/KendoConfigCrackerOutput'
+import MaintenanceTable from 'components/kendo-data-tables/MaintenanceTable'
+import NormalOpNormsScreen from 'components/kendo-data-tables/NormalOpNorms'
+import ProductionNorms from 'components/kendo-data-tables/ProductionNorms'
+import ProductionvolumeData from 'components/kendo-data-tables/ProductionVoluemData'
+import ShutDown from 'components/kendo-data-tables/ShutDown'
+import ShutdownNorms from 'components/kendo-data-tables/ShutdownNorms'
+import SlowDown from 'components/kendo-data-tables/Slowdown'
+import SlowdownNorms from 'components/kendo-data-tables/SlowdownNorms'
+import Loadable from 'components/Loadable'
+import TextSubmitComponent from 'components/user-management/TextSubmitComponent'
 import UserForm from 'components/user-management/UserForm'
 import UserManagementTable from 'components/user-management/UserManagementTable'
-import AssessmentForm from 'components/data-tables/AssesmentForm/AssessmentContext'
-import SlowdownNorms from 'components/data-tables/NormsScreens/SlowdownNorms'
-import TextSubmitComponent from 'components/user-management/TextSubmitComponent'
-import WorkFlowMerge from 'components/data-tables/AOPWorkFlow/WorkFlowMerge'
-import AnnualAopCost from 'components/data-tables/Reports/AnnualAopCost'
-import PlantsProductionSummary from 'components/data-tables/Reports/PlantsProductionData'
-// import MonthwiseProduction from 'components/data-tables/Reports/MonthWiseProduction'
-import ProductionVolumeDataBasis from 'components/data-tables/Reports/ProductionVolumeDataBasis'
-import MonthwiseProduction from 'components/data-tables/Reports/MonthwiseProduction'
-import MonthwiseRawMaterial from 'components/data-tables/Reports/MonthwiseRawMaterial'
-import NormsHistorianBasis from 'components/data-tables/Reports/NormsHistorianBasis'
+
+import MainLayout from 'layout/MainLayout'
+import { lazy } from 'react'
+import { CaseList } from 'views/caseList/caseList'
+import { CaseDefList } from 'views/management/caseDef/caseDefList/caseDefList'
+import { FormList } from 'views/management/form/formList'
+import { ProcessDefList } from 'views/management/processDef/processDefList'
+import { QueueList } from 'views/management/queue/queueList'
+import { RecordTypeList } from 'views/management/recordType/recordTypeList'
+import { TaskList } from 'views/taskList/taskList'
+// import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/kendo-ProductionVolumeDataBasisPe'
+import ProductionVolumeDataBasisPe from 'components/data-tables/Reports-kendo/ProductionVolumeDataBasisPe'
+import NormsHistorianBasisPe from 'components/data-tables/Reports/NormsHistorianBasisPe'
+import ConfigurationTable from 'components/kendo-data-tables/KendoConfigurationTable'
+import { Navigate } from '../../node_modules/react-router-dom/dist/index'
+import PrivateRoute from './PrivateRoutes'
+import AopBudget from 'components/kendo-data-tables/AopBudget'
+import MonthlyTemplatePlants from 'components/kendo-data-tables/MonthlyTemplatePlants'
+import AopSummary from 'components/kendo-data-tables/AopSummary'
+import PlantTeam from 'components/kendo-data-tables/PlantTeam'
+import RelPerf from 'components/kendo-data-tables/RelPerf'
+import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
+import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
+import RawDataSet from 'components/data-tables/Reports/RawDataSet'
+import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
+import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
+import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
+import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -49,72 +65,89 @@ export const MainRoutes = (
   // recordsTypes,
   casesDefinitions,
 ) => {
+  const verticalName = JSON.parse(
+    localStorage.getItem('selectedVertical'),
+  )?.name
+
+  const ProductionVolumeDataBasisElement =
+    verticalName == 'PE' ||
+    verticalName == 'ELASTOMER' ||
+    verticalName == 'PP' ? (
+      <ProductionVolumeDataBasisPe />
+    ) : (
+      <ProductionVolumeDataBasis />
+    )
+  const NormsHistorianBasisElement =
+    verticalName == 'ELASTOMER' ||
+    verticalName == 'PE' ||
+    verticalName == 'PP' ? (
+      <NormsHistorianBasisPe />
+    ) : (
+      <NormsHistorianBasis />
+    )
+
   let routes = {
     path: '/',
     element: <MainLayout keycloak={keycloak} authenticated={authenticated} />,
     children: [
       {
         path: '/',
-        element: <BusinessDemand />,
+        element: <Navigate to='/production-norms-plan/configuration' />,
       },
 
       {
         path: 'home',
-        element: <DashboardDefault />,
+        element: (
+          <PrivateRoute routeId='home'>
+            <DashboardDefault />
+          </PrivateRoute>
+        ),
       },
-      // {
-      //   path: 'case-list',
-      //   children: [
-      //     {
-      //       path: 'cases',
-      //       element: <CaseList />,
-      //     },
-      //     {
-      //       path: 'wip-cases',
-      //       element: <CaseList status={CaseStatus.WipCaseStatus.description} />,
-      //     },
-      //     {
-      //       path: 'closed-cases',
-      //       element: (
-      //         <CaseList status={CaseStatus.ClosedCaseStatus.description} />
-      //       ),
-      //     },
-      //     {
-      //       path: 'archived-cases',
-      //       element: (
-      //         <CaseList status={CaseStatus.ArchivedCaseStatus.description} />
-      //       ),
-      //     },
-      //   ],
-      // },
+
       {
         path: 'case-list',
         children: [
           {
             path: 'cases',
-            element: <CaseList />,
+            element: (
+              <PrivateRoute routeId='case-list'>
+                <CaseList />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'wip-cases',
-            element: <CaseList status={CaseStatus.WipCaseStatus.description} />,
+            element: (
+              <PrivateRoute routeId='case-list'>
+                <CaseList status={CaseStatus.WipCaseStatus.description} />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'closed-cases',
             element: (
-              <CaseList status={CaseStatus.ClosedCaseStatus.description} />
+              <PrivateRoute routeId='case-list'>
+                <CaseList status={CaseStatus.ClosedCaseStatus.description} />
+              </PrivateRoute>
             ),
           },
           {
             path: 'archived-cases',
             element: (
-              <CaseList status={CaseStatus.ArchivedCaseStatus.description} />
+              <PrivateRoute routeId='case-list'>
+                <CaseList status={CaseStatus.ArchivedCaseStatus.description} />
+              </PrivateRoute>
             ),
           },
         ],
       },
       {
         path: 'task-list',
-        element: <TaskList />,
+        element: (
+          <PrivateRoute routeId='task-list'>
+            <TaskList />
+          </PrivateRoute>
+        ),
       },
       {
         path: 'system',
@@ -131,23 +164,43 @@ export const MainRoutes = (
         children: [
           {
             path: 'process-definition',
-            element: <ProcessDefList />,
+            element: (
+              <PrivateRoute routeId='process-definition'>
+                <ProcessDefList />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'case-definition',
-            element: <CaseDefList />,
+            element: (
+              <PrivateRoute routeId='case-definition'>
+                <CaseDefList />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'record-type',
-            element: <RecordTypeList />,
+            element: (
+              <PrivateRoute routeId='record-type'>
+                <RecordTypeList />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'form',
-            element: <FormList />,
+            element: (
+              <PrivateRoute routeId='form'>
+                <FormList />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'queue',
-            element: <QueueList />,
+            element: (
+              <PrivateRoute routeId='queue'>
+                <QueueList />
+              </PrivateRoute>
+            ),
           },
         ],
       },
@@ -157,40 +210,106 @@ export const MainRoutes = (
         children: [
           {
             path: 'business-demand',
-            element: <BusinessDemand />,
+            element: (
+              <PrivateRoute routeId='business-demand'>
+                <BusinessDemand />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'configuration',
-            element: <ConfigurationTable />,
+            element: (
+              <PrivateRoute routeId='configuration'>
+                <ConfigurationTable />
+                {/* <Configuration /> */}
+              </PrivateRoute>
+            ),
             // element: <SelectivityData />,
           },
           {
+            path: 'spyro-menu',
+            children: [
+              {
+                path: 'spyro-input',
+                element: (
+                  <PrivateRoute routeId='spyro-input'>
+                    <CrackerConfig keycloak={keycloak} />
+                  </PrivateRoute>
+                ),
+              },
+              {
+                path: 'spyro-output',
+                element: (
+                  <PrivateRoute routeId='spyro-output'>
+                    <CrackerConfigOutput />
+                  </PrivateRoute>
+                ),
+              },
+              {
+                path: 'decoking-activities',
+                element: (
+                  <PrivateRoute routeId='decoking-activities'>
+                    <DecokingConfig />
+                  </PrivateRoute>
+                ),
+              },
+            ],
+          },
+          {
             path: 'production-volume-data',
-            element: <ProductionvolumeData />,
+            element: (
+              <PrivateRoute routeId='production-volume-data'>
+                <ProductionvolumeData />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'maintenance-details',
-            element: <MaintenanceTable />,
+            element: (
+              <PrivateRoute routeId='maintenance-details'>
+                <MaintenanceTable />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'consumption-aop',
-            element: <ConsumptionNorms />,
+            element: (
+              <PrivateRoute routeId='consumption-aop'>
+                <ConsumptionNorms />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'production-aop',
-            element: <ProductionNorms />,
+            element: (
+              <PrivateRoute routeId='production-aop'>
+                <ProductionNorms />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'normal-op-norms',
-            element: <NormalOpNormsScreen />,
+            element: (
+              <PrivateRoute routeId='normal-op-norms'>
+                <NormalOpNormsScreen />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'shutdown-norms',
-            element: <ShutdownNorms />,
+            element: (
+              <PrivateRoute routeId='shutdown-norms'>
+                <ShutdownNorms />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'slowdown-norms',
-            element: <SlowdownNorms />,
+            element: (
+              <PrivateRoute routeId='slowdown-norms'>
+                <SlowdownNorms />
+              </PrivateRoute>
+            ),
           },
           // {
           //   path: 'slowdown-norms',
@@ -199,22 +318,39 @@ export const MainRoutes = (
 
           {
             path: 'shutdown-plan',
-            element: <ShutDown />,
+            element: (
+              <PrivateRoute routeId='shutdown-plan'>
+                <ShutDown />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'slowdown-plan',
-            element: <SlowDown />,
+            element: (
+              <PrivateRoute routeId='slowdown-plan'>
+                <SlowDown />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'turnaround-plan',
-            element: <TurnaroundPlanTable />,
+            element: (
+              <PrivateRoute routeId='turnaround-plan'>
+                <TurnaroundPlanTable />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'feed-stock-availability',
-            element: <FeedStockAvailability />,
+            element: (
+              <PrivateRoute routeId='feed-stock-availability'>
+                <FeedStockAvailability />
+              </PrivateRoute>
+            ),
           },
         ],
       },
+
       {
         path: 'functions',
         children: [
@@ -222,51 +358,200 @@ export const MainRoutes = (
           { path: 'reliability', element: <TextSubmitComponent /> },
         ],
       },
+
       {
         path: 'reports',
         children: [
-          { path: 'aop-annual-cost-report', element: <AnnualAopCost /> },
+          {
+            path: 'aop-annual-cost-report',
+            element: (
+              <PrivateRoute routeId='aop-annual-cost-report'>
+                <AnnualAopCost />
+              </PrivateRoute>
+            ),
+          },
           {
             path: 'production-volume-basis',
-            element: <ProductionVolumeDataBasis />,
+            element: (
+              <PrivateRoute routeId='production-volume-basis'>
+                {ProductionVolumeDataBasisElement}
+              </PrivateRoute>
+            ),
           },
           {
             path: 'norms-historian-basis',
-            element: <NormsHistorianBasis />,
+            element: (
+              <PrivateRoute routeId='norms-historian-basis'>
+                {NormsHistorianBasisElement}
+              </PrivateRoute>
+            ),
           },
           {
+            path: 'steady-state-norms-historian-basis',
+            element: (
+              <PrivateRoute routeId='steady-state-norms-historian-basis'>
+                <SteadyStateNormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'consumption-norms-historian-basis',
+            element: (
+              <PrivateRoute routeId='consumption-norms-historian-basis'>
+                <ConsumptionNormsHistorianBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'best-achieved-basis',
+            element: (
+              <PrivateRoute routeId='best-achieved-basis'>
+                <BestAchievedNorms />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'best-achieved-individual-basis',
+            element: (
+              <PrivateRoute routeId='best-achieved-individual-basis'>
+                <BestAchievedIndividualNorms />
+              </PrivateRoute>
+            ),
+          },
+
+          {
             path: 'plants-production',
-            element: <PlantsProductionSummary />,
+            element: (
+              <PrivateRoute routeId='plants-production'>
+                <PlantsProductionSummary />
+              </PrivateRoute>
+            ),
           },
           {
             path: 'monthwise-production',
-            element: <MonthwiseProduction />,
+            element: (
+              <PrivateRoute routeId='monthwise-production'>
+                <MonthwiseProduction />
+              </PrivateRoute>
+            ),
           },
+
+          {
+            path: 'intermediate-values',
+            element: (
+              <PrivateRoute routeId='intermediate-values'>
+                <IntermediateValuesDataSet />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'raw-data',
+            element: (
+              <PrivateRoute routeId='raw-data'>
+                <RawDataSet />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'run-length',
+            element: (
+              <PrivateRoute routeId='run-length'>
+                <RunLengthDataSet />
+              </PrivateRoute>
+            ),
+          },
+
           {
             path: 'monthwise-raw-material',
             element: <MonthwiseRawMaterial />,
           },
           { path: 'previous-fy-aop-result', element: <DashboardDefault /> },
-          { path: 'previous-fy-aop-result', element: <DashboardDefault /> },
-          { path: 'mat-bal-sheet', element: <DashboardDefault /> },
+          {
+            path: 'mat-bal-sheet',
+            element: (
+              <PrivateRoute routeId='mat-bal-sheet'>
+                <DashboardDefault />
+              </PrivateRoute>
+            ),
+          },
         ],
       },
+
+      {
+        path: 'functional-aop',
+        children: [
+          {
+            path: 'aop-budget',
+            element: (
+              <PrivateRoute routeId='aop-budget'>
+                <AopBudget />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'reliability-performance',
+            element: (
+              <PrivateRoute routeId='reliability-performance'>
+                <RelPerf />
+              </PrivateRoute>
+            ),
+          },
+        ],
+      },
+
+      {
+        path: 'plant-team',
+        element: (
+          <PrivateRoute routeId='plant-team'>
+            <PlantTeam />
+          </PrivateRoute>
+        ),
+      },
+
+      {
+        path: 'plant-safety-performance-target',
+        element: (
+          <PrivateRoute routeId='plant-safety-performance-target'>
+            <PlantSafetyPerformanceTarget />
+          </PrivateRoute>
+        ),
+      },
+
       {
         path: 'workflow',
-        element: <WorkFlowMerge />,
+        element: (
+          <PrivateRoute routeId='workflow'>
+            <WorkFlowMerge />
+          </PrivateRoute>
+        ),
         // element: <FiveTables />,
       },
       {
         path: 'user-management',
-        element: <UserManagementTable keycloak={keycloak} />,
+        element: (
+          <PrivateRoute routeId='user-management'>
+            <UserManagementTable keycloak={keycloak} />
+          </PrivateRoute>
+        ),
       },
+
       {
         path: 'user-form',
         element: <UserForm keycloak={keycloak} />,
       },
       {
         path: 'assessment-form',
-        element: <AssessmentForm />,
+        element: (
+          <PrivateRoute routeId='assessment-form'>
+            <AssessmentForm />
+          </PrivateRoute>
+        ),
       },
     ],
   }
