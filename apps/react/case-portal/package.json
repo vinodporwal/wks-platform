@@ -14,13 +14,13 @@
     "@mui/x-data-grid": "^7.1.1",
     "@novu/notification-center": "^0.24.2",
     "@reduxjs/toolkit": "^2.2.3",
-	"@syncfusion/ej2-react-kanban": "^20.4.42",
-    "@syncfusion/ej2-react-schedule": "^20.4.42",
     "@syncfusion/ej2-react-buttons": "^20.4.42",
     "@syncfusion/ej2-react-calendars": "^20.4.42",
     "@syncfusion/ej2-react-dropdowns": "^20.4.42",
     "@syncfusion/ej2-react-inputs": "^20.4.42",
+    "@syncfusion/ej2-react-kanban": "^20.4.42",
     "@syncfusion/ej2-react-navigations": "^20.4.42",
+    "@syncfusion/ej2-react-schedule": "^20.4.42",
     "@syncfusion/ej2-react-splitbuttons": "^20.4.42",
     "@tabler/icons-react": "^3.2.0",
     "@wkspower/camunda-web-modeler": "^0.0.5",
@@ -91,6 +91,6 @@
     "style-loader": "^4.0.0",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.0.4"
+    "webpack-dev-server": "^5.2.2"
   }
 }
