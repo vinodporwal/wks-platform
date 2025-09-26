@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1no20ip" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.37.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.23.0">
+  <bpmn:process id="assettrain-onboarding" name="XOM Asset Train Onboarding" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="aot-start" name="Start">
+      <bpmn:outgoing>Flow_019o3dg</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_019o3dg" sourceRef="aot-start" targetRef="aot-createcase" />
+    <bpmn:sequenceFlow id="Flow_0xufcen" sourceRef="aot-createcase" targetRef="aot-split" />
+    <bpmn:parallelGateway id="aot-split" name="Parallel split" camunda:asyncAfter="true">
+      <bpmn:incoming>Flow_0xufcen</bpmn:incoming>
+      <bpmn:outgoing>Flow_1g9jhff</bpmn:outgoing>
+      <bpmn:outgoing>Flow_033pjpn</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1vfpy78</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="Flow_1g9jhff" sourceRef="aot-split" targetRef="aot-processengr" />
+    <bpmn:sequenceFlow id="Flow_033pjpn" sourceRef="aot-split" targetRef="aot-machineryengr" />
+    <bpmn:sequenceFlow id="Flow_1vfpy78" sourceRef="aot-split" targetRef="aot-modsengr" />
+    <bpmn:parallelGateway id="aot-combine" name="Combine">
+      <bpmn:incoming>Flow_1ienreq</bpmn:incoming>
+      <bpmn:incoming>Flow_1eybbzf</bpmn:incoming>
+      <bpmn:incoming>Flow_1em8sq9</bpmn:incoming>
+      <bpmn:outgoing>Flow_1w4iicr</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="Flow_1ienreq" sourceRef="aot-machineryengr" targetRef="aot-combine" />
+    <bpmn:sequenceFlow id="Flow_1eybbzf" sourceRef="aot-modsengr" targetRef="aot-combine" />
+    <bpmn:task id="aot-publish" name="Publish Asset">
+      <bpmn:incoming>Flow_1w4iicr</bpmn:incoming>
+      <bpmn:outgoing>Flow_0xj348w</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_1w4iicr" sourceRef="aot-combine" targetRef="aot-publish" />
+    <bpmn:endEvent id="aot-end" name="End">
+      <bpmn:incoming>Flow_0xj348w</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0xj348w" sourceRef="aot-publish" targetRef="aot-end" />
+    <bpmn:sequenceFlow id="Flow_1em8sq9" sourceRef="aot-processengr" targetRef="aot-combine" />
+    <bpmn:userTask id="aot-processengr" name="Process Engineer" camunda:formKey="assetonboarding-proceng">
+      <bpmn:incoming>Flow_1g9jhff</bpmn:incoming>
+      <bpmn:outgoing>Flow_1em8sq9</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="aot-machineryengr" name="Machinery Engineer" camunda:formKey="assetonboarding-macheng2">
+      <bpmn:incoming>Flow_033pjpn</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ienreq</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="aot-modsengr" name="Mods Engineer" camunda:formKey="assetonboarding-modseng">
+      <bpmn:incoming>Flow_1vfpy78</bpmn:incoming>
+      <bpmn:outgoing>Flow_1eybbzf</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="aot-createcase" name="Start Asset Onboarding" camunda:formKey="assetonboarding-createcase">
+      <bpmn:incoming>Flow_019o3dg</bpmn:incoming>
+      <bpmn:outgoing>Flow_0xufcen</bpmn:outgoing>
+    </bpmn:userTask>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="assettrain-onboarding">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="aot-start">
+        <dc:Bounds x="182" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="188" y="145" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0i1st0c_di" bpmnElement="aot-split">
+        <dc:Bounds x="425" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="420" y="65" width="61" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1mr2w3e_di" bpmnElement="aot-combine">
+        <dc:Bounds x="705" y="95" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="708" y="65" width="45" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1kl0z3h_di" bpmnElement="aot-publish">
+        <dc:Bounds x="830" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0bj8xz8_di" bpmnElement="aot-end">
+        <dc:Bounds x="1012" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1020" y="145" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1l1x6gh_di" bpmnElement="aot-processengr">
+        <dc:Bounds x="530" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1sir3xa_di" bpmnElement="aot-machineryengr">
+        <dc:Bounds x="530" y="190" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1a2inaq_di" bpmnElement="aot-modsengr">
+        <dc:Bounds x="530" y="300" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1m2egt5" bpmnElement="aot-createcase">
+        <dc:Bounds x="270" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_019o3dg_di" bpmnElement="Flow_019o3dg">
+        <di:waypoint x="218" y="120" />
+        <di:waypoint x="270" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0xufcen_di" bpmnElement="Flow_0xufcen">
+        <di:waypoint x="370" y="120" />
+        <di:waypoint x="425" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1g9jhff_di" bpmnElement="Flow_1g9jhff">
+        <di:waypoint x="475" y="120" />
+        <di:waypoint x="530" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_033pjpn_di" bpmnElement="Flow_033pjpn">
+        <di:waypoint x="450" y="145" />
+        <di:waypoint x="450" y="230" />
+        <di:waypoint x="530" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1vfpy78_di" bpmnElement="Flow_1vfpy78">
+        <di:waypoint x="450" y="145" />
+        <di:waypoint x="450" y="340" />
+        <di:waypoint x="530" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ienreq_di" bpmnElement="Flow_1ienreq">
+        <di:waypoint x="630" y="230" />
+        <di:waypoint x="668" y="230" />
+        <di:waypoint x="668" y="120" />
+        <di:waypoint x="705" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1eybbzf_di" bpmnElement="Flow_1eybbzf">
+        <di:waypoint x="630" y="340" />
+        <di:waypoint x="730" y="340" />
+        <di:waypoint x="730" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1w4iicr_di" bpmnElement="Flow_1w4iicr">
+        <di:waypoint x="755" y="120" />
+        <di:waypoint x="830" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0xj348w_di" bpmnElement="Flow_0xj348w">
+        <di:waypoint x="930" y="120" />
+        <di:waypoint x="1012" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1em8sq9_di" bpmnElement="Flow_1em8sq9">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="705" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

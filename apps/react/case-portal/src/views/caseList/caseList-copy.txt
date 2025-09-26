@@ -1,10 +1,8 @@
 /* eslint-disable no-unused-vars */
-import { useLocation, useSearchParams } from 'react-router-dom';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material'
 import CloseIcon from '@mui/icons-material/Close'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
 import ViewListIcon from '@mui/icons-material/ViewList'
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
 import { useTheme } from '@mui/material'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -23,16 +21,13 @@ import React, {
   useContext,
   useEffect,
   useState,
-  useRef
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CaseService } from '../../services'
 // import { Grid, GridColumn } from '@progress/kendo-react-grid';
-//import '@progress/kendo-theme-material/dist/all.css'
+import '@progress/kendo-theme-material/dist/all.css'
 import { getQueryParamValue } from 'utils/util'
 // import { useLocation } from 'react-router-dom';
-import { accountStore } from '../../store'
-import moment from 'moment'
 
 const DataGrid = lazy(() =>
   import('@mui/x-data-grid').then((module) => ({ default: module.DataGrid })),
@@ -42,22 +37,16 @@ const Kanban = lazy(() =>
     default: module.Kanban,
   })),
 )
-const ScheduleView = lazy(() =>
-  import('components/ScheduleView/scheduleView').then((module) => ({
-    default: module.ScheduleView,
-  })),
-)
-
 const CaseForm = lazy(() =>
   import('../caseForm/caseForm').then((module) => ({
     default: module.CaseForm,
   })),
 )
-const NewCaseForm = lazy(() =>
-   import('../caseForm/newCaseForm').then((module) => ({
-     default: module.NewCaseForm,
-   })),
-)
+// const NewCaseForm = lazy(() =>
+//   import('../caseForm/newCaseForm').then((module) => ({
+//     default: module.NewCaseForm,
+//   })),
+// )
 const CaseNewFormPage = lazy(() =>
   import('../caseForm/NewCaseFormPage').then((module) => ({
     default: module.NewCaseFormPage,
@@ -81,87 +70,14 @@ export const CaseList = ({ status, caseDefId }) => {
   const [fetching, setFetching] = useState(false)
   const [filter, setFilter] = useState({
     sort: '',
-    limit: 1000,
+    limit: 10,
     after: '',
     before: '',
     cursors: {},
     hasPrevious: false,
     hasNext: false,
   })
-
-  // XOM - Route changes -Start
-  const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
-  const currentPath = location.pathname;
-  // If either businessKey or caseNo is present in the URL we should treat this as a "view" request
-  const queryHasBusinessKey = searchParams.has('businessKey') || searchParams.has('caseNo');
-  // Only treat '/case/create' as an auto-create path. '/case-list/create' should show the list page.
-  const isCaseCreatePath = currentPath && currentPath === '/case/create';
-  const isCaseViewPath = queryHasBusinessKey || (currentPath && (currentPath === '/case/view' || currentPath === '/case-list/view'));
-  let createButtonRef = useRef(null);
-  let caseBusinessKey = null;
-  const [accepted, setAccepted] = useState(false);
-  const isCaseDefValid = (caseDefId && caseDefId.length !== 0 && caseDefId.trim().length !== 0);
-  
-  if(isCaseCreatePath && !isCaseDefValid)
-  {
-    const isCaseDefPresentInRoute = searchParams.has('case_def');
-    caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
-    if(!caseDefId || caseDefId.length === 0 || caseDefId.trim().length === 0) {
-      setLoading(false);
-      setError(true);
-      setErrorMsg('Invalid Case Definition "' + caseDefId + '" !! ');
-    }
-  }
-  
-  if(isCaseViewPath)
-  {
-    const isCaseDefPresentInRoute = searchParams.has('case_def');
-    const isBusinessKeyPresentInRoute = searchParams.has('businessKey') || searchParams.has('caseNo');
-    caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
-
-    if(!isBusinessKeyPresentInRoute) {
-      setLoading(false);
-      setError(true);
-      setErrorMsg('Business Key missing in parameters !! ');
-    } else {
-      caseBusinessKey = searchParams.get('businessKey') || searchParams.get('caseNo');
-      if(!caseBusinessKey || caseBusinessKey.length === 0 || caseBusinessKey.trim().length === 0) {
-        setLoading(false);
-        setError(true);
-        setErrorMsg('Invalid Business Key !! ');
-      } 
-    }
-  }
-
-  useEffect(() => {
-    // Do not auto-open the 'create new case' form when a businessKey/caseNo is present in the URL
-    if (isCaseCreatePath && !queryHasBusinessKey && !error && !accepted) {
-      const fireEvent = (el, eventName) => {
-        const event = new Event(eventName, { bubbles: true });
-        el.dispatchEvent(event);
-      };
-    
-	  var autoClickTimeout = null;
-      autoClickTimeout = setTimeout(() => {
-      if (createButtonRef && createButtonRef.current) {
-          setOpenNewCaseForm(true);
-          setAccepted(true);
-		  createButtonRef.current.click();
-          //fireEvent(createButtonRef, "click");
-        }
-      }, 500);
-
-      return () => {
-        if(autoClickTimeout) { clearInterval(autoClickTimeout); } // Clear the interval when component unmounts
-      };
-    }
-  }, [accepted]);  
-
-  // XOM - Route changes - End
+  // const location = useLocation();
 
   useEffect(() => {
     if (Config.WebsocketsEnabled) {
@@ -189,158 +105,23 @@ export const CaseList = ({ status, caseDefId }) => {
   }, [])
 
   useEffect(() => {
-    const isNavToView = (isCaseViewPath && !error && caseBusinessKey);
-
-    if (queryHasBusinessKey && caseBusinessKey) {
-      // Use getCasesById (which returns cases filtered by asset/hierarchy) and try to match the caseNo
-      setFetching(true);
-      try {
-        const searchParamsWindow = new URLSearchParams(window.location.search);
-        const assetName = searchParamsWindow.get('assetName') || 'defaultAssetName';
-        const hierarchyName = searchParamsWindow.get('hierarchyName') || 'defaultHierarchyName';
-
-        CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
-          .then((resp) => {
-            const caseList = Array.isArray(resp) ? resp : [];
-
-            const updatedCases = caseList.map((singleCase) => {
-              let caseTitle = '';
-              let caseNumber = singleCase.caseNo || singleCase.businessKey || singleCase.caseNumber;
-
-              try {
-                const attributes =
-                  typeof singleCase.attributes === 'string'
-                    ? JSON.parse(singleCase.attributes)
-                    : singleCase.attributes;
-
-                const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
-
-                if (containerValue) {
-                  const parsedValue = typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue;
-                  caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle || '';
-                  caseNumber = caseNumber || parsedValue?.caseNo || parsedValue?.businessKey || parsedValue?.caseNumber;
-                }
-              } catch (error) {
-                console.error('Error parsing container value:', error);
-              }
-
-              return {
-                ...singleCase,
-                caseTitle,
-                caseNumber,
-              };
-            });
-
-            setCases(updatedCases);
-            setFilter({
-              ...filter,
-              cursors: {},
-              hasPrevious: false,
-              hasNext: false,
-            });
-
-            const caseNoParam = caseBusinessKey || searchParamsWindow.get('caseNo') || searchParamsWindow.get('businessKey');
-            if (caseNoParam) {
-              const target = String(caseNoParam);
-              const selectedCase = updatedCases.find((c) => {
-                if (!c) return false;
-                const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
-                try {
-                  const attributes =
-                    typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
-                  const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
-                  const parsedContainer = containerValue ? (typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue) : {};
-                  candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
-                } catch (e) {
-                  // ignore
-                }
-                return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
-              });
-
-              if (selectedCase && setACase) {
-                setACase(selectedCase);
-                setOpenCaseForm(true);
-
-                // Remove 'caseNo' and 'businessKey' from the URL without reloading
-                searchParamsWindow.delete('caseNo');
-                searchParamsWindow.delete('businessKey');
-                const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
-                window.history.replaceState(null, '', newUrl);
-                return;
-              }
-            }
-
-            // If not found, fallback to full list fetch behavior
-            fetchCases(
-              setFetching,
-              keycloak,
-              caseDefId,
-              setStages,
-              status,
-              filter,
-              setCases,
-              setFilter,
-              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-            );
-          })
-          .catch((err) => {
-            console.error('Error in getCasesById for nav-to-view', err);
-            fetchCases(
-              setFetching,
-              keycloak,
-              caseDefId,
-              setStages,
-              status,
-              filter,
-              setCases,
-              setFilter,
-              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-            );
-          })
-          .finally(() => {
-            setFetching(false);
-          });
-      } catch (err) {
-        console.error('nav-to-view error', err);
-        fetchCases(
-          setFetching,
-          keycloak,
-          caseDefId,
-          setStages,
-          status,
-          filter,
-          setCases,
-          setFilter,
-          isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-        );
-        setFetching(false);
-      }
-    } else {
-      fetchCases(
-        setFetching,
-        keycloak,
-        caseDefId,
-        setStages,
-        status,
-        filter,
-        setCases,
-        setFilter,
-        isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-      );
-    }
+    fetchCases(
+      setFetching,
+      keycloak,
+      caseDefId,
+      setStages,
+      status,
+      filter,
+      setCases,
+      setFilter,
+      setACase,
+      setOpenCaseForm,
+    )
   }, [caseDefId, status, openNewCaseForm])
 
   useEffect(() => {
     CaseService.getCaseDefinitions(keycloak).then((resp) => {
-      setCaseDefs(resp);
-      // XOM - Route changes - Start
-      if(!resp.some(i => i.id === caseDefId)) {
-        setLoading(false);
-        setError(true);
-        setErrorMsg('Invalid Case Definition "' + caseDefId + '" !! ');
-      }
-      // XOM - Route changes - End
-
+      setCaseDefs(resp)
     })
   }, [])
 
@@ -350,30 +131,6 @@ export const CaseList = ({ status, caseDefId }) => {
         field: 'caseNumber',
         headerName: t('pages.caselist.datagrid.columns.caseNumber'),
         width: 150,
-		valueGetter: (value, row) => {
-          try {
-			if(row.businessKey && row.businessKey !== '')
-				return row.businessKey;
-			
-            const attributes =
-              typeof row.attributes === 'string'
-                ? JSON.parse(row.attributes)
-                : row.attributes
-
-            const containerValue = attributes?.find(
-              (attr) => attr.name === 'container',
-            )?.value
-
-            const parsedContainer = containerValue
-              ? JSON.parse(containerValue)
-              : {}
-
-            return parsedContainer.caseNo || parsedContainer.businessKey || ''
-          } catch (error) {
-            console.error('Error parsing mainAsset:', error)
-            return ''
-          }			
-		}
       },
       {
         field: 'caseTitle',
@@ -477,68 +234,66 @@ export const CaseList = ({ status, caseDefId }) => {
         headerName: 'Case Assigned To',
         flex: 1,
         valueGetter: (value, row) => {
-          //return value ? value?.userId : '';
-		  return row ? row?.caseAssignedTo : '';
+          return value ? value?.userId : '';
         },
       },
+      // {
+      //   field: "createdOn",
+      //   headerName: "Created On",
+      //   width: 100,
+      // },
+      // {
+      //   field: 'creationDate',
+      //   headerName: 'Created On',
+      //   width: 150,
+      //   valueGetter: (value, row) => {
+      //     const date = row?.creationDate
+      //     if (date) {
+      //       const dateObj = new Date(date)
+      //       const day = String(dateObj.getDate()).padStart(2, '0')
+      //       const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+      //       const year = String(dateObj.getFullYear())
+      //       const hours = String(dateObj.getHours()).padStart(2, '0')
+      //       const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+
+      //       return `${day}-${month}-${year} ${hours}:${minutes}`
+      //     }
+      //     return ''
+      //   },
+      // },
+
       // {
       //   field: 'ownerName',
       //   headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
       //   width: 150,
       //   valueGetter: (value, row) => row?.owner?.name,
       // },
+
       {
         field: 'creationDate',
         headerName: 'Created On',
         width: 150,
         valueGetter: (value, row) => {
-          try {
-            const attributes =
-              typeof row.attributes === 'string'
-                ? JSON.parse(row.attributes)
-                : row.attributes
-
-            const containerValue = attributes?.find(
-              (attr) => attr.name === 'container',
-            )?.value
-
-            const parsedContainer = containerValue
-              ? JSON.parse(containerValue)
-              : {}
-
-            return (parsedContainer.createdOn && moment(parsedContainer.createdOn).format("DD-MM-YYYY")) || ''
-          } catch (error) {
-            console.error('Error parsing createdOn:', error)
-            return ''
+          const date = row?.creationDate
+          if (date) {
+            const dateObj = new Date(date)
+            const day = String(dateObj.getDate()).padStart(2, '0')
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+            const year = String(dateObj.getFullYear())
+            const hours = String(dateObj.getHours()).padStart(2, '0')
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+            return `${day}-${month}-${year} ${hours}:${minutes}`
           }
-        }
+          return ''
+        },
       },
-      {
-        field: 'dueDate',
-        headerName: 'Due On',
-        width: 150,
-        valueGetter: (value, row) => {
-          try {
-            const attributes =
-              typeof row.attributes === 'string'
-                ? JSON.parse(row.attributes)
-                : row.attributes
 
-            const containerValue = attributes?.find(
-              (attr) => attr.name === 'container',
-            )?.value
-
-            const parsedContainer = containerValue
-              ? JSON.parse(containerValue)
-              : {}
-
-            return (parsedContainer.dueDate && moment(parsedContainer.dueDate).format("DD-MM-YYYY")) || ''
-          } catch (error) {
-            console.error('Error parsing dueDate:', error)
-            return ''
-          }
-        }
-      },
+      // {
+      //   field: 'ownerName',
+      //   headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
+      //   width: 150,
+      //   valueGetter: (value, row) => row?.owner?.name,
+      // },
       {
         field: 'action',
         headerName: 'Action',
@@ -649,15 +404,17 @@ export const CaseList = ({ status, caseDefId }) => {
   const handlerNextPage = () => {
     setFetching(true)
 
-  const next = {
+    const next = {
       sort: filter.sort,
       limit: filter.limit,
       after: filter.cursors.after,
-  }
+    }
 
-  CaseService.filterCase(keycloak, caseDefId, status, next)
+    CaseService.filterCase(keycloak, caseDefId, status, next)
       .then((resp) => {
         const { data, paging } = resp
+
+        console.log('Setting case 111')
         setCases(data)
         setFilter({
           ...filter,
@@ -683,6 +440,8 @@ export const CaseList = ({ status, caseDefId }) => {
     CaseService.filterCase(keycloak, caseDefId, status, prior)
       .then((resp) => {
         const { data, paging } = resp
+
+        console.log('Setting case 222')
         setCases(data)
         setFilter({
           ...filter,
@@ -795,37 +554,23 @@ export const CaseList = ({ status, caseDefId }) => {
     )
   }
 
-  const hasWaitMsg = loading || error;
-  const waitOrErrMsg = (loading && 'Loading...') || (error && (errorMsg || 'Something wrong happened'))
-
-  function generateRandom() {
-    var length = 8,
-        charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-        retVal = "";
-    for (var i = 0, n = charset.length; i < length; ++i) {
-        retVal += charset.charAt(Math.floor(Math.random() * n));
-    }
-    return retVal;
-  }
-
-  // {{loading && (<p>'Loading...'</p>)} || {error && (<p>{errorMsg || 'Something wrong happened'}</p>)}}
-  // {hasWaitMsg && (<p>{waitOrErrMsg}</p>)}
   return (
     <div style={{ height: 650, width: '100%' }}>
-      {caseDefId && accountStore.isManagerUser(keycloak) && (
+      {/* {caseDefId && (
+        <div>
           <Button
             id='basic-button'
             onClick={handleNewCaseAction}
-			ref={createButtonRef}
             variant='contained'
           >
             {t('pages.caselist.action.newcase')}
           </Button>
-      )}
+        </div>
+      )} */}
+      {/* 
       {caseDefId && (
         <ToggleButtonGroup
           orientation='horizontal'
-		  style={{ float: 'right' }}
           value={view}
           exclusive
           onChange={handleChangeView}
@@ -836,11 +581,9 @@ export const CaseList = ({ status, caseDefId }) => {
           <ToggleButton value='kanban' aria-label='kanban'>
             <ViewKanbanIcon />
           </ToggleButton>
-          <ToggleButton value='calendar' aria-label='calendar'>
-            <CalendarMonthIcon />
-          </ToggleButton>
         </ToggleButtonGroup>
-      )}
+      )} */}
+
       <MainCard sx={{ mt: 2 }} content={false}>
         <Box>
           {view === 'list' && (
@@ -849,7 +592,7 @@ export const CaseList = ({ status, caseDefId }) => {
                 <DataGrid
                   sx={{
                     height: 500,
-                    width: '99%',
+                    width: '100%',
                     backgroundColor: '#ffffff',
                     mt: 1,
                     '& .MuiDataGrid-cell': {
@@ -861,18 +604,14 @@ export const CaseList = ({ status, caseDefId }) => {
                   }}
                   rows={cases}
                   columns={makeColumns()}
-                  getRowId={(row) => {
-                    return generateRandom();
-                    //console.log((isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id)
-                    //return (isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id
-                  }}
+                  getRowId={(row) => row.caseNo}
                   loading={fetching}
                   components={{ Pagination: CustomPagination }}
                 />
               </Suspense>
             </div>
           )}
-          {/*{view === 'list' && (
+          {/* {view === 'list' && (
             <div>
               <Grid
                 data={cases}
@@ -916,17 +655,6 @@ export const CaseList = ({ status, caseDefId }) => {
               />
             </Suspense>
           )}
-          {view === 'calendar' && (
-            <Suspense fallback={<div>Loading...</div>}>
-              <ScheduleView
-                cases={cases}
-                caseDefId={caseDefId}
-                setACase={setACase}
-				handleClose={handleCloseCaseForm}
-                setOpenCaseForm={setOpenCaseForm}
-              />
-            </Suspense>
-          )}  		  
         </Box>
       </MainCard>
 
@@ -940,7 +668,8 @@ export const CaseList = ({ status, caseDefId }) => {
           keycloak={keycloak}
         />
       )}
-      {/*openNewCaseForm && (
+      {/* 
+      {openNewCaseForm && (
         <NewCaseForm
           handleClose={handleCloseNewCaseForm}
           cases={cases}
@@ -948,7 +677,7 @@ export const CaseList = ({ status, caseDefId }) => {
           caseDefId={newCaseDefId}
           setLastCreatedCase={setLastCreatedCase}
         />
-      )*/}
+      )} */}
       {openNewCaseForm && (
         <CaseNewFormPage
           handleClose={handleCloseNewCaseForm}
@@ -958,6 +687,7 @@ export const CaseList = ({ status, caseDefId }) => {
           setLastCreatedCase={setLastCreatedCase}
         />
       )}
+
       {lastCreatedCase && (
         <Snackbar
           open={snackOpen}
@@ -971,6 +701,65 @@ export const CaseList = ({ status, caseDefId }) => {
   )
 }
 
+// function fetchCases(
+//   setFetching,
+//   keycloak,
+//   caseDefId,
+//   setStages,
+//   status,
+//   filter,
+//   setCases,
+//   setFilter,
+// ) {
+//   setFetching(true)
+
+//   CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+//     .then((resp) => {
+//       resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
+//       setStages(resp.stages)
+//       return CaseService.filterCase(keycloak, caseDefId, status, filter)
+//     })
+//     .then((resp) => {
+//       const { data, paging } = resp
+//       console.log('resp', resp)
+//        const updatedCases = data.map((singleCase) => {
+//         let caseTitle = "";
+//         let caseNumber = "";
+
+//         try {
+//           const containerValue = singleCase.attributes.find(
+//             (attr) => attr.name === "container"
+//           )?.value;
+
+//           if (containerValue) {
+//             const parsedValue = JSON.parse(containerValue);
+//             caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
+//             caseNumber = parsedValue?.textField || parsedValue.caseNo;
+//           }
+//         } catch (error) {
+//           console.error("Error parsing container value:", error);
+//         }
+
+//         return {
+//           ...singleCase,
+//           caseTitle,
+//           caseNumber,
+//         };
+//       });
+
+//       setCases(updatedCases)
+//       setFilter({
+//         ...filter,
+//         cursors: paging.cursors,
+//         hasPrevious: paging.hasPrevious,
+//         hasNext: paging.hasNext,
+//       })
+//     })
+//     .finally(() => {
+//       setFetching(false)
+//     })
+// }
+
 function fetchCases(
   setFetching,
   keycloak,
@@ -980,82 +769,71 @@ function fetchCases(
   filter,
   setCases,
   setFilter,
-  navToView = null
+  setACase,
+  setOpenCaseForm,
 ) {
   setFetching(true)
+  const searchParams = new URLSearchParams(window.location.search)
+  const assetName = searchParams.get('assetName') || 'defaultAssetName'
+  const hierarchyName =
+    searchParams.get('hierarchyName') || 'defaultHierarchyName'
 
-  CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+  CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
     .then((resp) => {
-      resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
-      setStages(resp.stages)
-      return CaseService.filterCase(keycloak, caseDefId, status, filter)
-    })
-    .then((resp) => {
-      const { data, paging } = resp
-      console.log('resp', resp)
-      const updatedCases = data.map((singleCase) => {
-        let caseTitle = "";
-        let caseNumber = "";
+      const caseList = Array.isArray(resp) ? resp : []
+
+      const updatedCases = caseList.map((singleCase) => {
+        let caseTitle = ''
+        let caseNumber = singleCase.caseNo
 
         try {
           const containerValue = singleCase.attributes.find(
-            (attr) => attr.name === "container"
-          )?.value;
+            (attr) => attr.name === 'container',
+          )?.value
 
           if (containerValue) {
-            const parsedValue = JSON.parse(containerValue);
-            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
-            caseNumber = parsedValue?.textField || parsedValue.caseNo;
+            const parsedValue = JSON.parse(containerValue)
+            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle
+            caseNumber = caseNumber || parsedValue.caseNo
           }
         } catch (error) {
-          console.error("Error parsing container value:", error);
+          console.error('Error parsing container value:', error)
         }
 
         return {
           ...singleCase,
           caseTitle,
           caseNumber,
-        };
-      });
-	  
-	  const uniqueUpdatedCases = updatedCases.filter((obj, index, self) =>
-        index === self.findIndex((t) => t.businessKey === obj.businessKey)
-      );
-      setCases(uniqueUpdatedCases)
+        }
+      })
+
+      setCases(updatedCases)
       setFilter({
         ...filter,
-        cursors: paging.cursors,
-        hasPrevious: paging.hasPrevious,
-        hasNext: paging.hasNext,
+        cursors: {}, // Reset cursors here
+        hasPrevious: false,
+        hasNext: false,
       })
-	  
-      if (navToView && navToView[0]) {
-        const target = String(navToView[1]);
-        const selectedCase = uniqueUpdatedCases.find((c) => {
-          if (!c) return false;
-          const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
-          try {
-            const attributes =
-              typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
-            const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
-            const parsedContainer = containerValue ? JSON.parse(containerValue) : {};
-            candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
-          } catch (e) {
-            // ignore parse errors
-          }
-          return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
-        });
 
-        if (selectedCase && navToView[2]) {
-          navToView[2]({ ...selectedCase });
-          navToView[3](true);
-          navToView[4](true);
-          navToView[5](false);
-          navToView[6]();
+      const caseNo = getQueryParamValue(window.location.href, 'caseNo')
+
+      if (caseNo) {
+        const selectedCase = updatedCases.find((c) => c.caseNo == caseNo)
+        if (selectedCase && setACase) {
+          setACase(selectedCase)
+          setOpenCaseForm(true)
+
+          // Remove 'caseNo' from the URL without reloading
+          searchParams.delete('caseNo')
+          const newUrl = `${window.location.pathname}?${searchParams.toString()}`
+          window.history.replaceState(null, '', newUrl)
         }
       }
+    })
+    .catch((error) => {
+      console.error('Error fetching cases:', error)
     })
     .finally(() => {
       setFetching(false)
     })
-  }
+}

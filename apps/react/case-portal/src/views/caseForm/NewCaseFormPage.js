@@ -69,7 +69,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                   ? level7.columns[2].components[0]
                   : null
               if (saveAsDraft) {
-                //saveAsDraft.hidden = true
+                saveAsDraft.hidden = true
               }
 
               const createButton =
@@ -77,7 +77,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                   ? level7.columns[2].components[1]
                   : null
               if (createButton) {
-                //createButton.hidden = false
+                createButton.hidden = false
               }
 
               const saveButton =
@@ -85,7 +85,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                   ? level7.columns[3].components[0]
                   : null
               if (saveButton) {
-                //saveButton.hidden = true
+                saveButton.hidden = true
               }
             }
           }
@@ -169,6 +169,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        caseNo: null,
+        businessKey: null,
         owner: {
           id: keycloak.subject || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -195,6 +197,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
+			caseNo: businessKey,
+			caseNumber: businessKey,
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -210,6 +214,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
+		  console.log("CaseUrl after creation: " + data.caseUrl);
         setTimeout(() => {
           window.location.href = data.caseUrl;
           // handleClose()
@@ -269,6 +274,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+        caseNo: null,
+        businessKey: null,
         owner: {
           id: keycloak.subject || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -295,6 +302,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
+			caseNo: businessKey,
+			caseNumber: businessKey,	
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -330,8 +339,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         color='primary'
         size='small'
         onClick={() => {
+          navigate(`/case-list/create${currentParams}`)
           handleCloseSnack()
-		  navigate(`/case-list/create${currentParams}`)
         }}
       >
         {lastCreatedCase.caseNo}

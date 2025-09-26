@@ -1,4 +1,4 @@
-/*
+ /*
  * WKS Platform - Open-Source Project
  * 
  * This file is part of the WKS Platform, an open-source project developed by WKS Power.
@@ -47,7 +47,7 @@ public class MultiBpmEngineClientFacade implements BpmEngineClientFacade {
 		throw new RuntimeException();
 	}
 
-	private BpmEngineClient getEngineClient() {
+	private BpmEngineClient getEngineClient() { 
 		return getBpmEngine().getType().equals(BpmEngineType.BPM_ENGINE_CAMUNDA7) ? c7EngineClient : c8EngineClient;
 	}
 
@@ -56,7 +56,7 @@ public class MultiBpmEngineClientFacade implements BpmEngineClientFacade {
 		getEngineClient().deploy(getBpmEngine(), fileName, bpmnXml);
 	}
 
-	@Override
+	@Override 
 	public Deployment[] findDeployments() {
 		return getEngineClient().findDeployments(getBpmEngine());
 	}

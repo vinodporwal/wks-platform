@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="libraries/api-security/src/main/java"/>
+	<classpathentry kind="src" path="libraries/api-security/src/test/java"/>
+	<classpathentry kind="src" path="libraries/bpm-engine-client/src/main/java"/>
+	<classpathentry kind="src" path="libraries/bpm-engine-interface/src/main/java"/>
+	<classpathentry kind="src" path="libraries/c7-client/src/main/java"/>
+	<classpathentry kind="src" path="libraries/c7-client/src/test/java"/>
+	<classpathentry kind="src" path="libraries/c7-plugins/src/main/java"/>
+	<classpathentry kind="src" path="libraries/c8-client/src/main/java"/>
+	<classpathentry kind="src" path="libraries/case-engine/src/main/java"/>
+	<classpathentry kind="src" path="libraries/case-engine/src/test/java"/>
+	<classpathentry kind="src" path="libraries/case-engine-rest-client/src/main/java"/>
+	<classpathentry kind="src" path="libraries/case-engine-rest-dto/src/main/java"/>
+	<classpathentry kind="src" path="services/c7-external-tasks/src/main/java"/>
+	<classpathentry kind="src" path="services/c8-external-tasks/src/main/java"/>
+	<classpathentry kind="src" path="services/case-engine-rest-api/src/main/java"/>
+	<classpathentry kind="src" path="services/case-engine-rest-api/src/test/java"/>
+	<classpathentry kind="src" path="services/demo-data-loader/src/main/java"/>
+	<classpathentry kind="src" path="services/storage-api/src/main/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
+	<classpathentry kind="src" path="services/storage-api/src/test/java"/>
+	<classpathentry kind="src" path=".apt_generated">
+		<attributes>
+			<attribute name="optional" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

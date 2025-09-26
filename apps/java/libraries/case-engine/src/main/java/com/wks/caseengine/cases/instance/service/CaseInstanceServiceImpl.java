@@ -11,6 +11,7 @@
  */
 package com.wks.caseengine.cases.instance.service;
 
+import com.wks.caseengine.command.CommandContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,9 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	@Autowired
 	private CommandExecutor commandExecutor;
 
+    @Autowired
+    private CommandContext commandContext;
+
 	@Override
 	public PageResult<CaseInstance> find(CaseInstanceFilter filters) {
 		return commandExecutor.execute(new FindCaseInstanceCmd(filters));
@@ -48,8 +52,22 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 	}
 
 	@Override
-	public CaseInstance startWithValues(final CaseInstance caseInstance) {
-		return commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
+	public CaseInstance startWithValues   (final CaseInstance caseInstance) {
+
+		// return commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
+CaseInstance changedInstance =  commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
+
+    if(changedInstance.getBusinessKey().equals(caseInstance.getBusinessKey())) {
+
+    try {
+        commandContext.getCaseInstanceRepository().update(changedInstance.getId(), changedInstance);
+    } catch(Exception e) {
+        System.out.println("error while updating caseInstance");
+          throw new RuntimeException(e);
+    }
+}
+return changedInstance;
+
 	}
 
 	@Override
