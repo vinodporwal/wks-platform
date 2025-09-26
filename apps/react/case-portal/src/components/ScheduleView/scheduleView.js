@@ -59,6 +59,7 @@ export const ScheduleView = ({
   cases,
   caseDefId,
   setACase,
+  handleClose,
   setOpenCaseForm
 }) => {
   registerLicense(
@@ -179,7 +180,7 @@ export const ScheduleView = ({
         timeZone: scheduleTimezone,
       })
     }
-    timeBtn.current.innerHTML = liveTime
+    if(timeBtn.current) timeBtn.current.innerHTML = liveTime;
   }
   const onImportClick = (args) => {
     scheduleObj.current.importICalendar(args.event.target.files[0])
@@ -399,6 +400,7 @@ export const ScheduleView = ({
       businessKey: args.event.Id,
       caseDefinitionId: caseDefId,
     });
+	handleClose();
     setOpenCaseForm(true);
   };
   let generateEvents = () => {

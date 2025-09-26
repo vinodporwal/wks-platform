@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined'
 import CloseIcon from '@mui/icons-material/Close'
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { Grid } from '@mui/material'
 import AppBar from '@mui/material/AppBar'
@@ -132,8 +133,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         color='primary'
         size='small'
         onClick={() => {
+          navigate(`/case-list/create${currentParams}`)
           handleCloseSnack()
-		  navigate(`/case-list/create${currentParams}`)
         }}
       >
         {lastCreatedCase.caseNo}
@@ -171,12 +172,30 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         }
         setIsFormData(true)
 
-        // return CaseService.getCaseById(keycloak, aCase.businessKey);
+        // Prefer fetching by businessKey (exact match). If not available, fall back to getCaseById.
+        let caseData = null;
+        try {
+          if (aCase && aCase.businessKey) {
+            const resp = await CaseService.getCaseByBusinessKey(
+              keycloak,
+              aCase.caseDefinitionId,
+              aCase.businessKey,
+            );
+            if (resp && resp.data && resp.data.length > 0) {
+              // API returns an array in the same mapped format
+              caseData = resp.data[0];
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching case by businessKey', err)
+        }
 
-        const caseData = await CaseService.getCaseById(
-          keycloak,
-          aCase.businessKey,
-        )
+        if (!caseData) {
+          caseData = await CaseService.getCaseById(
+            keycloak,
+            aCase.businessKey,
+          )
+        }
 
         aCase.documents = caseData?.documents || []
         aCase.comments = caseData?.comments || []
@@ -344,19 +363,21 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           ),
         )
         setDocuments(caseData?.documents)
-        setFormData({
-          data: caseData.attributes.reduce(
-            (obj, item) =>
-              Object.assign(obj, {
-                [item.name]: tryParseJSONObject(item.value)
-                  ? JSON.parse(item.value)
-                  : item.value,
-              }),
-            {},
-          ),
-          metadata: {},
-          isValid: true,
-        })
+        if(caseData && caseData.attributes) {
+		  setFormData({
+            data: caseData.attributes.reduce(
+              (obj, item) =>
+                Object.assign(obj, {
+                  [item.name]: tryParseJSONObject(item.value)
+                    ? JSON.parse(item.value)
+                    : item.value,
+                }),
+              {},
+            ),
+            metadata: {},
+            isValid: true,
+          });
+		}
         setActiveStage(caseData.stage)
       })
       .catch((err) => {
@@ -438,6 +459,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             eventIds: eventIds,
             businessKey: businessKey,
 			caseNo: businessKey,
+      	caseNumber: businessKey,	
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -499,7 +521,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
-        caseNo: aCase.caseNo,
+        caseNo: aCase.businessKey,
         owner: {
           id: keycloak.subject || '',
           name: keycloak.idTokenParsed.name || '',
@@ -756,7 +778,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: aCase.caseDefinitionId,
-        caseNo: aCase.caseNo,
+        caseNo: aCase.businessKey,
         owner: {
           id: keycloak.subject || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -785,6 +807,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             eventIds: eventIds,
             businessKey: businessKey, // Include businessKey in the payload
 			caseNo: businessKey,
+      	caseNumber: businessKey,	
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',

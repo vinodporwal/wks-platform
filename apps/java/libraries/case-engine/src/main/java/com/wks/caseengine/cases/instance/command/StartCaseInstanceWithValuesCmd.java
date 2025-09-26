@@ -44,16 +44,22 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 
 	private CaseInstance caseInstanceParam;
 
+
+
 	@Override
 	public CaseInstance execute(CommandContext commandContext) {
+
 		try {
 		    CaseInstance existingCaseInstance = commandContext.getCaseInstanceRepository()
 		            .get(caseInstanceParam.getBusinessKey());
 
 		    mergeAttributes(existingCaseInstance, caseInstanceParam);
 		    existingCaseInstance.setOwner(caseInstanceParam.getOwner());
+
 		    return existingCaseInstance; // Return updated instance
 		} catch (DatabaseRecordNotFoundException e) {
+
+
 		CaseDefinition caseDefinition = retrieveCaseDefinition(commandContext);
 
 		caseInstanceParam.addAttribute(

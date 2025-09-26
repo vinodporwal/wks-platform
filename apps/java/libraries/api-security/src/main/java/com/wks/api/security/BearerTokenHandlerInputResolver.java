@@ -28,6 +28,8 @@ public final class BearerTokenHandlerInputResolver implements HandlerInputResolv
 
 	@Override
 	public Map<String, Object> resolver(HttpServletRequest request, Authentication authentication) {
+		
+		
 		return inputResolver(request, authentication);
 	}
 
