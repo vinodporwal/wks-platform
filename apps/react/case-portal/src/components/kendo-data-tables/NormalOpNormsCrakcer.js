@@ -430,6 +430,7 @@ const NormalOpNormsScreenCracker = () => {
       ExcelName: `${lowerVertName}_Best Achieved (Norms)`,
       saveBtn: true, // visible only if top
       showCalculate: true, // visible only if top and calculation available
+      showCalculateVisibility: true,
     }),
     [lowerVertName, calculationObject],
   )
