@@ -310,6 +310,14 @@ const BestAchievedNorms = () => {
       </Backdrop>
 
       {/* Hidden ExcelExport instances for each grid */}
+
+      <Typography component='div' className='grid-title'>
+        <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> - Propane
+        (1Z)&nbsp;&nbsp;
+        <span style={{ color: 'green', fontWeight: 'bold' }}>Green</span> -
+        Propane (2Z)
+      </Typography>
+
       <div style={{ display: 'none' }}>
         {gridNames.map((name) => {
           const data = dataMap[name] || { rows: [], columns: [] }

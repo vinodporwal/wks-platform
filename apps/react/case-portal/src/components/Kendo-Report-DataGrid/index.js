@@ -148,7 +148,7 @@ const KendoDataGrid = ({
       field,
     )
 
-    console.log('dataItem', dataItem)
+    // console.log('dataItem', dataItem)
 
     const month = field
     const normId =
