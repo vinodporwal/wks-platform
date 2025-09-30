@@ -1,5 +1,6 @@
 import Config from '../consts'
 import { json } from './request'
+
 export const DataService = {
   getProductById,
   getYearWiseProduct,
@@ -143,6 +144,8 @@ export const DataService = {
 
   plantContributionPlanLastFourYears,
   calculatePlantContributionSummaryYearly,
+  getRecipeExcel,
+  saveRecipeExcel,
 }
 
 async function miisData(keycloak, reportType, periodFrom, periodTo, mode) {
@@ -833,7 +836,7 @@ async function getProductionVolDataBasisPe(
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
 
-  let url = `${Config.CaseEngineUrl}/task/report/norms-basis/pe?plantId=${plantId}&year=${year}&type=${reportType}`
+  let url = `${Config.CaseEngineUrl}/task/data-set-norms-historian?plantId=${plantId}&year=${year}&type=${reportType}`
 
   if (periodFrom !== undefined) {
     url += `&periodFrom=${periodFrom}`
@@ -1985,16 +1988,16 @@ async function getAllProducts(keycloak) {
     console.log(e)
     return await Promise.reject(e)
   }
-} 
+}
 
 async function maintenacegetdata(keycloak, budgetCategory) {
   const storedPlant = localStorage.getItem('selectedPlant')
   const parsedPlant = JSON.parse(storedPlant)
   var year = localStorage.getItem('year')
-  
+
   // Only encode plantId and year, leave budgetCategory as-is
   const url = `${Config.CaseEngineUrl}/task/budget-maintenance?plantId=${encodeURIComponent(parsedPlant.id)}&year=${encodeURIComponent(year)}&budgetCategory=${budgetCategory}`
-  
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2012,7 +2015,7 @@ async function savemaintenacegetdata(maintenancedetails, keycloak) {
   const storedPlant = localStorage.getItem('selectedPlant')
   const parsedPlant = JSON.parse(storedPlant)
   var year = localStorage.getItem('year')
-  
+
   // Only encode plantId and year, leave budgetCategory as-is
   const url = `${Config.CaseEngineUrl}/task/budget-maintenance`
   const headers = {
@@ -2031,8 +2034,8 @@ async function savemaintenacegetdata(maintenancedetails, keycloak) {
     console.log(e)
     return await Promise.reject(e)
   }
-} 
-async function maintenaceExportdata(keycloak,budgetCategory) {
+}
+async function maintenaceExportdata(keycloak, budgetCategory) {
   const year = localStorage.getItem('year')
   let plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -2042,9 +2045,9 @@ async function maintenaceExportdata(keycloak,budgetCategory) {
   }
 
   let url = `${Config.CaseEngineUrl}/task/budget-maintenance-export-excel?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
-//  if (budgetCategory) {
-//     url += `&budgetCategory=${encodeURIComponent(budgetCategory)}`
-//   }
+  //  if (budgetCategory) {
+  //     url += `&budgetCategory=${encodeURIComponent(budgetCategory)}`
+  //   }
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -2074,7 +2077,7 @@ async function maintenaceExportdata(keycloak,budgetCategory) {
     console.error('Error exporting Spyro Input Excel:', e)
     return Promise.reject(e)
   }
-} 
+}
 
 async function maintenaceImportExceldata(file, keycloak) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
@@ -3285,6 +3288,67 @@ async function getCrackerNextYearData(keycloak, qParams) {
     return Promise.reject(e)
   }
 }
+async function getRecipeExcel(keycloak) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/recipe-export?year=${year}&plantId=${plantId}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to export data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'recipe.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting recipe data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveRecipeExcel(file, keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/recipe-import?plantId=${plantId}&year=${year}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing recipe data:', e)
+    return Promise.reject(e)
+  }
+}
+
 async function plantContributionPlanLastFourYears(keycloak, type) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
