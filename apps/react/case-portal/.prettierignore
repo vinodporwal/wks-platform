@@ -12,3 +12,5 @@ public/**/*.css
 public/**/**/**/*.js
 src/components/data-tables/ProductionNorms.js
 src\services\DataService.js
+src\components\data-tables\Reports-kendo\ProductionVolumeDataBasisPe.js
+src\components\data-tables\Reports-kendo\NormsHistorianBasisPe.js
