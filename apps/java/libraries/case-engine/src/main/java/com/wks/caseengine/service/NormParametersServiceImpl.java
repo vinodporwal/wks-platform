@@ -1,14 +1,16 @@
-package com.wks.caseengine.service;
+ package com.wks.caseengine.service;
 
  import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+ import org.springframework.stereotype.Service;
 
-import com.wks.caseengine.entity.NormParameters;
+ import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 
@@ -16,22 +18,22 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
-@Service
-public class NormParametersServiceImpl implements NormParametersService {
-
-	@Autowired
-	private NormParametersRepository normParametersRepository;
-
-	@PersistenceContext
+ @Service
+ public class NormParametersServiceImpl implements NormParametersService {
+	
+ 	@Autowired
+ 	private NormParametersRepository normParametersRepository;
+ 	
+ 	@PersistenceContext
 	private EntityManager entityManager;
-
-	@Autowired
+ 	
+ 	@Autowired
 	private PlantsRepository plantsRepository;
 
-	@Override
-	public List<NormParameters> findAllByType(String type) {
-		return normParametersRepository.findAllByType(type);
-	}
+ 	@Override
+ 	public List<NormParameters> findAllByType(String type) {
+ 		return	normParametersRepository.findAllByType(type);
+ 	}
 
 	@Override
  	public List<NormParameters> getAllGrades(String type) {
@@ -70,4 +72,14 @@ public class NormParametersServiceImpl implements NormParametersService {
 		}
 	}
 
-}
+	@Override
+	public AOPMessageVM getNormParameters(String plantId, String year,String type) {
+		List<NormParameters> normParametersList = normParametersRepository.findByPlantFkId(UUID.fromString(plantId));
+		
+		
+		
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+ }

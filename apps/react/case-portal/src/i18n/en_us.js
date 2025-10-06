@@ -82,7 +82,12 @@ const defs = {
     bestAchievedIndividualBasis: 'Best Achieved (Individual)',
     furnaceModeAndRunLength: 'Furnace Mode And Run Length',
     maintenanceProcess: 'Process',
-    utilitiesNormsBasis: 'Utilities Norms Basis'
+    utilitiesNormsBasis: 'Utilities Norms Basis',
+    productionTargetBasis: 'Production Target Basis',
+    maintenanceSummary: 'Maintenance Summary',
+    plantBudgetSummary: 'Plant Budget Summary',
+
+    functionalReports: 'Reports',
   },
   pages: {
     dashboard: {
@@ -264,7 +269,13 @@ const defs = {
         runlengthData: 'Furnace Run Length ',
         furnaceModeAndRunLength: 'Furnace Mode And Run Length',
         maintenanceProcess: 'Process',
-        utilitiesNormsBasis: 'Utilities Norms Basis'
+        utilitiesNormsBasis: 'Utilities Norms Basis',
+        productionTargetBasis: 'Production Target Basis',
+
+        maintenanceSummary: 'Maintenance Summary',
+        plantBudgetSummary: 'Plant Budget Summary',
+
+        functionalReports: 'Reports',
       },
     },
   },
