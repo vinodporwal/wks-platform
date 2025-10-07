@@ -162,8 +162,18 @@ export default function AopBudget() {
 
   const columns = [
     { field: 'plantName', title: 'Plant', width: 120 },
+
     { field: 'costName', title: 'Cost', width: 120 },
     { field: 'budgetType', title: 'Budget Type', width: 120, hidden: true },
+
+    {
+      field: 'budgetConstrains',
+      title: 'Budget Constrains',
+      width: 120,
+      editable: true,
+    },
+    { field: 'calc', title: 'Calc', width: 120 },
+
     ...monthFields.map(({ field, index, editable, type, format, width }) => ({
       field,
       title: headerMap[index],
@@ -189,7 +199,9 @@ export default function AopBudget() {
         ...item,
         plantName: item.plantName || item.plantName || '',
         IsEditable: item.isEditable,
-        originalRemark: item.remark?.trim() || '', // add this
+        originalRemark: item.remark?.trim() || '',
+        budgetConstrains: '',
+        calc: '+',
       }))
       setRows(mapped)
 
@@ -203,6 +215,8 @@ export default function AopBudget() {
         plantName: item.plantName || item.plantName || '',
         IsEditable: item.isEditable,
         originalRemark: item.remark?.trim() || '', // add this
+        budgetConstrains: '',
+        calc: '+',
       }))
       setRowsP(mappedP)
     } catch (err) {
@@ -259,6 +273,7 @@ export default function AopBudget() {
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       ExcelName: `${lowerVertName}_Monthly Procurement Budget`,
+      constarins: ['+', '-'],
     },
     isOldYear,
   )
@@ -288,6 +303,7 @@ export default function AopBudget() {
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Monthly Consumption Budget`,
+      constarins: ['+', '-'],
     },
     isOldYear,
   )
@@ -448,6 +464,13 @@ export default function AopBudget() {
         <Typography component='div' className='grid-title'>
           <div>Planning Plant : 40N0 </div>
           <div>Maintenance Plant : 40N3</div>
+        </Typography>
+      )}
+
+      {true && (
+        <Typography component='div' className='text-header'>
+          <div>Design Basis </div>
+          <div>Remarks</div>
         </Typography>
       )}
 
