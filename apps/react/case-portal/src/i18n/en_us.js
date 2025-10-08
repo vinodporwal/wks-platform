@@ -88,6 +88,8 @@ const defs = {
     plantBudgetSummary: 'Plant Budget Summary',
 
     functionalReports: 'Reports',
+    aopDesignBasis: 'AOP Basis',
+    tcsinput: 'TCS Input',
   },
   pages: {
     dashboard: {
@@ -276,6 +278,8 @@ const defs = {
         plantBudgetSummary: 'Plant Budget Summary',
 
         functionalReports: 'Reports',
+        aopDesignBasis: 'AOP Basis',
+        tcsinput: 'TCS Input',
       },
     },
   },

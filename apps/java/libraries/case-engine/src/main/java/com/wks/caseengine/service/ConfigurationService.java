@@ -18,6 +18,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 public interface ConfigurationService {
 	
 	public List<ConfigurationDTO> getConfigurationData(String year, UUID plantFKId);
+	AOPMessageVM calculateSteadyNorms(String year, String plantId,String periodTo,String periodFrom);
 	public AOPMessageVM getConfigurationConstants(String year,String plantFKId);
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId);
     public List<ConfigurationDTO> saveConfigurationData( String year, String plantFKId, List<ConfigurationDTO> configurationDTOList);
@@ -33,7 +34,9 @@ public interface ConfigurationService {
     public AOPMessageVM importRecipe(String year, UUID fromString, MultipartFile file);
     public AOPMessageVM importConfigurationConstantsExcel(String year, UUID plantId, MultipartFile file);
 	public AOPMessageVM getConfigurationExecution( String year, String plantId);
+	public AOPMessageVM getConfigurationExecutionNorms( String year, String plantId);
     public AOPMessageVM saveConfigurationExecution( List<ExecutionDetailDto> executionDetailDtoList);
+    public AOPMessageVM saveConfigurationExecutionNorms( List<ExecutionDetailDto> executionDetailDtoList);
     byte[] createConfigurationConstantsExcelResponse(String year, UUID plantFKId, List<ConfigurationDTO> list);
     public AOPMessageVM getConfigurationConstantsNorms(String year, String plantFKId);
 

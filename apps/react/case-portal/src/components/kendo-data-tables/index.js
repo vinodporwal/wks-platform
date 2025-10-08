@@ -88,6 +88,7 @@ export const monthMap = {
 }
 
 const KendoDataTables = ({
+  showCatChemUtilityCheckbox = false,
   rows = [],
   plantID = null,
   grades = [],
@@ -837,6 +838,8 @@ const KendoDataTables = ({
     // }))
   }
 
+  const CHECK_TYPES = ['cat chem', 'utility consumption']
+
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -1158,11 +1161,16 @@ const KendoDataTables = ({
             >
               {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
 
-              {permissions?.unitForExcelToadd && (
+              {/* {permissions?.unitForExcelToadd && (
                 <ExcelExportColumn field={selectedUOM} title='UOM' />
-              )}
+              )} */}
 
               {columns?.map((col) => {
+                {
+                  permissions?.unitForExcelToadd && (
+                    <ExcelExportColumn field={selectedUOM} title='UOM' />
+                  )
+                }
                 const isActive = isColumnActive(col?.field, filter, sort)
 
                 if (col.type === 'descLimit') {
@@ -1645,16 +1653,32 @@ const KendoDataTables = ({
                       hidden={col.hidden}
                       editable={true}
                       cells={{
-                        data: (props) => (
-                          <td style={{ textAlign: 'center' }}>
-                            <Checkbox
-                              checked={!!props.dataItem[props.field]}
-                              onChange={(e) =>
-                                handleCheckboxChange(props, e.value)
-                              }
-                            />
-                          </td>
-                        ),
+                        data: (props) => {
+                          const dataItem = props.dataItem || {}
+                          const normType = (dataItem.Particulars || '')
+                            .toString()
+                            .toLowerCase()
+
+                          if (
+                            showCatChemUtilityCheckbox &&
+                            !CHECK_TYPES.includes(normType)
+                          ) {
+                            return <td />
+                          }
+
+                          return (
+                            <td style={{ textAlign: 'center' }}>
+                              <Checkbox
+                                checked={!!props.dataItem[props.field]}
+                                onChange={(e) => {
+                                  const checked =
+                                    e?.value ?? e?.target?.checked ?? false
+                                  handleCheckboxChange(props, checked)
+                                }}
+                              />
+                            </td>
+                          )
+                        },
                         headerCell: BlankHeader,
                       }}
                     />

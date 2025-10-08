@@ -460,7 +460,7 @@ const ProductionNorms = ({ permissions }) => {
           const transformedItem = {
             ...item,
             idFromApi: item.id,
-            UOM: selectedUnit ? selectedUnit : 'MT/Month',
+            uom: selectedUnit ? selectedUnit : 'MT/Month',
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
             ...(TPH && {

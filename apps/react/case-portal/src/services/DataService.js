@@ -149,6 +149,8 @@ export const DataService = {
   saveRecipeExcel,
   getShutdownRateExcel,
   saveShutdownRateExcel,
+  getConfigurationExecutionDetailsNorms,
+  executeConfigurationNorms,
 }
 
 async function miisData(keycloak, reportType, periodFrom, periodTo, mode) {
@@ -2852,6 +2854,29 @@ async function executeConfiguration(executionDetailDtoList, keycloak) {
     return Promise.reject(e)
   }
 }
+async function executeConfigurationNorms(executionDetailDtoList, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-execution-norms`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(executionDetailDtoList),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json()
+    return data
+  } catch (e) {
+    console.error('Error saving configuration execution:', e)
+    return Promise.reject(e)
+  }
+}
 
 async function getConfigurationExecutionDetails(keycloak) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
@@ -3335,7 +3360,9 @@ async function getRecipeExcel(keycloak) {
       headers,
     })
     if (!resp.ok) {
-      throw new Error(`Failed to export data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
     }
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)
@@ -3395,7 +3422,9 @@ async function getShutdownRateExcel(keycloak) {
       headers,
     })
     if (!resp.ok) {
-      throw new Error(`Failed to export data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
     }
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)
@@ -3477,5 +3506,23 @@ async function calculatePlantContributionSummaryYearly(
   } catch (e) {
     console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
+  }
+}
+
+async function getConfigurationExecutionDetailsNorms(keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/configuration-execution-norms?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

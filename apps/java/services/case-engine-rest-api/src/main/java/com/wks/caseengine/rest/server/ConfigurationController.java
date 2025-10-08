@@ -36,6 +36,11 @@ public class ConfigurationController {
 		return configurationService.getConfigurationData(year,plantFKId);
 	}
 	
+	@GetMapping(value="/calculate-steady-norms")
+	public AOPMessageVM calculateSteadyNorms(@RequestParam String year,@RequestParam String plantId,@RequestParam(required=false) String periodTo,@RequestParam(required=false) String periodFrom){
+		return	configurationService.calculateSteadyNorms(year, plantId,periodTo,periodFrom);
+	}
+	
 	@GetMapping(value="/configuration/intermediate-values")
 	public AOPMessageVM getConfigurationIntermediateValues(@RequestParam String year,@RequestParam UUID plantFKId) {
 		return configurationService.getConfigurationIntermediateValues(year,plantFKId);
@@ -209,9 +214,19 @@ public class ConfigurationController {
 		return configurationService.getConfigurationExecution(year,plantId);
 	}
 	
+	@GetMapping(value="/configuration-execution-norms")
+	public AOPMessageVM getConfigurationExecutionNorms(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getConfigurationExecutionNorms(year,plantId);
+	}
+	
 	@PostMapping(value="/configuration-execution")
 	public AOPMessageVM saveConfigurationExecution(@RequestBody List<ExecutionDetailDto> executionDetailDtoList) {
 		return configurationService.saveConfigurationExecution(executionDetailDtoList);
+	}
+	
+	@PostMapping(value="/configuration-execution-norms")
+	public AOPMessageVM saveConfigurationExecutionNorms(@RequestBody List<ExecutionDetailDto> executionDetailDtoList) {
+		return configurationService.saveConfigurationExecutionNorms(executionDetailDtoList);
 	}
 
 }
