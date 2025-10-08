@@ -81,7 +81,7 @@ export const CaseList = ({ status, caseDefId }) => {
   const [fetching, setFetching] = useState(false)
   const [filter, setFilter] = useState({
     sort: '',
-    limit: 1000,
+    limit: 100000,
     after: '',
     before: '',
     cursors: {},
@@ -862,7 +862,10 @@ export const CaseList = ({ status, caseDefId }) => {
                   rows={cases}
                   columns={makeColumns()}
                   getRowId={(row) => {
-                    return generateRandom();
+                  //  return generateRandom();
+					//   return row.businessKey ?? row.caseNo ?? row.id ?? row._id ?? generateRandom();
+                    return row?.businessKey ?? row?.caseNo ?? row?.id ?? row?._id ?? generateRandom();
+
                     //console.log((isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id)
                     //return (isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id
                   }}
