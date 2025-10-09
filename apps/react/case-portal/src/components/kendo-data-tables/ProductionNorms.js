@@ -460,7 +460,7 @@ const ProductionNorms = ({ permissions }) => {
           const transformedItem = {
             ...item,
             idFromApi: item.id,
-            UOM: selectedUnit ? selectedUnit : 'MT/Month',
+            uom: selectedUnit ? selectedUnit : 'MT/Month',
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
             ...(TPH && {
@@ -736,7 +736,7 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
           downloadExcelBtnFromUI: !permissions?.hideExportBtn,
-          ExcelName: `${lowerVertName}_Production Target`,
+          ExcelName: `${lowerVertName}_Month wise Production plan`,
           unitForExcelToadd:
             lowerVertName === 'cracker' ? selectedUnit || 'MT/Month' : null,
         },
@@ -762,7 +762,7 @@ const ProductionNorms = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       downloadExcelBtnFromUI: !permissions?.hideExportBtn,
-      ExcelName: `${lowerVertName}_${selectedUnit}_Production Target`,
+      ExcelName: `${lowerVertName}_Production Target`,
       customHeight: permissions?.customHeight,
     },
     isOldYear,

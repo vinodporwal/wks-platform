@@ -1,5 +1,6 @@
 import Config from '../consts'
 import { json } from './request'
+
 export const DataService = {
   getProductById,
   getYearWiseProduct,
@@ -129,6 +130,7 @@ export const DataService = {
   getRunLengthExcel,
   saveRunLengthExcel,
   handleCalculateDecokingActivities,
+  handleCalculateSdTaActivities,
   getSlowDownPlantDataTab,
   postIbr,
   getSpyroOutputDataYield,
@@ -143,6 +145,17 @@ export const DataService = {
 
   plantContributionPlanLastFourYears,
   calculatePlantContributionSummaryYearly,
+  getRecipeExcel,
+  saveRecipeExcel,
+  getShutdownRateExcel,
+  saveShutdownRateExcel,
+  getConfigurationExecutionDetailsNorms,
+  executeConfigurationNorms,
+  getPioImpactData,
+  savePioImpactData,
+  deletePIOImpact,
+
+  getProductionTargetBasis,
 }
 
 async function miisData(keycloak, reportType, periodFrom, periodTo, mode) {
@@ -833,7 +846,7 @@ async function getProductionVolDataBasisPe(
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
 
-  let url = `${Config.CaseEngineUrl}/task/report/norms-basis/pe?plantId=${plantId}&year=${year}&type=${reportType}`
+  let url = `${Config.CaseEngineUrl}/task/data-set-norms-historian?plantId=${plantId}&year=${year}&type=${reportType}`
 
   if (periodFrom !== undefined) {
     url += `&periodFrom=${periodFrom}`
@@ -2846,6 +2859,29 @@ async function executeConfiguration(executionDetailDtoList, keycloak) {
     return Promise.reject(e)
   }
 }
+async function executeConfigurationNorms(executionDetailDtoList, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-execution-norms`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(executionDetailDtoList),
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json()
+    return data
+  } catch (e) {
+    console.error('Error saving configuration execution:', e)
+    return Promise.reject(e)
+  }
+}
 
 async function getConfigurationExecutionDetails(keycloak) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
@@ -3112,6 +3148,29 @@ async function saveRunLengthExcel(file, keycloak) {
     return Promise.reject(e)
   }
 }
+//handleCalculateSdTaActivities
+async function handleCalculateSdTaActivities(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/calculate/sd-ta-activities?year=${year1}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
 async function handleCalculateDecokingActivities(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
   const url = `${Config.CaseEngineUrl}/task/calculate/decoking-activities?year=${year1}&plantId=${plantId}`
@@ -3285,6 +3344,130 @@ async function getCrackerNextYearData(keycloak, qParams) {
     return Promise.reject(e)
   }
 }
+async function getRecipeExcel(keycloak) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/recipe-export?year=${year}&plantId=${plantId}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'recipe.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting recipe data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveRecipeExcel(file, keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/recipe-import?plantId=${plantId}&year=${year}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing recipe data:', e)
+    return Promise.reject(e)
+  }
+}
+async function getShutdownRateExcel(keycloak) {
+  var year = localStorage.getItem('year')
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  const url = `${Config.CaseEngineUrl}/task/shutdown-rate-export?year=${year}&plantId=${plantId}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'shutdown_rate.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting shutdown rate data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveShutdownRateExcel(file, keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/shutdown-rate-import?plantId=${plantId}&year=${year}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error importing shutdown rate data:', e)
+    return Promise.reject(e)
+  }
+}
 async function plantContributionPlanLastFourYears(keycloak, type) {
   const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const year = localStorage.getItem('year')
@@ -3327,6 +3510,114 @@ async function calculatePlantContributionSummaryYearly(
     return data
   } catch (e) {
     console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getConfigurationExecutionDetailsNorms(keycloak) {
+  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
+  const year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/configuration-execution-norms?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getProductionTargetBasis(keycloak, PLANT_ID, AOP_YEAR) {
+  let url = `${Config.CaseEngineUrl}/task/data-set-production-target?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+
+async function savePioImpactData(payload, keycloak) {
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  var year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/pio-impact?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return Promise.reject(e)
+  }
+}
+async function deletePIOImpact(id, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/pio-impact?id=${id}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    // Return proper response object with status code
+    return { code: resp.status, message: await resp.text() }
+  } catch (e) {
+    console.error('Error deleting PIO Impact data:', e)
+    return Promise.reject(e)
+  }
+}
+async function getPioImpactData(keycloak) {
+  var plantId = ''
+  const storedPlant = localStorage.getItem('selectedPlant')
+  if (storedPlant) {
+    const parsedPlant = JSON.parse(storedPlant)
+    plantId = parsedPlant.id
+  }
+  var year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/pio-impact?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return Promise.reject(e)
   }
 }

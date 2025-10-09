@@ -51,10 +51,16 @@ import RelPerf from 'components/kendo-data-tables/RelPerf'
 import PlantSafetyPerformanceTarget from 'components/kendo-data-tables/PlantSafetyPerformanceTarget'
 import IntermediateValuesDataSet from 'components/data-tables/Reports/IntermediateValuesDataSet'
 import RawDataSet from 'components/data-tables/Reports/RawDataSet'
+import UtilitiesNormsBasis from 'components/data-tables/Reports/UtilitiesNormsBasis'
 import SteadyStateNormsHistorianBasis from 'components/data-tables/Reports/SteadyStateNormsHistorianBasis'
 import ConsumptionNormsHistorianBasis from 'components/data-tables/Reports/ConsumptionNormsHistorianBasis'
 import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchievedIndividualNorms'
 import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
+import MaintenanceSummary from 'components/kendo-data-tables/MaintenanceSummary'
+import PlantBudgetSummary from 'components/kendo-data-tables/PlantBudgetSummary'
+import AopDesignBasis from 'components/kendo-data-tables/AopDesignBasis'
+import TcsInput from 'components/kendo-data-tables/TcsInput'
+import ProductionTargetBasis from 'components/data-tables/Reports/ProductionTargetBasis'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -71,6 +77,7 @@ export const MainRoutes = (
 
   const ProductionVolumeDataBasisElement =
     verticalName == 'PE' ||
+    verticalName == 'AROMATICS' ||
     verticalName == 'ELASTOMER' ||
     verticalName == 'PP' ? (
       <ProductionVolumeDataBasisPe />
@@ -80,6 +87,7 @@ export const MainRoutes = (
   const NormsHistorianBasisElement =
     verticalName == 'ELASTOMER' ||
     verticalName == 'PE' ||
+    verticalName == 'AROMATICS' ||
     verticalName == 'PP' ? (
       <NormsHistorianBasisPe />
     ) : (
@@ -216,6 +224,25 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          {
+            path: 'tcs-input',
+            element: (
+              <PrivateRoute routeId='tcs-input'>
+                <TcsInput />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'aop-design-basis',
+            element: (
+              <PrivateRoute routeId='aop-design-basis'>
+                <AopDesignBasis />
+              </PrivateRoute>
+            ),
+          },
+
           {
             path: 'configuration',
             element: (
@@ -363,6 +390,14 @@ export const MainRoutes = (
         path: 'reports',
         children: [
           {
+            path: 'production-target-basis',
+            element: (
+              <PrivateRoute routeId='production-target-basis'>
+                <ProductionTargetBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
             path: 'aop-annual-cost-report',
             element: (
               <PrivateRoute routeId='aop-annual-cost-report'>
@@ -456,7 +491,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
+          {
+            path: 'utilities-norms-basis',
+            element: (
+              <PrivateRoute routeId='utilities-norms-basis'>
+                <UtilitiesNormsBasis />
+              </PrivateRoute>
+            ),
+          },
           {
             path: 'run-length',
             element: (
@@ -499,6 +541,29 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='reliability-performance'>
                 <RelPerf />
+              </PrivateRoute>
+            ),
+          },
+        ],
+      },
+
+      {
+        path: 'functional-reports',
+        children: [
+          {
+            path: 'maintenance-summary',
+            element: (
+              <PrivateRoute routeId='maintenance-summary'>
+                <MaintenanceSummary />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'plant-budget-summary',
+            element: (
+              <PrivateRoute routeId='plant-budget-summary'>
+                <PlantBudgetSummary />
               </PrivateRoute>
             ),
           },

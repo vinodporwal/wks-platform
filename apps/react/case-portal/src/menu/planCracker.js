@@ -85,6 +85,14 @@ const planCracker = {
           breadcrumbs: true,
         },
         {
+          id: 'production-volume-data',
+          title: i18n.t('menu.productMCUVal'),
+          type: 'item',
+          url: '/production-norms-plan/production-volume-data',
+          icon: icons.IconSettings,
+          breadcrumbs: true,
+        },
+        {
           id: 'spyro-menu',
           title: i18n.t('menu.spyroMenu'),
           type: 'collapse',
@@ -174,6 +182,15 @@ const planCracker = {
       type: 'collapse',
       icon: icons.IconReport, // You can choose an appropriate icon
       children: [
+        // {
+        //    id: 'production-target-basis',
+        //    title: i18n.t('menu.productionTargetBasis'),
+        //    type: 'item',
+        //    url: '/reports/production-target-basis',
+        //    icon: icons.IconFile,
+        //    breadcrumbs: true,
+        //  },
+
         //  {
         //    id: 'aop-annual-cost-report',
         //    title: i18n.t('menu.annualAopCostReport'),
@@ -208,19 +225,27 @@ const planCracker = {
           breadcrumbs: true,
         },
 
+        // {
+        //   id: 'intermediate-values',
+        //   title: i18n.t('menu.intermediateValuesDataSet'),
+        //   type: 'item',
+        //   url: '/reports/intermediate-values',
+        //   icon: icons.IconReport,
+        //   breadcrumbs: true,
+        // },
+        // {
+        //   id: 'raw-data',
+        //   title: i18n.t('menu.rawData'),
+        //   type: 'item',
+        //   url: '/reports/raw-data',
+        //   icon: icons.IconReport,
+        //   breadcrumbs: true,
+        // },
         {
-          id: 'intermediate-values',
-          title: i18n.t('menu.intermediateValuesDataSet'),
+          id: 'utilities-norms-basis',
+          title: i18n.t('menu.utilitiesNormsBasis'),
           type: 'item',
-          url: '/reports/intermediate-values',
-          icon: icons.IconReport,
-          breadcrumbs: true,
-        },
-        {
-          id: 'raw-data',
-          title: i18n.t('menu.rawData'),
-          type: 'item',
-          url: '/reports/raw-data',
+          url: '/reports/utilities-norms-basis',
           icon: icons.IconReport,
           breadcrumbs: true,
         },

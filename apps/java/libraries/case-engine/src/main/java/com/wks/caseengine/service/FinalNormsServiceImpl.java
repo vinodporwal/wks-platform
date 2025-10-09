@@ -106,9 +106,8 @@ public class FinalNormsServiceImpl implements FinalNormsService {
 				finalNormsDTO.setMarch(row[19] != null ? Double.parseDouble(row[19].toString()) : 0.0);
 
 				finalNormsDTO.setRemark(row[21] != null ? row[21].toString() : "");
-				finalNormsDTO.setIsEditable(row[23] != null ? Boolean.valueOf(row[23].toString()) : null);
-				// Optionally, if needed: finalNormsDTO.setIsChecked(row[25] != null ? Boolean.valueOf(row[25].toString()) : null);
-
+				finalNormsDTO.setIsEditable(row[24] != null ? Boolean.valueOf(row[24].toString()) : null);
+				finalNormsDTO.setMethod(row[25] != null ? row[25].toString() : "");
 				finalNormsDTOList.add(finalNormsDTO);
 			}			
 			Map<String, Object> map = new HashMap<>();
@@ -126,6 +125,7 @@ public class FinalNormsServiceImpl implements FinalNormsService {
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 

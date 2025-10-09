@@ -20,9 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
-import com.wks.caseengine.dto.NormAttributeTransactionReceipeDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
-import com.wks.caseengine.entity.NormAttributeTransactionReceipe;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ConfigurationService;
 
@@ -36,6 +34,11 @@ public class ConfigurationController {
 	@GetMapping(value="/production-norms")
 	public List<ConfigurationDTO> getConfigurationData(@RequestParam String year,@RequestParam UUID plantFKId) {
 		return configurationService.getConfigurationData(year,plantFKId);
+	}
+	
+	@GetMapping(value="/calculate-steady-norms")
+	public AOPMessageVM calculateSteadyNorms(@RequestParam String year,@RequestParam String plantId,@RequestParam(required=false) String periodTo,@RequestParam(required=false) String periodFrom){
+		return	configurationService.calculateSteadyNorms(year, plantId,periodTo,periodFrom);
 	}
 	
 	@GetMapping(value="/configuration/intermediate-values")
@@ -61,7 +64,7 @@ public class ConfigurationController {
 	}
 	
 	@PostMapping(value="/updatePeConfigData")
-	public List<NormAttributeTransactionReceipe> updateCalculatedConsumptionNorms(@RequestParam String year,@RequestParam String plantId,@RequestBody List<NormAttributeTransactionReceipeRequestDTO> normAttributeTransactionReceipeDTOList){
+	public List<NormAttributeTransactionReceipeRequestDTO> updateCalculatedConsumptionNorms(@RequestParam String year,@RequestParam String plantId,@RequestBody List<NormAttributeTransactionReceipeRequestDTO> normAttributeTransactionReceipeDTOList){
 		return configurationService.updateCalculatedConsumptionNorms(year,plantId,normAttributeTransactionReceipeDTOList);
 	}
 	
@@ -99,16 +102,47 @@ public class ConfigurationController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
-
-
-	@GetMapping(value = "/configuration-export-excel")
-	public ResponseEntity<byte[]> exportConfigurationReport(
+	
+	@GetMapping(value = "/recipe-export")
+	public ResponseEntity<byte[]> exportConfigData(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = configurationService.createExcel(year,UUID.fromString(plantId), false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+	        byte[] excelBytes = configurationService.exportConfigData(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("recipe.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/recipe-import", consumes = "multipart/form-data")
+	public AOPMessageVM importRecipe(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	configurationService.importRecipe(year,UUID.fromString(plantId), file); 
+	}
+
+	@GetMapping(value = "/configuration-export-excel")
+	public ResponseEntity<byte[]> exportConfigurationReport(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam(required=false) String reportType
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = configurationService.createExcel(year,UUID.fromString(plantId),reportType, false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
@@ -124,14 +158,45 @@ public class ConfigurationController {
 	    }
 	}
 	
+	@GetMapping(value = "/shutdown-rate-export")
+	public ResponseEntity<byte[]> exportShutdownRate(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = configurationService.createShutdownRateExcel(year,UUID.fromString(plantId), false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("shutdown_rate.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
 	
 	@PostMapping(value = "/configuration-import-excel", consumes = "multipart/form-data")
 	public AOPMessageVM importExcel(
 	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam(required=false) String reportType,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	configurationService.importExcel(year,UUID.fromString(plantId),reportType, file); 
+	}
+	
+	@PostMapping(value = "/shutdown-rate-import", consumes = "multipart/form-data")
+	public AOPMessageVM importShutdownRateExcel(
+	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
 			@RequestParam("file") MultipartFile file
 	        ) {
-			return	configurationService.importExcel(year,UUID.fromString(plantId), file); 
+			return	configurationService.importShutdownRateExcel(year,UUID.fromString(plantId), file); 
 	}
 	
 	@PostMapping(value = "/configuration-constants-import-excel", consumes = "multipart/form-data")
@@ -149,9 +214,19 @@ public class ConfigurationController {
 		return configurationService.getConfigurationExecution(year,plantId);
 	}
 	
+	@GetMapping(value="/configuration-execution-norms")
+	public AOPMessageVM getConfigurationExecutionNorms(@RequestParam String year,@RequestParam String plantId) {
+		return configurationService.getConfigurationExecutionNorms(year,plantId);
+	}
+	
 	@PostMapping(value="/configuration-execution")
 	public AOPMessageVM saveConfigurationExecution(@RequestBody List<ExecutionDetailDto> executionDetailDtoList) {
 		return configurationService.saveConfigurationExecution(executionDetailDtoList);
+	}
+	
+	@PostMapping(value="/configuration-execution-norms")
+	public AOPMessageVM saveConfigurationExecutionNorms(@RequestBody List<ExecutionDetailDto> executionDetailDtoList) {
+		return configurationService.saveConfigurationExecutionNorms(executionDetailDtoList);
 	}
 
 }

@@ -19,9 +19,15 @@ public class BasisReportController {
 	@Autowired
 	private BasisReportService basisReportService;
 	
-	@GetMapping(value="/report/norms-basis/pe")
-	public ResponseEntity<AOPMessageVM> getNormBasisReport(@RequestParam String plantId,@RequestParam String year,@RequestParam String type,@RequestParam(value="periodFrom", required=false) String periodFrom,@RequestParam(value="periodTo", required=false) String periodTo){
-		AOPMessageVM response	=basisReportService.getNormBasisReportForPE(plantId,year,type,periodFrom,periodTo);
+	@GetMapping(value="/data-set-norms-historian")
+	public ResponseEntity<AOPMessageVM> getNormhistorian(@RequestParam String plantId,@RequestParam String year,@RequestParam(value="periodFrom", required=false) String periodFrom,@RequestParam(value="periodTo", required=false) String periodTo,@RequestParam(value="type", required=false) String type){
+		AOPMessageVM response=basisReportService.getNormhistorian(plantId,year,periodFrom,periodTo,type);
+		return ResponseEntity.status(response.getCode()).body(response);
+	}
+	
+	@GetMapping(value="/data-set-production-target")
+	public ResponseEntity<AOPMessageVM> getProductionTarget(@RequestParam String plantId,@RequestParam String year){
+		AOPMessageVM response=basisReportService.getProductionTarget(plantId,year);
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 	
@@ -34,7 +40,7 @@ public class BasisReportController {
 	public AOPMessageVM getBestAchievedCracker(@RequestParam String plantId,@RequestParam String year,@RequestParam(value="reportType", required=false) String reportType){
 		return basisReportService.getBestAchievedCracker(plantId,year,reportType);
 	}
-	
+		
 	@GetMapping(value="/calculate-best-achieved")
 	public AOPMessageVM calculateBestAchieved(@RequestParam String year,@RequestParam String plantId,@RequestParam(required=false) String periodTo,@RequestParam(required=false) String periodFrom){
 		return	basisReportService.calculateBestAchieved(year, plantId,periodTo,periodFrom);

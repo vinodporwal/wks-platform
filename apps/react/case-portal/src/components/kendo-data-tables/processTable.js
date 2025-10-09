@@ -32,7 +32,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const dataConfig = useMemo(
     () => ({
       serviceFn: MaintenanceDetailsApiService.getCrackerMaintenanceData,
-      editable: true,
     }),
     [plantID],
   )
@@ -55,7 +54,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const handleRemarkCellClick = (row) => {
-    if (!row?.isEditable) return
+    // if (!row?.isEditable) return
 
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
@@ -167,37 +166,19 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     try {
       const resp = await dataConfig.serviceFn(keycloak)
       const raw = resp.data
-      const formatted = (raw || []).map((item, idx) => ({
+      const formatted = (raw || []).map((item, idx, arr) => ({
         ...item,
         idFromApi: item.id,
         id: idx,
-        isEditable: viewOnly ? false : dataConfig.editable,
+        isEditable: viewOnly
+          ? false
+          : idx === arr.length - 1
+            ? false
+            : item?.isEditable,
         originalRemark: item.remarks,
       }))
 
-      // Find all numeric columns
-      const numericKeys = Object.keys(formatted[0] || {}).filter(
-        (key) => typeof formatted[0][key] === 'number',
-      )
-
-      // Create the sum row
-      const sumRow = numericKeys.reduce(
-        (acc, key) => {
-          acc[key] = formatted.reduce((sum, row) => sum + (row[key] || 0), 0)
-          return acc
-        },
-        {
-          id: formatted.length,
-          idFromApi: 'SUM_ROW',
-          isEditable: false,
-          originalRemark: 'Total',
-          monthName: 'Total',
-          remarks: 'Total',
-        },
-      )
-
-      // Add the sum row at the bottom
-      const finalData = [...formatted, sumRow]
+      const finalData = [...formatted]
 
       setRows(finalData)
     } catch (err) {
@@ -236,6 +217,102 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     fetchData()
   }, [fetchData, oldYear, yearChanged, plantID])
 
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      response = await MaintenanceDetailsApiService.CrackerMaintenanceExport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const uploadMaintenance = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let response
+
+      response = await MaintenanceDetailsApiService.CrackerMaintenanceImport(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Maintenance Details.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading xcel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    uploadMaintenance(rawFile)
+  }
   // Helper to generate monthly fields
   const getMonthlyColumns = () => {
     const months = [
@@ -286,6 +363,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       saveBtn: false,
       isOldYear: isOldYear,
       allAction: false,
+      uploadExcelBtn: false,
+      downloadExcelBtn: false,
     }
   }
 
@@ -301,8 +380,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           saveWithRemark: false,
           saveBtn: viewOnly ? false : true,
           allAction: true,
-          downloadExcelBtnFromUI: viewOnly ? false : true,
-          ExcelName: `CRAKCER_Maintenance Details`,
+          downloadExcelBtn: true,
+          uploadExcelBtn: viewOnly ? false : true,
           showRefresh: false,
           showCalculate: viewOnly ? false : true,
           showCalculateVisibility: true,
@@ -347,6 +426,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         currentRowId={currentRowId}
         note='*Unit of Measurement - Days'
         supressGridHeight={true}
+        handleExcelUpload={handleExcelUpload}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
       />
     </div>
   )

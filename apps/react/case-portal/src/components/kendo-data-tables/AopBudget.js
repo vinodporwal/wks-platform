@@ -15,6 +15,7 @@ import KendoDataTables from './index'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
+import { Grid, TextField } from '../../../node_modules/@mui/material/index'
 export default function AopBudget() {
   const keycloak = useSession()
   const thisYear = localStorage.getItem('year')
@@ -162,8 +163,18 @@ export default function AopBudget() {
 
   const columns = [
     { field: 'plantName', title: 'Plant', width: 120 },
+
     { field: 'costName', title: 'Cost', width: 120 },
     { field: 'budgetType', title: 'Budget Type', width: 120, hidden: true },
+
+    {
+      field: 'budgetConstrains',
+      title: 'Constraint',
+      width: 200,
+      editable: true,
+    },
+    { field: 'calc', title: 'Calculate', width: 120 },
+
     ...monthFields.map(({ field, index, editable, type, format, width }) => ({
       field,
       title: headerMap[index],
@@ -189,7 +200,9 @@ export default function AopBudget() {
         ...item,
         plantName: item.plantName || item.plantName || '',
         IsEditable: item.isEditable,
-        originalRemark: item.remark?.trim() || '', // add this
+        originalRemark: item.remark?.trim() || '',
+        budgetConstrains: '',
+        calc: '+',
       }))
       setRows(mapped)
 
@@ -203,6 +216,8 @@ export default function AopBudget() {
         plantName: item.plantName || item.plantName || '',
         IsEditable: item.isEditable,
         originalRemark: item.remark?.trim() || '', // add this
+        budgetConstrains: '',
+        calc: '+',
       }))
       setRowsP(mappedP)
     } catch (err) {
@@ -259,6 +274,7 @@ export default function AopBudget() {
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       ExcelName: `${lowerVertName}_Monthly Procurement Budget`,
+      constarins: ['+', '-'],
     },
     isOldYear,
   )
@@ -284,10 +300,11 @@ export default function AopBudget() {
       showTitleNameBusiness: true,
       titleName: 'Consumption Budget',
       adjustedPermissions: true,
-      // downloadExcelBtnFromUI: true,
+      downloadExcelBtnFromUI: false,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Monthly Consumption Budget`,
+      constarins: ['+', '-'],
     },
     isOldYear,
   )
@@ -338,7 +355,7 @@ export default function AopBudget() {
 
       setSnackbarData({ message: 'Saved successfully!', severity: 'success' })
       setSnackbarOpen(true)
-      setModifiedCells({}) // <-- clear modified cells for Consumption
+      setModifiedCells({})
       setModifiedCellsP({})
       fetchData()
     } catch (err) {
@@ -451,6 +468,112 @@ export default function AopBudget() {
         </Typography>
       )}
 
+      <Typography
+        component='div'
+        className='grid-title'
+        sx={{ marginBottom: '5px' }}
+      >
+        <Grid container spacing={1}>
+          {/* Design Basis Section */}
+          <Grid item xs={6}>
+            <Grid
+              container
+              alignItems='center'
+              justifyContent='space-between'
+              sx={{ marginBottom: 1 }}
+            >
+              <Grid item>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    marginBottom: 2,
+                  }}
+                >
+                  Design Basis
+                  <span style={{ color: 'red' }}>*</span>
+                </div>
+              </Grid>
+            </Grid>
+
+            <TextField
+              label='Design Basis'
+              multiline
+              minRows={3}
+              fullWidth
+              margin='none'
+              variant='outlined'
+              className='aop-design-basis'
+            />
+          </Grid>
+
+          {/* Remarks Section */}
+          <Grid item xs={6}>
+            <Grid
+              container
+              alignItems='center'
+              justifyContent='space-between'
+              sx={{ marginBottom: 1 }}
+            >
+              <Grid item>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    marginBottom: 2,
+                  }}
+                >
+                  Remarks
+                  <span style={{ color: 'red' }}>*</span>
+                </div>
+              </Grid>
+            </Grid>
+
+            <TextField
+              label='Remarks'
+              multiline
+              minRows={3}
+              fullWidth
+              margin='none'
+              variant='outlined'
+              className='aop-design-basis'
+            />
+
+            {/* Buttons moved here */}
+            {/* <Box
+              mt={1.5}
+              display='flex'
+              gap={1}
+              justifyContent='flex-end'
+              flexWrap='wrap'
+            >
+              <Button
+                variant='contained'
+                color='primary'
+                className='btn-save'
+                onClick={handleSaveAll}
+              >
+                Save
+              </Button>
+              <Button
+                variant='contained'
+                color='primary'
+                className='btn-save'
+                onClick={handleExcelUpload}
+              >
+                Import
+              </Button>
+              <Button
+                variant='contained'
+                color='primary'
+                className='btn-save'
+                onClick={downloadExcelForConfiguration}
+              >
+                Export
+              </Button>
+            </Box> */}
+          </Grid>
+        </Grid>
+      </Typography>
+
       <KendoDataTables
         title='Consumption Budget'
         titleMain='Monthly Budget'
@@ -474,6 +597,7 @@ export default function AopBudget() {
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         permissions={adjustedPermissionsC}
         groupBy='budgetType'
+        // setEditMode={setEditMode}
       />
 
       <KendoDataTables
@@ -496,6 +620,7 @@ export default function AopBudget() {
         handleRemarkCellClick={handleRemarkCellClickP}
         permissions={adjustedPermissionsP}
         groupBy='budgetType'
+        // setEditMode={setEditMode}
       />
       <Notification
         open={snackbarOpen}

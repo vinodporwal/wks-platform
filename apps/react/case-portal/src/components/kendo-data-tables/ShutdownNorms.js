@@ -32,7 +32,14 @@ const ShutdownNorms = () => {
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [rowModesModel, setRowModesModel] = useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
+  const {
+    verticalChange,
+
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -42,6 +49,15 @@ const ShutdownNorms = () => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [calculationObject, setCalculationObject] = useState([])
   const [grades, setGrades] = useState([])
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+
+  const PLANT_NAME = plantObject?.name
+  const SITE_NAME = siteObject?.name
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
 
   useEffect(() => {
     if (plantID?.plantId) {
@@ -131,6 +147,10 @@ const ShutdownNorms = () => {
           data = await ShutdownNormsApiService.getShutdownMonths(keycloak, null)
         }
         setShutdownMonths(data)
+
+        if (lowerVertName == 'cracker') {
+          setShutdownMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+        }
       } catch (error) {
         console.error('Error in loadData:', error)
       }
@@ -163,13 +183,6 @@ const ShutdownNorms = () => {
   const saveShutDownNormsData = async (rows) => {
     setLoading(true)
     try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
       const payload = rows.map((row) => ({
         april: row.april || null,
         may: row.may || null,
@@ -185,22 +198,22 @@ const ShutdownNorms = () => {
         march: row.march || null,
         remark: row.remarks,
         remarks: row.remarks,
-        financialYear: localStorage.getItem('year'),
-        plantId: plantId,
+        financialYear: AOP_YEAR,
+        plantId: PLANT_ID,
         normParameterId: row.normParameterId,
         id: row.idFromApi || null,
         materialFkId: row.materialFkId || null,
         mcuVersion: row.mcuVersion || null,
-        plantFkId: row.plantFkId || null,
-        siteFkId: row.siteFkId || null,
-        verticalFkId: row.verticalFkId || null,
+        plantFkId: PLANT_ID,
+        siteFkId: SITE_ID,
+        verticalFkId: VERTICAL_ID,
         unit: row.unit || null,
         normParameterTypeId: row.normParameterTypeId || null,
         gradeFkId: gradeId || null,
       }))
       if (payload.length > 0) {
         const response = await ShutdownNormsApiService.saveShutDownNormsData(
-          plantId,
+          PLANT_ID,
           payload,
           keycloak,
         )
@@ -292,22 +305,23 @@ const ShutdownNorms = () => {
         })
       } else {
         // For cracker, use mcuNormsValueDTOList if present, else fallback to data.data
-  const crackerArray = Array.isArray(data?.data?.mcuNormsValueDTOList)
-    ? data.data.mcuNormsValueDTOList
-    : Array.isArray(data?.data)
-      ? data.data
-      : [];
-  formattedData = crackerArray.map((item, index) => {
-    const baseItem = {
-      ...item,
-      idFromApi: item.id,
-      id: index,
-      materialFkId: item?.materialFkId?.toLowerCase(),
-      Particulars: item.normParameterTypeDisplayName || 'Type',
-      isEditable: false,
-    }
-    return baseItem
-  })
+        const crackerArray = Array.isArray(data?.data?.mcuNormsValueDTOList)
+          ? data.data.mcuNormsValueDTOList
+          : Array.isArray(data?.data)
+            ? data.data
+            : []
+        formattedData = crackerArray.map((item, index) => {
+          const baseItem = {
+            ...item,
+            idFromApi: item.id,
+            id: index,
+            materialFkId: item?.materialFkId?.toLowerCase(),
+            Particulars: item.normParameterTypeDisplayName || 'Type',
+            isEditable: item?.isEditable || true,
+            originalRemark: item.remarks,
+          }
+          return baseItem
+        })
       }
 
       setRows(formattedData)
@@ -461,18 +475,12 @@ const ShutdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
-      saveBtn:
-        lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
-        lowerVertName === 'cracker'
-          ? false
-          : true,
+
+      showNote: lowerVertName === 'meg' ? true : false,
+
+      saveBtn: lowerVertName === 'pe' || lowerVertName === 'pp' ? false : true,
       showCalculate:
-        lowerVertName == 'meg' ||
-        lowerVertName == 'elastomer' ||
-        lowerVertName === 'cracker'
-          ? false
-          : true,
+        lowerVertName == 'meg' || lowerVertName == 'elastomer' ? false : true,
       showCalculateVisibility:
         lowerVertName != 'meg' &&
         Object.keys(calculationObject || {}).length > 0
@@ -486,7 +494,7 @@ const ShutdownNorms = () => {
           : 'Select Mode',
       allAction: true,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_Shutdown Consumption (Quantity)`,
+      ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown Consumption (Quantity)`,
     },
     isOldYear,
   )
@@ -539,6 +547,7 @@ const ShutdownNorms = () => {
         calculatebtnClicked={calculatebtnClicked}
         plantID={plantID}
         grades={grades}
+        note='*Quantities are per day basis'
       />
     </div>
   )

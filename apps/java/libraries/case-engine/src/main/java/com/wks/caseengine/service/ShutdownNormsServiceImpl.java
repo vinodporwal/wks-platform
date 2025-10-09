@@ -184,11 +184,16 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			for (ShutdownNormsValueDTO shutdownNormsValueDTO : shutdownNormsValueDTOList) {
 				year=shutdownNormsValueDTO.getFinancialYear();
 				plantId=UUID.fromString(shutdownNormsValueDTO.getPlantFkId());
-				ShutdownNormsValue shutdownNormsValue = new ShutdownNormsValue();
+				ShutdownNormsValue shutdownNormsValue = null;
 				if (shutdownNormsValueDTO.getId() != null && !shutdownNormsValueDTO.getId().isEmpty()) {
-					shutdownNormsValue.setId(UUID.fromString(shutdownNormsValueDTO.getId()));
-					shutdownNormsValue.setModifiedOn(new Date());
+					Optional<ShutdownNormsValue> shutdownNormsValueOpt =shutdownNormsRepository.findById(UUID.fromString(shutdownNormsValueDTO.getId()));
+					if(shutdownNormsValueOpt.isPresent()) {
+						shutdownNormsValue=shutdownNormsValueOpt.get();
+						shutdownNormsValue.setModifiedOn(new Date());
+					}
+					
 				} else {
+					shutdownNormsValue = new ShutdownNormsValue();
 					UUID siteId = null;
 					UUID verticalId = null;
 					UUID materialId = null;
@@ -265,6 +270,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			// TODO Auto-generated method stub
 			return map;
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
@@ -641,6 +647,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			shutdownNormsValueDTO.setMarch(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0);
 			shutdownNormsValueDTO.setRemarks(row[20] != null ? row[20].toString() : null);
 			shutdownNormsValueDTO.setNormParameterTypeDisplayName(row[21] != null ? row[21].toString() : null);
+			shutdownNormsValueDTO.setSapCode(row[22] != null ? row[22].toString() : null);
 			shutdownNormsValueDTOs.add(shutdownNormsValueDTO);
 		}
 		Map<String, Object> map = new HashMap<>();

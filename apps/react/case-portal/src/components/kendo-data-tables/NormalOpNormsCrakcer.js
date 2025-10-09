@@ -20,6 +20,8 @@ import { useSession } from 'SessionStoreContext'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import CrakcerConstants from './CrackerConstants'
 import KendoDataTables from './index'
+import SelectivityData from './SelectivityData'
+import { DataService } from 'services/DataService'
 
 // Constants
 const MONTHS = [
@@ -42,7 +44,8 @@ const mapApiRowToGrid = (list = [], prefix = '') =>
     ...item,
     idFromApi: item.id,
     id: `${prefix}${index}`,
-    originalRemark: item.remarks || '',
+    originalRemark: item.remark || '',
+    remark: item.remark || '',
     Particulars: item.normType || item.normParameterTypeDisplayName,
   }))
 
@@ -64,6 +67,7 @@ const NormalOpNormsScreenCracker = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [modifiedCellsFinalNorms, setModifiedCellsFinalNorms] = useState({})
   const [allRedCell, setAllRedCell] = useState([])
+  const [allRedCell2, setAllRedCell2] = useState([])
 
   const dataGridStore = useSelector((s) => s.dataGridStore) || {}
   const { verticalChange, yearChanged, oldYear, plantObject, year } =
@@ -93,11 +97,24 @@ const NormalOpNormsScreenCracker = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [remarkDialogOpen1, setRemarkDialogOpen1] = useState(false)
+  const [remarkDialogOpen2, setRemarkDialogOpen2] = useState(false)
+  const [remarkDialogOpen3, setRemarkDialogOpen3] = useState(false)
+  const [remarkDialogOpen4, setRemarkDialogOpen4] = useState(false)
   const [remarkDialogOpenFinalNorms, setRemarkDialogOpenFinalNorms] =
     useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRemark1, setCurrentRemark1] = useState('')
+  const [currentRemark2, setCurrentRemark2] = useState('')
+  const [currentRemark3, setCurrentRemark3] = useState('')
+  const [currentRemark4, setCurrentRemark4] = useState('')
+
   const [currentRemarkFinalNorms, setCurrentRemarkFinalNorms] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [currentRowId1, setCurrentRowId1] = useState(null)
+  const [currentRowId2, setCurrentRowId2] = useState(null)
+  const [currentRowId3, setCurrentRowId3] = useState(null)
+  const [currentRowId4, setCurrentRowId4] = useState(null)
   const [currentRowIdFinalNorms, setCurrentRowIdFinalNorms] = useState(null)
 
   // default gradeId same as earlier (you used '4F' default)
@@ -106,6 +123,8 @@ const NormalOpNormsScreenCracker = () => {
 
   const [calculationObject, setCalculationObject] = useState({})
   const [selectedTab, setSelectedTab] = useState(0)
+  const [productionRows, setProductionRows] = useState([])
+  const [productionRowsConstants, setProductionRowsConstants] = useState([])
 
   const apiRef = useGridApiRef()
 
@@ -134,12 +153,65 @@ const NormalOpNormsScreenCracker = () => {
         format: '{0:#.###}',
         type: 'number',
       },
+      { field: 'remark', title: 'Remarks', widthT: 200, editable: true },
     ],
     [],
   )
 
+  const monthIndexMap = {
+    april: 4,
+    may: 5,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    october: 10,
+    november: 11,
+    december: 12,
+    january: 1,
+    february: 2,
+    march: 3,
+  }
+
   const colDefsFinalNorms = useMemo(
     () => [
+      {
+        field: 'sapMaterialCode',
+        title: 'SAP MAT Code',
+        widthT: 120,
+        editable: false,
+        useMethodColors: true,
+      },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        widthT: 130,
+        editable: false,
+      },
+      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      ...MONTHS.map((m, i) => ({
+        field: m,
+        title: headerMap[monthIndexMap[m]] || m,
+        editable: true,
+        width: 120,
+        align: 'right',
+        type: 'number',
+        format: '{0:#.###}',
+      })),
+      { field: 'isEditable', title: 'isEditable', hidden: true },
+      { field: 'remark', title: 'Remark', widthT: 140, editable: true },
+    ],
+    [headerMap],
+  )
+
+  const colDefsFinalNorms1 = useMemo(
+    () => [
+      {
+        field: 'isChecked',
+        type: 'switch',
+        widthT: 30,
+        filter: false,
+      },
       {
         field: 'sapMaterialCode',
         title: 'SAP MAT Code',
@@ -155,12 +227,12 @@ const NormalOpNormsScreenCracker = () => {
       { field: 'uom', title: 'UOM', widthT: 60, editable: false },
       ...MONTHS.map((m, i) => ({
         field: m,
-        title: headerMap[i + 1] || m,
+        title: headerMap[monthIndexMap[m]] || m,
         editable: true,
         width: 120,
         align: 'right',
         type: 'number',
-        format: '{0:#.##}',
+        format: '{0:#.###}',
       })),
       { field: 'isEditable', title: 'isEditable', hidden: true },
       { field: 'remarks', title: 'Remark', widthT: 140, editable: true },
@@ -168,6 +240,99 @@ const NormalOpNormsScreenCracker = () => {
     [headerMap],
   )
 
+  const colDefsExpressionCatChem = useMemo(
+    () => [
+      {
+        field: 'isChecked',
+        type: 'switch',
+        widthT: 30,
+        filter: false,
+      },
+      {
+        field: 'sapMaterialCode',
+        title: 'SAP MAT Code',
+        widthT: 120,
+        editable: false,
+      },
+      {
+        field: 'materialDisplayName',
+        title: 'Particulars',
+        widthT: 130,
+        editable: false,
+      },
+      { field: 'uom', title: 'UOM', widthT: 60, editable: false },
+      ...MONTHS.map((m, i) => ({
+        field: m,
+        title: headerMap[monthIndexMap[m]] || m,
+        editable: true,
+        width: 120,
+        align: 'right',
+        type: 'number',
+        format: '{0:#.###}',
+      })),
+      { field: 'isEditable', title: 'isEditable', hidden: true },
+      { field: 'remark', title: 'Remark', widthT: 140, editable: true },
+    ],
+    [headerMap],
+  )
+
+  const fetchConfigurationData = useCallback(
+    async (gradeId = null) => {
+      setProductionRows([])
+      setLoading(true)
+
+      try {
+        const data = await DataService.getCatalystSelectivityData(
+          keycloak,
+          gradeId,
+        )
+        const filteredData = data?.filter(
+          (item) => item.normType !== 'Report Manual Entry',
+        )
+        const formattedData = filteredData.map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remarks,
+          srNo: index + 1,
+          Particulars: item.normType,
+        }))
+        setProductionRows(formattedData)
+      } catch (error) {
+        console.error('Error fetching configuration data:', error)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak],
+  )
+
+  const fetchConstantsData = useCallback(async () => {
+    setProductionRowsConstants([])
+    try {
+      const constantsRes =
+        await DataService.getCatalystSelectivityDataConstants(keycloak)
+      if (constantsRes?.code !== 200) {
+        setProductionRowsConstants([])
+        return
+      }
+
+      const data = constantsRes?.data
+      const formattedData = data.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.Remarks,
+        srNo: index + 1,
+        Particulars: item.NormTypeName,
+        remarks: item.Remarks,
+      }))
+
+      setProductionRowsConstants(formattedData)
+    } catch (error) {
+      console.error('Error fetching constants data:', error)
+    }
+  }, [keycloak])
   // permission helper: if old year, getAdjustedPermissions blocks actions
   const getAdjustedPermissions = useCallback((permissions, isOldYearFlag) => {
     if (isOldYearFlag != 1) return permissions
@@ -181,7 +346,7 @@ const NormalOpNormsScreenCracker = () => {
       saveWithRemark: false,
       saveBtn: false,
       isOldYear: isOldYearFlag,
-      showCalculate: false,
+      showCalculate: true,
     }
   }, [])
 
@@ -198,7 +363,7 @@ const NormalOpNormsScreenCracker = () => {
       // saveBtn/showCalculate will be toggled per-grid depending on which is top
       saveBtn: true,
       showCalculate: true,
-      downloadExcelBtnFromUI: false,
+      downloadExcelBtnFromUI: gradeDisplayName !== 'Monthly' ? true : false,
       ExcelName: `${lowerVertName}_BestAcheived(Min CC)`,
       showCheckbox: false,
       marginBottom: false,
@@ -237,6 +402,7 @@ const NormalOpNormsScreenCracker = () => {
       ExcelName: `${lowerVertName}_Best Achieved (Norms)`,
       saveBtn: true, // visible only if top
       showCalculate: true, // visible only if top and calculation available
+      showCalculateVisibility: true,
     }),
     [lowerVertName, calculationObject],
   )
@@ -267,16 +433,21 @@ const NormalOpNormsScreenCracker = () => {
   // derive per-grid permissions: top grid keeps save/calc flags, others have them hidden.
   const mainPermissions = useMemo(() => {
     const base = { ...baseModePermissions }
-    base.saveBtn = mainIsTop && base.saveBtn
-    base.showCalculate = mainIsTop && base.showCalculate
+    base.saveBtn = selectedTab === 3 ? true : mainIsTop && base.saveBtn
+    base.showCalculate = base.showCalculate
     return getAdjustedPermissions(base, isOldYear)
-  }, [baseModePermissions, mainIsTop, getAdjustedPermissions, isOldYear])
+  }, [
+    baseModePermissions,
+    mainIsTop,
+    getAdjustedPermissions,
+    isOldYear,
+    selectedTab,
+  ])
 
   const expressionPermissions = useMemo(() => {
     const base = { ...baseExpressionPermissions }
-    // expression only shows save/calc if it is the top grid (rare: e.g., if you reorder)
-    const showSave = !mainIsTop && !monthlyIsTop && isModeTab // expression becomes top if both main & monthly not present (edge)
-    base.saveBtn = showSave && base.saveBtn
+    const showSave = !mainIsTop && !monthlyIsTop && isModeTab
+    base.saveBtn = selectedTab === 3 ? true : showSave && base.saveBtn
     base.showCalculate = showSave && base.showCalculate
     return getAdjustedPermissions(base, isOldYear)
   }, [
@@ -286,15 +457,14 @@ const NormalOpNormsScreenCracker = () => {
     isModeTab,
     getAdjustedPermissions,
     isOldYear,
+    selectedTab,
   ])
 
   const monthlyPermissions = useMemo(() => {
     const base = { ...baseMonthlyPermissions }
-    base.saveBtn = monthlyIsTop && base.saveBtn
-    base.showCalculate =
-      monthlyIsTop &&
-      base.showCalculate &&
-      Object.keys(calculationObject || {}).length > 0
+    base.saveBtn = selectedTab === 3 ? true : monthlyIsTop && base.saveBtn
+    base.showCalculate = base.showCalculate
+
     return getAdjustedPermissions(base, isOldYear)
   }, [
     baseMonthlyPermissions,
@@ -302,14 +472,34 @@ const NormalOpNormsScreenCracker = () => {
     calculationObject,
     getAdjustedPermissions,
     isOldYear,
+    selectedTab,
   ])
 
   const finalPermissions = useMemo(() => {
     const base = { ...baseFinalPermissions }
-    base.saveBtn = finalIsTop && base.saveBtn
-    base.showCalculate = finalIsTop && base.showCalculate
+    base.saveBtn = false
+    base.showCalculate = base.showCalculate
+
     return getAdjustedPermissions(base, isOldYear)
   }, [baseFinalPermissions, finalIsTop, getAdjustedPermissions, isOldYear])
+
+  const getNormTransactions = async () => {
+    try {
+      const res =
+        await NormalOperationNormsApiService.getNormTransactions(keycloak)
+      if (res?.code == 200) {
+        const normalized = res?.data.map((obj) => ({
+          ...obj,
+          normParameterFKId: obj.normParameterFKId.toUpperCase(),
+        }))
+        setAllRedCell2(normalized)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      // handleMenuClose();
+    }
+  }
 
   // --- Data fetchers ---
   const fetchFinalNorms = useCallback(async () => {
@@ -321,7 +511,19 @@ const NormalOpNormsScreenCracker = () => {
         return
       }
       const mapped = response?.data?.mcuNormsValueDTOList || []
-      setRowsBestFinalNorms(mapApiRowToGrid(mapped, ''))
+
+      // Map the data and ensure Method field is included
+      const mappedWithMethod = mapped.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: `${index}`,
+        originalRemark: item.remark || '',
+        remark: item.remark || '',
+        Particulars: item.normType || item.normParameterTypeDisplayName,
+        Method: item.Method || item.method,
+      }))
+
+      setRowsBestFinalNorms(mappedWithMethod)
     } catch (err) {
       console.error('fetchFinalNorms', err)
     }
@@ -331,6 +533,9 @@ const NormalOpNormsScreenCracker = () => {
     async (gradeIdParam) => {
       if (!lowerVertName) return
       setLoading(true)
+
+      getNormTransactions()
+
       try {
         if (lowerVertName === 'cracker') {
           const [bestResp, exprResp, yearlyResp, colorResp] = await Promise.all(
@@ -401,8 +606,19 @@ const NormalOpNormsScreenCracker = () => {
           { name: 'Monthly', displayName: 'Monthly', gradeId: 'Monthly' },
         ])
 
-        const promises = [fetchModeData(gId)]
-        if (selectedTab === 2) promises.push(fetchFinalNorms())
+        const promises = []
+
+        // Load data based on selected tab
+        if (selectedTab === 0) {
+          promises.push(fetchConfigurationData(gId))
+        } else if (selectedTab === 1) {
+          promises.push(fetchConstantsData())
+        } else if (selectedTab === 3) {
+          promises.push(fetchModeData(gId))
+        } else if (selectedTab === 4) {
+          promises.push(fetchFinalNorms())
+        }
+
         await Promise.all(promises)
       } catch (err) {
         console.error('fetchAllData', err)
@@ -410,7 +626,13 @@ const NormalOpNormsScreenCracker = () => {
         setLoading(false)
       }
     },
-    [fetchModeData, fetchFinalNorms, selectedTab],
+    [
+      fetchModeData,
+      fetchFinalNorms,
+      fetchConfigurationData,
+      fetchConstantsData,
+      selectedTab,
+    ],
   )
 
   useEffect(() => {
@@ -428,14 +650,41 @@ const NormalOpNormsScreenCracker = () => {
   // remark handlers
   const handleRemarkCellClick = useCallback((row) => {
     if (!row?.isEditable) return
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
 
+  const handleRemarkCellClick1 = useCallback((row) => {
+    if (!row?.isEditable) return
+    setCurrentRemark1(row.remark || '')
+    setCurrentRowId1(row.id)
+    setRemarkDialogOpen1(true)
+  }, [])
+  const handleRemarkCellClick2 = useCallback((row) => {
+    if (!row?.isEditable) return
+    setCurrentRemark2(row.remark || '')
+    setCurrentRowId2(row.id)
+    setRemarkDialogOpen2(true)
+  }, [])
+  const handleRemarkCellClick3 = useCallback((row) => {
+    if (!row?.isEditable) return
+    setCurrentRemark3(row.remark || '')
+    setCurrentRowId3(row.id)
+    setRemarkDialogOpen3(true)
+  }, [])
+  const handleRemarkCellClick4 = useCallback((row) => {
+    if (!row?.isEditable) return
+    setCurrentRemark4(row.remark || '')
+    setCurrentRowId4(row.id)
+    setRemarkDialogOpen4(true)
+  }, [])
+
   const handleRemarkCellClickFinalNorms = useCallback((row) => {
     if (!row?.isEditable) return
-    setCurrentRemarkFinalNorms(row.remarks || '')
+    // console.log('row', row)
+
+    setCurrentRemarkFinalNorms(row.remark || '')
     setCurrentRowIdFinalNorms(row.id)
     setRemarkDialogOpenFinalNorms(true)
   }, [])
@@ -501,25 +750,36 @@ const NormalOpNormsScreenCracker = () => {
   }, [modifiedCellsFinalNorms, saveRows])
 
   const saveChangesUnified = useCallback(async () => {
-    // Final tab -> final norms
-    if (selectedTab === 2) return saveChangesCrackerFinalNorms()
+    if (selectedTab === 4) return saveChangesCrackerFinalNorms()
 
-    // Mode tab + Monthly -> top is monthly -> save monthly entries only
-    if (selectedTab === 1 && gradeDisplayName === 'Monthly') {
-      const bestModified = Object.entries(modifiedCells)
-        .filter(([key]) => key.startsWith('best-'))
-        .map(([_, val]) => val)
-      if (!bestModified || bestModified.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
-        return
-      }
-      return saveRows(bestModified, false)
+    // Prepare modified rows for save
+    let allModified = Object.values(modifiedCells)
+
+    if (!allModified || allModified.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
+      return
     }
 
-    // Mode tab + non-Monthly -> top is main -> save all modifiedCells
-    const data = Object.values(modifiedCells)
-    return saveRows(data, false)
+    // Enforce single checked per materialName across the 2 grids
+    const materialGroups = {} // key = materialName, value = array of rows
+    allModified.forEach((row) => {
+      if (!materialGroups[row.materialName])
+        materialGroups[row.materialName] = []
+      materialGroups[row.materialName].push(row)
+    })
+
+    const updatedRows = []
+    Object.values(materialGroups).forEach((rows) => {
+      // Find the row that is checked
+      const checkedRow = rows.find((r) => r.isChecked)
+      rows.forEach((r) => {
+        if (r !== checkedRow) r.isChecked = false
+        updatedRows.push(r)
+      })
+    })
+
+    return saveRows(updatedRows, false)
   }, [
     selectedTab,
     gradeDisplayName,
@@ -576,6 +836,7 @@ const NormalOpNormsScreenCracker = () => {
         severity: success ? 'success' : 'error',
       })
       if (success) await fetchModeData(gradeId)
+      if (success) await fetchFinalNorms()
       return res
     } catch (err) {
       setSnackbarOpen(true)
@@ -590,55 +851,114 @@ const NormalOpNormsScreenCracker = () => {
   }, [PLANT_ID, fetchModeData, gradeId, keycloak, AOP_YEAR])
 
   const handleCalculateUnified = useCallback(async () => {
-    if (selectedTab === 2) return handleCalculateFinalNorms()
+    if (selectedTab === 4) return handleCalculateFinalNorms()
     return handleCalculate()
   }, [selectedTab, handleCalculate, handleCalculateFinalNorms])
 
   const handleGlobalCheckboxChange = useCallback(
     (gridName, id, materialName, field, value, dataItem) => {
-      const uniqueItemId = `${gridName}-${id}`
-      const uncheckedRows = []
-      const updateGridRows = (setRowsFunc, currentGridName) => {
-        setRowsFunc((prev) =>
-          (prev || []).map((row) => {
-            if (row.id === id && gridName === currentGridName)
-              return { ...row, [field]: value }
-            if (
-              row.materialName === materialName &&
-              !(row.id === id && gridName === currentGridName)
-            ) {
-              uncheckedRows.push({ ...row, gridName: currentGridName })
-              return { ...row, [field]: false }
-            }
-            return row
-          }),
-        )
-      }
-      updateGridRows(setRows, 'main')
-      updateGridRows(setRowsExpression, 'expression')
-      updateGridRows(setRowsBestAchivedIndividual, 'best')
+      // helper to ensure unique key format is consistent
+      const normalizeUniqueId = (gName, rowId) => `${gName}-${rowId}`
 
-      setModifiedCells((prev) => {
-        const updated = {
-          ...prev,
-          [uniqueItemId]: {
-            ...(prev[uniqueItemId] || {}),
-            ...dataItem,
-            [field]: value,
-          },
+      // 1) Build updated arrays synchronously from current state
+      const newMainRows = (rows || []).map((row) => {
+        if (gridName === 'main' && row.id === id)
+          return { ...row, [field]: value }
+        if (
+          row.materialName === materialName &&
+          !(gridName === 'main' && row.id === id)
+        ) {
+          return { ...row, [field]: false }
         }
+        return row
+      })
+
+      const newExpressionRows = (rowsExpression || []).map((row) => {
+        if (gridName === 'expression' && row.id === id)
+          return { ...row, [field]: value }
+        if (
+          row.materialName === materialName &&
+          !(gridName === 'expression' && row.id === id)
+        ) {
+          return { ...row, [field]: false }
+        }
+        return row
+      })
+
+      const newBestRows = (rowsBestAchivedIndividual || []).map((row) => {
+        if (gridName === 'best' && row.id === id)
+          return { ...row, [field]: value }
+        if (
+          row.materialName === materialName &&
+          !(gridName === 'best' && row.id === id)
+        ) {
+          return { ...row, [field]: false }
+        }
+        return row
+      })
+
+      // 2) Collect unchecked rows from those new arrays (except the one we just checked)
+      const uncheckedRows = []
+      ;[
+        { arr: newMainRows, gridName: 'main' },
+        { arr: newExpressionRows, gridName: 'expression' },
+        { arr: newBestRows, gridName: 'best' },
+      ].forEach(({ arr, gridName: gName }) => {
+        arr.forEach((r) => {
+          // If this row belongs to the same material and is unchecked, and it's NOT the row we clicked,
+          // then it's one of the rows that was implicitly unchecked
+          if (
+            r.materialName === materialName &&
+            !(gName === gridName && r.id === id) &&
+            !r[field]
+          ) {
+            uncheckedRows.push({ ...r, gridName: gName })
+          }
+        })
+      })
+
+      // 3) Apply the new arrays to state (this updates UI)
+      setRows(newMainRows)
+      setRowsExpression(newExpressionRows)
+      setRowsBestAchivedIndividual(newBestRows)
+
+      // 4) Build modifiedCells update using the full row objects we collected
+      setModifiedCells((prev = {}) => {
+        const updated = { ...prev }
+
+        // checked row: prefer dataItem (from the grid event) but fall back to existing saved object
+        const uniqueItemId = normalizeUniqueId(gridName, id)
+        updated[uniqueItemId] = {
+          ...(prev[uniqueItemId] || {}),
+          ...(dataItem || {}),
+          [field]: !!value,
+          gridName,
+          id,
+        }
+
+        // add/update all unchecked rows with their full data
         uncheckedRows.forEach((row) => {
-          const rowUniqueId = `${row.gridName}-${row.id}`
+          const rowUniqueId = normalizeUniqueId(row.gridName, row.id)
           updated[rowUniqueId] = {
             ...(prev[rowUniqueId] || {}),
-            ...row,
+            ...row, // includes months, idFromApi, materialFKId, materialName, etc.
             [field]: false,
           }
         })
+
         return updated
       })
     },
-    [],
+    // include the states/setters you use
+    [
+      rows,
+      rowsExpression,
+      rowsBestAchivedIndividual,
+      setRows,
+      setRowsExpression,
+      setRowsBestAchivedIndividual,
+      setModifiedCells,
+    ],
   )
 
   const downloadExcelForConfiguration = useCallback(async () => {
@@ -685,7 +1005,7 @@ const NormalOpNormsScreenCracker = () => {
     (_, newValue) => {
       setModifiedCells({})
       setSelectedTab(newValue)
-      if (newValue === 0) fetchAllData(gradeId)
+      fetchAllData(gradeId)
     },
     [gradeId, fetchAllData],
   )
@@ -697,7 +1017,13 @@ const NormalOpNormsScreenCracker = () => {
     padding: '9px',
     minHeight: '12px',
   }
-  const tabLabels = ['Constants', 'Mode wise selection', 'Final monthly norms']
+  const tabLabels = [
+    'Configuration',
+    'Constants',
+    'Criteria for Best Achieved',
+    'Norms Selection',
+    'Final monthly norms',
+  ]
 
   // UI render
   return (
@@ -725,8 +1051,35 @@ const NormalOpNormsScreenCracker = () => {
           ))}
         </Tabs>
       </Box>
-
+      {selectedTab === 0 && (
+        <SelectivityData
+          rows={productionRows}
+          loading={loading}
+          fetchData={fetchConfigurationData}
+          setRows={setProductionRows}
+          configType='cracker_configuration'
+          groupBy='Particulars'
+          tabIndex='0'
+          setGradeId={handleGradeChange}
+        />
+      )}
       {selectedTab === 1 && (
+        <SelectivityData
+          rows={productionRowsConstants}
+          loading={loading}
+          fetchData={fetchConstantsData}
+          setRows={setProductionRowsConstants}
+          configType='cracker_constants'
+          groupBy='Particulars'
+          tabIndex='1'
+        />
+      )}
+
+      {/* Criteria Tab */}
+      {selectedTab === 2 && <CrakcerConstants />}
+
+      {/* Norms Selection Tab */}
+      {selectedTab === 3 && (
         <>
           {/* EXTERNAL DROPDOWN */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
@@ -747,6 +1100,10 @@ const NormalOpNormsScreenCracker = () => {
             </FormControl>
 
             <Typography component='div' className='grid-title'>
+              <span style={{ color: 'orange', fontWeight: 'bold' }}>
+                Orange
+              </span>{' '}
+              - Overridden&nbsp;&nbsp;
               <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
               Propane (1Z)&nbsp;&nbsp;
               <span style={{ color: 'green', fontWeight: 'bold' }}>
@@ -777,12 +1134,12 @@ const NormalOpNormsScreenCracker = () => {
                 apiRef={apiRef}
                 setSnackbarOpen={setSnackbarOpen}
                 setSnackbarData={setSnackbarData}
-                remarkDialogOpen={remarkDialogOpen}
-                setRemarkDialogOpen={setRemarkDialogOpen}
-                currentRemark={currentRemark}
-                setCurrentRemark={setCurrentRemark}
-                currentRowId={currentRowId}
-                handleRemarkCellClick={handleRemarkCellClick}
+                remarkDialogOpen={remarkDialogOpen1}
+                setRemarkDialogOpen={setRemarkDialogOpen1}
+                currentRemark={currentRemark1}
+                setCurrentRemark={setCurrentRemark1}
+                currentRowId={currentRowId1}
+                handleRemarkCellClick={handleRemarkCellClick1}
                 permissions={monthlyPermissions}
                 groupBy='Particulars'
                 downloadExcelForConfiguration={downloadExcelForConfiguration}
@@ -797,7 +1154,9 @@ const NormalOpNormsScreenCracker = () => {
                 modifiedCells={modifiedCells}
                 setModifiedCells={setModifiedCells}
                 title='Normal Operations Norms'
-                columns={colDefs}
+                columns={
+                  gradeDisplayName === 'Monthly' ? colDefsFinalNorms1 : colDefs
+                }
                 setRows={setRowsExpression}
                 rows={rowsExpression}
                 grades={grades}
@@ -810,12 +1169,12 @@ const NormalOpNormsScreenCracker = () => {
                 apiRef={apiRef}
                 setSnackbarOpen={setSnackbarOpen}
                 setSnackbarData={setSnackbarData}
-                remarkDialogOpen={remarkDialogOpen}
-                setRemarkDialogOpen={setRemarkDialogOpen}
-                currentRemark={currentRemark}
-                setCurrentRemark={setCurrentRemark}
-                currentRowId={currentRowId}
-                handleRemarkCellClick={handleRemarkCellClick}
+                remarkDialogOpen={remarkDialogOpen2}
+                setRemarkDialogOpen={setRemarkDialogOpen2}
+                currentRemark={currentRemark2}
+                setCurrentRemark={setCurrentRemark2}
+                currentRowId={currentRowId2}
+                handleRemarkCellClick={handleRemarkCellClick2}
                 permissions={expressionPermissions}
                 groupBy='Particulars'
                 downloadExcelForConfiguration={downloadExcelForConfiguration}
@@ -823,6 +1182,8 @@ const NormalOpNormsScreenCracker = () => {
                 plantID={PLANT_ID}
                 onGlobalCheckboxChange={handleGlobalCheckboxChange}
                 gridName='expression'
+                allRedCell2={allRedCell2}
+                showThreeColors={true}
               />
             </>
           ) : (
@@ -844,12 +1205,12 @@ const NormalOpNormsScreenCracker = () => {
                 apiRef={apiRef}
                 setSnackbarOpen={setSnackbarOpen}
                 setSnackbarData={setSnackbarData}
-                remarkDialogOpen={remarkDialogOpen}
-                setRemarkDialogOpen={setRemarkDialogOpen}
-                currentRemark={currentRemark}
-                setCurrentRemark={setCurrentRemark}
-                currentRowId={currentRowId}
-                handleRemarkCellClick={handleRemarkCellClick}
+                remarkDialogOpen={remarkDialogOpen3}
+                setRemarkDialogOpen={setRemarkDialogOpen3}
+                currentRemark={currentRemark3}
+                setCurrentRemark={setCurrentRemark3}
+                currentRowId={currentRowId3}
+                handleRemarkCellClick={handleRemarkCellClick3}
                 permissions={mainPermissions}
                 allRedCell={allRedCell}
                 groupBy='Particulars'
@@ -858,6 +1219,7 @@ const NormalOpNormsScreenCracker = () => {
                 onGlobalCheckboxChange={handleGlobalCheckboxChange}
                 plantID={PLANT_ID}
                 gridName='main'
+                allRedCell2={allRedCell2}
                 showThreeColors={true}
               />
 
@@ -866,7 +1228,7 @@ const NormalOpNormsScreenCracker = () => {
                 modifiedCells={modifiedCells}
                 setModifiedCells={setModifiedCells}
                 title='Normal Operations Norms'
-                columns={colDefs}
+                columns={colDefsExpressionCatChem}
                 setRows={setRowsExpression}
                 rows={rowsExpression}
                 grades={grades}
@@ -879,12 +1241,12 @@ const NormalOpNormsScreenCracker = () => {
                 apiRef={apiRef}
                 setSnackbarOpen={setSnackbarOpen}
                 setSnackbarData={setSnackbarData}
-                remarkDialogOpen={remarkDialogOpen}
-                setRemarkDialogOpen={setRemarkDialogOpen}
-                currentRemark={currentRemark}
-                setCurrentRemark={setCurrentRemark}
-                currentRowId={currentRowId}
-                handleRemarkCellClick={handleRemarkCellClick}
+                remarkDialogOpen={remarkDialogOpen4}
+                setRemarkDialogOpen={setRemarkDialogOpen4}
+                currentRemark={currentRemark4}
+                setCurrentRemark={setCurrentRemark4}
+                currentRowId={currentRowId4}
+                handleRemarkCellClick={handleRemarkCellClick4}
                 permissions={expressionPermissions}
                 groupBy='Particulars'
                 downloadExcelForConfiguration={downloadExcelForConfiguration}
@@ -892,6 +1254,9 @@ const NormalOpNormsScreenCracker = () => {
                 plantID={PLANT_ID}
                 onGlobalCheckboxChange={handleGlobalCheckboxChange}
                 gridName='expression'
+                showCatChemUtilityCheckbox={true}
+                allRedCell2={allRedCell2}
+                showThreeColors={true}
               />
             </>
           )}
@@ -899,35 +1264,50 @@ const NormalOpNormsScreenCracker = () => {
       )}
 
       {/* FINAL norms tab: final grid is top */}
-      {selectedTab === 2 && (
-        <KendoDataTables
-          modifiedCells={modifiedCellsFinalNorms}
-          setModifiedCells={setModifiedCellsFinalNorms}
-          columns={colDefsFinalNorms}
-          setRows={setRowsBestFinalNorms}
-          rows={rowsBestFinalNorms}
-          paginationOptions={[100, 200, 300]}
-          saveChanges={saveChangesUnified}
-          isCellEditable={isCellEditable}
-          snackbarData={snackbarData}
-          handleCalculate={handleCalculateUnified}
-          snackbarOpen={snackbarOpen}
-          apiRef={apiRef}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          remarkDialogOpen={remarkDialogOpenFinalNorms}
-          setRemarkDialogOpen={setRemarkDialogOpenFinalNorms}
-          currentRemark={currentRemarkFinalNorms}
-          setCurrentRemark={setCurrentRemarkFinalNorms}
-          currentRowId={currentRowIdFinalNorms}
-          handleRemarkCellClick={handleRemarkCellClickFinalNorms}
-          permissions={finalPermissions}
-          groupBy='Particulars'
-          plantID={PLANT_ID}
-        />
+      {selectedTab === 4 && (
+        <>
+          {/* Add color-coded legend for Final norms */}
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2, mb: 2 }}
+          >
+            <Typography component='div' className='grid-title'>
+              <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
+              Expression &nbsp;&nbsp;
+              <span style={{ color: 'green', fontWeight: 'bold' }}>
+                Green
+              </span>{' '}
+              - Best Achieved (MinCC)&nbsp;&nbsp;
+              <span style={{ color: 'blue', fontWeight: 'bold' }}>Blue</span> -
+              Best Achieved (Indv)
+            </Typography>
+          </Box>
+          <KendoDataTables
+            modifiedCells={modifiedCellsFinalNorms}
+            setModifiedCells={setModifiedCellsFinalNorms}
+            columns={colDefsFinalNorms}
+            setRows={setRowsBestFinalNorms}
+            rows={rowsBestFinalNorms}
+            paginationOptions={[100, 200, 300]}
+            saveChanges={saveChangesUnified}
+            isCellEditable={isCellEditable}
+            snackbarData={snackbarData}
+            handleCalculate={handleCalculateUnified}
+            snackbarOpen={snackbarOpen}
+            apiRef={apiRef}
+            setSnackbarOpen={setSnackbarOpen}
+            setSnackbarData={setSnackbarData}
+            remarkDialogOpen={remarkDialogOpenFinalNorms}
+            setRemarkDialogOpen={setRemarkDialogOpenFinalNorms}
+            currentRemark={currentRemarkFinalNorms}
+            setCurrentRemark={setCurrentRemarkFinalNorms}
+            currentRowId={currentRowIdFinalNorms}
+            handleRemarkCellClick={handleRemarkCellClickFinalNorms}
+            permissions={finalPermissions}
+            groupBy='Particulars'
+            plantID={PLANT_ID}
+          />
+        </>
       )}
-
-      {selectedTab === 0 && <CrakcerConstants />}
     </div>
   )
 }

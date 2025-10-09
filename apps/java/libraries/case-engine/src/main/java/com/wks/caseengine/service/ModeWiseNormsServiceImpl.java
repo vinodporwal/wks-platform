@@ -1,11 +1,13 @@
 package com.wks.caseengine.service;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,7 @@ import com.wks.caseengine.dto.ModeWiseNormsDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.MCUNormsValue;
 import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormsTransactions;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
@@ -22,6 +25,7 @@ import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.MCUNormsValueRepository;
+import com.wks.caseengine.repository.NormsTransactionRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
@@ -55,6 +59,9 @@ public class ModeWiseNormsServiceImpl implements ModeWiseNormsService {
 
 	@Autowired
 	private ScreenMappingRepository screenMappingRepository;
+	
+	@Autowired
+	private NormsTransactionRepository normsTransactionRepository;
 
 	@Override
 	public AOPMessageVM getModeWiseNormsData(String year, String plantId, String mode, String method) {
@@ -92,7 +99,7 @@ public class ModeWiseNormsServiceImpl implements ModeWiseNormsService {
 				modeWiseNormsDTO.setJanuary(row[18] != null ? Double.parseDouble(row[18].toString()) : 0.0);
 				modeWiseNormsDTO.setFebruary(row[19] != null ? Double.parseDouble(row[19].toString()) : 0.0);
 				modeWiseNormsDTO.setMarch(row[20] != null ? Double.parseDouble(row[20].toString()) : 0.0);
-				modeWiseNormsDTO.setRemark(row[22] != null ? row[22].toString() : null); // Was row[21]
+				modeWiseNormsDTO.setRemark(row[22] != null ? row[22].toString() : ""); // Was row[21]
 				modeWiseNormsDTO.setIsEditable(row[24] != null ? Boolean.valueOf(row[24].toString()) : null); // Was
 																												// row[23]
 				modeWiseNormsDTO.setIsChecked(row[25] != null ? Boolean.valueOf(row[25].toString()) : null); // Was
@@ -148,10 +155,8 @@ public class ModeWiseNormsServiceImpl implements ModeWiseNormsService {
 		List<MCUNormsValue> mcuNormsValueList = new ArrayList<>();
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
 				.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-		Sites site = siteRepository.findById(plant.getSiteFkId())
-				.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
-		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
-				.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+		
+		
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
 			for (ModeWiseNormsDTO modeWiseNormsDTO : modeWiseNormsDTOList) {
@@ -165,8 +170,8 @@ public class ModeWiseNormsServiceImpl implements ModeWiseNormsService {
 					if (mcuNormsValueOpt.isPresent()) {
 						mcuNormsValue = mcuNormsValueOpt.get();
 						mcuNormsValue.setModifiedOn(new Date());
+						saveTransactions( year,  plantId,modeWiseNormsDTO,mcuNormsValue);
 					}
-
 				}
 				mcuNormsValue.setApril(modeWiseNormsDTO.getApril());
 				mcuNormsValue.setMay(modeWiseNormsDTO.getMay());
@@ -187,6 +192,7 @@ public class ModeWiseNormsServiceImpl implements ModeWiseNormsService {
 				mcuNormsValue.setPlantFkId(UUID.fromString(plantId));
 				mcuNormsValue.setSiteFkId(plant.getSiteFkId());
 				mcuNormsValue.setVerticalFkId(plant.getVerticalFKId());
+				mcuNormsValue.setRemarks(modeWiseNormsDTO.getRemark());
 				mcuNormsValueList.add(mcuNormsValueRepository.save(mcuNormsValue));
 			}
 
@@ -210,6 +216,52 @@ public class ModeWiseNormsServiceImpl implements ModeWiseNormsService {
 
 		// TODO Auto-generated method stub
 		return aopMessageVM;
+	}
+	public void saveTransactions(String year, String plantId,ModeWiseNormsDTO dto,MCUNormsValue value) {
+		for (int month = 1; month <= 12; month++) {
+			Double oldVal = getMonthlyValue(value, month);
+			Double newVal = getMonthlyValue(dto, month);
+			if (newVal != null && !Objects.equals(oldVal, newVal)) {
+				NormsTransactions normsTransactions = new NormsTransactions();
+				normsTransactions.setAopMonth(month);
+				normsTransactions.setAopYear(value.getFinancialYear());
+				normsTransactions.setAttributeValue(newVal != null ? newVal.doubleValue() : null);
+				normsTransactions.setNormParameterFkId(value.getMaterialFkId());
+				normsTransactions.setPlantFkId(UUID.fromString(plantId));
+				normsTransactions.setRemark(dto.getRemark());
+				normsTransactions.setVersion(1);
+				normsTransactions.setCreatedDateTime(new Date());
+				normsTransactions.setCreatedBy(Utility.getUserName());
+				normsTransactions.setMcuNormsValueFkId((UUID.fromString(dto.getId())));
+				normsTransactionRepository.save(normsTransactions);
+			}
+		}
+	}
+	
+	
+	private Double getMonthlyValue(Object obj, int month) {
+		try {
+			String methodName = switch (month) {
+				case 1 -> "getJanuary";
+				case 2 -> "getFebruary";
+				case 3 -> "getMarch";
+				case 4 -> "getApril";
+				case 5 -> "getMay";
+				case 6 -> "getJune";
+				case 7 -> "getJuly";
+				case 8 -> "getAugust";
+				case 9 -> "getSeptember";
+				case 10 -> "getOctober";
+				case 11 -> "getNovember";
+				case 12 -> "getDecember";
+				default -> throw new IllegalArgumentException("Invalid month: " + month);
+			};
+			Method method = obj.getClass().getMethod(methodName);
+			return (Double) method.invoke(obj);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	@Override

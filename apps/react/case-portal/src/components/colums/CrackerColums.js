@@ -1,12 +1,5 @@
 export const CrackerColums = [
   {
-    field: 'isChecked',
-    type: 'switch',
-    widthT: 30,
-    filter: false,
-  },
-
-  {
     field: 'sapMaterialCode',
     title: 'SAP MAT Code',
     widthT: 120,
@@ -17,14 +10,12 @@ export const CrackerColums = [
     title: 'Particulars',
     widthT: 120,
   },
-
   {
     field: 'uom',
     title: 'UOM',
     widthT: 60,
     editable: false,
   },
-
   {
     field: 'april',
     title: 4,
@@ -141,6 +132,7 @@ export const CrackerColums = [
     format: '{0:#.###}',
     type: 'number',
   },
+  { field: 'remark', title: 'Remarks', widthT: 200, editable: true },
 ]
 export const CrackerColumsForYearlyNorms = [
   {
@@ -174,6 +166,12 @@ export const CrackerColumsForYearlyNorms = [
 
 export const ShutdownConsumptionCrackerColumns = [
   {
+    field: 'sapCode',
+    headerName: 'SAP MAT Code',
+    widthT: 130,
+    editable: false,
+  },
+  {
     field: 'productName',
     headerName: 'Particulars',
     widthT: 130,
@@ -197,4 +195,11 @@ export const ShutdownConsumptionCrackerColumns = [
       monthNumber: monthIndex,
     }
   }),
+
+  {
+    field: 'remarks',
+    headerName: 'Remark',
+
+    editable: true,
+  },
 ]

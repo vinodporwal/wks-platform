@@ -106,6 +106,8 @@ const CrakcerConstants = () => {
       saveBtn: false,
       isOldYear: isOldYear,
       showCalculate: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
     }
   }
 
@@ -123,7 +125,7 @@ const CrakcerConstants = () => {
   useEffect(() => {
     if (!plantID || !AOP_YEAR) return
     setTabIndex(0)
-    getConfigurationExecutionDetails()
+    getConfigurationExecutionDetailsNorms()
     fetchData()
   }, [plantID, AOP_YEAR])
 
@@ -131,38 +133,9 @@ const CrakcerConstants = () => {
     if (!plantID || !AOP_YEAR) {
       return
     }
-    getConfigurationExecutionDetails()
+    getConfigurationExecutionDetailsNorms()
     getAopSummary()
   }, [oldYear, yearChanged, keycloak, plantID])
-
-  const computeAndSetDates = useCallback(() => {
-    setStartDate('')
-    setEndDate('')
-    const hasModifiedOn = configurationExecutionDetails[0]?.ModifiedOn
-    if (hasModifiedOn) {
-      const getDateValue = (name) =>
-        new Date(
-          configurationExecutionDetails.find(
-            (item) => item.Name === name,
-          )?.AttributeValue,
-        )
-      setStartDate(getDateValue('StartDate'))
-      setEndDate(getDateValue('EndDate'))
-    } else {
-      const today = new Date()
-      const fallbackEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
-      const fallbackStartDate = new Date(
-        today.getFullYear() - 5,
-        today.getMonth(),
-        1,
-      )
-      setStartDate(fallbackStartDate)
-      setEndDate(fallbackEndDate)
-    }
-  }, [configurationExecutionDetails, plantID])
-  useEffect(() => {
-    computeAndSetDates()
-  }, [computeAndSetDates])
 
   function formatDate(date) {
     if (!date) return ''
@@ -209,36 +182,55 @@ const CrakcerConstants = () => {
       return
     }
     hasExecutedRef.current = false
-    getConfigurationExecutionDetails()
+    getConfigurationExecutionDetailsNorms()
   }, [plantID])
 
-  const getConfigurationExecutionDetails = async () => {
+  const getConfigurationExecutionDetailsNorms = async () => {
     try {
       const response =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+        await DataService.getConfigurationExecutionDetailsNorms(keycloak)
       const details = response?.data || []
       if (details.length === 0) {
         console.warn(
-          'getConfigurationExecutionDetails returned an empty array:',
+          'getConfigurationExecutionDetailsNorms returned an empty array:',
           response,
         )
       }
-      const hasNoModifiedOn = details.length && !details[0]?.ModifiedOn
-      if (hasNoModifiedOn && !hasExecutedRef.current) {
-        const startDateObj = details.find((item) => item.Name === 'StartDate')
-        const endDateObj = details.find((item) => item.Name === 'EndDate')
+      if (details) {
+        const startDateObj = details.find(
+          (item) => item.Name === 'StartDateNorms',
+        )
+        const endDateObj = details.find((item) => item.Name === 'EndDateNorms')
+
+        setStartDate(
+          startDateObj?.AttributeValue
+            ? moment(startDateObj.AttributeValue, 'YYYY-MM-DD').toDate()
+            : null,
+        )
+        setEndDate(
+          endDateObj?.AttributeValue
+            ? moment(endDateObj.AttributeValue, 'YYYY-MM-DD').toDate()
+            : null,
+        )
+
         hasExecutedRef.current = true
+        setConfigurationExecutionDetails(details)
+
         // await onLoadTest(startDateObj, endDateObj)
       } else {
         setConfigurationExecutionDetails(details)
         // setLoading1(false)
       }
     } catch (error) {
-      console.error('Error fetching getConfigurationExecutionDetails:', error)
+      console.error(
+        'Error fetching getConfigurationExecutionDetailsNorms:',
+        error,
+      )
     } finally {
       // setLoading1(false)
     }
   }
+
   const onLoad = async () => {
     if (startDate && endDate && startDate > endDate) {
       setSnackbarOpen(true)
@@ -251,10 +243,10 @@ const CrakcerConstants = () => {
     }
     setLoading1(true)
     const startDateObj = configurationExecutionDetails.find(
-      (item) => item.Name === 'StartDate',
+      (item) => item.Name === 'StartDateNorms',
     )
     const endDateObj = configurationExecutionDetails.find(
-      (item) => item.Name === 'EndDate',
+      (item) => item.Name === 'EndDateNorms',
     )
     if (!startDateObj?.Id || !endDateObj?.Id) {
       console.warn(
@@ -291,7 +283,11 @@ const CrakcerConstants = () => {
           plantId: PLANT_ID,
         },
       ]
-      const response = await DataService.executeConfiguration(payload, keycloak)
+      const response = await DataService.executeConfigurationNorms(
+        payload,
+        keycloak,
+      )
+
       const response1 = await NormalOperationNormsApiService.load1(
         keycloak,
         PLANT_ID,
@@ -308,13 +304,21 @@ const CrakcerConstants = () => {
         moment(startDate).format('YYYY-MM-DD'),
       )
 
+      const response3 = await NormalOperationNormsApiService.load3(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        moment(endDate).format('YYYY-MM-DD'),
+        moment(startDate).format('YYYY-MM-DD'),
+      )
+
       if (response) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Execution Started Successfully!',
           severity: 'success',
         })
-        getConfigurationExecutionDetails()
+        getConfigurationExecutionDetailsNorms()
         setLoading(false)
       } else {
         setSnackbarOpen(true)
@@ -434,7 +438,7 @@ const CrakcerConstants = () => {
                 )}
               </Box>
             </Box>
-            <TextField
+            {/* <TextField
               label='AOP Design Basis'
               multiline
               minRows={2}
@@ -448,7 +452,7 @@ const CrakcerConstants = () => {
                 setSummaryEdited(true)
               }}
               className='aop-design-basis'
-            />
+            /> */}
           </CustomAccordionDetails>
         </CustomAccordion>
       </Box>
@@ -662,18 +666,116 @@ const CrakcerConstants = () => {
     setCurrentRowIdConstants(row.id)
     setRemarkDialogOpenConstants(true)
   }
+  const uploadCrackerConstant = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let response
+
+      response = await NormalOperationNormsApiService.CrackerConstantsImport(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute(
+          'download',
+          'Error File - Criteria_Best_Achieved.xlsx',
+        )
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading xcel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    uploadCrackerConstant(rawFile)
+  }
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      response = await NormalOperationNormsApiService.CrackerConstantsExport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
 
   const adjustedPermissionsConstants = getAdjustedPermissions(
     {
       showAction: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Constants',
-      downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_Constants`,
+      titleName: 'Criteria',
       saveWithRemark: true,
       saveBtn: true,
       showCalculate: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
     },
     isOldYear,
   )
@@ -717,6 +819,8 @@ const CrakcerConstants = () => {
           groupBy='Particulars'
           plantID={plantID}
           summaryEdited={summaryEdited}
+          handleExcelUpload={handleExcelUpload}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
         />
       </Box>
       <Notification

@@ -51,6 +51,7 @@ const ConfigurationTable = () => {
   const [productionRows, setProductionRows] = useState([])
   const [elastomerRows, setElastomerRows] = useState([])
   const [productionRowsConstants, setProductionRowsConstants] = useState([])
+  const [pioImpactRows, setPioImpactRows] = useState([])
   const [
     productionRowsConstantsMannualEntry,
     setProductionRowsConstantsMannualEntry,
@@ -95,6 +96,44 @@ const ConfigurationTable = () => {
     setOpenConfirmDialog(false)
     onLoad()
   }
+ const fetchPioImpactData = async () => {
+  setLoading(true)
+  try {
+    var data = await DataService.getPioImpactData(keycloak)
+    console.log("PIO Impact Data from API:", data)
+    if (data?.code === 200) {
+      const formattedData = data.data.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.remarks,
+        description: item.description,
+        startMonth: item.startMonth,
+        endMonth: item.endMonth,
+        value: item.value,
+        remarks: item.remarks,
+        Particulars: 'PIO Impact', // Assuming 'description' is the field to group by
+        isEditable: true,
+      }))
+      console.log("Formatted PIO Impact Data:", formattedData) // Add this debug log
+      setPioImpactRows(formattedData)
+    } else {
+      setPioImpactRows([])
+    }
+  } catch (error) {
+    console.error('Error fetching PIO Impact data:', error)
+    setPioImpactRows([])
+  } finally {
+    setLoading(false)
+  }
+}
+useEffect(() => {
+  console.log("Tab changed - tabIndex:", tabIndex, "lowerVertName:", lowerVertName)
+  if (tabIndex === 3 && lowerVertName === 'aromatics') { // PIO Impact tab
+    console.log("Fetching PIO Impact data...")
+    fetchPioImpactData()
+  }
+}, [tabIndex, lowerVertName])
 
   const fetchData = async (gradeId = null) => {
     setProductionRows([])
@@ -111,7 +150,8 @@ const ConfigurationTable = () => {
       if (
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
-        lowerVertName == verticalEnums.ELASTOMER
+        lowerVertName == verticalEnums.ELASTOMER ||
+        lowerVertName === 'aromatics'
       ) {
         data = data?.filter((item) => item.normType !== 'Report Manual Entry')
         const formattedData = data.map((item, index) => ({
@@ -157,6 +197,7 @@ const ConfigurationTable = () => {
               rowsForThisCategory.push({
                 ...item,
                 idFromApi: item.id,
+                originalRemark: item.remarks,
                 id: groupId++,
               })
             })
@@ -248,21 +289,38 @@ const ConfigurationTable = () => {
     setLoading(true)
     try {
       var data = await DataService.getPeConfigData(keycloak)
-      const formattedData = data?.map((item, index) => ({
-        ...item,
-        id: index,
-        TypeDisplayName: item?.TypeDisplayName
-          ? item?.TypeDisplayName
-          : 'Recipe',
-      }))
+
+      const formattedData = data?.map((item, index) => {
+        const converted = {}
+
+        Object.entries(item).forEach(([key, value]) => {
+          // Convert numeric strings to numbers
+          if (typeof value === 'string' && !isNaN(value)) {
+            converted[key] = value.includes('.')
+              ? parseFloat(value)
+              : parseInt(value, 10)
+          } else {
+            converted[key] = value
+          }
+        })
+
+        return {
+          ...converted,
+          id: index,
+          TypeDisplayName: item?.TypeDisplayName
+            ? item?.TypeDisplayName
+            : 'Recipe',
+        }
+      })
+
       setGradeData(formattedData)
-      setLoading(false)
     } catch (error) {
       console.error('Error fetching grade data:', error)
     } finally {
       setLoading(false)
     }
   }
+
   const getConfigurationTabsMatrix = async () => {
     setLoading(true)
     try {
@@ -611,36 +669,38 @@ const ConfigurationTable = () => {
                   marginTop: '5px',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography
-                    className='grid-title'
-                    sx={{ whiteSpace: 'nowrap' }}
-                  >
-                    Start Date
-                  </Typography>
-                  <DatePicker
-                    id='start-date'
-                    format='dd-MM-yyyy'
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.value)}
-                    style={{ height: '80px' }}
-                    size={'medium'}
-                  />
-                  <Typography
-                    className='grid-title'
-                    sx={{ whiteSpace: 'nowrap' }}
-                  >
-                    End Date
-                  </Typography>
-                  <DatePicker
-                    id='end-date'
-                    format='dd-MM-yyyy'
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.value)}
-                    style={{ height: '80px' }}
-                    size={'medium'}
-                  />
-                </Box>
+                {true && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography
+                      className='grid-title'
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      Start Date
+                    </Typography>
+                    <DatePicker
+                      id='start-date'
+                      format='dd-MM-yyyy'
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.value)}
+                      style={{ height: '80px' }}
+                      size={'medium'}
+                    />
+                    <Typography
+                      className='grid-title'
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      End Date
+                    </Typography>
+                    <DatePicker
+                      id='end-date'
+                      format='dd-MM-yyyy'
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.value)}
+                      style={{ height: '80px' }}
+                      size={'medium'}
+                    />
+                  </Box>
+                )}
                 {/* Load Button */}
                 {!isOldYearFlag && (
                   <Button
@@ -668,7 +728,7 @@ const ConfigurationTable = () => {
               label='AOP Design Basis'
               multiline
               // minRows={isAccordionExpanded ? 4 : 20}
-              minRows={2}
+              minRows={lowerVertName === 'cracker' ? 6 : 2}
               fullWidth
               margin='normal'
               variant='outlined'
@@ -717,7 +777,7 @@ const ConfigurationTable = () => {
   ) {
     const isAromatics = lowerVertName === 'aromatics'
     const megTabs = isAromatics
-      ? ['Configuration', 'Constants']
+      ? ['Configuration', 'Constants', 'Report Manual Entry', 'PIO Impact']
       : ['Configuration', 'Constants', 'Report Manual Entry']
     const auditYear = localStorage.getItem('year')
     let displayYear = ''
@@ -777,22 +837,39 @@ const ConfigurationTable = () => {
                   />
                 )
               case 'report manual entry':
-                if (!isAromatics) {
-                  return (
-                    <SelectivityData
-                      rows={productionRowsConstantsMannualEntry}
-                      loading={loading}
-                      fetchData={fetchDataConstantsMnnualEntry}
-                      setRows={setProductionRowsConstantsMannualEntry}
-                      configType='megConstantsMannualEntry'
-                      groupBy='Particulars'
-                      summaryEdited={summaryEdited}
-                      summary={debouncedSummary}
-                      onSummaryEditChange={setSummaryEdited}
-                      tabIndex='2'
-                    />
-                  )
-                }
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstantsMannualEntry}
+                    loading={loading}
+                    fetchData={fetchDataConstantsMnnualEntry}
+                    setRows={setProductionRowsConstantsMannualEntry}
+                    configType='megConstantsMannualEntry'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='2'
+                  />
+                )
+              case 'pio impact':
+                console.log("PIO IMPACT CASE MATCHED!")
+                console.log("Rows being passed:", pioImpactRows)
+                return (
+                  <SelectivityData
+                    rows={pioImpactRows} // You'll need to create a new state for PIO Impact data
+                    loading={loading}
+                    fetchData={fetchPioImpactData}
+                    setRows={setPioImpactRows}
+                    configType='pioImpact'
+                    groupBy='PIO Impact'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='3'
+                  />
+                )
+              default:
+                return null
             }
           })()}
         </Box>
@@ -881,11 +958,82 @@ const ConfigurationTable = () => {
       </div>
     )
   }
-  if (
-    lowerVertName === 'elastomer' ||
-    lowerVertName === 'pta' ||
-    vcmVerticalName === 'vcm'
-  ) {
+
+  if (lowerVertName === 'elastomer') {
+    const elastomerTabs = ['Constants', 'Report Manual Entry']
+    const auditYear = localStorage.getItem('year')
+    let displayYear = ''
+    if (auditYear) {
+      const [start, end] = auditYear.split('-').map(Number)
+      displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
+    }
+    return (
+      <div>
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={!!loading1}
+        >
+          <CircularProgress color='inherit' />
+        </Backdrop>
+        {ConfigurationAccordian}
+        <Box>
+          <AopTabs
+            tabIndex={tabIndex}
+            setTabIndex={setTabIndex}
+            tabs={elastomerTabs.map((tab) =>
+              tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
+            )}
+          />
+          {(() => {
+            const currentTab = elastomerTabs[tabIndex]?.toLowerCase()
+            switch (currentTab) {
+              case 'constants':
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstants}
+                    loading={loading}
+                    fetchData={fetchDataConstants}
+                    setRows={setProductionRowsConstants}
+                    configType='megConstants'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='1'
+                  />
+                )
+              case 'report manual entry':
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstantsMannualEntry}
+                    loading={loading}
+                    fetchData={fetchDataConstantsMnnualEntry}
+                    setRows={setProductionRowsConstantsMannualEntry}
+                    configType='megConstantsMannualEntry'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='2'
+                  />
+                )
+              default:
+                return null
+            }
+          })()}
+        </Box>
+        <Notification
+          open={snackbarOpen}
+          message={snackbarData?.message || ''}
+          severity={snackbarData?.severity || 'info'}
+          onClose={() => setSnackbarOpen(false)}
+        />
+        {ConfigurationDialog}
+      </div>
+    )
+  }
+
+  if (lowerVertName === 'pta' || vcmVerticalName === 'vcm') {
     const elastomerTabs = ['Configuration', 'Constants', 'Report Manual Entry']
     const auditYear = localStorage.getItem('year')
     let displayYear = ''
