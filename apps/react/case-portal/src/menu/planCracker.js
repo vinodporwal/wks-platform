@@ -84,14 +84,14 @@ const planCracker = {
           icon: icons.IconChartBar,
           breadcrumbs: true,
         },
-    {
+        {
           id: 'production-volume-data',
           title: i18n.t('menu.productMCUVal'),
           type: 'item',
           url: '/production-norms-plan/production-volume-data',
           icon: icons.IconSettings,
           breadcrumbs: true,
-        },        
+        },
         {
           id: 'spyro-menu',
           title: i18n.t('menu.spyroMenu'),
@@ -182,14 +182,14 @@ const planCracker = {
       type: 'collapse',
       icon: icons.IconReport, // You can choose an appropriate icon
       children: [
-        {
-           id: 'production-target-basis',
-           title: i18n.t('menu.productionTargetBasis'),
-           type: 'item',
-           url: '/reports/production-target-basis',
-           icon: icons.IconFile,
-           breadcrumbs: true,
-         },  
+        // {
+        //    id: 'production-target-basis',
+        //    title: i18n.t('menu.productionTargetBasis'),
+        //    type: 'item',
+        //    url: '/reports/production-target-basis',
+        //    icon: icons.IconFile,
+        //    breadcrumbs: true,
+        //  },
 
         //  {
         //    id: 'aop-annual-cost-report',

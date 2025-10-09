@@ -6,6 +6,7 @@ import { verticalEnums } from 'enums/verticalEnums'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { PIOImpactApiService } from 'services/Pio-Impact-api-service'
 import { useSession } from 'SessionStoreContext'
 import {
   CustomAccordion,
@@ -28,11 +29,24 @@ import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinpu
 import SelectivityData from './SelectivityData'
 
 const ConfigurationTable = () => {
-  const year = localStorage.getItem('year')
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
   const isOldYear = oldYear?.oldYear
   const isOldYearFlag = oldYear?.oldYear === 1
   const vertName = verticalChange?.selectedVertical
@@ -51,6 +65,7 @@ const ConfigurationTable = () => {
   const [productionRows, setProductionRows] = useState([])
   const [elastomerRows, setElastomerRows] = useState([])
   const [productionRowsConstants, setProductionRowsConstants] = useState([])
+  const [pioImpactRows, setPioImpactRows] = useState([])
   const [
     productionRowsConstantsMannualEntry,
     setProductionRowsConstantsMannualEntry,
@@ -95,6 +110,44 @@ const ConfigurationTable = () => {
     setOpenConfirmDialog(false)
     onLoad()
   }
+ const fetchPioImpactData = async () => {
+  setLoading(true)
+  try {
+    var data = await PIOImpactApiService.getPioImpactData(keycloak, PLANT_ID, AOP_YEAR)
+    console.log("PIO Impact Data from API:", data)
+    if (data?.code === 200) {
+      const formattedData = data.data.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.remarks,
+        description: item.description,
+        startMonth: item.startMonth,
+        endMonth: item.endMonth,
+        value: item.value,
+        remarks: item.remarks,
+        Particulars: 'PIO Impact', // Assuming 'description' is the field to group by
+        isEditable: true,
+      }))
+      console.log("Formatted PIO Impact Data:", formattedData) // Add this debug log
+      setPioImpactRows(formattedData)
+    } else {
+      setPioImpactRows([])
+    }
+  } catch (error) {
+    console.error('Error fetching PIO Impact data:', error)
+    setPioImpactRows([])
+  } finally {
+    setLoading(false)
+  }
+}
+useEffect(() => {
+  console.log("Tab changed - tabIndex:", tabIndex, "lowerVertName:", lowerVertName)
+  if (tabIndex === 3 && lowerVertName === 'aromatics') { // PIO Impact tab
+    console.log("Fetching PIO Impact data...")
+    fetchPioImpactData()
+  }
+}, [tabIndex, lowerVertName])
 
   const fetchData = async (gradeId = null) => {
     setProductionRows([])
@@ -319,14 +372,14 @@ const ConfigurationTable = () => {
   }
 
   useEffect(() => {
-    if (!plantID || !year) return
+    if (!plantID || !AOP_YEAR) return
     setTabIndex(0)
 
     getConfigurationExecutionDetails()
-  }, [plantID, year])
+  }, [plantID, AOP_YEAR])
 
   useEffect(() => {
-    if (!plantID || !year) {
+    if (!plantID || !AOP_YEAR) {
       return
     }
     getConfigurationExecutionDetails()
@@ -421,7 +474,7 @@ const ConfigurationTable = () => {
     setLoading1(true)
     const plantId =
       JSON.parse(localStorage.getItem('selectedPlant') || '{}')?.id || ''
-    const auditYear = localStorage.getItem('year')
+    const auditYear = AOP_YEAR
     const today = new Date()
     const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
     const startDate = new Date(today.getFullYear() - 5, today.getMonth(), 1)
@@ -459,12 +512,12 @@ const ConfigurationTable = () => {
     }
   }
   useEffect(() => {
-    if (!plantID || !year) {
+    if (!PLANT_ID || !AOP_YEAR) {
       return
     }
     hasExecutedRef.current = false
     getConfigurationExecutionDetails()
-  }, [plantID])
+  }, [PLANT_ID])
 
   const getConfigurationExecutionDetails = async () => {
     try {
@@ -536,20 +589,20 @@ const ConfigurationTable = () => {
         {
           apr: formatDate(startDate),
           UOM: '',
-          auditYear: localStorage.getItem('year'),
+          auditYear: AOP_YEAR,
           normParameterFKId: startDateObj?.NormParameter_FK_Id,
           remarks: 'Initiated',
           id: startDateObj?.Id || null,
-          plantId: plantId,
+          plantId: PLANT_ID,
         },
         {
           apr: formatDate(endDate),
           UOM: '',
-          auditYear: localStorage.getItem('year'),
+          auditYear: AOP_YEAR,
           normParameterFKId: endDateObj?.NormParameter_FK_Id,
           remarks: 'Initiated',
           id: endDateObj?.Id || null,
-          plantId: plantId,
+          plantId: PLANT_ID,
         },
       ]
       const response = await DataService.executeConfiguration(payload, keycloak)
@@ -738,9 +791,9 @@ const ConfigurationTable = () => {
   ) {
     const isAromatics = lowerVertName === 'aromatics'
     const megTabs = isAromatics
-      ? ['Configuration', 'Constants']
+      ? ['Configuration', 'Constants', 'Report Manual Entry', 'PIO Impact']
       : ['Configuration', 'Constants', 'Report Manual Entry']
-    const auditYear = localStorage.getItem('year')
+    const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
       const [start, end] = auditYear.split('-').map(Number)
@@ -798,22 +851,39 @@ const ConfigurationTable = () => {
                   />
                 )
               case 'report manual entry':
-                if (!isAromatics) {
-                  return (
-                    <SelectivityData
-                      rows={productionRowsConstantsMannualEntry}
-                      loading={loading}
-                      fetchData={fetchDataConstantsMnnualEntry}
-                      setRows={setProductionRowsConstantsMannualEntry}
-                      configType='megConstantsMannualEntry'
-                      groupBy='Particulars'
-                      summaryEdited={summaryEdited}
-                      summary={debouncedSummary}
-                      onSummaryEditChange={setSummaryEdited}
-                      tabIndex='2'
-                    />
-                  )
-                }
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstantsMannualEntry}
+                    loading={loading}
+                    fetchData={fetchDataConstantsMnnualEntry}
+                    setRows={setProductionRowsConstantsMannualEntry}
+                    configType='megConstantsMannualEntry'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='2'
+                  />
+                )
+              case 'pio impact':
+                console.log("PIO IMPACT CASE MATCHED!")
+                console.log("Rows being passed:", pioImpactRows)
+                return (
+                  <SelectivityData
+                    rows={pioImpactRows} // You'll need to create a new state for PIO Impact data
+                    loading={loading}
+                    fetchData={fetchPioImpactData}
+                    setRows={setPioImpactRows}
+                    configType='pioImpact'
+                    groupBy='PIO Impact'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='3'
+                  />
+                )
+              default:
+                return null
             }
           })()}
         </Box>
@@ -830,7 +900,7 @@ const ConfigurationTable = () => {
 
   if (lowerVertName === 'cracker') {
     const crackerTabs = ['Configuration', 'Constants']
-    const auditYear = localStorage.getItem('year')
+    const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
       const [start, end] = auditYear.split('-').map(Number)
@@ -905,7 +975,7 @@ const ConfigurationTable = () => {
 
   if (lowerVertName === 'elastomer') {
     const elastomerTabs = ['Constants', 'Report Manual Entry']
-    const auditYear = localStorage.getItem('year')
+    const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
       const [start, end] = auditYear.split('-').map(Number)
@@ -979,7 +1049,7 @@ const ConfigurationTable = () => {
 
   if (lowerVertName === 'pta' || vcmVerticalName === 'vcm') {
     const elastomerTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const auditYear = localStorage.getItem('year')
+    const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
       const [start, end] = auditYear.split('-').map(Number)

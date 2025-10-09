@@ -18,7 +18,7 @@ import {
 
 const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
 
-const UtilitiesNormsBasis = () => {
+const ProductionTargetBasis = () => {
   const keycloak = useSession()
 
   const [dataMap, setDataMap] = useState({})
@@ -159,9 +159,10 @@ const UtilitiesNormsBasis = () => {
     try {
       setLoading(true)
 
-      const apiResponse = await DataService.getBestAchievedNorms(
+      const apiResponse = await DataService.getProductionTargetBasis(
         keycloak,
-        'TYPE LIST3',
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (apiResponse?.code !== 200) {
@@ -193,7 +194,10 @@ const UtilitiesNormsBasis = () => {
       const newMap = {}
       gridsArray.forEach((g) => {
         const rawRows = Array.isArray(g.data) ? g.data : []
-        const inferredCols = inferColumnsFromRows(rawRows)
+        const inferredCols =
+          Array.isArray(g.columns) && g.columns.length
+            ? g.columns
+            : inferColumnsFromRows(rawRows)
         const enrichedCols = enrichColumns(inferredCols)
 
         const rowsWithId = rawRows.map((r, i) => {
@@ -302,7 +306,7 @@ const UtilitiesNormsBasis = () => {
     .replace(/T/, ' ')
     .replace(/:/g, '-')
     .split('.')[0]
-  const fileName = `Utilities Norms Basis.xlsx`
+  const fileName = `Production Target Basis.xlsx`
 
   const renderTitle = (t) => t
 
@@ -392,4 +396,4 @@ const UtilitiesNormsBasis = () => {
   )
 }
 
-export default UtilitiesNormsBasis
+export default ProductionTargetBasis
