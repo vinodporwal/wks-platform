@@ -259,53 +259,85 @@ const BestAchievedReport = () => {
     return v
   }
 
-  const exportAllGrids = useCallback(() => {
-    const keys = Object.keys(exportRefs.current || {})
-    const firstKey = keys.find((k) => exportRefs.current[k])
-    if (!firstKey) return
-    const baseRef = exportRefs.current[firstKey]
-    if (!baseRef || typeof baseRef.save !== 'function') return
+  // const exportAllGrids = useCallback(() => {
+  //   const keys = Object.keys(exportRefs.current || {})
+  //   const firstKey = keys.find((k) => exportRefs.current[k])
+  //   if (!firstKey) return
+  //   const baseRef = exportRefs.current[firstKey]
+  //   if (!baseRef || typeof baseRef.save !== 'function') return
 
-    const sheets = gridNames
-      .map((gridName, idx) => {
-        const d = dataMap[gridName] || { rows: [], columns: [] }
-        const cols = d.columns || []
-        const rows = d.rows || []
-        if (!cols.length && !rows.length) return null
+  //   const sheets = gridNames
+  //     .map((gridName, idx) => {
+  //       const d = dataMap[gridName] || { rows: [], columns: [] }
+  //       const cols = d.columns || []
+  //       const rows = d.rows || []
+  //       if (!cols.length && !rows.length) return null
 
-        const sheetColumns = cols.map((c) => ({
-          autoWidth: true,
-          title: c.title || c.field || '',
-        }))
+  //       const sheetColumns = cols.map((c) => ({
+  //         autoWidth: true,
+  //         title: c.title || c.field || '',
+  //       }))
 
-        const headerRow = {
-          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
-        }
+  //       const headerRow = {
+  //         cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+  //       }
 
-        const dataRows = rows.map((r) => ({
-          cells: cols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
-        }))
+  //       const dataRows = rows.map((r) => ({
+  //         cells: cols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
+  //       }))
 
-        const sheetRows = [headerRow, ...dataRows]
+  //       const sheetRows = [headerRow, ...dataRows]
 
-        return {
-          title: sanitizeSheetName(gridName, `Sheet${idx + 1}`),
-          columns: sheetColumns,
-          rows: sheetRows,
-        }
-      })
-      .filter(Boolean)
+  //       return {
+  //         title: sanitizeSheetName(gridName, `Sheet${idx + 1}`),
+  //         columns: sheetColumns,
+  //         rows: sheetRows,
+  //       }
+  //     })
+  //     .filter(Boolean)
 
-    if (!sheets.length) return
+  //   if (!sheets.length) return
 
-    const workbookOptions = { sheets }
+  //   const workbookOptions = { sheets }
 
+  //   try {
+  //     baseRef.save(workbookOptions)
+  //   } catch (err) {
+  //     console.error('Export save failed:', err)
+  //   }
+  // }, [gridNames, dataMap])
+
+  const exportAllGrids = async () => {
     try {
-      baseRef.save(workbookOptions)
-    } catch (err) {
-      console.error('Export save failed:', err)
+      setLoading(true)
+
+      if (!PLANT_ID || !AOP_YEAR) {
+        throw new Error('Plant ID or year not found in localStorage')
+      }
+
+      const payload = []
+
+      // Await the API call here to ensure completion
+      const data = await DataService.getExcel(keycloak, payload)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Report downloaded successfully!',
+        severity: 'success',
+      })
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
+      setLoading(false)
     }
-  }, [gridNames, dataMap])
+  }
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
