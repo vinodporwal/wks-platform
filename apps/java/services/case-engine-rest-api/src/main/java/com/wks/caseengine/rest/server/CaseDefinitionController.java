@@ -165,6 +165,15 @@ public class CaseDefinitionController {
 		}
 	}
 
+    @GetMapping(value = "/groups")
+    public ResponseEntity<List<?>> getRecommondationGroups() {
+        try {
+            return ResponseEntity.ok(caseDefinitionService.getGroupsList());
+        } catch (CaseDefinitionNotFoundException e) {
+            throw new RestResourceNotFoundException(e.getMessage());
+        }
+    }
+
 	@GetMapping(value = "/funcational-locations")
 	public ResponseEntity<List<FunctionalLocation>> getRecommondationUsers(@RequestParam String assetName) {
 		try {

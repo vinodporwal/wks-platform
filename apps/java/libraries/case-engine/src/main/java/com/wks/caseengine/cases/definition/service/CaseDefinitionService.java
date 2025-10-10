@@ -18,11 +18,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.wks.caseengine.cases.definition.CaseDefinition;
-import com.wks.caseengine.rest.db2.entity.Case;
-import com.wks.caseengine.rest.db2.entity.CaseCauseCategory;
-import com.wks.caseengine.rest.db2.entity.CaseCauseDescription;
-import com.wks.caseengine.rest.db2.entity.CaseStatus;
-import com.wks.caseengine.rest.db2.entity.FaultCategory;
+import com.wks.caseengine.rest.db2.entity.*;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
@@ -63,6 +59,8 @@ public interface CaseDefinitionService {
 	List<Users> getUserList();
 
 	List<com.wks.caseengine.rest.db2.entity.Users> getUsersList();
+    List<Groups>  getGroupsList();
+
 
 	List<FunctionalLocation> getFunctionalLocations(String AssetName);
 

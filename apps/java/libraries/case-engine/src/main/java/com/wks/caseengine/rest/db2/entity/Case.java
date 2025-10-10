@@ -1,8 +1,10 @@
 package com.wks.caseengine.rest.db2.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,15 +13,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.wks.caseengine.rest.model.Attribute;
 import com.wks.caseengine.rest.model.AttributesConverter;
 import com.wks.caseengine.rest.model.ListToStringConverter;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 
 @Entity
 @Table(name ="Cases")
@@ -71,9 +64,17 @@ public class Case {
     @Column(name = "case_url")
     private String caseUrl;
 
-    @ManyToOne
-    @JoinColumn(name = "assigned_to", nullable = true)
-    private Users assignedTo;
+
+//    @JoinColumn(name = "assigned_to", nullable = true)
+//    private Users assignedTo;
+
+    @ManyToMany
+    @JoinTable(name = "case-users",
+      joinColumns = @JoinColumn(name = "case_id"),
+      inverseJoinColumns = @JoinColumn(name = "user_id")  )
+      List<Users> assignedTo = new ArrayList<>();
+
+
 	public String getCaseNo() {
 		return caseNo;
 	}
@@ -186,10 +187,10 @@ public class Case {
 		this.caseUrl = caseUrl;
 	}
 
-	public Users getAssignedTo() {
+	public List<Users> getAssignedTo() {
 		return assignedTo;
 	}
-	public void setAssignedTo(Users assignedTo) {
+	public void setAssignedTo(List<Users> assignedTo) {
 		this.assignedTo = assignedTo;
 	}
 	@Override

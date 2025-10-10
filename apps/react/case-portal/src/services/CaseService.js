@@ -8,8 +8,10 @@ export const CaseService = {
   getCaseDefinitions,
   getCaseDefinitionsById,
   getCaseById,
+  getCaseByBusinessKey,
   filterCase,
   createCase,
+  createdSaveCase,
   patch,
   addDocuments,
   addComment,
@@ -206,7 +208,7 @@ async function createCase(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case`
 
   try {
-    const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
+   // const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
@@ -214,7 +216,8 @@ async function createCase(keycloak, body) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${keycloak.token}`,
       },
-      body: bodyWithDates,
+      //body: bodyWithDates,
+      body: body,
     })
     return json(keycloak, resp)
   } catch (err) {
@@ -222,12 +225,32 @@ async function createCase(keycloak, body) {
     return await Promise.reject(err)
   }
 }
+async function createdSaveCase(keycloak, body) {
+  const url = `${Config.CaseEngineUrl}/case/save`
 
+  try {
+   // const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${keycloak.token}`,
+      },
+      //body: bodyWithDates,
+      body: body,
+    })
+    return json(keycloak, resp)
+  } catch (err) {
+    console.log(err)
+    return await Promise.reject(err)
+  }
+}
 async function saveCase(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-case`
 
   try {
-    const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
+    //const bodyWithDates = {...body, lastUpdated: moment().toISOString()}; 
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
@@ -235,7 +258,8 @@ async function saveCase(keycloak, body) {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${keycloak.token}`,
       },
-      body: bodyWithDates,
+     // body: bodyWithDates,
+      body: body,
     })
     return json(keycloak, resp)
   } catch (err) {
@@ -243,6 +267,7 @@ async function saveCase(keycloak, body) {
     return await Promise.reject(err)
   }
 }
+
 
 async function saveRecommendation(keycloak, body) {
   const url = `${Config.CaseEngineUrl}/case-definition/save-recommendation`;
@@ -410,5 +435,36 @@ async function saveAnalysis(keycloak, body) {
   } catch (err) {
     console.log(err)
     return await Promise.reject(err)
+  }
+}
+
+// Fetch a case (or cases) by businessKey. Returns the same mapped shape as filterCase (data, paging).
+async function getCaseByBusinessKey(keycloak, caseDefId = '', businessKey) {
+  if (!businessKey) {
+    return Promise.resolve({ data: [], paging: {} })
+  }
+
+  let url = `${Config.CaseEngineUrl}/case?businessKey=${encodeURIComponent(
+    businessKey,
+  )}`
+
+  if (caseDefId) {
+    url += `&caseDefinitionId=${caseDefId}`
+  }
+
+  // limit to 1 to be efficient
+  url += `&limit=1`
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { headers })
+    const data = await json(keycloak, resp)
+    return mapperToCase(data)
+  } catch (e) {
+    console.error('Error fetching case by businessKey:', e)
+    return await Promise.reject(e)
   }
 }

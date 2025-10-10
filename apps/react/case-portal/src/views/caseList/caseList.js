@@ -81,7 +81,7 @@ export const CaseList = ({ status, caseDefId }) => {
   const [fetching, setFetching] = useState(false)
   const [filter, setFilter] = useState({
     sort: '',
-    limit: 100,
+    limit: 100000,
     after: '',
     before: '',
     cursors: {},
@@ -96,8 +96,11 @@ export const CaseList = ({ status, caseDefId }) => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const currentPath = location.pathname;
+  // If either businessKey or caseNo is present in the URL we should treat this as a "view" request
+  const queryHasBusinessKey = searchParams.has('businessKey') || searchParams.has('caseNo');
+  // Only treat '/case/create' as an auto-create path. '/case-list/create' should show the list page.
   const isCaseCreatePath = currentPath && currentPath === '/case/create';
-  const isCaseViewPath = currentPath && currentPath === '/case/view';
+  const isCaseViewPath = queryHasBusinessKey || (currentPath && (currentPath === '/case/view' || currentPath === '/case-list/view'));
   let createButtonRef = useRef(null);
   let caseBusinessKey = null;
   const [accepted, setAccepted] = useState(false);
@@ -135,7 +138,8 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   useEffect(() => {
-    if(isCaseCreatePath && !error && !accepted ) {
+    // Do not auto-open the 'create new case' form when a businessKey/caseNo is present in the URL
+    if (isCaseCreatePath && !queryHasBusinessKey && !error && !accepted) {
       const fireEvent = (el, eventName) => {
         const event = new Event(eventName, { bubbles: true });
         el.dispatchEvent(event);
@@ -185,19 +189,145 @@ export const CaseList = ({ status, caseDefId }) => {
   }, [])
 
   useEffect(() => {
-	const isNavToView = (isCaseViewPath && !error && caseBusinessKey);
+    const isNavToView = (isCaseViewPath && !error && caseBusinessKey);
 
-	fetchCases(
-      setFetching,
-      keycloak,
-      caseDefId,
-      setStages,
-      status,
-      filter,
-      setCases,
-      setFilter,
-      isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
-    );
+    if (queryHasBusinessKey && caseBusinessKey) {
+      // Use getCasesById (which returns cases filtered by asset/hierarchy) and try to match the caseNo
+      setFetching(true);
+      try {
+        const searchParamsWindow = new URLSearchParams(window.location.search);
+        const assetName = searchParamsWindow.get('assetName') || 'defaultAssetName';
+        const hierarchyName = searchParamsWindow.get('hierarchyName') || 'defaultHierarchyName';
+
+        CaseService.getCasesById(keycloak, caseDefId, assetName, hierarchyName)
+          .then((resp) => {
+            const caseList = Array.isArray(resp) ? resp : [];
+
+            const updatedCases = caseList.map((singleCase) => {
+              let caseTitle = '';
+              let caseNumber = singleCase.caseNo || singleCase.businessKey || singleCase.caseNumber;
+
+              try {
+                const attributes =
+                  typeof singleCase.attributes === 'string'
+                    ? JSON.parse(singleCase.attributes)
+                    : singleCase.attributes;
+
+                const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
+
+                if (containerValue) {
+                  const parsedValue = typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue;
+                  caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle || '';
+                  caseNumber = caseNumber || parsedValue?.caseNo || parsedValue?.businessKey || parsedValue?.caseNumber;
+                }
+              } catch (error) {
+                console.error('Error parsing container value:', error);
+              }
+
+              return {
+                ...singleCase,
+                caseTitle,
+                caseNumber,
+              };
+            });
+
+            setCases(updatedCases);
+            setFilter({
+              ...filter,
+              cursors: {},
+              hasPrevious: false,
+              hasNext: false,
+            });
+
+            const caseNoParam = caseBusinessKey || searchParamsWindow.get('caseNo') || searchParamsWindow.get('businessKey');
+            if (caseNoParam) {
+              const target = String(caseNoParam);
+              const selectedCase = updatedCases.find((c) => {
+                if (!c) return false;
+                const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
+                try {
+                  const attributes =
+                    typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
+                  const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
+                  const parsedContainer = containerValue ? (typeof containerValue === 'string' ? JSON.parse(containerValue) : containerValue) : {};
+                  candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
+                } catch (e) {
+                  // ignore
+                }
+                return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
+              });
+
+              if (selectedCase && setACase) {
+                setACase(selectedCase);
+                setOpenCaseForm(true);
+
+                // Remove 'caseNo' and 'businessKey' from the URL without reloading
+                searchParamsWindow.delete('caseNo');
+                searchParamsWindow.delete('businessKey');
+                const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
+                window.history.replaceState(null, '', newUrl);
+                return;
+              }
+            }
+
+            // If not found, fallback to full list fetch behavior
+            fetchCases(
+              setFetching,
+              keycloak,
+              caseDefId,
+              setStages,
+              status,
+              filter,
+              setCases,
+              setFilter,
+              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+            );
+          })
+          .catch((err) => {
+            console.error('Error in getCasesById for nav-to-view', err);
+            fetchCases(
+              setFetching,
+              keycloak,
+              caseDefId,
+              setStages,
+              status,
+              filter,
+              setCases,
+              setFilter,
+              isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+            );
+          })
+          .finally(() => {
+            setFetching(false);
+          });
+      } catch (err) {
+        console.error('nav-to-view error', err);
+        fetchCases(
+          setFetching,
+          keycloak,
+          caseDefId,
+          setStages,
+          status,
+          filter,
+          setCases,
+          setFilter,
+          isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+        );
+        setFetching(false);
+      }
+    } else {
+      fetchCases(
+        setFetching,
+        keycloak,
+        caseDefId,
+        setStages,
+        status,
+        filter,
+        setCases,
+        setFilter,
+        isNavToView ? [isNavToView, caseBusinessKey, setACase, setOpenCaseForm, setAccepted, setError, handleCloseSnack] : null
+      );
+    }
   }, [caseDefId, status, openNewCaseForm])
 
   useEffect(() => {
@@ -431,18 +561,18 @@ export const CaseList = ({ status, caseDefId }) => {
     ]
   }
 
-  const handleOpenCaseForm = (selectedCase) => {
-    setACase(selectedCase);  // Set the selected case to be displayed in the form
-    setOpenCaseForm(true);   // Open the case form modal
-  };
+  // const handleOpenCaseForm = (selectedCase) => {
+  //   setACase(selectedCase);  // Set the selected case to be displayed in the form
+  //   setOpenCaseForm(true);   // Open the case form modal
+  // };
 
-  const handlePageChange = (event) => {
-    const newPage = {
-      limit: event.page.take,
-      skip: event.page.skip,
-    };
-    fetchCases(setFetching, keycloak, caseDefId, setStages, status, newPage, setCases, setFilter);
-  };
+  // const handlePageChange = (event) => {
+  //   const newPage = {
+  //     limit: event.page.take,
+  //     skip: event.page.skip,
+  //   };
+  //   fetchCases(setFetching, keycloak, caseDefId, setStages, status, newPage, setCases, setFilter);
+  // };
 
   const handleCloseCaseForm = () => {
     setOpenCaseForm(false)
@@ -517,6 +647,7 @@ export const CaseList = ({ status, caseDefId }) => {
   )
 
   const handlerNextPage = () => {
+    console.log("handlerNextPage");
     setFetching(true)
 
   const next = {
@@ -624,6 +755,7 @@ export const CaseList = ({ status, caseDefId }) => {
           getItemAriaLabel={() => ''}
           labelDisplayedRows={() => ''}
           onPageChange={(e, type) => {
+            console.log("onPageChange", e, type);
             const action = {
               next: handlerNextPage,
               back: handlerPriorPage,
@@ -732,7 +864,10 @@ export const CaseList = ({ status, caseDefId }) => {
                   rows={cases}
                   columns={makeColumns()}
                   getRowId={(row) => {
-                    return generateRandom();
+                  //  return generateRandom();
+                 //   return row.businessKey ?? row.caseNo ?? row.id ?? row._id ?? generateRandom();
+                      return row?.businessKey ?? row?.caseNo ?? row?.id ?? row?._id ?? generateRandom();
+
                     //console.log((isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id)
                     //return (isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id
                   }}
@@ -792,6 +927,7 @@ export const CaseList = ({ status, caseDefId }) => {
                 cases={cases}
                 caseDefId={caseDefId}
                 setACase={setACase}
+				handleClose={handleCloseCaseForm}
                 setOpenCaseForm={setOpenCaseForm}
               />
             </Suspense>
@@ -852,6 +988,7 @@ function fetchCases(
   navToView = null
 ) {
   setFetching(true)
+  console.log("Case List : fetchCases", keycloak, caseDefId, status, filter)
 
   CaseService.getCaseDefinitionsById(keycloak, caseDefId)
     .then((resp) => {
@@ -898,16 +1035,31 @@ function fetchCases(
         hasNext: paging.hasNext,
       })
 	  
-	  if(navToView && navToView[0]) {
-        const selectedCase = uniqueUpdatedCases.find((c) => c.businessKey == navToView[1]);
+      if (navToView && navToView[0]) {
+        const target = String(navToView[1]);
+        const selectedCase = uniqueUpdatedCases.find((c) => {
+          if (!c) return false;
+          const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
+          try {
+            const attributes =
+              typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
+            const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
+            const parsedContainer = containerValue ? JSON.parse(containerValue) : {};
+            candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
+          } catch (e) {
+            // ignore parse errors
+          }
+          return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
+        });
+
         if (selectedCase && navToView[2]) {
-          navToView[2]({...selectedCase});
+          navToView[2]({ ...selectedCase });
           navToView[3](true);
           navToView[4](true);
           navToView[5](false);
           navToView[6]();
         }
-	  }
+      }
     })
     .finally(() => {
       setFetching(false)

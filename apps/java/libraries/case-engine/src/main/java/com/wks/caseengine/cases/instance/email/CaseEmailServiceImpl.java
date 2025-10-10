@@ -13,11 +13,9 @@ package com.wks.caseengine.cases.instance.email;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
+import kotlin.collections.UArraySortingKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -82,7 +80,7 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 
     @Async
 //	@Override
-	public void send(String from1, String to, String subject, String[] cc, String bcc,
+	public void send(String from1, String[] to, String subject, String[] cc, String bcc,
 			List<MultipartFile> attachments, String templateName, Map<String, Object> placeholders) {
 		 try {
 	            MimeMessage message = mailSender.createMimeMessage();
@@ -115,7 +113,7 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 	                }
 	            }
 	            System.out.println("From Email "+ from);
-	            System.out.println("To Email "+ to);
+	            System.out.println("To Email "+ Arrays.toString(to));
 
 	            mailSender.send(message);
 	            System.out.println("ratnesh email send");

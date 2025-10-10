@@ -25,6 +25,7 @@ public class Users {
     @Column(name = "FirstName", length = 50)
 	private String firstName;
 
+
     @Column(name = "LastName", length = 50)
     private String lastName;
 
@@ -36,6 +37,9 @@ public class Users {
 
     @Column(name = "UserClusteredId", nullable = false)
     private Integer userClusteredId;
+
+    @Column(name = "GroupId", length = 100)
+    private String groupId;
 
 	public String getUserPkId() {
 		return userPkId;

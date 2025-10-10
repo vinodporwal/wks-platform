@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import CloseIcon from '@mui/icons-material/Close'
-import { Box, Tooltip, CircularProgress } from '@mui/material'
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive' // Missing import
+import {
+  Box,
+  Tooltip,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle, // Missing import
+  DialogContent, // Missing import
+  DialogContentText, // Missing import
+  DialogActions, // Missing import
+} from '@mui/material'
 import AppBar from '@mui/material/AppBar'
 import Button from '@mui/material/Button'
-import Dialog from '@mui/material/Dialog'
 import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import Slide from '@mui/material/Slide'
@@ -42,7 +52,67 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  // ---------- ROLE LOGIC: viewer vs creator ----------
+  if (!keycloak || !keycloak.idTokenParsed) {
+    console.log('Keycloak or idTokenParsed missing:', keycloak)
+    return null
+  }
+
+  // collect roles (realm + client)
+  const realmRoles = keycloak.idTokenParsed.realm_access?.roles || []
+  const clientRoles = keycloak.idTokenParsed.resource_access
+    ? Object.values(keycloak.idTokenParsed.resource_access).flatMap(
+        (client) => client.roles || [],
+      )
+    : []
+  const allRoles = [...realmRoles, ...clientRoles]
+  console.log('all roles: ' + allRoles)
+
+  // independent role flags
+  const hasViewerRole = allRoles.includes('case_viewer')
+  const hasCreatorRole = allRoles.includes('case_creator')
+
+  // who can view? creators should also be able to view
+  const canView = hasViewerRole || hasCreatorRole
+  const canCreate = hasCreatorRole
+
+  // view-only mode when user has viewer role but NOT creator role
+  const viewOnly = hasViewerRole && !hasCreatorRole
+
+  const [showViewOnlyDialog, setShowViewOnlyDialog] = useState(viewOnly)
+
+  const handleCloseViewOnly = () => {
+    setShowViewOnlyDialog(false) // closes the popup
+    handleClose() // also close parent if needed
+  }
+
+  // keep canAnalyze (if you still use it elsewhere)
+  const canAnalyze = allRoles.includes('case_analyst')
+
+  // Show dialog if user cannot view at all
+  const [noAccessOpen, setNoAccessOpen] = useState(true)
+  if (!canView) {
+    return (
+      <Dialog open={noAccessOpen} onClose={() => setNoAccessOpen(false)}>
+        <Box sx={{ p: 4, minWidth: 300 }}>
+          <Typography variant='h6' color='error' sx={{ mb: 2 }}>
+            You do not have permission to view this page.
+          </Typography>
+          <Button
+            variant='contained'
+            color='primary'
+            onClick={() => setNoAccessOpen(false)}
+          >
+            Close
+          </Button>
+        </Box>
+      </Dialog>
+    )
+  }
+  // ---------------------------------------------------
+
   useEffect(() => {
+    
     const params = window.location.search
     setCurrentParams(params)
   }, [])
@@ -51,6 +121,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
         setCaseDef(data)
+       
         return FormService.getByKey(keycloak, data.formKey)
       })
       .then((data) => {
@@ -113,12 +184,29 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
     navigate(`/case-list/create${params}`)
   }
 
+  // ---------- SAVE GUARD uses viewOnly/canCreate ----------
   const onSave = () => {
+    if (viewOnly) {
+      setSnackbarMessages([
+        'You have view-only permission. Cannot create or edit.',
+      ])
+      setSnackbarOpen(true)
+      return
+    }
+    if (!canCreate) {
+      setSnackbarMessages(['You do not have permission to create cases.'])
+      setSnackbarOpen(true)
+      return // stop function here
+    }
+
+    console.log('In new case form page onSave')
     setLoading(true)
 
     const requiredFields = ['caseDescription', 'dueDate', 'faultCategory']
 
-    const faultCategoryValue = formData.data.container.faultCategory
+    // NOTE: You earlier had logic pushing analysis fields conditionally.
+    // If you removed analyst logic, remove this block; if you still need it, keep it.
+    const faultCategoryValue = formData?.data?.container?.faultCategory
     if (faultCategoryValue && faultCategoryValue.endsWith('_false')) {
       requiredFields.push(
         'caseCauseCategory',
@@ -169,6 +257,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+         caseNo: null,
+        businessKey: null,
         owner: {
           id: keycloak.subject || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -195,6 +285,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
+		  caseNo: businessKey,
+			caseNumber: businessKey,
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -210,8 +302,11 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       .then((data) => {
         setLastCreatedCase(data)
         setSnackOpen(true)
+       
         setTimeout(() => {
-          window.location.href = data.caseUrl;
+         window.location.href = data.caseUrl;
+    
+   
           // handleClose()
         }, 1000)
       })
@@ -221,7 +316,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       .finally(() => {
         setLoading(false)
       })
-  }
+   }
 
   const onSubmitRecommendation = () => {
     setSnackbarMessages(['Cannot submit recommendation without a case number.'])
@@ -234,7 +329,20 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
     return
   }
 
+  // ---------- SUBMIT FORM GUARD ----------
   const onSubmitForm = () => {
+    if (viewOnly) {
+      setSnackbarMessages(['You have view-only permission. Cannot submit.'])
+      setSnackbarOpen(true)
+      return
+    }
+    if (!canCreate) {
+      setSnackbarMessages(['You do not have permission to create cases.'])
+      setSnackbarOpen(true)
+      return // stop function here
+    }
+
+    console.log('In new case form page : onSubmitForm')
     setLoading(true)
     const requiredFields = ['caseTitle']
     const missingFields = requiredFields.filter(
@@ -269,6 +377,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
       keycloak,
       JSON.stringify({
         caseDefinitionId: caseDefId,
+      caseNo: null,
+        businessKey: null,
         owner: {
           id: keycloak.subject || '',
           // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -290,11 +400,13 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           JSON.stringify({
             caseDefinitionId: caseDefId,
             assetName: assetName,
-            isDraft: 'y',
+            isDraft: 'n',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
             businessKey: businessKey,
+	 		caseNo: businessKey,
+			caseNumber: businessKey,	
             owner: {
               id: keycloak.subject || '',
               // id: '0fcfac9f-acf8-4a59-8992-0006bb6909c5',
@@ -304,7 +416,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+           // assignedTo: {emailId: formData.data.container.caseAssignedTo}
+           assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
@@ -320,7 +433,9 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         console.error(err.message)
       })
       .finally(() => {
+       
         setLoading(false)
+     
       })
   }
 
@@ -330,8 +445,9 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
         color='primary'
         size='small'
         onClick={() => {
+          navigate(`/case-list/create${currentParams}`)
           handleCloseSnack()
-		  navigate(`/case-list/create${currentParams}`)
+		 
         }}
       >
         {lastCreatedCase.caseNo}
@@ -366,11 +482,14 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               <CloseIcon />
             </IconButton>
             <Typography sx={{ ml: 2, flex: 1 }} component='div'>
-              {caseDef.name}
+              {caseDef.name} 
             </Typography>
-            { <Button color='inherit' onClick={onSave}>
-              Save As Draft
-            </Button>}			
+            {/* Save button visible only if user can create (not view-only) */}
+            {canCreate && (
+              <Button color='inherit' onClick={onSave}>
+                Save As Draft
+              </Button>
+            )}
           </Toolbar>
         </AppBar>
 
@@ -387,7 +506,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                 </Tooltip>
               )}
               <Typography variant='h5' sx={{ ml: 1 }}>
-                {form.title}
+                {form.title} 
               </Typography>
             </Box>
 
@@ -397,6 +516,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               submission={formData}
               options={{
                 fileService: new StorageService(),
+                readOnly: viewOnly, // READ-ONLY for view-only users
               }}
               // onSubmit={(submission) => {
               //   console.log('Validation passed:', true)
@@ -409,8 +529,14 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                 setValidationSnackbarOpen(true)
               }}
               onCustomEvent={(event) => {
-                console.log('event event:', event)
-                if (event.component.key === 'saveAsDraft' || event.component.key === 'saveAsDraft1') {
+                // block custom events for view-only users
+                if (viewOnly) {
+                  return
+                }
+                if (
+                  event.component.key === 'saveAsDraft' ||
+                  event.component.key === 'saveAsDraft1'
+                ) {
                   onSubmitForm()
                 } else if (event.component.key === 'RecommendationSubmit3') {
                   onSubmitRecommendation()
@@ -420,6 +546,40 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
                 }
               }}
             />
+
+            {/* Show Alert Dialog if user is view-only */}
+            {viewOnly && (
+              <Dialog
+                open={showViewOnlyDialog}
+                onClose={handleCloseViewOnly}
+                aria-labelledby='view-only-dialog'
+                maxWidth='sm'
+                fullWidth
+              >
+                <DialogTitle id='view-only-dialog'>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <NotificationsActiveIcon color='warning' sx={{ mr: 1 }} />
+                    View-Only Access
+                  </Box>
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText>
+                    You have view-only permission. Creating or editing cases is
+                    disabled.
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button
+                    onClick={handleCloseViewOnly}
+                    variant='contained'
+                    color='primary'
+                    autoFocus
+                  >
+                    OK
+                  </Button>
+                </DialogActions>
+              </Dialog>
+            )}
           </Grid>
         </Grid>
 
