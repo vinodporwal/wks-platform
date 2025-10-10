@@ -349,7 +349,7 @@ const FurnaceRawData = () => {
         })}
       </div>
 
-      <Box display='flex' justifyContent='flex-end' mb='2px'>
+      {/* <Box display='flex' justifyContent='flex-end' mb='2px'>
         <Button
           variant='contained'
           onClick={exportAllGrids}
@@ -357,7 +357,7 @@ const FurnaceRawData = () => {
         >
           Export
         </Button>
-      </Box>
+      </Box> */}
 
       <Box display='flex' flexDirection='column' gap={2}>
         {tabIndex === 0 && (
