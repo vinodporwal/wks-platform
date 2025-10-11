@@ -62,28 +62,31 @@ const BestAchievedNorms = () => {
   }, [])
 
   const enrichColumns = useCallback((backendCols = []) => {
-    return backendCols
-      .filter((col) => col.field !== 'GRID_TYPE')
-      .map((col) => {
-        const isTextCol = col.type === 'string'
-        const isNumberCol = col.type === 'number'
-        return {
-          ...col,
-          title: col.title || col.field,
-          filterable: true,
-          filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
-          align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: '{0:#.##}' } : {}),
-          editable: false,
-          isRightAlligned: isNumberCol ? 'numeric' : undefined,
-          // hide Material FK field (both common casings)
-          hidden:
-            (col.field &&
-              (col.field === 'Material_FK_Id' ||
-                col.field === 'materialFkId')) ||
-            col.hidden,
-        }
-      })
+    const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+    const applyFixedWidth = filteredCols.length > 15
+    const fixedWidth = applyFixedWidth ? 150 : undefined
+
+    return filteredCols.map((col) => {
+      const isTextCol = col.type === 'string'
+      const isNumberCol = col.type === 'number'
+      return {
+        ...col,
+        title: col.title || col.field,
+        filterable: true,
+        filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
+        align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
+        ...(isNumberCol ? { format: '{0:#.##}' } : {}),
+        editable: false,
+        isRightAlligned: isNumberCol ? 'numeric' : undefined,
+        // hide Material FK field (both common casings)
+        hidden:
+          (col.field &&
+            (col.field === 'Material_FK_Id' || col.field === 'materialFkId')) ||
+          col.hidden,
+        // set fixed width when total cols > 15
+        ...(fixedWidth ? { widthT: fixedWidth } : {}),
+      }
+    })
   }, [])
 
   // ---------------------------------------------------------------------------

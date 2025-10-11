@@ -22,6 +22,7 @@ import {
   Typography,
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
+import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 
 const AopDesignBasisNorms = () => {
   const hasExecutedRef = useRef(false)
@@ -88,44 +89,6 @@ const AopDesignBasisNorms = () => {
 
     getConfigurationExecutionDetailsNorms()
   }, [plantID, AOP_YEAR])
-
-  const saveSummary = async () => {
-    try {
-      const response = await DataService.saveSummaryAOPConsumptionNorm(
-        PLANT_ID,
-        AOP_YEAR,
-        summary,
-        keycloak,
-      )
-
-      if (response?.code == 200) {
-        setSnackbarData({
-          message: 'Saved Successfully!',
-          severity: 'success',
-        })
-        setLoading(false)
-        setSnackbarOpen(true)
-        // setIsEdited(false)
-      } else {
-        setSnackbarData({
-          message: 'Saved Failed!',
-          severity: 'error',
-        })
-        setLoading(false)
-        // setSnackbarOpen(true)
-      }
-
-      //
-
-      // setLoading(false)
-      return response
-    } catch (error) {
-      console.error('Error saving Summary!', error)
-    } finally {
-      //
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
     if (!plantID || !AOP_YEAR) {
@@ -350,6 +313,15 @@ const AopDesignBasisNorms = () => {
           severity: 'success',
         })
         getConfigurationExecutionDetailsNorms()
+
+        const response = await NormalOperationNormsApiService.load2(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          endDate(endDate),
+          formatDate(startDate),
+        )
+
         setLoading(false)
       } else {
         setSnackbarOpen(true)
