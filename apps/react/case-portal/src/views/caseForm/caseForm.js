@@ -1,5 +1,3 @@
-
-
 /* eslint-disable no-unused-vars */
 import QuestionCircleOutlined from '@ant-design/icons/QuestionCircleOutlined'
 import CloseIcon from '@mui/icons-material/Close'
@@ -471,7 +469,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
+		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
@@ -556,7 +555,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            assignedTo: {emailId: formData.data.container.caseAssignedTo}
+          //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
+		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
@@ -819,8 +819,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            // assignedTo: {emailId: formData.data.container.caseAssignedTo}
-			assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+          //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
+		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
         )
       })
@@ -1202,33 +1202,6 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
     }
   }
 
-  // Role-based access control (copy from NewCaseFormPage)
-const realmRoles = keycloak?.idTokenParsed?.realm_access?.roles || [];
-const clientRoles = keycloak?.idTokenParsed?.resource_access
-  ? Object.values(keycloak.idTokenParsed.resource_access)
-      .flatMap((client) => client.roles || [])
-  : [];
-const allRoles = [...realmRoles, ...clientRoles];
-const canCreate = allRoles.includes('case_creator');
-const canView = allRoles.includes('case_viewer');
-
-// Show dialog with error and close if no view access
-const [noAccessOpen, setNoAccessOpen] = useState(true);
-if (!canView) {
-  return (
-    <Dialog open={noAccessOpen} onClose={() => setNoAccessOpen(false)}>
-      <Box sx={{ p: 4, minWidth: 300 }}>
-        <Typography variant="h6" color="error" sx={{ mb: 2 }}>
-          You do not have permission to view this page.
-        </Typography>
-        <Button variant="contained" color="primary" onClick={() => setNoAccessOpen(false)}>
-          Close
-        </Button>
-      </Box>
-    </Dialog>
-  );
-}
-
   return (
     aCase &&
     caseDef &&
@@ -1442,7 +1415,6 @@ if (!canView) {
                         options={{
                           // readOnly: true,
                           fileService: new StorageService(),
-                          readOnly: !canCreate,
                         }}
                         // onSubmit={(submission) => {
                         //   console.log('Validation passed:', true)

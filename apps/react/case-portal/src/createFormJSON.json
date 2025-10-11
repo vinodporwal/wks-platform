@@ -1,5 +1,4 @@
-{
-    "key": "case-management-system",
+{    "key": "case-management-system",
     "title": "XOM Case Management System",
     "structure": {
         "components": [
@@ -281,7 +280,7 @@
                                     {
                                         "components": [
                                             {
-                                                "label": "Case Assigned To Test3",
+                                                "label": "Case Assigned To",
                                                 "widget": "choicesjs",
                                                 "customClass": "custom-select-height",
                                                 "tableView": true,
