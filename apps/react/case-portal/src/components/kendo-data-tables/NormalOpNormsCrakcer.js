@@ -208,7 +208,7 @@ const NormalOpNormsScreenCracker = () => {
     () => [
       {
         field: 'isChecked',
-        type: 'switch',
+        type: 'switch2',
         widthT: 30,
         filter: false,
       },
