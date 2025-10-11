@@ -90,6 +90,7 @@ export const monthMap = {
 
 const KendoDataTables = ({
   showCatChemUtilityCheckbox = false,
+  showCatChemUtilityCheckbox2 = false,
   rows = [],
   plantID = null,
   grades = [],
@@ -948,6 +949,7 @@ const KendoDataTables = ({
   }
 
   const CHECK_TYPES = ['cat chem', 'utility consumption']
+  const CHECK_TYPES2 = ['raw material', 'by products']
 
   return (
     <div style={{ position: 'relative' }}>
@@ -1844,6 +1846,69 @@ const KendoDataTables = ({
                           if (
                             showCatChemUtilityCheckbox &&
                             !CHECK_TYPES.includes(normType)
+                          ) {
+                            return <td />
+                          }
+
+                          if (
+                            showCatChemUtilityCheckbox2 &&
+                            !CHECK_TYPES2.includes(normType)
+                          ) {
+                            return <td />
+                          }
+
+                          return (
+                            <td style={{ textAlign: 'center' }}>
+                              <Checkbox
+                                checked={!!props.dataItem[props.field]}
+                                onChange={(e) => {
+                                  const checked =
+                                    e?.value ?? e?.target?.checked ?? false
+                                  handleCheckboxChange(props, checked)
+                                }}
+                              />
+                            </td>
+                          )
+                        },
+                        headerCell: BlankHeader,
+                      }}
+                    />
+                  )
+                }
+
+                if (col.type === 'switch2') {
+                  const handleCheckboxChange = (props, value) => {
+                    const { dataItem, field } = props
+                    const { materialName, id } = dataItem
+
+                    onGlobalCheckboxChange(
+                      gridName,
+                      id,
+                      materialName,
+                      field,
+                      value,
+                      dataItem,
+                    )
+                  }
+
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title='.'
+                      width={col.widthT}
+                      hidden={col.hidden}
+                      editable={true}
+                      cells={{
+                        data: (props) => {
+                          const dataItem = props.dataItem || {}
+                          const normType = (dataItem.Particulars || '')
+                            .toString()
+                            .toLowerCase()
+
+                          if (
+                            showCatChemUtilityCheckbox2 &&
+                            CHECK_TYPES2.includes(normType)
                           ) {
                             return <td />
                           }

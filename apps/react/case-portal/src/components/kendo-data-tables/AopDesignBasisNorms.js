@@ -318,7 +318,7 @@ const AopDesignBasisNorms = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-          endDate(endDate),
+          formatDate(endDate),
           formatDate(startDate),
         )
 
