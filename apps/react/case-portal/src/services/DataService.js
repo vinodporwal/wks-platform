@@ -151,11 +151,15 @@ export const DataService = {
   saveShutdownRateExcel,
   getConfigurationExecutionDetailsNorms,
   executeConfigurationNorms,
-  getPioImpactData,
-  savePioImpactData,
-  deletePIOImpact,
-
   getProductionTargetBasis,
+  ImportShutdownDetails,
+  shutdownDetailsExport,
+  slowdownDetailsExport,
+  ImportSlowdownDetails,
+
+  getConfigurationExcelType,
+
+  getProductionReports,
 }
 
 async function miisData(keycloak, reportType, periodFrom, periodTo, mode) {
@@ -2021,11 +2025,12 @@ async function maintenacegetdata(keycloak, budgetCategory) {
     return await Promise.reject(e)
   }
 }
-async function savemaintenacegetdata(maintenancedetails, keycloak) {
-  const storedPlant = localStorage.getItem('selectedPlant')
-  const parsedPlant = JSON.parse(storedPlant)
-  var year = localStorage.getItem('year')
-
+async function savemaintenacegetdata(
+  maintenancedetails,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
   // Only encode plantId and year, leave budgetCategory as-is
   const url = `${Config.CaseEngineUrl}/task/budget-maintenance`
   const headers = {
@@ -2045,16 +2050,13 @@ async function savemaintenacegetdata(maintenancedetails, keycloak) {
     return await Promise.reject(e)
   }
 }
-async function maintenaceExportdata(keycloak, budgetCategory) {
-  const year = localStorage.getItem('year')
-  let plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
-
-  let url = `${Config.CaseEngineUrl}/task/budget-maintenance-export-excel?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+async function maintenaceExportdata(
+  keycloak,
+  budgetCategory,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  let url = `${Config.CaseEngineUrl}/task/budget-maintenance-export-excel?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
   //  if (budgetCategory) {
   //     url += `&budgetCategory=${encodeURIComponent(budgetCategory)}`
   //   }
@@ -2089,11 +2091,8 @@ async function maintenaceExportdata(keycloak, budgetCategory) {
   }
 }
 
-async function maintenaceImportExceldata(file, keycloak) {
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const year = localStorage.getItem('year')
-
-  const url = `${Config.CaseEngineUrl}/task/budget-maintenance-import-excel?plantId=${plantId}&year=${year}`
+async function maintenaceImportExceldata(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/budget-maintenance-import-excel?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const formData = new FormData()
   formData.append('file', file)
 
@@ -3549,70 +3548,148 @@ async function getProductionTargetBasis(keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-
-async function savePioImpactData(payload, keycloak) {
-  var plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
-  var year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/pio-impact?year=${year}&plantId=${plantId}`
+export async function ImportShutdownDetails(file, keycloak, plantId, year) {
+  const maintenanceTypeName = 'Shutdown'
+  const url = `${Config.CaseEngineUrl}/task/shutdown-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const formData = new FormData()
+  formData.append('file', file)
   const headers = {
     Accept: 'application/json',
-    'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
     const resp = await fetch(url, {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload),
+      body: formData,
     })
-    return json(keycloak, resp)
+    return await resp.json()
   } catch (e) {
-    console.log(e)
+    console.error('Error importing Shutdown Excel:', e)
     return Promise.reject(e)
   }
 }
-async function deletePIOImpact(id, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/pio-impact?id=${id}`
+export async function shutdownDetailsExport(keycloak, plantId, year) {
+  const maintenanceTypeName = 'Shutdown'
+  const url = `${Config.CaseEngineUrl}/task/shutdown-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'shutdown.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function ImportSlowdownDetails(file, keycloak, plantId, year) {
+  const maintenanceTypeName = 'Slowdown'
+  const url = `${Config.CaseEngineUrl}/task/slowdown-import?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const formData = new FormData()
+  formData.append('file', file)
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
     const resp = await fetch(url, {
-      method: 'DELETE',
+      method: 'POST',
       headers,
+      body: formData,
     })
-    if (!resp.ok) {
-      throw new Error(
-        `Failed to delete data: ${resp.status} ${resp.statusText}`,
-      )
-    }
-    // Return proper response object with status code
-    return { code: resp.status, message: await resp.text() }
+    return await resp.json()
   } catch (e) {
-    console.error('Error deleting PIO Impact data:', e)
+    console.error('Error importing Slowdown Excel:', e)
     return Promise.reject(e)
   }
 }
-async function getPioImpactData(keycloak) {
-  var plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
+export async function slowdownDetailsExport(keycloak, plantId, year) {
+  const maintenanceTypeName = 'Slowdown'
+  const url = `${Config.CaseEngineUrl}/task/slowdown-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
   }
-  var year = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/pio-impact?year=${year}&plantId=${plantId}`
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'slowdown.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Slowdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getConfigurationExcelType(keycloak, PLANT_ID, AOP_YEAR, type) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}&reportType=${type}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'Production & Norms Basis.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing Config data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getProductionReports(keycloak, PLANT_ID, AOP_YEAR, REPORT_TYPE) {
+  let url = `${Config.CaseEngineUrl}/task/production-reports?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${REPORT_TYPE}`
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
   }
+
   try {
     const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)

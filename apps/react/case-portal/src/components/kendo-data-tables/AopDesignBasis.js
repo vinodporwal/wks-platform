@@ -1,5 +1,7 @@
 import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
+import { verticalEnums } from 'enums/verticalEnums'
+// import { usePermissions } from 'hooks/usePermissions'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -47,6 +49,7 @@ const AopDesignBasis = () => {
   const [productionRows, setProductionRows] = useState([])
   const [elastomerRows, setElastomerRows] = useState([])
   const [productionRowsConstants, setProductionRowsConstants] = useState([])
+  const [pioImpactRows, setPioImpactRows] = useState([])
   const [
     productionRowsConstantsMannualEntry,
     setProductionRowsConstantsMannualEntry,
@@ -78,6 +81,9 @@ const AopDesignBasis = () => {
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
   const [gradeId, setGradeId] = React.useState(null)
 
+  // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
+  //   usePermissions()
+
   const handleOpenDialog = () => {
     setOpenConfirmDialog(true)
   }
@@ -87,6 +93,264 @@ const AopDesignBasis = () => {
   const handleConfirmLoad = () => {
     setOpenConfirmDialog(false)
     onLoad()
+  }
+  const fetchPioImpactData = async () => {
+    setLoading(true)
+    try {
+      var data = await DataService.getPioImpactData(keycloak)
+
+      if (data?.code === 200) {
+        const formattedData = data.data.map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remarks,
+          description: item.description,
+          startMonth: item.startMonth,
+          endMonth: item.endMonth,
+          value: item.value,
+          remarks: item.remarks,
+          Particulars: 'PIO Impact', // Assuming 'description' is the field to group by
+          isEditable: true,
+        }))
+
+        setPioImpactRows(formattedData)
+      } else {
+        setPioImpactRows([])
+      }
+    } catch (error) {
+      console.error('Error fetching PIO Impact data:', error)
+      setPioImpactRows([])
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    if (tabIndex === 3 && lowerVertName === 'aromatics') {
+      fetchPioImpactData()
+    }
+  }, [tabIndex, lowerVertName])
+
+  const fetchData = async (gradeId = null) => {
+    setProductionRows([])
+    setProductionRowsConstants([])
+    setProductionRowsConstantsMannualEntry([])
+    setLoading(true)
+
+    try {
+      setLoading(true)
+      var data = []
+
+      data = await DataService.getCatalystSelectivityData(keycloak, gradeId)
+
+      if (
+        lowerVertName == verticalEnums.MEG ||
+        lowerVertName == verticalEnums.CRACKER ||
+        lowerVertName == verticalEnums.ELASTOMER ||
+        lowerVertName === 'aromatics'
+      ) {
+        data = data?.filter((item) => item.normType !== 'Report Manual Entry')
+        const formattedData = data.map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remarks,
+          srNo: index + 1,
+          Particulars: item.normType,
+        }))
+        setProductionRows(formattedData)
+        if (data) {
+          setLoading(false)
+        }
+        // setRows(formattedData)
+      } else {
+        const groups = new Map()
+
+        data.forEach((item) => {
+          const ConfigTypeName = item.ConfigTypeName
+          const TypeName = item.TypeDisplayName
+          if (!groups.has(ConfigTypeName)) {
+            groups.set(ConfigTypeName, new Map())
+          }
+          const normGroup = groups.get(ConfigTypeName)
+          if (!normGroup.has(TypeName)) {
+            normGroup.set(TypeName, [])
+          }
+          normGroup.get(TypeName).push(item)
+        })
+        let groupId = 0
+        let shutdownRows = []
+        let startUpRows = []
+        let otherLossRows = []
+        let continiousGradeRows = []
+        let discontiniousGradeRows = []
+        let constantsRows = []
+        let configurationRows = []
+        groups.forEach((normGroup, ConfigTypeName) => {
+          let rowsForThisCategory = []
+          normGroup.forEach((items, TypeName) => {
+            items.forEach((item) => {
+              rowsForThisCategory.push({
+                ...item,
+                idFromApi: item.id,
+                originalRemark: item.remarks,
+                id: groupId++,
+              })
+            })
+          })
+          if (ConfigTypeName == 'Configuration') {
+            configurationRows = rowsForThisCategory
+          }
+          if (ConfigTypeName == 'ShutdownNorms') {
+            shutdownRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'StartupLosses') {
+            startUpRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Otherlosses') {
+            otherLossRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'ContineGradeChange') {
+            continiousGradeRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'DisContineGradeChange') {
+            discontiniousGradeRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Constant') {
+            constantsRows = rowsForThisCategory
+          }
+        })
+
+        setShutdownRows(shutdownRows)
+        setStartUpRows(startUpRows)
+        setOtherLossRows(otherLossRows)
+        setContiniousGradeData(continiousGradeRows)
+        setDiscontiniousGradeData(discontiniousGradeRows)
+        setConstantsRows(constantsRows)
+        setConfigurationRows(configurationRows)
+      }
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  const fetchDataConstants = async () => {
+    setProductionRowsConstants([])
+    try {
+      var constantsRes =
+        await DataService.getCatalystSelectivityDataConstants(keycloak)
+      if (constantsRes?.code != 200) {
+        setProductionRowsConstants([])
+        return
+      }
+
+      var data = constantsRes?.data
+
+      const formattedData = data.map((item, index) => {
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.Remarks,
+          srNo: index + 1,
+          Particulars: item.NormTypeName,
+          remarks: item.Remarks,
+        }
+      })
+
+      setProductionRowsConstants(formattedData)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
+
+  const fetchDataConstantsMnnualEntry = async () => {
+    setProductionRowsConstantsMannualEntry([])
+    try {
+      var constantsRes = await DataService.getCatalystSelectivityData(keycloak)
+      const formattedData = constantsRes.map((item, index) => ({
+        ...item,
+        idFromApi: item.id,
+        id: index,
+        originalRemark: item.remarks,
+        srNo: index + 1,
+        Particulars: item.normType,
+      }))
+      var data = formattedData?.filter(
+        (item) => item?.Particulars == 'Report Manual Entry',
+      )
+      setProductionRowsConstantsMannualEntry(data)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
+  const fetchGradeData = async () => {
+    setLoading(true)
+    try {
+      var data = await DataService.getPeConfigData(keycloak)
+
+      const formattedData = data?.map((item, index) => {
+        const converted = {}
+
+        Object.entries(item).forEach(([key, value]) => {
+          // Convert numeric strings to numbers
+          if (typeof value === 'string' && !isNaN(value)) {
+            converted[key] = value.includes('.')
+              ? parseFloat(value)
+              : parseInt(value, 10)
+          } else {
+            converted[key] = value
+          }
+        })
+
+        return {
+          ...converted,
+          id: index,
+          TypeDisplayName: item?.TypeDisplayName
+            ? item?.TypeDisplayName
+            : 'Recipe',
+        }
+      })
+
+      setGradeData(formattedData)
+    } catch (error) {
+      console.error('Error fetching grade data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getConfigurationTabsMatrix = async () => {
+    setLoading(true)
+    try {
+      var response = await DataService.getConfigurationTabsMatrix(keycloak)
+      if (response?.code == 200) {
+        const parsedData = JSON.parse(response?.data)
+        setTabs(parsedData)
+        setLoading(false)
+      } else {
+        setTabs([])
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setTabs([])
+      setLoading(false)
+    }
+  }
+  const getConfigurationAvailableTabs = async () => {
+    setLoading(true)
+    try {
+      var response = await DataService.getConfigurationAvailableTabs(keycloak)
+      if (response?.code == 200) {
+        setAvailableTabs(response?.data?.configurationTypeList)
+        setLoading(false)
+      } else {
+        setAvailableTabs([])
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setAvailableTabs([])
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -104,6 +368,17 @@ const AopDesignBasis = () => {
     getAopSummary()
     let vertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
     let verticalName = vertical?.toLowerCase()
+    setTimeout(() => {
+      if (
+        verticalName != 'cracker' &&
+        verticalName != 'meg' &&
+        verticalName != 'elastomer'
+      ) {
+        getConfigurationTabsMatrix()
+        getConfigurationAvailableTabs()
+        fetchGradeData()
+      }
+    }, 500)
   }, [oldYear, yearChanged, keycloak, plantID])
 
   const computeAndSetDates = useCallback(() => {
@@ -131,7 +406,6 @@ const AopDesignBasis = () => {
       setEndDate(fallbackEndDate)
     }
   }, [configurationExecutionDetails, plantID])
-
   useEffect(() => {
     computeAndSetDates()
   }, [computeAndSetDates])
@@ -358,6 +632,10 @@ const AopDesignBasis = () => {
   const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
 
+  const handleGradeChange = (gradeId) => {
+    setGradeId(gradeId)
+  }
+
   const saveSummary = async () => {
     try {
       let plantId = ''
@@ -380,6 +658,7 @@ const AopDesignBasis = () => {
           severity: 'success',
         })
         setSummaryEdited(false)
+
         setLoading(false)
         setSnackbarOpen(true)
         // setIsEdited(false)
@@ -390,7 +669,6 @@ const AopDesignBasis = () => {
         })
         setLoading(false)
         // setSnackbarOpen(true)
-        setSummaryEdited(false)
       }
 
       //
@@ -399,11 +677,9 @@ const AopDesignBasis = () => {
       return response
     } catch (error) {
       console.error('Error saving Summary!', error)
-      setSummaryEdited(false)
     } finally {
       //
       setLoading(false)
-      setSummaryEdited(false)
     }
   }
 
@@ -416,7 +692,7 @@ const AopDesignBasis = () => {
             id='meg-grid-header'
           >
             <Typography className='grid-title'>
-              AOP Historical Period Basis for Production Target
+              AOP Historical Period Basis
             </Typography>
           </CustomAccordionSummary>
           <CustomAccordionDetails>
@@ -494,7 +770,6 @@ const AopDesignBasis = () => {
                     Save
                   </Button>
                 )}
-
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
                     className='summary-title'
@@ -509,7 +784,7 @@ const AopDesignBasis = () => {
               label='AOP Design Basis'
               multiline
               // minRows={isAccordionExpanded ? 4 : 20}
-              minRows={10}
+              minRows={lowerVertName === 'cracker' ? 6 : 2}
               fullWidth
               margin='normal'
               variant='outlined'
@@ -551,34 +826,30 @@ const AopDesignBasis = () => {
     )
   }, [openConfirmDialog])
 
-  if (lowerVertName === 'cracker') {
-    const crackerTabs = ['Configuration', 'Constants']
-    const auditYear = localStorage.getItem('year')
-    let displayYear = ''
-    if (auditYear) {
-      const [start, end] = auditYear.split('-').map(Number)
-      displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
-    }
-    return (
-      <div>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading1}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-        {ConfigurationAccordian}
+  return (
+    <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading1}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+      {ConfigurationAccordian}
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
+      {ConfigurationDialog}
 
-        <Notification
-          open={snackbarOpen}
-          message={snackbarData?.message || ''}
-          severity={snackbarData?.severity || 'info'}
-          onClose={() => setSnackbarOpen(false)}
-        />
-        {ConfigurationDialog}
-      </div>
-    )
-  }
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      ></div>
+    </div>
+  )
 }
-
 export default AopDesignBasis

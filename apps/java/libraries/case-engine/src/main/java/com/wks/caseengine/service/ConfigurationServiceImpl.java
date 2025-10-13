@@ -150,8 +150,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					list.add(dto.getConfigTypeDisplayName());
 					list.add(dto.getTypeDisplayName());
 				}
-				if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
-						|| verticalName.equalsIgnoreCase("CRACKER")) {
+				if ((verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("ELASTOMER"))
+						|| (verticalName.equalsIgnoreCase("CRACKER")) || (verticalName.equalsIgnoreCase("VCM")) 
+						|| (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS"))) {
 					list.add(dto.getNormType());
 				}
 
@@ -296,11 +297,17 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				
 				List<Object> list = new ArrayList<>();
 				list.add(dto.getTypeDisplayName());
+				System.out.println("list.add(dto.getTypeDisplayName());" +dto.getTypeDisplayName());
 				list.add(dto.getProductName());
+				System.out.println("list.add(dto.getTypeDisplayName());" +dto.getProductName());
 				list.add(dto.getApr());
+				System.out.println("list.add(dto.getTypeDisplayName());" +dto.getApr());
 				list.add(dto.getRemarks());
+				System.out.println("list.add(dto.getTypeDisplayName());" +dto.getRemarks());
 				list.add(dto.getNormParameterFKId());
+				System.out.println("list.add(dto.getTypeDisplayName());" +dto.getNormParameterFKId());
 				list.add(dto.getId());
+				System.out.println("list.add(dto.getTypeDisplayName());" +dto.getId());
 				isEditable.add(dto.getIsEditable());
 				
 				if (isAfterSave) {
@@ -657,17 +664,26 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			for (Object[] row : obj) {
 				ConfigurationDTO configurationDTO = new ConfigurationDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+				System.out.println("NormParameterFKId = "+configurationDTO.getNormParameterFKId());
 
 				configurationDTO.setApr(
 						(row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString())
 								: 0.0);
+				System.out.println("Apr = "+configurationDTO.getApr());
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
+				System.out.println("Remarks = "+configurationDTO.getRemarks());
 					configurationDTO.setConfigTypeDisplayName(row[17] != null ? row[17].toString() : "");
+					System.out.println("ConfigTypeDisplayName = "+configurationDTO.getConfigTypeDisplayName());
 					configurationDTO.setTypeDisplayName(row[18] != null ? row[18].toString() : "");
+					System.out.println("TypeDisplayName = "+configurationDTO.getTypeDisplayName());
 					configurationDTO.setConfigTypeName(row[19] != null ? row[19].toString() : "");
+					System.out.println("ConfigTypeName = "+configurationDTO.getConfigTypeName());
 					configurationDTO.setTypeName(row[20] != null ? row[20].toString() : "");
+					System.out.println("TypeName = "+configurationDTO.getTypeName());
 					configurationDTO.setProductName(row[21] != null ? row[21].toString() : "");
+					System.out.println("ProductName = "+configurationDTO.getProductName());
 					configurationDTO.setId(row[14] != null ? row[14].toString() : i + "#");
+					System.out.println("Id = "+configurationDTO.getId());
 				configurationDTOList.add(configurationDTO);
 				if (row[14] == null) {
 					i++;
@@ -1679,7 +1695,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					+ "JOIN NormParameterType NPT ON NP.NormParameterType_FK_Id = NPT.Id "
 					+ "LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.NormParameter_FK_Id "
 					+ "    AND NAT.AuditYear = :year " + "WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant') "
-					+ "  AND NP.Plant_FK_Id = :plantFKId AND NP.ConfigTypeDisplayName = :reportType " + "GROUP BY " + "    NP.NormParameter_FK_Id, "
+					+ "  AND NP.Plant_FK_Id = :plantFKId AND NP.ConfigTypeName = :reportType " + "GROUP BY " + "    NP.NormParameter_FK_Id, "
 					+ "    NP.TypeDisplayName, " + "    NP.TypeDisplayOrder, " + "    NP.ConfigTypeDisplayName, "
 					+ "    NP.ConfigTypeName, " + "    NP.TypeName, " + "    NP.DisplayOrder "
 					+ "ORDER BY NP.TypeDisplayOrder, NP.DisplayOrder";
@@ -2153,8 +2169,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			String procedureName = verticalName + "_GetConfiguration_Constant";
 			List<Object[]> obj = new ArrayList<>();
-			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
-					|| verticalName.equalsIgnoreCase("Cracker")) {
+			if ((verticalName.equalsIgnoreCase("MEG")) || (verticalName.equalsIgnoreCase("ELASTOMER"))
+					|| (verticalName.equalsIgnoreCase("CRACKER")) || (verticalName.equalsIgnoreCase("VCM")) 
+					|| (verticalName.equalsIgnoreCase("PTA")) || (verticalName.equalsIgnoreCase("AROMATICS"))) {
 				obj = findConstantsByYearAndPlantFkId(year, plantFKId.toString(), procedureName);
 			}
 			Workbook workbook = new XSSFWorkbook();
@@ -2392,14 +2409,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                dtoList = failedDtos;
 	            }
 	        }
-
-	        
 	        List<Map<String, Object>> data = getNormAttributeTransactionReceipe(year, plantFKId.toString());
 	        List<NormParameters> normParametersList = normParametersService.getAllGrades(plantFKId.toString());
-
-	        
 	        List<String> innerHeaders = new ArrayList<>();
 	        innerHeaders.add("Recipe");
+	        innerHeaders.add("UOM");
 	        for (NormParameters normParameters : normParametersList) {
 	            innerHeaders.add(normParameters.getDisplayName());
 	        }
@@ -2444,6 +2458,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	            } else {
 	                list.add("");  
 	            }
+	            if (rec.containsKey("UOM")) {
+	                newMap.put("UOM", rec.get("UOM"));
+	                list.add(rec.get("UOM"));
+	            } else {
+	                list.add("");  
+	            }
 
 	            
 	            for (Map.Entry<String, Object> e : rec.entrySet()) {
@@ -2458,7 +2478,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 	           
 	            for (String header : innerHeaders) {
-	                if (header.equalsIgnoreCase("Recipe") || header.equalsIgnoreCase("RecipeId")
+	                if (header.equalsIgnoreCase("Recipe") || header.equalsIgnoreCase("RecipeId") || header.equalsIgnoreCase("UOM")
 	                        || (isAfterSave && (header.equalsIgnoreCase("Status") || header.equalsIgnoreCase("Error Description")))) {
 	                    continue;
 	                }
@@ -2608,7 +2628,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			    dto.setRecId(recId);
 
 			    
-			    for (int col = 1; col < lastColIndex; col++) {
+			    for (int col = 2; col < lastColIndex; col++) {
 			        String header = allHeaders.get(col);
 			        Cell valueCell = row.getCell(col);
 			        Double numeric = getNumericCellValue(valueCell, dto);

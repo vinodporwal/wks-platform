@@ -136,7 +136,7 @@ const NormalOpNormsScreenCracker = () => {
 
   const colDefsIndividual = useMemo(
     () => [
-      { field: 'isChecked', type: 'switch', widthT: 30, filter: false },
+      { field: 'isChecked', type: 'switch2', widthT: 30, filter: false },
       {
         field: 'sapMaterialCode',
         title: 'SAP MAT Code',
@@ -208,7 +208,7 @@ const NormalOpNormsScreenCracker = () => {
     () => [
       {
         field: 'isChecked',
-        type: 'switch',
+        type: 'switch2',
         widthT: 30,
         filter: false,
       },
@@ -521,6 +521,7 @@ const NormalOpNormsScreenCracker = () => {
         remark: item.remark || '',
         Particulars: item.normType || item.normParameterTypeDisplayName,
         Method: item.Method || item.method,
+        isEditable: false,
       }))
 
       setRowsBestFinalNorms(mappedWithMethod)
@@ -1147,6 +1148,7 @@ const NormalOpNormsScreenCracker = () => {
                 onGlobalCheckboxChange={handleGlobalCheckboxChange}
                 plantID={PLANT_ID}
                 gridName='best'
+                showCatChemUtilityCheckbox2={true}
               />
 
               {/* expression below */}
@@ -1184,6 +1186,7 @@ const NormalOpNormsScreenCracker = () => {
                 gridName='expression'
                 allRedCell2={allRedCell2}
                 showThreeColors={true}
+                showCatChemUtilityCheckbox2={true}
               />
             </>
           ) : (
