@@ -326,6 +326,7 @@ const KendoDataTables = ({
     setRows((prevRows) => {
       let updatedRow = null
       let keyToUpdate = ''
+
       const updatedRows = prevRows.map((row) => {
         // console.log(currentRowId, row.id)
         if (row.id === currentRowId) {
@@ -340,10 +341,26 @@ const KendoDataTables = ({
       })
 
       if (updatedRow) {
-        setModifiedCells((prev) => ({
-          ...prev,
-          [updatedRow.id]: updatedRow,
-        }))
+        if (permissions?.showCheckbox) {
+          // new behaviour (keep merged entry and use grid-prefixed unique key)
+          const uniqueKey = `${gridName}-${updatedRow.id}`
+
+          setModifiedCells((prev) => ({
+            ...prev,
+            [uniqueKey]: {
+              ...(prev[uniqueKey] || {}),
+              ...updatedRow,
+              gridName,
+              id: updatedRow.id,
+            },
+          }))
+        } else {
+          // previous behaviour (no prefix, simple assignment)
+          setModifiedCells((prev) => ({
+            ...prev,
+            [updatedRow.id]: updatedRow,
+          }))
+        }
       }
 
       return updatedRows
@@ -351,6 +368,7 @@ const KendoDataTables = ({
 
     setRemarkDialogOpen(false)
   }
+
   const handleAddRow1 = () => {
     if (isButtonDisabled) return
     setIsButtonDisabled(true)
