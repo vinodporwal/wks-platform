@@ -54,7 +54,7 @@ const TcsInput = () => {
     'PCG Outlook',
     'Crude Blend Window',
   ]
-  const tabsWithGroupBy = [3, 4]
+  const tabsWithGroupBy = []
 
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [tabIndex, setTabIndex] = useState(0)
@@ -1328,9 +1328,12 @@ const TcsInput = () => {
                 permissions={{
                   customHeight: { mainBox: '32vh', otherBox: '100%' },
                   textAlignment: 'center',
+                  allAction: true,
+                  addButton: true,
                   remarksEditable: true,
                   showCalculate: false,
                   showExport: true,
+                  showImport: true,
                   saveBtnForRemark: true,
                   saveBtn: true,
                   showWorkFlowBtns: true,

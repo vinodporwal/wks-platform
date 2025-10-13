@@ -624,7 +624,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 className='btn-save'
                 onClick={handleAddRow}
-                disabled={true}
+                disabled={false}
               >
                 Add Item
               </Button>
@@ -672,6 +672,17 @@ const KendoDataTablesReports = ({
                 className='btn-save'
               >
                 Export
+              </Button>
+            )}
+
+            {permissions?.showImport && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled}
+                className='btn-save'
+              >
+                Import
               </Button>
             )}
 
