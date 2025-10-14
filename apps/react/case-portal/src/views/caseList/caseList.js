@@ -477,8 +477,33 @@ export const CaseList = ({ status, caseDefId }) => {
         headerName: 'Case Assigned To',
         flex: 1,
         valueGetter: (value, row) => {
+
+ try {
+			
+			
+            const attributes =
+              typeof row.attributes === 'string'
+                ? JSON.parse(row.attributes)
+                : row.attributes
+
+            const containerValue = attributes?.find(
+              (attr) => attr.name === 'container',
+            )?.value
+
+            const parsedContainer = containerValue
+              ? JSON.parse(containerValue)
+              : {}
+
+            return parsedContainer.caseAssignedTo || parsedContainer.caseAssignedTo || ''
+          } catch (error) {
+            console.error('Error parsing CaseAssignedTo:', error)
+            return ''
+          }			
+
+
+
           //return value ? value?.userId : '';
-		  return row ? row?.caseAssignedTo : '';
+	//	  return row ? row?.caseAssignedTo : '';
         },
       },
       // {
