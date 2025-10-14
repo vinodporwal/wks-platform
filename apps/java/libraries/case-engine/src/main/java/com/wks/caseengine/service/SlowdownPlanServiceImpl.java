@@ -14,7 +14,11 @@ import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -149,7 +153,13 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-	
+	private CellStyle createDateTimeStyle(Workbook workbook, String excelFormat) {
+        CellStyle style = workbook.createCellStyle();
+        CreationHelper createHelper = workbook.getCreationHelper();
+        style.setDataFormat(createHelper.createDataFormat().getFormat(excelFormat)); 
+        return style;
+    }
+
 	public byte[] slowdownExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
 		try {
 			
@@ -157,10 +167,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			if (!isAfterSave) {
 				 dtoList = findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId),maintenanceTypeName, year); 
 			}
-			String pattern = "dd-MM-yyyy hh:mm a";
+			String pattern = "dd-MM-yyyy HH:mm";
 			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
 			Workbook workbook = new XSSFWorkbook();
-
+			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
 			Sheet sheet = workbook.createSheet("Sheet1");
 			int currentRow = 0;
 			// List<List<Object>> rows = new ArrayList<>();
@@ -273,24 +283,25 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				}
 			}
 			for (List<Object> rowData : rows) {
-				
-				 
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
+                Row row = sheet.createRow(currentRow++);
+                for (int col = 0; col < rowData.size(); col++) {
+                    Cell cell = row.createCell(col);
+                    Object value = rowData.get(col);
 
-					if (value instanceof Number) {
-						cell.setCellValue(((Number) value).doubleValue()); // Handles Integer, Double, etc.
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
-				}
-			}
+                    if (value instanceof Date) {
+                        cell.setCellValue((Date) value);
+                        cell.setCellStyle(dateTimeStyle);
+                    } else if (value instanceof Number) {
+                        cell.setCellValue(((Number) value).doubleValue());
+                    } else if (value instanceof Boolean) {
+                        cell.setCellValue((Boolean) value);
+                    } else if (value != null) {
+                        cell.setCellValue(value.toString());
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+            }
 			
 			sheet.setColumnHidden(7, true);
 			sheet.setColumnHidden(8, true);
@@ -337,13 +348,48 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		return null;
 	}
 	
+	private static String getCellAsString(Cell cell, ShutDownPlanDTO dto, FormulaEvaluator evaluator) {
+	    if (cell == null) {
+	        return null;
+	    }
+	    try {
+	        CellType cellType = cell.getCellType();
+	        DataFormatter dataFormatter = new DataFormatter();  // formats as shown in Excel
+	        if (cellType == CellType.NUMERIC) {
+	            if (DateUtil.isCellDateFormatted(cell)) {
+	                Date date = cell.getDateCellValue();
+	                SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+	                return sdf.format(date);
+	            } else {
+	                // it's a plain number; format it as shown
+	                return dataFormatter.formatCellValue(cell, evaluator);
+	            }
+	        } else if (cellType == CellType.STRING) {
+	            return cell.getStringCellValue().trim();
+	        } else if (cellType == CellType.FORMULA) {
+	            // evaluate formula then get formatted value
+	            return dataFormatter.formatCellValue(cell, evaluator);
+	        } else if (cellType == CellType.BLANK) {
+	            return null;
+	        } else {
+	            // fallback
+	            return dataFormatter.formatCellValue(cell, evaluator);
+	        }
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Error reading cell: " + e.getMessage());
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+
 	public List<ShutDownPlanDTO> readSlowdownData(InputStream inputStream, UUID plantFKId, String year) {
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
-
+			FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
 			if (rowIterator.hasNext())
 				rowIterator.next(); // Skip header
 
@@ -354,10 +400,24 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					dto.setAudityear(year);
 					dto.setDiscription(getStringCellValue(row.getCell(0), dto));
 					dto.setProductName(getStringCellValue(row.getCell(1), dto));
-					String maintStartDateTime = getStringCellValue(row.getCell(2), dto);
+					if(dto.getProductName()!=null) {
+						UUID productId=normParametersRepository.findNormParameterIdByDisplayNameAndPlant(dto.getProductName().trim(),plantFKId);
+						if(productId!=null) {
+							dto.setProductId(productId);
+						}else {
+							dto.setSaveStatus("Failed");
+					        dto.setErrDescription("Particulars not found");
+						}
+						
+					}else {
+						dto.setSaveStatus("Failed");
+				        dto.setErrDescription("Please enter particulars");
+					}
+					
+					String maintStartDateTime = getCellAsString(row.getCell(2), dto,evaluator);
 					if (maintStartDateTime != null && !"Failed".equals(dto.getSaveStatus())) {
 					    try { 
-					    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a", Locale.US);
+					    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
 					        LocalDateTime dateTime = LocalDateTime.parse(maintStartDateTime, formatter); 
 					        Date date = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()); 					        
 					        dto.setMaintStartDateTime(date);
@@ -367,11 +427,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					        e.printStackTrace();
 					    }
 					}
-					String maintEndDateTime = getStringCellValue(row.getCell(3), dto);
+					String maintEndDateTime = getCellAsString(row.getCell(3), dto,evaluator);
 					if (maintEndDateTime != null && !"Failed".equals(dto.getSaveStatus())) {
 					    try {
 					        
-					    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy hh:mm a", Locale.US);
+					    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
 					        LocalDateTime dateTime = LocalDateTime.parse(maintEndDateTime, formatter); 
 					        Date date = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()); 					        
 					        dto.setMaintEndDateTime(date);
@@ -399,27 +459,25 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 					}
 					dto.setRate(getNumericCellValue(row.getCell(5), dto));
 					dto.setRemark(getStringCellValue(row.getCell(6), dto));
+					if(dto.getRemark()==null) {
+						dto.setSaveStatus("Failed");
+					    dto.setErrDescription("Please enter remark");
+					}
 					String idString = getStringCellValue(row.getCell(7), dto);
 					dto.setId(idString); 
-					String productIdString = getStringCellValue(row.getCell(8), dto);
-					if (productIdString == null || productIdString.isEmpty()) {
-						UUID productId=normParametersRepository.findNormParameterIdByDisplayNameAndPlant(dto.getProductName(),plantFKId);
-					    if(productId!=null) {
-					    	dto.setProductId(productId);
-					    }else {
-					    	 dto.setSaveStatus("Failed");
-						     dto.setErrDescription("Particular not found.");
-					    }
-						
-					} else {
-					    try {
-					        dto.setProductId(UUID.fromString(productIdString));
-					    } catch (IllegalArgumentException e) {
-					        dto.setSaveStatus("Failed");
-					        dto.setErrDescription("Product ID in cell 8 must be a valid UUID format.");
-					        e.printStackTrace();
-					    }
-					}
+					/*
+					 * String productIdString = getStringCellValue(row.getCell(8), dto); if
+					 * (productIdString == null || productIdString.isEmpty()) { UUID
+					 * productId=normParametersRepository.findNormParameterIdByDisplayNameAndPlant(
+					 * dto.getProductName(),plantFKId); if(productId!=null) {
+					 * dto.setProductId(productId); }else { dto.setSaveStatus("Failed");
+					 * dto.setErrDescription("Particular not found."); }
+					 * 
+					 * } else { try { dto.setProductId(UUID.fromString(productIdString)); } catch
+					 * (IllegalArgumentException e) { dto.setSaveStatus("Failed");
+					 * dto.setErrDescription("Product ID in cell 8 must be a valid UUID format.");
+					 * e.printStackTrace(); } }
+					 */
 					
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -432,7 +490,6 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 		return dtoList;
 	}
 
@@ -532,7 +589,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	@Override
 	public List<ShutDownPlanDTO> saveShutdownData(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
 		String year=null;
-			
+		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		try {
 			UUID plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Slowdown");
 			if (plantMaintenanceId == null) {
@@ -546,6 +603,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Slowdown");
 			}
 			for (ShutDownPlanDTO shutDownPlanDTO : shutDownPlanDTOList) {
+				if (shutDownPlanDTO.getSaveStatus() != null
+						&& shutDownPlanDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(shutDownPlanDTO);
+					continue;
+				}
 				year=shutDownPlanDTO.getAudityear();
 				PlantMaintenanceTransaction plantMaintenanceTransaction =null;
 				if (shutDownPlanDTO.getId() == null || shutDownPlanDTO.getId().isEmpty()) {
@@ -605,7 +667,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
 			}
-			return shutDownPlanDTOList;
+			return failedList;
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to save data", ex);
 		}
