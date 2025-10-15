@@ -56,6 +56,11 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 @Service
 public class ShutDownPlanServiceImpl implements ShutDownPlanService {
@@ -345,7 +350,20 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	        return null;
 	    }
 	}
+	
+	private static LocalDateTime[] parseFinancialYearBounds(String fy) {
+	    String[] parts = fy.split("-");
+	    if (parts.length != 2) {
+	        throw new IllegalArgumentException("Invalid financial year format: " + fy);
+	    }
+	    int startYear = Integer.parseInt(parts[0].trim());
+	    // Use startYear + 1
+	    int endYear = startYear + 1;
 
+	    LocalDateTime start = LocalDateTime.of(startYear, 4, 1, 0, 0, 0);
+	    LocalDateTime end   = LocalDateTime.of(endYear, 3, 31, 23, 59, 59);
+	    return new LocalDateTime[]{ start, end };
+	}
 	
 	public List<ShutDownPlanDTO> readShutdownData(InputStream inputStream, UUID plantFKId, String year) {
 		List<ShutDownPlanDTO> dtoList = new ArrayList<>();
@@ -362,12 +380,27 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				ShutDownPlanDTO dto = new ShutDownPlanDTO();
 				try {
 					dto.setAudityear(year);
-					dto.setDiscription(getStringCellValue(row.getCell(0), dto));
+					String desc = getStringCellValue(row.getCell(0), dto);
+					dto.setDiscription(desc);
+
+					// Only do duplicate check if desc is non-null
+					if (desc != null) {
+					    boolean exists = dtoList.stream()
+					        .anyMatch(existing -> desc.equals(existing.getDiscription()));
+					    if (exists) {
+					        dto.setSaveStatus("Failed");
+					        dto.setErrDescription("Description cannot be duplicate");
+					        // You may decide to skip adding this dto further
+					    } 
+					} 
+
 					dto.setProductName(getStringCellValue(row.getCell(1), dto));
+					
 					if(dto.getProductName()!=null) {
 						UUID productId=normParametersRepository.findNormParameterIdByDisplayNameAndPlant(dto.getProductName().trim(),plantFKId);
 						if(productId!=null) {
 							dto.setProductId(productId);
+							dto.setProduct(productId.toString());
 						}else {
 							dto.setSaveStatus("Failed");
 					        dto.setErrDescription("Particulars not found");
@@ -378,35 +411,63 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 				        dto.setErrDescription("Please enter particulars");
 					}
 					
-					String maintStartDateTime = getCellAsString(row.getCell(2), dto, evaluator);
-					if (maintStartDateTime != null && !"Failed".equals(dto.getSaveStatus())) {
-					    try { 
-					    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
-					        LocalDateTime dateTime = LocalDateTime.parse(maintStartDateTime, formatter); 
-					        Date date = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()); 					        
-					        dto.setMaintStartDateTime(date);
-					    } catch (Exception e) {
-					        dto.setSaveStatus("Failed");
-					        dto.setErrDescription("Invalid date/time format in cell 3.");
-					        e.printStackTrace();
-					    }
-					}
-					
-					String maintEndDateTime = getCellAsString(row.getCell(3), dto, evaluator);
-					if (maintEndDateTime != null && !"Failed".equals(dto.getSaveStatus())) {
-					    try {
-					        
-					    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
-					        LocalDateTime dateTime = LocalDateTime.parse(maintEndDateTime, formatter); 
-					        Date date = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()); 					        
-					        dto.setMaintEndDateTime(date);
-					    } catch (Exception e) {
-					        dto.setSaveStatus("Failed");
-					        dto.setErrDescription("Invalid date/time format in cell 4.");
-					        e.printStackTrace();
-					    }
-					}
-					
+					LocalDateTime[] bounds = parseFinancialYearBounds(year);
+				    LocalDateTime fyStart = bounds[0];
+				    LocalDateTime fyEnd   = bounds[1];
+				    
+				    String mantStartStr = getCellAsString(row.getCell(2), dto, evaluator);
+				    LocalDateTime ldtStart = null;
+				    if (mantStartStr != null) {
+				        try {
+				            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
+				            ldtStart = LocalDateTime.parse(mantStartStr, fmt);
+				            
+				            // Check within financial year
+				            if (ldtStart.isBefore(fyStart) || ldtStart.isAfter(fyEnd)) {
+				                dto.setSaveStatus("Failed");
+				                dto.setErrDescription("Start date/time is outside the financial year " + year);
+				                Date startDate = Date.from(ldtStart.atZone(ZoneId.systemDefault()).toInstant());
+				                dto.setMaintStartDateTime(startDate);
+				            } else {
+				                Date startDate = Date.from(ldtStart.atZone(ZoneId.systemDefault()).toInstant());
+				                dto.setMaintStartDateTime(startDate);
+				            }
+				        } catch (Exception ex) {
+				            dto.setSaveStatus("Failed");
+				            dto.setErrDescription("Invalid date/time format in cell 3.");
+				            ex.printStackTrace();
+				        }
+				    }
+				    
+				    String mantEndStr = getCellAsString(row.getCell(3), dto, evaluator);
+				    if (mantEndStr != null) {
+				        try {
+				            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
+				            LocalDateTime ldtEnd = LocalDateTime.parse(mantEndStr, fmt);
+				            
+				            // Check within financial year
+				            if (ldtEnd.isBefore(fyStart) || ldtEnd.isAfter(fyEnd)) {
+				                dto.setSaveStatus("Failed");
+				                dto.setErrDescription("End date/time is outside the financial year " + year);
+				                Date endDate = Date.from(ldtEnd.atZone(ZoneId.systemDefault()).toInstant());
+				                dto.setMaintEndDateTime(endDate);
+				            } else if (ldtStart != null && ldtEnd.isBefore(ldtStart)) {
+				                // Also check end >= start
+				                dto.setSaveStatus("Failed");
+				                dto.setErrDescription("End date/time cannot be before start date/time.");
+				                Date endDate = Date.from(ldtEnd.atZone(ZoneId.systemDefault()).toInstant());
+				                dto.setMaintEndDateTime(endDate);
+				            } else {
+				                Date endDate = Date.from(ldtEnd.atZone(ZoneId.systemDefault()).toInstant());
+				                dto.setMaintEndDateTime(endDate);
+				            }
+				        } catch (Exception ex) {
+				            dto.setSaveStatus("Failed");
+				            dto.setErrDescription("Invalid date/time format in cell 4.");
+				            ex.printStackTrace();
+				        }
+				    }
+									
 					try {
 					    Instant startInstant = dto.getMaintStartDateTime().toInstant();
 					    Instant endInstant = dto.getMaintEndDateTime().toInstant();
@@ -431,19 +492,14 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					}
 					String idString = getStringCellValue(row.getCell(6), dto);
 					dto.setId(idString); 
-					/*
-					 * String productIdString = getStringCellValue(row.getCell(7), dto); if
-					 * (productIdString == null || productIdString.isEmpty()) { UUID
-					 * productId=normParametersRepository.findNormParameterIdByDisplayNameAndPlant(
-					 * dto.getProductName(),plantFKId); if(productId!=null) {
-					 * dto.setProductId(productId); }else { dto.setSaveStatus("Failed");
-					 * dto.setErrDescription("Particular not found."); }
-					 * 
-					 * } else { try { dto.setProductId(UUID.fromString(productIdString)); } catch
-					 * (IllegalArgumentException e) { dto.setSaveStatus("Failed");
-					 * dto.setErrDescription("Product ID in cell 7 must be a valid UUID format.");
-					 * e.printStackTrace(); } }
-					 */
+					if(dto.getId()==null) {
+						List<Object[]> obj=shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown",plantFKId.toString(),year,dto.getDiscription());
+
+						if(obj.size()>0) {
+							dto.setSaveStatus("Failed");
+							dto.setErrDescription("The Description"+dto.getDiscription()+"already exists in the list. please enter unique description to avoid duplication.");
+						}
+					}
 					
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -886,7 +942,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					plantMaintenanceTransaction
 							.setDiscription(shutDownPlanDTO.getDiscription() != null ? shutDownPlanDTO.getDiscription()
 									: "Default Description");
-
+					
+					
 					if (shutDownPlanDTO.getDurationInHrs() != null) {
 						
 						plantMaintenanceTransaction

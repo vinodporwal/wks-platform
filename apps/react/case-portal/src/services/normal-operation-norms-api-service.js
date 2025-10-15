@@ -19,7 +19,7 @@ export const NormalOperationNormsApiService = {
   updateFinalNormsData,
   getfinalNorms,
   calculateFinalNorms,
-  CrackerConstantsExport,
+  criteriaForBestAchivedExcelExport,
   CrackerConstantsImport,
   getNormsConstants,
   BestAchivedColorCodes,
@@ -64,16 +64,9 @@ async function CrackerConstantsImport(file, keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-async function CrackerConstantsExport(keycloak, PLANT_ID, AOP_YEAR) {
-  const year = localStorage.getItem('year')
-  let plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
 
-  const url = `${Config.CaseEngineUrl}/task/configuration-constants-export-excel?year=${encodeURIComponent(AOP_YEAR)}&plantFKId=${encodeURIComponent(PLANT_ID)}`
+async function criteriaForBestAchivedExcelExport(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-constants-norms-export-excel?year=${encodeURIComponent(AOP_YEAR)}&plantFKId=${encodeURIComponent(PLANT_ID)}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -105,6 +98,7 @@ async function CrackerConstantsExport(keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
+
 async function getNormsConstants(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/configuration-constants-norms?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
   const headers = {
