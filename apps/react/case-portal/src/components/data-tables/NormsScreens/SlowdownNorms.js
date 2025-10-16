@@ -441,7 +441,7 @@ const SlowdownNorms = () => {
 
         setSnackbarOpen(true)
         setSnackbarData({
-          message: `Shutdown Norms Saved Successfully!`,
+          message: `Saved Successfully!`,
           severity: 'success',
         })
         unsavedChangesRef.current = {

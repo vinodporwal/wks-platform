@@ -221,7 +221,7 @@ const ShutdownNorms = () => {
 
         setSnackbarOpen(true)
         setSnackbarData({
-          message: `Data Saved Successfully!`,
+          message: `Saved Successfully!`,
           severity: 'success',
         })
         setModifiedCells({})

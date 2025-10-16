@@ -2,10 +2,8 @@ import Config from '../consts'
 import { json } from './request'
 export const BusinessDemandDataApiService = {
   getBDData,
-
   saveBusinessDemandData,
   deleteBusinessDemandData,
-
   businessDemandImport,
   businessDemandExport,
 }

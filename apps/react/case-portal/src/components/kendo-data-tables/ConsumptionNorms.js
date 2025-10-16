@@ -115,7 +115,7 @@ const ConsumptionNorms = () => {
       )
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Consumption AOP Saved Successfully!',
+        message: 'Saved Successfully!',
         severity: 'success',
       })
       //
