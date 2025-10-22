@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material'
 import CloseIcon from '@mui/icons-material/Close'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
@@ -16,6 +16,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { useSession } from 'SessionStoreContext'
 import MainCard from 'components/MainCard'
 import Config from 'consts/index'
+
 import React, {
   Suspense,
   createContext,
@@ -95,6 +96,7 @@ export const CaseList = ({ status, caseDefId }) => {
   const [errorMsg, setErrorMsg] = useState("");
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
   // If either businessKey or caseNo is present in the URL we should treat this as a "view" request
   const queryHasBusinessKey = searchParams.has('businessKey') || searchParams.has('caseNo');
@@ -139,6 +141,7 @@ export const CaseList = ({ status, caseDefId }) => {
 
   useEffect(() => {
     // Do not auto-open the 'create new case' form when a businessKey/caseNo is present in the URL
+    
     if (isCaseCreatePath && !queryHasBusinessKey && !error && !accepted) {
       const fireEvent = (el, eventName) => {
         const event = new Event(eventName, { bubbles: true });
@@ -156,7 +159,7 @@ export const CaseList = ({ status, caseDefId }) => {
       }, 500);
 
       return () => {
-        if(autoClickTimeout) { clearInterval(autoClickTimeout); } // Clear the interval when component unmounts
+        if(autoClickTimeout) { clearTimeout(autoClickTimeout); } // Clear the timeout when component unmounts
       };
     }
   }, [accepted]);  
@@ -193,6 +196,8 @@ export const CaseList = ({ status, caseDefId }) => {
 
     if (queryHasBusinessKey && caseBusinessKey) {
       // Use getCasesById (which returns cases filtered by asset/hierarchy) and try to match the caseNo
+
+      //logic for navigation after form submission
       setFetching(true);
       try {
         const searchParamsWindow = new URLSearchParams(window.location.search);
@@ -600,7 +605,13 @@ export const CaseList = ({ status, caseDefId }) => {
   // };
 
   const handleCloseCaseForm = () => {
-    setOpenCaseForm(false)
+
+    console.log("In CaseList handleCloseCaseForm........");
+   
+    // Remove all URL parameters
+    navigate(location.pathname, { replace: true });
+   
+    setOpenCaseForm(false);
     fetchCases(
       setFetching,
       keycloak,
@@ -616,8 +627,10 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   const handleCloseNewCaseForm = () => {
+    
     setOpenNewCaseForm(false)
     setSnackOpen(true)
+    
   }
 
   const handleNewCaseAction = () => {
@@ -981,10 +994,11 @@ export const CaseList = ({ status, caseDefId }) => {
       )*/}
       {openNewCaseForm && (
         <CaseNewFormPage
-          handleClose={handleCloseNewCaseForm}
+          handleFormClose={handleCloseNewCaseForm}
           cases={cases}
           open={openNewCaseForm}
           caseDefId={newCaseDefId}
+          openedFromList={true}
           setLastCreatedCase={setLastCreatedCase}
         />
       )}

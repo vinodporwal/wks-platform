@@ -167,7 +167,7 @@ async function filterCase(keycloak, caseDefId, status, cursor) {
   url = url + (caseDefId ? `&caseDefinitionId=${caseDefId}` : '')
   url = url + `&before=${cursor.before || ''}`
   url = url + `&after=${cursor.after || ''}`
-  url = url + `&sort=${cursor.sort || 'asc'}`
+  url = url + `&sort=${cursor.sort || 'DESC'}`
   url = url + `&limit=${cursor.limit || 10}`
 
   const headers = {

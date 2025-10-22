@@ -38,7 +38,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction='up' ref={ref} {...props} />
 })
 
-export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
+export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormClose, openedFromList = false }) => {
   const [caseDef, setCaseDef] = useState([])
   const [form, setForm] = useState([])
   const [formData, setFormData] = useState(null)
@@ -119,10 +119,14 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
   }
 
   const handleClose = () => {
-    const params =
-      currentParams.length > 0 ? currentParams : window.location.search
-    console.log('currentParams', params)
-    navigate(`/case-list/create${params}`)
+   
+    if (openedFromList && typeof handleFormClose === 'function') {
+    
+      handleFormClose()
+      return
+    } else {
+      navigate(`/case-list/create`)
+    }
   }
 
   const onSave = () => {
@@ -194,7 +198,12 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href),
+      //  caseUrl: buildCreateUrl(window.location.href),
+      caseUrl: (() => { 
+        const uri = window.location.pathname;
+        return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+       })(),
+
       }),
     )
     .then((data) => {
@@ -207,7 +216,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           JSON.stringify({
             caseDefinitionId: caseDefId,
             assetName: assetName,
-            isDraft: 'y',
+            isDraft: 'n',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
@@ -222,7 +231,12 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               phone: keycloak.idTokenParsed.phone || '1234543211',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href),
+         //   caseUrl: buildCreateUrl(window.location.href),
+         caseUrl: (() => { 
+          const uri = window.location.pathname;
+          return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+         })(),
+         
           }),
         )
       })
@@ -303,7 +317,12 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href),
+       // caseUrl: buildCreateUrl(window.location.href),
+       caseUrl: (() => { 
+        const uri = window.location.pathname;
+        return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+       })(),
+
       }),
     )
       .then((data) => {
@@ -316,7 +335,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
           JSON.stringify({
             caseDefinitionId: caseDefId,
             assetName: assetName,
-            isDraft: 'y',
+            isDraft: 'n',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
@@ -331,7 +350,14 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create' }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href),
+         //   caseUrl: buildCreateUrl(window.location.href),
+
+           caseUrl: (() => { 
+             const uri = window.location.pathname;
+             return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+            })(),
+
+
            // assignedTo: {emailId: formData.data.container.caseAssignedTo}
            assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),

@@ -182,6 +182,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               aCase.businessKey,
             );
             if (resp && resp.data && resp.data.length > 0) {
+              console.log("in caseForm : caseData.........", resp.data[0]);
               // API returns an array in the same mapped format
               caseData = resp.data[0];
             }
@@ -191,6 +192,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
         }
 
         if (!caseData) {
+          console.log("in caseForm : caseData not found.........", caseData);
           caseData = await CaseService.getCaseById(
             keycloak,
             aCase.businessKey,
@@ -441,7 +443,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href),
+        //caseUrl: buildCreateUrl(window.location.href),
+        caseUrl: (() => { 
+          const uri = window.location.pathname;
+          return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+         })(),
+    
+
         businessKey: aCase.businessKey,
       }),
     )
@@ -468,7 +476,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href),
+          //  caseUrl: buildCreateUrl(window.location.href),
+          caseUrl: (() => { 
+            const uri = window.location.pathname;
+            return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+           })(),
+       
           //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
@@ -554,7 +567,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href),
+         //   caseUrl: buildCreateUrl(window.location.href),
+          caseUrl: (() => { 
+            const uri = window.location.pathname;
+            return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+           })(),
           //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
@@ -757,6 +774,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const onSubmitForm = () => {
+
+    console.log("in caseForm : onSubmitForm.........");
     const currentParams = window.location.search
     setCurrentParams(currentParams)
     const urlParams = new URLSearchParams(window.location.search)
@@ -789,7 +808,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-        caseUrl: buildCreateUrl(window.location.href),
+        //caseUrl: buildCreateUrl(window.location.href),
+        caseUrl: (() => { 
+          const uri = window.location.pathname;
+          return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+         })(),
+     
+
         businessKey: aCase.businessKey,
       }),
     )
@@ -803,7 +828,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           JSON.stringify({
             caseDefinitionId: aCase.caseDefinitionId,
             assetName: assetName,
-            isDraft: 'y',
+            isDraft: 'n',
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
@@ -818,7 +843,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-            caseUrl: buildCreateUrl(window.location.href),
+           // caseUrl: buildCreateUrl(window.location.href),
+           caseUrl: (() => { 
+            const uri = window.location.pathname;
+            return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+           })(),
+
           //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
@@ -1423,7 +1453,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         //   onSave(submission)
                         // }}
                         onCustomEvent={(event) => {
-                          console.log('Form event:', event)
+                          console.log("in caseForm : onCustomEvent.........");
+                          
                           if (event.component.key === 'saveAsDraft') {
                             onSubmitForm()
                           } else if (
