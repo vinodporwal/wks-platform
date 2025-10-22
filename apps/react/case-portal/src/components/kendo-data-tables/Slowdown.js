@@ -324,6 +324,7 @@ const SlowDown = ({ permissions }) => {
       // Select required fields based on vertical
       const requiredFields = ['discription', 'remark']
       const requiredFieldsForElastomer = ['discription', 'remark', 'rate']
+      const requiredFieldsForPe = ['discription', 'remark', 'rate']
       const requiredFieldsForMeg = [
         'discription',
         'remark',
@@ -336,7 +337,9 @@ const SlowDown = ({ permissions }) => {
           ? requiredFieldsForElastomer
           : lowerVertName === 'meg'
             ? requiredFieldsForMeg
-            : requiredFields
+            : lowerVertName === 'pe'
+              ? requiredFieldsForPe
+              : requiredFields
 
       // Missing required fields
       for (const record of data) {

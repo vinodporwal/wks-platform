@@ -141,7 +141,7 @@ const ShutDown = ({ permissions }) => {
         if (plantName?.toLowerCase() === 'ldpe') {
           requiredFields = ['discription', 'remark', 'productName1']
         } else {
-          requiredFields = ['discription', 'remark']
+          requiredFields = ['discription', 'remark', 'productName1']
         }
       } else if (lowerVertName === 'pp') {
         requiredFields = ['discription', 'remark']
@@ -570,9 +570,9 @@ const ShutDown = ({ permissions }) => {
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
       case verticalEnums.PE:
-        if (plantName?.toLowerCase() != 'ldpe') {
-          return ShutDownAllColumns
-        }
+        // if (plantName?.toLowerCase() != 'ldpe') {
+        //   return ShutDownAllColumns
+        // }
 
         return ShutDownPeColumns
 
