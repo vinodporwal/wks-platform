@@ -22,6 +22,15 @@ public interface CaseInstanceRepository extends Repository<CaseInstance> {
 
 	PageResult<CaseInstance> find(CaseInstanceFilter filters);
 
+	/**
+	 * Find the CaseInstance with the latest createdAt attribute.
+	 * The createdAt is stored as a CaseAttribute with name "createdAt" in the attributes list.
+	 *
+	 * @return the latest CaseInstance by createdAt
+	 * @throws DatabaseRecordNotFoundException if no case instances are found
+	 */
+	CaseInstance findLatestByCreatedAt() throws DatabaseRecordNotFoundException;
+
 	void deleteComment(final String businessKey, final CaseComment comment) throws DatabaseRecordNotFoundException;
 
 	void updateComment(final String businessKey, final String commentId, final String body)

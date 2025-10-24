@@ -12,6 +12,7 @@
 package com.wks.caseengine.cases.instance.command;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,23 +51,34 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 	public CaseInstance execute(CommandContext commandContext) {
 
 		try {
+			
 		    CaseInstance existingCaseInstance = commandContext.getCaseInstanceRepository()
 		            .get(caseInstanceParam.getBusinessKey());
-
+       System.out.println("StartCaseInstanceWithValuesCMD *************Found existing case Instance************: " + existingCaseInstance.getBusinessKey());
 		    mergeAttributes(existingCaseInstance, caseInstanceParam);
 		    existingCaseInstance.setOwner(caseInstanceParam.getOwner());
 
 		    return existingCaseInstance; // Return updated instance
 		} catch (DatabaseRecordNotFoundException e) {
 
+			System.out.println("StartCaseInstanceWithValuesCMD *************Creating new case Instance************");
+
 
 		CaseDefinition caseDefinition = retrieveCaseDefinition(commandContext);
 
 		caseInstanceParam.addAttribute(
-				new CaseAttribute("createdAt", LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-						CaseAttributeType.STRING.getValue()));
+				new CaseAttribute(
+    "createdAt",
+
+	// LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), // 2025-10-24T15:30:00
+
+    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")),
+    CaseAttributeType.STRING.getValue()
+)
+);
 
 		String businessKey = generateBusinessKey(commandContext);
+		System.out.println("StartCaseInstanceWithValuesCMD *************generated businessKey************: " + businessKey);
 
 		CaseInstance.CaseInstanceBuilder caseInstanceBuilder = CaseInstance.builder().businessKey(businessKey)
 				.attributes(caseInstanceParam.getAttributes()).caseDefinitionId(caseInstanceParam.getCaseDefinitionId())

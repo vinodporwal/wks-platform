@@ -16,7 +16,12 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Sorts.descending;
 import static com.mongodb.client.model.Updates.set;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.bson.BsonObjectId;
@@ -29,6 +34,8 @@ import org.springframework.stereotype.Component;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Sorts;
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.CaseInstanceFilter;
@@ -137,6 +144,54 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 		}
 
 	}
+@Override
+public CaseInstance findLatestByCreatedAt() throws DatabaseRecordNotFoundException {
+
+	// Match documents that have an attribute with name "createdAt" but
+	// keep the original document shape (attributes as an array). Using
+	// unwind here would replace the array with a document for that
+	// field which breaks the POJO codec (it expects an array).
+	List<CaseInstance> results = getCollection()
+		.find(Filters.elemMatch("attributes", Filters.eq("name", "createdAt")))
+		.into(new ArrayList<>());
+
+    if (results.isEmpty()) {
+        throw new DatabaseRecordNotFoundException("CaseInstance", "createdAt", "latest");
+    }
+
+    // Parse the date strings and find the latest
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+	DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    return results.stream()
+        .max((ci1, ci2) -> {
+            String dateStr1 = ci1.getAttributes().stream()
+                    .filter(attr -> "createdAt".equals(attr.getName()))
+                    .map(attr -> attr.getValue())
+                    .findFirst().orElse("01/01/1970 00:00:00");
+
+            String dateStr2 = ci2.getAttributes().stream()
+                    .filter(attr -> "createdAt".equals(attr.getName()))
+                    .map(attr -> attr.getValue())
+                    .findFirst().orElse("01/01/1970 00:00:00");
+
+					LocalDateTime dt1;
+					LocalDateTime dt2;
+
+            try {   dt1 = LocalDateTime.parse(dateStr1, formatter) ;    } 
+			catch (DateTimeParseException e) {   dt1 = LocalDate.parse(dateStr1, dateFormatter).atStartOfDay();    }
+
+
+
+			try {   dt2 = LocalDateTime.parse(dateStr2, formatter) ;    }	
+			catch (DateTimeParseException e) {   dt2 = LocalDate.parse(dateStr2, dateFormatter).atStartOfDay();    }
+
+
+            return dt1.compareTo(dt2);
+        })
+        .orElseThrow(() -> new DatabaseRecordNotFoundException("CaseInstance", "createdAt", "latest"));
+}
+
 
 	protected MongoOperations getOperations() {
 		return connection.getOperations();
