@@ -52,6 +52,15 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const realmRoles = keycloak.idTokenParsed.realm_access?.roles || []
+  const clientRoles = keycloak.idTokenParsed.resource_access
+    ? Object.values(keycloak.idTokenParsed.resource_access).flatMap(
+        (client) => client.roles || [],
+      )
+    : []
+  const allRoles = [...realmRoles, ...clientRoles]
+  console.log('all roles: ',  allRoles)
+
   useEffect(() => {
     
     const params = window.location.search
@@ -198,11 +207,11 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-      //  caseUrl: buildCreateUrl(window.location.href),
-      caseUrl: (() => { 
-        const uri = window.location.pathname;
-        return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-       })(),
+        caseUrl: buildCreateUrl(window.location.href),
+      // caseUrl: (() => { 
+      //   const uri = window.location.pathname;
+      //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+      //  })(),
 
       }),
     )
@@ -231,11 +240,11 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
               phone: keycloak.idTokenParsed.phone || '1234543211',
             },
             attributes: caseAttributes,
-         //   caseUrl: buildCreateUrl(window.location.href),
-         caseUrl: (() => { 
-          const uri = window.location.pathname;
-          return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-         })(),
+           caseUrl: buildCreateUrl(window.location.href),
+        //  caseUrl: (() => { 
+        //   const uri = window.location.pathname;
+        //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+        //  })(),
          
           }),
         )
@@ -317,11 +326,11 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-       // caseUrl: buildCreateUrl(window.location.href),
-       caseUrl: (() => { 
-        const uri = window.location.pathname;
-        return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-       })(),
+         caseUrl: buildCreateUrl(window.location.href),
+      //  caseUrl: (() => { 
+      //   const uri = window.location.pathname;
+      //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+      //  })(),
 
       }),
     )
@@ -350,12 +359,12 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-         //   caseUrl: buildCreateUrl(window.location.href),
+            caseUrl: buildCreateUrl(window.location.href),
 
-           caseUrl: (() => { 
+        /*   caseUrl: (() => { 
              const uri = window.location.pathname;
              return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-            })(),
+            })(),  */
 
 
            // assignedTo: {emailId: formData.data.container.caseAssignedTo}

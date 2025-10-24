@@ -101,7 +101,7 @@ spring:
     # password: "ldaortwzpbjadvez"
     host: smtp.honeywell.com
     port: 25
-    fromEmail:  smtp@honeywell.com
+    fromEmail:  smtp.honeywell.com
     properties:
       mail:
         smtp:
