@@ -15,4 +15,6 @@ public interface BusinessKeyGenerator {
 
 	String generate();
 
+    String generate(String caseDefinitionKey);
+
 }

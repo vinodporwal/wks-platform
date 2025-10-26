@@ -87,6 +87,14 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 	}
 
 	@Override
+	public boolean existsByBusinessKey(final String businessKey) {
+		Bson filter = Filters.eq("businessKey", businessKey);
+		// only need to check if one document exists, limit the query for efficiency
+		CaseInstance found = getCollection().find(filter).projection(Filters.eq("_id", 1)).limit(1).first();
+		return found != null;
+	}
+
+	@Override
 	public String save(final CaseInstance caseInstance) {
 		return ((BsonObjectId) getCollection().insertOne(caseInstance).getInsertedId()).getValue().toHexString();
 	}
@@ -145,19 +153,33 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 
 	}
 @Override
-public CaseInstance findLatestByCreatedAt() throws DatabaseRecordNotFoundException {
-
-	// Match documents that have an attribute with name "createdAt" but
-	// keep the original document shape (attributes as an array). Using
-	// unwind here would replace the array with a document for that
-	// field which breaks the POJO codec (it expects an array).
-	List<CaseInstance> results = getCollection()
+public CaseInstance findLatestByCreatedAt(String... args) throws DatabaseRecordNotFoundException {
+List<CaseInstance> results = new ArrayList<>();
+if( args.length == 0 ) {
+	
+ results = getCollection()
 		.find(Filters.elemMatch("attributes", Filters.eq("name", "createdAt")))
 		.into(new ArrayList<>());
 
     if (results.isEmpty()) {
         throw new DatabaseRecordNotFoundException("CaseInstance", "createdAt", "latest");
     }
+}
+else {
+	String caseDefinitionId = args[0];
+	
+	results = getCollection()
+		.find(Filters.and(
+			Filters.eq("caseDefinitionId", caseDefinitionId),
+			Filters.elemMatch("attributes", Filters.eq("name", "createdAt"))
+		))
+		.into(new ArrayList<>());
+
+	if (results.isEmpty()) {
+		throw new DatabaseRecordNotFoundException("CaseInstance", "caseDefinitionId and createdAt", caseDefinitionId + ", latest");
+	}
+}
+	
 
     // Parse the date strings and find the latest
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");

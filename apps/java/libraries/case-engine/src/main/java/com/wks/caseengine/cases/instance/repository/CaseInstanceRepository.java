@@ -29,11 +29,13 @@ public interface CaseInstanceRepository extends Repository<CaseInstance> {
 	 * @return the latest CaseInstance by createdAt
 	 * @throws DatabaseRecordNotFoundException if no case instances are found
 	 */
-	CaseInstance findLatestByCreatedAt() throws DatabaseRecordNotFoundException;
+	CaseInstance findLatestByCreatedAt(String... args) throws DatabaseRecordNotFoundException;
 
 	void deleteComment(final String businessKey, final CaseComment comment) throws DatabaseRecordNotFoundException;
 
 	void updateComment(final String businessKey, final String commentId, final String body)
 			throws DatabaseRecordNotFoundException;
+
+    boolean existsByBusinessKey(String businessKey);
 
 }

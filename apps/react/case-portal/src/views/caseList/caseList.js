@@ -123,7 +123,7 @@ export const CaseList = ({ status, caseDefId }) => {
   {
     const isCaseDefPresentInRoute = searchParams.has('case_def');
     const isBusinessKeyPresentInRoute = searchParams.has('businessKey') || searchParams.has('caseNo');
-    caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
+   // caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
 
     if(!isBusinessKeyPresentInRoute) {
       setLoading(false);

@@ -60,6 +60,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
     : []
   const allRoles = [...realmRoles, ...clientRoles]
   console.log('all roles: ',  allRoles)
+  console.log("NewCaseFormPage.. creating new case for caseDefId: ", caseDefId);
 
   useEffect(() => {
     

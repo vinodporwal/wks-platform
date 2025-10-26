@@ -443,11 +443,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '1234567890',
         },
         attributes: caseAttributes,
-        //caseUrl: buildCreateUrl(window.location.href),
-        caseUrl: (() => { 
-          const uri = window.location.pathname;
-          return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-         })(),
+        caseUrl: buildCreateUrl(window.location.href),
+        // caseUrl: (() => { 
+        //   const uri = window.location.pathname;
+        //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+        //  })(),
     
 
         businessKey: aCase.businessKey,
@@ -476,11 +476,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-          //  caseUrl: buildCreateUrl(window.location.href),
-          caseUrl: (() => { 
-            const uri = window.location.pathname;
-            return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-           })(),
+            caseUrl: buildCreateUrl(window.location.href),
+          // caseUrl: (() => { 
+          //   const uri = window.location.pathname;
+          //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+          //  })(),
        
           //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
@@ -567,11 +567,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-         //   caseUrl: buildCreateUrl(window.location.href),
-          caseUrl: (() => { 
-            const uri = window.location.pathname;
-            return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-           })(),
+            caseUrl: buildCreateUrl(window.location.href),
+          // caseUrl: (() => { 
+          //   const uri = window.location.pathname;
+          //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+          //  })(),
           //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
           }),
@@ -808,11 +808,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           phone: keycloak.idTokenParsed.phone || '',
         },
         attributes: caseAttributes,
-        //caseUrl: buildCreateUrl(window.location.href),
-        caseUrl: (() => { 
-          const uri = window.location.pathname;
-          return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-         })(),
+        caseUrl: buildCreateUrl(window.location.href),
+        // caseUrl: (() => { 
+        //   const uri = window.location.pathname;
+        //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+        //  })(),
      
 
         businessKey: aCase.businessKey,
@@ -843,11 +843,11 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               phone: keycloak.idTokenParsed.phone || '',
             },
             attributes: caseAttributes,
-           // caseUrl: buildCreateUrl(window.location.href),
-           caseUrl: (() => { 
-            const uri = window.location.pathname;
-            return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
-           })(),
+            caseUrl: buildCreateUrl(window.location.href),
+          //  caseUrl: (() => { 
+          //   const uri = window.location.pathname;
+          //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
+          //  })(),
 
           //  assignedTo: {emailId: formData.data.container.caseAssignedTo}
 		  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))

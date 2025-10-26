@@ -116,7 +116,7 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 	private String generateBusinessKey(CommandContext commandContext) {
 		String businessKey = null;
 		if (caseInstanceParam.getBusinessKey() == null) {
-			businessKey = commandContext.getBusinessKeyCreator().generate();
+			businessKey = commandContext.getBusinessKeyCreator().generate(caseInstanceParam.getCaseDefinitionId());
 		} else {
 			businessKey = caseInstanceParam.getBusinessKey();
 		}

@@ -11,11 +11,13 @@
  */
 package com.wks.caseengine.cases.businesskey;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.repository.CaseInstanceRepository;
 import com.wks.caseengine.repository.DatabaseRecordNotFoundException;
 
@@ -29,20 +31,45 @@ public class GenericBusinessKeyGenerator implements BusinessKeyGenerator {
 
 	@Override
 	public String generate() {
+		
 		return calculateBusinessKey();
 	}
 
-	private String calculateBusinessKey() {
+	@Override
+	 public String generate(String caseDefinitionKey) {
+		
+		return calculateBusinessKey(caseDefinitionKey);
+	 }
+
+	private String calculateBusinessKey(String... args) {
 		String latestKey;
 		try {
-			latestKey = caseInstanceRepository.findLatestByCreatedAt().getBusinessKey();
-			System.out.println("GenericBusinessKeyGenerator *************latestKey************: " + latestKey);
+			if(args.length == 0) {
+				latestKey = caseInstanceRepository.findLatestByCreatedAt().getBusinessKey();
+			} else {
+				latestKey = caseInstanceRepository.findLatestByCreatedAt(args).getBusinessKey();
+			}
+			
 		} catch (DatabaseRecordNotFoundException e) {
 			 latestKey = String.valueOf(PREFIX + ThreadLocalRandom.current().nextInt(0, 100000 + 1));
 		}
     
     
     int nextKey = Integer.parseInt(latestKey) + 1;
+
+	// safeguard against duplicate businessKey in caseInstance
+	List<CaseInstance> allCases = caseInstanceRepository.find();
+
+	boolean exists = true;
+	while (exists) {
+		String keyToCheck = String.valueOf(nextKey);
+	    exists = allCases.stream().anyMatch(ci -> ci.getBusinessKey().equals(keyToCheck));
+		if (exists) {
+			nextKey++;
+		}
+	}
+		
+	
     
     return String.valueOf(nextKey);
 	//	return String.valueOf(PREFIX + ThreadLocalRandom.current().nextInt(0, 100000 + 1));
