@@ -560,6 +560,7 @@ const AopDesignBasis = () => {
         message: 'Start/End date configuration is incomplete.',
         severity: 'error',
       })
+      setLoading(false)
       return
     }
     setLoading(true)

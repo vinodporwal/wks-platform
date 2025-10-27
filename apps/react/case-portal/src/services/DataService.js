@@ -2078,14 +2078,12 @@ async function savemaintenacegetdata(
 }
 async function maintenaceExportdata(
   keycloak,
-  budgetCategory,
+
   PLANT_ID,
   AOP_YEAR,
 ) {
   let url = `${Config.CaseEngineUrl}/task/budget-maintenance-export-excel?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
-  //  if (budgetCategory) {
-  //     url += `&budgetCategory=${encodeURIComponent(budgetCategory)}`
-  //   }
+
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
