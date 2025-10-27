@@ -671,6 +671,30 @@ export default function RelPerf() {
         setLoading(false)
         return
       }
+
+      // 🔹 Additional validation for UOM = '%'
+      const invalidPercentRows = data.filter((row) => {
+        if (row?.uom === '%') {
+          const fieldsToCheck = ['actual', 'aop', 'bestAchieved', 'plann']
+          return fieldsToCheck.some((key) => {
+            const value = parseFloat(row[key])
+            return isNaN(value) || value < 1 || value > 100
+          })
+        }
+        return false
+      })
+
+      if (invalidPercentRows.length > 0) {
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'For rows with UOM as %, values must be between 1 and 100.',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      // ✅ Proceed to save if validation passes
       saveReliabilityPerformance(data)
     } catch (error) {
       console.log('Error saving changes:', error)
@@ -761,6 +785,30 @@ export default function RelPerf() {
         setLoading(false)
         return
       }
+
+      // 🔹 Additional validation for UOM = '%'
+      const invalidPercentRows = data.filter((row) => {
+        if (row?.uom === '%') {
+          const fieldsToCheck = ['actual', 'aop', 'bestAchieved', 'plann']
+          return fieldsToCheck.some((key) => {
+            const value = parseFloat(row[key])
+            return isNaN(value) || value < 1 || value > 100
+          })
+        }
+        return false
+      })
+
+      if (invalidPercentRows.length > 0) {
+        setSnackbarOpenFinancial(true)
+        setSnackbarDataFinancial({
+          message: 'For rows with UOM as %, values must be between 1 and 100.',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      // ✅ Proceed to save if validation passes
       saveFinancial(data)
     } catch (error) {
       console.log('Error saving changes:', error)
