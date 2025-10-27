@@ -73,6 +73,7 @@ export const DataService = {
   handleCalculateNormalOpsNorms1,
 
   handleCalculateSlowdownNorms,
+  handleCalculateSlowdownNormsPP,
   updatePeConfigData,
   getPeConfigData,
   getAllGrades,
@@ -160,6 +161,7 @@ export const DataService = {
   getConfigurationExcelType,
 
   getProductionReports,
+  gradeDetails,
 }
 
 async function miisData(keycloak, reportType, periodFrom, periodTo, mode) {
@@ -279,6 +281,30 @@ async function handleCalculateSlowdownNorms(plantId, year, keycloak) {
   const year1 = localStorage.getItem('year')
   //  const url = `${Config.CaseEngineUrl}/task/getCalculatedShutdownNorms?year=${year1}&plantId=${plantId}`
   const url = `${Config.CaseEngineUrl}/task/getSlowdownNormsSPData?year=${year1}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json()
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function handleCalculateSlowdownNormsPP(plantId, year, keycloak) {
+  const year1 = localStorage.getItem('year')
+  //  const url = `${Config.CaseEngineUrl}/task/getCalculatedShutdownNorms?year=${year1}&plantId=${plantId}`
+  const url = `${Config.CaseEngineUrl}/task/calculate-slowdown-norms?plantId=${plantId}&year=${year}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
@@ -2086,7 +2112,7 @@ async function maintenaceExportdata(
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error exporting Spyro Input Excel:', e)
+    console.error('Error exporting Optimizer Input Excel:', e)
     return Promise.reject(e)
   }
 }
@@ -2579,7 +2605,7 @@ async function importSpyroOutputExcel(file, keycloak, mode) {
     })
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
-    console.error('Error importing Spyro Input Excel:', e)
+    console.error('Error importing Optimizer Input Excel:', e)
     return await Promise.reject(e)
   }
 }
@@ -2604,7 +2630,7 @@ async function importSpyroOutputExcelYield(file, keycloak, mode) {
     })
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
-    console.error('Error importing Spyro Input Excel:', e)
+    console.error('Error importing Optimizer Input Excel:', e)
     return await Promise.reject(e)
   }
 }
@@ -2640,13 +2666,13 @@ async function exportSpyroOutputExcel(keycloak, mode) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `SpyroOutput_${mode || 'Export'}.xlsx`
+    a.download = `Optimizer_Output_${mode || 'Export'}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error exporting Spyro Input Excel:', e)
+    console.error('Error exporting Optimizer Input Excel:', e)
     return Promise.reject(e)
   }
 }
@@ -2688,7 +2714,7 @@ async function exportSpyroOutputExcelYield(keycloak, mode) {
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error exporting Spyro Input Excel:', e)
+    console.error('Error exporting Optimizer Input Excel:', e)
     return Promise.reject(e)
   }
 }
@@ -2712,7 +2738,7 @@ async function importSpyroInputExcel(file, keycloak, mode) {
     })
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
-    console.error('Error importing Spyro Input Excel:', e)
+    console.error('Error importing Optimizer Input Excel:', e)
     return await Promise.reject(e)
   }
 }
@@ -2748,19 +2774,19 @@ async function exportSpyroInputExcel(keycloak, mode) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `SpyroInput_${mode || 'Export'}.xlsx`
+    a.download = `Optimizer_Input_${mode || 'Export'}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error exporting Spyro Input Excel:', e)
+    console.error('Error exporting Optimizer Input Excel:', e)
     return Promise.reject(e)
   }
 }
 
 //--
-async function getConfigurationExcel(keycloak) {
+async function getConfigurationExcel(keycloak, reportType) {
   var year = localStorage.getItem('year')
   var plantId = ''
   const storedPlant = localStorage.getItem('selectedPlant')
@@ -2768,6 +2794,7 @@ async function getConfigurationExcel(keycloak) {
     const parsedPlant = JSON.parse(storedPlant)
     plantId = parsedPlant.id
   }
+
   const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${year}&plantId=${plantId}`
 
   const headers = {
@@ -2775,14 +2802,22 @@ async function getConfigurationExcel(keycloak) {
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     Authorization: `Bearer ${keycloak.token}`,
   }
+
+  const body = JSON.stringify(reportType)
+
   try {
     const resp = await fetch(url, {
-      method: 'GET',
+      method: 'POST', // changed from GET to POST since we’re sending a body
       headers,
+      body,
     })
+
     if (!resp.ok) {
-      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
     }
+
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -2793,10 +2828,11 @@ async function getConfigurationExcel(keycloak) {
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error Editing Config data:', e)
+    console.error('Error exporting Config data:', e)
     return Promise.reject(e)
   }
 }
+
 async function getConfigurationExcelConstants(keycloak) {
   var year = localStorage.getItem('year')
   var plantId = ''
@@ -3651,21 +3687,34 @@ export async function slowdownDetailsExport(keycloak, plantId, year) {
   }
 }
 
-async function getConfigurationExcelType(keycloak, PLANT_ID, AOP_YEAR, type) {
-  const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}&reportType=${type}`
+async function getConfigurationExcelType(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  reportType,
+) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     Authorization: `Bearer ${keycloak.token}`,
   }
+
+  const body = JSON.stringify(reportType)
+
   try {
     const resp = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers,
+      body,
     })
+
     if (!resp.ok) {
-      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+      throw new Error(
+        `Failed to export data: ${resp.status} ${resp.statusText}`,
+      )
     }
+
     const blob = await resp.blob()
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -3676,7 +3725,7 @@ async function getConfigurationExcelType(keycloak, PLANT_ID, AOP_YEAR, type) {
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error Editing Config data:', e)
+    console.error('Error exporting Config data:', e)
     return Promise.reject(e)
   }
 }
@@ -3696,5 +3745,21 @@ async function getProductionReports(keycloak, PLANT_ID, AOP_YEAR, REPORT_TYPE) {
   } catch (e) {
     console.log(e)
     return Promise.reject(e)
+  }
+}
+
+async function gradeDetails(keycloak, AOP_YEAR, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/products?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

@@ -2,12 +2,11 @@ import Config from '../consts'
 import { json } from './request'
 export const BusinessDemandDataApiService = {
   getBDData,
-
   saveBusinessDemandData,
   deleteBusinessDemandData,
-
   businessDemandImport,
   businessDemandExport,
+  aopDesignBasisBluePrint,
 }
 async function getBDData(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/business-demand?year=${year}&plantId=${plantId}`
@@ -104,7 +103,7 @@ async function businessDemandExport(keycloak, PLANT_ID, AOP_YEAR) {
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error exporting Spyro Input Excel:', e)
+    console.error('Error exporting Optimizer Input Excel:', e)
     return Promise.reject(e)
   }
 }
@@ -126,7 +125,25 @@ async function businessDemandImport(file, keycloak, PLANT_ID, AOP_YEAR) {
     })
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
-    console.error('Error importing Spyro Input Excel:', e)
+    console.error('Error importing Optimizer Input Excel:', e)
     return await Promise.reject(e)
+  }
+}
+
+async function aopDesignBasisBluePrint() {
+  var url = `${window.location.origin}/files/Blue Print.docx`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+    })
+
+    const blob = await resp.blob()
+    const fileURL = window.URL.createObjectURL(blob)
+    window.open(fileURL, '_blank')
+    return true
+  } catch (e) {
+    console.error('Error fetching file:', e)
+    return Promise.reject(e)
   }
 }

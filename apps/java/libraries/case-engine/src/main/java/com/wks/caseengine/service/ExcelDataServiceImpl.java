@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.dto.ModeWiseNormsDTO;
+import com.wks.caseengine.dto.ShutdownNormsValueDTO;
 import com.wks.caseengine.dto.WorkflowYearDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -34,6 +35,8 @@ public class ExcelDataServiceImpl implements ExcelDataService {
 
     @Autowired
     private ModeWiseNormsService modeWiseNormsService;
+    @Autowired
+    private ShutdownNormsService shutdownNormsService;
 
     @Override
     public List<List<Object>> getDataForProductionVolumeReport(String plantId, String year, List<String> headers) {
@@ -197,6 +200,56 @@ public class ExcelDataServiceImpl implements ExcelDataService {
 
         System.out.println("getReportForMonthWiseConsumptionSummaryData " + outerMap);
         return outerMap;
+
+    }
+
+    @Override
+    public List<List<Object>> getShutdownNormsData(String plantId, String year, String dataInput,
+            List<String> headers) {
+
+        Map<String, List<List<Object>>> outerMap = new HashMap<>();
+        AOPMessageVM aopMessageVM = shutdownNormsService.getShutdownNormsData(year, plantId, null);
+
+        Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+        List<ShutdownNormsValueDTO> shutDownList = (List<ShutdownNormsValueDTO>) responseMap
+                .get("mcuNormsValueDTOList");
+        System.out.println("ShutDownData in report" + shutDownList);
+
+        for (ShutdownNormsValueDTO dto : shutDownList) {
+            // List<List<Object>> dataList = new ArrayList<>();
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    Object value = field.get(dto); // Get the value as Object
+                    list.add(Objects.toString(value, null)); // Safely convert to String
+                } catch (Exception e) {
+                    // If field doesn't exist or is not accessible, add null
+                    list.add(null);
+                }
+
+            }
+            // dataList.add(list);
+            if (outerMap.containsKey(dto.getNormParameterTypeDisplayName())) {
+                List<List<Object>> dataList = outerMap.get(dto.getNormParameterTypeDisplayName());
+                dataList.add(list);
+            } else {
+                List<List<Object>> dataList = new ArrayList<>();
+                dataList.add(list);
+                outerMap.put(dto.getNormParameterTypeDisplayName(), dataList);
+            }
+
+        }
+
+        System.out.println("getShutdownReportData" + outerMap);
+        if (outerMap.containsKey(dataInput)) {
+            return outerMap.get(dataInput);
+        } else {
+            List<List<Object>> dataList = new ArrayList<>();
+            return dataList;
+        }
+        // return outerMap;
 
     }
 
@@ -600,7 +653,7 @@ public class ExcelDataServiceImpl implements ExcelDataService {
 
         AOPMessageVM aopMessageVM = crackerReportService.getMonthWiseRawDataByMethod(
                 plantId,
-                year, mode,method);
+                year, mode, method);
 
         Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
         List<Map<String, Object>> finalNormsProduction = (List<Map<String, Object>>) responseMap
@@ -621,8 +674,6 @@ public class ExcelDataServiceImpl implements ExcelDataService {
         return dataList;
 
     }
-
-    
 
     @Override
     public List<List<Object>> getFinalNormsReport(String plantId, String year, String dataInput,

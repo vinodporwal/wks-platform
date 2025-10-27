@@ -25,11 +25,15 @@ const SelectivityData = (props) => {
     siteObject,
     verticalObject,
     year,
+    screenTitle,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const SCREEN_NAME = screenTitle?.title
+
   const AOP_YEAR = year?.selectedYear
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
@@ -40,6 +44,8 @@ const SelectivityData = (props) => {
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const [allGradesReciepes, setAllGradesReciepes] = useState(null)
+
+  const reportTypes = props?.reportTypes
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState(null)
   const [snackbarData, setSnackbarData] = useState({
@@ -76,12 +82,10 @@ const SelectivityData = (props) => {
     },
   ])
 
-  const currentYear = localStorage.getItem('year')
-
-  const [start, end] = currentYear.split('-').map(Number)
+  const [start, end] = AOP_YEAR.split('-').map(Number)
   const prevYearFormatted = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
 
-  const headerMap = generateHeaderNames(currentYear)
+  const headerMap = generateHeaderNames(AOP_YEAR)
   const headerMapForPrevYear = generateHeaderNames(prevYearFormatted)
   const [isEdited, setIsEdited] = useState(false)
 
@@ -128,16 +132,9 @@ const SelectivityData = (props) => {
 
   const saveSummary = async (summary) => {
     try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      let year = localStorage.getItem('year')
       const response = await DataService.saveSummaryAOPConsumptionNorm(
-        plantId,
-        year,
+        PLANT_ID,
+        AOP_YEAR,
         summary,
         keycloak,
       )
@@ -174,13 +171,6 @@ const SelectivityData = (props) => {
   const saveCatalystData = async (newRow) => {
     setLoading(true)
     try {
-      var plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
       var payload = []
       var response
 
@@ -199,14 +189,14 @@ const SelectivityData = (props) => {
           feb: row.apr || row.ConstantValue || null,
           mar: row.apr || row.ConstantValue || null,
           UOM: '',
-          auditYear: localStorage.getItem('year'),
+          auditYear: AOP_YEAR,
           normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
           remarks: row.remarks,
           id: row.idFromApi || null,
         }))
 
         response = await DataService.saveCatalystData(
-          plantId,
+          PLANT_ID,
           payload,
           keycloak,
         )
@@ -225,14 +215,14 @@ const SelectivityData = (props) => {
           feb: row.feb || null,
           mar: row.mar || null,
           UOM: '',
-          auditYear: localStorage.getItem('year'),
+          auditYear: AOP_YEAR,
           normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
           remarks: row.remarks,
           id: row.idFromApi || null,
         }))
 
         response = await DataService.saveCatalystData(
-          plantId,
+          PLANT_ID,
           payload,
           keycloak,
         )
@@ -448,6 +438,10 @@ const SelectivityData = (props) => {
       uploadExcelBtn: true,
       showLoad: true,
       allAction: true,
+
+      showTitleNameBusiness: true,
+      titleName: props?.currentTabDisplayName,
+
       // showG: props?.configType === 'cracker_configuration' ? true : false,
       showG: false,
       dropdownLabel: 'Select Mode',
@@ -487,10 +481,33 @@ const SelectivityData = (props) => {
             keycloak,
             PLANT_ID,
             AOP_YEAR,
-            props?.configType,
+            [props?.configType],
           )
         } else {
-          await DataService.getConfigurationExcel(keycloak, gradeId)
+          var report_t = []
+
+          if (props?.tabIndex == 0) {
+            report_t = reportTypes.filter(
+              (type) =>
+                type !== 'Report Manual Entry' &&
+                type !== 'Shutdown' &&
+                type !== 'PIO Impact',
+            )
+          }
+          if (props?.tabIndex == 2) {
+            report_t = reportTypes.filter(
+              (type) => type == 'Report Manual Entry',
+            )
+          }
+          if (props?.tabIndex == 3) {
+            report_t = reportTypes.filter((type) => type == 'PIO Impact')
+          }
+
+          if (props?.tabIndex == 4) {
+            report_t = reportTypes.filter((type) => type == 'Shutdown')
+          }
+
+          await DataService.getConfigurationExcel(keycloak, report_t)
         }
       } else {
         await DataService.getConfigurationExcelConstants(keycloak)
@@ -516,12 +533,6 @@ const SelectivityData = (props) => {
   const saveExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      var plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
       var response
       if (props?.configType === 'grades') {
         response = await DataService.saveRecipeExcel(rawFile, keycloak)
@@ -697,6 +708,7 @@ const SelectivityData = (props) => {
       </div>
     )
   }
+
   return (
     <div>
       <Box>
@@ -717,8 +729,7 @@ const SelectivityData = (props) => {
           setRows={props?.setRows}
           title='Configuration'
           summaryEdited={props?.summaryEdited}
-          // isCellEditable={isCellEditable}
-          // paginationOptions={[100, 200, 300]}
+          currentTabDisplayName={props?.currentTabDisplayName}
           saveChanges={saveChanges}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}

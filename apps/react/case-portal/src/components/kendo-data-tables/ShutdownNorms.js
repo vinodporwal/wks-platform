@@ -34,7 +34,7 @@ const ShutdownNorms = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
-
+    screenTitle,
     plantObject,
     siteObject,
     verticalObject,
@@ -58,6 +58,7 @@ const ShutdownNorms = () => {
   const SITE_NAME = siteObject?.name
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
 
   useEffect(() => {
     if (plantID?.plantId) {
@@ -221,7 +222,7 @@ const ShutdownNorms = () => {
 
         setSnackbarOpen(true)
         setSnackbarData({
-          message: `Data Saved Successfully!`,
+          message: `Saved Successfully!`,
           severity: 'success',
         })
         setModifiedCells({})
@@ -492,13 +493,18 @@ const ShutdownNorms = () => {
           : false,
 
       showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      marginBottom:
+        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
       dropdownLabel:
         lowerVertName === 'pe' || lowerVertName === 'pp'
           ? 'Select Grade'
           : 'Select Mode',
       allAction: true,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown Consumption (Quantity)`,
+
+      showTitleNameBusiness: true,
+      titleName: SCREEN_NAME,
+      ExcelName: `${VERTICAL_NAME}_${SCREEN_NAME}`,
     },
     isOldYear,
   )

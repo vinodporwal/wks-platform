@@ -2,7 +2,6 @@ import { useGridApiRef } from '@mui/x-data-grid'
 import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-// import DataGridTable from '../ASDataGrid'
 // import { GridRowModes } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { DataService } from 'services/DataService'
@@ -425,12 +424,20 @@ const SlowdownNorms = () => {
         plantId = parsedPlant.id
       }
 
-      const response = await DataService.handleCalculateSlowdownNorms(
-        plantId,
-        year,
-        keycloak,
-      )
-
+      var response = []
+      if (lowerVertName == 'pp') {
+        response = await DataService.handleCalculateSlowdownNormsPP(
+          plantId,
+          year,
+          keycloak,
+        )
+      } else {
+        response = await DataService.handleCalculateSlowdownNorms(
+          plantId,
+          year,
+          keycloak,
+        )
+      }
       if (response?.code == 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -502,6 +509,8 @@ const SlowdownNorms = () => {
           : 'Select Grade',
       downloadExcelBtnFromUI: true,
       showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      marginBottom:
+        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
 
       ExcelName: `${lowerVertName}_Slowdown Consumption (Norms/Quantity)`,
       showCalculateVisibility:
@@ -597,18 +606,6 @@ const SlowdownNorms = () => {
           grades={grades}
           calculatebtnClicked={calculatebtnClicked}
           handleGradeChange={handleGradeChange}
-
-          // permissions={{
-          //   showAction: false,
-          //   addButton: false,
-          //   deleteButton: false,
-          //   editButton: false,
-          //   showUnit: false,
-          //   units: ['TPH', 'TPD'],
-          //   saveWithRemark: false,
-          //   saveBtn: true,
-          //   showCalculate: lowerVertName == 'meg' ? false : false,
-          // }}
         />
       )}
     </div>

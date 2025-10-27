@@ -4,14 +4,10 @@
     "title": "Type",
     "groupable": true,
     "editable": false,
-    "hidden": true
+    "hidden": true,
+    "widthT": 300
   },
-  {
-    "field": "normParameterFKId",
-    "title": "Particulars",
-    "editable": false,
-    "hidden": true
-  },
+
   {
     "field": "productName",
     "title": "Particulars",
@@ -19,19 +15,22 @@
     "widthT": 300
   },
   {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 60
+  },
+  {
     "field": "apr",
-    "title": "Values",
+    "title": "Value",
     "editable": true,
-    "align": "left",
-    "headerAlign": "left",
     "type": "number",
-    "format": "{0:#.##}" 
+    "widthT": 140
   },
   {
     "field": "remarks",
     "title": "Remark",
     "editable": true,
-    "renderCell": "renderRemarkCell",
     "widthT": 300
   }
 ]

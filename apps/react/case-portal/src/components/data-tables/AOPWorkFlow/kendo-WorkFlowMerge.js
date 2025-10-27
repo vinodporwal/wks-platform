@@ -41,6 +41,8 @@ import PlantContributionLastFourYears from '../Reports-kendo/kendo-PlantContribu
 import BestAchievedReport from '../Reports/BestAchievedReport'
 import MonthWiseRawData from '../Reports/MonthWiseRawData'
 import FurnaceRawData from '../Reports/FurnaceRawData'
+import OptimizerReport from '../Reports/OptimizerReport'
+import TurnaroundReportCracker from '../Reports/TurnaroundReportCracker'
 
 const WorkFlowMerge = () => {
   const keycloak = useSession()
@@ -304,10 +306,29 @@ const WorkFlowMerge = () => {
     ],
   }
 
-  function getNumericKeysInAllRows(rows) {
+  function getNumericKeysInAllRows(rows = []) {
     if (!Array.isArray(rows) || rows.length === 0) return []
-    return Object.keys(rows[0]).filter((key) =>
-      rows.every((row) => row[key] === '' || !isNaN(Number(row[key]))),
+
+    // collect every key that appears in any row
+    const allKeys = Array.from(
+      rows.reduce((set, row) => {
+        if (row && typeof row === 'object') {
+          Object.keys(row).forEach((k) => set.add(k))
+        }
+        return set
+      }, new Set()),
+    )
+
+    return allKeys.filter((key) =>
+      rows.every((row) => {
+        const v = row?.[key]
+        // ignore missing / null / empty-string values (they don't disqualify the key)
+        if (v === undefined || v === null || String(v).trim() === '')
+          return true
+
+        const n = Number(String(v).trim())
+        return Number.isFinite(n)
+      }),
     )
   }
 
@@ -594,9 +615,11 @@ const WorkFlowMerge = () => {
   ]
 
   const crackerTabs = [
+    'Optimizer Input / Output',
     'Month Wise Production Plan',
-    'Month Wise Raw Data',
+    'Month Wise Norms',
     'Furnace Data',
+    'Turnaround',
     'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
   ]
@@ -836,11 +859,21 @@ const WorkFlowMerge = () => {
         {/* For CRACKER */}
         {lowerVertName === 'cracker' && (
           <>
-            {tabIndex === 0 && <BestAchievedReport />}
+            {/* {tabIndex === 0 && <BestAchievedReport />}
             {tabIndex === 1 && <MonthWiseRawData />}
             {tabIndex === 2 && <FurnaceRawData />}
             {tabIndex === 3 && <PlantContribution />}
             {tabIndex === 4 && <PlantContributionLastFourYears />}
+ */}
+
+            {tabIndex === 0 && <OptimizerReport />}
+            {tabIndex === 1 && <BestAchievedReport />}
+            {tabIndex === 2 && <MonthWiseRawData />}
+            {tabIndex === 3 && <FurnaceRawData />}
+            {tabIndex === 4 && <TurnaroundReportCracker />}
+
+            {tabIndex === 5 && <PlantContribution />}
+            {tabIndex === 6 && <PlantContributionLastFourYears />}
 
             <Notification
               open={snackbarOpen}

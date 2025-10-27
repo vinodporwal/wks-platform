@@ -20,7 +20,6 @@ import NormalOpNormsScreenCracker from './NormalOpNormsCrakcer'
 
 const NormalOpNormsScreen = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
-
   const [allRedCell, setAllRedCell] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const [calculationObject, setCalculationObject] = useState([])
@@ -47,6 +46,7 @@ const NormalOpNormsScreen = () => {
     plantObject,
     siteObject,
     verticalObject,
+    screenTitle,
     year,
   } = dataGridStore
   const isOldYear = oldYear?.oldYear
@@ -57,11 +57,12 @@ const NormalOpNormsScreen = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const dispatch = useDispatch()
-  const headerMap = generateHeaderNames(localStorage.getItem('year'))
+  const headerMap = generateHeaderNames(AOP_YEAR)
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -389,13 +390,7 @@ const NormalOpNormsScreen = () => {
   const saveNormalOperationNormsData = async (newRows) => {
     setLoading(true)
     try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
+      
       const businessData = newRows.map((row) => ({
         april: row.april || null,
         may: row.may || null,
@@ -411,8 +406,8 @@ const NormalOpNormsScreen = () => {
         march: row.march || null,
         remark: row.remarks,
         remarks: row.remarks,
-        financialYear: localStorage.getItem('year'),
-        plantId: plantId,
+        financialYear:AOP_YEAR,
+        plantId: PLANT_ID,
         normParameterId: row.normParameterId,
         id: row.idFromApi || null,
         materialFkId: row.materialFkId || null,
@@ -427,7 +422,7 @@ const NormalOpNormsScreen = () => {
       if (businessData.length > 0) {
         const response =
           await NormalOperationNormsApiService.saveNormalOperationNormsData(
-            plantId,
+            PLANT_ID,
             businessData,
             keycloak,
             gradeId,
@@ -477,32 +472,22 @@ const NormalOpNormsScreen = () => {
     setRows([])
     setLoading(true)
     try {
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const year = localStorage.getItem('year')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      var plantId = plantId
       var data = null
-      let siteID =
-        JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
-      let verticalId = localStorage.getItem('verticalId')
-
+      
       if (lowerVertName == 'pe' || lowerVertName == 'pp') {
         data =
           await NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe(
-            plantId,
-            siteID,
-            verticalId,
-            year,
+            PLANT_ID,
+            SITE_ID,
+            VERTICAL_ID,
+            AOP_YEAR,
             keycloak,
           )
       } else {
         data =
           await NormalOperationNormsApiService.handleCalculateNormalOperationNorms(
-            plantId,
-            year,
+            PLANT_ID,
+            AOP_YEAR,
             keycloak,
           )
       }
@@ -568,17 +553,21 @@ const NormalOpNormsScreen = () => {
       saveBtn: true,
       showCalculate: true,
       downloadExcelBtnFromUI: false,
-      ExcelName: `${lowerVertName}_BestAcheived(Min CC)`,
       showCheckbox: false,
-      marginBottom: false,
       showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      marginBottom:
+        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+
       dropdownLabel:
         lowerVertName === 'pe' || lowerVertName === 'pp'
           ? 'Select Grade'
           : 'Select Mode',
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
-      titleName: 'Best Achieved (Min CC)',
+
+      showTitleNameBusiness: true,
+      titleName: SCREEN_NAME,
+
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
@@ -638,13 +627,7 @@ const NormalOpNormsScreen = () => {
   const saveExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      var plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
+      
       const response =
         await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
           rawFile,
@@ -751,7 +734,7 @@ const NormalOpNormsScreen = () => {
         />
       )}
 
-      {true && lowerVertName === 'meg' && (
+      {lowerVertName === 'meg' && (
         <Box sx={{ width: '100%', marginTop: 1 }}>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary

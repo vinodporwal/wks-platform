@@ -20,9 +20,7 @@ import ProductionvolumeData from './ProductionVoluemData'
 
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
-
   const keycloak = useSession()
-
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -35,16 +33,18 @@ const BusinessDemand = ({ permissions }) => {
     siteObject,
     verticalObject,
     year,
+    screenTitle,
   } = dataGridStore
-
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const SCREEN_NAME = screenTitle?.title
+
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -132,9 +132,7 @@ const BusinessDemand = ({ permissions }) => {
         setLoading(false)
         return
       }
-      const isPPorPE_NMD =
-        (lowerVertName === 'pp' || lowerVertName === 'pe') &&
-        siteObject?.name?.toLowerCase() === 'nmd'
+      const isPPorPE_NMD = lowerVertName === 'pp' || lowerVertName === 'pe'
       //
 
       if (isPPorPE_NMD) {
@@ -289,8 +287,8 @@ const BusinessDemand = ({ permissions }) => {
   }
   const percentageTitle =
     lowerVertName === 'pp' || lowerVertName === 'pe'
-      ? 'Business Demand Data (%)'
-      : 'Business Demand Data'
+      ? `${SCREEN_NAME} (%)`
+      : `${SCREEN_NAME}`
 
   const adjustedPermissions = getAdjustedPermissions(
     {
@@ -305,30 +303,28 @@ const BusinessDemand = ({ permissions }) => {
       units: ['TPH', 'TPD'],
       showTitleNameBusiness: true,
       titleName: percentageTitle,
-      downloadExcelBtnFromUI:
-        lowerVertName == 'cracker' ||
-        (lowerVertName == 'pe' &&
-          plantObject?.name?.toLowerCase() === 'ldpe' &&
-          siteObject?.name?.toLowerCase() === 'nmd')
-          ? false
-          : true,
-      ExcelName: `${lowerVertName}_Business Demand Data`,
+      ExcelName: `${VERTICAL_NAME}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
 
       downloadExcelBtn:
         lowerVertName == 'cracker' ||
-        (lowerVertName == 'pe' &&
-          plantObject?.name?.toLowerCase() === 'ldpe' &&
-          siteObject?.name?.toLowerCase() === 'nmd')
+        lowerVertName == 'pe' ||
+        lowerVertName == 'pp'
           ? true
           : false,
       uploadExcelBtn:
         lowerVertName == 'cracker' ||
-        (lowerVertName == 'pe' &&
-          plantObject?.name?.toLowerCase() === 'ldpe' &&
-          siteObject?.name?.toLowerCase() === 'nmd')
+        lowerVertName == 'pe' ||
+        lowerVertName == 'pp'
           ? true
           : false,
+
+      downloadExcelBtnFromUI:
+        lowerVertName == 'cracker' ||
+        lowerVertName == 'pe' ||
+        lowerVertName == 'pp'
+          ? false
+          : true,
     },
     isOldYear,
   )
@@ -446,7 +442,7 @@ const BusinessDemand = ({ permissions }) => {
               aria-controls='meg-grid-content'
               id='meg-grid-header'
             >
-              <Typography component='span' className='grid-title'>
+              <Typography component='span' className='accordian-title'>
                 Production Target (MT) (This is a reference for entering the
                 Business Demand value)
               </Typography>

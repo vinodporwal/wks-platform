@@ -19,6 +19,7 @@ import { Box, Tab, Tabs } from '../../../node_modules/@mui/material/index'
 import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/gridEditRowModel'
 import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -31,12 +32,17 @@ const SlowDown = ({ permissions }) => {
     siteObject,
     verticalObject,
     year,
+    screenTitle,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
+
+  const FORMATE_DECIMAL = ValueFormatterProduction()
+
   const vertName = verticalChange?.selectedVertical
   const plantName = plantObject?.name
   const isOldYear = oldYear?.oldYear
@@ -129,12 +135,7 @@ const SlowDown = ({ permissions }) => {
   const saveSlowDownData = async (newRow) => {
     setLoading(true)
     try {
-      var plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
+      var plantId = PLANT_ID
 
       const slowDownDetailsMEG = newRow.map((row) => ({
         productId: (() => {
@@ -155,7 +156,7 @@ const SlowDown = ({ permissions }) => {
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
         remark: row.remark,
         rate: row.rate,
-        audityear: localStorage.getItem('year'),
+        audityear: AOP_YEAR,
         id: row.idFromApi || null,
         rateEO: row.rateEO,
         rateEOE: row.rateEOE,
@@ -172,7 +173,7 @@ const SlowDown = ({ permissions }) => {
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
         remark: row.remark,
         rate: row.rate,
-        audityear: localStorage.getItem('year'),
+        audityear: AOP_YEAR,
         id: row.idFromApi || null,
         rateEO: null,
         rateEOE: null,
@@ -215,14 +216,8 @@ const SlowDown = ({ permissions }) => {
   const saveSlowDownConfigurationData = async (row) => {
     setLoading(true)
     try {
-      var plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      const year = localStorage.getItem('year')
-
+      var plantId = PLANT_ID
+      const year = AOP_YEAR
       const response = await DataService.saveSlowdownConfigData(
         plantId,
         year,
@@ -231,7 +226,6 @@ const SlowDown = ({ permissions }) => {
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)
-
         setSnackbarData({
           message: 'Saved Successfully!',
           severity: 'success',
@@ -275,7 +269,7 @@ const SlowDown = ({ permissions }) => {
         })
         return
       }
-      const yearStr = localStorage.getItem('year') // e.g. "2025-26"
+      const yearStr = AOP_YEAR
       let startLimit, endLimit
       if (yearStr) {
         const [startYear, endYear] = yearStr
@@ -333,6 +327,7 @@ const SlowDown = ({ permissions }) => {
       // Select required fields based on vertical
       const requiredFields = ['discription', 'remark']
       const requiredFieldsForElastomer = ['discription', 'remark', 'rate']
+      const requiredFieldsForPe = ['discription', 'remark', 'rate']
       const requiredFieldsForMeg = [
         'discription',
         'remark',
@@ -345,7 +340,9 @@ const SlowDown = ({ permissions }) => {
           ? requiredFieldsForElastomer
           : lowerVertName === 'meg'
             ? requiredFieldsForMeg
-            : requiredFields
+            : lowerVertName === 'pe'
+              ? requiredFieldsForPe
+              : requiredFields
 
       // Missing required fields
       for (const record of data) {
@@ -579,7 +576,7 @@ const SlowDown = ({ permissions }) => {
 
       return response
     } catch (error) {
-      console.error('Error saving Slowdown data:', error)
+      console.error('Error saving data:', error)
     } finally {
       fetchData()
 
@@ -737,7 +734,7 @@ const SlowDown = ({ permissions }) => {
           hidden: removedCols.includes(item.field),
           ...(item.field !== 'particulars' &&
             item.field.toLowerCase() !== 'uom' && {
-              format: '{0:#.###}',
+              format: FORMATE_DECIMAL,
               type: 'number',
             }),
         }))
@@ -761,7 +758,9 @@ const SlowDown = ({ permissions }) => {
         var data = []
         if (lowerVertName == 'meg')
           data = await DataService.getAllProducts(keycloak, null)
-        else {
+        else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+          data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
+        } else {
           data = await DataService.getAllProductsAll(keycloak, 'Production')
         }
         var productList = []
@@ -773,6 +772,12 @@ const SlowDown = ({ permissions }) => {
               displayName: product.displayName,
               realId: product.id,
             }))
+        } else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+          productList = data?.data.map((product) => ({
+            id: product.displayName,
+            displayName: product.displayName,
+            realId: product.id,
+          }))
         } else {
           productList = data.map((product) => ({
             id: product.displayname,
@@ -858,6 +863,7 @@ const SlowDown = ({ permissions }) => {
       console.error('Error deleting Record!', error)
     }
   }
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -917,7 +923,7 @@ const SlowDown = ({ permissions }) => {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.setAttribute('download', 'Error File - Shutdown.xlsx')
+        link.setAttribute('download', 'Error File - Slowdown.xlsx')
         document.body.appendChild(link)
         link.click()
         link.remove()
@@ -981,6 +987,10 @@ const SlowDown = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
+
+      showTitleNameBusiness: true,
+      titleName: SCREEN_NAME,
+
       uploadExcelBtn:
         lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
     },
@@ -1100,6 +1110,8 @@ const SlowDown = ({ permissions }) => {
             onlyCellUpdate: true,
             downloadExcelBtnFromUI: true,
             ExcelName: `${lowerVertName}_Slowdown Activities Configuration`,
+            showTitleNameBusiness: true,
+            titleName: 'Configuration',
           }}
           handleCancelClick={handleCancelClick}
           groupBy='Particulars'

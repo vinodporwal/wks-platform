@@ -418,21 +418,22 @@ const CrakcerConstants = () => {
                     style={{ height: '80px' }}
                     size={'medium'}
                   />
+                  {!isOldYearFlag && (
+                    <Button
+                      variant='contained'
+                      onClick={handleOpenDialog}
+                      className='btn-load'
+                      sx={{ alignSelf: 'flex-end' }}
+                    >
+                      Load
+                    </Button>
+                  )}
                 </Box>
-                {!isOldYearFlag && (
-                  <Button
-                    variant='contained'
-                    onClick={handleOpenDialog}
-                    className='btn-load'
-                    sx={{ alignSelf: 'flex-end' }}
-                  >
-                    Load
-                  </Button>
-                )}
+
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
                     className='summary-title'
-                    sx={{ whiteSpace: 'normal' }}
+                    sx={{ whiteSpace: 'normal' }} // <-- added alignSelf
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
                   </Typography>
@@ -750,11 +751,12 @@ const CrakcerConstants = () => {
 
     try {
       let response
-      response = await NormalOperationNormsApiService.CrackerConstantsExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      response =
+        await NormalOperationNormsApiService.criteriaForBestAchivedExcelExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({

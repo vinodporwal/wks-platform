@@ -1,4 +1,3 @@
-//import DataGridTable from './ASDataGrid'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
@@ -9,10 +8,7 @@ import { useSession } from 'SessionStoreContext'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
-
 import { Box } from '@mui/material'
-//import './data-grid-css.css'
-//import './extra-css.css'
 
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
@@ -21,19 +17,33 @@ const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
-  const headerMap = generateHeaderNames(localStorage.getItem('year'))
-  const [isAccordionExpanded, setIsAccordionExpanded] = useState(true)
 
   const [open1, setOpen1] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
-  const { sitePlantChange, verticalChange, yearChanged, oldYear, plantID } =
-    dataGridStore
-  //const isOldYear = oldYear?.oldYear
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
 
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
@@ -73,18 +83,9 @@ const ConsumptionNorms = () => {
   const saveEditedData = async (newRows) => {
     setLoading(true)
     try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
-      let siteID =
-        JSON.parse(localStorage.getItem('selectedSiteId') || '{}')?.id || ''
-
-      let verticalId = localStorage.getItem('verticalId')
-
+      let plantId = PLANT_ID
+      let siteID = SITE_ID
+      let verticalId = VERTICAL_ID
       const businessData = newRows.map((row) => ({
         april: row.april || null,
         may: row.may || null,
@@ -99,7 +100,7 @@ const ConsumptionNorms = () => {
         feb: row.feb || null,
         march: row.march || null,
         aopRemarks: row.aopRemarks || null,
-        aopYear: localStorage.getItem('year'),
+        aopYear: AOP_YEAR,
         plantFkId: plantId,
         siteFkId: siteID,
         verticalFkId: verticalId,
@@ -115,7 +116,7 @@ const ConsumptionNorms = () => {
       )
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Consumption AOP Saved Successfully!',
+        message: 'Saved Successfully!',
         severity: 'success',
       })
       //
@@ -132,7 +133,7 @@ const ConsumptionNorms = () => {
 
       return response
     } catch (error) {
-      console.error('Error saving Consumption AOP!', error)
+      console.error('Error saving data!', error)
     } finally {
       //
       setLoading(false)
@@ -143,10 +144,6 @@ const ConsumptionNorms = () => {
     setLoading(true)
 
     setTimeout(() => {
-      const lowerVertName = JSON.parse(
-        localStorage.getItem('selectedVertical'),
-      )?.name?.toLowerCase()
-
       if (lowerVertName == 'meg') {
         try {
           var data = Object.values(modifiedCells)
@@ -330,26 +327,6 @@ const ConsumptionNorms = () => {
     }
   }
 
-  // const getAopSummary = async () => {
-  //   setLoading(true)
-  //   try {
-  //     var res = await ConsumptionNormsApiService.getAopSummary(keycloak)
-
-  //     if (res?.code == 200) {
-  //       setSummary(res?.data?.summary)
-  //     } else {
-  //       setSummary('')
-  //     }
-
-  //     setLoading(false)
-  //     setCalculatebtnClicked(false)
-  //   } catch (error) {
-  //     console.error('Error fetching data:', error)
-  //     setLoading(false)
-  //     setCalculatebtnClicked(false)
-  //   }
-  // }
-
   useEffect(() => {
     fetchData(gradeId)
     if (lowerVertName === 'pe' || lowerVertName === 'pp') {
@@ -372,18 +349,11 @@ const ConsumptionNorms = () => {
 
   const handleCalculateMeg = async () => {
     try {
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const year = localStorage.getItem('year')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
-      var plantId = plantId
+   
       const data =
         await ConsumptionNormsApiService.handleCalculateonsumptionNorms(
-          plantId,
-          year,
+          PLANT_ID,
+          AOP_YEAR,
           keycloak,
         )
 
@@ -455,11 +425,14 @@ const ConsumptionNorms = () => {
       noColor: false,
       customHeight: defaultCustomHeight,
       showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      marginBottom:
+        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI: true,
-      // ExcelName: `${lowerVertName}${gradeId ? `_${gradeId}` : ''}_Overall AOP Consumption`,
-      ExcelName: `${lowerVertName}_Overall AOP Consumption`,
+      ExcelName: `${lowerVertName}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
+      showTitleNameBusiness: true,
+      titleName: `${SCREEN_NAME}`,
     },
     isOldYear,
   )
@@ -478,21 +451,7 @@ const ConsumptionNorms = () => {
       </Backdrop>
 
       <div>
-        {true && (
-          // <CustomAccordion
-          //   defaultExpanded
-          //   disableGutters
-          //   onChange={handleAccordionChange}
-          // >
-          // <CustomAccordionSummary
-          //   aria-controls='meg-grid-content'
-          //   id='meg-grid-header'
-          // >
-          // <Typography component='span' className='grid-title'>
-          //   Consumption AOP
-          // </Typography>
-          // </CustomAccordionSummary>
-          // <CustomAccordionDetails>
+        {
           <Box
             sx={{
               width: '100%',
@@ -537,9 +496,7 @@ const ConsumptionNorms = () => {
               calculatebtnClicked={calculatebtnClicked}
             />
           </Box>
-          // </CustomAccordionDetails>
-          // </CustomAccordion>
-        )}
+        }
       </div>
     </div>
   )

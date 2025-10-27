@@ -27,6 +27,7 @@ const ShutDown = ({ permissions }) => {
     siteObject,
     verticalObject,
     year,
+    screenTitle,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -34,6 +35,7 @@ const ShutDown = ({ permissions }) => {
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical
+  const SCREEN_NAME = screenTitle?.title
 
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const plantName = plantObject?.name
@@ -82,7 +84,7 @@ const ShutDown = ({ permissions }) => {
         })
         return
       }
-      const yearStr = localStorage.getItem('year') // e.g. "2025-26"
+      const yearStr = AOP_YEAR
       let startLimit, endLimit
       if (yearStr) {
         const [startYear, endYear] = yearStr
@@ -141,7 +143,7 @@ const ShutDown = ({ permissions }) => {
         if (plantName?.toLowerCase() === 'ldpe') {
           requiredFields = ['discription', 'remark', 'productName1']
         } else {
-          requiredFields = ['discription', 'remark']
+          requiredFields = ['discription', 'remark', 'productName1']
         }
       } else if (lowerVertName === 'pp') {
         requiredFields = ['discription', 'remark']
@@ -348,14 +350,6 @@ const ShutDown = ({ permissions }) => {
   const saveShutdownData = async (newRow) => {
     setLoading(true)
     try {
-      let plantId = ''
-
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
       const shutdownDetails = newRow.map((row) => ({
         productId: (() => {
           if (
@@ -383,20 +377,20 @@ const ShutDown = ({ permissions }) => {
         })(),
         maintEndDateTime: addTimeOffset(row.maintEndDateTime),
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
-        audityear: localStorage.getItem('year'),
+        audityear: AOP_YEAR,
         id: row.idFromApi || null,
         remark: row.remark || 'null',
       }))
 
       const response = await DataService.saveShutdownData(
-        plantId,
+        PLANT_ID,
         shutdownDetails,
         keycloak,
       )
 
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Shutdown data Saved Successfully!',
+        message: 'Saved Successfully!',
         severity: 'success',
       })
 
@@ -438,13 +432,13 @@ const ShutDown = ({ permissions }) => {
       setSnackbarOpen(true)
 
       setSnackbarData({
-        message: 'Shutdown data Updated successfully!',
+        message: 'Updated successfully!',
         severity: 'success',
       })
 
       return response
     } catch (error) {
-      console.error('Error saving Shutdown data:', error)
+      console.error('Error saving  data:', error)
     } finally {
       fetchData()
     }
@@ -493,7 +487,7 @@ const ShutDown = ({ permissions }) => {
       setRows(formattedData)
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching Shutdown data:', error)
+      console.error('Error fetching data:', error)
       setLoading(false)
     }
   }
@@ -526,6 +520,8 @@ const ShutDown = ({ permissions }) => {
         let data = []
         if (lowerVertName === 'meg') {
           data = await DataService.getAllProducts(keycloak, null)
+        } else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+          data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
           data = await DataService.getAllProductsAll(keycloak, 'Production')
         }
@@ -538,6 +534,12 @@ const ShutDown = ({ permissions }) => {
               displayName: product.displayName,
               realId: product.id,
             }))
+        } else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+          productList = data?.data.map((product) => ({
+            id: product.displayName,
+            displayName: product.displayName,
+            realId: product.id,
+          }))
         } else {
           productList = data.map((product) => ({
             id: product.displayName,
@@ -562,9 +564,9 @@ const ShutDown = ({ permissions }) => {
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
       case verticalEnums.PE:
-        if (plantName?.toLowerCase() != 'ldpe') {
-          return ShutDownAllColumns
-        }
+        // if (plantName?.toLowerCase() != 'ldpe') {
+        //   return ShutDownAllColumns
+        // }
 
         return ShutDownPeColumns
 
@@ -732,6 +734,10 @@ const ShutDown = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
+
+      showTitleNameBusiness: true,
+      titleName: `${SCREEN_NAME}`,
+
       uploadExcelBtn:
         lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
     },
