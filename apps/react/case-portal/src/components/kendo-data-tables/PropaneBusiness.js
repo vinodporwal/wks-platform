@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
 import KendoDataTables from './index'
-
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import { DataService } from 'services/DataService'
 import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
@@ -114,7 +113,7 @@ const PropaneBusiness = ({ permissions }) => {
   // To use dynamic year headers:
   const columns = [
     { field: 'productName', title: 'Particulars', editable: false },
-    { field: 'UOM', title: 'UOM', editable: false, widthT: 55 },
+    { field: 'uom', title: 'UOM', editable: false, widthT: 55 },
     { field: 'normType', title: 'Norm Type', editable: false, hidden: true },
     ...dynamicYearMonthColumns,
     { field: 'remarks', title: 'Remarks', editable: true },
@@ -147,6 +146,7 @@ const PropaneBusiness = ({ permissions }) => {
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, keycloak])
+
   const savePropaneBusiness = async () => {
     setLoading(true)
     try {
@@ -158,18 +158,19 @@ const PropaneBusiness = ({ permissions }) => {
         setLoading(false)
         return
       }
-      const missingRemark = editedRows.find(
-        (row) => !row.remarks || row.remarks.trim() === '',
-      )
-      if (missingRemark) {
-        setSnackbarData({
-          message: 'Remark is required for all edited rows.',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
-        setLoading(false)
-        return
-      }
+      // const missingRemark = editedRows.find(
+      //   (row) => !row.remarks || row.remarks.trim() === '',
+      // )
+      // if (missingRemark) {
+      //   setSnackbarData({
+      //     message: 'Remark is required for all edited rows.',
+      //     severity: 'error',
+      //   })
+      //   setSnackbarOpen(true)
+      //   setLoading(false)
+      //   return
+      // }
+
       const payload = editedRows.map((row) => ({
         apr: row.apr || null,
         may: row.may || null,
@@ -223,29 +224,24 @@ const PropaneBusiness = ({ permissions }) => {
     if (isOldYear != 1) return permissions
     return {
       ...permissions,
-      showAction: true,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
-      showTitleNameBusiness: true,
-      titleName: 'Propane Demand',
-      saveBtn: true,
-      ExcelName: `${VERTICAL_NAME}_${SCREEN_NAME}`,
-      downloadExcelBtnFromUI: true,
-      allAction: true,
     }
   }
   const adjustedPermissions = getAdjustedPermissions(
     {
       ...permissions,
-      showAction: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
-      showTitleNameBusiness: true,
-      titleName: 'Propane Demand',
-      saveBtn: true,
-      ExcelName: `${VERTICAL_NAME}_${SCREEN_NAME}`,
-      downloadExcelBtnFromUI: true,
-      allAction: true,
+      titleName: 'Propane Business Demand',
     },
     isOldYear,
   )
