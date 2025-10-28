@@ -50,7 +50,7 @@ const NormsHistorianBasisAromatics = () => {
       if (col && col.__processed) return col
       const newCol = {
         ...(col || {}),
-        width: col?.width ?? widthValue,
+        widthT: col?.width ?? widthValue,
         isEditable: false,
         __processed: true,
       }
