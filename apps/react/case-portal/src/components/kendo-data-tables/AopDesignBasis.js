@@ -20,23 +20,44 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
   TextField,
+  Tooltip,
   Typography,
 } from '../../../node_modules/@mui/material/index'
+import InfoIcon from '@mui/icons-material/Info'
+
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
+import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
+import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 
 const AopDesignBasis = () => {
-  const year = localStorage.getItem('year')
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
   const isOldYear = oldYear?.oldYear
   const isOldYearFlag = oldYear?.oldYear === 1
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase()
-  const vcmVertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
-  const vcmVerticalName = vcmVertical?.toLowerCase().trim()
+
   const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [loading1, setLoading1] = useState(false)
@@ -61,6 +82,7 @@ const AopDesignBasis = () => {
   const [availableTabs, setAvailableTabs] = useState([])
   const [summary, setSummary] = useState('')
   const [debouncedSummary, setDebouncedSummary] = useState('')
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSummary(summary)
@@ -94,292 +116,15 @@ const AopDesignBasis = () => {
     setOpenConfirmDialog(false)
     onLoad()
   }
-  const fetchPioImpactData = async () => {
-    setLoading(true)
-    try {
-      var data = await DataService.getPioImpactData(keycloak)
-
-      if (data?.code === 200) {
-        const formattedData = data.data.map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.remarks,
-          description: item.description,
-          startMonth: item.startMonth,
-          endMonth: item.endMonth,
-          value: item.value,
-          remarks: item.remarks,
-          Particulars: 'PIO Impact', // Assuming 'description' is the field to group by
-          isEditable: true,
-        }))
-
-        setPioImpactRows(formattedData)
-      } else {
-        setPioImpactRows([])
-      }
-    } catch (error) {
-      console.error('Error fetching PIO Impact data:', error)
-      setPioImpactRows([])
-    } finally {
-      setLoading(false)
-    }
-  }
-  useEffect(() => {
-    if (tabIndex === 3 && lowerVertName === 'aromatics') {
-      fetchPioImpactData()
-    }
-  }, [tabIndex, lowerVertName])
-
-  const fetchData = async (gradeId = null) => {
-    setProductionRows([])
-    setProductionRowsConstants([])
-    setProductionRowsConstantsMannualEntry([])
-    setLoading(true)
-
-    try {
-      setLoading(true)
-      var data = []
-
-      data = await DataService.getCatalystSelectivityData(keycloak, gradeId)
-
-      if (
-        lowerVertName == verticalEnums.MEG ||
-        lowerVertName == verticalEnums.CRACKER ||
-        lowerVertName == verticalEnums.ELASTOMER ||
-        lowerVertName === 'aromatics'
-      ) {
-        data = data?.filter((item) => item.normType !== 'Report Manual Entry')
-        const formattedData = data.map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.remarks,
-          srNo: index + 1,
-          Particulars: item.normType,
-        }))
-        setProductionRows(formattedData)
-        if (data) {
-          setLoading(false)
-        }
-        // setRows(formattedData)
-      } else {
-        const groups = new Map()
-
-        data.forEach((item) => {
-          const ConfigTypeName = item.ConfigTypeName
-          const TypeName = item.TypeDisplayName
-          if (!groups.has(ConfigTypeName)) {
-            groups.set(ConfigTypeName, new Map())
-          }
-          const normGroup = groups.get(ConfigTypeName)
-          if (!normGroup.has(TypeName)) {
-            normGroup.set(TypeName, [])
-          }
-          normGroup.get(TypeName).push(item)
-        })
-        let groupId = 0
-        let shutdownRows = []
-        let startUpRows = []
-        let otherLossRows = []
-        let continiousGradeRows = []
-        let discontiniousGradeRows = []
-        let constantsRows = []
-        let configurationRows = []
-        groups.forEach((normGroup, ConfigTypeName) => {
-          let rowsForThisCategory = []
-          normGroup.forEach((items, TypeName) => {
-            items.forEach((item) => {
-              rowsForThisCategory.push({
-                ...item,
-                idFromApi: item.id,
-                originalRemark: item.remarks,
-                id: groupId++,
-              })
-            })
-          })
-          if (ConfigTypeName == 'Configuration') {
-            configurationRows = rowsForThisCategory
-          }
-          if (ConfigTypeName == 'ShutdownNorms') {
-            shutdownRows = rowsForThisCategory
-          } else if (ConfigTypeName == 'StartupLosses') {
-            startUpRows = rowsForThisCategory
-          } else if (ConfigTypeName == 'Otherlosses') {
-            otherLossRows = rowsForThisCategory
-          } else if (ConfigTypeName == 'ContineGradeChange') {
-            continiousGradeRows = rowsForThisCategory
-          } else if (ConfigTypeName == 'DisContineGradeChange') {
-            discontiniousGradeRows = rowsForThisCategory
-          } else if (ConfigTypeName == 'Constant') {
-            constantsRows = rowsForThisCategory
-          }
-        })
-
-        setShutdownRows(shutdownRows)
-        setStartUpRows(startUpRows)
-        setOtherLossRows(otherLossRows)
-        setContiniousGradeData(continiousGradeRows)
-        setDiscontiniousGradeData(discontiniousGradeRows)
-        setConstantsRows(constantsRows)
-        setConfigurationRows(configurationRows)
-      }
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      setLoading(false)
-    }
-  }
-
-  const fetchDataConstants = async () => {
-    setProductionRowsConstants([])
-    try {
-      var constantsRes =
-        await DataService.getCatalystSelectivityDataConstants(keycloak)
-      if (constantsRes?.code != 200) {
-        setProductionRowsConstants([])
-        return
-      }
-
-      var data = constantsRes?.data
-
-      const formattedData = data.map((item, index) => {
-        return {
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.Remarks,
-          srNo: index + 1,
-          Particulars: item.NormTypeName,
-          remarks: item.Remarks,
-        }
-      })
-
-      setProductionRowsConstants(formattedData)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    }
-  }
-
-  const fetchDataConstantsMnnualEntry = async () => {
-    setProductionRowsConstantsMannualEntry([])
-    try {
-      var constantsRes = await DataService.getCatalystSelectivityData(keycloak)
-      const formattedData = constantsRes.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.remarks,
-        srNo: index + 1,
-        Particulars: item.normType,
-      }))
-      var data = formattedData?.filter(
-        (item) => item?.Particulars == 'Report Manual Entry',
-      )
-      setProductionRowsConstantsMannualEntry(data)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    }
-  }
-  const fetchGradeData = async () => {
-    setLoading(true)
-    try {
-      var data = await DataService.getPeConfigData(keycloak)
-
-      const formattedData = data?.map((item, index) => {
-        const converted = {}
-
-        Object.entries(item).forEach(([key, value]) => {
-          // Convert numeric strings to numbers
-          if (typeof value === 'string' && !isNaN(value)) {
-            converted[key] = value.includes('.')
-              ? parseFloat(value)
-              : parseInt(value, 10)
-          } else {
-            converted[key] = value
-          }
-        })
-
-        return {
-          ...converted,
-          id: index,
-          TypeDisplayName: item?.TypeDisplayName
-            ? item?.TypeDisplayName
-            : 'Recipe',
-        }
-      })
-
-      setGradeData(formattedData)
-    } catch (error) {
-      console.error('Error fetching grade data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getConfigurationTabsMatrix = async () => {
-    setLoading(true)
-    try {
-      var response = await DataService.getConfigurationTabsMatrix(keycloak)
-      if (response?.code == 200) {
-        const parsedData = JSON.parse(response?.data)
-        setTabs(parsedData)
-        setLoading(false)
-      } else {
-        setTabs([])
-        setLoading(false)
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      setTabs([])
-      setLoading(false)
-    }
-  }
-  const getConfigurationAvailableTabs = async () => {
-    setLoading(true)
-    try {
-      var response = await DataService.getConfigurationAvailableTabs(keycloak)
-      if (response?.code == 200) {
-        setAvailableTabs(response?.data?.configurationTypeList)
-        setLoading(false)
-      } else {
-        setAvailableTabs([])
-        setLoading(false)
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      setAvailableTabs([])
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
-    if (!plantID || !year) return
+    if (!PLANT_ID || !AOP_YEAR) return
     setTabIndex(0)
+    setLoading1(true)
+    carryForwardRecords()
 
-    getConfigurationExecutionDetails()
-  }, [plantID, year])
-
-  useEffect(() => {
-    if (!plantID || !year) {
-      return
-    }
-    getConfigurationExecutionDetails()
-    getAopSummary()
-    let vertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
-    let verticalName = vertical?.toLowerCase()
-    setTimeout(() => {
-      if (
-        verticalName != 'cracker' &&
-        verticalName != 'meg' &&
-        verticalName != 'elastomer'
-      ) {
-        getConfigurationTabsMatrix()
-        getConfigurationAvailableTabs()
-        fetchGradeData()
-      }
-    }, 500)
-  }, [oldYear, yearChanged, keycloak, plantID])
+    hasExecutedRef.current = false
+  }, [PLANT_ID, AOP_YEAR])
 
   const computeAndSetDates = useCallback(() => {
     setStartDate('')
@@ -405,17 +150,15 @@ const AopDesignBasis = () => {
       setStartDate(fallbackStartDate)
       setEndDate(fallbackEndDate)
     }
-  }, [configurationExecutionDetails, plantID])
+  }, [configurationExecutionDetails, PLANT_ID])
+
   useEffect(() => {
     computeAndSetDates()
   }, [computeAndSetDates])
-  const getTheId = (name) => {
-    const tab = availableTabs.find((tab) => tab.name === name)
-    return tab ? tab.id : null
-  }
+
   function formatDate(date) {
     if (!date) return ''
-    const year = date?.getFullYear()
+    const year = AOP_YEAR
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
@@ -439,6 +182,7 @@ const AopDesignBasis = () => {
     }
     return formatted
   }
+
   const getAopSummary = async () => {
     try {
       setSummary('')
@@ -452,11 +196,11 @@ const AopDesignBasis = () => {
       console.error('Error fetching data:', error)
     }
   }
+
   const onLoadTest = async (startDateObj, endDateObj) => {
     setLoading1(true)
-    const plantId =
-      JSON.parse(localStorage.getItem('selectedPlant') || '{}')?.id || ''
-    const auditYear = localStorage.getItem('year')
+    const plantId = PLANT_ID
+    const auditYear = AOP_YEAR
     const today = new Date()
     const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
     const startDate = new Date(today.getFullYear() - 5, today.getMonth(), 1)
@@ -493,13 +237,6 @@ const AopDesignBasis = () => {
       setLoading1(false)
     }
   }
-  useEffect(() => {
-    if (!plantID || !year) {
-      return
-    }
-    hasExecutedRef.current = false
-    getConfigurationExecutionDetails()
-  }, [plantID])
 
   const getConfigurationExecutionDetails = async () => {
     try {
@@ -528,6 +265,33 @@ const AopDesignBasis = () => {
       // setLoading1(false)
     }
   }
+
+  const carryForwardRecords = async () => {
+    try {
+      const response = await DataService.carryForwardRecords(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      getAopSummary()
+
+      if (response && response.code === 200) {
+        console.log('Carry forward successful, status 200.')
+        getConfigurationExecutionDetails()
+        setLoading1(false)
+      } else {
+        console.warn(
+          `Carry forward request completed but status was not 200: ${response?.status}`,
+        )
+      }
+    } catch (error) {
+      console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // setLoading1(false)
+    }
+  }
+
   const onLoad = async () => {
     if (startDate && endDate && startDate > endDate) {
       setSnackbarOpen(true)
@@ -554,37 +318,32 @@ const AopDesignBasis = () => {
         message: 'Start/End date configuration is incomplete.',
         severity: 'error',
       })
+      setLoading(false)
+
       return
     }
     setLoading(true)
     try {
-      var plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
       setStartDateObj(startDateObj)
       setEndDateObj(endDateObj)
       const payload = [
         {
           apr: formatDate(startDate),
           UOM: '',
-          auditYear: localStorage.getItem('year'),
+          auditYear: AOP_YEAR,
           normParameterFKId: startDateObj?.NormParameter_FK_Id,
           remarks: 'Initiated',
           id: startDateObj?.Id || null,
-          plantId: plantId,
+          plantId: PLANT_ID,
         },
         {
           apr: formatDate(endDate),
           UOM: '',
-          auditYear: localStorage.getItem('year'),
+          auditYear: AOP_YEAR,
           normParameterFKId: endDateObj?.NormParameter_FK_Id,
           remarks: 'Initiated',
           id: endDateObj?.Id || null,
-          plantId: plantId,
+          plantId: PLANT_ID,
         },
       ]
       const response = await DataService.executeConfiguration(payload, keycloak)
@@ -632,22 +391,16 @@ const AopDesignBasis = () => {
   const startDateFromConfig = new Date(startDateConfig?.AttributeValue)
   const endDateDateFromConfig = new Date(endDateConfig?.AttributeValue)
 
-  const handleGradeChange = (gradeId) => {
-    setGradeId(gradeId)
+  const aopDesignBasisBluePrint = async () => {
+    const response =
+      await BusinessDemandDataApiService.aopDesignBasisBluePrint(keycloak)
   }
 
   const saveSummary = async () => {
     try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      let year = localStorage.getItem('year')
       const response = await DataService.saveSummaryAOPConsumptionNorm(
-        plantId,
-        year,
+        PLANT_ID,
+        AOP_YEAR,
         summary,
         keycloak,
       )
@@ -686,12 +439,34 @@ const AopDesignBasis = () => {
   const ConfigurationAccordian = useMemo(() => {
     return (
       <Box sx={{ mb: '0px' }}>
+        <Box display='flex' alignItems='center'>
+          <Typography className='text-note' variant='body2'>
+            *AOP Design Basis Blue Print
+          </Typography>
+          <Tooltip title='AOP Design Basis Blue Print'>
+            <IconButton
+              size='medium'
+              sx={{
+                ml: 1,
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+                padding: '6px',
+              }}
+              onClick={() => aopDesignBasisBluePrint()}
+            >
+              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+
         <CustomAccordion defaultExpanded disableGutters>
           <CustomAccordionSummary
             aria-controls='meg-grid-content'
             id='meg-grid-header'
           >
-            <Typography className='grid-title'>
+            <Typography className='accordian-title'>
               AOP Historical Period Basis for Production Target
             </Typography>
           </CustomAccordionSummary>
@@ -712,90 +487,115 @@ const AopDesignBasis = () => {
                   marginTop: '5px',
                 }}
               >
+                {' '}
                 {true && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography
-                      className='grid-title'
-                      sx={{ whiteSpace: 'nowrap' }}
-                    >
-                      Start Date
-                    </Typography>
-                    <DatePicker
-                      id='start-date'
-                      format='dd-MM-yyyy'
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.value)}
-                      style={{ height: '80px' }}
-                      size={'medium'}
-                    />
-                    <Typography
-                      className='grid-title'
-                      sx={{ whiteSpace: 'nowrap' }}
-                    >
-                      End Date
-                    </Typography>
-                    <DatePicker
-                      id='end-date'
-                      format='dd-MM-yyyy'
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.value)}
-                      style={{ height: '80px' }}
-                      size={'medium'}
-                    />
-                  </Box>
-                )}
-                {/* Load Button */}
-                {!isOldYearFlag && (
-                  <Button
-                    variant='contained'
-                    // onClick={onLoad}
-                    onClick={handleOpenDialog}
-                    className='btn-save'
-                    // disabled={!isLoadEnabled}
-                    sx={{ alignSelf: 'flex-end' }}
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
                   >
-                    Load
-                  </Button>
-                )}
+                    {/* Start Date */}
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                    >
+                      <Typography
+                        className='button-title'
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Start Date
+                      </Typography>
+                      <DatePicker
+                        id='start-date'
+                        format='dd-MM-yyyy'
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.value)}
+                        style={{ height: '80px' }}
+                        size={'medium'}
+                      />
+                    </Box>
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                    >
+                      <Typography
+                        className='button-title'
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        End Date
+                      </Typography>
+                      <DatePicker
+                        id='end-date'
+                        format='dd-MM-yyyy'
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.value)}
+                        style={{ height: '80px' }}
+                        size={'medium'}
+                      />{' '}
+                    </Box>
 
-                {!isOldYearFlag && (
-                  <Button
-                    variant='contained'
-                    // onClick={onLoad}
-                    onClick={saveSummary}
-                    className='btn-save'
-                    disabled={!summaryEdited}
-                    sx={{ alignSelf: 'flex-end' }}
-                  >
-                    Save
-                  </Button>
+                    {/* Load Button */}
+                    {!isOldYearFlag && (
+                      <Button
+                        variant='contained'
+                        onClick={handleOpenDialog}
+                        className='btn-save'
+                        sx={{ alignSelf: 'flex-end' }}
+                      >
+                        Load
+                      </Button>
+                    )}
+
+                    {!isOldYearFlag && (
+                      <Button
+                        variant='contained'
+                        // onClick={onLoad}
+                        onClick={saveSummary}
+                        className='btn-save'
+                        disabled={!summaryEdited}
+                        sx={{ alignSelf: 'flex-end' }}
+                      >
+                        Save
+                      </Button>
+                    )}
+                  </Box>
                 )}
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
                     className='summary-title'
-                    sx={{ whiteSpace: 'normal' }}
+                    sx={{
+                      whiteSpace: 'normal',
+                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
+                    }}
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
                   </Typography>
                 )}
               </Box>
             </Box>
-            <TextField
-              label='AOP Design Basis'
-              multiline
-              // minRows={isAccordionExpanded ? 4 : 20}
-              minRows={lowerVertName === 'cracker' ? 6 : 2}
-              fullWidth
-              margin='normal'
-              variant='outlined'
-              disabled={isOldYear == 1}
-              value={summary}
-              onChange={(e) => {
-                setSummary(e.target.value)
-                setSummaryEdited(true)
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column', // ?? stack vertically
+                alignItems: 'flex-start',
+                gap: 0,
+                mt: 1,
               }}
-              className='aop-design-basis'
-            />
+            >
+              <Typography
+                className='button-title'
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                AOP Design Basis
+              </Typography>
+
+              <TextArea
+                value={summary}
+                rows={6}
+                onChange={(e) => {
+                  setSummary(e.target.value)
+                  setSummaryEdited(true)
+                }}
+                // className='aop-design-basis'
+              />
+            </Box>
           </CustomAccordionDetails>
         </CustomAccordion>
       </Box>

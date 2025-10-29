@@ -19,6 +19,7 @@ import { Box, Tab, Tabs } from '../../../node_modules/@mui/material/index'
 import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/gridEditRowModel'
 import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -31,12 +32,17 @@ const SlowDown = ({ permissions }) => {
     siteObject,
     verticalObject,
     year,
+    screenTitle,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
+
+  const FORMATE_DECIMAL = ValueFormatterProduction()
+
   const vertName = verticalChange?.selectedVertical
   const plantName = plantObject?.name
   const isOldYear = oldYear?.oldYear
@@ -731,7 +737,7 @@ const SlowDown = ({ permissions }) => {
           hidden: removedCols.includes(item.field),
           ...(item.field !== 'particulars' &&
             item.field.toLowerCase() !== 'uom' && {
-              format: '{0:#.###}',
+              format: FORMATE_DECIMAL,
               type: 'number',
             }),
         }))
@@ -983,6 +989,10 @@ const SlowDown = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
+
+      showTitleNameBusiness: true,
+      titleName: SCREEN_NAME,
+
       uploadExcelBtn:
         lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
     },
@@ -1102,6 +1112,8 @@ const SlowDown = ({ permissions }) => {
             onlyCellUpdate: true,
             downloadExcelBtnFromUI: true,
             ExcelName: `${lowerVertName}_Slowdown Activities Configuration`,
+            showTitleNameBusiness: true,
+            titleName: 'Configuration',
           }}
           handleCancelClick={handleCancelClick}
           groupBy='Particulars'

@@ -499,7 +499,8 @@ const SlowdownNorms = () => {
       showCalculate:
         lowerVertName == 'meg' ||
         lowerVertName == 'elastomer' ||
-        lowerVertName == 'aromatics'
+        lowerVertName == 'aromatics' ||
+        lowerVertName == 'pta'
           ? false
           : true,
 
@@ -510,6 +511,8 @@ const SlowdownNorms = () => {
           : 'Select Grade',
       downloadExcelBtnFromUI: true,
       showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      marginBottom:
+        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
 
       ExcelName: `${lowerVertName}_Slowdown Consumption (Norms/Quantity)`,
       showCalculateVisibility:

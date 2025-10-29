@@ -7,11 +7,12 @@ import getEnhancedColDefsByProducts from 'components/data-tables/CommonHeader/Ke
 import React, { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { ProductionNormsApiService } from 'services/production-norms-api-service'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopHeader'
 import KendoDataTables from './index'
-import { ProductionNormsApiService } from 'services/production-norms-api-service'
+import ProductionNormsCracker from './ProductionNormsCracker'
 
 const ProductionNorms = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -19,21 +20,38 @@ const ProductionNorms = ({ permissions }) => {
   const keycloak = useSession()
 
   const apiRef = useGridApiRef()
-  const headerMap = generateHeaderNames(localStorage.getItem('year'))
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const [_plantID, set_PlantID] = useState('')
 
-  const { sitePlantChange, verticalChange, yearChanged, oldYear, plantID } =
-    dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
+
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
+
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('')
   const [rows, setRows] = useState([])
@@ -115,23 +133,18 @@ const ProductionNorms = ({ permissions }) => {
     setLoading(true)
 
     try {
-      let plantId = ''
+      let plantId = PLANT_ID
       const isKiloTon = selectedUnit != ('MT' || 'MT/Month')
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
 
       const productNormData = newRow.map((row) => ({
         aopType: row.aopType || 'production',
         aopCaseId: row.aopCaseId || null,
         aopStatus: row.aopStatus || null,
-        aopYear: localStorage.getItem('year'),
+        aopYear: AOP_YEAR,
         plantFKId: plantId,
         materialFKId: row.normParametersFKId,
-        siteFKId: JSON.parse(localStorage.getItem('selectedSiteId')).id,
-        verticalFKId: localStorage.getItem('verticalId'),
+        siteFKId: SITE_ID,
+        verticalFKId: VERTICAL_ID,
         april:
           row.april === 0
             ? 0
@@ -220,7 +233,7 @@ const ProductionNorms = ({ permissions }) => {
         dispatch(setIsBlocked(false))
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Production AOP Saved Successfully !',
+          message: 'Saved Successfully !',
           severity: 'success',
         })
 
@@ -264,16 +277,9 @@ const ProductionNorms = ({ permissions }) => {
     setCalculatebtnClicked(true)
     setLoading(true)
     try {
-      const year = localStorage.getItem('year')
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      var plantId = plantId
       const data = await ProductionNormsApiService.handleCalculate(
-        plantId,
-        year,
+        PLANT_ID,
+        AOP_YEAR,
         keycloak,
       )
       if (data?.code == 200) {
@@ -444,11 +450,14 @@ const ProductionNorms = ({ permissions }) => {
           return {
             ...transformedItem,
             averageTPH: total,
+            _displayNameLower: String(
+              transformedItem.displayName || '',
+            ).toLowerCase(),
           }
         })
       }
 
-      const fiscalYear = localStorage.getItem('year')
+      const fiscalYear = AOP_YEAR
       const startYear = parseInt(fiscalYear.split('-')[0], 10)
       const nextYear = startYear + 1
 
@@ -519,6 +528,9 @@ const ProductionNorms = ({ permissions }) => {
           return {
             ...transformedItem,
             averageTPH: total,
+            _displayNameLower: String(
+              transformedItem.displayName || '',
+            ).toLowerCase(),
           }
         })
       }
@@ -537,6 +549,54 @@ const ProductionNorms = ({ permissions }) => {
         'feb',
         'march',
       ]
+
+      const mapTrainNumberToLabel = (val) => {
+        if (val === null || val === undefined || val === '') return val
+
+        const parsed = parseFloat(String(val).trim())
+        if (Number.isNaN(parsed)) return val
+
+        const candidates = [parsed]
+        if (Math.abs(parsed) < 0.1) candidates.push(parsed * 1000)
+
+        for (const num of candidates) {
+          const rounded = Math.round(num)
+          if (Math.abs(num - rounded) <= TOL) {
+            if (rounded === 1) return 'Single'
+            if (rounded === 2) return 'Two'
+            if (rounded === 3) return 'Three'
+          }
+        }
+
+        return val
+      }
+
+      if (
+        lowerVertName === 'aromatics' &&
+        Array.isArray(formattedData) &&
+        formattedData.length
+      ) {
+        const trainIndex = formattedData.findIndex(
+          (r) =>
+            String(r._displayNameLower || r.displayName || '').toLowerCase() ===
+            'train',
+        )
+        if (trainIndex !== -1) {
+          monthFields.forEach((m) => {
+            const original = formattedData[trainIndex][m]
+            if (
+              original !== undefined &&
+              original !== null &&
+              original !== ''
+            ) {
+              formattedData[trainIndex][m] = mapTrainNumberToLabel(original)
+            }
+          })
+          formattedData[trainIndex].averageTPH =
+            formattedData[trainIndex].averageTPH || ''
+        }
+      }
+
       const totalsRow = {
         id: formattedData.length,
         displayName: 'Total',
@@ -549,10 +609,19 @@ const ProductionNorms = ({ permissions }) => {
           return acc
         }, {}),
       }
-      totalsRow.averageTPH = monthFields.reduce(
-        (sum, field) => sum + (parseFloat(totalsRow[field]) || 0),
-        0,
-      )
+
+      if (
+        lowerVertName == 'aromatics' &&
+        row.displayName.toLowerCase() === 'train'
+      ) {
+        totalsRow.averageTPH = '-'
+      } else {
+        totalsRow.averageTPH = monthFields.reduce(
+          (sum, field) => sum + (parseFloat(totalsRow[field]) || 0),
+          0,
+        )
+      }
+
       let finalData = []
 
       if (formattedData.length > 0) {
@@ -566,7 +635,6 @@ const ProductionNorms = ({ permissions }) => {
       }
 
       setRows(finalData)
-
       setLoading(false)
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -587,13 +655,11 @@ const ProductionNorms = ({ permissions }) => {
       if (response?.code != 200) {
         setRows([])
         setLoading(false)
-
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Error fetching data. Please try again.',
           severity: 'error',
         })
-
         return
       }
 
@@ -727,6 +793,12 @@ const ProductionNorms = ({ permissions }) => {
           showCalculate: permissions?.showCalculate ?? true,
           allAction: permissions?.allAction ?? true,
           showNote: true,
+
+          showTitleNameBusiness: true,
+          titleName: permissions?.title
+            ? permissions?.title
+            : 'Month wise Production plan',
+
           showCalculateVisibility:
             calculationObject && Object.keys(calculationObject).length > 0
               ? permissions?.showCalculate ?? true
@@ -768,6 +840,10 @@ const ProductionNorms = ({ permissions }) => {
     isOldYear,
   )
 
+  if (lowerVertName === 'cracker' && !permissions?.hideByProducts) {
+    return <ProductionNormsCracker />
+  }
+
   return (
     <div>
       <Backdrop
@@ -808,7 +884,9 @@ const ProductionNorms = ({ permissions }) => {
         permissions={adjustedPermissions}
         selectedUOM={'UOM'}
         note={
-          !permissions?.hideNoteText && lowerVertName !== 'cracker'
+          !permissions?.hideNoteText &&
+          lowerVertName !== 'cracker' &&
+          lowerVertName !== 'aromatics'
             ? '* MT per Annum'
             : ''
         }

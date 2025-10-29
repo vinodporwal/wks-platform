@@ -1,8 +1,16 @@
+import HelpIcon from '@mui/icons-material/Help'
+import { Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
 import { Tooltip } from '@progress/kendo-react-tooltip'
 import '@progress/kendo-theme-default/dist/all.css'
+import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
+import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
+import Notification from 'components/Utilities/Notification'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
+
+import { useSelector } from 'react-redux'
 import {
   Box,
   Button,
@@ -12,46 +20,42 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  IconButton,
   MenuItem,
   TextField,
   Typography,
 } from '../../../node_modules/@mui/material/index'
-import '../../kendo-data-grid.css'
-
-import Notification from 'components/Utilities/Notification'
 import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
-import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
-import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
-import MonthCell from './Utilities-Kendo/MonthCell'
-import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
-import ProductCell from './Utilities-Kendo/ProductCell'
-import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
-import MonthDropdownEditor from './Utilities-Kendo/MonthDropdownEditor'
-import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports-kendo/ColumnMenu1'
-import {
-  isColumnMenuFilterActive,
-  isColumnMenuSortActive,
-} from '../../../node_modules/@progress/kendo-react-grid/index'
-import {
-  recalcDuration,
-  recalcEndDate,
-} from './Utilities-Kendo/durationHelpers'
-import { DurationEditor } from './Utilities-Kendo/numericViewCells'
-// import DateTimePickerr from './Utilities-Kendo/DatePicker'
-import DateOnlyPicker from './Utilities-Kendo/DatePicker'
-// import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
-import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
-import { descLimit } from './Utilities-Kendo/descLimit'
-import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import {
   ExcelExport,
   ExcelExportColumn,
 } from '../../../node_modules/@progress/kendo-react-excel-export/index'
-import { useSelector } from 'react-redux'
+import {
+  isColumnMenuFilterActive,
+  isColumnMenuSortActive,
+} from '../../../node_modules/@progress/kendo-react-grid/index'
 import { Checkbox } from '../../../node_modules/@progress/kendo-react-inputs/index'
-import LimitCellEditor from './Utilities-Kendo/LimitCellEditor'
+import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
+import { arrowRotateCcwIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
+import '../../kendo-data-grid.css'
 import BudgetConstrainsCellEditor from './Utilities-Kendo/BudgetConstrainsCellEditor'
+import DateOnlyPicker from './Utilities-Kendo/DatePicker'
+import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
+import { descLimit } from './Utilities-Kendo/descLimit'
+import {
+  recalcDuration,
+  recalcEndDate,
+} from './Utilities-Kendo/durationHelpers'
+import LimitCellEditor from './Utilities-Kendo/LimitCellEditor'
+import MonthCell from './Utilities-Kendo/MonthCell'
+import MonthDropdownEditor from './Utilities-Kendo/MonthDropdownEditor'
 import { NoSpinnerNumericEditorNegative } from './Utilities-Kendo/negativeNumbericColumns'
+import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
+import { DurationEditor } from './Utilities-Kendo/numericViewCells'
+import ProductCell from './Utilities-Kendo/ProductCell'
+import { RemarkCell } from './Utilities-Kendo/RemarkCell'
+import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+import { NoSpinnerNumericEditorWithUOMValidation } from './Utilities-Kendo/numbericColumnsWithUOMValidation'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -133,7 +137,6 @@ const KendoDataTables = ({
   titleName = '',
   gridName,
   onGlobalCheckboxChange,
-
   allProducts = [],
   allMonths = [],
   selectMode,
@@ -148,6 +151,7 @@ const KendoDataTables = ({
   const _grid = React.useRef(undefined)
 
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
+  const [openResetDialogeBox, setOpenResetDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
   const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
   const [selectedUnit, setSelectedUnit] = useState(permissions?.units?.[0])
@@ -176,9 +180,6 @@ const KendoDataTables = ({
         },
       ]
     : []
-
-  // console.log('selectedUOM', selectedUOM)
-  // console.log('allRedCell2', allRedCell2)
 
   const fileInputRef = useRef(null)
 
@@ -223,10 +224,51 @@ const KendoDataTables = ({
       if (dataItem?.field === 'ParticularsType') return
 
       const itemId = dataItem.id
+
+      // months list in the order you provided
+      const months = [
+        'apr',
+        'may',
+        'jun',
+        'jul',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+        'jan',
+        'feb',
+        'mar',
+      ]
+
+      // Helper: return numeric percent if input contains at least one digit, otherwise null.
+      const parsePctOrNull = (v) => {
+        if (v == null) return null
+        const s = String(v).replace('%', '').trim()
+        // if there are no digits at all, treat as invalid (e.g. "+", "-", "", "+%")
+        if (!/[0-9]/.test(s)) return null
+        // remove leading plus sign for parsing, keep minus sign
+        const cleaned = s.replace(/^\+/, '')
+        const n = Number(cleaned)
+        return Number.isFinite(n) ? n : null
+      }
+
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
           const updated = { ...r, [field]: value }
+
+          // percentChange logic: adjust months if enabled and percentChange field changed
+          if (field === 'percentChange' && permissions?.percentChangeLogic) {
+            const pct = parsePctOrNull(value)
+            if (pct !== null) {
+              const factor = 1 + pct / 100
+              months.forEach((m) => {
+                const original = Number(r[m]) || 0
+                updated[m] = Number((original * factor).toFixed(2))
+              })
+            }
+          }
 
           if (
             'maintStartDateTime' in updated &&
@@ -254,6 +296,7 @@ const KendoDataTables = ({
           return updated
         }),
       )
+
       if (permissions?.onlyCellUpdate) {
         setModifiedCells((prev) => {
           const updated = { ...(prev[itemId] || {}) }
@@ -264,12 +307,24 @@ const KendoDataTables = ({
             updated.NormParameter_FK_Id = dataItem.NormParameter_FK_Id
           }
 
-          const result = {
+          // percentChange: only set month fields when percent is numeric
+          if (field === 'percentChange' && permissions?.percentChangeLogic) {
+            const pct = parsePctOrNull(value)
+            if (pct !== null) {
+              const factor = 1 + pct / 100
+              months.forEach((m) => {
+                if (m in dataItem) {
+                  const original = Number(dataItem[m]) || 0
+                  updated[m] = Number((original * factor).toFixed(2))
+                }
+              })
+            }
+          }
+
+          return {
             ...prev,
             [itemId]: updated,
           }
-
-          return result
         })
       } else {
         const uniqueItemId = permissions?.showCheckbox
@@ -282,6 +337,7 @@ const KendoDataTables = ({
             ...dataItem,
             [field]: value,
           }
+
           if (
             'maintStartDateTime' in base &&
             'maintEndDateTime' in base &&
@@ -301,13 +357,42 @@ const KendoDataTables = ({
             }
           }
 
+          // percentChange logic: mutate base for all months (only when numeric)
+          if (field === 'percentChange' && permissions?.percentChangeLogic) {
+            const pct = parsePctOrNull(value)
+            if (pct !== null) {
+              const factor = 1 + pct / 100
+              months.forEach((m) => {
+                const original = Number(dataItem[m]) || 0
+                base[m] = Number((original * factor).toFixed(2))
+              })
+            }
+          }
+
           return { ...prev, [uniqueItemId]: base }
         })
       }
-      setCustomModifiedCells((prev) => ({
-        ...prev,
-        [itemId]: { ...(prev[itemId] || {}), [field]: value },
-      }))
+
+      // customModifiedCells: always set per-row custom changes (include months if percentChange)
+      setCustomModifiedCells((prev) => {
+        const base = { ...(prev[itemId] || {}), [field]: value }
+
+        if (field === 'percentChange' && permissions?.percentChangeLogic) {
+          const pct = parsePctOrNull(value)
+          if (pct !== null) {
+            const factor = 1 + pct / 100
+            months.forEach((m) => {
+              const original = Number(dataItem[m]) || 0
+              base[m] = Number((original * factor).toFixed(2))
+            })
+          }
+        }
+
+        return {
+          ...prev,
+          [itemId]: base,
+        }
+      })
     },
     [setRows, setModifiedCells, setCustomModifiedCells],
   )
@@ -328,7 +413,6 @@ const KendoDataTables = ({
       let keyToUpdate = ''
 
       const updatedRows = prevRows.map((row) => {
-        // console.log(currentRowId, row.id)
         if (row.id === currentRowId) {
           const keysToUpdate = ['aopRemarks', 'remarks', 'remark'].filter(
             (key) => key in row,
@@ -342,7 +426,6 @@ const KendoDataTables = ({
 
       if (updatedRow) {
         if (permissions?.showCheckbox) {
-          // new behaviour (keep merged entry and use grid-prefixed unique key)
           const uniqueKey = `${gridName}-${updatedRow.id}`
 
           setModifiedCells((prev) => ({
@@ -355,7 +438,6 @@ const KendoDataTables = ({
             },
           }))
         } else {
-          // previous behaviour (no prefix, simple assignment)
           setModifiedCells((prev) => ({
             ...prev,
             [updatedRow.id]: updatedRow,
@@ -369,51 +451,6 @@ const KendoDataTables = ({
     setRemarkDialogOpen(false)
   }
 
-  const handleAddRow1 = () => {
-    if (isButtonDisabled) return
-    setIsButtonDisabled(true)
-
-    // Generate a unique negative id for the new row
-    const newRowId = Date.now() * -1
-
-    // Build the new row with default values for PIO Impact or generic columns
-    const newRow = {
-      id: newRowId,
-      isNew: true,
-      description: '',
-      startMonth: null,
-      endMonth: null,
-      value: 0,
-      remarks: '',
-      Particulars: 'PIO Impact',
-      isEditable: true,
-      // Add all other columns as empty if needed:
-      ...Object.fromEntries(
-        (columns || [])
-          .filter(
-            (col) =>
-              ![
-                'id',
-                'description',
-                'startMonth',
-                'endMonth',
-                'value',
-                'remarks',
-                'Particulars',
-                'isEditable',
-                'isNew',
-              ].includes(col.field),
-          )
-          .map((col) => [col.field, '']),
-      ),
-    }
-
-    setRows((prevRows) => [newRow, ...prevRows])
-
-    setTimeout(() => {
-      setIsButtonDisabled(false)
-    }, 500)
-  }
   const handleAddRow = () => {
     if (isButtonDisabled) return
     setIsButtonDisabled(true)
@@ -427,13 +464,6 @@ const KendoDataTables = ({
     }
 
     setRows((prevRows) => [newRow, ...prevRows])
-    // onAddRow?.(newRow)
-    // setProduct('')
-    // setRowModesModel((oldModel) => ({
-    //   ...oldModel,
-    //   [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
-    // }))
-    // focusFirstField()
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
@@ -448,16 +478,38 @@ const KendoDataTables = ({
     setParamsForDelete(params)
     setOpenDeleteDialogeBox(true)
   }
+
+  const handleResetClick = async (params) => {
+    setOpenResetDialogeBox(true)
+  }
+
   const deleteTheRecord = async () => {
     deleteRowData(paramsForDelete)
     setOpenDeleteDialogeBox(false)
   }
+
+  const resetTheRecord = async () => {
+    resetRowData(paramsForDelete)
+    setOpenResetDialogeBox(false)
+  }
+
   const ActionsCell = ({ dataItem }) => {
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
         <SvgIcon
           onClick={() => handleDeleteClick(dataItem)}
           icon={trashIcon}
+          themeColor='dark'
+        />
+      </td>
+    )
+  }
+  const ResetActionsCell = ({ dataItem }) => {
+    return (
+      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+        <SvgIcon
+          onClick={() => handleResetClick(dataItem)}
+          icon={arrowRotateCcwIcon}
           themeColor='dark'
         />
       </td>
@@ -520,27 +572,24 @@ const KendoDataTables = ({
     )
   }
 
-  // console.log('rows?.length', rows?.length)
   const MaterialDisplayNameCell = (props) => {
     const { dataItem, field, tdProps, children } = props
     const value = dataItem[field]
     const method = dataItem.Method
 
-    // Define colors based on Method
     let color = 'inherit'
 
     switch (method) {
       case 'BestAchieved(MinCC)':
-        color = '#2e7d32' // Dark green text
+        color = '#2e7d32'
         break
       case 'Expression':
-        color = '#f51717ff' // Dark yellow/orange text
+        color = '#f51717ff'
         break
       case 'BestAchieved(Indv)':
-        color = '#1565c0' // Dark blue text
+        color = '#1565c0'
         break
       default:
-        // No special styling for other methods
         break
     }
 
@@ -765,17 +814,6 @@ const KendoDataTables = ({
     )
   }
 
-  const HeaderWithTooltip = (props) => {
-    // console.log('HeaderWithTooltip', props)
-    return (
-      <th {...props.thProps}>
-        <a className='k-link' onClick={props.onClick}>
-          <span title={props.title}>{props.title}</span>
-        </a>
-      </th>
-    )
-  }
-
   const SimpleHeaderWithTooltip = (props) => {
     const { ariaSort, ...restThProps } = props.thProps || {}
 
@@ -784,7 +822,7 @@ const KendoDataTables = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #b4b4b4ff' }}
+        style={{ padding: '0px', borderRight: '1px solid #878787' }}
       >
         <Tooltip
           position='top'
@@ -805,7 +843,7 @@ const KendoDataTables = ({
         {...restThProps}
         aria-sort={ariaSort}
         title=''
-        style={{ padding: '0px', borderRight: '1px solid #b4b4b4ff' }}
+        style={{ padding: '0px', borderRight: '1px solid #878787' }}
       ></th>
     )
   }
@@ -863,40 +901,6 @@ const KendoDataTables = ({
     )
   }
 
-  // const ConditionalDateEditorForConstantValue = (props) => {
-  //   if (props.dataItem.UOM === 'Date') {
-  //     return <DateOnlyPicker {...props} />
-  //   }
-
-  //   return <NoSpinnerNumericEditor {...props} />
-  // }
-
-  // const handleLoadClick = () => {
-  //   if (onLoad && startDate && endDate) {
-  //     onLoad(startDate, endDate)
-  //   }
-  // }
-
-  // const SafeColumnMenu = (props) => {
-  //   return (
-  //     <GridColumnMenuFilter
-  //       {...props}
-  //       mobileMode={false} // ✅ This prevents the crash
-  //     />
-  //   )
-  // }
-
-  // const dateFields = [
-  //   'maintStartDateTime',
-  //   'maintEndDateTime',
-  //   'endDateTA',
-  //   'startDateTA',
-  //   'endDateSD',
-  //   'startDateSD',
-  //   'endDateIBR',
-  //   'startDateIBR',
-  // ]
-
   useEffect(() => {
     if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
       const firstGrade = grades[0]
@@ -931,40 +935,6 @@ const KendoDataTables = ({
     const available = 100 - pageHeaderVH
     return Math.round(Math.min(needed, maxVH, available))
   }, [rows?.length])
-
-  const handleHeaderSelectionChange = (event) => {
-    const checked = event.nativeEvent.target.checked
-    // console.log('Header checkbox changed. Checked:', checked)
-  }
-
-  // console.log(
-  //   'grades[0].gradeId',
-  //   grades?.[0]?.gradeId,
-  //   typeof grades?.[0]?.gradeId,
-  // )
-  // console.log('selectedGrade', selectedGrade, typeof selectedGrade)
-
-  const onSelectionChange = (event) => {
-    // const checkbox = event.nativeEvent.target
-    // if (!checkbox || checkbox.type !== 'checkbox') return // only handle checkbox clicks
-    // const selectedRow = event.dataItem
-    // const isSelected = event.nativeEvent.target.checked
-    // setRows((prevRows) =>
-    //   prevRows.map((row) =>
-    //     row.id === selectedRow.id
-    //       ? { ...row, isChecked: isSelected, inEdit: true }
-    //       : row,
-    //   ),
-    // )
-    // setModifiedCells((prev) => ({
-    //   ...prev,
-    //   [selectedRow.id]: {
-    //     ...selectedRow,
-    //     isChecked: isSelected,
-    //     inEdit: true,
-    //   },
-    // }))
-  }
 
   const CHECK_TYPES = ['cat chem', 'utility consumption']
   const CHECK_TYPES2 = ['raw material', 'by products']
@@ -1015,6 +985,43 @@ const KendoDataTables = ({
                 </Typography>
               )}
 
+              {permissions?.showTitleAndInformation && (
+                <Box display='flex' alignItems='center'>
+                  <Typography
+                    component='div'
+                    className='grid-title'
+                    sx={{
+                      ...(permissions?.marginBottom && {
+                        marginBottom: '10px',
+                      }),
+                    }}
+                  >
+                    {permissions?.titleName}
+                  </Typography>
+
+                  <MuiTooltip
+                    title={
+                      permissions?.titleAndInformation ||
+                      'No information available'
+                    }
+                  >
+                    <IconButton
+                      size='medium'
+                      sx={{
+                        ml: 0,
+                        backgroundColor: 'transparent',
+                        '&:hover': {
+                          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                        },
+                        padding: '4px',
+                      }}
+                    >
+                      <HelpIcon fontSize='small' />
+                    </IconButton>
+                  </MuiTooltip>
+                </Box>
+              )}
+
               {permissions?.showTitleNameBusiness && (
                 <Typography
                   component='div'
@@ -1040,11 +1047,17 @@ const KendoDataTables = ({
                     handleGradeChange(
                       selectedGradeObj?.gradeId,
                       selectedGradeObj?.displayName,
-                    ) // ✅ Pass both id & name
+                    )
                   }}
                   className='dropdown-select'
                   variant='outlined'
                   label={permissions?.dropdownLabel || 'Select'}
+                  InputLabelProps={{
+                    shrink: true,
+                    sx: {
+                      fontWeight: 'bold',
+                    },
+                  }}
                 >
                   <MenuItem value='' disabled>
                     {permissions?.dropdownLabel || 'Select'}
@@ -1077,16 +1090,6 @@ const KendoDataTables = ({
                   disabled={isButtonDisabled}
                 >
                   Add Item
-                </Button>
-              )}
-              {permissions?.addButtons && (
-                <Button
-                  variant='contained'
-                  className='btn-save'
-                  onClick={handleAddRow1}
-                  disabled={isButtonDisabled}
-                >
-                  Add Items
                 </Button>
               )}
 
@@ -1202,7 +1205,7 @@ const KendoDataTables = ({
                   </MenuItem>
 
                   {/* Render the correct unit options dynamically */}
-                  {permissions?.units.map((unit) => (
+                  {permissions?.units?.map((unit) => (
                     <MenuItem key={unit} value={unit}>
                       {unit}
                     </MenuItem>
@@ -1301,10 +1304,6 @@ const KendoDataTables = ({
             >
               {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
 
-              {/* {permissions?.unitForExcelToadd && (
-                <ExcelExportColumn field={selectedUOM} title='UOM' />
-              )} */}
-
               {columns?.map((col) => {
                 {
                   permissions?.unitForExcelToadd && (
@@ -1346,7 +1345,6 @@ const KendoDataTables = ({
                             'toDate',
                             'periodTo',
                             'periodFrom',
-
                             'toDateReport',
                             'fromDateReport',
                           ].includes(col.field)
@@ -1436,11 +1434,11 @@ const KendoDataTables = ({
                     />
                   )
                 }
-                if (col?.field === 'calc') {
+                if (col?.field === 'symbol') {
                   return (
                     <GridColumn
-                      key='limit'
-                      field='limit'
+                      key='symbol'
+                      field='symbol'
                       width={80}
                       title={col.title}
                       editable={col.editable || true}
@@ -1638,7 +1636,7 @@ const KendoDataTables = ({
                       key='DisplayName'
                       field={col?.field}
                       title={col.title || col.headerName}
-                      // width={col?.width}
+                      width={col?.widthT}
                       editable={false}
                       columnMenu={ColumnMenuCheckboxFilter}
                       hidden={col.hidden}
@@ -1745,6 +1743,49 @@ const KendoDataTables = ({
                   )
                 }
 
+                if (col.type === 'propaneDropdown') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: { text: PropaneDropdown }, // <-- Use your custom editor here
+                        data: MonthDisplayCell,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+
+                if (col.type === 'percentChange') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.widthT}
+                      hidden={col.hidden}
+                      className={'k-number-right'}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: { text: NoSpinnerNumericEditorNegative },
+                        data: toolTipRenderer,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      filter='numeric'
+                      format={col.format}
+                    />
+                  )
+                }
+
                 if (col.type === 'negativeNumber') {
                   return (
                     <GridColumn
@@ -1761,6 +1802,48 @@ const KendoDataTables = ({
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: NoSpinnerNumericEditorNegative },
+                        data: (props) =>
+                          showThreeColors ? (
+                            <RedHighlightCell2
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              allRedCell2={allRedCell2}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          ) : (
+                            <RedHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      filter='numeric'
+                      format={col.format}
+                    />
+                  )
+                }
+
+                if (col.type === 'numberWithUOMValidation') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.widthT}
+                      hidden={col.hidden}
+                      className={`
+                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                  ${col?.isBold ? 'bold-text' : ''}
+                `}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: { text: NoSpinnerNumericEditorWithUOMValidation },
                         data: (props) =>
                           showThreeColors ? (
                             <RedHighlightCell2
@@ -1828,8 +1911,6 @@ const KendoDataTables = ({
                     />
                   )
                 }
-
-                // ...
 
                 if (col.type === 'switch') {
                   const handleCheckboxChange = (props, value) => {

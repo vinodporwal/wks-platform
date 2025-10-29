@@ -2,10 +2,14 @@ import Config from '../consts'
 import { json } from './request'
 export const BusinessDemandDataApiService = {
   getBDData,
+  getBDssData,
   saveBusinessDemandData,
   deleteBusinessDemandData,
+
   businessDemandImport,
   businessDemandExport,
+  aopDesignBasisBluePrint,
+  savepropanebusiness,
 }
 async function getBDData(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/business-demand?year=${year}&plantId=${plantId}`
@@ -125,6 +129,60 @@ async function businessDemandImport(file, keycloak, PLANT_ID, AOP_YEAR) {
     return json(keycloak, resp) // assuming `json()` handles response properly
   } catch (e) {
     console.error('Error importing Optimizer Input Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function aopDesignBasisBluePrint() {
+  var url = `${window.location.origin}/files/Blue Print.docx`
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+    })
+
+    const blob = await resp.blob()
+    const fileURL = window.URL.createObjectURL(blob)
+    window.open(fileURL, '_blank')
+    return true
+  } catch (e) {
+    console.error('Error fetching file:', e)
+    return Promise.reject(e)
+  }
+}
+async function getBDssData(keycloak, plantId, year) {
+  // changed URL to backend path /business-demand-data
+  const url = `${Config.CaseEngineUrl}/task/business-demand-manual-entry?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function savepropanebusiness(plantId, turnAroundDetails, keycloak) {
+  var year = localStorage.getItem('year')
+  const url = `${Config.CaseEngineUrl}/task/business-demand-manual-entry?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(turnAroundDetails),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

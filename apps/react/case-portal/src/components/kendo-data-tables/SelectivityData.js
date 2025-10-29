@@ -25,11 +25,15 @@ const SelectivityData = (props) => {
     siteObject,
     verticalObject,
     year,
+    screenTitle,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const SCREEN_NAME = screenTitle?.title
+
   const AOP_YEAR = year?.selectedYear
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
@@ -393,7 +397,9 @@ const SelectivityData = (props) => {
     }
   }
 
-  const type = props?.configType === 'megConstantsMannualEntry'
+  const type =
+    props?.configType === 'megConstantsMannualEntry' ||
+    props?.configType === 'Report Manual Entry'
   const selectedHeaderMap = !type ? headerMap : headerMapForPrevYear
 
   const productionColumns = getEnhancedAOPColDefs({
@@ -434,6 +440,13 @@ const SelectivityData = (props) => {
       uploadExcelBtn: true,
       showLoad: true,
       allAction: true,
+
+      showTitleNameBusiness: true,
+      titleName:
+        props?.currentTabDisplayName === 'Report Manual Entry'
+          ? `${props?.currentTabDisplayName} (${prevYearFormatted})`
+          : props?.currentTabDisplayName,
+
       // showG: props?.configType === 'cracker_configuration' ? true : false,
       showG: false,
       dropdownLabel: 'Select Mode',
@@ -468,7 +481,11 @@ const SelectivityData = (props) => {
       } else if (props?.configType === 'ShutdownNorms') {
         await DataService.getShutdownRateExcel(keycloak)
       } else if (props?.tabIndex != 1) {
-        if (lowerVertName == 'pe' || lowerVertName == 'pp') {
+        if (
+          lowerVertName == 'pe' ||
+          lowerVertName == 'pp' ||
+          lowerVertName == 'pta'
+        ) {
           await DataService.getConfigurationExcelType(
             keycloak,
             PLANT_ID,
@@ -721,8 +738,7 @@ const SelectivityData = (props) => {
           setRows={props?.setRows}
           title='Configuration'
           summaryEdited={props?.summaryEdited}
-          // isCellEditable={isCellEditable}
-          // paginationOptions={[100, 200, 300]}
+          currentTabDisplayName={props?.currentTabDisplayName}
           saveChanges={saveChanges}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}

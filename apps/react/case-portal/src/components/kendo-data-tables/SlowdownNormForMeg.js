@@ -6,15 +6,30 @@ import KendoDataTables from './index'
 
 const SlowdownNormForMeg = () => {
   const keycloak = useSession()
-  const { year, plantID, oldYear, verticalChange } = useSelector(
-    (state) => state.dataGridStore,
-  )
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
+
   const lowerVertName = vertName?.toLowerCase()
 
-  const isOldYear = oldYear?.oldYear
-  const plantId = plantID?.plantId
-  const selectedYear = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
 
   const [isLoading, setIsLoading] = useState(false)
   const [notification, setNotification] = useState({
@@ -47,8 +62,8 @@ const SlowdownNormForMeg = () => {
         const response =
           await SlowdownNormForMegServices.updateSlowdownNormsForMeg({
             keycloak,
-            plantId,
-            year: selectedYear,
+            PLANT_ID,
+            year: AOP_YEAR,
             payload,
           })
 
@@ -69,7 +84,7 @@ const SlowdownNormForMeg = () => {
         setIsLoading(false)
       }
     },
-    [keycloak, plantId, selectedYear, showNotification],
+    [keycloak, PLANT_ID, AOP_YEAR, showNotification],
   )
 
   const handleSaveChanges = useCallback(async () => {
@@ -113,8 +128,8 @@ const SlowdownNormForMeg = () => {
       const response =
         await SlowdownNormForMegServices.getSlowdownNormsCalculateForMeg({
           keycloak,
-          plantId,
-          year: selectedYear,
+          PLANT_ID,
+          year: AOP_YEAR,
         })
 
       if (response) {
@@ -133,7 +148,7 @@ const SlowdownNormForMeg = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [keycloak, plantId, selectedYear, showNotification])
+  }, [keycloak, PLANT_ID, AOP_YEAR, showNotification])
 
   const fetchSlowdownNormsData = useCallback(async () => {
     setIsLoading(true)
@@ -141,8 +156,8 @@ const SlowdownNormForMeg = () => {
       const { data } =
         await SlowdownNormForMegServices.getSlowdownNormsDataForMeg({
           keycloak,
-          plantId,
-          year: selectedYear,
+          PLANT_ID,
+          year: AOP_YEAR,
         })
 
       const formattedRows =
@@ -181,7 +196,7 @@ const SlowdownNormForMeg = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [keycloak, plantId, selectedYear])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const fetchSlowdownNormsColumns = useCallback(async () => {
     setIsLoading(true)
@@ -191,8 +206,8 @@ const SlowdownNormForMeg = () => {
       const response =
         await SlowdownNormForMegServices.getSlowdownNormsColumnsForMeg({
           keycloak,
-          plantId,
-          year: selectedYear,
+          PLANT_ID,
+          year: AOP_YEAR,
         })
 
       const hiddenColumns = [
@@ -238,13 +253,13 @@ const SlowdownNormForMeg = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [keycloak, plantId, selectedYear, fetchSlowdownNormsData])
+  }, [keycloak, PLANT_ID, AOP_YEAR, fetchSlowdownNormsData])
 
   useEffect(() => {
-    if (keycloak && plantId && selectedYear) {
+    if (keycloak && PLANT_ID && AOP_YEAR) {
       fetchSlowdownNormsColumns()
     }
-  }, [keycloak, plantId, selectedYear, fetchSlowdownNormsColumns])
+  }, [keycloak, PLANT_ID, AOP_YEAR, fetchSlowdownNormsColumns])
 
   const tablePermissions = useMemo(() => {
     const isCurrentYear = isOldYear !== 1
@@ -256,7 +271,9 @@ const SlowdownNormForMeg = () => {
       allAction: isCurrentYear,
       showCalculateVisibility: hasCalculationResults,
       downloadExcelBtnFromUI: true,
-      ExcelName: `${lowerVertName}_Slowdown Consumption (Norms / Quantity)`,
+      ExcelName: `${lowerVertName}_${SCREEN_NAME}`,
+      showTitleNameBusiness: true,
+      titleName: `${SCREEN_NAME}`,
     }
   }, [isOldYear, tableRows.length, calculationResults.length])
 

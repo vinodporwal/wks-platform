@@ -27,6 +27,7 @@ const ShutDown = ({ permissions }) => {
     siteObject,
     verticalObject,
     year,
+    screenTitle,
   } = dataGridStore
 
   const PLANT_ID = plantObject?.id
@@ -34,6 +35,7 @@ const ShutDown = ({ permissions }) => {
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical
+  const SCREEN_NAME = screenTitle?.title
 
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const plantName = plantObject?.name
@@ -82,7 +84,7 @@ const ShutDown = ({ permissions }) => {
         })
         return
       }
-      const yearStr = localStorage.getItem('year') // e.g. "2025-26"
+      const yearStr = AOP_YEAR
       let startLimit, endLimit
       if (yearStr) {
         const [startYear, endYear] = yearStr
@@ -348,14 +350,6 @@ const ShutDown = ({ permissions }) => {
   const saveShutdownData = async (newRow) => {
     setLoading(true)
     try {
-      let plantId = ''
-
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
       const shutdownDetails = newRow.map((row) => ({
         productId: (() => {
           if (
@@ -383,13 +377,13 @@ const ShutDown = ({ permissions }) => {
         })(),
         maintEndDateTime: addTimeOffset(row.maintEndDateTime),
         maintStartDateTime: addTimeOffset(row.maintStartDateTime),
-        audityear: localStorage.getItem('year'),
+        audityear: AOP_YEAR,
         id: row.idFromApi || null,
         remark: row.remark || 'null',
       }))
 
       const response = await DataService.saveShutdownData(
-        plantId,
+        PLANT_ID,
         shutdownDetails,
         keycloak,
       )
@@ -740,6 +734,10 @@ const ShutDown = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
+
+      showTitleNameBusiness: true,
+      titleName: `${SCREEN_NAME}`,
+
       uploadExcelBtn:
         lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
     },

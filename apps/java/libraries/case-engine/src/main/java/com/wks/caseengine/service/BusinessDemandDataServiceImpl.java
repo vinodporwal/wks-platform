@@ -39,9 +39,13 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
+import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.BusinessDemandDataRepository;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
@@ -135,6 +139,76 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	public AOPMessageVM getBusinessDemand(String year, UUID plantFKId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+			List<Object[]> obj = new ArrayList<>();
+			
+				String procedureName = verticalName + "_GetBusinessDemandMonthly";
+				obj = getData(year, plantFKId, procedureName);
+			
+			List<BusinessDemandMonthlyDTO> configurationDTOList = new ArrayList<BusinessDemandMonthlyDTO>();
+			int i = 0;
+			for (Object[] row : obj) {
+				BusinessDemandMonthlyDTO configurationDTO = new BusinessDemandMonthlyDTO();
+				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
+
+				configurationDTO.setJan(row[1] != null ? row[1].toString() : "Propane MIN");
+				configurationDTO.setFeb(row[2] != null ? row[2].toString() : "Propane MIN");
+				configurationDTO.setMar(row[3] != null ? row[3].toString() : "Propane MIN");
+				configurationDTO.setApr(row[4] != null ? row[4].toString() : "Propane MIN");
+				configurationDTO.setMay(row[5] != null ? row[5].toString() : "Propane MIN");
+				configurationDTO.setJun(row[6] != null ? row[6].toString() : "Propane MIN");
+				configurationDTO.setJul(row[7] != null ? row[7].toString() : "Propane MIN");
+				configurationDTO.setAug(row[8] != null ? row[8].toString() : "Propane MIN");
+				configurationDTO.setSep(row[9] != null ? row[9].toString() : "Propane MIN");
+				configurationDTO.setOct(row[10] != null ? row[10].toString() : "Propane MIN");
+				configurationDTO.setNov(row[11] != null ? row[11].toString() : "Propane MIN");
+				configurationDTO.setDec(row[12] != null ? row[12].toString() : "Propane MIN");
+				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
+					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
+					configurationDTO.setUom(row[15] != null ? row[15].toString() : "");
+					configurationDTO.setNormType(row[16] != null ? row[16].toString() : "");
+					configurationDTO.setIsEditable(row[17] != null ? ((Boolean) row[17]).booleanValue() : null);
+					configurationDTO.setProductName(row[18] != null ? row[18].toString() : "");
+					configurationDTO.setType(row[19] != null ? row[19].toString() : "");				
+					configurationDTOList.add(configurationDTO);
+				if (row[14] == null) {
+					i++;
+				}
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(configurationDTOList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	public List<Object[]> getData(String aopYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
 	
 	public byte[] exportBusinessDemand(String year, String plantId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList) {
 		try {
@@ -602,6 +676,36 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		normAttributeTransactionsRepository.save(normAttributeTransactions);
 	}
 	
+	void saveValue(UUID normParameterFKId, Integer i, String attributeValue, String remark, String plantId,
+			String year) {
+
+		Optional<NormAttributeTransactions> existingRecord = normAttributeTransactionsRepository
+				.findByNormParameterFKIdAndAOPMonthAndAuditYear(normParameterFKId, i, year);
+		
+		NormAttributeTransactions normAttributeTransactions;
+
+		if (existingRecord.isPresent()) {
+			normAttributeTransactions = existingRecord.get();
+			normAttributeTransactions.setModifiedOn(new Date());
+		} else {
+
+			normAttributeTransactions = new NormAttributeTransactions();
+			normAttributeTransactions.setCreatedOn(new Date());
+			normAttributeTransactions.setAttributeValueVersion("V1");
+			normAttributeTransactions.setUserName(Utility.getUserName());
+			normAttributeTransactions.setNormParameterFKId(normParameterFKId);
+			normAttributeTransactions.setAopMonth(i);
+			normAttributeTransactions.setAuditYear(year);
+		}
+
+		normAttributeTransactions
+				.setAttributeValue(attributeValue != null ? attributeValue.toString() : "0.0");
+		normAttributeTransactions.setRemarks(remark);
+		normAttributeTransactions.setUserName(Utility.getUserName());
+		normAttributeTransactionsRepository.save(normAttributeTransactions);
+	}
+
+	
 	public Double getAttributeValue(BusinessDemandDataDTO businessDemandDataDTO, Integer i) {
 		switch (i) {
 			case 1:
@@ -633,6 +737,36 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		return businessDemandDataDTO.getJan();
 	}
 
+	public String getValue(BusinessDemandMonthlyDTO businessDemandDataDTO, Integer i) {
+		switch (i) {
+			case 1:
+				return businessDemandDataDTO.getJan();
+			case 2:
+				return businessDemandDataDTO.getFeb();
+			case 3:
+				return businessDemandDataDTO.getMar();
+			case 4:
+				return businessDemandDataDTO.getApr();
+			case 5:
+				return businessDemandDataDTO.getMay();
+			case 6:
+				return businessDemandDataDTO.getJun();
+			case 7:
+				return businessDemandDataDTO.getJul();
+			case 8:
+				return businessDemandDataDTO.getAug();
+			case 9:
+				return businessDemandDataDTO.getSep();
+			case 10:
+				return businessDemandDataDTO.getOct();
+			case 11:
+				return businessDemandDataDTO.getNov();
+			case 12:
+				return businessDemandDataDTO.getDec();
+
+		}
+		return businessDemandDataDTO.getJan();
+	}
 
 
 	@Override
@@ -701,5 +835,62 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Override
+	public AOPMessageVM saveBusinessDemand(String year, String plantFKId,
+			List<BusinessDemandMonthlyDTO> businessDemandMonthlyDTOs) {
+		try {
+			List<BusinessDemandMonthlyDTO> failedList = new ArrayList<>();
+			
+			for (BusinessDemandMonthlyDTO businessDemandMonthlyDTO : businessDemandMonthlyDTOs) {
+				if (businessDemandMonthlyDTO.getSaveStatus() != null
+						&& businessDemandMonthlyDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+					failedList.add(businessDemandMonthlyDTO);
+					continue;
+				}
+
+				UUID normParameterFKId = UUID.fromString(businessDemandMonthlyDTO.getNormParameterFKId());
+
+				Optional<NormParameters> optionNormParameters = normParametersRepository.findById(normParameterFKId);
+				if (!optionNormParameters.isPresent()) {
+					businessDemandMonthlyDTO.setSaveStatus("Failed");
+					businessDemandMonthlyDTO.setErrDescription("Norm Paramter not found");
+					failedList.add(businessDemandMonthlyDTO);
+					continue;
+				}
+				if (optionNormParameters.isPresent() && (!optionNormParameters.get().getIsEditable())) {
+					continue;
+				}
+
+				for (int i = 1; i <= 12; i++) {
+					String attributeValue = getValue(businessDemandMonthlyDTO, i);
+
+					saveValue(optionNormParameters.get().getId(), i, attributeValue,businessDemandMonthlyDTO.getRemarks(), plantFKId, year);
+					if(businessDemandMonthlyDTO.getSaveStatus()!=null && businessDemandMonthlyDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+						failedList.add(businessDemandMonthlyDTO);
+					}
+				}
+			}
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("configuration");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantFKId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(failedList);
+			aopMessageVM.setMessage("Data updated successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to save data", ex);
+		}
+	}
+
 
 }

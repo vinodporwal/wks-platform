@@ -7,11 +7,29 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
+import { OptimizerDataApiService } from 'services/optimizer-api-service'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, oldYear, plantID, yearChanged } = dataGridStore
+  const {
+    verticalChange,
+    oldYear,
+    plantID,
+    yearChanged,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -169,11 +187,30 @@ const CrackerConfig = () => {
     }
   }, [keycloak])
 
+  const fetchModes = useCallback(async () => {
+    try {
+      const resp = await OptimizerDataApiService.fetchModes(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        '1',
+      )
+      if (resp?.code === 200 && Array.isArray(resp.data)) {
+        setModes(resp.data)
+      } else {
+        setModes([])
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err)
+    }
+  }, [keycloak])
+
   useEffect(() => {
+    fetchModes()
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
-  }, [keycloak, fetchTabsMatrix, fetchAvailableTabs])
+  }, [keycloak, fetchTabsMatrix, fetchAvailableTabs, fetchModes])
 
   const getRows = useCallback(
     (tabId) => {

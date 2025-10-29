@@ -27,6 +27,7 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
+import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -74,6 +75,10 @@ const ConfigurationTable = () => {
   const [gradeData, setGradeData] = useState([])
   const [continiousGradeData, setContiniousGradeData] = useState([])
   const [discontiniousGradeData, setDiscontiniousGradeData] = useState([])
+
+  const [reportManualEntry, setReportManualEntry] = useState([])
+  const [PIO, setPIO] = useState([])
+
   const [tabs, setTabs] = useState([])
   const [availableTabs, setAvailableTabs] = useState([])
   const [summary, setSummary] = useState('')
@@ -131,13 +136,11 @@ const ConfigurationTable = () => {
       ]
       setReportTypes(distinctReportTypes)
 
-
       if (
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
         lowerVertName == verticalEnums.ELASTOMER ||
-        lowerVertName === 'aromatics' ||
-        lowerVertName === 'pta'
+        lowerVertName === 'aromatics'
       ) {
         data = data?.filter(
           (item) =>
@@ -182,6 +185,9 @@ const ConfigurationTable = () => {
         let discontiniousGradeRows = []
         let constantsRows = []
         let configurationRows = []
+        let PIORows = []
+        let reportManualEntryRows = []
+
         groups.forEach((normGroup, ConfigTypeName) => {
           let rowsForThisCategory = []
           normGroup.forEach((items, TypeName) => {
@@ -209,6 +215,10 @@ const ConfigurationTable = () => {
             discontiniousGradeRows = rowsForThisCategory
           } else if (ConfigTypeName == 'Constant') {
             constantsRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Report Manual Entry') {
+            reportManualEntryRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'PIO Impact') {
+            PIORows = rowsForThisCategory
           }
         })
 
@@ -219,6 +229,8 @@ const ConfigurationTable = () => {
         setDiscontiniousGradeData(discontiniousGradeRows)
         setConstantsRows(constantsRows)
         setConfigurationRows(configurationRows)
+        setReportManualEntry(reportManualEntryRows)
+        setPIO(PIORows)
       }
       setLoading(false)
     } catch (error) {
@@ -474,15 +486,17 @@ const ConfigurationTable = () => {
     const today = new Date()
     const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
     const startDate = new Date(today.getFullYear() - 5, today.getMonth(), 1)
+
     const createPayloadItem = (obj, date) => ({
       apr: date,
       UOM: '',
-      AOP_YEAR,
+      auditYear: AOP_YEAR,
       normParameterFKId: obj?.NormParameter_FK_Id,
       remarks: 'Initiated',
       id: obj?.Id || null,
-      PLANT_ID,
+      plantId: PLANT_ID,
     })
+
     const payload = [
       createPayloadItem(startDateObj, formatDate(startDate)),
       createPayloadItem(endDateObj, formatDate(endDate)),
@@ -651,7 +665,7 @@ const ConfigurationTable = () => {
             aria-controls='meg-grid-content'
             id='meg-grid-header'
           >
-            <Typography className='grid-title'>
+            <Typography className='accordian-title'>
               AOP Historical Period Basis
             </Typography>
           </CustomAccordionSummary>
@@ -673,76 +687,103 @@ const ConfigurationTable = () => {
                 }}
               >
                 {true && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography
-                      className='grid-title'
-                      sx={{ whiteSpace: 'nowrap' }}
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
+                  >
+                    {/* Start Date */}
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
                     >
-                      Start Date
-                    </Typography>
-                    <DatePicker
-                      id='start-date'
-                      format='dd-MM-yyyy'
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.value)}
-                      style={{ height: '80px' }}
-                      size={'medium'}
-                    />
-                    <Typography
-                      className='grid-title'
-                      sx={{ whiteSpace: 'nowrap' }}
+                      <Typography
+                        className='button-title'
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Start Date
+                      </Typography>
+                      <DatePicker
+                        id='start-date'
+                        format='dd-MM-yyyy'
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.value)}
+                        style={{ height: '80px' }}
+                        size='medium'
+                      />
+                    </Box>
+
+                    {/* End Date */}
+                    <Box
+                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
                     >
-                      End Date
-                    </Typography>
-                    <DatePicker
-                      id='end-date'
-                      format='dd-MM-yyyy'
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.value)}
-                      style={{ height: '80px' }}
-                      size={'medium'}
-                    />
+                      <Typography
+                        className='button-title'
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        End Date
+                      </Typography>
+                      <DatePicker
+                        id='end-date'
+                        format='dd-MM-yyyy'
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.value)}
+                        style={{ height: '80px' }}
+                        size='medium'
+                      />
+                    </Box>
+
+                    {/* Load Button */}
+                    {!isOldYearFlag && (
+                      <Button
+                        variant='contained'
+                        onClick={handleOpenDialog}
+                        className='btn-load'
+                        sx={{ alignSelf: 'flex-end' }}
+                      >
+                        Load
+                      </Button>
+                    )}
                   </Box>
                 )}
-                {/* Load Button */}
-                {!isOldYearFlag && (
-                  <Button
-                    variant='contained'
-                    // onClick={onLoad}
-                    onClick={handleOpenDialog}
-                    className='btn-load'
-                    // disabled={!isLoadEnabled}
-                    sx={{ alignSelf: 'flex-end' }}
-                  >
-                    Load
-                  </Button>
-                )}
+
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
                     className='summary-title'
-                    sx={{ whiteSpace: 'normal' }}
+                    sx={{
+                      whiteSpace: 'normal',
+                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
+                    }}
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
                   </Typography>
                 )}
               </Box>
             </Box>
-            <TextField
-              label='AOP Design Basis'
-              multiline
-              // minRows={isAccordionExpanded ? 4 : 20}
-              minRows={lowerVertName === 'cracker' ? 6 : 2}
-              fullWidth
-              margin='normal'
-              variant='outlined'
-              disabled={isOldYear == 1}
-              value={summary}
-              onChange={(e) => {
-                setSummary(e.target.value)
-                setSummaryEdited(true)
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column', // ?? stack vertically
+                alignItems: 'flex-start',
+                gap: 0,
+                mt: 1,
               }}
-              className='aop-design-basis'
-            />
+            >
+              <Typography
+                className='button-title'
+                sx={{ whiteSpace: 'nowrap' }}
+              >
+                AOP Design Basis
+              </Typography>
+
+              <TextArea
+                value={summary}
+                rows={3}
+                onChange={(e) => {
+                  setSummary(e.target.value)
+                  setSummaryEdited(true)
+                }}
+                // style={{ width: '50%' }}
+              />
+            </Box>
           </CustomAccordionDetails>
         </CustomAccordion>
       </Box>
@@ -774,26 +815,15 @@ const ConfigurationTable = () => {
   }, [openConfirmDialog])
 
   if (
-    (lowerVertName == 'meg' ||
-      lowerVertName === 'aromatics' ||
-      lowerVertName === 'pta') &&
+    (lowerVertName == 'meg' || lowerVertName === 'aromatics') &&
     lowerVertName !== 'cracker' &&
     lowerVertName !== 'elastomer'
   ) {
     const isAromatics = lowerVertName === 'aromatics'
-    const isPta = lowerVertName === 'pta'
 
     const megTabs = isAromatics
-      ? ['Configuration', 'Constants', 'Report Manual Entry', 'PIO Impact']
-      : isPta
-        ? [
-            'Configuration',
-            'Constants',
-            'Report Manual Entry',
-            'PIO Impact',
-            'Shutdown',
-          ]
-        : ['Configuration', 'Constants', 'Report Manual Entry']
+      ? ['Configuration', 'Constants', 'PIO Impact']
+      : ['Configuration', 'Constants', 'Report Manual Entry']
 
     const auditYear = AOP_YEAR
     let displayYear = ''
@@ -821,6 +851,8 @@ const ConfigurationTable = () => {
 
           {(() => {
             const currentTab = megTabs[tabIndex]?.toLowerCase()
+            const currentTabDisplayName = megTabs[tabIndex]
+
             switch (currentTab) {
               case 'configuration':
                 return (
@@ -836,6 +868,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='0'
                     reportTypes={reportTypes}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case 'constants':
@@ -851,6 +884,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='1'
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case 'report manual entry':
@@ -866,7 +900,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='2'
-                    reportTypes={reportTypes}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case 'pio impact':
@@ -883,6 +917,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='3'
                     reportTypes={reportTypes}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
 
@@ -900,6 +935,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='4'
                     reportTypes={reportTypes}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               default:
@@ -943,6 +979,7 @@ const ConfigurationTable = () => {
           />
           {(() => {
             const currentTab = crackerTabs[tabIndex]?.toLowerCase()
+            const currentTabDisplayName = crackerTabs[tabIndex]
 
             switch (currentTab) {
               case 'configuration':
@@ -959,6 +996,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='0'
                     setGradeId={handleGradeChange}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case 'constants':
@@ -974,6 +1012,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='1'
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
 
@@ -1020,6 +1059,7 @@ const ConfigurationTable = () => {
           />
           {(() => {
             const currentTab = elastomerTabs[tabIndex]?.toLowerCase()
+            const currentTabDisplayName = elastomerTabs[tabIndex]
             switch (currentTab) {
               case 'constants':
                 return (
@@ -1034,6 +1074,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='1'
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case 'report manual entry':
@@ -1049,6 +1090,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='2'
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               default:
@@ -1094,6 +1136,7 @@ const ConfigurationTable = () => {
           />
           {(() => {
             const currentTab = elastomerTabs[tabIndex]?.toLowerCase()
+            const currentTabDisplayName = elastomerTabs[tabIndex]
             switch (currentTab) {
               case 'configuration':
                 return (
@@ -1108,6 +1151,7 @@ const ConfigurationTable = () => {
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='0'
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case 'constants':
@@ -1123,6 +1167,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='1'
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case 'report manual entry':
@@ -1138,6 +1183,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='2'
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               default:
@@ -1193,6 +1239,12 @@ const ConfigurationTable = () => {
         <Box>
           {(() => {
             const currentTabId = tabs[tabIndex]?.toLowerCase()
+
+            const currentTabInfo = availableTabs.find(
+              (tab) => tab.id.toLowerCase() === currentTabId,
+            )
+            const currentTabDisplayName = currentTabInfo?.displayName
+
             switch (currentTabId) {
               case getTheId('Configuration'):
                 return (
@@ -1206,6 +1258,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case getTheId('StartupLosses'):
@@ -1220,6 +1273,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case getTheId('Otherlosses'):
@@ -1234,6 +1288,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case getTheId('ShutdownNorms'):
@@ -1248,6 +1303,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case getTheId('Constant'):
@@ -1262,6 +1318,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case getTheId('Receipe'):
@@ -1276,6 +1333,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case getTheId('ContineGradeChange'):
@@ -1289,6 +1347,7 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
               case getTheId('DisContineGradeChange'):
@@ -1302,6 +1361,37 @@ const ConfigurationTable = () => {
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              case getTheId('Report Manual Entry'):
+                return (
+                  <SelectivityData
+                    rows={reportManualEntry}
+                    loading={loading}
+                    setRows={setReportManualEntry}
+                    fetchData={fetchData}
+                    configType='Report Manual Entry'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              case getTheId('PIO Impact'):
+                return (
+                  <SelectivityData
+                    rows={PIO}
+                    loading={loading}
+                    setRows={setPIO}
+                    fetchData={fetchData}
+                    configType='PIO Impact'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
                   />
                 )
 

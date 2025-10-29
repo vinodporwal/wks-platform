@@ -36,7 +36,7 @@ const BudgetConstrainsCellEditor = (props) => {
 
   // helper to safely parse numeric percent from the row
   const getPercentFromRow = () => {
-    const raw = dataItem?.budgetConstrains
+    const raw = dataItem?.percentChange
     if (raw === undefined || raw === null || raw === '') return NaN
     const n = Number(raw)
     return isNaN(n) ? NaN : n
@@ -89,10 +89,7 @@ const BudgetConstrainsCellEditor = (props) => {
         value={currentValueObj}
         onChange={handleChange}
         style={{ width: '100%' }}
-        disabled={
-          dataItem?.budgetConstrains === '' ||
-          dataItem?.budgetConstrains === undefined
-        }
+        disabled={dataItem?.percentChange == dataItem?.originalPercentChange}
       />
     )
   }
