@@ -735,13 +735,17 @@ const ConfigurationTable = () => {
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
                     className='summary-title'
-                    sx={{ whiteSpace: 'normal' }}
+                    sx={{
+                      whiteSpace: 'normal',
+                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
+                    }}
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
                   </Typography>
                 )}
               </Box>
             </Box>
+
             <Box
               sx={{
                 display: 'flex',
