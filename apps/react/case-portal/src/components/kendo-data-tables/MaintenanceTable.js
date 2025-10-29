@@ -324,11 +324,11 @@ const MaintenanceTable = () => {
           saveBtn: dataConfig.isCracker,
           allAction: true,
           downloadExcelBtnFromUI: true,
-          ExcelName: `${lowerVertName}_${SCREEN_NAME}`,
+          ExcelName: `${lowerVertName}_'Maintenance Data Excel'`,
           showRefresh: false,
 
           showTitleNameBusiness: true,
-          titleName: SCREEN_NAME,
+          titleName: 'Maintenance Details',
         },
         oldYear?.oldYear,
       ),
