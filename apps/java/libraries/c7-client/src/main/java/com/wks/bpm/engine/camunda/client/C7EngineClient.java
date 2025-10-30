@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -183,18 +184,29 @@ public class C7EngineClient implements BpmEngineClient {
 	@Override
 	public ProcessInstance startProcess(final String processDefinitionKey, final Optional<String> businessKey,
 			final Optional<ProcessVariable> processVariable, final BpmEngine bpmEngine) {
-		return startProcess(processDefinitionKey, businessKey, Arrays.asList(processVariable.get()), bpmEngine);
+
+				 System.out.println("****************startProcess processDefKey: " + processDefinitionKey + " businessKey: " + businessKey.orElse("N/A"));
+
+				 List<ProcessVariable> variables = processVariable
+        .map(Collections::singletonList)
+        .orElse(Collections.emptyList());
+
+		// return startProcess(processDefinitionKey, businessKey, Arrays.asList(processVariable.get()), bpmEngine);
+		return startProcess(processDefinitionKey, businessKey, variables, bpmEngine);
 	}
 
 	@Override
 	public ProcessInstance startProcess(final String processDefinitionKey, final Optional<String> businessKey,
 			final List<ProcessVariable> processVariables, final BpmEngine bpmEngine) {
 
+				System.out.println("**********StartProcess.....");
+
 		try {
 
 			StartProcessInstanceDto requestDto = new StartProcessInstanceDto();
-			requestDto.businessKey(businessKey.orElse(null));
-			requestDto.setCaseInstanceId(businessKey.orElse(null));
+		//	requestDto.businessKey(businessKey.orElse(null));
+			requestDto.setBusinessKey(businessKey.orElse(null));
+			requestDto.setCaseInstanceId(processDefinitionKey);
 			requestDto.variables(c7VariablesMapper.toEngineFormat(processVariables));
 
 			ProcessInstanceWithVariablesDto responseDto = processDefinitionApi.startProcessInstanceByKeyAndTenantId(

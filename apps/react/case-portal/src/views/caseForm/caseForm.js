@@ -58,7 +58,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   const [documents, setDocuments] = useState(null)
   const [mainTabIndex, setMainTabIndex] = useState(0)
   const [rightTabIndex, setRightTabIndex] = useState(0)
-  const [activeStage, setActiveStage] = React.useState(0)
+  const [activeStage, setActiveStage] = React.useState(null)
   const [stages, setStages] = useState([])
   const { t } = useTranslation()
 
@@ -96,11 +96,24 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   useEffect(() => {
     if (activeStage) {
       const stage = caseDef.stages.find((o) => o.name === activeStage)
-      const stageProcesses = stage ? stage.processesDefinitions : []
-      const autoStartProcesses = stageProcesses
-        ? stageProcesses.filter((o) => o.autoStart === false)
-        : undefined
-      setManualInitProcessDefs(autoStartProcesses)
+       console.log('CaseForm : Stage : ', stage)
+      // const stageProcesses = stage ? stage.processesDefinitions : []
+       ProcessDefService.find(keycloak)
+        .then((data) => {
+          console.log('CaseForm : Process Definitions : ', data)
+       // const autoStartProcesses =    data.filter((o) => o.autoStart === false)
+        // setManualInitProcessDefs(autoStartProcesses)
+        setManualInitProcessDefs(data)
+        })
+        .catch((err) => {
+          console.error('Error fetching stage processes', err)
+          return []
+        })
+      
+      // const autoStartProcesses = stageProcesses
+      //   ? stageProcesses.filter((o) => o.autoStart === false)
+      //   : undefined
+      // setManualInitProcessDefs(autoStartProcesses)
     }
   }, [activeStage])
 
@@ -151,6 +164,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   )
 
   const getCaseInfo = async (aCase) => {
+    console.log('CaseForm : getCaseInfo')
     await loadOptions(keycloak);
     console.log('Fetching case data of ', aCase)
     // setLoading(true)
@@ -381,6 +395,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
           });
 		}
         setActiveStage(caseData.stage)
+        console.log('CaseForm : Active Stage : ', caseData.stage)
       })
       .catch((err) => {
         console.log(err.message)
@@ -906,6 +921,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   // }
 
   const handleOpenProcessesDialog = () => {
+    console.log('CaseForm : handleOpenProcessesDialog')
     setOpenProcessesDialog(true)
     handleMenuClose()
   }
@@ -915,8 +931,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
   }
 
   const startProcess = (key) => {
-    ProcessDefService.start(keycloak, key, aCase.businessKey)
+    console.log('CaseForm : startProcess : ', key)
 
+    ProcessDefService.start(keycloak, key, aCase.businessKey).then((data) => {
+      console.log('CaseForm : process started : ', data)
+    }).catch((err) => {
+      console.error('Error starting process', err)
+    })
+    
     // Close the dialog
     handleCloseProcessesDialog()
   }
@@ -1604,10 +1626,14 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
             </DialogTitle>
             <List>
               {manualInitProcessDefs.map((process, index) => (
-                <React.Fragment key={process.definitionKey}>
+
+              //  <React.Fragment key={process.definitionKey}>
+              <React.Fragment key={process.key}>
                   <ListItem
                     button
-                    onClick={() => startProcess(process.definitionKey)}
+                  
+                   // onClick={() => startProcess(process.definitionKey)}
+                   onClick={() => startProcess(process.key)}
                     sx={{
                       '&:hover': {
                         backgroundColor: 'action.hover',
