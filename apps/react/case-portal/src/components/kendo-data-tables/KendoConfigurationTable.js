@@ -75,6 +75,10 @@ const ConfigurationTable = () => {
   const [gradeData, setGradeData] = useState([])
   const [continiousGradeData, setContiniousGradeData] = useState([])
   const [discontiniousGradeData, setDiscontiniousGradeData] = useState([])
+
+  const [reportManualEntry, setReportManualEntry] = useState([])
+  const [PIO, setPIO] = useState([])
+
   const [tabs, setTabs] = useState([])
   const [availableTabs, setAvailableTabs] = useState([])
   const [summary, setSummary] = useState('')
@@ -136,8 +140,7 @@ const ConfigurationTable = () => {
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
         lowerVertName == verticalEnums.ELASTOMER ||
-        lowerVertName === 'aromatics' ||
-        lowerVertName === 'pta'
+        lowerVertName === 'aromatics'
       ) {
         data = data?.filter(
           (item) =>
@@ -182,6 +185,9 @@ const ConfigurationTable = () => {
         let discontiniousGradeRows = []
         let constantsRows = []
         let configurationRows = []
+        let PIORows = []
+        let reportManualEntryRows = []
+
         groups.forEach((normGroup, ConfigTypeName) => {
           let rowsForThisCategory = []
           normGroup.forEach((items, TypeName) => {
@@ -209,6 +215,10 @@ const ConfigurationTable = () => {
             discontiniousGradeRows = rowsForThisCategory
           } else if (ConfigTypeName == 'Constant') {
             constantsRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'Report Manual Entry') {
+            reportManualEntryRows = rowsForThisCategory
+          } else if (ConfigTypeName == 'PIO Impact') {
+            PIORows = rowsForThisCategory
           }
         })
 
@@ -219,6 +229,8 @@ const ConfigurationTable = () => {
         setDiscontiniousGradeData(discontiniousGradeRows)
         setConstantsRows(constantsRows)
         setConfigurationRows(configurationRows)
+        setReportManualEntry(reportManualEntryRows)
+        setPIO(PIORows)
       }
       setLoading(false)
     } catch (error) {
@@ -737,7 +749,7 @@ const ConfigurationTable = () => {
                     className='summary-title'
                     sx={{
                       whiteSpace: 'normal',
-                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
+                      alignSelf: 'flex-end', // 👈 ensures it's bottom-aligned with the button
                     }}
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
@@ -749,7 +761,7 @@ const ConfigurationTable = () => {
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: 'column', // ?? stack vertically
+                flexDirection: 'column', // ⬅️ stack vertically
                 alignItems: 'flex-start',
                 gap: 0,
                 mt: 1,
@@ -803,26 +815,15 @@ const ConfigurationTable = () => {
   }, [openConfirmDialog])
 
   if (
-    (lowerVertName == 'meg' ||
-      lowerVertName === 'aromatics' ||
-      lowerVertName === 'pta') &&
+    (lowerVertName == 'meg' || lowerVertName === 'aromatics') &&
     lowerVertName !== 'cracker' &&
     lowerVertName !== 'elastomer'
   ) {
     const isAromatics = lowerVertName === 'aromatics'
-    const isPta = lowerVertName === 'pta'
 
     const megTabs = isAromatics
       ? ['Configuration', 'Constants', 'PIO Impact']
-      : isPta
-        ? [
-            'Configuration',
-            'Constants',
-            'Report Manual Entry',
-            'PIO Impact',
-            'Shutdown',
-          ]
-        : ['Configuration', 'Constants', 'Report Manual Entry']
+      : ['Configuration', 'Constants', 'Report Manual Entry']
 
     const auditYear = AOP_YEAR
     let displayYear = ''
@@ -851,6 +852,7 @@ const ConfigurationTable = () => {
           {(() => {
             const currentTab = megTabs[tabIndex]?.toLowerCase()
             const currentTabDisplayName = megTabs[tabIndex]
+
             switch (currentTab) {
               case 'configuration':
                 return (
@@ -1356,6 +1358,36 @@ const ConfigurationTable = () => {
                     setRows={setDiscontiniousGradeData}
                     fetchData={fetchData}
                     configType='DisContineGradeChange'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              case getTheId('Report Manual Entry'):
+                return (
+                  <SelectivityData
+                    rows={reportManualEntry}
+                    loading={loading}
+                    setRows={setReportManualEntry}
+                    fetchData={fetchData}
+                    configType='Report Manual Entry'
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    onSummaryEditChange={setSummaryEdited}
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              case getTheId('PIO Impact'):
+                return (
+                  <SelectivityData
+                    rows={PIO}
+                    loading={loading}
+                    setRows={setPIO}
+                    fetchData={fetchData}
+                    configType='PIO Impact'
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
