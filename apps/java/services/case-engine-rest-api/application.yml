@@ -17,6 +17,10 @@ logging:
       org.hibernate.type.descriptor.sql.BasicBinder: TRACE
       org.springframework.mail: DEBUG
 
+      javax.mail: DEBUG
+      com.sun.mail: DEBUG
+      com.sun.mail.smtp: DEBUG
+
 
 spring.mvc.converters.preferred-json-mapper: gson
 

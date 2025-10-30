@@ -8,8 +8,8 @@ export const buildCreateUrl = (url) => {
 
   } else {
     newUrl = cleanedUrl.replace(
-    'create?assetName',
-    'case-list/create?assetName',
+    'create?',
+    'case-list/create?',
     );
   }
 

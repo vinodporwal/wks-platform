@@ -58,6 +58,11 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
         (client) => client.roles || [],
       )
     : []
+
+    console.log("keycloak access token : ", keycloak.tokenParsed);
+    console.log("keycloak Id token ", keycloak.idTokenParsed)
+    console.log("keycloak raw token ", keycloak.token)
+  
   const allRoles = [...realmRoles, ...clientRoles]
   console.log('all roles: ',  allRoles)
   console.log("NewCaseFormPage.. creating new case for caseDefId: ", caseDefId);
@@ -349,7 +354,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
             hierarchyName: hierarchyName,
             sourceSystem: sourceSystem,
             eventIds: eventIds,
-            businessKey: businessKey,
+            businessKey: businessKey, 
 	 		caseNo: businessKey,
 			caseNumber: businessKey,	
             owner: {
