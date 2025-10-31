@@ -66,7 +66,8 @@ import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { CircularProgress, Box, Typography, Button } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
-import { Backdrop } from '../../../node_modules/@mui/material/index'
+import { Backdrop, Toolbar } from '../../../node_modules/@mui/material/index'
+import { renderChildren } from '../../../node_modules/@progress/kendo-react-layout/index'
 
 export default function PlantBudgetSummary() {
   const keycloak = useSession()
@@ -83,20 +84,9 @@ export default function PlantBudgetSummary() {
   const AOP_YEAR = year?.selectedYear
 
   const src = useMemo(() => {
-    const base =
-      'https://sjmnpb174.in.ril.com/ReportServer/Pages/ReportViewer.aspx'
-    const reportPath = '%2fAOP'
-    const params = new URLSearchParams({
-      '': reportPath,
-      'rs:Command': 'Render',
-      'rc:Toolbar': 'true',
-      plantId: PLANT_ID ?? '',
-      siteId: SITE_ID ?? '',
-      verticalId: VERTICAL_ID ?? '',
-      finYear: AOP_YEAR ?? '',
-    })
+    const base = `https://sjmnpb174.in.ril.com/ReportServer/Pages/ReportViewer.aspx?%2fAOP&rs:Command=Render&rc:Toolbar=true&plantId=${PLANT_ID}&siteId=${PLANT_ID}&verticalId=${PLANT_ID}&finYear=${AOP_YEAR}`
 
-    return `${base}?${params.toString()}`
+    return `${base}`
   }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR])
 
   if (openInTab) {

@@ -67,28 +67,10 @@ export default function MaintenanceSummary() {
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
 
-  // Construct the SSRS URL. Use the ReportServer or ReportManager URL you need.
-  // Example uses ReportViewer.aspx path you had.
   const src = useMemo(() => {
-    const base =
-      'https://sjmnpb174.in.ril.com/ReportServer/Pages/ReportViewer.aspx'
-    // if your report path is /AOPReport/ConsumptionBudgetSummarySiteWise
-    const reportPath = '%2fAOPReport%2fConsumptionBudgetSummarySiteWise' // encoded '/AOPReport/ConsumptionBudgetSummarySiteWise'
-    const params = new URLSearchParams({
-      // Report path already encoded in URL; append render command and other params
-      '': reportPath, // this makes URL like ...ReportViewer.aspx?%2fAOPReport%2f...  (some servers prefer this form)
-      'rs:Command': 'Render',
-      'rc:Toolbar': 'true', // or false
-      // pass any report parameters here, use your actual parameter names (example:)
-      PlantId: PLANT_ID ?? '',
-      SiteId: SITE_ID ?? '',
-      VerticalId: VERTICAL_ID ?? '',
-      AOPYear: AOP_YEAR ?? '',
-    })
+    const base = `https://sjmnpb174.in.ril.com/ReportServer/Pages/ReportViewer.aspx?%2fAOPReport%2fConsumptionBudgetSummarySiteWise&rs:Command=Render&rc:Toolbar=true&PlantId=${PLANT_ID}&SiteId=${PLANT_ID}&VerticalId=${PLANT_ID}&AOPYear=${AOP_YEAR}`
 
-    // If the server expects query string without param names for the path, build accordingly:
-    // const url = `${base}?%2fAOPReport%2fConsumptionBudgetSummarySiteWise&rs:Command=Render&PlantId=${encodeURIComponent(PLANT_ID)}...`
-    return `${base}?${params.toString()}`
+    return `${base}`
   }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR])
 
   // Optionally open in new tab
