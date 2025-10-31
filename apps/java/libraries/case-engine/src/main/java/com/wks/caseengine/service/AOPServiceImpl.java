@@ -134,22 +134,20 @@ public class AOPServiceImpl implements AOPService {
 				aopDTO.setMaterialFKId(row[4] != null ? row[4].toString() : null);
 				aopDTO.setDisplayName(row[5] != null ? row[5].toString() : null);
 
-				// Directly parsing Double values
-
-				aopDTO.setApril(row[6] != null ? Double.valueOf(row[6].toString()) : null);
-				aopDTO.setMay(row[7] != null ? Double.valueOf(row[7].toString()) : null);
-				aopDTO.setJune(row[8] != null ? Double.valueOf(row[8].toString()) : null);
-				aopDTO.setJuly(row[9] != null ? Double.valueOf(row[9].toString()) : null);
-				aopDTO.setAug(row[10] != null ? Double.valueOf(row[10].toString()) : null);
-				aopDTO.setSep(row[11] != null ? Double.valueOf(row[11].toString()) : null);
-				aopDTO.setOct(row[12] != null ? Double.valueOf(row[12].toString()) : null);
-				aopDTO.setNov(row[13] != null ? Double.valueOf(row[13].toString()) : null);
-				aopDTO.setDec(row[14] != null ? Double.valueOf(row[14].toString()) : null);
-				aopDTO.setJan(row[15] != null ? Double.valueOf(row[15].toString()) : null);
-				aopDTO.setFeb(row[16] != null ? Double.valueOf(row[16].toString()) : null);
-				aopDTO.setMarch(row[17] != null ? Double.valueOf(row[17].toString()) : null);
-				aopDTO.setAvgTPH(row[18] != null ? Double.valueOf(row[18].toString()) : null);
-				aopDTO.setRemark(row[19] != null ? row[19].toString() : null);
+				 aopDTO.setApril(safeParseDouble(row[6]));
+			        aopDTO.setMay(safeParseDouble(row[7]));
+			        aopDTO.setJune(safeParseDouble(row[8]));
+			        aopDTO.setJuly(safeParseDouble(row[9]));
+			        aopDTO.setAug(safeParseDouble(row[10]));
+			        aopDTO.setSep(safeParseDouble(row[11]));
+			        aopDTO.setOct(safeParseDouble(row[12]));
+			        aopDTO.setNov(safeParseDouble(row[13]));
+			        aopDTO.setDec(safeParseDouble(row[14]));
+			        aopDTO.setJan(safeParseDouble(row[15]));
+			        aopDTO.setFeb(safeParseDouble(row[16]));
+			        aopDTO.setMarch(safeParseDouble(row[17]));
+			        aopDTO.setAvgTPH(safeParseDouble(row[18]));
+			        aopDTO.setRemark(row[19] != null ? row[19].toString() : null);
 				aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
 				aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
 				aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
@@ -172,7 +170,23 @@ public class AOPServiceImpl implements AOPService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-	
+	private Double safeParseDouble(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        String s = obj.toString().trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        try {
+            return Double.valueOf(s);
+        } catch (NumberFormatException ex) {
+            // Logging is optional but helpful to track bad data
+            System.err.println("Warning: could not parse to Double: '" + s + "'");
+            return null;
+        }
+    }
+
 	public List<Object[]> getData(String finYear, UUID plantId,UUID siteId,UUID verticalId, String procedureName) {
 		try {
 
@@ -312,14 +326,7 @@ public class AOPServiceImpl implements AOPService {
 		aopMessageVM.setCode(200);
 		aopMessageVM.setMessage("Data fetched successfully");
 		aopMessageVM.setData(result);
-		// }
-
-		// else if(verticalName.equalsIgnoreCase("PE")) {
-		// List<AOPDTO> result= calculateDataForPE(plant.getId().toString(),year);
-		// aopMessageVM.setCode(200);
-		// aopMessageVM.setMessage("Data fetched successfully");
-		// aopMessageVM.setData(result);
-		// }
+		
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year,
 				"production-aop");
 		List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("production-aop");

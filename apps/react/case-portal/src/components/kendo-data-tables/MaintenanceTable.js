@@ -134,11 +134,9 @@ const MaintenanceTable = () => {
 
       const response =
         await MaintenanceDetailsApiService.saveCrackerMaintenance(
-          {
-            plantId,
-            year,
-            payloadData,
-          },
+          plantId,
+          year,
+          payloadData,
           keycloak,
         )
 

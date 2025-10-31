@@ -5,7 +5,6 @@ export const BusinessDemandDataApiService = {
   getBDssData,
   saveBusinessDemandData,
   deleteBusinessDemandData,
-
   businessDemandImport,
   businessDemandExport,
   aopDesignBasisBluePrint,
@@ -134,7 +133,7 @@ async function businessDemandImport(file, keycloak, PLANT_ID, AOP_YEAR) {
 }
 
 async function aopDesignBasisBluePrint() {
-  var url = `${window.location.origin}/files/Blue Print.docx`
+  var url = `${window.location.origin}/files/BluePrintCracker.pdf`
 
   try {
     const resp = await fetch(url, {

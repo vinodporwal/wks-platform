@@ -86,7 +86,9 @@ const SelectivityData = (props) => {
   const prevYearFormatted = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
 
   const headerMap = generateHeaderNames(AOP_YEAR)
+
   const headerMapForPrevYear = generateHeaderNames(prevYearFormatted)
+
   const [isEdited, setIsEdited] = useState(false)
 
   const handleGradeChange = (gradeId) => {
@@ -479,7 +481,7 @@ const SelectivityData = (props) => {
       if (props?.configType === 'grades') {
         await DataService.getRecipeExcel(keycloak)
       } else if (props?.configType === 'ShutdownNorms') {
-        await DataService.getShutdownRateExcel(keycloak)
+        await DataService.getShutdownRateExcel(keycloak, props?.configType)
       } else if (props?.tabIndex != 1) {
         if (
           lowerVertName == 'pe' ||
@@ -493,7 +495,6 @@ const SelectivityData = (props) => {
             [props?.configType],
           )
         } else {
-
           var report_t = []
 
           if (props?.tabIndex == 0) {
@@ -548,7 +549,11 @@ const SelectivityData = (props) => {
         response = await DataService.saveRecipeExcel(rawFile, keycloak)
       } else if (props?.configType === 'ShutdownNorms') {
         // Add shutdown rate specific upload
-        response = await DataService.saveShutdownRateExcel(rawFile, keycloak)
+        response = await DataService.saveShutdownRateExcel(
+          rawFile,
+          keycloak,
+          props?.configType,
+        )
       } else if (props?.tabIndex != 1) {
         response = await DataService.saveConfigurationExcel(rawFile, keycloak)
       } else {
@@ -718,6 +723,7 @@ const SelectivityData = (props) => {
       </div>
     )
   }
+
   return (
     <div>
       <Box>

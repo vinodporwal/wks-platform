@@ -703,6 +703,12 @@ const DecokingConfig = () => {
         plantId: plantId,
         id: row?.idFromApi || '',
         demo: row?.demo || '',
+        // Date: row?.date
+        //   ? `${row.date.getFullYear()}/${String(row.date.getMonth() + 1).padStart(2, '0')}/${String(row.date.getDate()).padStart(2, '0')}`
+        //   : null,
+        date: row?.date
+          ? `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, '0')}-${String(row.date.getDate()).padStart(2, '0')}`
+          : null,
       }))
       const response = await DataService.saveCrackerRunLength(
         plantId,
@@ -984,7 +990,7 @@ const DecokingConfig = () => {
       </Backdrop>
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               TA Start Date

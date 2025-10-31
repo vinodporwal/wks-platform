@@ -26,7 +26,7 @@ import KendoDataTables from './index'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import moment from '../../../node_modules/moment/moment'
 import AopDesignBasisNorms from './AopDesignBasisNorms'
-
+import useValueFormatterConsumption from 'utils/ValueFormatterConsumption' 
 const CrakcerConstants = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
@@ -56,6 +56,7 @@ const CrakcerConstants = () => {
   const [availableTabs, setAvailableTabs] = useState([])
   const [summary, setSummary] = useState('')
   const [debouncedSummary, setDebouncedSummary] = useState('')
+  const valueFormat = useValueFormatterConsumption()
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSummary(summary)
@@ -437,7 +438,7 @@ const CrakcerConstants = () => {
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
                     className='summary-title'
-                    sx={{ whiteSpace: 'normal' }}
+                    sx={{ whiteSpace: 'normal' }} // <-- added alignSelf
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
                   </Typography>
@@ -493,12 +494,13 @@ const CrakcerConstants = () => {
     {
       field: 'DisplayName',
       title: 'Particulars',
+      widthT: '200px',
     },
 
     {
       field: 'UOM',
       title: 'UOM',
-
+      widthT: '60px',
       editable: false,
     },
 
@@ -507,7 +509,8 @@ const CrakcerConstants = () => {
       title: 'Value',
       editable: true,
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
+      widthT: '200px',
       type: 'number',
     },
     {
@@ -674,6 +677,7 @@ const CrakcerConstants = () => {
   }
   const uploadCrackerConstant = async (rawFile) => {
     setLoading(true)
+    setLoading1(true)
 
     try {
       let response
@@ -688,10 +692,10 @@ const CrakcerConstants = () => {
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Uploaded Successfully!',
+          message: 'Saved Successfully!',
           severity: 'success',
         })
-        setModifiedCells({})
+        setModifiedCellsConstants({})
         fetchData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
@@ -721,6 +725,8 @@ const CrakcerConstants = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
+        setLoading(false)
+        setLoading1(false)
         fetchData()
       } else {
         setSnackbarOpen(true)
@@ -728,12 +734,15 @@ const CrakcerConstants = () => {
           message: 'Upload Failed!',
           severity: 'error',
         })
+        setLoading(false)
+        setLoading1(false)
       }
 
       return response
     } catch (error) {
       console.error('Error uploading xcel:', error)
       setSnackbarOpen(true)
+
       setSnackbarData({
         message: 'Unexpected error occurred!',
         severity: 'error',

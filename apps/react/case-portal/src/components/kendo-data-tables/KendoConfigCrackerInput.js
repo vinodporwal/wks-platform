@@ -33,7 +33,7 @@ const CrackerConfig = () => {
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant') || '{}')?.id
+
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -43,17 +43,14 @@ const CrackerConfig = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const handleRemarkCellClick = (row) => {
-    // if (!row?.isEditable) return
 
+  const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  const headerMap = useMemo(
-    () => generateHeaderNames(localStorage.getItem('year')),
-    [],
-  )
+
+  const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [])
 
   const rawTabsStatic = [
     'Feed',
@@ -66,6 +63,7 @@ const CrackerConfig = () => {
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
+  const [modes, setModes] = useState([])
   const [tabIndex, setTabIndex] = useState(0)
 
   const [feedRows, setFeedRows] = useState([])
@@ -74,8 +72,10 @@ const CrackerConfig = () => {
   const [recoveryRows, setRecoveryRows] = useState([])
   const [optimizing, setOptimizing] = useState([])
   const [furnace, setFurnance] = useState([])
-  const allModes = ['5F', '4F', '4F+D']
-  const [selectMode, setSelectMode] = useState(allModes[0])
+
+  // const allModes = ['5F', '4F', '4F+D']
+
+  const [selectMode, setSelectMode] = useState('')
   const [constantsRows, setConstantsRows] = useState([])
 
   const currentTabDisplay = useMemo(() => {
@@ -83,6 +83,17 @@ const CrackerConfig = () => {
     const info = availableTabs.find((t) => t.id.toLowerCase() === idLower)
     return info ? info.name : tabs[tabIndex] || 'Feed'
   }, [tabs, tabIndex, availableTabs])
+
+  useEffect(() => {
+    if (Array.isArray(modes) && modes.length > 0) {
+      setSelectMode((prev) => {
+        const stillExists = modes.some((m) => m.name === prev)
+        return stillExists ? prev : modes[0].name
+      })
+    } else {
+      setSelectMode('')
+    }
+  }, [modes])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -113,7 +124,7 @@ const CrackerConfig = () => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
-      modes: allModes,
+      modes: modes,
       uploadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
       downloadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
     },
@@ -160,6 +171,7 @@ const CrackerConfig = () => {
       setTabs(rawTabsStatic)
     }
   }, [keycloak])
+
   const fetchAvailableTabs = useCallback(async () => {
     try {
       const resp = await DataService.getConfigurationAvailableTabs(keycloak)
@@ -195,22 +207,32 @@ const CrackerConfig = () => {
         AOP_YEAR,
         '1',
       )
+
       if (resp?.code === 200 && Array.isArray(resp.data)) {
         setModes(resp.data)
+        setSelectMode(resp.data[0]?.name ?? '')
       } else {
         setModes([])
+        setSelectMode('')
       }
     } catch (err) {
       console.error('Error fetching data:', err)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
     fetchModes()
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
-  }, [keycloak, fetchTabsMatrix, fetchAvailableTabs, fetchModes])
+  }, [
+    keycloak,
+    fetchTabsMatrix,
+    fetchAvailableTabs,
+    fetchModes,
+    AOP_YEAR,
+    PLANT_ID,
+  ])
 
   const getRows = useCallback(
     (tabId) => {
@@ -345,24 +367,29 @@ const CrackerConfig = () => {
   )
 
   useEffect(() => {
-    if (keycloak && plantId && currentTabDisplay) {
+    if (keycloak && PLANT_ID && AOP_YEAR && currentTabDisplay) {
+      if (!selectMode) {
+        console.log('Skipping fetchCrackerRows until selectMode is set')
+        return
+      }
+
       fetchCrackerRows(currentTabDisplay, selectMode)
     } else {
       console.warn('Missing data for fetchCrackerRows:', {
         hasKeycloak: !!keycloak,
-        hasPlantId: !!plantId,
+        hasPlantId: !!PLANT_ID,
         currentTabDisplay,
       })
     }
   }, [
     tabIndex,
     selectMode,
-    plantID,
+    PLANT_ID,
     tabs,
     fetchCrackerRows,
     keycloak,
     currentTabDisplay,
-    yearChanged,
+    AOP_YEAR,
   ])
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -421,7 +448,7 @@ const CrackerConfig = () => {
       const response = await DataService.saveSpyroInput(
         SpyroInputData,
         keycloak,
-        plantId,
+        PLANT_ID,
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)

@@ -7,14 +7,33 @@ import KendoDataTables from './index'
 import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import { useSession } from 'SessionStoreContext'
+import { OptimizerDataApiService } from 'services/optimizer-api-service'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, oldYear, plantID, yearChanged } = dataGridStore
+  const {
+    verticalChange,
+    oldYear,
+    plantID,
+    yearChanged,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const plantId = JSON.parse(localStorage.getItem('selectedPlant') || '{}')?.id
   const [modifiedCells, setModifiedCells] = useState({})
 
@@ -33,10 +52,7 @@ const CrackerConfig = () => {
     setRemarkDialogOpen(true)
   }
 
-  const headerMap = useMemo(
-    () => generateHeaderNames(localStorage.getItem('year')),
-    [],
-  )
+  const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [])
 
   const rawTabsStatic = [
     'Total Feed',
@@ -48,6 +64,7 @@ const CrackerConfig = () => {
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
   const [tabIndex, setTabIndex] = useState(0)
+  const [modes, setModes] = useState([])
 
   const [yieldRows, setYieldRows] = useState([])
   const [constantsRows, setConstantsRows] = useState([])
@@ -55,8 +72,8 @@ const CrackerConfig = () => {
   const [compositionRows, setCompositionRows] = useState([])
   const [hydrogenationRows, setHydrogenationRows] = useState([])
 
-  const allModes = ['5F', '4F', '4F+D']
-  const [selectMode, setSelectMode] = useState(allModes[0])
+  // const allModes = ['5F', '4F', '4F+D']
+  const [selectMode, setSelectMode] = useState('')
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -110,7 +127,7 @@ const CrackerConfig = () => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
-      modes: allModes,
+      modes: modes,
       uploadExcelBtn: true,
       downloadExcelBtn: true,
     },
@@ -171,11 +188,41 @@ const CrackerConfig = () => {
     }
   }, [keycloak])
 
+  const fetchModes = useCallback(async () => {
+    try {
+      const resp = await OptimizerDataApiService.fetchModes(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        '1',
+      )
+
+      if (resp?.code === 200 && Array.isArray(resp.data)) {
+        setModes(resp.data) // keep full objects
+        setSelectMode(resp.data[0]?.name ?? '') // default select first mode by name
+      } else {
+        setModes([])
+        setSelectMode('')
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
   useEffect(() => {
+    fetchModes()
+
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
-  }, [keycloak, fetchTabsMatrix, fetchAvailableTabs])
+  }, [
+    keycloak,
+    fetchTabsMatrix,
+    fetchAvailableTabs,
+    fetchModes,
+    PLANT_ID,
+    AOP_YEAR,
+  ])
 
   const getRows = useCallback(
     (tabId) => {
