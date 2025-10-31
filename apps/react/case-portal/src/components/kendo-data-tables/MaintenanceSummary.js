@@ -94,7 +94,7 @@ export default function MaintenanceSummary() {
 
     const params = `&PlantId=${PLANT_ID}&SiteId=${SITE_ID}&VerticalId=${VERTICAL_ID}&AOPYear=${AOP_YEAR}`
 
-    return `${base}`
+    return `${base}${params}`
   }, [base, PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR])
 
   // Optionally open in new tab
