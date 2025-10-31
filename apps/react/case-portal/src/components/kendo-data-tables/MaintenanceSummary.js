@@ -47,17 +47,19 @@
 // }
 
 // MaintenanceSummary.jsx
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { CircularProgress, Box, Typography, Button } from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import { Backdrop } from '../../../node_modules/@mui/material/index'
+import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
 
 export default function MaintenanceSummary() {
   const keycloak = useSession()
   const [openInTab, setOpenInTab] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  const [base, setBase] = useState('')
 
   const dataGridStore = useSelector((s) => s.dataGridStore)
   const { plantObject, siteObject, verticalObject, year } = dataGridStore
@@ -67,11 +69,33 @@ export default function MaintenanceSummary() {
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
 
+  const fetchData = async () => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+    try {
+      var data = await BusinessDemandDataApiService.ssrsMaintenanceSummary(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setBase(data?.data[0]?.reportURL)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [PLANT_ID, AOP_YEAR, keycloak])
+
   const src = useMemo(() => {
-    const base = `https://sjmnpb174.in.ril.com/ReportServer/Pages/ReportViewer.aspx?%2fAOPReport%2fConsumptionBudgetSummarySiteWise&rs:Command=Render&rc:Toolbar=true&PlantId=${PLANT_ID}&SiteId=${PLANT_ID}&VerticalId=${PLANT_ID}&AOPYear=${AOP_YEAR}`
+    if (!base) return
+
+    const params = `&PlantId=${PLANT_ID}&SiteId=${SITE_ID}&VerticalId=${VERTICAL_ID}&AOPYear=${AOP_YEAR}`
 
     return `${base}`
-  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR])
+  }, [base, PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR])
 
   // Optionally open in new tab
   if (openInTab) {
