@@ -43,6 +43,7 @@ import MonthWiseRawData from '../Reports/MonthWiseRawData'
 import FurnaceRawData from '../Reports/FurnaceRawData'
 import OptimizerReport from '../Reports/OptimizerReport'
 import TurnaroundReportCracker from '../Reports/TurnaroundReportCracker'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const WorkFlowMerge = () => {
   const keycloak = useSession()
@@ -325,6 +326,8 @@ const WorkFlowMerge = () => {
     )
   }
 
+  const VALUE_FORMATOR = ValueFormatterProduction()
+
   const generateColumns = (data, numericKeys, handleRemarkCellClick) => {
     const cols = data.headers.map((header, i) => {
       const field = data.keys[i]
@@ -339,7 +342,7 @@ const WorkFlowMerge = () => {
         }),
         ...(isNumeric && {
           type: 'number',
-          format: '{0:#.###}',
+          format: VALUE_FORMATOR,
           // valueFormatter: ({ value }) =>
           //   value === '' || value == null ? '' : Number(value).toFixed(2),
         }),

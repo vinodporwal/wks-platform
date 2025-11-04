@@ -149,6 +149,7 @@ const ProductionTargetBasis = () => {
   // Fetch all grids in one call and build dataMap + gridNames
   // The backend is expected to return: apiResponse.data = [ { gridName, data: [...] }, ... ]
   // ---------------------------------------------------------------------------
+
   const fetchAllGrids = useCallback(async () => {
     // clear previous timers if any
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
@@ -361,7 +362,9 @@ const ProductionTargetBasis = () => {
       <Box display='flex' flexDirection='column' gap={2}>
         {tabIndex === 0 && (
           <>
-            {gridNames.map((name) => {
+            {gridNames.map((name, idx) => {
+              if (idx === 0) return null
+
               const d = dataMap[name] || { rows: [], columns: [] }
               return (
                 <div key={name}>
