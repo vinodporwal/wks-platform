@@ -107,6 +107,17 @@ export const CaseList = ({ status, caseDefId }) => {
   let caseBusinessKey = null;
   const [accepted, setAccepted] = useState(false);
   const isCaseDefValid = (caseDefId && caseDefId.length !== 0 && caseDefId.trim().length !== 0);
+
+  // role based access control
+  const[isCaseViewer, setIsCaseViewer] = useState(false);
+
+  useEffect(() => {
+    const token = keycloak.tokenParsed;
+    const clientId = token?.azp || token?.client_id; 
+    const clientRoles = token?.resource_access?.[clientId]?.roles || [];
+    setIsCaseViewer(clientRoles.includes('case_viewer'));
+  }, [keycloak]);
+  
   
   if(isCaseCreatePath && !isCaseDefValid)
   {
@@ -858,6 +869,7 @@ export const CaseList = ({ status, caseDefId }) => {
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
             variant='contained'
+            disabled={isCaseViewer}
           >
             {t('pages.caselist.action.newcase')}
           </Button>
@@ -981,6 +993,7 @@ export const CaseList = ({ status, caseDefId }) => {
           handleClose={handleCloseCaseForm}
           open={openCaseForm}
           keycloak={keycloak}
+          isCaseViewer={isCaseViewer}
         />
       )}
       {/*openNewCaseForm && (

@@ -50,7 +50,7 @@ Formio.options = {
   }
 }
 
-export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
+export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = false }) => {
   const [caseDef, setCaseDef] = useState(null)
   const [form, setForm] = useState(null)
   const [formData, setFormData] = useState(null)
@@ -1284,7 +1284,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   {aCase?.statusDescription}
                 </div> */}
               </Typography>
-              {aCase.status === CaseStatus.WipCaseStatus.description && (
+              {!isCaseViewer && aCase.status === CaseStatus.WipCaseStatus.description && (
                 <Button
                   color='inherit'
                   onClick={() =>
@@ -1307,7 +1307,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
               >
                 Open Image
               </Button> */}
-              {aCase.status === CaseStatus.ClosedCaseStatus.description && (
+              {!isCaseViewer && aCase.status === CaseStatus.ClosedCaseStatus.description && (
                 <React.Fragment>
                   <Button
                     color='inherit'
@@ -1332,7 +1332,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   </Button>
                 </React.Fragment>
               )}
-              {aCase.status === CaseStatus.ArchivedCaseStatus.description && (
+              {!isCaseViewer && aCase.status === CaseStatus.ArchivedCaseStatus.description && (
                 <React.Fragment>
                   <Button
                     color='inherit'
@@ -1346,7 +1346,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   </Button>
                 </React.Fragment>
               )}
-              { <Button
+              {!isCaseViewer && <Button
                 color='inherit'
                 onClick={handleFollowClick}
                 startIcon={<NotificationsActiveIcon />}
@@ -1357,18 +1357,18 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                 {'Print'}
               </Button>
 
-              <Button color='inherit' onClick={onSave}>
+              {!isCaseViewer && <Button color='inherit' onClick={onSave}>
                 {'Save'}
-              </Button>
+              </Button>}
               {/* Case Actions Menu */}
-              <IconButton
+              {!isCaseViewer && <IconButton
                 edge='end'
                 color='inherit'
                 onClick={handleMenuOpen}
                 aria-label='manual-actions'
               >
                 <MoreVertIcon />
-              </IconButton>
+              </IconButton>}
               <Menu
                 anchorEl={anchorEl}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -1425,10 +1425,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                   <Tab
                     label={t('pages.caseform.tabs.attachments')}
                     {...a11yProps(1)}
+                    disabled={isCaseViewer}
                   />
                   <Tab
                     label={t('pages.caseform.tabs.comments')}
                     {...a11yProps(2)}
+                    disabled={isCaseViewer}
                   />
                 </Tabs>
               </Box>
@@ -1465,7 +1467,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         form={form.structure}
                         submission={formData}
                         options={{
-                          // readOnly: true,
+                          readOnly: isCaseViewer,
                           fileService: new StorageService(),
                         }}
                         // onSubmit={(submission) => {
@@ -1476,6 +1478,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak }) => {
                         // }}
                         onCustomEvent={(event) => {
                           console.log("in caseForm : onCustomEvent.........");
+                          
+                          if (isCaseViewer) {
+                            return; // Prevent any form submission for case viewers
+                          }
                           
                           if (event.component.key === 'saveAsDraft') {
                             onSubmitForm()

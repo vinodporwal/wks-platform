@@ -52,19 +52,21 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const realmRoles = keycloak.idTokenParsed.realm_access?.roles || []
-  const clientRoles = keycloak.idTokenParsed.resource_access
-    ? Object.values(keycloak.idTokenParsed.resource_access).flatMap(
-        (client) => client.roles || [],
-      )
-    : []
+  // const realmRoles = keycloak.idTokenParsed.realm_access?.roles || []
+  // const clientRoles = keycloak.idTokenParsed.resource_access
+  //   ? Object.values(keycloak.idTokenParsed.resource_access).flatMap(
+  //       (client) => client.roles || [],
+  //     )
+  //   : []
 
-    console.log("keycloak access token : ", keycloak.tokenParsed);
-    console.log("keycloak Id token ", keycloak.idTokenParsed)
-    console.log("keycloak raw token ", keycloak.token)
-  
-  const allRoles = [...realmRoles, ...clientRoles]
-  console.log('all roles: ',  allRoles)
+  const token = keycloak.tokenParsed;
+  const clientId = token?.azp || token?.client_id; 
+  const clientRoles = token?.resource_access?.[clientId]?.roles || [];
+  console.log("Client roles:", clientRoles);
+
+    console.log("keycloak access token parsed : ", keycloak.tokenParsed);
+  // const allRoles = [...realmRoles, ...clientRoles]
+  // console.log('all roles: ',  allRoles)
   console.log("NewCaseFormPage.. creating new case for caseDefId: ", caseDefId);
 
   useEffect(() => {

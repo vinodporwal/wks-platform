@@ -17,9 +17,6 @@ logging:
       org.hibernate.type.descriptor.sql.BasicBinder: TRACE
       org.springframework.mail: DEBUG
 
-      javax.mail: DEBUG
-      com.sun.mail: DEBUG
-      com.sun.mail.smtp: DEBUG
 
 
 spring.mvc.converters.preferred-json-mapper: gson
@@ -49,6 +46,10 @@ spring.data.mongodb.database.max-connection-life-time: 3000
 
 opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
 keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
+keycloak.realm: ${KEYCLOAK_REALM:localhost}
+keycloak.client-id: ${KEYCLOAK_CLIENT_ID:wks-portal}
+keycloak.username: ${KEYCLOAK_USERNAME:admin}
+keycloak.password: ${KEYCLOAK_PASSWORD:admin}
 ge.authentication.datasource: ${GE_AUTHENTICATION_DATASOURCE}
 ge.authentication.id: ${GE_AUTHENTICATION_ID}
 ge.authentication.password: ${GE_AUTHENTICATION_PASSWORD}
