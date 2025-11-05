@@ -1057,7 +1057,7 @@ const ConfigurationTable = () => {
   }
 
   if (lowerVertName === 'elastomer') {
-    const elastomerTabs = ['Constants', 'Report Manual Entry']
+    const elastomerTabs = ['Constants']
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
