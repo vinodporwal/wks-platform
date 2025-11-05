@@ -256,7 +256,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 			List<String> innerHeaders = new ArrayList<>();
 			
-			innerHeaders.add("Shutdown Desc");
+			innerHeaders.add("Slowdown Desc");
 			innerHeaders.add("Particulars");
 			innerHeaders.add("SD-From");
 			innerHeaders.add("SD-To");
@@ -303,6 +303,153 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 			
 			sheet.setColumnHidden(7, true);
 			sheet.setColumnHidden(8, true);
+			try {
+
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public byte[] nonProductSlowdownExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
+		try {
+			
+			
+			if (!isAfterSave) {
+				 dtoList = findSlowdownDetailsByPlantIdAndType(UUID.fromString(plantId),maintenanceTypeName, year); 
+			}
+			String pattern = "dd-MM-yyyy HH:mm";
+			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+			Workbook workbook = new XSSFWorkbook();
+			CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+			// List<List<Object>> rows = new ArrayList<>();
+
+			List<List<Object>> rows = new ArrayList<>();
+			
+			// Data rows
+			for (ShutDownPlanDTO dto : dtoList) {
+				List<Object> list = new ArrayList<>();
+				String formattedDuration = ""; 
+				String formattedStartDate = "";
+				String formattedEndDate = "";
+				try {
+					Double durationObject = dto.getDurationInHrs();
+					if (durationObject != null) {
+						double durationDouble = durationObject.doubleValue();
+						int hours = (int) durationDouble; 
+						int minutes = (int) Math.round((durationDouble - hours) * 100); 
+						formattedDuration = String.format("%02d:%02d", hours, minutes);
+					}
+				} catch (Exception e) {
+					formattedDuration = "Invalid Duration"; 
+				}
+				
+				list.add(dto.getDiscription());
+				/*
+				 * if(dto.getProduct()!=null) { try { UUID product =
+				 * UUID.fromString(dto.getProduct()); Optional<NormParameters> normParameter =
+				 * normParametersRepository.findById(product); if(normParameter.isPresent()) {
+				 * list.add(normParameter.get().getDisplayName()); } else {
+				 * list.add(dto.getProduct()); // Keep original product ID if not found } }
+				 * catch (IllegalArgumentException e) { // Handles UUID.fromString exception
+				 * list.add("Invalid Product ID"); } catch (Exception e) {
+				 * list.add("Error Product Lookup"); } } else { list.add(null); // Add null if
+				 * product is null, maintaining column structure }
+				 */
+				
+				// --- Date/Time Formatting ---
+				try {
+					if (dto.getMaintStartDateTime() != null) {
+						formattedStartDate = formatter.format(dto.getMaintStartDateTime());
+					}
+				} catch (Exception e) {
+					formattedStartDate = "Invalid Start Date";
+				}
+				list.add(formattedStartDate);
+				
+				try {
+					if (dto.getMaintEndDateTime() != null) {
+						formattedEndDate = formatter.format(dto.getMaintEndDateTime());
+					}
+				} catch (Exception e) {
+					formattedEndDate = "Invalid End Date";
+				}
+				list.add(formattedEndDate);
+				
+				// --- Adding the rest of the fields ---
+				list.add(formattedDuration);
+				list.add(dto.getRate());
+				list.add(dto.getRemark());
+				list.add(dto.getId());
+				//list.add(dto.getProduct());
+				
+				if (isAfterSave) {
+					list.add(dto.getSaveStatus());
+					list.add(dto.getErrDescription());
+				}
+				
+				rows.add(list);
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			
+			innerHeaders.add("Slowdown Desc");
+			//innerHeaders.add("Particulars");
+			innerHeaders.add("SD-From");
+			innerHeaders.add("SD-To");
+			innerHeaders.add("Duration (hrs)");
+			innerHeaders.add("Rate (TPH)");
+			innerHeaders.add("Shutdown Basis");
+			innerHeaders.add("Id");
+			//innerHeaders.add("Product");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(createBoldBorderedStyle(workbook));
+				}
+			}
+			for (List<Object> rowData : rows) {
+                Row row = sheet.createRow(currentRow++);
+                for (int col = 0; col < rowData.size(); col++) {
+                    Cell cell = row.createCell(col);
+                    Object value = rowData.get(col);
+
+                    if (value instanceof Date) {
+                        cell.setCellValue((Date) value);
+                        cell.setCellStyle(dateTimeStyle);
+                    } else if (value instanceof Number) {
+                        cell.setCellValue(((Number) value).doubleValue());
+                    } else if (value instanceof Boolean) {
+                        cell.setCellValue((Boolean) value);
+                    } else if (value != null) {
+                        cell.setCellValue(value.toString());
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+            }
+			
+			sheet.setColumnHidden(6, true);
+			//sheet.setColumnHidden(8, true);
 			try {
 
 				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

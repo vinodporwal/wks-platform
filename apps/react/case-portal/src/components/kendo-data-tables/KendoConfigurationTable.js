@@ -1073,14 +1073,18 @@ const ConfigurationTable = () => {
           <CircularProgress color='inherit' />
         </Backdrop>
         {ConfigurationAccordian}
+
         <Box>
-          <AopTabs
-            tabIndex={tabIndex}
-            setTabIndex={setTabIndex}
-            tabs={elastomerTabs.map((tab) =>
-              tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
-            )}
-          />
+          {false && (
+            <AopTabs
+              tabIndex={tabIndex}
+              setTabIndex={setTabIndex}
+              tabs={elastomerTabs.map((tab) =>
+                tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
+              )}
+            />
+          )}
+
           {(() => {
             const currentTab = elastomerTabs[tabIndex]?.toLowerCase()
             const currentTabDisplayName = elastomerTabs[tabIndex]

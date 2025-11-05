@@ -217,9 +217,7 @@ const SlowDown = ({ permissions }) => {
     setLoading(true)
     try {
       var plantId = PLANT_ID
-
       const year = AOP_YEAR
-
       const response = await DataService.saveSlowdownConfigData(
         plantId,
         year,
@@ -228,7 +226,6 @@ const SlowDown = ({ permissions }) => {
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)
-
         setSnackbarData({
           message: 'Saved Successfully!',
           severity: 'success',
@@ -430,7 +427,7 @@ const SlowDown = ({ permissions }) => {
       }
 
       // MEG specific checks
-      if (lowerVertName === 'meg') {
+      if (lowerVertName === 'meg' || lowerVertName === 'elastomer') {
         // Month span check
         for (const row of rows) {
           const start = new Date(row.maintStartDateTime)
@@ -866,6 +863,7 @@ const SlowDown = ({ permissions }) => {
       console.error('Error deleting Record!', error)
     }
   }
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -875,11 +873,20 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      response = await DataService.slowdownDetailsExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
+      
+    if(lowerVertName == 'elastomer'){
+            response = await DataService.slowdownDetailsElastomerExport(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+          } else{
+            response = await DataService.slowdownDetailsExport(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
       )
+          }
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({

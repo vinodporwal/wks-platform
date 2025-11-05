@@ -246,7 +246,7 @@ const ShutDown = ({ permissions }) => {
         }
       }
 
-      if (lowerVertName == 'meg') {
+      if (lowerVertName == 'meg' || lowerVertName == 'elastomer') {
         const monthSpanRows = new Set() // Add this line
         for (const row of allRecords) {
           const start = new Date(row.maintStartDateTime)
@@ -617,12 +617,22 @@ const ShutDown = ({ permissions }) => {
     })
 
     try {
-      let response
-      response = await DataService.shutdownDetailsExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+    
+    let response
+          if(lowerVertName === 'elastomer'){
+            response= await DataService.shutdownDetailsElastomerExport(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          }else{
+            response = await DataService.shutdownDetailsExport(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+    
+          }
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
