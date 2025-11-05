@@ -30,21 +30,21 @@ const SlowdownNorms = () => {
 
   const [slowdownMonths, setSlowdownMonths] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
-    const {
-      verticalChange,
-      yearChanged,
-      oldYear,
-      plantID,
-      plantObject,
-      siteObject,
-      verticalObject,
-      year,
-    } = dataGridStore
-  
-    const PLANT_ID = plantObject?.id
-    const SITE_ID = siteObject?.id
-    const VERTICAL_ID = verticalObject?.id
-    const AOP_YEAR = year?.selectedYear
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
   //const isOldYear = oldYear?.oldYear
   const isOldYear = oldYear?.oldYear
 
@@ -185,8 +185,12 @@ const SlowdownNorms = () => {
   }
 
   // const months = slowdownMonths
-   const valueFormat = ValueFormatterConsumption()
-  const colDefs = getSlowdownNormsColDef({ headerMap, slowdownMonths, valueFormat })
+  const valueFormat = ValueFormatterConsumption()
+  const colDefs = getSlowdownNormsColDef({
+    headerMap,
+    slowdownMonths,
+    valueFormat,
+  })
 
   const handleRemarkCellClick = (row) => {
     if (!row?.isEditable) return
@@ -515,6 +519,9 @@ const SlowdownNorms = () => {
       ExcelName: `${lowerVertName}_Slowdown Consumption (Norms/Quantity)`,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
+
+      showTitleNameBusiness: lowerVertName === 'elastomer' ? true : false,
+      titleName: `Slowdown Consumption (Norms/Quantity)`,
     },
     isOldYear,
   )
