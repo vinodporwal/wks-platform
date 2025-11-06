@@ -424,7 +424,7 @@ export const MockReportService = {
                       editable: false,
                       width: 120,
                       align: 'right',
-                      format: '{0:#. ##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
