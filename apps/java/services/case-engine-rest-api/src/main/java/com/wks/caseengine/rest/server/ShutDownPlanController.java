@@ -101,6 +101,15 @@ public class ShutDownPlanController {
 	        ) {
 			return	shutDownPlanService.importShutdownExcel(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
 	}
+	
+	@PostMapping(value = "/shutdown-import-non-product", consumes = "multipart/form-data")
+	public AOPMessageVM importNonProductShutdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	shutDownPlanService.importNonProductShutdown(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
 
 	
 		  @PostMapping(value = "/shutdown/{plantId}")

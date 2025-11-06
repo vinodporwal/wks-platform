@@ -142,14 +142,6 @@ async function CrackerMaintenanceImport(file, keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 async function CrackerMaintenanceExport(keycloak, PLANT_ID, AOP_YEAR) {
-  const year = localStorage.getItem('year')
-  let plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
-
   const url = `${Config.CaseEngineUrl}/task/maintenance-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
 
   const headers = {

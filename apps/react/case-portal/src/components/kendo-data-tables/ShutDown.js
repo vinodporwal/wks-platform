@@ -305,10 +305,12 @@ const ShutDown = ({ permissions }) => {
         }
 
         //THEN CHECK 1 SCREEN DATA WITH ANOTHER SCREEN
-        for (let i = 0; i < rows.length; i++) {
-          const a = rows[i]
-          const aStart = new Date(a.maintStartDateTime).getTime()
-          const aEnd = new Date(a.maintEndDateTime).getTime()
+
+        if (lowerVertName != 'elastomer') {
+          for (let i = 0; i < rows.length; i++) {
+            const a = rows[i]
+            const aStart = new Date(a.maintStartDateTime).getTime()
+            const aEnd = new Date(a.maintEndDateTime).getTime()
 
           if (isNaN(aStart) || isNaN(aEnd)) continue
 
@@ -319,15 +321,16 @@ const ShutDown = ({ permissions }) => {
 
             if (isNaN(bStart) || isNaN(bEnd)) continue
 
-            if (aStart < bEnd && bStart < aEnd) {
-              // Add this line
-              a.isError = true // Add this line
-              setSnackbarOpen(true)
-              setSnackbarData({
-                message: `The timeframe for "${a.discription} (Shutdown)" overlaps with "${b.discription} (Slowdown)". Please ensure no overlapping timeframes.`,
-                severity: 'error',
-              })
-              return
+              if (aStart < bEnd && bStart < aEnd) {
+                // Add this line
+                a.isError = true // Add this line
+                setSnackbarOpen(true)
+                setSnackbarData({
+                  message: `The timeframe for "${a.discription} (Shutdown)" overlaps with "${b.discription} (Slowdown)". Please ensure no overlapping timeframes.`,
+                  severity: 'error',
+                })
+                return
+              }
             }
           }
         }
@@ -649,12 +652,22 @@ const ShutDown = ({ permissions }) => {
     try {
       let response
 
-      response = await DataService.ImportShutdownDetails(
+      
+      if(lowerVertName == 'elastomer'){
+        response = await DataService.ImportShutdownElastomerDetails(
         rawFile,
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
+      } else{
+        response = await DataService.ImportShutdownDetails(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -749,7 +762,7 @@ const ShutDown = ({ permissions }) => {
       titleName: `${SCREEN_NAME}`,
 
       uploadExcelBtn:
-        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+        lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'elastomer' ? true : false,
     },
     isOldYear,
   )

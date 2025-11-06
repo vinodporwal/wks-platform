@@ -8,6 +8,7 @@ import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -95,6 +96,8 @@ const CrackerConfig = () => {
     }
   }, [modes])
 
+  const FORMATE_VALUE = ValueFormatterProduction()
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -127,6 +130,7 @@ const CrackerConfig = () => {
       modes: modes,
       uploadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
       downloadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
+      hideRemarkForNonEditableRows: true,
     },
     isOldYear,
   )
@@ -145,6 +149,7 @@ const CrackerConfig = () => {
       headerMap,
       handleRemarkCellClick,
       configType,
+      FORMATE_VALUE,
     })
   }, [headerMap, currentTabDisplay])
 

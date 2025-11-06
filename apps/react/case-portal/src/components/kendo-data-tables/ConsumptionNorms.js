@@ -111,7 +111,7 @@ const ConsumptionNorms = () => {
         aopStatus: 'Saved',
       }))
       const response = await ConsumptionNormsApiService.saveAOPConsumptionNorm(
-        plantId,
+        PLANT_ID,
         businessData,
         keycloak,
       )
@@ -307,16 +307,40 @@ const ConsumptionNorms = () => {
         return
       }
       setCalculationObject(response?.data?.aopCalculation)
+
+      const monthFields = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+        'jan',
+        'feb',
+        'march',
+      ]
+
       const formattedData = response?.data?.aopConsumptionNormDTOList?.map(
-        (item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          NormParametersId: item.materialFkId.toLowerCase(),
-          originalRemark: item.aopRemarks?.trim() || null,
-          id: index,
-          isEditable: false,
-          Particulars: item.normParameterTypeDisplayName || 'Type',
-        }),
+        (item, index) => {
+          const total = monthFields.reduce((sum, month) => {
+            const value = parseFloat(item[month]) || 0
+            return sum + value
+          }, 0)
+          const avgOfAllMonths = total / monthFields.length
+          return {
+            ...item,
+            idFromApi: item.id,
+            NormParametersId: item.materialFkId?.toLowerCase(),
+            originalRemark: item.aopRemarks?.trim() || null,
+            id: index,
+            isEditable: false,
+            Particulars: item.normParameterTypeDisplayName || 'Type',
+            avgOfAllMonths,
+          }
+        },
       )
       setRows(formattedData)
       setLoading(false)

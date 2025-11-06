@@ -6,7 +6,7 @@ export const ConsumptionNormsApiService = {
   getConsumptionNormsData,
   handleCalculateonsumptionNorms,
 }
-async function saveAOPConsumptionNorm(plantId, shutdownDetails, keycloak) {
+async function saveAOPConsumptionNorm(PLANT_ID, shutdownDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/overall-consumption`
   const headers = {
     Accept: 'application/json',

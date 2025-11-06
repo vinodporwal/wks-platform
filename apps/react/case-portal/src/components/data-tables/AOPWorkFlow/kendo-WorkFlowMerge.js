@@ -623,7 +623,7 @@ const WorkFlowMerge = () => {
     'Annual AOP Cost',
     'Plant Production Summary',
     'Month Wise Production Plan',
-    'Month Wise Raw Data',
+    'Month Wise Consumption',
     'Turnaround Report',
     'Annual Production Plan',
     'Plant Contribution',

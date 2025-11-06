@@ -103,6 +103,15 @@ public class SlowdownPlanController {
 	        ) {
 			return	slowdownPlanService.importSlowdownExcel(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
 	}
+	
+	@PostMapping(value = "/slowdown-import-non-product", consumes = "multipart/form-data")
+	public AOPMessageVM importNonProductSlowdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	slowdownPlanService.importNonProductSlowdown(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
 
 	
 	@PostMapping(value="/slowdown/{plantId}")

@@ -475,27 +475,29 @@ const SlowDown = ({ permissions }) => {
           }
         }
 
-        // Cross overlap with Shutdown
-        for (let i = 0; i < rows.length; i++) {
-          const a = rows[i]
-          const aStart = new Date(a.maintStartDateTime).getTime()
-          const aEnd = new Date(a.maintEndDateTime).getTime()
-          if (isNaN(aStart) || isNaN(aEnd)) continue
+        // Cross overlap the timeframe with Shutdown
+        if (lowerVertName != 'elastomer') {
+          for (let i = 0; i < rows.length; i++) {
+            const a = rows[i]
+            const aStart = new Date(a.maintStartDateTime).getTime()
+            const aEnd = new Date(a.maintEndDateTime).getTime()
+            if (isNaN(aStart) || isNaN(aEnd)) continue
 
-          for (let j = 0; j < rowsShutdown.length; j++) {
-            const b = rowsShutdown[j]
-            const bStart = new Date(b.maintStartDateTime).getTime()
-            const bEnd = new Date(b.maintEndDateTime).getTime()
-            if (isNaN(bStart) || isNaN(bEnd)) continue
+            for (let j = 0; j < rowsShutdown.length; j++) {
+              const b = rowsShutdown[j]
+              const bStart = new Date(b.maintStartDateTime).getTime()
+              const bEnd = new Date(b.maintEndDateTime).getTime()
+              if (isNaN(bStart) || isNaN(bEnd)) continue
 
-            if (aStart < bEnd && bStart < aEnd) {
-              a.isError = true
-              setSnackbarOpen(true)
-              setSnackbarData({
-                message: `The timeframe for "${a.discription} (Slowdown)" overlaps with "${b.discription} (Shutdown)". Please ensure no overlapping of timeframes.`,
-                severity: 'error',
-              })
-              return
+              if (aStart < bEnd && bStart < aEnd) {
+                a.isError = true
+                setSnackbarOpen(true)
+                setSnackbarData({
+                  message: `The timeframe for "${a.discription} (Slowdown)" overlaps with "${b.discription} (Shutdown)". Please ensure no overlapping of timeframes.`,
+                  severity: 'error',
+                })
+                return
+              }
             }
           }
         }
@@ -903,12 +905,22 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      response = await DataService.ImportSlowdownDetails(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
+    
+    if(lowerVertName == 'elastomer'){
+            response = await DataService.ImportSlowdownElastomerDetails(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
       )
+          } else{
+            response = await DataService.ImportSlowdownDetails(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+      )
+          }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -1001,7 +1013,7 @@ const SlowDown = ({ permissions }) => {
       titleName: SCREEN_NAME,
 
       uploadExcelBtn:
-        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+        lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName == 'elastomer' ? true : false,
     },
     isOldYear,
   )
