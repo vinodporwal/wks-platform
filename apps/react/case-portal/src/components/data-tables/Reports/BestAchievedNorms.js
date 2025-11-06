@@ -508,9 +508,9 @@ export default function BestAchievedNorms() {
         VERTICAL_NAME,
       )
 
-      if (response?.code === 200) {
-        setLoading(false)
-      }
+      // if (response?.code === 200) {
+      setLoading(false)
+      // }
     } catch (error) {
       console.error('Export failed:', error)
       setLoading(false)
