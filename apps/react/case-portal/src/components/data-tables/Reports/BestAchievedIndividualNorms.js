@@ -311,7 +311,7 @@ const BestAchievedIndividualNorms = () => {
     .replace(/T/, ' ')
     .replace(/:/g, '-')
     .split('.')[0]
-  const fileName = `Overall Consumption Basis.xlsx`
+  const fileName = `Best Achieved Individual Norms.xlsx`
 
   const renderTitle = (t) => t
 

@@ -566,6 +566,8 @@ export default function BestAchievedNorms() {
           Propane (1Z)&nbsp;&nbsp;
           <span style={{ color: 'green', fontWeight: 'bold' }}>Green</span> -
           Propane (2Z)
+          <span style={{ color: 'purple', fontWeight: 'bold' }}>Purple</span> -
+          Copied From Other Season
         </Typography>
 
         {isExporting && (

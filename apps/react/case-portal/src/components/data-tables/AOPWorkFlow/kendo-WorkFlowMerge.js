@@ -44,7 +44,7 @@ import FurnaceRawData from '../Reports/FurnaceRawData'
 import OptimizerReport from '../Reports/OptimizerReport'
 import TurnaroundReportCracker from '../Reports/TurnaroundReportCracker'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-
+import SpecificConsumptionNorm from '../Reports-kendo/SpecificConsumptionnorm'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const [steps, setSteps] = useState([])
@@ -343,8 +343,6 @@ const WorkFlowMerge = () => {
         ...(isNumeric && {
           type: 'number',
           format: VALUE_FORMATOR,
-          // valueFormatter: ({ value }) =>
-          //   value === '' || value == null ? '' : Number(value).toFixed(2),
         }),
       }
     })
@@ -575,6 +573,7 @@ const WorkFlowMerge = () => {
     'Annual Production Plan(T-15)',
     'Plant Contribution(T-21)',
     'Plant Contribution Summary (T-22)',
+    'Specific Consumption Norms',
   ]
 
   const customPPTabs = [
@@ -586,6 +585,7 @@ const WorkFlowMerge = () => {
     'Annual Production Plan(T-15)',
     'Plant Contribution(T-21)',
     'Plant Contribution Summary (T-22)',
+    'Specific Consumption Norms',
   ]
   const PETabs = [
     'Annual AOP Cost',
@@ -634,6 +634,7 @@ const WorkFlowMerge = () => {
   // Pick tabs based on vertical
 
   let activeTabs = defaultTabs
+
   if (lowerVertName === 'cracker') {
     activeTabs = crackerTabs
   } else if (
@@ -841,6 +842,9 @@ const WorkFlowMerge = () => {
             {tabIndex === 5 && <AnnualProductionPlan />}
             {tabIndex === 6 && <PlantContribution />}
             {tabIndex === 7 && <PlantContributionLastFourYears />}
+            {(lowerVertName === 'pe' || lowerVertName === 'pp') && (
+              <>{tabIndex === 8 && <SpecificConsumptionNorm />}</>
+            )}
 
             <Notification
               open={snackbarOpen}

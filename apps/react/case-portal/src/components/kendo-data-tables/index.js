@@ -783,12 +783,17 @@ const KendoDataTables = ({
     })
 
     let highlightColor
+    let highlightColorFullCell = false
+
     if (isEdited || isRedFromAllRedCell) {
       highlightColor = 'orange'
     } else if (matchedCell?.mode === 'Propane(1Z)') {
       highlightColor = 'red'
     } else if (matchedCell?.mode === 'Propane(2Z)') {
       highlightColor = 'green'
+    } else if (matchedCell?.mode === 'Copied') {
+      highlightColor = 'purple'
+      highlightColorFullCell = true
     }
 
     return (
@@ -798,6 +803,7 @@ const KendoDataTables = ({
         style={{
           color: highlightColor,
           fontWeight: highlightColor ? 'bold' : undefined,
+          backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
         {children}

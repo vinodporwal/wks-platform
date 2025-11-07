@@ -1110,7 +1110,11 @@ const NormalOpNormsScreenCracker = () => {
               <span style={{ color: 'green', fontWeight: 'bold' }}>
                 Green
               </span>{' '}
-              - Propane (2Z)
+              - Propane (2Z)&nbsp;&nbsp;
+              <span style={{ color: 'purple', fontWeight: 'bold' }}>
+                Purple
+              </span>{' '}
+              - Copied From Other Season
             </Typography>
           </Box>
 

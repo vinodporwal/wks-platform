@@ -220,7 +220,6 @@ export default function AopBudget() {
       type,
       format,
     })),
-    { field: 'remark', title: 'Remark', editable: true, widthT: 100 },
     {
       field: 'allMonthsTotal',
       title: 'Total',
@@ -229,6 +228,7 @@ export default function AopBudget() {
       type: 'number',
       format: FORMATE_DECIMAL,
     },
+    { field: 'remark', title: 'Remark', editable: true, widthT: 100 },
   ]
 
   const formatPercentChange = (value) => {
