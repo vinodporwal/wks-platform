@@ -495,29 +495,31 @@ export default function AopBudget() {
       const consumptionData = Object.values(modifiedCells)
       const procurementData = Object.values(modifiedCellsP)
 
-      if (
-        !designBasisAndDesignRemarksEdited ||
-        !designBasisAndDesignRemarksEdited2
-      ) {
-        setSnackbarData({
-          message: 'Please update Justification & Remarks',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
-        setLoading(false)
+      //VALIDATION REMOVED
 
-        if (!designBasisAndDesignRemarksEdited) {
-          setTextAreaRedDesign(true)
-        } else {
-          setTextAreaRedDesign(false)
-        }
-        if (!designBasisAndDesignRemarksEdited2) {
-          setTextAreaRedRemark(true)
-        } else {
-          setTextAreaRedRemark(false)
-        }
-        return
-      }
+      // if (
+      //   !designBasisAndDesignRemarksEdited ||
+      //   !designBasisAndDesignRemarksEdited2
+      // ) {
+      //   setSnackbarData({
+      //     message: 'Please update Justification & Remarks',
+      //     severity: 'error',
+      //   })
+      //   setSnackbarOpen(true)
+      //   setLoading(false)
+
+      //   if (!designBasisAndDesignRemarksEdited) {
+      //     setTextAreaRedDesign(true)
+      //   } else {
+      //     setTextAreaRedDesign(false)
+      //   }
+      //   if (!designBasisAndDesignRemarksEdited2) {
+      //     setTextAreaRedRemark(true)
+      //   } else {
+      //     setTextAreaRedRemark(false)
+      //   }
+      //   return
+      // }
 
       setTextAreaRedDesign(false)
       setTextAreaRedRemark(false)
