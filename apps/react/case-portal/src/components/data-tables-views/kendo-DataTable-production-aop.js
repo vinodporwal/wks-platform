@@ -106,8 +106,8 @@ const ProductionAopView = ({
       var formattedRows = data.results.map((row, id) => {
         const newRow = { id }
         Object.entries(row).forEach(([key, val]) => {
-          if (!isNaN(val) && val !== '') {
-            newRow[key] = val
+          if (['syAop', 'fyActual', 'fyAop'].includes(key)) {
+            newRow[key] = val !== '' && !isNaN(val) ? Number(val) : val
           } else {
             newRow[key] = val
           }
