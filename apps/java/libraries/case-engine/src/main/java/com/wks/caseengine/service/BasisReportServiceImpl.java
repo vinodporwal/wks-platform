@@ -627,6 +627,7 @@ public class BasisReportServiceImpl implements BasisReportService {
 	        CellStyle headerStyle = createHeaderStyle(workbook);
 	        CellStyle greenTextStyle = createPropaneStyle(workbook, IndexedColors.GREEN.getIndex());
 	        CellStyle redTextStyle = createPropaneStyle(workbook, IndexedColors.RED.getIndex());
+	        CellStyle violetTextStyle = createPropaneStyle(workbook, IndexedColors.VIOLET.getIndex());
 
 	        int sheetIndex = 1;
 	        for (Map<String, Object> grid : grids) {
@@ -671,9 +672,6 @@ public class BasisReportServiceImpl implements BasisReportService {
 	                    Object value = rowMap.get(key);
 	                    if (key.equalsIgnoreCase("Mode") && value != null) {
 	                        mode = value.toString();
-	                        if(mode.equalsIgnoreCase("5F")) {
-	                        	System.out.println(mode);
-	                        }
 	                        Object normParameter = rowMap.get("Material_FK_Id");
 	                        if (normParameter != null) {
 	                            normParameterId = normParameter.toString();
@@ -684,42 +682,32 @@ public class BasisReportServiceImpl implements BasisReportService {
 	                    Cell cell = row.createCell(i);
 	                    if (rowData != null && rowData.length > 0 && isMonth(key)) {
 	                        try {
-	                            // --- Correction Starts Here ---
-	                            // 1. Check if rowData is the 2D array (list inside a list)
-	                            // If rowData is Object[][], this check ensures we get the inner Object[]
 	                            Object[] dataRow = null;
 	                            if (rowData.length > 0 && rowData[0] instanceof Object[]) {
-	                                // Assume the monthly data is in the first (and only) inner array
 	                                dataRow = (Object[]) rowData[0];
 	                            } else {
-	                                // If it's already a 1D array, use it directly (fallback/original intent)
 	                                dataRow = rowData; 
 	                            }
 
 	                            if (dataRow != null && dataRow.length > 0) {
-	                                // 2. Proceed with the original logic using the correct dataRow
 	                                int monthIndex = getMonthNumberByName(key);
 	                                int arrayIndex = (monthIndex > 0) ? monthIndex : 0;
 	                                String dataValue = null;
-
-	                                // Ensure arrayIndex is within bounds of dataRow
 	                                if (arrayIndex < dataRow.length && dataRow[arrayIndex] != null) { 
 	                                    dataValue = dataRow[arrayIndex].toString();
 	                                }
 
 	                                if (dataValue != null) {
-	                                    // ... Styling logic remains the same ...
 	                                    if ("Propane(2Z)".equalsIgnoreCase(dataValue)) {
 	                                        cell.setCellStyle(greenTextStyle);
 	                                    } else if ("Propane(1Z)".equalsIgnoreCase(dataValue)) {
 	                                        cell.setCellStyle(redTextStyle);
+	                                    }else if ("Copied".equalsIgnoreCase(dataValue)) {
+	                                        cell.setCellStyle(violetTextStyle);
 	                                    }
 	                                }
 	                            }
-	                            // --- Correction Ends Here ---
-
 	                        } catch (Exception ignored) {
-	                            // Handle or log the error instead of ignoring it in production code
 	                        }
 	                    }
 	                    setCellValue(cell, value);
@@ -1065,11 +1053,9 @@ public class BasisReportServiceImpl implements BasisReportService {
 	    String  storedProcedure = vertical.getName() + "_" + site.getName() + "_BestAchived_MinCC";
 	    
 	    try {
-	        // 1. Fetch ALL column metadata (List of Lists of Maps) - NEW
 	        List<List<Map<String, Object>>> allColMetadata = getBestAchievedAllColumnMeta(
 	                plantId, aopYear,reportType, storedProcedure);
 
-	        // 2. Fetch ALL grid data (List of Lists of Object[]) - Unchanged
 	        List<List<Object[]>> allGridData = getBestAchievedReportData(
 	                plantId, aopYear,reportType, storedProcedure);
 
@@ -1079,38 +1065,29 @@ public class BasisReportServiceImpl implements BasisReportService {
 	                        + " metadata lists but " + allGridData.size() + " data grids.");
 	        }
 
-	        // 3. Build combined list for frontend (List of Maps)
 	        List<Map<String, Object>> combined = new ArrayList<>();
-	        
-	        // Loop through each grid's data and its corresponding metadata
 	        for (int i = 0; i < allGridData.size(); i++) {
 	            List<Map<String, Object>> colMetadata = allColMetadata.get(i);
 	            List<Object[]> rawRows = allGridData.get(i);
-	            
-	            // Extract column names from metadata list
 	            List<String> colNames = colMetadata.stream()
 	                                              .map(m -> (String)m.get("field"))
 	                                              .collect(Collectors.toList());
 
-	            // --- Grid Name Logic (Copied from original, using 'colNames' derived from metadata) ---
 	            String gridName = "UNKNOWN_GRID_" + (i + 1); // Default name
 	            if (!colNames.isEmpty()) {
 	                int lastColIdx = colNames.size() - 1;
-	                // Check if the last column is actually GRID_TYPE (as in your SP)
+	                
 	                if (colNames.get(lastColIdx).equalsIgnoreCase("GRID_TYPE") && !rawRows.isEmpty()) {
-	                    // Use the value from the first row as the grid name
+	                   
 	                    Object gridTypeVal = rawRows.get(0)[lastColIdx];
 	                    if (gridTypeVal != null) {
 	                        gridName = gridTypeVal.toString();
 	                    }
 	                } else {
-	                    // Fallback to the column name of the first column if no GRID_TYPE is found
+	                    
 	                    gridName = colNames.get(0); 
 	                }
 	            }
-	            // ---------------------------------------------------------------------------------
-
-	            // Convert Object[] rows to List<Map<String, Object>>
 	            List<Map<String, Object>> gridDataMap = new ArrayList<>();
 	            for (Object[] row : rawRows) {
 	                Map<String, Object> rowMap = new LinkedHashMap<>();
@@ -1120,11 +1097,11 @@ public class BasisReportServiceImpl implements BasisReportService {
 	                gridDataMap.add(rowMap);
 	            }
 
-	            // Assemble the final map structure for the grid
+	            
 	            Map<String, Object> part = new LinkedHashMap<>();
 	            part.put("gridName", gridName);
 	            part.put("data", gridDataMap);
-	            // ADD THE COLUMN METADATA HERE
+	            
 	            part.put("columns", colMetadata); 
 	            combined.add(part);
 	        }
@@ -1183,7 +1160,7 @@ public class BasisReportServiceImpl implements BasisReportService {
 	                        allMetadataGrids.add(currentMetadata);
 	                    }
 	                }
-	                // Move to the next result set or update count
+	                
 	                results = callableStatement.getMoreResults();
 	            }
 
