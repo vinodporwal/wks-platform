@@ -17,9 +17,10 @@ import { validateFields } from 'utils/validationUtils'
 import { Box, Typography } from '../../../node_modules/@mui/material/index'
 import KendoDataTables from './index'
 import NormalOpNormsScreenCracker from './NormalOpNormsCrakcer'
-
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 const NormalOpNormsScreen = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
+
   const [allRedCell, setAllRedCell] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const [calculationObject, setCalculationObject] = useState([])
@@ -72,6 +73,7 @@ const NormalOpNormsScreen = () => {
   const keycloak = useSession()
 
   const fetchData = async (gradeId) => {
+    if (!PLANT_ID || !AOP_YEAR) return
     const verticalsRequiringGrade = ['pe', 'pp']
     if (verticalsRequiringGrade.includes(lowerVertName) && !gradeId) return
     setLoading(true)
@@ -84,6 +86,8 @@ const NormalOpNormsScreen = () => {
             keycloak,
             gradeId,
             false,
+            PLANT_ID,
+            AOP_YEAR,
           )
       }
 
@@ -114,6 +118,8 @@ const NormalOpNormsScreen = () => {
       const response =
         await NormalOperationNormsApiService.getNormalOperationNormsGrades(
           keycloak,
+          PLANT_ID,
+          AOP_YEAR,
         )
 
       if (response?.code === 200) {
@@ -130,8 +136,11 @@ const NormalOpNormsScreen = () => {
 
   const fetchDataIntermediateValues = async () => {
     try {
-      const res =
-        await NormalOperationNormsApiService.getIntermediateValues(keycloak)
+      const res = await NormalOperationNormsApiService.getIntermediateValues(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (res?.code == 200) {
         const formattedData = res?.data.map((item, index) => {
           const formattedItem = {
@@ -150,9 +159,13 @@ const NormalOpNormsScreen = () => {
   }
 
   const getNormTransactions = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
-      const res =
-        await NormalOperationNormsApiService.getNormTransactions(keycloak)
+      const res = await NormalOperationNormsApiService.getNormTransactions(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (res?.code == 200) {
         const normalized = res?.data.map((obj) => ({
           ...obj,
@@ -196,10 +209,11 @@ const NormalOpNormsScreen = () => {
 
   useEffect(() => {
     fetchAllData(gradeId)
-  }, [oldYear, yearChanged, keycloak, gradeId, plantID])
-
+  }, [oldYear, yearChanged, keycloak, gradeId, PLANT_ID])
+  const valueFormat = ValueFormatterConsumption()
   const colDefs = getNormalOpNormColDef({
     headerMap,
+    valueFormat,
   })
 
   const colDefsIntermediateValues = [
@@ -235,7 +249,7 @@ const NormalOpNormsScreen = () => {
       editable: false,
       width: 120,
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
 
@@ -245,7 +259,7 @@ const NormalOpNormsScreen = () => {
       editable: false,
       width: 120,
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -255,7 +269,7 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       width: 120,
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Jul',
@@ -264,7 +278,7 @@ const NormalOpNormsScreen = () => {
       type: 'number',
       width: 120,
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
 
     {
@@ -274,7 +288,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       type: 'number',
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Sep',
@@ -283,7 +297,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       type: 'number',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Oct',
@@ -292,7 +306,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       type: 'number',
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Nov',
@@ -301,7 +315,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       type: 'number',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Dec',
@@ -310,7 +324,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       type: 'number',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Jan',
@@ -319,7 +333,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       align: 'right',
       type: 'number',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Feb',
@@ -328,7 +342,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       type: 'number',
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'Mar',
@@ -337,7 +351,7 @@ const NormalOpNormsScreen = () => {
       width: 120,
       type: 'number',
       align: 'right',
-      format: '{0:#.###}',
+      format: valueFormat,
     },
     {
       field: 'idFromApi',
@@ -390,7 +404,6 @@ const NormalOpNormsScreen = () => {
   const saveNormalOperationNormsData = async (newRows) => {
     setLoading(true)
     try {
-      
       const businessData = newRows.map((row) => ({
         april: row.april || null,
         may: row.may || null,
@@ -406,7 +419,7 @@ const NormalOpNormsScreen = () => {
         march: row.march || null,
         remark: row.remarks,
         remarks: row.remarks,
-        financialYear:AOP_YEAR,
+        financialYear: AOP_YEAR,
         plantId: PLANT_ID,
         normParameterId: row.normParameterId,
         id: row.idFromApi || null,
@@ -427,6 +440,7 @@ const NormalOpNormsScreen = () => {
             keycloak,
             gradeId,
             lowerVertName,
+            AOP_YEAR,
           )
 
         // if (response.status === 200) {
@@ -473,7 +487,7 @@ const NormalOpNormsScreen = () => {
     setLoading(true)
     try {
       var data = null
-      
+
       if (lowerVertName == 'pe' || lowerVertName == 'pp') {
         data =
           await NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe(
@@ -606,6 +620,8 @@ const NormalOpNormsScreen = () => {
       await NormalOperationNormsApiService.getNormalOpsNormsExcel(
         keycloak,
         gradeId,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       setSnackbarData({
@@ -627,11 +643,12 @@ const NormalOpNormsScreen = () => {
   const saveExcelFile = async (rawFile) => {
     setLoading(true)
     try {
-      
       const response =
         await NormalOperationNormsApiService.saveNormalOpsNormsExcel(
           rawFile,
           keycloak,
+          PLANT_ID,
+          AOP_YEAR,
         )
       if (response?.code === 200) {
         setSnackbarOpen(true)

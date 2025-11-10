@@ -158,7 +158,7 @@ const AopDesignBasis = () => {
 
   function formatDate(date) {
     if (!date) return ''
-    const year = AOP_YEAR
+    const year = date?.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
@@ -184,9 +184,10 @@ const AopDesignBasis = () => {
   }
 
   const getAopSummary = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setSummary('')
-      var res = await DataService.getAopSummary(keycloak)
+      var res = await DataService.getAopSummary(keycloak, PLANT_ID, AOP_YEAR)
       if (res?.code == 200) {
         setSummary(res?.data?.summary)
       } else {
@@ -240,8 +241,11 @@ const AopDesignBasis = () => {
 
   const getConfigurationExecutionDetails = async () => {
     try {
-      const response =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+      const response = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       const details = response?.data || []
       if (details.length === 0) {
         console.warn(
@@ -277,7 +281,7 @@ const AopDesignBasis = () => {
       getAopSummary()
 
       if (response && response.code === 200) {
-        console.log('Carry forward successful, status 200.')
+        // console.log('Carry forward successful, status 200.')
         getConfigurationExecutionDetails()
         setLoading1(false)
       } else {

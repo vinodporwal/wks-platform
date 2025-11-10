@@ -20,9 +20,24 @@ const NormsHistorianBasisAromatics = () => {
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
   const [tabIndex, setTabIndex] = useState(0)
-
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear, verticalChange } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
@@ -61,14 +76,18 @@ const NormsHistorianBasisAromatics = () => {
   }, [])
 
   const fetchAllGrids = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
     timeoutIdsRef.current = []
 
     try {
       setLoading(true)
 
-      const configData =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+      const configData = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (configData?.code !== 200) {
         setGridNames([])
         setDataMap({})
@@ -93,6 +112,9 @@ const NormsHistorianBasisAromatics = () => {
         REPORT_TYPE_FOR_ALL,
         StartDate,
         EndDate,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (apiResponse?.code !== 200) {
@@ -143,7 +165,7 @@ const NormsHistorianBasisAromatics = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   const renderTitle = useCallback((t) => t, [])
 

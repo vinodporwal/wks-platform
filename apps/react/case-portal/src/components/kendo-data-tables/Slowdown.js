@@ -187,7 +187,11 @@ const SlowDown = ({ permissions }) => {
       )
 
       const maintenanceResponse =
-        await MaintenanceDetailsApiService.getMaintenanceData(keycloak)
+        await MaintenanceDetailsApiService.getMaintenanceData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       setSnackbarOpen(true)
 
@@ -427,8 +431,9 @@ const SlowDown = ({ permissions }) => {
       }
 
       // MEG specific checks
-      if (lowerVertName === 'meg') {
+      if (lowerVertName === 'meg' || lowerVertName === 'elastomer') {
         // Month span check
+        //check timeframe Multiple month spilt into single
         for (const row of rows) {
           const start = new Date(row.maintStartDateTime)
           const end = new Date(row.maintEndDateTime)
@@ -449,7 +454,7 @@ const SlowDown = ({ permissions }) => {
           }
         }
 
-        // Overlap within Slowdown
+        // Overlap within Slowdown  of timeframe ovelaping
         for (let i = 0; i < rows.length; i++) {
           const a = rows[i]
           const aStart = new Date(a.maintStartDateTime).getTime()
@@ -475,27 +480,29 @@ const SlowDown = ({ permissions }) => {
           }
         }
 
-        // Cross overlap with Shutdown
-        for (let i = 0; i < rows.length; i++) {
-          const a = rows[i]
-          const aStart = new Date(a.maintStartDateTime).getTime()
-          const aEnd = new Date(a.maintEndDateTime).getTime()
-          if (isNaN(aStart) || isNaN(aEnd)) continue
+        // Cross overlap the timeframe with Shutdown
+        if (lowerVertName != 'elastomer') {
+          for (let i = 0; i < rows.length; i++) {
+            const a = rows[i]
+            const aStart = new Date(a.maintStartDateTime).getTime()
+            const aEnd = new Date(a.maintEndDateTime).getTime()
+            if (isNaN(aStart) || isNaN(aEnd)) continue
 
-          for (let j = 0; j < rowsShutdown.length; j++) {
-            const b = rowsShutdown[j]
-            const bStart = new Date(b.maintStartDateTime).getTime()
-            const bEnd = new Date(b.maintEndDateTime).getTime()
-            if (isNaN(bStart) || isNaN(bEnd)) continue
+            for (let j = 0; j < rowsShutdown.length; j++) {
+              const b = rowsShutdown[j]
+              const bStart = new Date(b.maintStartDateTime).getTime()
+              const bEnd = new Date(b.maintEndDateTime).getTime()
+              if (isNaN(bStart) || isNaN(bEnd)) continue
 
-            if (aStart < bEnd && bStart < aEnd) {
-              a.isError = true
-              setSnackbarOpen(true)
-              setSnackbarData({
-                message: `The timeframe for "${a.discription} (Slowdown)" overlaps with "${b.discription} (Shutdown)". Please ensure no overlapping of timeframes.`,
-                severity: 'error',
-              })
-              return
+              if (aStart < bEnd && bStart < aEnd) {
+                a.isError = true
+                setSnackbarOpen(true)
+                setSnackbarData({
+                  message: `The timeframe for "${a.discription} (Slowdown)" overlaps with "${b.discription} (Shutdown)". Please ensure no overlapping of timeframes.`,
+                  severity: 'error',
+                })
+                return
+              }
             }
           }
         }
@@ -619,15 +626,18 @@ const SlowDown = ({ permissions }) => {
   }
 
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
       const data = await DataService.getSlowDownPlantData(
         keycloak,
-        plantID?.plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
       const dataShutDown = await DataService.getShutDownPlantData(
         keycloak,
-        plantID?.plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
       const formattedDataShutDown = dataShutDown?.map((item, index) => ({
         ...item,
@@ -662,10 +672,15 @@ const SlowDown = ({ permissions }) => {
   const [allRedCell, setAllRedCell] = useState([])
 
   const fetchConfigurationData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setRows2([])
     setLoading(true)
     try {
-      var response = await DataService.getSlowDownConfigurationData(keycloak)
+      var response = await DataService.getSlowDownConfigurationData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       var data = response?.data?.data
       var redCells = response?.data?.changedData
 
@@ -708,10 +723,16 @@ const SlowDown = ({ permissions }) => {
     }
   }
   const fetchData2 = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
     setLoading(true)
     setColDefs2([])
     try {
-      var data1 = await DataService.getSlowDownPlantDataTab(keycloak)
+      var data1 = await DataService.getSlowDownPlantDataTab(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       const removedCols = [
         'srNo',
@@ -757,11 +778,15 @@ const SlowDown = ({ permissions }) => {
       try {
         var data = []
         if (lowerVertName == 'meg')
-          data = await DataService.getAllProducts(keycloak, null)
+          data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
         else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
-          data = await DataService.getAllProductsAll(keycloak, 'Production')
+          data = await DataService.getAllProductsAll(
+            keycloak,
+            'Production',
+            PLANT_ID,
+          )
         }
         var productList = []
         if (lowerVertName === 'meg') {
@@ -803,7 +828,7 @@ const SlowDown = ({ permissions }) => {
       setRows2([])
       fetchData2()
     }
-  }, [oldYear, yearChanged, keycloak, plantID])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID])
 
   const focusFirstField = async () => {
     const newRowId = rows.length
@@ -846,7 +871,7 @@ const SlowDown = ({ permissions }) => {
       }
 
       if (idFromApi) {
-        await DataService.deleteSlowdownData(idFromApi, keycloak)
+        await DataService.deleteSlowdownData(idFromApi, keycloak, PLANT_ID)
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
@@ -855,7 +880,11 @@ const SlowDown = ({ permissions }) => {
         })
         fetchData()
         const maintenanceResponse =
-          await MaintenanceDetailsApiService.getMaintenanceData(keycloak)
+          await MaintenanceDetailsApiService.getMaintenanceData(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
       } else {
         setLoading(false)
       }
@@ -873,11 +902,20 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      response = await DataService.slowdownDetailsExport(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+
+      if (lowerVertName == 'elastomer') {
+        response = await DataService.slowdownDetailsElastomerExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.slowdownDetailsExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
@@ -894,12 +932,21 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      response = await DataService.ImportSlowdownDetails(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      if (lowerVertName == 'elastomer') {
+        response = await DataService.ImportSlowdownElastomerDetails(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.ImportSlowdownDetails(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -992,7 +1039,11 @@ const SlowDown = ({ permissions }) => {
       titleName: SCREEN_NAME,
 
       uploadExcelBtn:
-        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName == 'elastomer'
+          ? true
+          : false,
     },
     isOldYear,
   )

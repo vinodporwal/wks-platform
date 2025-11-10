@@ -1,5 +1,13 @@
 export const MockPlantContributionAPILastFourYears = {
-  async getReport({ category, year, verticalName }) {
+  async getReport({
+    category,
+    year,
+    verticalName,
+    FORMAT_VALUES_3_DECIMAL,
+    FORMAT_VALUES_2_DECIMAL,
+    FORMAT_VALUES_COST,
+    FORMAT_VALUES_PRICE,
+  }) {
     const currFY = year || ''
     let prevFY1 = ''
     let prevFY2 = ''
@@ -22,6 +30,7 @@ export const MockPlantContributionAPILastFourYears = {
               title: 'S.no',
               widthT: 58,
               editable: false,
+              format: '{0:#.#}',
               align: 'right',
             },
             {
@@ -44,7 +53,7 @@ export const MockPlantContributionAPILastFourYears = {
                   editable: false,
                   align: 'right',
 
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_PRICE,
                   type: 'number',
                 },
               ],
@@ -61,7 +70,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
                       align: 'right',
 
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -75,7 +84,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
                       align: 'right',
 
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -89,7 +98,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
                       align: 'right',
 
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -103,7 +112,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
                       align: 'right',
 
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -117,7 +126,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
                       align: 'right',
 
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_2_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -135,7 +144,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'rowNo',
               title: 'S.no',
               widthT: 58,
-
+              format: '{0:#.#}',
               editable: false,
               align: 'right',
             },
@@ -159,7 +168,7 @@ export const MockPlantContributionAPILastFourYears = {
                   editable: false,
 
                   align: 'right',
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_PRICE,
                   type: 'number',
                 },
               ],
@@ -174,9 +183,8 @@ export const MockPlantContributionAPILastFourYears = {
                       field: 'actualFourYearsAgo',
                       title: 'Actual',
                       editable: false,
-
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -188,9 +196,8 @@ export const MockPlantContributionAPILastFourYears = {
                       field: 'actualThreeYearsAgo',
                       title: 'Actual',
                       editable: false,
-
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -202,9 +209,8 @@ export const MockPlantContributionAPILastFourYears = {
                       field: 'actualTwoYearsAgo',
                       title: 'Actual',
                       editable: false,
-
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -216,9 +222,8 @@ export const MockPlantContributionAPILastFourYears = {
                       field: 'actualLastYear',
                       title: 'Actual',
                       editable: false,
-
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -230,9 +235,8 @@ export const MockPlantContributionAPILastFourYears = {
                       field: 'budgetCurrent',
                       title: 'Budget',
                       editable: false,
-
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -251,7 +255,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -265,7 +269,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -279,7 +283,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -293,7 +297,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -307,7 +311,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -325,6 +329,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'rowNo',
               title: 'S.no',
               widthT: 58,
+              format: '{0:#.#}',
 
               editable: false,
               align: 'right',
@@ -349,7 +354,7 @@ export const MockPlantContributionAPILastFourYears = {
                   editable: false,
 
                   align: 'right',
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_PRICE,
                   type: 'number',
                 },
               ],
@@ -366,7 +371,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -380,7 +385,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -394,7 +399,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -408,7 +413,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -422,7 +427,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -441,7 +446,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -455,7 +460,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -469,7 +474,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -483,7 +488,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -497,7 +502,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -515,6 +520,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'rowNo',
               title: 'S.no',
               widthT: 58,
+              format: '{0:#.#}',
 
               editable: false,
               align: 'right',
@@ -539,7 +545,7 @@ export const MockPlantContributionAPILastFourYears = {
                   editable: false,
 
                   align: 'right',
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_PRICE,
                   type: 'number',
                 },
               ],
@@ -556,7 +562,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -570,7 +576,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -584,7 +590,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -598,7 +604,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -612,7 +618,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -631,7 +637,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -645,7 +651,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -659,7 +665,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -673,7 +679,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -687,7 +693,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -705,6 +711,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'rowNo',
               title: 'S.no',
               widthT: 58,
+              format: '{0:#.#}',
 
               editable: false,
               align: 'right',
@@ -729,7 +736,7 @@ export const MockPlantContributionAPILastFourYears = {
                   editable: false,
 
                   align: 'right',
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_PRICE,
                   type: 'number',
                 },
               ],
@@ -746,7 +753,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -760,7 +767,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -774,7 +781,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -788,7 +795,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -802,7 +809,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_3_DECIMAL,
                       type: 'number',
                     },
                   ],
@@ -821,7 +828,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -835,7 +842,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -849,7 +856,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -863,7 +870,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -877,7 +884,7 @@ export const MockPlantContributionAPILastFourYears = {
                       editable: false,
 
                       align: 'right',
-                      format: '{0:#.##}',
+                      format: FORMAT_VALUES_COST,
                       type: 'number',
                     },
                   ],
@@ -897,6 +904,7 @@ export const MockPlantContributionAPILastFourYears = {
               widthT: 58,
               align: 'right',
               editable: false,
+              format: '{0:#.#}',
             },
             {
               field: 'id',
@@ -921,7 +929,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Actual',
                   align: 'right',
                   editable: true,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'numberNonGrey',
                 },
               ],
@@ -934,7 +942,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Actual',
                   align: 'right',
                   editable: true,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'numberNonGrey',
                 },
               ],
@@ -947,7 +955,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Actual',
                   align: 'right',
                   editable: true,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'numberNonGrey',
                 },
               ],
@@ -960,7 +968,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Actual',
                   align: 'right',
                   editable: true,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'numberNonGrey',
                 },
               ],
@@ -973,7 +981,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Budget',
                   align: 'right',
                   editable: true,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'numberNonGrey',
                 },
               ],
@@ -989,6 +997,7 @@ export const MockPlantContributionAPILastFourYears = {
               field: 'rowNo',
               title: 'S.no',
               widthT: 58,
+              format: '{0:#.#}',
               align: 'right',
               editable: false,
             },
@@ -1006,7 +1015,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Actual',
                   align: 'right',
                   editable: false,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'number',
                 },
               ],
@@ -1019,7 +1028,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Actual',
                   align: 'right',
                   editable: false,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'number',
                 },
               ],
@@ -1032,7 +1041,7 @@ export const MockPlantContributionAPILastFourYears = {
                   title: 'Actual',
                   align: 'right',
                   editable: false,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'number',
                 },
               ],
@@ -1046,7 +1055,7 @@ export const MockPlantContributionAPILastFourYears = {
 
                   align: 'right',
                   editable: false,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'number',
                 },
               ],
@@ -1060,7 +1069,7 @@ export const MockPlantContributionAPILastFourYears = {
 
                   align: 'right',
                   editable: false,
-                  format: '{0:#.##}',
+                  format: FORMAT_VALUES_COST,
                   type: 'number',
                 },
               ],

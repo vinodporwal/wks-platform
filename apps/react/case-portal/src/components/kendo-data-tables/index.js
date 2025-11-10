@@ -9,6 +9,7 @@ import { DateColumnMenu } from 'components/Utilities/DateColumnMenu'
 import Notification from 'components/Utilities/Notification'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
 
 import { useSelector } from 'react-redux'
 import {
@@ -146,6 +147,7 @@ const KendoDataTables = ({
   onLoad = () => {},
   disableRedHighlight = false,
   showThreeColors = false,
+  resetDataChanges = () => {},
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -157,8 +159,10 @@ const KendoDataTables = ({
   const [selectedUnit, setSelectedUnit] = useState(permissions?.units?.[0])
   const [selectedGrade, setSelectedGrade] = useState()
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const [openResetDataDialogeBox, setOpenResetDataDialogeBox] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  const closeResetDataDialogeBox = () => setOpenResetDataDialogeBox(false)
   const [edit, setEdit] = useState({})
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [sort, setSort] = useState([])
@@ -474,6 +478,12 @@ const KendoDataTables = ({
     setEdit({})
   }
 
+  const resetConfirmation = async () => {
+    resetDataChanges()
+    setOpenResetDataDialogeBox(false)
+    setEdit({})
+  }
+
   const handleDeleteClick = async (params) => {
     setParamsForDelete(params)
     setOpenDeleteDialogeBox(true)
@@ -522,6 +532,15 @@ const KendoDataTables = ({
       setIsButtonDisabled(false)
     }, 500)
   }
+
+  const resetDataModalOpen = async () => {
+    setIsButtonDisabled(true)
+    setOpenResetDataDialogeBox(true)
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+
   const handleCalculateBtn = async () => {
     setSelectedGrade('')
     setIsButtonDisabled(true)
@@ -764,12 +783,17 @@ const KendoDataTables = ({
     })
 
     let highlightColor
+    let highlightColorFullCell = false
+
     if (isEdited || isRedFromAllRedCell) {
       highlightColor = 'orange'
     } else if (matchedCell?.mode === 'Propane(1Z)') {
       highlightColor = 'red'
     } else if (matchedCell?.mode === 'Propane(2Z)') {
       highlightColor = 'green'
+    } else if (matchedCell?.mode === 'Copied') {
+      highlightColor = 'purple'
+      highlightColorFullCell = true
     }
 
     return (
@@ -779,6 +803,7 @@ const KendoDataTables = ({
         style={{
           color: highlightColor,
           fontWeight: highlightColor ? 'bold' : undefined,
+          backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
         {children}
@@ -835,6 +860,7 @@ const KendoDataTables = ({
       </th>
     )
   }
+
   const BlankHeader = (props) => {
     const { ariaSort, ...restThProps } = props.thProps || {}
 
@@ -853,6 +879,7 @@ const KendoDataTables = ({
       fileInputRef.current.click()
     }
   }
+
   const onFileChange = (event) => {
     const file = event.target.files[0]
     if (!file) return
@@ -935,6 +962,13 @@ const KendoDataTables = ({
     const available = 100 - pageHeaderVH
     return Math.round(Math.min(needed, maxVH, available))
   }, [rows?.length])
+
+  useEffect(() => {
+    const modes = permissions?.modes
+    if (Array.isArray(modes) && modes.length && selectMode === undefined) {
+      setSelectMode(modes[0])
+    }
+  }, [permissions?.modes])
 
   const CHECK_TYPES = ['cat chem', 'utility consumption']
   const CHECK_TYPES2 = ['raw material', 'by products']
@@ -1140,6 +1174,21 @@ const KendoDataTables = ({
                 </Button>
               )}
 
+              {permissions?.showResetButton && (
+                <Button
+                  variant='contained'
+                  className='btn-save'
+                  onClick={resetDataModalOpen}
+                  disabled={
+                    isButtonDisabled ||
+                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                  }
+                  startIcon={<RestartAltIcon />}
+                >
+                  Reset
+                </Button>
+              )}
+
               {permissions?.showCalculate && (
                 <Button
                   variant='contained'
@@ -1216,11 +1265,8 @@ const KendoDataTables = ({
               {permissions?.showModes && (
                 <TextField
                   select
-                  value={selectMode || permissions?.modes?.[0]}
-                  onChange={(e) => {
-                    setSelectMode(e.target.value)
-                    // fetchData()
-                  }}
+                  value={selectMode ?? ''}
+                  onChange={(e) => setSelectMode(e.target.value)}
                   className='dropdown-select'
                   variant='outlined'
                   label='Select Modes'
@@ -1229,10 +1275,9 @@ const KendoDataTables = ({
                     Select Modes
                   </MenuItem>
 
-                  {/* Render the correct unit options dynamically */}
-                  {permissions?.modes.map((unit) => (
-                    <MenuItem key={unit} value={unit}>
-                      {unit}
+                  {permissions.modes.map((m) => (
+                    <MenuItem key={m.name} value={m.name}>
+                      {m.displayName}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -2064,7 +2109,7 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
-                      // width={col.width}
+                      width={col.widthT}
                       hidden={col.hidden}
                       editable={!!col?.editable}
                       headerClassName={isActive ? 'active-column' : ''}
@@ -2205,6 +2250,7 @@ const KendoDataTables = ({
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
@@ -2224,6 +2270,27 @@ const KendoDataTables = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={openResetDataDialogeBox}
+        onClose={closeResetDataDialogeBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+      >
+        <DialogTitle id='alert-dialog-title'>{'Reset ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+            Are you sure you want to reset these changes?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeResetDataDialogeBox}>Cancel</Button>
+          <Button onClick={resetConfirmation} autoFocus>
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}

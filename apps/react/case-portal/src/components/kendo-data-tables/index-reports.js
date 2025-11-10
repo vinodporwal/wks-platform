@@ -389,6 +389,8 @@ const KendoDataTablesReports = ({
       const isEditable = col.editable === true
       const isActive = isColumnActive(col.field, filter, sort)
 
+      // console.log('col', col)
+
       const headerColorClass = undefined
 
       const budgetDividerClass =
@@ -537,7 +539,7 @@ const KendoDataTablesReports = ({
           field={col.field}
           title={col.title || col.headerName}
           editable={col.editable || false}
-          format={col.format || '{0:#.###}'}
+          format={col.format || '{0:0.000}'}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
             data: toolTipRenderer,

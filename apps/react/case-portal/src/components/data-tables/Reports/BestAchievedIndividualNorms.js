@@ -15,6 +15,7 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const BestAchievedIndividualNorms = () => {
   const keycloak = useSession()
@@ -56,7 +57,13 @@ const BestAchievedIndividualNorms = () => {
     }
   }, [])
 
+  const VALUE_FORMATOR = ValueFormatterProduction()
+
   const enrichColumns = useCallback((backendCols = []) => {
+    const filteredCols = backendCols.filter((col) => col.field !== 'GRID_TYPE')
+    const applyFixedWidth = filteredCols.length > 15
+    const fixedWidth = applyFixedWidth ? 150 : undefined
+
     return backendCols
       .filter((col) => col.field !== 'GRID_TYPE')
       .map((col) => {
@@ -68,9 +75,10 @@ const BestAchievedIndividualNorms = () => {
           filterable: true,
           filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
           align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: '{0:#.##}' } : {}),
+          ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
           editable: false,
           isRightAlligned: isNumberCol ? 'numeric' : undefined,
+          ...(fixedWidth ? { widthT: fixedWidth } : {}),
         }
       })
   }, [])
@@ -160,6 +168,8 @@ const BestAchievedIndividualNorms = () => {
       const apiResponse = await DataService.getBestAchievedNorms(
         keycloak,
         'TYPE LIST2',
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (apiResponse?.code !== 200) {
@@ -220,7 +230,7 @@ const BestAchievedIndividualNorms = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   // ---------------------------------------------------------------------------
   // Excel export helpers (keeps your existing implementation compatible)
@@ -303,7 +313,7 @@ const BestAchievedIndividualNorms = () => {
     .replace(/T/, ' ')
     .replace(/:/g, '-')
     .split('.')[0]
-  const fileName = `Overall Consumption Basis.xlsx`
+  const fileName = `Best Achieved Individual Norms.xlsx`
 
   const renderTitle = (t) => t
 
@@ -360,7 +370,8 @@ const BestAchievedIndividualNorms = () => {
       <Box display='flex' flexDirection='column' gap={2}>
         {tabIndex === 0 && (
           <>
-            {gridNames.map((name) => {
+            {gridNames.map((name, idx) => {
+              if (idx === 0) return null
               const d = dataMap[name] || { rows: [], columns: [] }
               return (
                 <div key={name}>

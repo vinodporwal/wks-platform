@@ -19,6 +19,7 @@ import KendoDataTables from './index'
 import SlowdownNormForMeg from './SlowdownNormForMeg'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 
 const SlowdownNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -28,7 +29,22 @@ const SlowdownNorms = () => {
   const [grades, setGrades] = useState([])
 
   const [slowdownMonths, setSlowdownMonths] = useState([])
-  const { sitePlantChange, yearChanged, oldYear, plantID } = menu
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const AOP_YEAR = year?.selectedYear
   //const isOldYear = oldYear?.oldYear
   const isOldYear = oldYear?.oldYear
 
@@ -43,13 +59,11 @@ const SlowdownNorms = () => {
     severity: 'info',
   })
 
-  const headerMap = generateHeaderNames(localStorage.getItem('year'))
+  const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [rowModesModel, setRowModesModel] = useState({}) // Track row edit state
 
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
@@ -66,13 +80,6 @@ const SlowdownNorms = () => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
-
-  const [_plantID, set_PlantID] = useState('')
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-  }, [plantID])
 
   // const getProductDisplayName = (id) => {
   //   if (!id) return
@@ -115,6 +122,7 @@ const SlowdownNorms = () => {
 
   useEffect(() => {
     const loadData = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
       try {
         if (['pe', 'pp'].includes(lowerVertName)) {
           if (!gradeId) return
@@ -125,9 +133,19 @@ const SlowdownNorms = () => {
         let data
         if (['pe', 'pp'].includes(lowerVertName)) {
           if (!gradeId) return
-          data = await DataService.getSlowdownMonths(keycloak, gradeId)
+          data = await DataService.getSlowdownMonths(
+            keycloak,
+            gradeId,
+            PLANT_ID,
+            AOP_YEAR,
+          )
         } else {
-          data = await DataService.getSlowdownMonths(keycloak, null)
+          data = await DataService.getSlowdownMonths(
+            keycloak,
+            null,
+            PLANT_ID,
+            AOP_YEAR,
+          )
         }
         setSlowdownMonths(data)
       } catch (error) {
@@ -148,8 +166,14 @@ const SlowdownNorms = () => {
 
   useEffect(() => {
     const getSlowdownMonths = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
       try {
-        const data = await DataService.getSlowdownMonths(keycloak, null)
+        const data = await DataService.getSlowdownMonths(
+          keycloak,
+          null,
+          PLANT_ID,
+          AOP_YEAR,
+        )
         if (data) setSlowdownMonths(data)
       } catch (error) {
         console.error('Error fetching months:', error)
@@ -161,7 +185,7 @@ const SlowdownNorms = () => {
       fetchData(gradeId)
       getSlowdownMonths()
     }
-  }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
+  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
 
   // const formatValueToFiveDecimals = (params) =>
   //   params ? parseFloat(params).toFixed(5) : ''
@@ -171,8 +195,12 @@ const SlowdownNorms = () => {
   }
 
   // const months = slowdownMonths
-
-  const colDefs = getSlowdownNormsColDef({ headerMap, slowdownMonths })
+  const valueFormat = ValueFormatterConsumption()
+  const colDefs = getSlowdownNormsColDef({
+    headerMap,
+    slowdownMonths,
+    valueFormat,
+  })
 
   const handleRemarkCellClick = (row) => {
     if (!row?.isEditable) return
@@ -218,14 +246,6 @@ const SlowdownNorms = () => {
   const saveSlowdownNormsData = async (newRows) => {
     setLoading(true)
     try {
-      let plantId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const isTPH = selectedUnit == 'TPD'
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
       const businessData = newRows.map((row) => ({
         april: isTPH && row.april ? row.april * 24 : row.april || null,
         may: isTPH && row.may ? row.may * 24 : row.may || null,
@@ -245,8 +265,8 @@ const SlowdownNorms = () => {
         march: isTPH && row.march ? row.march * 24 : row.march || null,
         remark: row.remarks,
         remarks: row.remarks,
-        financialYear: localStorage.getItem('year'),
-        plantId: plantId,
+        financialYear: AOP_YEAR,
+        plantId: PLANT_ID,
         normParameterId: row.normParameterId,
         id: row.idFromApi || null,
         materialFkId: row.materialFkId || null,
@@ -261,7 +281,7 @@ const SlowdownNorms = () => {
         // console.log(title)
 
         const response = await DataService.saveSlowdownNormsData(
-          plantId,
+          PLANT_ID,
           businessData,
           keycloak,
         )
@@ -303,6 +323,7 @@ const SlowdownNorms = () => {
   }
 
   const fetchData = async (gradeId) => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
       setRows([])
@@ -316,7 +337,12 @@ const SlowdownNorms = () => {
       }
 
       // Fetch data from API
-      const data = await DataService.getSlowdownNormsData(keycloak, gradeId)
+      const data = await DataService.getSlowdownNormsData(
+        keycloak,
+        gradeId,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       setCalculationObject(data?.data?.aopCalculation)
 
@@ -362,11 +388,14 @@ const SlowdownNorms = () => {
   }
 
   const loadGradesAfterCalculation = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     if (['pe', 'pp'].includes(lowerVertName)) {
       try {
         const response =
           await NormalOperationNormsApiService.getGradesForSlowdownNorms(
             keycloak,
+            PLANT_ID,
+            AOP_YEAR,
           )
 
         if (response?.code === 200) {
@@ -399,7 +428,12 @@ const SlowdownNorms = () => {
       // non PE/PP flow
       await fetchData(null)
       try {
-        const months = await DataService.getSlowdownMonths(keycloak, null)
+        const months = await DataService.getSlowdownMonths(
+          keycloak,
+          null,
+          PLANT_ID,
+          AOP_YEAR,
+        )
         setSlowdownMonths(months)
       } catch (err) {
         console.error('Error fetching shutdown months:', err)
@@ -416,25 +450,17 @@ const SlowdownNorms = () => {
     setCalculatebtnClicked(true)
     setLoading(true)
     try {
-      const year = localStorage.getItem('year')
-      const storedPlant = localStorage.getItem('selectedPlant')
-      let plantId = ''
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
       var response = []
       if (lowerVertName == 'pp') {
         response = await DataService.handleCalculateSlowdownNormsPP(
-          plantId,
-          year,
+          PLANT_ID,
+          AOP_YEAR,
           keycloak,
         )
       } else {
         response = await DataService.handleCalculateSlowdownNorms(
-          plantId,
-          year,
+          PLANT_ID,
+          AOP_YEAR,
           keycloak,
         )
       }
@@ -516,6 +542,9 @@ const SlowdownNorms = () => {
       ExcelName: `${lowerVertName}_Slowdown Consumption (Norms/Quantity)`,
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
+
+      showTitleNameBusiness: lowerVertName === 'elastomer' ? true : false,
+      titleName: `Slowdown Consumption (Norms/Quantity)`,
     },
     isOldYear,
   )
@@ -528,6 +557,8 @@ const SlowdownNorms = () => {
           const response =
             await NormalOperationNormsApiService.getGradesForSlowdownNorms(
               keycloak,
+              PLANT_ID,
+              AOP_YEAR,
             )
 
           if (response?.code === 200) {
@@ -544,7 +575,7 @@ const SlowdownNorms = () => {
       }
     }
     loadGrades()
-  }, [plantID, yearChanged, keycloak])
+  }, [PLANT_ID, yearChanged, keycloak])
 
   const handleGradeChange = (gradeId) => {
     setGradeId(gradeId)

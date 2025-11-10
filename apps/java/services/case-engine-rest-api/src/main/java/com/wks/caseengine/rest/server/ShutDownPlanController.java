@@ -72,6 +72,27 @@ public class ShutDownPlanController {
 	    }
 	}
 	
+	@GetMapping(value = "/shutdown-export-non-product")
+	public ResponseEntity<byte[]> shutdownNonProductExport(
+	         @RequestParam String year,@RequestParam String plantId,@RequestParam String maintenanceTypeName) {
+	    try {
+			
+	        byte[] excelBytes = shutDownPlanService.shutdownNonProductExport(year, plantId,maintenanceTypeName, false, null);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("shutdown.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
 	@PostMapping(value = "/shutdown-import", consumes = "multipart/form-data")
 	public AOPMessageVM importShutdownExcel(
 	         @RequestParam("plantId") String plantId,
@@ -79,6 +100,15 @@ public class ShutDownPlanController {
 			@RequestParam("file") MultipartFile file
 	        ) {
 			return	shutDownPlanService.importShutdownExcel(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
+	
+	@PostMapping(value = "/shutdown-import-non-product", consumes = "multipart/form-data")
+	public AOPMessageVM importNonProductShutdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	shutDownPlanService.importNonProductShutdown(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
 	}
 
 	
@@ -103,6 +133,11 @@ public class ShutDownPlanController {
 		  @GetMapping("/getMonthlyShutdownHours")
 		  public List<MonthWiseDataDTO> getMonthlyShutdownHours(@RequestParam String auditYear,@RequestParam String plantId){
 			  return shutDownPlanService.getMonthlyShutdownHours(auditYear,UUID.fromString(plantId));
+		  }
+		  
+		  @GetMapping("/description-drpdwn")
+		  public AOPMessageVM getDescriptionDropdown(@RequestParam String year,@RequestParam String plantId){
+			  return shutDownPlanService.getDescriptionDropdown(year,plantId);
 		  }
 		  
 		  

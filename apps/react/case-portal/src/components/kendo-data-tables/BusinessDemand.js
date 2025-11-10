@@ -93,7 +93,7 @@ const BusinessDemand = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-  }, [plantID, oldYear, yearChanged, keycloak])
+  }, [PLANT_ID, oldYear, yearChanged, keycloak])
 
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return

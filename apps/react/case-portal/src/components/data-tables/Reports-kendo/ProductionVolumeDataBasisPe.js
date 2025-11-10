@@ -15,6 +15,7 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const REPORT_TYPE_FOR_ALL = 'ProductionTarget' // <-- change to your backend's value if needed
 
@@ -25,9 +26,24 @@ const ProductionVolumeDataBasisPe = () => {
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
   const [tabIndex, setTabIndex] = useState(0)
-
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear, verticalChange } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
@@ -50,6 +66,8 @@ const ProductionVolumeDataBasisPe = () => {
     return new Date(`${year}-${month}-${day}`)
   }
 
+  const VALUE_FORMATOR = ValueFormatterProduction()
+
   const enrichColumns = useCallback((backendCols = []) => {
     const columnsToHide = ['GRID_TYPE']
     return backendCols
@@ -63,7 +81,7 @@ const ProductionVolumeDataBasisPe = () => {
           filterable: true,
           filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
           align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: '{0:#.##}' } : {}),
+          ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
           editable: false,
           isRightAlligned: isNumberCol ? 'numeric' : undefined,
         }
@@ -174,6 +192,7 @@ const ProductionVolumeDataBasisPe = () => {
   // The backend is expected to return: apiResponse.data = [ { gridName, data: [...] }, ... ]
   // ---------------------------------------------------------------------------
   const fetchAllGrids = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     // clear previous timers if any
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
     timeoutIdsRef.current = []
@@ -181,8 +200,11 @@ const ProductionVolumeDataBasisPe = () => {
     try {
       setLoading(true)
 
-      const configData =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+      const configData = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (configData?.code !== 200) {
         setLoading(false)
         return
@@ -206,6 +228,9 @@ const ProductionVolumeDataBasisPe = () => {
         REPORT_TYPE_FOR_ALL,
         StartDate,
         EndDate,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (apiResponse?.code !== 200) {
@@ -270,7 +295,7 @@ const ProductionVolumeDataBasisPe = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   // ---------------------------------------------------------------------------
   // Excel export helpers (keeps your existing implementation compatible)
@@ -429,6 +454,7 @@ const ProductionVolumeDataBasisPe = () => {
                           rows={d.rows}
                           columns={d.columns?.map((col) => ({
                             ...col,
+                            format: `{0:0.###}`,
                             widthT:
                               d?.columns?.length > 20 ? '150px' : undefined,
                           }))}

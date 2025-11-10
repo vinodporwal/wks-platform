@@ -13,6 +13,7 @@ import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopHeader'
 import KendoDataTables from './index'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const ProductionNormsCracker = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -23,6 +24,8 @@ const ProductionNormsCracker = ({ permissions }) => {
   const apiRefC2C3R = useGridApiRef()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const [_plantID, set_PlantID] = useState('')
+
+  const valueFormat = ValueFormatterProduction()
 
   const {
     verticalChange,
@@ -170,6 +173,7 @@ const ProductionNormsCracker = ({ permissions }) => {
         PLANT_ID,
         payload,
         keycloak,
+        AOP_YEAR,
       )
 
       // Adjust response check depending on your API (status, success flag, etc.)
@@ -285,11 +289,14 @@ const ProductionNormsCracker = ({ permissions }) => {
   ]
 
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
       const response = await ProductionNormsApiService.getAOPData(
         keycloak,
         'Production',
+        PLANT_ID,
+        AOP_YEAR,
       )
       setCalculationObject(response?.data?.aopCalculation)
       if (response?.code != 200) {
@@ -479,18 +486,18 @@ const ProductionNormsCracker = ({ permissions }) => {
           normParametersFKId: product.normParameterFKId,
           originalRemark: product.remarks,
           isEditable: product.isEditable,
-          apr: product?.apr.toFixed(2) ?? '0.00',
-          may: product?.may.toFixed(2) ?? '0.00',
-          jun: product?.jun.toFixed(2) ?? '0.00',
-          jul: product?.jul.toFixed(2) ?? '0.00',
-          aug: product?.aug.toFixed(2) ?? '0.00',
-          sep: product?.sep.toFixed(2) ?? '0.00',
-          oct: product?.oct.toFixed(2) ?? '0.00',
-          nov: product?.nov.toFixed(2) ?? '0.00',
-          dec: product?.dec.toFixed(2) ?? '0.00',
-          jan: product?.jan.toFixed(2) ?? '0.00',
-          feb: product?.feb.toFixed(2) ?? '0.00',
-          mar: product?.mar.toFixed(2) ?? '0.00',
+          apr: product?.apr,
+          may: product?.may,
+          jun: product?.jun,
+          jul: product?.jul,
+          aug: product?.aug,
+          sep: product?.sep,
+          oct: product?.oct,
+          nov: product?.nov,
+          dec: product?.dec,
+          jan: product?.jan,
+          feb: product?.feb,
+          mar: product?.mar,
           Particulars: product.productName,
           idFromApi: product.id,
           id: index,
@@ -536,10 +543,12 @@ const ProductionNormsCracker = ({ permissions }) => {
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
+    valueFormat,
   })
 
   const productionColumnsC2C3R = getEnhancedColDefsC2C3R({
     headerMap,
+    valueFormat,
   })
 
   const handleUnitChange = (unit) => {
@@ -622,11 +631,11 @@ const ProductionNormsCracker = ({ permissions }) => {
           showCalculate: false,
           allAction: true,
           showNote: true,
-          showTitleNameBusiness: true,
-          titleName: 'Other Production',
+          showTitleNameBusiness: false,
+          titleName: '',
           saveBtn: true,
           downloadExcelBtnFromUI: true,
-          ExcelName: `${lowerVertName}_Other Production`,
+          ExcelName: `${lowerVertName}_Production`,
         },
         isOldYear,
       ),
@@ -647,35 +656,6 @@ const ProductionNormsCracker = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
-      <KendoDataTables
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        columns={productionColumns}
-        rows={rows}
-        setRows={setRows}
-        title={'Production AOP'}
-        isCellEditable={isCellEditable}
-        onAddRow={(newRow) => console.log('New Row Added:', newRow)}
-        onDeleteRow={(id) => console.log('Row Deleted:', id)}
-        onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
-        paginationOptions={[100, 200, 300]}
-        updateProductNormData={updateProductNormData}
-        saveChanges={saveChanges}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        handleCalculate={handleCalculate}
-        apiRef={apiRef}
-        fetchData={fetchData}
-        handleUnitChange={handleUnitChange}
-        currentRowId={currentRowId}
-        unsavedChangesRef={unsavedChangesRef}
-        permissions={adjustedPermissions}
-        selectedUOM={'UOM'}
-        note={''}
-      />
 
       <KendoDataTables
         modifiedCells={modifiedCellsC2C3R}
@@ -705,6 +685,35 @@ const ProductionNormsCracker = ({ permissions }) => {
         selectedUOM={'UOM'}
         note={''}
         handleRemarkCellClick={handleRemarkCellClick}
+      />
+
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        columns={productionColumns}
+        rows={rows}
+        setRows={setRows}
+        title={'Production AOP'}
+        isCellEditable={isCellEditable}
+        onAddRow={(newRow) => console.log('New Row Added:', newRow)}
+        onDeleteRow={(id) => console.log('Row Deleted:', id)}
+        onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+        paginationOptions={[100, 200, 300]}
+        updateProductNormData={updateProductNormData}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        handleCalculate={handleCalculate}
+        apiRef={apiRef}
+        fetchData={fetchData}
+        handleUnitChange={handleUnitChange}
+        currentRowId={currentRowId}
+        unsavedChangesRef={unsavedChangesRef}
+        permissions={adjustedPermissions}
+        selectedUOM={'UOM'}
+        note={''}
       />
     </div>
   )

@@ -7,15 +7,34 @@ import KendoDataTables from './index'
 import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import { useSession } from 'SessionStoreContext'
+import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, oldYear, plantID, yearChanged } = dataGridStore
+  const {
+    verticalChange,
+    oldYear,
+    plantID,
+    yearChanged,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant') || '{}')?.id
+
   const [modifiedCells, setModifiedCells] = useState({})
 
   const [snackbarData, setSnackbarData] = useState({
@@ -33,10 +52,7 @@ const CrackerConfig = () => {
     setRemarkDialogOpen(true)
   }
 
-  const headerMap = useMemo(
-    () => generateHeaderNames(localStorage.getItem('year')),
-    [],
-  )
+  const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [])
 
   const rawTabsStatic = [
     'Total Feed',
@@ -48,6 +64,7 @@ const CrackerConfig = () => {
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
   const [tabIndex, setTabIndex] = useState(0)
+  const [modes, setModes] = useState([])
 
   const [yieldRows, setYieldRows] = useState([])
   const [constantsRows, setConstantsRows] = useState([])
@@ -55,8 +72,10 @@ const CrackerConfig = () => {
   const [compositionRows, setCompositionRows] = useState([])
   const [hydrogenationRows, setHydrogenationRows] = useState([])
 
-  const allModes = ['5F', '4F', '4F+D']
-  const [selectMode, setSelectMode] = useState(allModes[0])
+  const FORMATE_VALUE = ValueFormatterProduction()
+
+  // const allModes = ['5F', '4F', '4F+D']
+  const [selectMode, setSelectMode] = useState('')
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -78,6 +97,7 @@ const CrackerConfig = () => {
       headerMap,
       handleRemarkCellClick,
       configType,
+      FORMATE_VALUE,
     })
   }, [headerMap, currentTabDisplay])
 
@@ -110,7 +130,7 @@ const CrackerConfig = () => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
-      modes: allModes,
+      modes: modes,
       uploadExcelBtn: true,
       downloadExcelBtn: true,
     },
@@ -121,6 +141,10 @@ const CrackerConfig = () => {
     try {
       const resp = await DataService.getConfigurationTabsMatrix(
         keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        SITE_ID,
+        VERTICAL_ID,
         'output',
       )
       let tabsFromApi = []
@@ -171,11 +195,41 @@ const CrackerConfig = () => {
     }
   }, [keycloak])
 
+  const fetchModes = useCallback(async () => {
+    try {
+      const resp = await OptimizerDataApiService.fetchModes(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        '1',
+      )
+
+      if (resp?.code === 200 && Array.isArray(resp.data)) {
+        setModes(resp.data) // keep full objects
+        setSelectMode(resp.data[0]?.name ?? '') // default select first mode by name
+      } else {
+        setModes([])
+        setSelectMode('')
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err)
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
   useEffect(() => {
+    fetchModes()
+
     fetchTabsMatrix()
     fetchAvailableTabs()
     setTabIndex(0)
-  }, [keycloak, fetchTabsMatrix, fetchAvailableTabs])
+  }, [
+    keycloak,
+    fetchTabsMatrix,
+    fetchAvailableTabs,
+    fetchModes,
+    PLANT_ID,
+    AOP_YEAR,
+  ])
 
   const getRows = useCallback(
     (tabId) => {
@@ -224,6 +278,7 @@ const CrackerConfig = () => {
   const fetchCrackerRows = useCallback(
     async (currentTabDisplay, mode) => {
       if (!currentTabDisplay) return
+      if (!PLANT_ID || !AOP_YEAR) return
       try {
         setLoading(true)
 
@@ -231,6 +286,8 @@ const CrackerConfig = () => {
           keycloak,
           mode,
           currentTabDisplay,
+          PLANT_ID,
+          AOP_YEAR,
         )
         let transformedData = []
         if (spyroVM?.data && Array.isArray(spyroVM.data)) {
@@ -269,6 +326,8 @@ const CrackerConfig = () => {
             keycloak,
             mode,
             currentTabDisplay,
+            PLANT_ID,
+            AOP_YEAR,
           )
         }
         let transformedData1 = (spyroVMYield1.data || []).map(
@@ -328,7 +387,7 @@ const CrackerConfig = () => {
   )
 
   useEffect(() => {
-    if (keycloak && plantId && currentTabDisplay) {
+    if (keycloak && PLANT_ID && currentTabDisplay) {
       if (currentTabDisplay === 'Yield') {
         fetchCrackerRowsYield(currentTabDisplay, selectMode)
       } else {
@@ -337,7 +396,7 @@ const CrackerConfig = () => {
     } else {
       console.warn('Missing data for fetchCrackerRows:', {
         hasKeycloak: !!keycloak,
-        hasPlantId: !!plantId,
+        hasPlantId: !!PLANT_ID,
         currentTabDisplay,
       })
     }
@@ -411,7 +470,8 @@ const CrackerConfig = () => {
       const response = await DataService.saveSpyroOutput(
         SpyroInputData,
         keycloak,
-        plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -465,6 +525,8 @@ const CrackerConfig = () => {
       const response = await DataService.saveSpyroOutputYield(
         SpyroOutputYield,
         keycloak,
+        PLANT_ID,
+        AOP_YEAR,
       )
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -501,8 +563,6 @@ const CrackerConfig = () => {
     setLoading(true)
 
     try {
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const plantId = storedPlant ? JSON.parse(storedPlant)?.id : ''
       const mode = selectMode || '' // Optional
 
       let response
@@ -512,12 +572,16 @@ const CrackerConfig = () => {
           rawFile,
           keycloak,
           mode,
+          PLANT_ID,
+          AOP_YEAR,
         )
       } else {
         response = await DataService.importSpyroOutputExcel(
           rawFile,
           keycloak,
           mode,
+          PLANT_ID,
+          AOP_YEAR,
         )
       }
 
@@ -600,9 +664,19 @@ const CrackerConfig = () => {
     try {
       let response
       if (currentTabDisplay === 'Yield') {
-        response = await DataService.exportSpyroOutputExcelYield(keycloak, mode)
+        response = await DataService.exportSpyroOutputExcelYield(
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
-        response = await DataService.exportSpyroOutputExcel(keycloak, mode)
+        response = await DataService.exportSpyroOutputExcel(
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       }
 
       if (response?.code === 200) {

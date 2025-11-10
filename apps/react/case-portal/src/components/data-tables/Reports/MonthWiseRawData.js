@@ -24,7 +24,28 @@ export default function MonthWiseRawData() {
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const SCREEN_NAME = screenTitle?.title
+
   const isMountedRef = useRef(true)
   const exportRefs = useRef({})
 
@@ -50,7 +71,7 @@ export default function MonthWiseRawData() {
         filterable: true,
         filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
         align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-        ...(isNumberCol ? { format: '{0:#.###}' } : {}),
+        ...(isNumberCol ? { format: '{0:0.000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
       }
@@ -125,6 +146,8 @@ export default function MonthWiseRawData() {
               keycloak,
               grade,
               mode,
+              PLANT_ID,
+              AOP_YEAR,
             )
           if (resp?.code !== 200) continue
 
@@ -231,6 +254,8 @@ export default function MonthWiseRawData() {
             await CrackerReportsApiDataService.finalNormsReport(
               keycloak,
               reportType,
+              PLANT_ID,
+              AOP_YEAR,
             )
 
           if (!isMountedRef.current) return
@@ -314,7 +339,7 @@ export default function MonthWiseRawData() {
 
   useEffect(() => {
     fetchAndPrepare()
-  }, [fetchAndPrepare, plantID, oldYear, yearChanged])
+  }, [fetchAndPrepare, PLANT_ID, oldYear, AOP_YEAR])
 
   const renderTitle = (t) => t
 

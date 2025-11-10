@@ -70,7 +70,7 @@ const RunLengthDataSet = () => {
         filterable: true,
         filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
         align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-        ...(isNumberCol ? { format: '{0:#.###}' } : {}),
+        ...(isNumberCol ? { format: '{0:0.000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
       }
@@ -205,7 +205,7 @@ const RunLengthDataSet = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   // Export: gather sheets from each ExcelExport instance and combine into one workbook
   const exportAllGrids = useCallback(() => {
@@ -304,7 +304,9 @@ const RunLengthDataSet = () => {
           <Typography>No grids available.</Typography>
         )}
 
-        {gridNames.map((name) => {
+        {gridNames.map((name, idx) => {
+          if (idx === 0) return null
+
           const d = dataMap[name] || { rows: [], columns: [] }
           return (
             <div key={name}>

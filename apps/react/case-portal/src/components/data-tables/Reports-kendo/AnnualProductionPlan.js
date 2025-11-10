@@ -1,5 +1,4 @@
 import { Box } from '@mui/material'
-import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
 import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -287,6 +286,7 @@ const AnnualProductionPlan = () => {
       title: 'SL.No',
       editable: false,
       widthT: 80,
+      format: '{0:#.#}',
       align: 'right',
     },
     {
@@ -307,6 +307,7 @@ const AnnualProductionPlan = () => {
           flex: 1,
           align: 'right',
           format: '{0:#.##}',
+          type: 'number',
         },
         {
           field: 'Actual1',
@@ -315,6 +316,7 @@ const AnnualProductionPlan = () => {
           flex: 1,
           align: 'right',
           format: '{0:#.##}',
+          type: 'number',
         },
       ],
     },
@@ -328,6 +330,7 @@ const AnnualProductionPlan = () => {
           flex: 1,
           align: 'right',
           format: '{0:#.##}',
+          type: 'number',
         },
         {
           field: 'Actual2',
@@ -336,6 +339,7 @@ const AnnualProductionPlan = () => {
           flex: 1,
           align: 'right',
           format: '{0:#.##}',
+          type: 'number',
         },
       ],
     },
@@ -349,6 +353,7 @@ const AnnualProductionPlan = () => {
           flex: 1,
           align: 'right',
           format: '{0:#.##}',
+          type: 'number',
         },
         {
           field: 'Actual3',
@@ -357,6 +362,7 @@ const AnnualProductionPlan = () => {
           flex: 1,
           align: 'right',
           format: '{0:#.##}',
+          type: 'number',
         },
       ],
     },
@@ -384,6 +390,8 @@ const AnnualProductionPlan = () => {
       var res = await DataService.getAnnualProductionPlanReportData(
         keycloak,
         type,
+        PLANT_ID,
+        AOP_YEAR,
       )
       if (res?.code == 200) {
         res = res?.data?.plantProductionData.map((item, index) => ({
@@ -469,7 +477,7 @@ const AnnualProductionPlan = () => {
   const handleCalculateMonthwiseAndTurnaround = async () => {
     try {
       setLoading(true)
-    
+
       const res = await DataService.calculateAnnualProductionPlanData(
         PLANT_ID,
         AOP_YEAR,

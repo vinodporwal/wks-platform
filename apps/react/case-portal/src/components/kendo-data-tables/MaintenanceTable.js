@@ -36,11 +36,21 @@ const MaintenanceTable = () => {
       isCracker: lowerVertName === 'cracker',
       serviceFn:
         lowerVertName === 'cracker'
-          ? MaintenanceDetailsApiService.getCrackerMaintenanceData
-          : MaintenanceDetailsApiService.getMaintenanceData,
+          ? (keycloak, PLANT_ID, AOP_YEAR) =>
+              MaintenanceDetailsApiService.getCrackerMaintenanceData(
+                keycloak,
+                PLANT_ID,
+                AOP_YEAR,
+              )
+          : (keycloak, PLANT_ID, AOP_YEAR) =>
+              MaintenanceDetailsApiService.getMaintenanceData(
+                keycloak,
+                PLANT_ID,
+                AOP_YEAR,
+              ),
       editable: lowerVertName === 'cracker',
     }),
-    [plantID],
+    [PLANT_ID, AOP_YEAR, lowerVertName],
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -167,18 +177,43 @@ const MaintenanceTable = () => {
     }
   }
   const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
     setLoading(true)
     try {
-      const resp = await dataConfig.serviceFn(keycloak)
+      const resp = await dataConfig.serviceFn(keycloak, PLANT_ID, AOP_YEAR)
       const raw = dataConfig.isCracker ? resp.data : resp
-      const formatted = (raw || []).map((item, idx) => ({
-        ...item,
-        idFromApi: item.id,
-        id: idx,
-        isEditable: dataConfig.editable,
-        originalRemark: item.remarks,
-      }))
+      const monthFields = [
+        'April',
+        'May',
+        'June',
+        'July',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+        'Jan',
+        'Feb',
+        'Mar',
+      ]
+
+      const formatted = (raw || []).map((item, idx) => {
+        const allMonthsTotal = monthFields.reduce((sum, month) => {
+          const value = parseFloat(item[month]) || 0
+          return sum + value
+        }, 0)
+
+        return {
+          ...item,
+          idFromApi: item.id,
+          id: idx,
+          isEditable: dataConfig.editable,
+          originalRemark: item.remarks,
+          allMonthsTotal,
+        }
+      })
+
       setRows(formatted)
     } catch (err) {
       console.error('Error fetching data:', err)
@@ -186,7 +221,7 @@ const MaintenanceTable = () => {
     } finally {
       setLoading(false)
     }
-  }, [plantID, keycloak])
+  }, [PLANT_ID, AOP_YEAR, keycloak, dataConfig])
 
   const handleCalculate = useCallback(async () => {
     const plantId = PLANT_ID
@@ -216,7 +251,7 @@ const MaintenanceTable = () => {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData, oldYear, yearChanged, plantID])
+  }, [fetchData, oldYear, yearChanged, PLANT_ID])
 
   // Helper to generate monthly fields
   const getMonthlyColumns = () => {
@@ -267,10 +302,32 @@ const MaintenanceTable = () => {
     isEditableField,
   ]
 
+  const generateColumnsELASTOMER = (nameWidthT) => [
+    {
+      field: 'Name',
+      title: 'Description',
+      align: 'left',
+      headerAlign: 'left',
+      widthT: nameWidthT,
+      editable: false,
+    },
+    ...getMonthlyColumns(),
+    isEditableField,
+    {
+      field: 'allMonthsTotal',
+      title: 'Total',
+      type: 'number',
+      format: '{0:00}',
+      editable: false,
+    },
+  ]
+
   // Column sets
   const productionColumnsMEG = generateColumns(390)
   const productionColumnsPE = generateColumns(150)
   const productionColumnsPP = generateColumns(220)
+  const productionColumnsNonMEG = generateColumns(200)
+  const productionColumnsELASTOMER = generateColumnsELASTOMER(200)
 
   // Column selection
   let basecols
@@ -288,8 +345,11 @@ const MaintenanceTable = () => {
     case 'pp':
       basecols = productionColumnsPP
       break
+    case 'elastomer':
+      basecols = productionColumnsELASTOMER
+      break
     default:
-      basecols = productionColumnsMEG
+      basecols = productionColumnsNonMEG
       break
   }
 

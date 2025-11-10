@@ -18,6 +18,7 @@ import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const CALL_DELAY_MS = 200
 
@@ -31,7 +32,25 @@ const SteadyStateNormsHistorianBasis = () => {
   const [loading, setLoading] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
 
   const timeoutIdsRef = useRef([])
   const activeRequestsRef = useRef(0)
@@ -53,6 +72,8 @@ const SteadyStateNormsHistorianBasis = () => {
     return new Date(`${year}-${month}-${day}`)
   }
 
+  const VALUE_FORMATOR = ValueFormatterProduction()
+
   const enrichColumns = useCallback((backendCols = []) => {
     return backendCols.map((col) => {
       const isTextCol = col.type === 'string'
@@ -64,7 +85,7 @@ const SteadyStateNormsHistorianBasis = () => {
         filterable: true,
         filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
         align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-        ...(isNumberCol ? { format: '{0:#.##}' } : {}),
+        ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
       }
@@ -74,12 +95,16 @@ const SteadyStateNormsHistorianBasis = () => {
   // Fetch columns + rows for one grid type. Returns { rows, columns }
   const fetchDataForGrid = useCallback(
     async (reportType, StartDate, EndDate) => {
+      if (!PLANT_ID || !AOP_YEAR) return
       try {
         const apiResponse = await DataService.getProductionVolDataBasisPe(
           keycloak,
           reportType,
           StartDate,
           EndDate,
+          null,
+          PLANT_ID,
+          AOP_YEAR,
         )
 
         if (apiResponse?.code !== 200) {
@@ -128,8 +153,11 @@ const SteadyStateNormsHistorianBasis = () => {
 
         try {
           // get config before fetching grid (so we have StartDate/EndDate)
-          const configData =
-            await DataService.getConfigurationExecutionDetails(keycloak)
+          const configData = await DataService.getConfigurationExecutionDetails(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
           if (configData?.code !== 200) return
 
           const StartDate = configData.data.find(
@@ -166,14 +194,18 @@ const SteadyStateNormsHistorianBasis = () => {
 
   // Main: fetch TYPE_LIST then schedule fetching each grid in order
   const fetchAllGrids = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     // clear previous timers
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
     timeoutIdsRef.current = []
 
     try {
       setLoading(true)
-      const configData =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+      const configData = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (configData?.code !== 200) {
         setLoading(false)
         return
@@ -197,6 +229,9 @@ const SteadyStateNormsHistorianBasis = () => {
         'TYPE LIST2',
         StartDate,
         EndDate,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       let types = []
@@ -227,7 +262,7 @@ const SteadyStateNormsHistorianBasis = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   // Export: gather sheets from each ExcelExport instance and combine into one workbook
   const exportAllGrids = useCallback(() => {

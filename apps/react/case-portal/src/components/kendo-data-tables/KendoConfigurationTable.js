@@ -52,8 +52,7 @@ const ConfigurationTable = () => {
   const isOldYearFlag = oldYear?.oldYear === 1
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
-  const vcmVertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
-  const vcmVerticalName = vcmVertical?.toLowerCase().trim()
+
   const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [loading1, setLoading1] = useState(false)
@@ -129,7 +128,12 @@ const ConfigurationTable = () => {
       setLoading(true)
       var data = []
 
-      data = await DataService.getCatalystSelectivityData(keycloak, gradeId)
+      data = await DataService.getCatalystSelectivityData(
+        keycloak,
+        gradeId,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       const distinctReportTypes = [
         ...new Set(data.map((item) => item.normType).filter(Boolean)),
@@ -242,8 +246,11 @@ const ConfigurationTable = () => {
   const fetchDataConstants = async () => {
     setProductionRowsConstants([])
     try {
-      var constantsRes =
-        await DataService.getCatalystSelectivityDataConstants(keycloak)
+      var constantsRes = await DataService.getCatalystSelectivityDataConstants(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (constantsRes?.code != 200) {
         setProductionRowsConstants([])
         return
@@ -276,7 +283,12 @@ const ConfigurationTable = () => {
     setPioImpactRows([])
     setShutdownDataRows([])
     try {
-      var constantsRes = await DataService.getCatalystSelectivityData(keycloak)
+      var constantsRes = await DataService.getCatalystSelectivityData(
+        keycloak,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       const formattedData = constantsRes.map((item, index) => ({
         ...item,
@@ -309,7 +321,7 @@ const ConfigurationTable = () => {
   const fetchGradeData = async () => {
     setLoading(true)
     try {
-      var data = await DataService.getPeConfigData(keycloak)
+      var data = await DataService.getPeConfigData(keycloak, PLANT_ID, AOP_YEAR)
 
       const formattedData = data?.map((item, index) => {
         const converted = {}
@@ -349,7 +361,13 @@ const ConfigurationTable = () => {
   const getConfigurationTabsMatrix = async () => {
     setLoading(true)
     try {
-      var response = await DataService.getConfigurationTabsMatrix(keycloak)
+      var response = await DataService.getConfigurationTabsMatrix(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        SITE_ID,
+        VERTICAL_ID,
+      )
       if (response?.code == 200) {
         const parsedData = JSON.parse(response?.data)
         setTabs(parsedData)
@@ -382,15 +400,37 @@ const ConfigurationTable = () => {
     }
   }
 
+  const carryForwardRecords = async () => {
+    try {
+      const response = await DataService.carryForwardRecords(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response && response.code === 200) {
+        // console.log('Carry forward successful, status 200.')
+      } else {
+        console.warn(
+          `Carry forward request completed but status was not 200: ${response?.status}`,
+        )
+      }
+    } catch (error) {
+      console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // setLoading1(false)
+    }
+  }
+
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) return
+    if (!PLANT_ID || !AOP_YEAR) return
     setTabIndex(0)
-
+    carryForwardRecords()
     getConfigurationExecutionDetails()
-  }, [plantID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) {
+    if (!PLANT_ID || !AOP_YEAR) {
       return
     }
     getConfigurationExecutionDetails()
@@ -407,7 +447,7 @@ const ConfigurationTable = () => {
         fetchGradeData()
       }
     }, 500)
-  }, [oldYear, yearChanged, keycloak, plantID])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID])
 
   const computeAndSetDates = useCallback(() => {
     setStartDate('')
@@ -433,7 +473,7 @@ const ConfigurationTable = () => {
       setStartDate(fallbackStartDate)
       setEndDate(fallbackEndDate)
     }
-  }, [configurationExecutionDetails, plantID])
+  }, [configurationExecutionDetails, PLANT_ID])
   useEffect(() => {
     computeAndSetDates()
   }, [computeAndSetDates])
@@ -468,9 +508,10 @@ const ConfigurationTable = () => {
     return formatted
   }
   const getAopSummary = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setSummary('')
-      var res = await DataService.getAopSummary(keycloak)
+      var res = await DataService.getAopSummary(keycloak, PLANT_ID, AOP_YEAR)
       if (res?.code == 200) {
         setSummary(res?.data?.summary)
       } else {
@@ -531,8 +572,11 @@ const ConfigurationTable = () => {
 
   const getConfigurationExecutionDetails = async () => {
     try {
-      const response =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+      const response = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       const details = response?.data || []
       if (details.length === 0) {
         console.warn(
@@ -749,7 +793,7 @@ const ConfigurationTable = () => {
                     className='summary-title'
                     sx={{
                       whiteSpace: 'normal',
-                      alignSelf: 'flex-end', // 👈 ensures it's bottom-aligned with the button
+                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
                     }}
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
@@ -761,7 +805,7 @@ const ConfigurationTable = () => {
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: 'column', // ⬅️ stack vertically
+                flexDirection: 'column', // ?? stack vertically
                 alignItems: 'flex-start',
                 gap: 0,
                 mt: 1,
@@ -815,7 +859,9 @@ const ConfigurationTable = () => {
   }, [openConfirmDialog])
 
   if (
-    (lowerVertName == 'meg' || lowerVertName === 'aromatics') &&
+    (lowerVertName == 'meg' ||
+      lowerVertName === 'aromatics' ||
+      lowerVertName == 'pvc') &&
     lowerVertName !== 'cracker' &&
     lowerVertName !== 'elastomer'
   ) {
@@ -885,6 +931,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='1'
                     currentTabDisplayName={currentTabDisplayName}
+                    reportTypes={reportTypes}
                   />
                 )
               case 'report manual entry':
@@ -901,6 +948,7 @@ const ConfigurationTable = () => {
                     onSummaryEditChange={setSummaryEdited}
                     tabIndex='2'
                     currentTabDisplayName={currentTabDisplayName}
+                    reportTypes={reportTypes}
                   />
                 )
               case 'pio impact':
@@ -1049,14 +1097,18 @@ const ConfigurationTable = () => {
           <CircularProgress color='inherit' />
         </Backdrop>
         {ConfigurationAccordian}
+
         <Box>
-          <AopTabs
-            tabIndex={tabIndex}
-            setTabIndex={setTabIndex}
-            tabs={elastomerTabs.map((tab) =>
-              tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
-            )}
-          />
+          {true && (
+            <AopTabs
+              tabIndex={tabIndex}
+              setTabIndex={setTabIndex}
+              tabs={elastomerTabs.map((tab) =>
+                tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
+              )}
+            />
+          )}
+
           {(() => {
             const currentTab = elastomerTabs[tabIndex]?.toLowerCase()
             const currentTabDisplayName = elastomerTabs[tabIndex]
@@ -1109,7 +1161,7 @@ const ConfigurationTable = () => {
     )
   }
 
-  if (vcmVerticalName === 'vcm') {
+  if (lowerVertName === 'vcm') {
     const elastomerTabs = ['Configuration', 'Constants', 'Report Manual Entry']
     const auditYear = AOP_YEAR
     let displayYear = ''

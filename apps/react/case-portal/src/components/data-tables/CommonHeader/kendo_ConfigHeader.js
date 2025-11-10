@@ -65,8 +65,11 @@ const getEnhancedAOPColDefs = ({
   allGradesReciepes,
   headerMap,
   configType,
+  FORMATE_VALUE,
 }) => {
   var config = []
+
+  // console.log('configType', configType)
 
   if (configType == 'grades') {
     config = [
@@ -90,6 +93,7 @@ const getEnhancedAOPColDefs = ({
         editable: true,
         width1: 200,
         type: 'number',
+        format: FORMATE_VALUE,
       })
     })
   } else {
@@ -108,7 +112,7 @@ const getEnhancedAOPColDefs = ({
         return {
           ...col,
           type: 'number',
-          format: '{0:0.00}',
+          format: FORMATE_VALUE,
         }
       }
 
@@ -122,7 +126,7 @@ const getEnhancedAOPColDefs = ({
           title: headerMap[col.title],
           align: 'right',
           type: 'negativeNumber',
-          format: '{0:0.00}',
+          format: FORMATE_VALUE,
         }
       }
 
@@ -136,7 +140,7 @@ const getEnhancedAOPColDefs = ({
           title: headerMap[col.title],
           align: 'right',
           type: 'number',
-          format: '{0:0.00}',
+          format: FORMATE_VALUE,
         }
       }
 

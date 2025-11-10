@@ -11,11 +11,13 @@ import {
   Backdrop,
   CircularProgress,
 } from '../../../node_modules/@mui/material/index'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 export default function RelPerf() {
   // Reliability Performance Grid (already present)
   const keycloak = useSession()
   const [loading, setLoading] = useState(false)
+  const FORMATE_DECIMAL = ValueFormatterProduction()
 
   // Incidents
   // Improvement
@@ -199,14 +201,14 @@ export default function RelPerf() {
         'Reliability Improvement Initiative',
       )
 
-      var data5 = await FunctionalApiService.testMacro(
-        keycloak,
-        '20.15',
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      // var data5 = await FunctionalApiService.testMacro(
+      //   keycloak,
+      //   '20.15',
+      //   PLANT_ID,
+      //   AOP_YEAR,
+      // )
 
-      console.log('macro', data5)
+      // console.log('macro', data5)
 
       const processedDatar = data4.data.map((item, index) => ({
         ...item,
@@ -225,7 +227,7 @@ export default function RelPerf() {
 
   useEffect(() => {
     fetchData()
-  }, [plantID, oldYear, yearChanged, keycloak])
+  }, [PLANT_ID, oldYear, yearChanged, keycloak])
 
   const reliabilityPerformanceColumns = [
     {
@@ -242,24 +244,28 @@ export default function RelPerf() {
       title: 'Best Achieved',
       editable: true,
       type: 'numberWithUOMValidation',
+      format: FORMATE_DECIMAL,
     },
     {
       field: 'aop',
       title: `FY${startYear.slice(-2)} AOP`,
       editable: true,
       type: 'numberWithUOMValidation',
+      format: FORMATE_DECIMAL,
     },
     {
       field: 'actual',
       title: `FY${startYear.slice(-2)} Actual`,
       editable: true,
       type: 'numberWithUOMValidation',
+      format: FORMATE_DECIMAL,
     },
     {
       field: 'plann',
       title: `FY${endYear} Plan`,
       editable: true,
       type: 'numberWithUOMValidation',
+      format: FORMATE_DECIMAL,
     },
     { field: 'limit', title: 'Limit', editable: true },
     {
@@ -274,140 +280,140 @@ export default function RelPerf() {
     },
   ]
 
-  const initialReliabilityRows = [
-    {
-      serialNumber: 1,
-      parameter: 'Technical availability, YTD',
-      uom: '%',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '>99%',
-      rationale: '',
-      id: 0,
-    },
-    {
-      serialNumber: 2,
-      parameter: 'Maintenance Effectiveness',
-      uom: '%',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '>80%',
-      rationale: '',
-      id: 1,
-    },
-    {
-      serialNumber: 3,
-      parameter: 'Shutdown Schedule Compliance',
-      uom: '%',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '100 ± 10%',
-      rationale: '',
-      id: 2,
-    },
-    {
-      serialNumber: 4,
-      parameter: 'Open NSD PM order backlog in weeks',
-      uom: 'Weeks',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '4-6 weeks',
-      rationale: '',
-      id: 3,
-    },
-    {
-      serialNumber: 5,
-      parameter: 'Planned Jobs Schedule compliance',
-      uom: '%',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '>96%',
-      rationale: '',
-      id: 4,
-    },
-    {
-      serialNumber: 6,
-      parameter: 'Inspection overdue (VitalEquipment)',
-      uom: 'Nos',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '0',
-      rationale: '',
-      id: 5,
-    },
-    {
-      serialNumber: 7,
-      parameter: 'Overdue reliability recommendations (NSD-APM)',
-      uom: 'Nos',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '0',
-      rationale: '',
-      id: 6,
-    },
-    {
-      serialNumber: 8,
-      parameter: 'Overdue IM Recommendations in E&M Discipline',
-      uom: 'Nos',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '0',
-      rationale: '',
-      id: 7,
-    },
-    {
-      serialNumber: '9.1',
-      parameter: 'Total no. of Asset Failures - YTD (IM count)',
-      uom: 'Nos',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '20% reduction YOY',
-      rationale: '',
-      id: 8,
-    },
-    {
-      serialNumber: '9.2',
-      parameter: 'Repetitive failures - YTD',
-      uom: 'Nos',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '0',
-      rationale: '',
-      id: 9,
-    },
-    {
-      serialNumber: 10,
-      parameter: 'JMS approval time till A2',
-      uom: 'Nos',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '7 days',
-      rationale: '',
-      id: 10,
-    },
-    {
-      serialNumber: 11,
-      parameter: 'Pending GRN',
-      uom: 'Nos',
-      bestAchieved: '',
-      fy25Aop: '',
-      fy25Actual: '',
-      fy26Plan: '7 days',
-      rationale: '',
-      id: 11,
-    },
-  ]
+  // const initialReliabilityRows = [
+  //   {
+  //     serialNumber: 1,
+  //     parameter: 'Technical availability, YTD',
+  //     uom: '%',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '>99%',
+  //     rationale: '',
+  //     id: 0,
+  //   },
+  //   {
+  //     serialNumber: 2,
+  //     parameter: 'Maintenance Effectiveness',
+  //     uom: '%',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '>80%',
+  //     rationale: '',
+  //     id: 1,
+  //   },
+  //   {
+  //     serialNumber: 3,
+  //     parameter: 'Shutdown Schedule Compliance',
+  //     uom: '%',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '100 ± 10%',
+  //     rationale: '',
+  //     id: 2,
+  //   },
+  //   {
+  //     serialNumber: 4,
+  //     parameter: 'Open NSD PM order backlog in weeks',
+  //     uom: 'Weeks',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '4-6 weeks',
+  //     rationale: '',
+  //     id: 3,
+  //   },
+  //   {
+  //     serialNumber: 5,
+  //     parameter: 'Planned Jobs Schedule compliance',
+  //     uom: '%',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '>96%',
+  //     rationale: '',
+  //     id: 4,
+  //   },
+  //   {
+  //     serialNumber: 6,
+  //     parameter: 'Inspection overdue (VitalEquipment)',
+  //     uom: 'Nos',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '0',
+  //     rationale: '',
+  //     id: 5,
+  //   },
+  //   {
+  //     serialNumber: 7,
+  //     parameter: 'Overdue reliability recommendations (NSD-APM)',
+  //     uom: 'Nos',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '0',
+  //     rationale: '',
+  //     id: 6,
+  //   },
+  //   {
+  //     serialNumber: 8,
+  //     parameter: 'Overdue IM Recommendations in E&M Discipline',
+  //     uom: 'Nos',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '0',
+  //     rationale: '',
+  //     id: 7,
+  //   },
+  //   {
+  //     serialNumber: '9.1',
+  //     parameter: 'Total no. of Asset Failures - YTD (IM count)',
+  //     uom: 'Nos',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '20% reduction YOY',
+  //     rationale: '',
+  //     id: 8,
+  //   },
+  //   {
+  //     serialNumber: '9.2',
+  //     parameter: 'Repetitive failures - YTD',
+  //     uom: 'Nos',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '0',
+  //     rationale: '',
+  //     id: 9,
+  //   },
+  //   {
+  //     serialNumber: 10,
+  //     parameter: 'JMS approval time till A2',
+  //     uom: 'Nos',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '7 days',
+  //     rationale: '',
+  //     id: 10,
+  //   },
+  //   {
+  //     serialNumber: 11,
+  //     parameter: 'Pending GRN',
+  //     uom: 'Nos',
+  //     bestAchieved: '',
+  //     fy25Aop: '',
+  //     fy25Actual: '',
+  //     fy26Plan: '7 days',
+  //     rationale: '',
+  //     id: 11,
+  //   },
+  // ]
 
   // Financial Aspect Grid
   const financialAspectColumns = [
@@ -424,24 +430,32 @@ export default function RelPerf() {
       field: 'bestAchieved',
       title: 'Best Achieved',
       editable: true,
+      format: FORMATE_DECIMAL,
+
       type: 'numberWithUOMValidation',
     },
     {
       field: 'aop',
       title: `FY${startYear.slice(-2)} AOP`,
       editable: true,
+      format: FORMATE_DECIMAL,
+
       type: 'numberWithUOMValidation',
     },
     {
       field: 'actual',
       title: `FY${startYear.slice(-2)} Actual`,
       editable: true,
+      format: FORMATE_DECIMAL,
+
       type: 'numberWithUOMValidation',
     },
     {
       field: 'plann',
       title: `FY${endYear} Plan`,
       editable: true,
+      format: FORMATE_DECIMAL,
+
       type: 'numberWithUOMValidation',
     },
     // { field: 'limit', title: 'Limit', editable: true },
@@ -810,6 +824,183 @@ export default function RelPerf() {
     }
   }, [modifiedReliabilityInitiativeCells])
 
+  const exportReliabilityExcel = async (
+    keycloak,
+    PLANT_ID,
+    AOP_YEAR,
+    excelName,
+  ) => {
+    setSnackbarOpenReliabilityPerformance(true)
+    setSnackbarDataReliabilityPerformance({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      const response = await FunctionalApiService.exportReliabilityExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        excelName,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpenReliabilityPerformance(true)
+
+        setSnackbarDataReliabilityPerformance({
+          message: 'Excel download completed successfully!',
+          severity: 'success',
+        })
+      } else {
+        setSnackbarOpenReliabilityPerformance(true)
+
+        setSnackbarDataReliabilityPerformance({
+          message: 'Failed to download Excel.',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarOpenReliabilityPerformance(true)
+
+      setSnackbarDataReliabilityPerformance({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpenReliabilityPerformance(false)
+    }
+  }
+  //importReliabilityIncidentExcel
+  const saveReliabilityIncidentExcelFile = async (rawFile) => {
+    setLoading(true)
+    try {
+      let response
+
+      response = await FunctionalApiService.importReliabilityIncidentExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        rawFile,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute(
+          'download',
+          'Error File - Reliability Performance.xlsx',
+        )
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        // setSnackbarOpen(true)
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Reliability Performance Excel:', error)
+    } finally {
+      setLoading(false)
+      fetchData()
+    }
+  }
+  const handleExcelUpload1 = (rawFile) => {
+    saveReliabilityIncidentExcelFile(rawFile)
+  }
+  const saveReliabilityPerformanceExcelFile = async (rawFile) => {
+    setLoading(true)
+    try {
+      let response
+
+      response = await FunctionalApiService.importReliabilityPerformanceExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        rawFile,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute(
+          'download',
+          'Error File - Reliability Performance.xlsx',
+        )
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpenReliabilityPerformance(true)
+        setSnackbarDataReliabilityPerformance({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        // setSnackbarOpen(true)
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Reliability Performance Excel:', error)
+    } finally {
+      setLoading(false)
+      fetchData()
+    }
+  }
+  const handleExcelUpload = (rawFile) => {
+    saveReliabilityPerformanceExcelFile(rawFile)
+  }
+
   return (
     <>
       <Backdrop
@@ -848,6 +1039,15 @@ export default function RelPerf() {
         }}
         columns={reliabilityPerformanceColumns}
         saveChanges={saveChangesReliabilityPerformance}
+        downloadExcelForConfiguration={() =>
+          exportReliabilityExcel(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            'Reliability_Performance',
+          )
+        }
+        handleExcelUpload={handleExcelUpload}
       />
 
       {/* Financial Aspect Grid */}
@@ -896,6 +1096,8 @@ export default function RelPerf() {
           ...gridPermissions,
           titleName: `Major Reliability Incidents FY${startYear.slice(-2)} (High & Medium Risks)`,
           ExcelName: 'Major_Reliability_Incidents',
+          downloadExcelBtn: true,
+          uploadExcelBtn: true,
         }}
         columns={majorIncidentsColumns}
         saveChanges={saveChangesIncidents}
@@ -906,6 +1108,15 @@ export default function RelPerf() {
         setOpenIncidents={setOpenIncidents}
         handleRemarkCellClick={handleRemarkCellClickIncidents}
         OpenIncidents={OpenIncidents}
+        downloadExcelForConfiguration={() =>
+          exportReliabilityExcel(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            'Major_Reliability_Incidents',
+          )
+        }
+        handleExcelUpload={handleExcelUpload1}
       />
 
       {/* Reliability Improvement Initiative Grid */}

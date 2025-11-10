@@ -23,7 +23,7 @@ import {
   getColDefsPercentageSummary,
 } from './Utilities-Kendo/productionTargetColDefs'
 import ProductionTarget from './ProductionTarget'
-
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 const ProductionvolumeData = ({ permissions }) => {
   // const { isReadOnly, isWriteOnly, isReadWrite, isFullAccess, isApproveOnly } =
   //   usePermissions()
@@ -72,6 +72,7 @@ const ProductionvolumeData = ({ permissions }) => {
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
   const [rowsFormattedAndNonEditable, setRowsFormattedAndNonEditable] =
     useState()
+  const valueFormat = ValueFormatterProduction()
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -96,7 +97,6 @@ const ProductionvolumeData = ({ permissions }) => {
   const dispatch = useDispatch()
   const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
-
   const handleRemarkCellClick = (row) => {
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
@@ -107,11 +107,6 @@ const ProductionvolumeData = ({ permissions }) => {
     setCurrentRowIdDesignCapacity(row.id)
     setRemarkDialogOpenDesignCapacity(true)
   }
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-  }, [plantID])
 
   const findAvg = (value, row) => {
     const months = [
@@ -559,13 +554,19 @@ const ProductionvolumeData = ({ permissions }) => {
     })
   }
 
-  const colDefs_percentage_summary = getColDefsPercentageSummary(headerMap)
+  const colDefs_percentage_summary = getColDefsPercentageSummary(
+    headerMap,
+    valueFormat,
+  )
   const colDefs_design_capacity = IS_PE_PP
-    ? getColDefsDesignCapacityPEPP(headerMap)
-    : getColDefsDesignCapacity(headerMap)
+    ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
+    : getColDefsDesignCapacity(headerMap, valueFormat)
 
-  const colDefs_max_achieved_capacity = getColDefsMaxAchievedCapacity(headerMap)
-  const colDefs_non_editable = getColDefsNonEditable(headerMap)
+  const colDefs_max_achieved_capacity = getColDefsMaxAchievedCapacity(
+    headerMap,
+    valueFormat,
+  )
+  const colDefs_non_editable = getColDefsNonEditable(headerMap, valueFormat)
 
   useEffect(() => {
     setModifiedCellsDesignCapacity({})
@@ -575,10 +576,11 @@ const ProductionvolumeData = ({ permissions }) => {
     fetchData()
 
     fetchConfiguration()
-  }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
+  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
 
   const colDefs_editable = getEnhancedProductionColDefs({
     headerMap,
+    valueFormat,
   })
 
   const handleUnitChangeDesignCapacity = (unit) => {
@@ -769,16 +771,16 @@ const ProductionvolumeData = ({ permissions }) => {
 
   useEffect(() => {
     fetchDesignCapacityData(unitDesignCapacity)
-  }, [unitDesignCapacity, plantID, yearChanged, keycloak])
+  }, [unitDesignCapacity, PLANT_ID, yearChanged, keycloak])
 
   useEffect(() => {
     fetchMaxCapacityData(unitMaxCapacity)
-  }, [unitMaxCapacity, plantID, yearChanged, keycloak])
+  }, [unitMaxCapacity, PLANT_ID, yearChanged, keycloak])
 
   useEffect(() => {
     fetchData()
     fetchConfiguration()
-  }, [oldYear, yearChanged, keycloak, selectedUnit, plantID])
+  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
 
   const handleCalculateMeg = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -855,7 +857,8 @@ const ProductionvolumeData = ({ permissions }) => {
       titleName: percentageTitle,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
-      titleAndInformation: 'Max Achieved Capacity (Ethylene)',
+      titleAndInformation:
+        'Maximum Ethylene Production achieved in the historical data for different furnace mode of operation.',
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
@@ -883,7 +886,8 @@ const ProductionvolumeData = ({ permissions }) => {
       ExcelName: `${VERTICAL_NAME}_Design Capacity`,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
-      titleAndInformation: 'Design Capacity (Ethylene)',
+      titleAndInformation:
+        'Design plant capacity for different furnace mode of operation as per licensor provided data.',
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
@@ -917,7 +921,7 @@ const ProductionvolumeData = ({ permissions }) => {
       uploadExcelBtn: permissions?.hideUploadExcel ? false : true,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
-      titleAndInformation: 'Current Operating Capacity (Ethylene)',
+      titleAndInformation: 'Operating capacity derived from Optimizer model.',
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
       titleName:
@@ -1074,7 +1078,11 @@ const ProductionvolumeData = ({ permissions }) => {
 
   max_achieved_capacity = colDefs_max_achieved_capacity
 
-  if (VERTICAL_NAME?.toLowerCase() == 'aromatics' && conditionForFirst) {
+  if (
+    (VERTICAL_NAME?.toLowerCase() == 'aromatics' ||
+      VERTICAL_NAME?.toLowerCase() == 'elastomer') &&
+    conditionForFirst
+  ) {
     return <ProductionTarget />
   }
 

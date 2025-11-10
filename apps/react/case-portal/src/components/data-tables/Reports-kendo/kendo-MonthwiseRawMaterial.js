@@ -11,23 +11,43 @@ import {
 import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import { validateFields } from 'utils/validationUtils'
-import dataGridStore from 'store/reducers/dataGridStore'
+import useValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import { useSelector } from 'react-redux'
 
 const MonthwiseRawMaterial = () => {
   const keycloak = useSession()
-  const headerMap = generateHeaderNames(localStorage.getItem('year'))
   const [normRows, setNormRows] = useState({})
   const [rows, setRows] = useState()
-  const { verticalChange, yearChanged, oldYear, plantID } = dataGridStore
 
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    screenTitle,
+    year,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
-
+  const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const valueFormat = useValueFormatterConsumption()
 
   const columnDefs = [
     { field: 'id', headerName: 'ID', editable: false },
@@ -55,7 +75,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -65,7 +85,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -74,7 +94,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -83,7 +103,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -92,7 +112,7 @@ const MonthwiseRawMaterial = () => {
       editable: false,
       align: 'right',
       headerAlign: 'left',
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -101,7 +121,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -110,7 +130,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -119,7 +139,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -128,7 +148,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -137,7 +157,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -146,7 +166,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -155,7 +175,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -164,7 +184,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -172,7 +192,7 @@ const MonthwiseRawMaterial = () => {
       headerName: 'Total',
       align: 'right',
       editable: false,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
   ]
@@ -193,7 +213,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -203,7 +223,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -213,7 +233,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -223,7 +243,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -233,7 +253,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -243,7 +263,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -253,7 +273,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -263,7 +283,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -273,7 +293,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -283,7 +303,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -293,7 +313,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     {
@@ -303,7 +323,7 @@ const MonthwiseRawMaterial = () => {
       align: 'right',
       headerAlign: 'left',
       flex: 1,
-      format: '{0:#.###}',
+      format: valueFormat,
       type: 'number',
     },
     // {
@@ -319,8 +339,6 @@ const MonthwiseRawMaterial = () => {
   const [row, setRow] = useState()
   const [row2, setRow2] = useState()
   const [loading, setLoading] = useState(false)
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
-  const year = localStorage.getItem('year')
   const [modifiedCells, setModifiedCells] = React.useState({})
 
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -330,12 +348,18 @@ const MonthwiseRawMaterial = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      var res = await DataService.getMonthwiseRawData(keycloak, 'NormQuantity')
+      var res = await DataService.getMonthwiseRawData(keycloak, 'NormQuantity', PLANT_ID, AOP_YEAR)
 
-      if (lowerVertName != 'pe' || lowerVertName != 'pp') {
+      if (
+        lowerVertName != 'pe' &&
+        lowerVertName != 'pp' &&
+        lowerVertName != 'elastomer'
+      ) {
         var res2 = await DataService.getMonthwiseRawData(
           keycloak,
           'Selectivity',
+          PLANT_ID,
+          AOP_YEAR,
         )
 
         if (res2?.code == 200) {
@@ -435,7 +459,7 @@ const MonthwiseRawMaterial = () => {
 
   useEffect(() => {
     fetchData()
-  }, [yearChanged, plantID])
+  }, [yearChanged, PLANT_ID])
 
   const handleCalculate = () => {
     handleCalculateMonthwiseAndTurnaround()
@@ -443,17 +467,9 @@ const MonthwiseRawMaterial = () => {
   const handleCalculateMonthwiseAndTurnaround = async () => {
     try {
       setLoading(true)
-
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const year = localStorage.getItem('year')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-      var plantId = plantId
       const res = await DataService.handleCalculatePlantConsumptionData(
-        plantId,
-        year,
+        PLANT_ID,
+        AOP_YEAR,
         keycloak,
       )
 
@@ -499,7 +515,7 @@ const MonthwiseRawMaterial = () => {
 
       var data = Object.values(modifiedCells)
       //  console.log('Modified cells before save:', modifiedCells);
-      const year = localStorage.getItem('year') // e.g. "2025-26"
+      const year = AOP_YEAR // e.g. "2025-26"
 
       let prevYear = ''
       if (year && year.includes('-')) {
@@ -538,7 +554,8 @@ const MonthwiseRawMaterial = () => {
       const res = await DataService.postMonthwiseRawData(
         keycloak,
         rowsToUpdate,
-        plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (res?.code == 200) {
@@ -572,34 +589,44 @@ const MonthwiseRawMaterial = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {lowerVertName !== 'pe' && lowerVertName !== 'pp' && (
-        <KendoDataTablesReports
-          rows={row2}
-          columns={columns}
-          setRows={setRow2}
-          loading={loading}
-          handleCalculate={handleCalculate}
-          title='Monthwise Consumption (T-18)'
-          modifiedCells={modifiedCells}
-          setModifiedCells={setModifiedCells}
-          permissions={{
-            showCalculate: false,
-            allAction: true,
-            showTitle: true,
-            saveBtn: false,
-            textAlignment: 'center',
-            remarksEditable: true,
-          }}
-          remarkDialogOpen={remarkDialogOpen}
-          setRemarkDialogOpen={setRemarkDialogOpen}
-          currentRemark={currentRemark}
-          setCurrentRemark={setCurrentRemark}
-          currentRowId={currentRowId}
-          setCurrentRowId={setCurrentRowId}
-          saveChanges={saveChanges}
-          handleRemarkCellClick={handleRemarkCellClick}
-        />
-      )}
+      {lowerVertName !== 'pe' &&
+        lowerVertName !== 'pp' &&
+        lowerVertName !== 'elastomer' && (
+          <KendoDataTablesReports
+            rows={row2}
+            columns={columns}
+            setRows={setRow2}
+            loading={loading}
+            handleCalculate={handleCalculate}
+            title='Monthwise Consumption (T-18)'
+            modifiedCells={modifiedCells}
+            setModifiedCells={setModifiedCells}
+            permissions={{
+              showCalculate: false,
+              allAction: true,
+              showTitle: true,
+              saveBtn: false,
+              textAlignment: 'center',
+              remarksEditable: true,
+            }}
+            remarkDialogOpen={remarkDialogOpen}
+            setRemarkDialogOpen={setRemarkDialogOpen}
+            currentRemark={currentRemark}
+            setCurrentRemark={setCurrentRemark}
+            currentRowId={currentRowId}
+            setCurrentRowId={setCurrentRowId}
+            saveChanges={saveChanges}
+            handleRemarkCellClick={handleRemarkCellClick}
+          />
+        )}
+
+      {lowerVertName == 'pe' ||
+        lowerVertName == 'pp' ||
+        (lowerVertName == 'elastomer' && (
+          <Typography component='div' className='grid-title' sx={{ mb: 1 }}>
+            {'Monthwise Consumption (T-18)'}
+          </Typography>
+        ))}
 
       {Object.entries(normRows).map(([normName, rows]) => (
         <div key={normName}>

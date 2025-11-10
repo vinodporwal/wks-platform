@@ -15,6 +15,7 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
 
@@ -58,6 +59,8 @@ const UtilitiesNormsBasis = () => {
     }
   }, [])
 
+  const VALUE_FORMATOR = ValueFormatterProduction()
+
   const enrichColumns = useCallback((backendCols = []) => {
     return backendCols
       .filter((col) => col.field !== 'GRID_TYPE')
@@ -70,7 +73,7 @@ const UtilitiesNormsBasis = () => {
           filterable: true,
           filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
           align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: '{0:#.##}' } : {}),
+          ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
           editable: false,
           isRightAlligned: isNumberCol ? 'numeric' : undefined,
         }
@@ -162,6 +165,8 @@ const UtilitiesNormsBasis = () => {
       const apiResponse = await DataService.getBestAchievedNorms(
         keycloak,
         'TYPE LIST3',
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (apiResponse?.code !== 200) {
@@ -219,7 +224,7 @@ const UtilitiesNormsBasis = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   // ---------------------------------------------------------------------------
   // Excel export helpers (keeps your existing implementation compatible)
@@ -359,7 +364,9 @@ const UtilitiesNormsBasis = () => {
       <Box display='flex' flexDirection='column' gap={2}>
         {tabIndex === 0 && (
           <>
-            {gridNames.map((name) => {
+            {gridNames.map((name, idx) => {
+              if (idx === 0) return null
+
               const d = dataMap[name] || { rows: [], columns: [] }
               return (
                 <div key={name}>

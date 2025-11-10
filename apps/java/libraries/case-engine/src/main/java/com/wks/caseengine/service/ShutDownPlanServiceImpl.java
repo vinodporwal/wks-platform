@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import com.wks.caseengine.repository.SlowdownNormsRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
+
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -36,9 +38,11 @@ import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
+import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.ShutdownNormsValue;
 import com.wks.caseengine.entity.SlowdownNormsValue;
+import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
@@ -46,10 +50,16 @@ import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantMaintenanceRepository;
 import com.wks.caseengine.repository.PlantMaintenanceTransactionRepository;
+import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.ShutDownPlanRepository;
 import com.wks.caseengine.repository.ShutdownNormsRepository;
 import com.wks.caseengine.utility.Utility;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.*;
@@ -71,7 +81,15 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	@Autowired
 	private SlowdownNormsRepository slowdownNormsRepository;
 
-
+	@Autowired
+	private PlantsRepository plantsRepository;
+	
+	@Autowired
+	private VerticalsRepository verticalRepository;
+	
+	@PersistenceContext
+	private EntityManager entityManager;
+	
 	@Lazy // Add this annotation here
 	@Autowired
 	private SlowdownPlanService slowdownPlanService;
@@ -288,6 +306,142 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		}
 		return null;
 	}
+
+	public byte[] shutdownNonProductExport(String year, String plantId,String maintenanceTypeName, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
+		try {
+			if (!isAfterSave) {
+				 dtoList = findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId),maintenanceTypeName, year); 
+			}
+			String pattern = "dd-MM-yyyy HH:mm";
+			SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+			Workbook workbook = new XSSFWorkbook();
+            CellStyle dateTimeStyle = createDateTimeStyle(workbook, "dd-MM-yyyy HH:mm");
+
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+			List<List<Object>> rows = new ArrayList<>();
+			for (ShutDownPlanDTO dto : dtoList) {
+				List<Object> list = new ArrayList<>();
+				
+				try {
+					
+					Double durationObject = dto.getDurationInHrs();
+					double durationDouble = (durationObject != null) ? durationObject.doubleValue() : 0.0;
+					int hours = (int) durationDouble;
+					int minutes = (int) Math.round((durationDouble - hours) * 100);
+					String formattedDuration = String.format("%02d:%02d", hours, minutes);
+					
+					list.add(dto.getDiscription());
+					//String productString = dto.getProduct();
+					/*
+					 * if (productString != null) { try { UUID product =
+					 * UUID.fromString(productString); Optional<NormParameters> normParameter =
+					 * normParametersRepository.findById(product); if (normParameter.isPresent()) {
+					 * list.add(normParameter.get().getDisplayName()); } else {
+					 * list.add(productString); } } catch (IllegalArgumentException e) {
+					 * 
+					 * list.add("Invalid Product ID"); throw new Exception("Invalid Product UUID: "
+					 * + productString, e); } } else { list.add(null); }
+					 */
+					
+					
+					Date startDate = dto.getMaintStartDateTime();
+					Date endDate = dto.getMaintEndDateTime();
+					
+					list.add(startDate != null ? formatter.format(startDate) : null);
+					list.add(endDate != null ? formatter.format(endDate) : null);
+					list.add(formattedDuration);
+					list.add(dto.getRemark());
+					list.add(dto.getId());
+					//list.add(productString);
+					
+					if (isAfterSave) {
+						list.add(dto.getSaveStatus());
+						list.add(dto.getErrDescription());
+					}
+					
+				} catch (Exception e) {
+					list.clear(); 
+					list.add(dto.getDiscription());
+					//list.add(null); 
+					list.add(null); 
+					list.add(null); 
+					list.add("00:00"); 
+					list.add(dto.getRemark());
+					list.add(dto.getId());
+					//list.add(dto.getProduct());
+					
+					if (isAfterSave) {
+						list.add("Failed");
+						list.add("Processing Error: " + e.getMessage());
+					}
+				}
+				
+				rows.add(list);
+			}
+			List<String> innerHeaders = new ArrayList<>();
+			
+			innerHeaders.add("Shutdown Desc");
+			//innerHeaders.add("Particulars");
+			innerHeaders.add("SD-From");
+			innerHeaders.add("SD-To");
+			innerHeaders.add("Duration (hrs)");
+			innerHeaders.add("Shutdown Basis");
+			innerHeaders.add("Id");
+			//innerHeaders.add("Product");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(createBoldBorderedStyle(workbook));
+				}
+			}
+			for (List<Object> rowData : rows) {
+                Row row = sheet.createRow(currentRow++);
+                for (int col = 0; col < rowData.size(); col++) {
+                    Cell cell = row.createCell(col);
+                    Object value = rowData.get(col);
+
+                    if (value instanceof Date) {
+                        cell.setCellValue((Date) value);
+                        cell.setCellStyle(dateTimeStyle);
+                    } else if (value instanceof Number) {
+                        cell.setCellValue(((Number) value).doubleValue());
+                    } else if (value instanceof Boolean) {
+                        cell.setCellValue((Boolean) value);
+                    } else if (value != null) {
+                        cell.setCellValue(value.toString());
+                    } else {
+                        cell.setCellValue("");
+                    }
+                }
+            }
+			
+			sheet.setColumnHidden(5, true);
+			//sheet.setColumnHidden(7, true);
+			try {
+
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 	
 	@Override
 	public AOPMessageVM importShutdownExcel(String year,UUID plantId, String maintenanceTypeName,MultipartFile file) {
@@ -315,7 +469,34 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		}
 		return null;
 	}
-	
+
+	@Override
+	public AOPMessageVM importNonProductShutdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			List<ShutDownPlanDTO> data = readNonProductShutdown(file.getInputStream(), plantId, year);
+			List<ShutDownPlanDTO> failedList = saveShutdownPlantData(plantId, data);
+			if (failedList != null && failedList.size() > 0) {
+				byte[] fileByteArray = shutdownNonProductExport(year, plantId.toString(),maintenanceTypeName, true, failedList);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				// aopMessageVM.setData();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			// return ResponseEntity.ok(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// return ResponseEntity.internalServerError().build();
+		}
+		return null;
+	}
+
 	private static String getCellAsString(Cell cell, ShutDownPlanDTO dto, FormulaEvaluator evaluator) {
 	    if (cell == null) {
 	        return null;
@@ -515,7 +696,174 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
 		return dtoList;
 	}
-	
+
+	public List<ShutDownPlanDTO> readNonProductShutdown(InputStream inputStream, UUID plantFKId, String year) {
+	    List<ShutDownPlanDTO> dtoList = new ArrayList<>();
+	    List<LocalDateTime[]> validTimeRanges = new ArrayList<>(); // Stores [ldtStart, ldtEnd]
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+	        FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+	        if (rowIterator.hasNext())
+	            rowIterator.next(); 
+	        List<String> des = new ArrayList<>();
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+	            ShutDownPlanDTO dto = new ShutDownPlanDTO();
+	            LocalDateTime ldtStart = null; 
+	            LocalDateTime ldtEnd = null;  
+
+	            try {
+	                dto.setAudityear(year);
+	                String desc = getStringCellValue(row.getCell(0), dto);
+	                dto.setDiscription(desc);
+	                boolean alreadyFailed = false;
+	                if(des!=null && des.contains(dto.getDiscription())) {
+	                	 dto.setSaveStatus("Failed");
+	                     dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
+	                }
+	                if (dto.getDiscription() != null) {
+	                    des.add(dto.getDiscription().trim());
+	                }
+
+	                LocalDateTime[] bounds = parseFinancialYearBounds(year);
+	                LocalDateTime fyStart = bounds[0];
+	                LocalDateTime fyEnd   = bounds[1];
+	                String mantStartStr = getCellAsString(row.getCell(1), dto, evaluator);
+	                if (mantStartStr != null) {
+	                    try {
+	                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
+	                        ldtStart = LocalDateTime.parse(mantStartStr, fmt);
+	                        if (ldtStart.isBefore(fyStart) || ldtStart.isAfter(fyEnd)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Start date/time is outside the financial year " + year);
+	                            alreadyFailed = true;
+	                        } 
+	                        Date startDate = Date.from(ldtStart.atZone(ZoneId.systemDefault()).toInstant());
+	                        dto.setMaintStartDateTime(startDate); // Set even if failed for display
+	                    } catch (Exception ex) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("Invalid date/time format in cell 3 (Start Date).");
+	                        ex.printStackTrace();
+	                        alreadyFailed = true;
+	                    }
+	                }
+	                String mantEndStr = getCellAsString(row.getCell(2), dto, evaluator);
+	                if (mantEndStr != null) {
+	                    try {
+	                        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm", Locale.US);
+	                        ldtEnd = LocalDateTime.parse(mantEndStr, fmt);
+	                        
+	                        Date endDate = Date.from(ldtEnd.atZone(ZoneId.systemDefault()).toInstant());
+	                        dto.setMaintEndDateTime(endDate); // Set even if failed for display
+	                        if (ldtEnd.isBefore(fyStart) || ldtEnd.isAfter(fyEnd)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("End date/time is outside the financial year " + year);
+	                            alreadyFailed = true;
+	                        } 
+	                        else if (ldtStart != null && ldtEnd.isBefore(ldtStart)) {
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("End date/time cannot be before start date/time.");
+	                            alreadyFailed = true;
+	                        } 
+	                        else if (ldtStart != null && ldtStart.getMonth() != ldtEnd.getMonth()) { 
+	                            dto.setSaveStatus("Failed");
+	                            dto.setErrDescription("Start and end date/time must belong to the same month.");
+	                            alreadyFailed = true;
+	                        } 
+	                        else if (ldtStart != null) {
+	                            boolean overlaps = false;
+	                            for (LocalDateTime[] prevPeriod : validTimeRanges) {
+	                                LocalDateTime prevLdtStart = prevPeriod[0];
+	                                LocalDateTime prevLdtEnd = prevPeriod[1];
+	                                if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                    overlaps = true;
+	                                    break;
+	                                }
+	                            }
+
+	                            if (overlaps) {
+	                                dto.setSaveStatus("Failed");
+	                                dto.setErrDescription("The maintenance period overlaps with an already validated period in the file.");
+	                                alreadyFailed = true;
+	                            }
+	                        }
+
+	                    } catch (Exception ex) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("Invalid date/time format in cell 4 (End Date).");
+	                        ex.printStackTrace();
+	                        alreadyFailed = true;
+	                    }
+	                }
+	                if (ldtStart != null && ldtEnd != null) {
+	                    try {
+	                        Duration duration = Duration.between(ldtStart, ldtEnd);
+	                        long totalMinutes = duration.toMinutes();
+	                        if (totalMinutes < 0) {
+	                            throw new IllegalStateException("Calculated negative duration.");
+	                        }
+	                        
+	                        double durationInDecimalHours = (double) totalMinutes / 60.0;
+	                        dto.setDurationInHrs(durationInDecimalHours);
+	                      //  dto.setSaveStatus("Success");
+	                        validTimeRanges.add(new LocalDateTime[]{ldtStart, ldtEnd});
+
+	                    } catch (Exception e) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("Error calculating duration between maintenance dates or duration is negative.");
+	                        e.printStackTrace();
+	                        alreadyFailed = true;
+	                    }
+	                } else if (dto.getSaveStatus() == null) {
+	                     if (mantStartStr == null || mantEndStr == null) {
+	                         dto.setSaveStatus("Failed");
+	                         dto.setErrDescription("Start and/or End Date/Time is missing.");
+	                         alreadyFailed = true;
+	                     }
+	                }
+
+	                dto.setRemark(getStringCellValue(row.getCell(4), dto));
+	                if(dto.getRemark() == null || dto.getRemark().trim().isEmpty()) {
+	                    if (dto.getSaveStatus() == null || "Success".equals(dto.getSaveStatus())) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("Please enter remark");
+	                    }
+	                }
+	                String idString = getStringCellValue(row.getCell(5), dto);
+	                dto.setId(idString); 
+	                
+	                if (dto.getId() == null && (dto.getSaveStatus() == null || "Success".equals(dto.getSaveStatus()))) {
+	                    List<Object[]> obj=shutDownPlanRepository.findDiscriptionByPlantIdAndType("Shutdown", plantFKId.toString(), year, dto.getDiscription());
+
+	                    if(obj.size() > 0) {
+	                        dto.setSaveStatus("Failed");
+	                        dto.setErrDescription("The Description '"+dto.getDiscription()+"' already exists in the database. Please enter a unique description to avoid duplication.");
+	                    }
+	                }
+	                
+	                if (dto.getSaveStatus() == null) {
+	                    dto.setSaveStatus("Success");
+	                }
+
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                if (dto.getSaveStatus() == null) {
+	                    dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "An unexpected error occurred during processing.");
+	                    dto.setSaveStatus("Failed");
+	                }
+	            }
+	            
+	            dtoList.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return dtoList;
+	}
 	private static String getStringCellValue(Cell cell, ShutDownPlanDTO dto) {
 		try {
 			if (cell == null)
@@ -636,7 +984,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	        String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 
 	        PlantMaintenanceTransaction plantMaintenanceTransaction = plantMaintenanceTransactionOpt.get();
-
+	        String year = plantMaintenanceTransaction.getAuditYear();
 	        List<NormAttributeTransactions> normAttributeTransactionsList =
 	                normAttributeTransactionsRepository.findByMaintenanceId(plantMaintenanceTransactionId);
 
@@ -649,7 +997,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	        }
 	        if(("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName))) {
 	        	int month=plantMaintenanceTransaction.getMaintForMonth();
-	        	Long count=plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId,month);
+	        	Long count=plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId,month,"Slowdown",year);
 	        	if(count==1) {
 	        		List<SlowdownNormsValue> slowdownNormsValues =slowdownNormsRepository.findByPlantFkIdAndFinancialYear(plantId,plantMaintenanceTransaction.getAuditYear());
 		        	for(SlowdownNormsValue slowdownNormsValue: slowdownNormsValues) {
@@ -711,7 +1059,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	        
 	        if(("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName))) {
 	        	int month=plantMaintenanceTransaction.getMaintForMonth();
-	        	Long count=plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId,month);
+	        	Long count=plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId,month,"Shutdown",year);
 	        	if(count==1) {
 	        		List<ShutdownNormsValue> shutdownNormsValues =shutdownNormsRepository.findByPlantFkIdAndFinancialYear(plantId,plantMaintenanceTransaction.getAuditYear());
 		        	for(ShutdownNormsValue shutdownNormsValue: shutdownNormsValues) {
@@ -1105,7 +1453,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
 	@Override
 	public List<MonthWiseDataDTO> getMonthlyShutdownHours(String auditYear, UUID plantId) {
 		try {
@@ -1125,7 +1473,50 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	@Override
+	public AOPMessageVM getDescriptionDropdown(String auditYear, String plantId) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			List<Map<String,Object>> mapList = new ArrayList<Map<String,Object>>();
+			String viewName= "vwScrnShutdown"+vertical.getName();
+			List<Object[]> results = getDescriptionDropdownData(auditYear, plantId,viewName);
+			for (Object[] obj : results) {
+				Map<String,Object> map = new HashMap<String,Object>();
+				map.put("DisplayName",obj[2]);
+				map.put("Name",obj[1]);
+				mapList.add(map);
+			}
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(mapList);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid data format", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	public List<Object[]> getDescriptionDropdownData(String year, String plantFkId, String viewName) {
+		try {
+			String sql = "SELECT * from " + viewName+ " where Plant_FK_Id = :plantFkId AND AOPyear = :year order by DisplayOrder";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("year", year);
+			query.setParameter("plantFkId", plantFkId);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 		
 	
 

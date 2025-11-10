@@ -75,7 +75,7 @@ const OptimizerReport = () => {
         filterable: true,
         filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
         align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-        ...(isNumberCol ? { format: '{0:#.###}' } : {}),
+        ...(isNumberCol ? { format: '{0:0.000}' } : {}),
         editable: false,
         isRightAlligned: isNumberCol ? 'numeric' : undefined,
       }
@@ -152,12 +152,16 @@ const OptimizerReport = () => {
             keycloak,
             reportType,
             mode,
+            PLANT_ID,
+            AOP_YEAR,
           )
         } else {
           apiResponse = await CrackerReportsApiDataService.spyroOutputReport(
             keycloak,
             reportType,
             mode,
+            PLANT_ID,
+            AOP_YEAR,
           )
         }
 
@@ -349,7 +353,7 @@ const OptimizerReport = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   // Export: gather sheets from each ExcelExport instance and combine into one workbook
 
@@ -370,7 +374,12 @@ const OptimizerReport = () => {
       const payload = []
 
       // Await the API call here to ensure completion
-      const data = await DataService.getExcel(keycloak, payload)
+      const data = await DataService.getExcel(
+        keycloak,
+        payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -404,14 +413,17 @@ const OptimizerReport = () => {
     try {
       setCalculating(true)
 
-
       if (!PLANT_ID || !AOP_YEAR) {
-        throw new Error('Plant ID or year not found in localStorage')
+        throw new Error('Plant ID or year not found ')
       }
 
       // Call the calculate API
       const calculateResult =
-        await CrackerReportsApiDataService.calculateMonthWiseRawData(keycloak)
+        await CrackerReportsApiDataService.calculateMonthWiseRawData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (calculateResult?.code === 200) {
         setSnackbarOpen(true)

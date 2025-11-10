@@ -2,20 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-
-// import DataGridTable from 'components/data-tables/ASDataGrid'
-// import { DataGrid } from '@mui/x-data-grid'
-import {
-  // Backdrop,
-  Box,
-  // Typography,
-  // CircularProgress,
-} from '../../../node_modules/@mui/material/index'
-import { remarkColumn } from 'components/Utilities/remarkColumn'
-// import ReportDataGrid from './ReportDataGrid'
-import Notification from 'components/Utilities/Notification'
-// import KendoDataTables from 'components/kendo-data-tables/index'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
+import Notification from 'components/Utilities/Notification'
+import { remarkColumn } from 'components/Utilities/remarkColumn'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { Box } from '../../../node_modules/@mui/material/index'
 
 const ProductionAopView = ({
   handleCalculate,
@@ -26,15 +17,30 @@ const ProductionAopView = ({
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [columns, setColumns] = useState([])
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { oldYear, verticalChange, yearChanged, plantID } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   // remark dialog state
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const VALUE_FORMATOR = ValueFormatterProduction()
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -47,7 +53,7 @@ const ProductionAopView = ({
   const formatValueToNoDecimals = (val) =>
     val && !isNaN(val) ? Math.round(val) : val
 
-  function getNumericKeysInAllRows(data) {
+  function getNumericKeysInAllRows1(data = []) {
     if (!Array.isArray(data) || data.length === 0) return []
 
     const keys = Object.keys(data[0])
@@ -55,9 +61,31 @@ const ProductionAopView = ({
     return keys.filter((key) =>
       data.every((row) => {
         const value = row[key]
-        // The column is considered numeric if:
-        // - It's a valid number (including empty values)
         return value === '' || !isNaN(Number(value))
+      }),
+    )
+  }
+
+  function getNumericKeysInAllRows(rows = []) {
+    if (!Array.isArray(rows) || rows.length === 0) return []
+
+    const allKeys = Array.from(
+      rows.reduce((set, row) => {
+        if (row && typeof row === 'object') {
+          Object.keys(row).forEach((k) => set.add(k))
+        }
+        return set
+      }, new Set()),
+    )
+
+    return allKeys.filter((key) =>
+      rows.every((row) => {
+        if (row === null || typeof row !== 'object') return true
+        const v = row[key]
+        if (v === undefined || v === null || String(v).trim() === '')
+          return true
+        const n = Number(String(v).trim())
+        return Number.isFinite(n)
       }),
     )
   }
@@ -76,13 +104,18 @@ const ProductionAopView = ({
     // }
   }
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
-      var data = await DataService.getWorkflowDataProduction(keycloak, plantId)
+      var data = await DataService.getWorkflowDataProduction(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       var formattedRows = data.results.map((row, id) => {
         const newRow = { id }
         Object.entries(row).forEach(([key, val]) => {
-          if (!isNaN(val) && val !== '') {
-            newRow[key] = formatValueToNoDecimals(val)
+          if (['syAop', 'fyActual', 'fyAop'].includes(key)) {
+            newRow[key] = val !== '' && !isNaN(val) ? Number(val) : val
           } else {
             newRow[key] = val
           }
@@ -114,6 +147,7 @@ const ProductionAopView = ({
             ...(numericKeys.includes(key) && {
               align: 'right',
               type: 'number',
+              format: VALUE_FORMATOR,
             }),
           }
         })
@@ -141,13 +175,13 @@ const ProductionAopView = ({
 
   useEffect(() => {
     fetchData()
-  }, [plantID, yearChanged])
+  }, [PLANT_ID, yearChanged])
 
   // const lastColumnField = columns[columns.length - 1]?.field
   const saveChanges = async () => {
     try {
       // console.log(rows, 'workflowDto')
-      await DataService.saveAnnualWorkFlowData(keycloak, rows, plantId)
+      await DataService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
       // console.log(response, 'response')
       setSnackbarData({
         message: 'Data Saved Successfully!',

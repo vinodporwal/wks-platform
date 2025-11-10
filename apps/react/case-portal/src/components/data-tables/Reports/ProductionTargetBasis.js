@@ -16,8 +16,6 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 
-const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
-
 const ProductionTargetBasis = () => {
   const keycloak = useSession()
 
@@ -70,7 +68,7 @@ const ProductionTargetBasis = () => {
           filterable: true,
           filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
           align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: '{0:#.##}' } : {}),
+          ...(isNumberCol ? { format: '{0:0.00}' } : {}),
           editable: false,
           isRightAlligned: isNumberCol ? 'numeric' : undefined,
         }
@@ -151,6 +149,7 @@ const ProductionTargetBasis = () => {
   // Fetch all grids in one call and build dataMap + gridNames
   // The backend is expected to return: apiResponse.data = [ { gridName, data: [...] }, ... ]
   // ---------------------------------------------------------------------------
+
   const fetchAllGrids = useCallback(async () => {
     // clear previous timers if any
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
@@ -223,7 +222,7 @@ const ProductionTargetBasis = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   // ---------------------------------------------------------------------------
   // Excel export helpers (keeps your existing implementation compatible)
@@ -363,7 +362,9 @@ const ProductionTargetBasis = () => {
       <Box display='flex' flexDirection='column' gap={2}>
         {tabIndex === 0 && (
           <>
-            {gridNames.map((name) => {
+            {gridNames.map((name, idx) => {
+              if (idx === 0) return null
+
               const d = dataMap[name] || { rows: [], columns: [] }
               return (
                 <div key={name}>

@@ -24,6 +24,8 @@ export default function AopBudget() {
 
   const [row, setRows] = useState([])
   const [loading, setLoading] = useState(false)
+  const [textAreaRedDesign, setTextAreaRedDesign] = useState(false)
+  const [textAreaRedRemark, setTextAreaRedRemark] = useState(false)
   const [openSaveDialog, setOpenSaveDialog] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -184,6 +186,21 @@ export default function AopBudget() {
     },
   ]
 
+  const monthTotal = [
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
+    'jan',
+    'feb',
+    'mar',
+  ]
+
   const columns = [
     { field: 'plantName', title: 'Plant', widthT: 70 },
     { field: 'costName', title: 'Cost', widthT: 80 },
@@ -203,6 +220,14 @@ export default function AopBudget() {
       type,
       format,
     })),
+    {
+      field: 'allMonthsTotal',
+      title: 'Total',
+      editable: false,
+
+      type: 'number',
+      format: FORMATE_DECIMAL,
+    },
     { field: 'remark', title: 'Remark', editable: true, widthT: 100 },
   ]
 
@@ -226,6 +251,7 @@ export default function AopBudget() {
   }
 
   const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
       // Fetch for Consumption Budget
@@ -235,14 +261,24 @@ export default function AopBudget() {
         PLANT_ID,
         AOP_YEAR,
       )
-      const mapped = (resConsumption?.data || []).map((item, index) => ({
-        ...item,
-        plantName: item.plantName || item.plantName || '',
-        IsEditable: item.isEditable,
-        originalRemark: item.remark?.trim() || '',
-        percentChange: formatPercentChange(item?.percentChange),
-        originalPercentChange: item?.percentChange || null,
-      }))
+
+      const mapped = (resConsumption?.data || []).map((item) => {
+        const allMonthsTotal = monthTotal?.reduce((sum, month) => {
+          const value = parseFloat(item[month]) || 0
+          return sum + value
+        }, 0)
+
+        return {
+          ...item,
+          plantName: item.plantName || '',
+          IsEditable: item.isEditable,
+          originalRemark: item.remark?.trim() || '',
+          percentChange: formatPercentChange(item?.percentChange),
+          originalPercentChange: item?.percentChange || null,
+          allMonthsTotal,
+        }
+      })
+
       setRows(mapped)
 
       // Fetch for Procurement Budget
@@ -252,14 +288,22 @@ export default function AopBudget() {
         PLANT_ID,
         AOP_YEAR,
       )
-      const mappedP = (resProcurement?.data || []).map((item, index) => ({
-        ...item,
-        plantName: item.plantName || item.plantName || '',
-        IsEditable: item.isEditable,
-        originalRemark: item.remark?.trim() || '',
-        percentChange: item?.percentChange || null,
-        originalPercentChange: item?.percentChange || null,
-      }))
+      const mappedP = (resProcurement?.data || []).map((item, index) => {
+        const allMonthsTotal = monthTotal?.reduce((sum, month) => {
+          const value = parseFloat(item[month]) || 0
+          return sum + value
+        }, 0)
+
+        return {
+          ...item,
+          plantName: item.plantName || item.plantName || '',
+          IsEditable: item.isEditable,
+          originalRemark: item.remark?.trim() || '',
+          percentChange: item?.percentChange || null,
+          originalPercentChange: item?.percentChange || null,
+          allMonthsTotal,
+        }
+      })
       setRowsP(mappedP)
     } catch (err) {
       console.error('fetchData error', err)
@@ -268,10 +312,27 @@ export default function AopBudget() {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID])
+
+  const resetDataChanges = useCallback(async () => {
+    setModifiedCells({})
+    setModifiedCellsP({})
+
+    //FETCH DATA WHEN RESET BUTTON CLICKED
+    fetchData()
+
+    //FETCH BOTH DESIGN BASIS & DESIGN REMARKS AS WELL
+    fetchDesignRemarksAndDesignBasis()
+  }, [keycloak, yearChanged, PLANT_ID])
 
   const fetchDesignRemarksAndDesignBasis = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
+    setTextAreaRedDesign(false)
+    setTextAreaRedRemark(false)
+
+    setDesignRemarks('')
+    setDesignBasis('')
     try {
       const resDesignBasis = await AOPMaintenanceApiService.designBasis(
         keycloak,
@@ -295,7 +356,7 @@ export default function AopBudget() {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID])
 
   useEffect(() => {
     fetchData()
@@ -311,6 +372,7 @@ export default function AopBudget() {
   const handleCalculateP = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
+    if (!row?.IsEditable) return
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
@@ -341,7 +403,7 @@ export default function AopBudget() {
 
   const adjustedPermissionsP = getAdjustedPermissionsP(
     {
-      saveBtn: true,
+      saveBtn: false,
       addButton: false,
       allAction: true,
       showTitleNameBusiness: true,
@@ -389,6 +451,7 @@ export default function AopBudget() {
       constarins: ['+', '-'],
       resetButton: false,
       percentChangeLogic: true,
+      showResetButton: true,
     },
     isOldYear,
   )
@@ -431,26 +494,42 @@ export default function AopBudget() {
   const handleSaveAll = async () => {
     setLoading(true)
     try {
-      // Get modified rows for both grids
       const consumptionData = Object.values(modifiedCells)
       const procurementData = Object.values(modifiedCellsP)
 
-      if (
-        !designBasisAndDesignRemarksEdited &&
-        !designBasisAndDesignRemarksEdited2
-      ) {
-        setSnackbarData({
-          message: 'Please update Design Basis & Design Remarks',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
-        setLoading(false)
-        return
-      }
+      //VALIDATION REMOVED
+
+      // if (
+      //   !designBasisAndDesignRemarksEdited ||
+      //   !designBasisAndDesignRemarksEdited2
+      // ) {
+      //   setSnackbarData({
+      //     message: 'Please update Justification & Remarks',
+      //     severity: 'error',
+      //   })
+      //   setSnackbarOpen(true)
+      //   setLoading(false)
+
+      //   if (!designBasisAndDesignRemarksEdited) {
+      //     setTextAreaRedDesign(true)
+      //   } else {
+      //     setTextAreaRedDesign(false)
+      //   }
+      //   if (!designBasisAndDesignRemarksEdited2) {
+      //     setTextAreaRedRemark(true)
+      //   } else {
+      //     setTextAreaRedRemark(false)
+      //   }
+      //   return
+      // }
+
+      setTextAreaRedDesign(false)
+      setTextAreaRedRemark(false)
 
       const requiredFields = ['remark']
       const validationMessageC = validateFields(consumptionData, requiredFields)
       const validationMessageP = validateFields(procurementData, requiredFields)
+
       if (validationMessageC || validationMessageP) {
         setSnackbarData({
           message: validationMessageC || validationMessageP,
@@ -460,6 +539,7 @@ export default function AopBudget() {
         setLoading(false)
         return
       }
+
       const fieldsToOmit = ['isEditable', 'IsEditable']
 
       const allRows = [
@@ -483,6 +563,8 @@ export default function AopBudget() {
       await AOPMaintenanceApiService.savemaintenacegetdata(
         processedRows,
         keycloak,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       setSnackbarOpen(true)
@@ -622,7 +704,7 @@ export default function AopBudget() {
               container
               alignItems='center'
               justifyContent='space-between'
-              sx={{ marginBottom: 0.5 }}
+              // sx={{ marginBottom: 0.5 }}
             >
               <Grid item>
                 <div
@@ -631,13 +713,14 @@ export default function AopBudget() {
                     // marginBottom: 0.5,
                   }}
                 >
-                  Design Basis
-                  <span style={{ color: 'red' }}>*</span>
+                  Justification
+                  {textAreaRedDesign && <span style={{ color: 'red' }}>*</span>}
                 </div>
               </Grid>
             </Grid>
 
             <TextArea
+              className={textAreaRedDesign ? 'textarea-error' : ''}
               value={designBasis}
               rows={3}
               onChange={(e) => {
@@ -663,12 +746,13 @@ export default function AopBudget() {
                   }}
                 >
                   Remarks
-                  <span style={{ color: 'red' }}>*</span>
+                  {textAreaRedRemark && <span style={{ color: 'red' }}>*</span>}
                 </div>
               </Grid>
             </Grid>
 
             <TextArea
+              className={textAreaRedRemark ? 'textarea-error' : ''}
               value={designRemarks}
               rows={3}
               onChange={(e) => {
@@ -705,7 +789,7 @@ export default function AopBudget() {
         groupBy='budgetType'
         resetRowData={resetRowData1}
         summaryEdited={designBasisAndDesignRemarksEdited}
-
+        resetDataChanges={resetDataChanges}
         // setEditMode={setEditMode}
       />
 
@@ -732,6 +816,7 @@ export default function AopBudget() {
         resetRowData={resetRowData2}
         summaryEdited={designBasisAndDesignRemarksEdited2}
         // setEditMode={setEditMode}
+        resetDataChanges={resetDataChanges}
       />
       <Notification
         open={snackbarOpen}

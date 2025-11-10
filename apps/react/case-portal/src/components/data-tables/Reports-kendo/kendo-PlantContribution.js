@@ -6,17 +6,36 @@ import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import { DataService } from 'services/DataService'
 import { MockReportService } from './mockPlantContributionAPI'
+import { useSelector } from 'react-redux'
 
-const categories = () => {
-  const verticalName = JSON.parse(
-    localStorage.getItem('selectedVertical'),
-  )?.name?.toLowerCase()
 
-  return [
+export default function PlantContribution() {
+  const keycloak = useSession()
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+    const {
+      verticalChange,
+      yearChanged,
+      oldYear,
+      plantID,
+      plantObject,
+      siteObject,
+      verticalObject,
+      year,
+      screenTitle,
+    } = dataGridStore
+    const PLANT_ID = plantObject?.id
+    const SITE_ID = siteObject?.id
+    const VERTICAL_ID = verticalObject?.id
+    const VERTICAL_NAME = verticalObject?.name
+    const AOP_YEAR = year?.selectedYear
+    const isOldYear = oldYear?.oldYear
+    const vertName = verticalChange?.selectedVertical
+    const lowerVertName = vertName?.toLowerCase() || 'meg'
+    const categories = () => [
     {
       key: 'ProductMixAndProduction',
       title:
-        verticalName === 'meg'
+        lowerVertName === 'meg'
           ? 'Plant Contribution (T-21) - MEG\nProduct mix and Production'
           : 'Plant Contribution (T-21)\nProduct mix and Production',
     },
@@ -27,12 +46,6 @@ const categories = () => {
     { key: 'OtherVariableCost', title: 'Other Variable Cost' },
     { key: 'ProductionCostCalculations', title: 'Production Cost Calculation' },
   ]
-}
-
-export default function PlantContribution() {
-  const keycloak = useSession()
-  const year = localStorage.getItem('year')
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const [loading, setLoading] = useState(false)
   const [reports, setReports] = useState({})
   const [snackbarData, setSnackbarData] = useState({
@@ -41,9 +54,14 @@ export default function PlantContribution() {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [rows, setRows] = useState()
-  const verticalName = JSON.parse(
-    localStorage.getItem('selectedVertical'),
-  )?.name?.toLowerCase()
+
+  const FORMAT_VALUES_3_DECIMAL =
+    lowerVertName == 'elastomer' ? '{0:0.000}' : '{0:0.00}'
+  const FORMAT_VALUES_2_DECIMAL =
+    lowerVertName == 'elastomer' ? '{0:0.00}' : '{0:0.00}'
+  const FORMAT_VALUES_COST = lowerVertName == 'elastomer' ? '{0:0}' : '{0:0.00}'
+  const FORMAT_VALUES_PRICE = '{0:0}'
+
   const loadAll = async () => {
     setLoading(true)
     const out = {}
@@ -52,13 +70,19 @@ export default function PlantContribution() {
       categories().map(async ({ key }) => {
         const { columns, columnGrouping } = await MockReportService.getReport({
           category: key,
-          year,
-          verticalName,
+          AOP_YEAR,
+          lowerVertName,
+          FORMAT_VALUES_3_DECIMAL,
+          FORMAT_VALUES_2_DECIMAL,
+          FORMAT_VALUES_COST,
+          FORMAT_VALUES_PRICE,
         })
 
         const apiResp = await DataService.getPlantContributionYearWisePlan(
           keycloak,
           key,
+          PLANT_ID,
+          AOP_YEAR,
         )
         let rows = apiResp.data?.plantProductionData || []
         if (apiResp?.code == 200) {
@@ -66,10 +90,7 @@ export default function PlantContribution() {
             ...item,
             id: index,
             actualId: item?.id,
-            isEditable:
-              key == 'OtherVariableCost' && [1, 2, 3, 0].includes(index)
-                ? true
-                : false,
+            isEditable: key === 'OtherVariableCost' && index <= rows.length - 4,
           }))
           if (key == 'OtherVariableCost') setRows(rows)
         } else {
@@ -85,7 +106,7 @@ export default function PlantContribution() {
 
   useEffect(() => {
     loadAll()
-  }, [keycloak, year, plantId])
+  }, [keycloak, AOP_YEAR, PLANT_ID])
 
   const handleCalculate = () => {
     handleCalculateMonthwiseAndTurnaround()
@@ -93,17 +114,10 @@ export default function PlantContribution() {
   const handleCalculateMonthwiseAndTurnaround = async () => {
     try {
       setLoading(true)
-      const storedPlant = localStorage.getItem('selectedPlant')
-      const year = localStorage.getItem('year')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
-      var plantId = plantId
+   
       const res = await DataService.calculatePlantContributionReportData(
-        plantId,
-        year,
+        PLANT_ID,
+        AOP_YEAR,
         keycloak,
       )
 
@@ -171,7 +185,8 @@ export default function PlantContribution() {
       const res = await DataService.savePlantContributionData(
         keycloak,
         rowsToUpdate,
-        plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (res?.code == 200) {
@@ -213,7 +228,7 @@ export default function PlantContribution() {
         .map(({ key, title }, idx) => {
           const rpt = reports[key] || {}
           return (
-            <Box key={key} sx={{ mt: 0 }}>
+            <Box key={key} sx={{ mt: 1 }}>
               <KendoDataTablesReports
                 columns={rpt.columns || []}
                 rows={rpt.rows || []}

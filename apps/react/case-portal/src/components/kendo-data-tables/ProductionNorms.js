@@ -13,7 +13,7 @@ import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopHeader'
 import KendoDataTables from './index'
 import ProductionNormsCracker from './ProductionNormsCracker'
-
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 const ProductionNorms = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
@@ -64,14 +64,6 @@ const ProductionNorms = ({ permissions }) => {
     rowsBeforeChange: {},
   })
   const dispatch = useDispatch()
-
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-    // setSelectedUnit('')
-  }, [plantID])
-  // const isBlocked = useSelector((state) => state.isBlocked) // Get block flag from Redux
 
   const saveChanges = React.useCallback(async () => {
     setTimeout(() => {
@@ -305,6 +297,24 @@ const ProductionNorms = ({ permissions }) => {
 
   const rowDataForCracker = [
     {
+      displayName: 'Train',
+      april: 1,
+      may: 1,
+      june: 2,
+      july: 1,
+      aug: 2,
+      sep: 1,
+      oct: 2,
+      nov: 1,
+      dec: 2,
+      jan: 1,
+      feb: 2,
+      march: 1,
+      averageTPH: '',
+      isEditable: false,
+      aopStatus: '',
+    },
+    {
       displayName: 'Ethyelene',
       april: 13420,
       may: 12875,
@@ -360,11 +370,14 @@ const ProductionNorms = ({ permissions }) => {
   ]
 
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
       const response = await ProductionNormsApiService.getAOPData(
         keycloak,
         'Production',
+        PLANT_ID,
+        AOP_YEAR,
       )
       setCalculationObject(response?.data?.aopCalculation)
       if (response?.code != 200) {
@@ -379,7 +392,7 @@ const ProductionNorms = ({ permissions }) => {
       }
 
       let dataSet = response?.data?.aopDTOList
-      // if (lowerVertName === 'cracker') {
+      // if (lowerVertName === 'elastomer') {
       //   dataSet = rowDataForCracker
       // }
 
@@ -389,18 +402,18 @@ const ProductionNorms = ({ permissions }) => {
           normParametersFKId: product.materialFKId,
           originalRemark: product.aopRemarks,
           isEditable: false,
-          april: product?.april.toFixed(2) ?? '0.00',
-          may: product?.may.toFixed(2) ?? '0.00',
-          june: product?.june.toFixed(2) ?? '0.00',
-          july: product?.july.toFixed(2) ?? '0.00',
-          aug: product?.aug.toFixed(2) ?? '0.00',
-          sep: product?.sep.toFixed(2) ?? '0.00',
-          oct: product?.oct.toFixed(2) ?? '0.00',
-          nov: product?.nov.toFixed(2) ?? '0.00',
-          dec: product?.dec.toFixed(2) ?? '0.00',
-          jan: product?.jan.toFixed(2) ?? '0.00',
-          feb: product?.feb.toFixed(2) ?? '0.00',
-          march: product?.march.toFixed(2) ?? '0.00',
+          april: product?.april,
+          may: product?.may,
+          june: product?.june,
+          july: product?.july,
+          aug: product?.aug,
+          sep: product?.sep,
+          oct: product?.oct,
+          nov: product?.nov,
+          dec: product?.dec,
+          jan: product?.jan,
+          feb: product?.feb,
+          march: product?.march,
           Particulars: product.normParameterDisplayName,
           ...(product.materialFKId !== undefined
             ? { materialFKId: undefined }
@@ -473,42 +486,20 @@ const ProductionNorms = ({ permissions }) => {
             normParametersFKId: item?.normParametersFKId?.toLowerCase(),
             id: index,
             ...(TPH && {
-              jan: item.jan
-                ? item.jan / 24 / 31
-                : item.jan.toFixed(2) ?? '0.00',
+              jan: item.jan ? item.jan / 24 / 31 : item.jan,
               feb: item.feb
                 ? item.feb / 24 / (isLeap(nextYear) ? 29 : 28)
-                : item.feb.toFixed(2) ?? '0.00',
-              march: item.march
-                ? item.march / 24 / 31
-                : item.march.toFixed(2) ?? '0.00',
-              april: item.april
-                ? item.april / 24 / 30
-                : item.april.toFixed(2) ?? '0.00',
-              may: item.may
-                ? item.may / 24 / 31
-                : item.may.toFixed(2) ?? '0.00',
-              june: item.june
-                ? item.june / 24 / 30
-                : item.june.toFixed(2) ?? '0.00',
-              july: item.july
-                ? item.july / 24 / 31
-                : item.july.toFixed(2) ?? '0.00',
-              aug: item.aug
-                ? item.aug / 24 / 31
-                : item.aug.toFixed(2) ?? '0.00',
-              sep: item.sep
-                ? item.sep / 24 / 30
-                : item.sep.toFixed(2) ?? '0.00',
-              oct: item.oct
-                ? item.oct / 24 / 31
-                : item.oct.toFixed(2) ?? '0.00',
-              nov: item.nov
-                ? item.nov / 24 / 30
-                : item.nov.toFixed(2) ?? '0.00',
-              dec: item.dec
-                ? item.dec / 24 / 31
-                : item.dec.toFixed(2) ?? '0.00',
+                : item.feb,
+              march: item.march ? item.march / 24 / 31 : item.march,
+              april: item.april ? item.april / 24 / 30 : item.april,
+              may: item.may ? item.may / 24 / 31 : item.may,
+              june: item.june ? item.june / 24 / 30 : item.june,
+              july: item.july ? item.july / 24 / 31 : item.july,
+              aug: item.aug ? item.aug / 24 / 31 : item.aug,
+              sep: item.sep ? item.sep / 24 / 30 : item.sep,
+              oct: item.oct ? item.oct / 24 / 31 : item.oct,
+              nov: item.nov ? item.nov / 24 / 30 : item.nov,
+              dec: item.dec ? item.dec / 24 / 31 : item.dec,
             }),
           }
           const total = [
@@ -551,6 +542,7 @@ const ProductionNorms = ({ permissions }) => {
       ]
 
       const mapTrainNumberToLabel = (val) => {
+        const TOL = 0.0001
         if (val === null || val === undefined || val === '') return val
 
         const parsed = parseFloat(String(val).trim())
@@ -610,22 +602,29 @@ const ProductionNorms = ({ permissions }) => {
         }, {}),
       }
 
-      if (
-        lowerVertName == 'aromatics' &&
-        row.displayName.toLowerCase() === 'train'
-      ) {
-        totalsRow.averageTPH = '-'
-      } else {
-        totalsRow.averageTPH = monthFields.reduce(
-          (sum, field) => sum + (parseFloat(totalsRow[field]) || 0),
-          0,
-        )
+      totalsRow.averageTPH = monthFields.reduce(
+        (sum, field) => sum + (parseFloat(totalsRow[field]) || 0),
+        0,
+      )
+
+      const trainRow = formattedData.find(
+        (r) =>
+          String(r._displayNameLower || r.displayName || '').toLowerCase() ===
+          'train',
+      )
+
+      if (lowerVertName === 'aromatics' && trainRow) {
+        trainRow.averageTPH = '-'
       }
 
       let finalData = []
 
       if (formattedData.length > 0) {
-        if (lowerVertName !== 'meg' && lowerVertName !== 'cracker') {
+        if (
+          lowerVertName !== 'meg' &&
+          lowerVertName !== 'cracker' &&
+          lowerVertName !== 'elastomer'
+        ) {
           finalData = [...formattedData, totalsRow]
         } else {
           finalData = [...formattedData]
@@ -644,12 +643,15 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   const fetchDataByProducts = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
 
       const response = await ProductionNormsApiService.getAOPData(
         keycloak,
         'ByProducts',
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (response?.code != 200) {
@@ -748,14 +750,18 @@ const ProductionNorms = ({ permissions }) => {
     if (lowerVertName === 'meg') {
       fetchDataByProducts()
     }
-  }, [plantID, oldYear, yearChanged, keycloak, selectedUnit])
+  }, [PLANT_ID, oldYear, yearChanged, keycloak, selectedUnit])
+
+  const valueFormat = ValueFormatterProduction()
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
+    valueFormat,
   })
 
   const productionColumnsByProducts = getEnhancedColDefsByProducts({
     headerMap,
+    valueFormat,
   })
 
   const handleUnitChange = (unit) => {
@@ -886,6 +892,7 @@ const ProductionNorms = ({ permissions }) => {
         note={
           !permissions?.hideNoteText &&
           lowerVertName !== 'cracker' &&
+          lowerVertName !== 'elastomer' &&
           lowerVertName !== 'aromatics'
             ? '* MT per Annum'
             : ''

@@ -25,20 +25,39 @@ export function MenuProvider({ children }) {
 
   const keycloak = useSession()
 
-  const { verticalChange } = useSelector((state) => state.dataGridStore)
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const SCREEN_NAME = screenTitle?.title
+
   const verticalName = verticalChange?.selectedVertical || ''
-  const verticalId =
-    verticalChange?.selectedVerticalId || localStorage.getItem('verticalId')
-  const plant = JSON.parse(localStorage.getItem('selectedPlant') || '{}')
-  const plantId = plant?.id
 
   const staticMenuForVertical = useMemo(() => {
-    return verticalName === 'Cracker'
+    return lowerVertName === 'cracker'
       ? STATIC_MENU_CRACKER
       : STATIC_MENU_DEFAULT
   }, [verticalName])
   const [menuItems, setMenuItems] = useState(staticMenuForVertical)
   const [permissions, setPermissions] = useState([])
+
   // const fetchMenuScreens = useCallback(
   //   async (currentToken, vId, pId, staticMenu) => {
   //     if (USE_STATIC_MENU) {
@@ -134,8 +153,8 @@ export function MenuProvider({ children }) {
       const token = keycloak?.token
       const items = await fetchMenuScreens(
         token,
-        verticalId,
-        plantId,
+        VERTICAL_ID,
+        PLANT_ID,
         staticMenuForVertical,
       )
       // console.log('items', items)
@@ -149,8 +168,8 @@ export function MenuProvider({ children }) {
     }
   }, [
     keycloak?.token,
-    verticalId,
-    plantId,
+    VERTICAL_ID,
+    PLANT_ID,
     staticMenuForVertical,
     fetchMenuScreens,
   ])

@@ -2,9 +2,13 @@ package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import jakarta.persistence.EntityManager;
@@ -14,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import javax.sql.DataSource;
 
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.BusinessDemand;
@@ -87,6 +93,12 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	
 	@Autowired
 	private SiteRepository siteRepository;
+	
+	private DataSource dataSource;
+	
+	public BusinessDemandDataServiceImpl(DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
 
 
 	
@@ -155,18 +167,18 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 				BusinessDemandMonthlyDTO configurationDTO = new BusinessDemandMonthlyDTO();
 				configurationDTO.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
 
-				configurationDTO.setJan(row[1] != null ? row[1].toString() : "Propane MIN");
-				configurationDTO.setFeb(row[2] != null ? row[2].toString() : "Propane MIN");
-				configurationDTO.setMar(row[3] != null ? row[3].toString() : "Propane MIN");
-				configurationDTO.setApr(row[4] != null ? row[4].toString() : "Propane MIN");
-				configurationDTO.setMay(row[5] != null ? row[5].toString() : "Propane MIN");
-				configurationDTO.setJun(row[6] != null ? row[6].toString() : "Propane MIN");
-				configurationDTO.setJul(row[7] != null ? row[7].toString() : "Propane MIN");
-				configurationDTO.setAug(row[8] != null ? row[8].toString() : "Propane MIN");
-				configurationDTO.setSep(row[9] != null ? row[9].toString() : "Propane MIN");
-				configurationDTO.setOct(row[10] != null ? row[10].toString() : "Propane MIN");
-				configurationDTO.setNov(row[11] != null ? row[11].toString() : "Propane MIN");
-				configurationDTO.setDec(row[12] != null ? row[12].toString() : "Propane MIN");
+				configurationDTO.setJan(row[1] != null ? row[1].toString() : "Propane Min");
+				configurationDTO.setFeb(row[2] != null ? row[2].toString() : "Propane Min");
+				configurationDTO.setMar(row[3] != null ? row[3].toString() : "Propane Min");
+				configurationDTO.setApr(row[4] != null ? row[4].toString() : "Propane Min");
+				configurationDTO.setMay(row[5] != null ? row[5].toString() : "Propane Min");
+				configurationDTO.setJun(row[6] != null ? row[6].toString() : "Propane Min");
+				configurationDTO.setJul(row[7] != null ? row[7].toString() : "Propane Min");
+				configurationDTO.setAug(row[8] != null ? row[8].toString() : "Propane Min");
+				configurationDTO.setSep(row[9] != null ? row[9].toString() : "Propane Min");
+				configurationDTO.setOct(row[10] != null ? row[10].toString() : "Propane Min");
+				configurationDTO.setNov(row[11] != null ? row[11].toString() : "Propane Min");
+				configurationDTO.setDec(row[12] != null ? row[12].toString() : "Propane Min");
 				configurationDTO.setRemarks((row[13] != null ? row[13].toString() : ""));
 					configurationDTO.setAuditYear(row[14] != null ? row[14].toString() : "");
 					configurationDTO.setUom(row[15] != null ? row[15].toString() : "");
@@ -890,6 +902,61 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to save data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM loadPlantContribution(String year, String plantId) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_LoadPlantContributionSummaryBusinessDemand";
+			// System.out.println(storedProcedure);
+			int count = executeDynamicUpdateProcedure(storedProcedure, plantId, year);
+			Map<String, Integer> map = new HashMap<>();
+			map.put("count", count);
+			AOPMessageVM response = new AOPMessageVM();
+			response.setData(map);
+			response.setCode(200);
+			response.setMessage("success");
+			return response;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+
+	}
+	public int executeDynamicUpdateProcedure(String procedureName, String plantId,
+			String aopYear) {
+		try {
+
+			String callSql = "{call " + procedureName + "(?, ?)}";
+
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+
+				// Set parameters in the correct order
+				stmt.setString(1, plantId);
+				stmt.setString(2, aopYear);
+
+				// Execute the stored procedure
+				int rowsAffected = stmt.executeUpdate();
+
+				// Optional: commit if auto-commit is off
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
+
+				return rowsAffected;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return 0;
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
 	}
 
 
