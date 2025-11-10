@@ -104,9 +104,13 @@ spring:
     # port: 587
     # username: shrikant.mnt@gmail.com
     # password: "ldaortwzpbjadvez"
-    host: smtp.honeywell.com
-    port: 25
-    fromEmail:  smtp@honeywell.com
+
+    # host: smtp.honeywell.com
+    # port: 25
+    # fromEmail:  smtp@honeywell.com
+    host: smtp-secure.honeywell.com
+    port: 587
+    fromEmail: apm-cm-notifications@honeywell.com
     properties:
       mail:
         smtp:
@@ -140,3 +144,8 @@ case.engine.email-to-case-outbound-process: email-to-case-outbound
 
 case.engine.actuator.enabled: true
 case.engine.swagger.enabled: true
+
+wks.kafka.enabled: ${KAFKA_ENABLED:false}
+wks.kafka.topic.case-create: ${KAFKA_TOPIC_CASE_CREATE:case-create}
+wks.kafka.topic.case-email-outbound: ${KAFKA_TOPIC_CASE_EMAIL_OUTBOUND:case-email-outbound}
+spring.kafka.bootstrap-servers: ${KAFKA_URL:localhost:9092}
