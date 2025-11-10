@@ -26,6 +26,8 @@ export const NormalOperationNormsApiService = {
   load1,
   load2,
   load3,
+  getNormTransactionsForFinalNorms,
+  getNormTransactionsForFinalNormsModeWise,
 }
 
 async function BestAchivedColorCodes(keycloak, plantId, year, mode) {
@@ -599,6 +601,42 @@ async function updateFinalNormsData(keycloak, gradeId, payload) {
       headers,
       body: JSON.stringify(payload),
     })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNormTransactionsForFinalNormsModeWise(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/norms-transactions-final-norms-mode-wise?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNormTransactionsForFinalNorms(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/norms-transactions-final-norms?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

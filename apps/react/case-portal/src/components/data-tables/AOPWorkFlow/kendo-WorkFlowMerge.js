@@ -139,8 +139,7 @@ const WorkFlowMerge = () => {
         throw new Error('PLANT_ID or AOP_YEAR not found ')
       }
 
-      // Wait for all API calls to complete
-      const [data, res1, res2, res3, res4, res5, res6, res7] =
+      const [data, res1, res2, res3, res4, res5, res6, res7, res8] =
         await Promise.all([
           DataService.handleCalculateAnnualAopCostMiisContribution(
             PLANT_ID,
@@ -189,19 +188,21 @@ const WorkFlowMerge = () => {
             keycloak,
           ),
 
-          lowerVertName === 'meg' || lowerVertName === 'pe'
-            ? DataService.calculatePlantContributionReportData(
-                PLANT_ID,
-                AOP_YEAR,
-                keycloak,
-              )
-            : Promise.resolve(null),
+          DataService.calculatePlantContributionReportData(
+            PLANT_ID,
+            AOP_YEAR,
+            keycloak,
+          ),
+          DataService.calculatePlantContributionBusinessDemand(
+            PLANT_ID,
+            AOP_YEAR,
+            keycloak,
+          ),
+
+          Promise.resolve(null),
         ])
 
-      const responses =
-        lowerVertName === 'meg' || lowerVertName === 'pe'
-          ? [data, res1, res2, res3, res4, res5, res6, res7]
-          : [data, res1, res2, res3, res4, res5, res6]
+      const responses = [data, res1, res2, res3, res4, res5, res6, res7, res8]
 
       const allSuccess = responses.every(
         (res) => res !== null && res !== undefined,

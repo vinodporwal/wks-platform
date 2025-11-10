@@ -428,8 +428,6 @@ const CrackerConfig = () => {
   }, [modifiedCells])
 
   const saveSpyroData = async (newRows) => {
-    console.log('newRows', newRows)
-
     setLoading(true)
     try {
       const SpyroInputData = newRows.map((row) => ({
