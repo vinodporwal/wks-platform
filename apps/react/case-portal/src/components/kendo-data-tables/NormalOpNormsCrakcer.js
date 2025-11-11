@@ -283,7 +283,7 @@ const NormalOpNormsScreenCracker = () => {
 
   const [reportTypes, setReportTypes] = useState([])
 
-  const fetchConfigurationData = useCallback(
+  const fetchData = useCallback(
     async (gradeId = null) => {
       setProductionRows([])
       setLoading(true)
@@ -533,12 +533,12 @@ const NormalOpNormsScreenCracker = () => {
       if (res1?.code === 200 && res2?.code === 200) {
         const normalized1 = res1.data.map((obj) => ({
           ...obj,
-          normParameterFKId: obj.normParameterFKId.toUpperCase(),
+          normParameterFKId: obj.normParameterId.toUpperCase(),
         }))
 
         const normalized2 = res2.data.map((obj) => ({
           ...obj,
-          normParameterFKId: obj.normParameterFKId.toUpperCase(),
+          normParameterFKId: obj.normParameterId.toUpperCase(),
         }))
 
         const combinedData = [...normalized1, ...normalized2]
@@ -547,8 +547,7 @@ const NormalOpNormsScreenCracker = () => {
           (v, i, a) =>
             a.findIndex(
               (t) =>
-                t.month === v.month &&
-                t.normParameterFKId === v.normParameterFKId,
+                t.month === v.month && t.normParameterId === v.normParameterId,
             ) === i,
         )
 
@@ -671,7 +670,7 @@ const NormalOpNormsScreenCracker = () => {
 
         // Load data based on selected tab
         if (selectedTab === 0) {
-          promises.push(fetchConfigurationData(gId))
+          promises.push(fetchData(gId))
         } else if (selectedTab === 1) {
           promises.push(fetchConstantsData())
         } else if (selectedTab === 3) {
@@ -690,11 +689,15 @@ const NormalOpNormsScreenCracker = () => {
     [
       fetchModeData,
       fetchFinalNorms,
-      fetchConfigurationData,
+      fetchData,
       fetchConstantsData,
       selectedTab,
     ],
   )
+
+  useEffect(() => {
+    setSelectedTab(0)
+  }, [oldYear, yearChanged, keycloak, gradeId, plantObject?.id])
 
   useEffect(() => {
     fetchAllData(gradeId)
@@ -1122,7 +1125,7 @@ const NormalOpNormsScreenCracker = () => {
         <SelectivityData
           rows={productionRows}
           loading={loading}
-          fetchData={fetchConfigurationData}
+          fetchData={fetchData}
           setRows={setProductionRows}
           configType='cracker_configuration'
           groupBy='Particulars'
