@@ -178,7 +178,7 @@ const KendoDataGrid = ({
         style={{
           color: highlightColor,
           fontWeight: highlightColor ? 'bold' : undefined,
-          backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
+          // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
         {children}

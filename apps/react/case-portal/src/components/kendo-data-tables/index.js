@@ -139,6 +139,7 @@ const KendoDataTables = ({
   gridName,
   onGlobalCheckboxChange,
   allProducts = [],
+  allDescriptionDrpdwn = [],
   allMonths = [],
   selectMode,
   setSelectMode = () => {},
@@ -803,7 +804,7 @@ const KendoDataTables = ({
         style={{
           color: highlightColor,
           fontWeight: highlightColor ? 'bold' : undefined,
-          backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
+          // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
         {children}
@@ -1513,6 +1514,29 @@ const KendoDataTables = ({
                     />
                   )
                 }
+
+                if (col?.field === 'discriptionDrpdwn') {
+                  return (
+                    <GridColumn
+                      key='discriptionDrpdwn'
+                      field='discriptionDrpdwn'
+                      title={col.title || col.headerName || 'Particulars'}
+                      editable={col.editable || true}
+                      hidden={col.hidden}
+                      cells={{
+                        data: (cellProps) => (
+                          <ProductCell
+                            {...cellProps}
+                            allProducts={allDescriptionDrpdwn}
+                          />
+                        ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+
                 if (col?.field === 'productName1') {
                   return (
                     <GridColumn
@@ -2107,7 +2131,7 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
-                      // width={col.width}
+                      width={col.widthT}
                       hidden={col.hidden}
                       editable={!!col?.editable}
                       headerClassName={isActive ? 'active-column' : ''}

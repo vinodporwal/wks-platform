@@ -188,11 +188,6 @@ const WorkFlowMerge = () => {
             keycloak,
           ),
 
-          DataService.calculatePlantContributionReportData(
-            PLANT_ID,
-            AOP_YEAR,
-            keycloak,
-          ),
           DataService.calculatePlantContributionBusinessDemand(
             PLANT_ID,
             AOP_YEAR,

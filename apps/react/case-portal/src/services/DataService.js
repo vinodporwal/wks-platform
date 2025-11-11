@@ -164,6 +164,7 @@ export const DataService = {
   gradeDetails,
   carryForwardRecords,
   specificConsumption,
+  dropdownValues,
   calculatePlantContributionBusinessDemand,
 }
 
@@ -3839,5 +3840,22 @@ async function calculatePlantContributionBusinessDemand(
   } catch (e) {
     console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
+  }
+}
+
+//PTA DROPDOWNS
+async function dropdownValues(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

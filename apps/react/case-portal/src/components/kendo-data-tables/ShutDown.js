@@ -12,11 +12,13 @@ import KendoDataTables from './index'
 import { ShutDownPeColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownPpColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownAllColumns } from 'components/colums/ShutdownColumn'
+import { ShutDownPTAColumns } from 'components/colums/ShutdownColumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
+  const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -39,12 +41,6 @@ const ShutDown = ({ permissions }) => {
 
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const plantName = plantObject?.name
-
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-  }, [plantID])
 
   const isOldYear = oldYear?.oldYear
 
@@ -145,6 +141,8 @@ const ShutDown = ({ permissions }) => {
         } else {
           requiredFields = ['discription', 'remark', 'productName1']
         }
+      } else if (lowerVertName === 'pta') {
+        requiredFields = ['discriptionDrpdwn', 'remark']
       } else if (lowerVertName === 'pp') {
         requiredFields = ['discription', 'remark']
       } else {
@@ -184,12 +182,6 @@ const ShutDown = ({ permissions }) => {
       )
 
       if (duplicate) {
-        // Find all rows with duplicate descriptions
-        // rows.forEach((row, index) => {
-        //   if ((row.discription || '').trim().toLowerCase() === duplicate) {
-        //     duplicateRows.add(row.id)
-        //   }
-        // })
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -251,7 +243,7 @@ const ShutDown = ({ permissions }) => {
         for (const row of allRecords) {
           const start = new Date(row.maintStartDateTime)
           const end = new Date(row.maintEndDateTime)
-
+          //shutdown timeframe for Multiple months
           if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
 
           const formatDate = (date) =>
@@ -275,7 +267,7 @@ const ShutDown = ({ permissions }) => {
             return
           }
         }
-
+        //Shutdown timeframe overlapping of same time
         for (let i = 0; i < allRecords.length; i++) {
           const a = allRecords[i]
           const aStart = new Date(a.maintStartDateTime).getTime()
@@ -303,7 +295,7 @@ const ShutDown = ({ permissions }) => {
             }
           }
         }
-
+        // Slowdown and shutdown timeframe overlapping
         //THEN CHECK 1 SCREEN DATA WITH ANOTHER SCREEN
 
         if (lowerVertName != 'elastomer') {
@@ -312,14 +304,14 @@ const ShutDown = ({ permissions }) => {
             const aStart = new Date(a.maintStartDateTime).getTime()
             const aEnd = new Date(a.maintEndDateTime).getTime()
 
-          if (isNaN(aStart) || isNaN(aEnd)) continue
+            if (isNaN(aStart) || isNaN(aEnd)) continue
 
-          for (let j = 0; j < rowsSlowdown.length; j++) {
-            const b = rowsSlowdown[j]
-            const bStart = new Date(b.maintStartDateTime).getTime()
-            const bEnd = new Date(b.maintEndDateTime).getTime()
+            for (let j = 0; j < rowsSlowdown.length; j++) {
+              const b = rowsSlowdown[j]
+              const bStart = new Date(b.maintStartDateTime).getTime()
+              const bEnd = new Date(b.maintEndDateTime).getTime()
 
-            if (isNaN(bStart) || isNaN(bEnd)) continue
+              if (isNaN(bStart) || isNaN(bEnd)) continue
 
               if (aStart < bEnd && bStart < aEnd) {
                 // Add this line
@@ -371,7 +363,7 @@ const ShutDown = ({ permissions }) => {
           lowerVertName === verticalEnums.PP
             ? row.productName1
             : null,
-        discription: row.discription,
+        discription: row.discription || row.discriptionDrpdwn,
         durationInHrs: (() => {
           const v = findDuration('1', row)
           if (!v) return null
@@ -473,8 +465,24 @@ const ShutDown = ({ permissions }) => {
       setRowsSlowdown(formattedDataSlowDown)
 
       const formattedData = data.map((item, index) => {
-        // Find the product display name from allProducts using the product ID
         const productObj = allProducts.find((p) => p.realId === item.product)
+        const descriptionObj = allDescriptionDrpdwn.find(
+          (p) => p.name === item.discription,
+        )
+
+        if (lowerVertName == 'pta') {
+          return {
+            ...item,
+            idFromApi: item?.id,
+            id: index,
+            originalRemark: item.remark,
+            inEdit: false,
+            maintStartDateTime: new Date(item?.maintStartDateTime),
+            maintEndDateTime: new Date(item?.maintEndDateTime),
+            discriptionDrpdwn: descriptionObj ? descriptionObj.displayName : '',
+          }
+        }
+
         return {
           ...item,
           idFromApi: item?.id,
@@ -483,7 +491,7 @@ const ShutDown = ({ permissions }) => {
           inEdit: false,
           maintStartDateTime: new Date(item?.maintStartDateTime),
           maintEndDateTime: new Date(item?.maintEndDateTime),
-          productName1: productObj ? productObj.displayName : '', // <-- Fix here
+          productName1: productObj ? productObj.displayName : '',
         }
       })
 
@@ -558,11 +566,71 @@ const ShutDown = ({ permissions }) => {
 
     getAllProducts()
   }, [oldYear, yearChanged, keycloak, _plantID, lowerVertName])
+
   useEffect(() => {
-    if (allProducts.length > 0) {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    const getAllDescriptionDrpdwn = async () => {
+      try {
+        let data = []
+        data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
+
+        // let data = {
+        //   code: 200,
+        //   message: 'Data fetched successfully',
+        //   data: [
+        //     {
+        //       DisplayName: 'Catalyst Full Topup',
+        //       Name: 'Catalyst Full Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Catalyst Partial Topup',
+        //       Name: 'Catalyst Partial Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Preheater Cleaning',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Other',
+        //     },
+        //   ],
+        // }
+
+        let descriptionObjList = []
+        {
+          descriptionObjList = data?.data.map((product) => ({
+            id: product.Name,
+            name: product.Name,
+            displayName: product.DisplayName,
+          }))
+        }
+        setAllDescriptionDrpdwn(descriptionObjList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+
+    getAllDescriptionDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+
+  useEffect(() => {
+    if (lowerVertName == 'pta' && allDescriptionDrpdwn?.length > 0) {
+      fetchData()
+    } else if (allProducts.length > 0) {
+      if (!PLANT_ID || !AOP_YEAR) return
       fetchData()
     }
-  }, [allProducts, oldYear, yearChanged, keycloak, _plantID, lowerVertName])
+  }, [
+    allProducts,
+    allDescriptionDrpdwn,
+    oldYear,
+    yearChanged,
+    keycloak,
+    PLANT_ID,
+    lowerVertName,
+  ])
 
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
@@ -575,6 +643,9 @@ const ShutDown = ({ permissions }) => {
 
       case verticalEnums.PP:
         return ShutDownPpColumns
+
+      case verticalEnums.PTA:
+        return ShutDownPTAColumns
 
       default:
         return ShutDownAllColumns
@@ -620,22 +691,20 @@ const ShutDown = ({ permissions }) => {
     })
 
     try {
-    
-    let response
-          if(lowerVertName === 'elastomer'){
-            response= await DataService.shutdownDetailsElastomerExport(
-              keycloak,
-              PLANT_ID,
-              AOP_YEAR,
-            )
-          }else{
-            response = await DataService.shutdownDetailsExport(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-          )
-    
-          }
+      let response
+      if (lowerVertName === 'elastomer') {
+        response = await DataService.shutdownDetailsElastomerExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.shutdownDetailsExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
@@ -652,21 +721,20 @@ const ShutDown = ({ permissions }) => {
     try {
       let response
 
-      
-      if(lowerVertName == 'elastomer'){
+      if (lowerVertName == 'elastomer') {
         response = await DataService.ImportShutdownElastomerDetails(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-      } else{
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
         response = await DataService.ImportShutdownDetails(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       }
 
       if (response?.code === 200) {
@@ -762,7 +830,11 @@ const ShutDown = ({ permissions }) => {
       titleName: `${SCREEN_NAME}`,
 
       uploadExcelBtn:
-        lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'elastomer' ? true : false,
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'elastomer'
+          ? true
+          : false,
     },
     isOldYear,
   )
@@ -805,6 +877,7 @@ const ShutDown = ({ permissions }) => {
         permissions={adjustedPermissions}
         disableRedHighlight={true}
         allProducts={allProducts}
+        allDescriptionDrpdwn={allDescriptionDrpdwn}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
       />
