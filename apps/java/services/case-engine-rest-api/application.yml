@@ -100,17 +100,17 @@ spring:
         format_sql: true
   
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: shrikant.mnt@gmail.com
-    password: "ldaortwzpbjadvez"
+    # host: smtp.gmail.com
+    # port: 587
+    # username: shrikant.mnt@gmail.com
+    # password: "ldaortwzpbjadvez"
 
     # host: smtp.honeywell.com
     # port: 25
     # fromEmail:  smtp@honeywell.com
-    # host: smtp-secure.honeywell.com
-    # port: 587
-    # fromEmail: apm-cm-notifications@honeywell.com
+    host: smtp-secure.honeywell.com
+    port: 587
+    fromEmail: apm-cm-notifications@honeywell.com
     properties:
       mail:
         smtp:
