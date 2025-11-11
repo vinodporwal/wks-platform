@@ -12,11 +12,13 @@ import KendoDataTables from './index'
 import { ShutDownPeColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownPpColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownAllColumns } from 'components/colums/ShutdownColumn'
+import { ShutDownPTAColumns } from 'components/colums/ShutdownColumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
+  const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -139,6 +141,8 @@ const ShutDown = ({ permissions }) => {
         } else {
           requiredFields = ['discription', 'remark', 'productName1']
         }
+      } else if (lowerVertName === 'pta') {
+        requiredFields = ['discriptionDrpdwn', 'remark']
       } else if (lowerVertName === 'pp') {
         requiredFields = ['discription', 'remark']
       } else {
@@ -365,7 +369,7 @@ const ShutDown = ({ permissions }) => {
           lowerVertName === verticalEnums.PP
             ? row.productName1
             : null,
-        discription: row.discription,
+        discription: row.discription || row.discriptionDrpdwn,
         durationInHrs: (() => {
           const v = findDuration('1', row)
           if (!v) return null
@@ -473,8 +477,24 @@ const ShutDown = ({ permissions }) => {
       setRowsSlowdown(formattedDataSlowDown)
 
       const formattedData = data.map((item, index) => {
-        // Find the product display name from allProducts using the product ID
         const productObj = allProducts.find((p) => p.realId === item.product)
+        const descriptionObj = allDescriptionDrpdwn.find(
+          (p) => p.name === item.discription,
+        )
+
+        if (lowerVertName == 'pta') {
+          return {
+            ...item,
+            idFromApi: item?.id,
+            id: index,
+            originalRemark: item.remark,
+            inEdit: false,
+            maintStartDateTime: new Date(item?.maintStartDateTime),
+            maintEndDateTime: new Date(item?.maintEndDateTime),
+            discriptionDrpdwn: descriptionObj ? descriptionObj.displayName : '',
+          }
+        }
+
         return {
           ...item,
           idFromApi: item?.id,
@@ -519,6 +539,8 @@ const ShutDown = ({ permissions }) => {
   }
   useEffect(() => {
     const getAllProducts = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
+
       try {
         let data = []
         if (lowerVertName === 'meg') {
@@ -559,14 +581,73 @@ const ShutDown = ({ permissions }) => {
         console.error('Error fetching products', error)
       }
     }
-
     getAllProducts()
   }, [oldYear, yearChanged, keycloak, PLANT_ID, lowerVertName])
+
   useEffect(() => {
-    if (allProducts.length > 0) {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    const getAllDescriptionDrpdwn = async () => {
+      try {
+        let data = []
+        data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
+
+        // let data = {
+        //   code: 200,
+        //   message: 'Data fetched successfully',
+        //   data: [
+        //     {
+        //       DisplayName: 'Catalyst Full Topup',
+        //       Name: 'Catalyst Full Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Catalyst Partial Topup',
+        //       Name: 'Catalyst Partial Topup',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Preheater Cleaning',
+        //     },
+        //     {
+        //       DisplayName: 'Preheater Cleaning',
+        //       Name: 'Other',
+        //     },
+        //   ],
+        // }
+
+        let descriptionObjList = []
+        {
+          descriptionObjList = data?.data.map((product) => ({
+            id: product.Name,
+            name: product.Name,
+            displayName: product.DisplayName,
+          }))
+        }
+        setAllDescriptionDrpdwn(descriptionObjList)
+      } catch (error) {
+        console.error('Error fetching products', error)
+      }
+    }
+
+    getAllDescriptionDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+
+  useEffect(() => {
+    if (lowerVertName == 'pta' && allDescriptionDrpdwn?.length > 0) {
+      fetchData()
+    } else if (allProducts.length > 0) {
+      if (!PLANT_ID || !AOP_YEAR) return
       fetchData()
     }
-  }, [allProducts, oldYear, yearChanged, keycloak, PLANT_ID, lowerVertName])
+  }, [
+    allProducts,
+    allDescriptionDrpdwn,
+    oldYear,
+    yearChanged,
+    keycloak,
+    PLANT_ID,
+    lowerVertName,
+  ])
 
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
@@ -579,6 +660,9 @@ const ShutDown = ({ permissions }) => {
 
       case verticalEnums.PP:
         return ShutDownPpColumns
+
+      case verticalEnums.PTA:
+        return ShutDownPTAColumns
 
       default:
         return ShutDownAllColumns
@@ -814,6 +898,7 @@ const ShutDown = ({ permissions }) => {
         permissions={adjustedPermissions}
         disableRedHighlight={true}
         allProducts={allProducts}
+        allDescriptionDrpdwn={allDescriptionDrpdwn}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
       />
