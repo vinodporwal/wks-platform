@@ -514,10 +514,40 @@ export default function BestAchievedNorms() {
 
   useEffect(() => {
     if (!isExporting) return
-    const t = setTimeout(() => {
+
+    let cancelled = false
+
+    ;(async () => {
       try {
         if (excelExportRef.current && workbookRef.current) {
-          excelExportRef.current.save(workbookRef.current)
+          // Prefer toDataURL (returns a Promise<string>) so we know when the file was generated.
+          if (typeof excelExportRef.current.toDataURL === 'function') {
+            const dataUrl = await excelExportRef.current.toDataURL(workbookRef.current)
+            if (cancelled) return
+
+            // Convert data URL to blob then trigger download programmatically.
+            const base64 = dataUrl.split(',')[1]
+            const byteString = atob(base64)
+            const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0]
+            const ab = new ArrayBuffer(byteString.length)
+            const ia = new Uint8Array(ab)
+            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i)
+            const blob = new Blob([ab], { type: mimeString })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            // fileName is defined below; safe to reference here because it's constant for component render
+            a.download = `Best Achieved Basis (MIN CC).xlsx`
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+          } else if (typeof excelExportRef.current.save === 'function') {
+            // Fallback to save() if toDataURL is not available in this kendo version
+            excelExportRef.current.save(workbookRef.current)
+          } else {
+            console.error('ExcelExport ref method missing: toDataURL or save not found')
+          }
         } else {
           console.error('ExcelExport ref or workbookOptions missing')
         }
@@ -525,10 +555,13 @@ export default function BestAchievedNorms() {
         console.error('Export save failed:', err)
       } finally {
         workbookRef.current = null
-        setIsExporting(false)
+        if (!cancelled) setIsExporting(false)
       }
-    }, 0)
-    return () => clearTimeout(t)
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [isExporting])
 
   const currentDateTime = new Date()
@@ -536,7 +569,7 @@ export default function BestAchievedNorms() {
     .replace(/T/, ' ')
     .replace(/:/g, '-')
     .split('.')[0]
-  const fileName = `Best Achhieved Basis (MIN CC).xlsx`
+  const fileName = `Best Achieved Basis (MIN CC).xlsx`
   const renderTitle = (t) => t
   const defaultTabs = ['TAB1']
   let activeTabs = defaultTabs
@@ -545,7 +578,8 @@ export default function BestAchievedNorms() {
     <div>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
+        // show backdrop during data loading OR while exporting the workbook
+        open={!!loading || !!isExporting}
       >
         <CircularProgress color='inherit' />
       </Backdrop>
