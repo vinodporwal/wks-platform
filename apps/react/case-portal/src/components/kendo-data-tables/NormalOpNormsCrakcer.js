@@ -697,7 +697,7 @@ const NormalOpNormsScreenCracker = () => {
 
   useEffect(() => {
     setSelectedTab(0)
-  }, [oldYear, yearChanged, keycloak, gradeId, plantObject?.id])
+  }, [oldYear, yearChanged, keycloak, plantObject?.id])
 
   useEffect(() => {
     fetchAllData(gradeId)
