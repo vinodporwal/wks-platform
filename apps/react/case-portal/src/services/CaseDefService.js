@@ -8,7 +8,8 @@ export const CaseDefService = {
   getAll,
   getCaseDefinitionUsers,
   getCaseDefinitionCategories,
-  getCaseDefinitionGEAPMUsers
+  getCaseDefinitionGEAPMUsers,
+  getFaultEvent
 }
 
 async function create(keycloak, body) {
@@ -49,6 +50,27 @@ async function update(keycloak, id, body) {
     console.log(err)
     return await Promise.reject(err)
   }
+}
+
+async function getFaultEvent(keycloak, eventId) {
+  if (keycloak.isTokenExpired()) {
+    keycloak.logout({ redirectUri: window.location.origin })
+  }
+
+  const headers = {
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+const url = `${Config.CaseEngineUrl}/case-definition/fault-history/eventIds?eventIds=${eventId}`
+  
+
+try {
+  const resp = await fetch(url, { headers })
+  return json(keycloak, resp)
+} catch (err) {
+  console.log(err)
+  return await Promise.reject(err)
+}
+
 }
 
 async function remove(keycloak, id) {
