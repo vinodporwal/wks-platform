@@ -78,6 +78,24 @@
             </tbody>
         </table>
     </div>
+	
+	<div style="margin-top: 20px; display: flex; gap: 10px;">
+    <div th:if="${eventTrendUrl != null}">
+        <a th:href="${eventTrendUrl}" 
+           style="background-color: #2F8B8B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Event Trend
+        </a>
+    </div>
+
+    <div th:if="${eventReportUrl != null}">
+        <a th:href="${eventReportUrl}" 
+           style="background-color: #2F8B8B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Event Report
+        </a>
+    </div>
+</div>
+
+
 </div>
 </body>
 </html>

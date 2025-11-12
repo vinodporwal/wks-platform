@@ -138,6 +138,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
     @Autowired
     private GroupsRepository groupsRepository;
 
+    // @Autowired
+    // private EventEnrichmentLinksService eventEnrichmentLinksService;
+
     @Value("${spring.mail.fromEmail}")
     private String from;
     @PersistenceContext(unitName = "db2")
@@ -296,6 +299,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                 EquipmentModel equipment = equipments.get(0);
                 faultEvent.setAssetName(equipment.getName());
                 faultEvent.setAssetDisplayName(equipment.getDisplayName());
+                faultEvent.setAssetId(equipment.getAssetId());
             }
             List<EventCategoryModel> eventCategories = fetchRecords.getCategoryByCategoryId(faultHistory.getEventCategoryPkId());
             faultEvent.setEventCategory(!eventCategories.isEmpty() ? eventCategories.get(0) : new EventCategoryModel());
@@ -427,6 +431,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
             System.out.println("Saving New Case Details....");
             caseData.setCreationDate(currentDate);
             caseDetails  = caseRepository.save(caseData);
+          //  eventEnrichmentLinksService.createEventEnrichmentLinks("", caseDetails.getCaseUrl(), caseData.getEventIds().toString());
+
 
             List<Long> eventIds = new ArrayList<Long>();
             for(String eventId: caseData.getEventIds()) {
@@ -517,6 +523,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     data.put("environment", "");
                     data.put("mainAsset", mainAsset);
                     data.put("subAssets", subAssetList);
+                    data.put("eventTrendUrl", caseDetails.getEventTrendUrl());
+                    data.put("eventReportUrl", caseDetails.getEventReportUrl());
                     caseTitle = "CASE MANAGEMENT :"+ caseTitle;
 
                     caseEmailService.send(from, assignedTo , caseTitle, reviewers, null, null, "email-template", data);

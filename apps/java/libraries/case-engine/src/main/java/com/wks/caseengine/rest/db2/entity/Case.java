@@ -64,6 +64,12 @@ public class Case {
     @Column(name = "case_url")
     private String caseUrl;
 
+	@Transient
+	private String eventTrendUrl;
+
+	@Transient
+	private String eventReportUrl;
+
 
 //    @JoinColumn(name = "assigned_to", nullable = true)
 //    private Users assignedTo;
@@ -193,6 +199,23 @@ public class Case {
 	public void setAssignedTo(List<Users> assignedTo) {
 		this.assignedTo = assignedTo;
 	}
+
+	public String getEventTrendUrl() {
+		return eventTrendUrl;
+	}
+	public void setEventTrendUrl(String eventTrendUrl) {
+		this.eventTrendUrl = eventTrendUrl;
+	}
+
+	public String getEventReportUrl() {
+			return eventReportUrl;
+	}
+	public void setEventReportUrl(String eventReportUrl) {
+		this.eventReportUrl = eventReportUrl;
+	}
+
+
+
 	@Override
 	public String toString() {
 		return "Case [caseNo=" + caseNo + ", caseDefinitionId=" + caseDefinitionId + ", owner=" + owner

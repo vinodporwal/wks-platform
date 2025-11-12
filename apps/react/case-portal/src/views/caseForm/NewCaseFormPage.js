@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom'
 import { buildCreateUrl } from 'utils/util'
 import { Formio } from 'formiojs'
 import { Form } from '@formio/react'
+import { CaseDefService } from 'services/CaseDefService'
 
 Formio.options = {
   vm: {
@@ -51,6 +52,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   const [currentParams, setCurrentParams] = useState([])
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const[eventTrendUrl, setEventTrendUrl] = useState('')
+  const[eventReportUrl, setEventReportUrl] = useState('')
 
   // const realmRoles = keycloak.idTokenParsed.realm_access?.roles || []
   // const clientRoles = keycloak.idTokenParsed.resource_access
@@ -69,16 +72,72 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   // console.log('all roles: ',  allRoles)
   console.log("NewCaseFormPage.. creating new case for caseDefId: ", caseDefId);
 
-  useEffect(() => {
+  const createApmUrlBasedOnSelectedEvent = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.size === 0) {
+      console.log('No URL parameters found.. No APM URL will be created');
+      return;  }
+    const eventIds = urlParams.get('eventIds');
+
+    if (!eventIds) {
+      console.error('eventIds parameter not found in the URL');
+      return;
+    }
+
+    // Split on commas, spaces, or other separators, then take the first part
+    const firstEventId = eventIds.split(/[,\s]+/)[0];
+       
+    const encodedEventId = encodeURIComponent(firstEventId);
+    CaseDefService.getFaultEvent(keycloak, encodedEventId)
+    .then((data) => {
+      console.log('*********data', data)
+      const faultEvent = data[0];
+
+      const startTimeStampRaw = faultEvent.startTime;
+      const endTimeStampRaw = faultEvent.endTime;
+
+     
+ const assetDisplayName = encodeURIComponent(faultEvent.AssetDisplayName);
+ const assetName = encodeURIComponent(faultEvent.assetName);
+ 
+const eventName = encodeURIComponent(faultEvent.events.eventName);
+const selectedEventId = encodeURIComponent(faultEvent.events.eventPkId);   
+const assetId = encodeURIComponent(faultEvent.assetId);  
+
+const startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
+const endTimeStamp = new Date(endTimeStampRaw.replace(" ", "T") + "Z").toISOString();
+// const rootNode = '';
+ //  const assetType = '';
+
+const event_TrendUrl = `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${assetName}&assetDisplayName=${assetDisplayName}&period=Custom+Range&startTimeStamp=${startTimeStamp}&endTimeStamp=${endTimeStamp}&selectedEventId=${selectedEventId}&eventName=${eventName}&eventId=${selectedEventId}&assetId=${assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+
+const event_ReportUrl = `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${selectedEventId}`
+
+console.log('apmUrl', event_TrendUrl)
+
+    setEventTrendUrl(event_TrendUrl)
+    setEventReportUrl(event_ReportUrl)
+    })
+    .catch((err) => {
+      console.error(err.message)
+    })
+
+
+
+  }
+
+  useEffect(() => { 
     
     const params = window.location.search
     setCurrentParams(params)
+    createApmUrlBasedOnSelectedEvent();
   }, [])
 
   useEffect(() => {
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
         setCaseDef(data)
+        
        
         return FormService.getByKey(keycloak, data.formKey)
       })
@@ -368,6 +427,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
+            eventTrendUrl: eventTrendUrl,
+            eventReportUrl: eventReportUrl,
 
         /*   caseUrl: (() => { 
              const uri = window.location.pathname;
@@ -443,6 +504,24 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
             <Typography sx={{ ml: 2, flex: 1 }} component='div'>
               {caseDef.name} 
             </Typography>
+            {eventTrendUrl && (
+              <Button 
+                color='inherit' 
+                onClick={() => window.open(eventTrendUrl, '_blank')}
+                sx={{ mr: 1 }}
+              >
+                Event Trend
+              </Button>
+            )}
+            {eventReportUrl && (
+              <Button 
+                color='inherit' 
+                onClick={() => window.open(eventReportUrl, '_blank')}
+                sx={{ mr: 1 }}
+              >
+                Event Report
+              </Button>
+            )}
             { <Button color='inherit' onClick={onSave}>
               Save As Draft
             </Button>}			

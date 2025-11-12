@@ -78,6 +78,11 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 		commandExecutor.execute(new PatchCaseEmailCmd(id, mergePatch));
 	}
 
+	public void send (String[] to, String subject, String[] cc, String bcc,
+	List<MultipartFile> attachments, String templateName, Map<String, Object> placeholders) {
+		send(from, to, subject, cc, bcc, attachments, templateName, placeholders);
+	}
+
     @Async
 //	@Override
 	public void send(String from1, String[] to, String subject, String[] cc, String bcc,
@@ -97,6 +102,8 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 	            if (bcc != null && !bcc.isEmpty()) {
 	                helper.setBcc(bcc);
 	            }
+
+			
 
 	            // Process the template
 	            Context context = new Context();

@@ -8,6 +8,7 @@ public class FaultEvents {
 	private String assetName;
 	private String startTime;
 	private String endTime;
+	private String assetId;
 	public EventEnrichmentModel getEventEnrichment() {
 		return eventEnrichment;
 	}
@@ -49,5 +50,11 @@ public class FaultEvents {
 	}
 	public void setEndTime(String endTime) {
 		this.endTime = endTime;
+	}
+	public String getAssetId() {
+		return assetId;
+	}
+	public void setAssetId(String assetId) {
+		this.assetId = assetId;
 	}
 }
