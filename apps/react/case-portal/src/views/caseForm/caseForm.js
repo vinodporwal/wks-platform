@@ -50,7 +50,7 @@ Formio.options = {
   }
 }
 
-export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = false }) => {
+export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = false, isCaseEditor = false }) => {
   const [caseDef, setCaseDef] = useState(null)
   const [form, setForm] = useState(null)
   const [formData, setFormData] = useState(null)
@@ -176,6 +176,19 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
         )
 
         const formData = await FormService.getByKey(keycloak, data.formKey)
+
+        if(data.formKey === 'case-management-system'){
+        if(isCaseEditor){
+          console.log("*** isCaseEditor : ", isCaseEditor)
+          formData.structure.components[0].components.forEach((c) => {
+            if(c.title === 'Analysis' || c.title === 'Value Realization' || c.label === 'Columns')
+             return;
+
+              c.disabled = isCaseEditor
+          })
+      
+        }
+      }
         setFormStructure(formData)
         let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
@@ -370,6 +383,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
         setForm({
           ...updatedFormStructure,
         })
+
+       
 
         // setIsDraft(caseData?.isDraft === 'y')
         setComments(
@@ -1465,7 +1480,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
                     {isFormData && (
                       <Form
                         form={form.structure}
-                        submission={formData}
+                         submission={formData}
+                      //  submission={{ ...formData, isEditor }}
                         options={{
                           readOnly: isCaseViewer,
                           fileService: new StorageService(),

@@ -23,10 +23,10 @@ const App = () => {
   const [casesDefinitions, setCasesDefinitions] = useState([])
   const [menu, setMenu] = useState({ items: [] })
   const [formChecked, setFormChecked] = useState(false)
-
+ 
   useEffect(() => {
     localStorage.setItem('baseUrl', `${Config.CaseEngineUrl}`)
-
+    
     const { keycloak } = sessionStore.bootstrap()
 
     const storedToken = localStorage.getItem('keycloakToken')
@@ -106,15 +106,27 @@ const App = () => {
 
   
    async function buildMenuItems(keycloak, userGroups = []) {
+
+    const token = keycloak.tokenParsed;
+    const clientId = token?.azp || token?.client_id; 
+    const clientRoles = token?.resource_access?.[clientId]?.roles || [];
+    console.log("*** buildMenuItems clientRoles : ", clientRoles);
+   const isAdmin = clientRoles.includes('admin');
+    console.log("*** buildMenuItems isAdmin : ", isAdmin);
     const menu = {
       items: [...menuItemsDefs.items],
     };
     console.log('menuItemsDefs', menuItemsDefs);
 
     // Hide the entire management menu group for users without management roles
-    if (!accountStore.isManagerUser(keycloak)) {
+    // if (!accountStore.isManagerUser(keycloak)) {
+    //   menu.items = menu.items.filter(item => item.id !== 'management');
+    // }
+
+    if (!isAdmin) {
       menu.items = menu.items.filter(item => item.id !== 'management');
     }
+  
 
     await RecordService.getAllRecordTypes(keycloak).then((data) => {
       setRecordsTypes(data)
@@ -148,7 +160,11 @@ const App = () => {
       })
     })
 
-    if (!accountStore.isManagerUser(keycloak)) {
+    // if (!accountStore.isManagerUser(keycloak)) {
+    //   delete menu.items[2]
+    // }
+
+    if (!isAdmin) {
       delete menu.items[2]
     }
 

@@ -110,12 +110,21 @@ export const CaseList = ({ status, caseDefId }) => {
 
   // role based access control
   const[isCaseViewer, setIsCaseViewer] = useState(false);
+  const[isCaseEditor, setIsCaseEditor] = useState(false);
+
 
   useEffect(() => {
     const token = keycloak.tokenParsed;
+    
     const clientId = token?.azp || token?.client_id; 
+    
     const clientRoles = token?.resource_access?.[clientId]?.roles || [];
+    console.log("*** clientRoles : ", clientRoles);
+      
     setIsCaseViewer(clientRoles.includes('case_viewer'));
+    setIsCaseEditor(clientRoles.includes('case_editor'));  
+    console.log("*** isCaseEditor : ", isCaseEditor);
+    console.log("*** isCaseViewer : ", isCaseViewer);
   }, [keycloak]);
   
   
@@ -869,7 +878,7 @@ export const CaseList = ({ status, caseDefId }) => {
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
             variant='contained'
-            disabled={isCaseViewer}
+            disabled={isCaseViewer || isCaseEditor}
           >
             {t('pages.caselist.action.newcase')}
           </Button>
@@ -994,6 +1003,7 @@ export const CaseList = ({ status, caseDefId }) => {
           open={openCaseForm}
           keycloak={keycloak}
           isCaseViewer={isCaseViewer}
+          isCaseEditor={isCaseEditor}
         />
       )}
       {/*openNewCaseForm && (
