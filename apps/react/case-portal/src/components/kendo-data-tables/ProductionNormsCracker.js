@@ -183,6 +183,7 @@ const ProductionNormsCracker = ({ permissions }) => {
         // clear modified cells and refresh data
         setModifiedCellsC2C3R({})
         await fetchDataC2C3R()
+        await fetchData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
