@@ -63,6 +63,7 @@ import TcsInput from 'components/kendo-data-tables/TcsInput'
 import ProductionTargetBasis from 'components/data-tables/Reports/ProductionTargetBasis'
 import NormsHistorianBasisAromatics from 'components/data-tables/Reports/NormsHistorianBasisAromatics'
 import SiteMaintenanceSummary from 'components/kendo-data-tables/SiteMaintenanceSummary'
+import NormComparisonReport from 'components/kendo-data-tables/NormComparisonReport'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -572,6 +573,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='plant-budget-summary'>
                 <PlantBudgetSummary />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'norm-comparison-report',
+            element: (
+              <PrivateRoute routeId='norm-comparison-report'>
+                <NormComparisonReport />
               </PrivateRoute>
             ),
           },
