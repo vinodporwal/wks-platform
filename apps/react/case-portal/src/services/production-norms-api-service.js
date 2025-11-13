@@ -90,8 +90,13 @@ async function monthlyProductionC2rC3R(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-export async function MonthwiseProductionExport(keycloak, plantId, year, type) {
-  const url = `${Config.CaseEngineUrl}/task/monthly-production-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&type=${encodeURIComponent(type)}`
+export async function MonthwiseProductionExport(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  type,
+) {
+  const url = `${Config.CaseEngineUrl}/task/monthly-production-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&type=${encodeURIComponent(type)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
