@@ -108,9 +108,16 @@ spring:
     # host: smtp.honeywell.com
     # port: 25
     # fromEmail:  smtp@honeywell.com
-    host: smtp-secure.honeywell.com
+
+    # host: smtp-secure.honeywell.com
+    # port: 587
+    # fromEmail: apm-cm-notifications@honeywell.com
+
+    host: smtp.honeywell.com
     port: 587
-    fromEmail: apm-cm-notifications@honeywell.com
+    username: GN-IE67-HCI-CPLT-COM@Honeywell.com
+    password: _K7vX?PWPT
+    fromEmail: noreply.apm-cm-notifications@Honeywell.com
     properties:
       mail:
         smtp:
