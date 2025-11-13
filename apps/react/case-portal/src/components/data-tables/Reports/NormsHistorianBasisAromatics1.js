@@ -17,7 +17,26 @@ const NormsHistorianBasisAromatics1 = () => {
   const [loading, setLoading] = useState(false)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear, verticalChange } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const SCREEN_NAME = screenTitle?.title
 
   const timeoutIdsRef = useRef([])
   const isMountedRef = useRef(true)
@@ -85,8 +104,11 @@ const NormsHistorianBasisAromatics1 = () => {
       logStage('fetchAllGrids-start')
       setLoading(true)
 
-      const configData =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+      const configData = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       logStage('config-fetched', `ok=${configData?.code === 200}`)
 
       if (configData?.code !== 200) {
@@ -118,6 +140,9 @@ const NormsHistorianBasisAromatics1 = () => {
         REPORT_TYPE_FOR_ALL,
         StartDate,
         EndDate,
+        'null',
+        PLANT_ID,
+        AOP_YEAR,
       )
       logStage('apiResponse-received', `code=${apiResponse?.code}`)
 

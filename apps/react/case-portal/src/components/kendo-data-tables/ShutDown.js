@@ -182,12 +182,6 @@ const ShutDown = ({ permissions }) => {
       )
 
       if (duplicate) {
-        // Find all rows with duplicate descriptions
-        // rows.forEach((row, index) => {
-        //   if ((row.discription || '').trim().toLowerCase() === duplicate) {
-        //     duplicateRows.add(row.id)
-        //   }
-        // })
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -458,6 +452,7 @@ const ShutDown = ({ permissions }) => {
         PLANT_ID,
         AOP_YEAR,
       )
+
       const dataSlowDown = await DataService.getSlowDownPlantData(
         keycloak,
         PLANT_ID,
@@ -503,7 +498,7 @@ const ShutDown = ({ permissions }) => {
           inEdit: false,
           maintStartDateTime: new Date(item?.maintStartDateTime),
           maintEndDateTime: new Date(item?.maintEndDateTime),
-          productName1: productObj ? productObj.displayName : '', // <-- Fix here
+          productName1: productObj ? productObj.displayName : '',
         }
       })
 
@@ -537,6 +532,7 @@ const ShutDown = ({ permissions }) => {
 
     return ''
   }
+
   useEffect(() => {
     const getAllProducts = async () => {
       if (!PLANT_ID || !AOP_YEAR) return
@@ -629,7 +625,7 @@ const ShutDown = ({ permissions }) => {
       }
     }
 
-    getAllDescriptionDrpdwn()
+    if (lowerVertName == 'pta') getAllDescriptionDrpdwn()
   }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
   useEffect(() => {

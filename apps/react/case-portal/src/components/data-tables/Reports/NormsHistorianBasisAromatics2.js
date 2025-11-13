@@ -18,9 +18,26 @@ const NormsHistorianBasisAromatics2 = () => {
   const [tabIndex, setTabIndex] = useState(0)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear, verticalChange } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
+  const SCREEN_NAME = screenTitle?.title
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
 
   const timeoutIdsRef = useRef([])
   const isMountedRef = useRef(true)
@@ -63,8 +80,11 @@ const NormsHistorianBasisAromatics2 = () => {
     try {
       setLoading(true)
 
-      const configData =
-        await DataService.getConfigurationExecutionDetails(keycloak)
+      const configData = await DataService.getConfigurationExecutionDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (configData?.code !== 200) {
         setGridNames([])
         setDataMap({})
@@ -89,8 +109,10 @@ const NormsHistorianBasisAromatics2 = () => {
         REPORT_TYPE_FOR_ALL,
         StartDate,
         EndDate,
+        'null',
+        PLANT_ID,
+        AOP_YEAR,
       )
-
       if (apiResponse?.code !== 200) {
         setGridNames([])
         setDataMap({})
