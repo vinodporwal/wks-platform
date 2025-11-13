@@ -159,7 +159,7 @@ export const DataService = {
   ImportSlowdownDetails,
   ImportSlowdownElastomerDetails,
   getConfigurationExcelType,
-
+  dropdownValues,
   getProductionReports,
   gradeDetails,
   carryForwardRecords,
@@ -3843,9 +3843,11 @@ async function calculatePlantContributionBusinessDemand(
   }
 }
 
-//PTA DROPDOWNS
+//PTA SHUTDOWN ACTIVITIES DROPDOWNS
+//AOP_DEPLOYMENT_PROD
 async function dropdownValues(keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
