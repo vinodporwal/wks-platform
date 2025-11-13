@@ -77,8 +77,14 @@ const NormalOpNormsScreenCracker = () => {
   const [allRedCellFinalNorms, setAllRedCellFinalNorms] = useState([])
 
   const dataGridStore = useSelector((s) => s.dataGridStore) || {}
-  const { verticalChange, yearChanged, oldYear, plantObject, year } =
-    dataGridStore || {}
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantObject,
+    siteObject,
+    year,
+  } = dataGridStore || {}
 
   const isOldYear = oldYear?.oldYear
   const PLANT_ID = plantObject?.id
@@ -561,6 +567,7 @@ const NormalOpNormsScreenCracker = () => {
   // --- Data fetchers ---
   const fetchFinalNorms = useCallback(async () => {
     try {
+      setAllRedCellFinalNorms([])
       getCombinedNormTransactions()
       const response =
         await NormalOperationNormsApiService.getfinalNorms(keycloak)
@@ -709,6 +716,7 @@ const NormalOpNormsScreenCracker = () => {
     gradeId,
     plantObject?.id,
     selectedTab,
+    siteObject?.id,
   ])
 
   // remark handlers
