@@ -858,7 +858,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
       titleAndInformation:
-        'Maximum Ethylene Production achieved in the historical data for different furnace mode of operation.',
+        'Maximum Ethylene Production achieved in the last 05 years historical data for 05 consecutive days in different furnace mode of operation.',
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
@@ -917,11 +917,22 @@ const ProductionvolumeData = ({ permissions }) => {
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
-      downloadExcelBtn: VERTICAL_NAME === 'vcm' ? false : (permissions?.hideDownloadExcel ? false : true),
-      uploadExcelBtn: VERTICAL_NAME === 'vcm' ? false : (permissions?.hideUploadExcel ? false : true),
+      downloadExcelBtn:
+        VERTICAL_NAME === 'vcm'
+          ? false
+          : permissions?.hideDownloadExcel
+            ? false
+            : true,
+      uploadExcelBtn:
+        VERTICAL_NAME === 'vcm'
+          ? false
+          : permissions?.hideUploadExcel
+            ? false
+            : true,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
-      titleAndInformation: 'Operating capacity derived from Optimizer model.',
+      titleAndInformation:
+        'Maximum Ethylene Production achieved in the last 01 year historical data for 05 consecutive days in different furnace mode of operation.',
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
       titleName:
