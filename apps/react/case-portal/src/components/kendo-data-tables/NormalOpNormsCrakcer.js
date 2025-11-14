@@ -77,14 +77,8 @@ const NormalOpNormsScreenCracker = () => {
   const [allRedCellFinalNorms, setAllRedCellFinalNorms] = useState([])
 
   const dataGridStore = useSelector((s) => s.dataGridStore) || {}
-  const {
-    verticalChange,
-    yearChanged,
-    oldYear,
-    plantObject,
-    siteObject,
-    year,
-  } = dataGridStore || {}
+  const { verticalChange, yearChanged, oldYear, plantObject, year } =
+    dataGridStore || {}
 
   const isOldYear = oldYear?.oldYear
   const PLANT_ID = plantObject?.id
@@ -298,6 +292,8 @@ const NormalOpNormsScreenCracker = () => {
         const data = await DataService.getCatalystSelectivityData(
           keycloak,
           gradeId,
+          PLANT_ID,
+          AOP_YEAR,
         )
 
         const distinctReportTypes = [
@@ -331,7 +327,11 @@ const NormalOpNormsScreenCracker = () => {
     setProductionRowsConstants([])
     try {
       const constantsRes =
-        await DataService.getCatalystSelectivityDataConstants(keycloak)
+        await DataService.getCatalystSelectivityDataConstants(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       if (constantsRes?.code !== 200) {
         setProductionRowsConstants([])
         return
@@ -505,8 +505,11 @@ const NormalOpNormsScreenCracker = () => {
 
   const getNormTransactions = async () => {
     try {
-      const res =
-        await NormalOperationNormsApiService.getNormTransactions(keycloak)
+      const res = await NormalOperationNormsApiService.getNormTransactions(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (res?.code == 200) {
         const normalized = res?.data.map((obj) => ({
           ...obj,
@@ -539,12 +542,12 @@ const NormalOpNormsScreenCracker = () => {
       if (res1?.code === 200 && res2?.code === 200) {
         const normalized1 = res1.data.map((obj) => ({
           ...obj,
-          normParameterFKId: obj.normParameterId.toUpperCase(),
+          normParameterFKId: obj.normParameterFKId.toUpperCase(),
         }))
 
         const normalized2 = res2.data.map((obj) => ({
           ...obj,
-          normParameterFKId: obj.normParameterId.toUpperCase(),
+          normParameterFKId: obj.normParameterFKId.toUpperCase(),
         }))
 
         const combinedData = [...normalized1, ...normalized2]
@@ -553,7 +556,8 @@ const NormalOpNormsScreenCracker = () => {
           (v, i, a) =>
             a.findIndex(
               (t) =>
-                t.month === v.month && t.normParameterId === v.normParameterId,
+                t.month === v.month &&
+                t.normParameterFKId === v.normParameterFKId,
             ) === i,
         )
 
@@ -567,11 +571,12 @@ const NormalOpNormsScreenCracker = () => {
   // --- Data fetchers ---
   const fetchFinalNorms = useCallback(async () => {
     try {
-      setAllRedCellFinalNorms([])
       getCombinedNormTransactions()
-      const response =
-        await NormalOperationNormsApiService.getfinalNorms(keycloak)
-
+      const response = await NormalOperationNormsApiService.getfinalNorms(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       if (response?.code !== 200) {
         setRowsBestFinalNorms([])
         return
@@ -611,16 +616,22 @@ const NormalOpNormsScreenCracker = () => {
                 keycloak,
                 gradeIdParam,
                 'Best Achieved',
+                PLANT_ID,
+                AOP_YEAR,
               ),
               NormalOperationNormsApiService.getModeWiseNormsData(
                 keycloak,
                 gradeIdParam,
                 'Expression',
+                PLANT_ID,
+                AOP_YEAR,
               ),
               NormalOperationNormsApiService.getModeWiseNormsData(
                 keycloak,
                 gradeIdParam,
                 'Yearly Norms',
+                PLANT_ID,
+                AOP_YEAR,
               ),
               NormalOperationNormsApiService.BestAchivedColorCodes(
                 keycloak,
@@ -703,10 +714,6 @@ const NormalOpNormsScreenCracker = () => {
   )
 
   useEffect(() => {
-    setSelectedTab(0)
-  }, [oldYear, yearChanged, keycloak, plantObject?.id])
-
-  useEffect(() => {
     fetchAllData(gradeId)
   }, [
     fetchAllData,
@@ -716,7 +723,6 @@ const NormalOpNormsScreenCracker = () => {
     gradeId,
     plantObject?.id,
     selectedTab,
-    siteObject?.id,
   ])
 
   // remark handlers
@@ -780,11 +786,15 @@ const NormalOpNormsScreenCracker = () => {
               keycloak,
               gradeId,
               payload,
+              PLANT_ID,
+              AOP_YEAR,
             )
           : await NormalOperationNormsApiService.updateModeWiseNormsData(
               keycloak,
               gradeId,
               payload,
+              PLANT_ID,
+              AOP_YEAR,
             )
 
         if (response?.code === 200) {
@@ -824,7 +834,6 @@ const NormalOpNormsScreenCracker = () => {
 
   const saveChangesUnified = useCallback(
     async (extraParam) => {
-
       if (selectedTab === 4) return saveChangesCrackerFinalNorms()
 
       // Prepare modified rows for save

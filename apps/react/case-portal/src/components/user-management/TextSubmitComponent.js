@@ -9,6 +9,26 @@ const TextSubmitMUI = () => {
   const [showTextBox, setShowTextBox] = useState(false)
   const [showCreateCasebutton, setShowCreateCasebutton] = useState(false)
   const [taskId, setTaskId] = useState('')
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+    const {
+      verticalChange,
+      yearChanged,
+      oldYear,
+      plantID,
+      plantObject,
+      siteObject,
+      verticalObject,
+      year,
+      screenTitle,
+    } = dataGridStore
+    const PLANT_ID = plantObject?.id
+    const SITE_ID = siteObject?.id
+    const VERTICAL_ID = verticalObject?.id
+    const VERTICAL_NAME = verticalObject?.name
+    const AOP_YEAR = year?.selectedYear
+    const isOldYear = oldYear?.oldYear
+    const vertName = verticalChange?.selectedVertical
+    const lowerVertName = vertName?.toLowerCase() || 'meg'
   const caseData = {
     caseDefinitionId: 'aopv5',
     owner: {
@@ -31,9 +51,10 @@ const TextSubmitMUI = () => {
   }, [])
 
   const getCaseId = async () => {
+    if(!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
     try {
       // console.log("keycloak",keycloak);
-      const data = await DataService.getCaseId(keycloak)
+      const data = await DataService.getCaseId(keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID)
       // console.log('API Response:', data)
       if (!data || data.length === 0) {
         // console.log('API Response:')
@@ -62,32 +83,14 @@ const TextSubmitMUI = () => {
   const createCase = async () => {
     try {
       const result = await DataService.createCase(keycloak, caseData)
-      // console.log('Response:', result)
-
-      var year = localStorage.getItem('year')
-      var plantId = ''
-      var siteId = ''
-      const storedPlant = localStorage.getItem('selectedPlant')
-      if (storedPlant) {
-        const parsedPlant = JSON.parse(storedPlant)
-        plantId = parsedPlant.id
-      }
-
-      const storedSite = localStorage.getItem('selectedSite')
-      if (storedSite) {
-        const parsedSite = JSON.parse(storedSite)
-        siteId = parsedSite.id
-      }
-
-      const verticalId = localStorage.getItem('verticalId')
 
       let workflowData = {
-        year: year,
-        plantFkId: plantId,
+        year: AOP_YEAR,
+        plantFkId: PLANT_ID,
         caseDefId: caseData.caseDefinitionId,
         caseId: result.businessKey,
-        siteFKId: siteId,
-        verticalFKId: verticalId,
+        siteFKId: SITE_ID,
+        verticalFKId: VERTICAL_ID,
       }
 
       const workFlowResult = await DataService.saveworkflow(

@@ -187,7 +187,11 @@ const SlowDown = ({ permissions }) => {
       )
 
       const maintenanceResponse =
-        await MaintenanceDetailsApiService.getMaintenanceData(keycloak)
+        await MaintenanceDetailsApiService.getMaintenanceData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       setSnackbarOpen(true)
 
@@ -624,15 +628,18 @@ const SlowDown = ({ permissions }) => {
   }
 
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
       const data = await DataService.getSlowDownPlantData(
         keycloak,
-        plantID?.plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
       const dataShutDown = await DataService.getShutDownPlantData(
         keycloak,
-        plantID?.plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
       const formattedDataShutDown = dataShutDown?.map((item, index) => ({
         ...item,
@@ -667,10 +674,15 @@ const SlowDown = ({ permissions }) => {
   const [allRedCell, setAllRedCell] = useState([])
 
   const fetchConfigurationData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setRows2([])
     setLoading(true)
     try {
-      var response = await DataService.getSlowDownConfigurationData(keycloak)
+      var response = await DataService.getSlowDownConfigurationData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       var data = response?.data?.data
       var redCells = response?.data?.changedData
 
@@ -713,10 +725,16 @@ const SlowDown = ({ permissions }) => {
     }
   }
   const fetchData2 = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
     setLoading(true)
     setColDefs2([])
     try {
-      var data1 = await DataService.getSlowDownPlantDataTab(keycloak)
+      var data1 = await DataService.getSlowDownPlantDataTab(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       const removedCols = [
         'srNo',
@@ -762,11 +780,15 @@ const SlowDown = ({ permissions }) => {
       try {
         var data = []
         if (lowerVertName == 'meg')
-          data = await DataService.getAllProducts(keycloak, null)
+          data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
         else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
-          data = await DataService.getAllProductsAll(keycloak, 'Production')
+          data = await DataService.getAllProductsAll(
+            keycloak,
+            'Production',
+            PLANT_ID,
+          )
         }
         var productList = []
         if (lowerVertName === 'meg') {
@@ -808,7 +830,7 @@ const SlowDown = ({ permissions }) => {
       setRows2([])
       fetchData2()
     }
-  }, [oldYear, yearChanged, keycloak, plantID])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID])
 
   const focusFirstField = async () => {
     const newRowId = rows.length
@@ -855,7 +877,7 @@ const SlowDown = ({ permissions }) => {
       }
 
       if (idFromApi) {
-        await DataService.deleteSlowdownData(idFromApi, keycloak)
+        await DataService.deleteSlowdownData(idFromApi, keycloak, PLANT_ID)
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
@@ -864,7 +886,11 @@ const SlowDown = ({ permissions }) => {
         })
         fetchData()
         const maintenanceResponse =
-          await MaintenanceDetailsApiService.getMaintenanceData(keycloak)
+          await MaintenanceDetailsApiService.getMaintenanceData(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
       } else {
         setLoading(false)
       }
@@ -883,7 +909,10 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (lowerVertName == 'elastomer' || lowerVertName== 'pvc' || lowerVertName== 'vcm') {
+      if (lowerVertName == 'elastomer' || lowerVertName== 'pvc' || lowerVertName== 'vcm' ||
+        lowerVertName === 'aromatics' ||
+        lowerVertName === 'pta' 
+      ) {
         response = await DataService.slowdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,

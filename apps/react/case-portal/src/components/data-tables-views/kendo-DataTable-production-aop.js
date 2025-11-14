@@ -2,21 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
-
-// import DataGridTable from 'components/data-tables/ASDataGrid'
-// import { DataGrid } from '@mui/x-data-grid'
-import {
-  // Backdrop,
-  Box,
-  // Typography,
-  // CircularProgress,
-} from '../../../node_modules/@mui/material/index'
-import { remarkColumn } from 'components/Utilities/remarkColumn'
-// import ReportDataGrid from './ReportDataGrid'
-import Notification from 'components/Utilities/Notification'
-// import KendoDataTables from 'components/kendo-data-tables/index'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
+import Notification from 'components/Utilities/Notification'
+import { remarkColumn } from 'components/Utilities/remarkColumn'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { Box } from '../../../node_modules/@mui/material/index'
 
 const ProductionAopView = ({
   handleCalculate,
@@ -27,9 +17,23 @@ const ProductionAopView = ({
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
   const [columns, setColumns] = useState([])
-  const plantId = JSON.parse(localStorage.getItem('selectedPlant'))?.id
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { oldYear, verticalChange, yearChanged, plantID } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   // remark dialog state
@@ -100,9 +104,13 @@ const ProductionAopView = ({
     // }
   }
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
-      var data = await DataService.getWorkflowDataProduction(keycloak, plantId)
-
+      var data = await DataService.getWorkflowDataProduction(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       var formattedRows = data.results.map((row, id) => {
         const newRow = { id }
         Object.entries(row).forEach(([key, val]) => {
@@ -167,13 +175,13 @@ const ProductionAopView = ({
 
   useEffect(() => {
     fetchData()
-  }, [plantID, yearChanged])
+  }, [PLANT_ID, yearChanged])
 
   // const lastColumnField = columns[columns.length - 1]?.field
   const saveChanges = async () => {
     try {
       // console.log(rows, 'workflowDto')
-      await DataService.saveAnnualWorkFlowData(keycloak, rows, plantId)
+      await DataService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
       // console.log(response, 'response')
       setSnackbarData({
         message: 'Data Saved Successfully!',

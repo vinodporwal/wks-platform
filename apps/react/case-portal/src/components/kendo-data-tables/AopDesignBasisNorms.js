@@ -85,31 +85,29 @@ const AopDesignBasisNorms = () => {
   }
 
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) return
+    if (!PLANT_ID || !AOP_YEAR) return
 
     getConfigurationExecutionDetailsNorms()
-  }, [plantID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) {
+    if (!PLANT_ID || !AOP_YEAR) {
       return
     }
     getConfigurationExecutionDetailsNorms()
 
-    let vertical = JSON.parse(localStorage.getItem('selectedVertical'))?.name
-    let verticalName = vertical?.toLowerCase()
     setTimeout(() => {
       if (
-        verticalName != 'cracker' &&
-        verticalName != 'meg' &&
-        verticalName != 'elastomer'
+        lowerVertName != 'cracker' &&
+        lowerVertName != 'meg' &&
+        lowerVertName != 'elastomer'
       ) {
         getConfigurationTabsMatrix()
         getConfigurationAvailableTabs()
         fetchGradeData()
       }
     }, 500)
-  }, [oldYear, yearChanged, keycloak, plantID])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID])
 
   const computeAndSetDates = useCallback(() => {
     setStartDate('')
@@ -135,7 +133,7 @@ const AopDesignBasisNorms = () => {
       setStartDate(fallbackStartDate)
       setEndDate(fallbackEndDate)
     }
-  }, [configurationExecutionDetails, plantID])
+  }, [configurationExecutionDetails, PLANT_ID])
   useEffect(() => {
     computeAndSetDates()
   }, [computeAndSetDates])
@@ -210,17 +208,20 @@ const AopDesignBasisNorms = () => {
     }
   }
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) {
+    if (!PLANT_ID || !AOP_YEAR) {
       return
     }
     hasExecutedRef.current = false
     getConfigurationExecutionDetailsNorms()
-  }, [plantID])
+  }, [PLANT_ID, AOP_YEAR])
 
   const getConfigurationExecutionDetailsNorms = async () => {
     try {
-      const response =
-        await DataService.getConfigurationExecutionDetailsNorms(keycloak)
+      const response = await DataService.getConfigurationExecutionDetailsNorms(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       const details = response?.data || []
       if (details.length === 0) {
         console.warn(

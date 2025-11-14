@@ -394,7 +394,11 @@ const ShutDown = ({ permissions }) => {
       })
 
       const maintenanceResponse =
-        await MaintenanceDetailsApiService.getMaintenanceData(keycloak)
+        await MaintenanceDetailsApiService.getMaintenanceData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       setModifiedCells({})
 
@@ -444,16 +448,19 @@ const ShutDown = ({ permissions }) => {
   }
 
   const fetchData = async () => {
-    if (!plantID) return
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
       const data = await DataService.getShutDownPlantData(
         keycloak,
-        plantID?.plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
+
       const dataSlowDown = await DataService.getSlowDownPlantData(
         keycloak,
-        plantID?.plantId,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       const formattedDataSlowDown = dataSlowDown.map((item, index) => ({
@@ -509,7 +516,7 @@ const ShutDown = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-  }, [oldYear, yearChanged, keycloak, _plantID])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID])
 
   const findDuration = (v, row) => {
     if (row.durationInHrs) return row.durationInHrs
@@ -529,16 +536,23 @@ const ShutDown = ({ permissions }) => {
 
     return ''
   }
+
   useEffect(() => {
     const getAllProducts = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
+
       try {
         let data = []
         if (lowerVertName === 'meg') {
-          data = await DataService.getAllProducts(keycloak, null)
+          data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
         } else if (lowerVertName === 'pe' || lowerVertName === 'pp') {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
-          data = await DataService.getAllProductsAll(keycloak, 'Production')
+          data = await DataService.getAllProductsAll(
+            keycloak,
+            'Production',
+            PLANT_ID,
+          )
         }
         let productList = []
         if (lowerVertName === 'meg') {
@@ -567,9 +581,8 @@ const ShutDown = ({ permissions }) => {
         console.error('Error fetching products', error)
       }
     }
-
     getAllProducts()
-  }, [oldYear, yearChanged, keycloak, _plantID, lowerVertName])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, lowerVertName])
 
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -668,7 +681,7 @@ const ShutDown = ({ permissions }) => {
       }
 
       if (idFromApi) {
-        await DataService.deleteShutdownData(idFromApi, keycloak)
+        await DataService.deleteShutdownData(idFromApi, keycloak, PLANT_ID)
         setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
         setSnackbarOpen(true)
         setSnackbarData({
@@ -678,7 +691,11 @@ const ShutDown = ({ permissions }) => {
         fetchData()
 
         const maintenanceResponse =
-          await MaintenanceDetailsApiService.getMaintenanceData(keycloak)
+          await MaintenanceDetailsApiService.getMaintenanceData(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
       } else {
         setLoading(false)
       }
@@ -696,7 +713,12 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (lowerVertName === 'elastomer' || lowerVertName === 'pvc' || lowerVertName === 'vcm') {
+      if (lowerVertName === 'elastomer' || 
+        lowerVertName === 'pvc' || 
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'aromatic' ||
+        lowerVertName === 'pta' ||
+        lowerVertName === 'pet' ) {
         response = await DataService.shutdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,
@@ -728,18 +750,18 @@ const ShutDown = ({ permissions }) => {
       
       if(lowerVertName == 'elastomer' || lowerVertName ==='pvc' || lowerVertName ==='vcm'){
         response = await DataService.ImportShutdownElastomerDetails(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      } else {
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      } else{
         response = await DataService.ImportShutdownDetails(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       }
 
       if (response?.code === 200) {

@@ -1,5 +1,4 @@
 import { Box } from '@mui/material'
-import ReportDataGrid from 'components/data-tables-views/ReportDataGrid'
 import React, { useEffect, useState } from 'react'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -391,6 +390,8 @@ const AnnualProductionPlan = () => {
       var res = await DataService.getAnnualProductionPlanReportData(
         keycloak,
         type,
+        PLANT_ID,
+        AOP_YEAR,
       )
       if (res?.code == 200) {
         res = res?.data?.plantProductionData.map((item, index) => ({
@@ -535,12 +536,10 @@ const AnnualProductionPlan = () => {
         rateValue: row.rateValue,
       }))
       const res = await DataService.saveAnnualProduction(
-        {
-          PLANT_ID,
-          AOP_YEAR,
-          reportType: 'assumptions',
-          dataList,
-        },
+        PLANT_ID,
+        AOP_YEAR,
+        'assumptions',
+        dataList,
         keycloak,
       )
 
@@ -593,12 +592,10 @@ const AnnualProductionPlan = () => {
         maxHourlyRateValue: row.maxHourlyRateValue,
       }))
       const res = await DataService.saveAnnualProduction(
-        {
-          PLANT_ID,
-          AOP_YEAR,
-          reportType: 'maxRate',
-          dataList,
-        },
+        PLANT_ID,
+        AOP_YEAR,
+        'maxRate',
+        dataList,
         keycloak,
       )
 
@@ -650,12 +647,10 @@ const AnnualProductionPlan = () => {
         rateValue: row.rateValue,
       }))
       const res = await DataService.saveAnnualProduction(
-        {
-          PLANT_ID,
-          AOP_YEAR,
-          reportType: 'OperatingHrs',
-          dataList,
-        },
+        PLANT_ID,
+        AOP_YEAR,
+        'OperatingHrs',
+        dataList,
         keycloak,
       )
 
@@ -721,12 +716,10 @@ const AnnualProductionPlan = () => {
           : null,
       }))
       const res = await DataService.saveAnnualProduction(
-        {
-          PLANT_ID,
-          AOP_YEAR,
-          reportType: 'AverageHourlyrate',
-          dataList,
-        },
+        PLANT_ID,
+        AOP_YEAR,
+        'AverageHourlyrate',
+        dataList,
         keycloak,
       )
 

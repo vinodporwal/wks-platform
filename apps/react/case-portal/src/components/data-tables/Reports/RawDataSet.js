@@ -35,7 +35,29 @@ const RawDataSet = () => {
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear } = dataGridStore
+
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const SCREEN_NAME = screenTitle?.title
+
   const isMountedRef = useRef(true)
   const exportRefs = useRef({})
   const [exportTarget, setExportTarget] = useState('ALL') // 'ALL' or specific steam grid
@@ -52,6 +74,8 @@ const RawDataSet = () => {
         const resp =
           await CrackerReportsApiDataService.getConfigurationExecutionDetails(
             keycloak,
+            PLANT_ID,
+            AOP_YEAR,
           )
         if (Array.isArray(resp?.data)) {
           const start = resp.data.find((d) => d.Name === 'StartDate')
@@ -97,6 +121,8 @@ const RawDataSet = () => {
         apiResponse = await CrackerReportsApiDataService.getRawasfindingteam(
           keycloak,
           mode,
+          PLANT_ID,
+          AOP_YEAR,
         )
       } else if (type === 'Raw Steam') {
         apiResponse = await CrackerReportsApiDataService.getRawasteam(
@@ -104,6 +130,8 @@ const RawDataSet = () => {
           periodFrom,
           periodTo,
           mode,
+          PLANT_ID,
+          AOP_YEAR,
         )
       } else {
         return { rows: [], columns: [] }
@@ -202,7 +230,7 @@ const RawDataSet = () => {
 
   useEffect(() => {
     if (periodFrom && periodTo) loadGrids()
-  }, [loadGrids, plantID, oldYear, yearChanged, periodFrom, periodTo])
+  }, [loadGrids, PLANT_ID, oldYear, yearChanged, periodFrom, periodTo])
 
   // Export helpers (only for steam grids)
   const currentDateTime = new Date()

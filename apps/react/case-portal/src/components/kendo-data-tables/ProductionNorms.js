@@ -65,14 +65,6 @@ const ProductionNorms = ({ permissions }) => {
   })
   const dispatch = useDispatch()
 
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-    // setSelectedUnit('')
-  }, [plantID])
-  // const isBlocked = useSelector((state) => state.isBlocked) // Get block flag from Redux
-
   const saveChanges = React.useCallback(async () => {
     setTimeout(() => {
       try {
@@ -378,11 +370,14 @@ const ProductionNorms = ({ permissions }) => {
   ]
 
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
       const response = await ProductionNormsApiService.getAOPData(
         keycloak,
         'Production',
+        PLANT_ID,
+        AOP_YEAR,
       )
       setCalculationObject(response?.data?.aopCalculation)
       if (response?.code != 200) {
@@ -628,7 +623,8 @@ const ProductionNorms = ({ permissions }) => {
         if (
           lowerVertName !== 'meg' &&
           lowerVertName !== 'cracker' &&
-          lowerVertName !== 'elastomer'
+          lowerVertName !== 'elastomer' &&
+          lowerVertName !== 'vcm'
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
@@ -648,12 +644,15 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   const fetchDataByProducts = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setLoading(true)
 
       const response = await ProductionNormsApiService.getAOPData(
         keycloak,
         'ByProducts',
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (response?.code != 200) {
@@ -752,7 +751,7 @@ const ProductionNorms = ({ permissions }) => {
     if (lowerVertName === 'meg') {
       fetchDataByProducts()
     }
-  }, [plantID, oldYear, yearChanged, keycloak, selectedUnit])
+  }, [PLANT_ID, oldYear, yearChanged, keycloak, selectedUnit])
 
   const valueFormat = ValueFormatterProduction()
 
@@ -844,9 +843,11 @@ const ProductionNorms = ({ permissions }) => {
           units:
             lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
-          downloadExcelBtnFromUI:
-            lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
-          downloadExcelBtn: lowerVertName == 'vcm' ? true : false,
+          downloadExcelBtnFromUI: lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
+          downloadExcelBtn:
+        lowerVertName == 'vcm'
+          ? true
+          : false,
           ExcelName: `${lowerVertName}_Month wise Production plan`,
           unitForExcelToadd:
             lowerVertName === 'cracker' ? selectedUnit || 'MT/Month' : null,
@@ -872,8 +873,7 @@ const ProductionNorms = ({ permissions }) => {
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
-      downloadExcelBtnFromUI:
-        lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
+      downloadExcelBtnFromUI: lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
       ExcelName: `${lowerVertName}_Production Target`,
       customHeight: permissions?.customHeight,
     },

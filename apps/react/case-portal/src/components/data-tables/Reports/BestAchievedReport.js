@@ -30,13 +30,33 @@ const BestAchievedReport = () => {
   const [loading, setLoading] = useState(false)
   const [calculating, setCalculating] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantID, yearChanged, oldYear, verticalChange } = dataGridStore
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = oldYear?.oldYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const SCREEN_NAME = screenTitle?.title
+
   const timeoutIdsRef = useRef([])
   const activeRequestsRef = useRef(0)
   const isMountedRef = useRef(true)
   const exportRefs = useRef({})
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || ''
+
   const isCracker = lowerVertName === 'cracker'
 
   useEffect(() => {
@@ -77,7 +97,8 @@ const BestAchievedReport = () => {
           await CrackerReportsApiDataService.finalNormsProductionReport(
             keycloak,
             reportTypeForCall,
-            mode,
+            PLANT_ID,
+            AOP_YEAR,
           )
 
         if (apiResponseForRawData?.code !== 200) {
@@ -183,7 +204,7 @@ const BestAchievedReport = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, plantID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({

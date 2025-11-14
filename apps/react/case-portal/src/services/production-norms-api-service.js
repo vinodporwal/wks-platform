@@ -31,9 +31,8 @@ async function updateProductNormData(turnAroundDetails, keycloak) {
     return Promise.reject(e)
   }
 }
-async function handleCalculate(plantId, year, keycloak) {
-  const year1 = localStorage.getItem('year')
-  const url = `${Config.CaseEngineUrl}/task/calculate-monthly-production?year=${year1}&plantId=${plantId}`
+async function handleCalculate(PLANT_ID, AOP_YEAR, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-monthly-production?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
@@ -53,15 +52,9 @@ async function handleCalculate(plantId, year, keycloak) {
     return Promise.reject(e)
   }
 }
-async function getAOPData(keycloak, type) {
-  var year = localStorage.getItem('year')
-  var plantId = ''
-  const storedPlant = localStorage.getItem('selectedPlant')
-  if (storedPlant) {
-    const parsedPlant = JSON.parse(storedPlant)
-    plantId = parsedPlant.id
-  }
-  const url = `${Config.CaseEngineUrl}/task/monthly-production?plantId=${plantId}&year=${year}&type=${type}`
+async function getAOPData(keycloak, type, PLANT_ID, AOP_YEAR) {
+
+  const url = `${Config.CaseEngineUrl}/task/monthly-production?plantId=${PLANT_ID}&year=${AOP_YEAR}&type=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -90,13 +83,8 @@ async function monthlyProductionC2rC3R(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-export async function MonthwiseProductionExport(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  type,
-) {
-  const url = `${Config.CaseEngineUrl}/task/monthly-production-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&type=${encodeURIComponent(type)}`
+export async function MonthwiseProductionExport(keycloak, plantId, year, type) {
+  const url = `${Config.CaseEngineUrl}/task/monthly-production-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&type=${encodeURIComponent(type)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

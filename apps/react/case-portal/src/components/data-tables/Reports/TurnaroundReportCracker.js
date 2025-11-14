@@ -58,12 +58,6 @@ const TurnaroundReportCracker = () => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
 
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-  }, [plantID])
-
   const keycloak = useSession()
 
   useEffect(() => {
@@ -140,6 +134,8 @@ const TurnaroundReportCracker = () => {
       data = await ShutdownNormsApiService.shutdownConsumptionHistoryData(
         keycloak,
         gradeId,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (data?.code != 200) {

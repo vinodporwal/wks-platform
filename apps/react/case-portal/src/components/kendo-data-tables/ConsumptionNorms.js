@@ -65,12 +65,6 @@ const ConsumptionNorms = () => {
   const [gradeId, setGradeId] = useState(null)
   const [grades, setGrades] = useState([])
 
-  useEffect(() => {
-    if (plantID?.plantId) {
-      set_PlantID(plantID?.plantId)
-    }
-  }, [plantID])
-
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -234,7 +228,11 @@ const ConsumptionNorms = () => {
     try {
       setGrades([])
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(keycloak)
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code == 200) {
         setGrades(response?.data)
@@ -251,7 +249,11 @@ const ConsumptionNorms = () => {
     try {
       setGrades([])
       const response =
-        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(keycloak)
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
       if (response?.code == 200) {
         setGrades(response?.data)
@@ -278,6 +280,7 @@ const ConsumptionNorms = () => {
   }
 
   const fetchData = async (gradeId) => {
+    if (!PLANT_ID || !AOP_YEAR) return
     if ((lowerVertName === 'pe' || lowerVertName === 'pp') && !gradeId) return
     setLoading(true)
     try {
@@ -286,11 +289,15 @@ const ConsumptionNorms = () => {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
           gradeId,
+          PLANT_ID,
+          AOP_YEAR,
         )
       } else {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
           null,
+          PLANT_ID,
+          AOP_YEAR,
         )
       }
 
@@ -342,6 +349,7 @@ const ConsumptionNorms = () => {
           }
         },
       )
+
       setRows(formattedData)
       setLoading(false)
       setCalculatebtnClicked(false)
@@ -357,11 +365,13 @@ const ConsumptionNorms = () => {
     if (lowerVertName === 'pe' || lowerVertName === 'pp') {
       fetchGradeDropdowns()
     }
-  }, [plantID, oldYear, yearChanged, keycloak, selectedUnit, gradeId])
+  }, [PLANT_ID, oldYear, yearChanged, keycloak, selectedUnit, gradeId])
+
   const valueFormat = ValueFormatterConsumption()
+
   const productionColumns = getEnhancedColDefs({
     headerMap,
-    lowerVertName, // pass it here
+    lowerVertName,
     valueFormat,
   })
 
@@ -375,7 +385,6 @@ const ConsumptionNorms = () => {
 
   const handleCalculateMeg = async () => {
     try {
-   
       const data =
         await ConsumptionNormsApiService.handleCalculateonsumptionNorms(
           PLANT_ID,

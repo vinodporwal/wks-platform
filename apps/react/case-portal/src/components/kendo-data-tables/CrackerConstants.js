@@ -26,7 +26,7 @@ import KendoDataTables from './index'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import moment from '../../../node_modules/moment/moment'
 import AopDesignBasisNorms from './AopDesignBasisNorms'
-import useValueFormatterConsumption from 'utils/ValueFormatterConsumption' 
+import useValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 const CrakcerConstants = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
@@ -45,7 +45,11 @@ const CrakcerConstants = () => {
   const isOldYear = oldYear?.oldYear
   const isOldYearFlag = oldYear?.oldYear === 1
   const vertName = verticalChange?.selectedVertical
-
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
   const lowerVertName = vertName?.toLowerCase()
   const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -90,11 +94,6 @@ const CrakcerConstants = () => {
     rowsBeforeChange: {},
   })
 
-  const PLANT_ID = plantObject?.id
-  const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
-  const AOP_YEAR = year?.selectedYear
-
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -125,19 +124,19 @@ const CrakcerConstants = () => {
   }
 
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) return
+    if (!PLANT_ID || !AOP_YEAR) return
     setTabIndex(0)
     getConfigurationExecutionDetailsNorms()
     fetchData()
-  }, [plantID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) {
+    if (!PLANT_ID || !AOP_YEAR) {
       return
     }
     getConfigurationExecutionDetailsNorms()
     getAopSummary()
-  }, [oldYear, yearChanged, keycloak, plantID])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID])
 
   function formatDate(date) {
     if (!date) return ''
@@ -166,9 +165,10 @@ const CrakcerConstants = () => {
     return formatted
   }
   const getAopSummary = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       setSummary('')
-      var res = await DataService.getAopSummary(keycloak)
+      var res = await DataService.getAopSummary(keycloak, PLANT_ID, AOP_YEAR)
       if (res?.code == 200) {
         setSummary(res?.data?.summary)
       } else {
@@ -180,17 +180,20 @@ const CrakcerConstants = () => {
   }
 
   useEffect(() => {
-    if (!plantID || !AOP_YEAR) {
+    if (!PLANT_ID || !AOP_YEAR) {
       return
     }
     hasExecutedRef.current = false
     getConfigurationExecutionDetailsNorms()
-  }, [plantID])
+  }, [PLANT_ID])
 
   const getConfigurationExecutionDetailsNorms = async () => {
     try {
-      const response =
-        await DataService.getConfigurationExecutionDetailsNorms(keycloak)
+      const response = await DataService.getConfigurationExecutionDetailsNorms(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       const details = response?.data || []
       if (details.length === 0) {
         console.warn(
@@ -548,6 +551,7 @@ const CrakcerConstants = () => {
         PLANT_ID,
         payload,
         keycloak,
+        AOP_YEAR,
       )
       if (response) {
         setSnackbarOpen(true)
@@ -837,7 +841,7 @@ const CrakcerConstants = () => {
           handleRemarkCellClick={handleRemarkCellClickConstants}
           permissions={adjustedPermissionsConstants}
           groupBy='Particulars'
-          plantID={plantID}
+          plantID={PLANT_ID}
           summaryEdited={summaryEdited}
           handleExcelUpload={handleExcelUpload}
           downloadExcelForConfiguration={downloadExcelForConfiguration}

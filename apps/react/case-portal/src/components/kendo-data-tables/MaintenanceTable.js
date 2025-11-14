@@ -31,17 +31,26 @@ const MaintenanceTable = () => {
   const vertName = verticalChange?.selectedVertical
   const SCREEN_NAME = screenTitle?.title
   const lowerVertName = vertName?.toLowerCase()
-
   const dataConfig = useMemo(
     () => ({
       isCracker: lowerVertName === 'cracker',
       serviceFn:
         lowerVertName === 'cracker'
-          ? MaintenanceDetailsApiService.getCrackerMaintenanceData
-          : MaintenanceDetailsApiService.getMaintenanceData,
+          ? (keycloak, PLANT_ID, AOP_YEAR) =>
+              MaintenanceDetailsApiService.getCrackerMaintenanceData(
+                keycloak,
+                PLANT_ID,
+                AOP_YEAR,
+              )
+          : (keycloak, PLANT_ID, AOP_YEAR) =>
+              MaintenanceDetailsApiService.getMaintenanceData(
+                keycloak,
+                PLANT_ID,
+                AOP_YEAR,
+              ),
       editable: lowerVertName === 'cracker',
     }),
-    [plantID],
+    [PLANT_ID, AOP_YEAR, lowerVertName],
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -168,10 +177,11 @@ const MaintenanceTable = () => {
     }
   }
   const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setRows([])
     setLoading(true)
     try {
-      const resp = await dataConfig.serviceFn(keycloak)
+      const resp = await dataConfig.serviceFn(keycloak, PLANT_ID, AOP_YEAR)
       const raw = dataConfig.isCracker ? resp.data : resp
       const monthFields = [
         'April',
@@ -211,7 +221,7 @@ const MaintenanceTable = () => {
     } finally {
       setLoading(false)
     }
-  }, [plantID, keycloak])
+  }, [PLANT_ID, AOP_YEAR, keycloak, dataConfig])
 
   const handleCalculate = useCallback(async () => {
     const plantId = PLANT_ID
@@ -241,7 +251,7 @@ const MaintenanceTable = () => {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData, oldYear, yearChanged, plantID])
+  }, [fetchData, oldYear, yearChanged, PLANT_ID])
 
   // Helper to generate monthly fields
   const getMonthlyColumns = () => {
@@ -372,7 +382,7 @@ const MaintenanceTable = () => {
           saveBtn: dataConfig.isCracker,
           allAction: true,
           downloadExcelBtnFromUI: true,
-          ExcelName: `'Maintenance Data Excel'`,
+          ExcelName: `Maintenance Details`,
           showRefresh: false,
 
           showTitleNameBusiness: true,

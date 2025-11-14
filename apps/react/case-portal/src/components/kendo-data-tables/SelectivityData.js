@@ -203,6 +203,7 @@ const SelectivityData = (props) => {
           PLANT_ID,
           payload,
           keycloak,
+          AOP_YEAR,
         )
       } else {
         payload = newRow.map((row) => ({
@@ -229,6 +230,7 @@ const SelectivityData = (props) => {
           PLANT_ID,
           payload,
           keycloak,
+          AOP_YEAR,
         )
       }
 
@@ -283,7 +285,12 @@ const SelectivityData = (props) => {
       }))
 
       if (payload.length > 0) {
-        const response = await DataService.updatePeConfigData(keycloak, payload)
+        const response = await DataService.updatePeConfigData(
+          keycloak,
+          payload,
+          PLANT_ID,
+          AOP_YEAR,
+        )
         if (response) {
           setSnackbarOpen(true)
           setSnackbarData({
@@ -326,7 +333,11 @@ const SelectivityData = (props) => {
   useEffect(() => {
     const getAllGrades = async () => {
       try {
-        const data = await DataService.getAllGrades(keycloak)
+        const data = await DataService.getAllGrades(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
         setAllGradesReciepes(data)
       } catch (error) {
         console.error('Error fetching Grades/Reciepes:', error)
@@ -336,8 +347,11 @@ const SelectivityData = (props) => {
     }
     const getConfigurationExecutionDetails = async () => {
       try {
-        const data =
-          await DataService.getConfigurationExecutionDetails(keycloak)
+        const data = await DataService.getConfigurationExecutionDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
         var data1 = data?.data
 
@@ -382,7 +396,7 @@ const SelectivityData = (props) => {
   const fetchConfigData = async () => {
     setLoading(true)
     try {
-      var data = await DataService.getPeConfigData(keycloak)
+      var data = await DataService.getPeConfigData(keycloak, PLANT_ID, AOP_YEAR)
 
       data = data.map((item, index) => ({
         ...item,
@@ -489,9 +503,14 @@ const SelectivityData = (props) => {
 
     try {
       if (props?.configType === 'grades') {
-        await DataService.getRecipeExcel(keycloak)
+        await DataService.getRecipeExcel(keycloak, PLANT_ID, AOP_YEAR)
       } else if (props?.configType === 'ShutdownNorms') {
-        await DataService.getShutdownRateExcel(keycloak, props?.configType)
+        await DataService.getShutdownRateExcel(
+          keycloak,
+          props?.configType,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else if (props?.tabIndex != 1) {
         if (
           lowerVertName == 'pe' ||
@@ -528,10 +547,19 @@ const SelectivityData = (props) => {
             report_t = reportTypes.filter((type) => type == 'Shutdown')
           }
 
-          await DataService.getConfigurationExcel(keycloak, report_t)
+          await DataService.getConfigurationExcel(
+            keycloak,
+            report_t,
+            PLANT_ID,
+            AOP_YEAR,
+          )
         }
       } else {
-        await DataService.getConfigurationExcelConstants(keycloak)
+        await DataService.getConfigurationExcelConstants(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       }
 
       // If no error is thrown, the request was successful
@@ -556,20 +584,34 @@ const SelectivityData = (props) => {
     try {
       var response
       if (props?.configType === 'grades') {
-        response = await DataService.saveRecipeExcel(rawFile, keycloak)
+        response = await DataService.saveRecipeExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else if (props?.configType === 'ShutdownNorms') {
         // Add shutdown rate specific upload
         response = await DataService.saveShutdownRateExcel(
           rawFile,
           keycloak,
           props?.configType,
+          PLANT_ID,
+          AOP_YEAR,
         )
       } else if (props?.tabIndex != 1) {
-        response = await DataService.saveConfigurationExcel(rawFile, keycloak)
+        response = await DataService.saveConfigurationExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       } else {
         response = await DataService.saveConfigurationExcelConstants(
           rawFile,
           keycloak,
+          PLANT_ID,
+          AOP_YEAR,
         )
       }
       if (response?.code == 200) {

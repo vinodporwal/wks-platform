@@ -125,7 +125,7 @@ const WorkFlowMerge = () => {
   useEffect(() => {
     setTabIndex(0)
     fetchData()
-  }, [plantID, yearChanged])
+  }, [PLANT_ID, AOP_YEAR])
 
   const handleExport = () => {
     handleExportAll()
@@ -246,7 +246,12 @@ const WorkFlowMerge = () => {
       const payload = postmanData
 
       // Await the API call here to ensure completion
-      const data = await DataService.getExcel(keycloak, payload)
+      const data = await DataService.getExcel(
+        keycloak,
+        payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -354,10 +359,12 @@ const WorkFlowMerge = () => {
   }
 
   const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     try {
       const { headers, keys, results } = await DataService.getWorkflowData(
         keycloak,
         PLANT_ID,
+        AOP_YEAR,
       )
       const numericKeys = getNumericKeysInAllRows(results)
       const formatted = results.map((row, idx) => ({
@@ -386,8 +393,15 @@ const WorkFlowMerge = () => {
   }
 
   const getCaseId = async () => {
+    if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
     try {
-      const cases = await DataService.getCaseId(keycloak)
+      const cases = await DataService.getCaseId(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        SITE_ID,
+        VERTICAL_ID,
+      )
       setCaseId(cases?.workflowMasterDTO?.casedefId || '')
       setShowCreateCasebutton(cases?.workflowList?.length === 0)
       setTaskId(cases?.taskId || '')

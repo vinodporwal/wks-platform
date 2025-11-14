@@ -89,7 +89,7 @@ export default function SpecificConsumptionNorm() {
           AOP_YEAR,
           valueFormat,
         })
-        const apiResp = await DataService.specificConsumption(
+        const apiResp = await DataService.getSpecificConsumption(
           keycloak,
           key,
           PLANT_ID,

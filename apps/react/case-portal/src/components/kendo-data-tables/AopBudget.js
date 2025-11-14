@@ -251,6 +251,7 @@ export default function AopBudget() {
   }
 
   const fetchData = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
       // Fetch for Consumption Budget
@@ -311,7 +312,7 @@ export default function AopBudget() {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID])
 
   const resetDataChanges = useCallback(async () => {
     setModifiedCells({})
@@ -322,9 +323,10 @@ export default function AopBudget() {
 
     //FETCH BOTH DESIGN BASIS & DESIGN REMARKS AS WELL
     fetchDesignRemarksAndDesignBasis()
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID])
 
   const fetchDesignRemarksAndDesignBasis = useCallback(async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     setTextAreaRedDesign(false)
     setTextAreaRedRemark(false)
@@ -354,7 +356,7 @@ export default function AopBudget() {
     } finally {
       setLoading(false)
     }
-  }, [keycloak, yearChanged, plantID])
+  }, [keycloak, yearChanged, PLANT_ID])
 
   useEffect(() => {
     fetchData()
