@@ -136,10 +136,10 @@ const BusinessDemand = ({ permissions }) => {
       //
 
       if (isPPorPE_NMD) {
-        // Use all rows, not just edited ones
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',
         )
+
         if (productionRows.length > 0) {
           const months = [
             'april',
@@ -155,23 +155,48 @@ const BusinessDemand = ({ permissions }) => {
             'feb',
             'march',
           ]
+
+          const toPreciseInt = (num) => {
+            if (num === null || num === undefined || num === '') return 0
+            const n = Number(num)
+            if (isNaN(n)) return 0
+            return Math.round(n * 100000)
+          }
+
+          const expected = 100 * 100000
+          const failures = []
+
           for (const month of months) {
-            const sumMonth = productionRows.reduce(
-              (acc, row) => acc + (parseFloat(row[month]) || 0),
+            const sumInt = productionRows.reduce(
+              (acc, row) => acc + toPreciseInt(row[month]),
               0,
             )
-            if (Math.abs(sumMonth - 100) > 0.01) {
-              setSnackbarOpen(true)
-              setSnackbarData({
-                message: `Sum of '${month.charAt(0).toUpperCase() + month.slice(1)}' for Production must be exactly 100.00 (Current: ${sumMonth.toFixed(2)})`,
-                severity: 'error',
+
+            if (sumInt !== expected) {
+              failures.push({
+                month,
+                sumValue: (sumInt / 100000).toFixed(2),
               })
-              setLoading(false)
-              return
             }
+          }
+
+          if (failures.length > 0) {
+            const parts = failures.map((f) => {
+              const name = f.month.charAt(0).toUpperCase() + f.month.slice(1)
+              return `${name} - ${f.sumValue}`
+            })
+
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `The production Sum should be exactly same - Current values (${parts.join(', ')})`,
+              severity: 'error',
+            })
+            setLoading(false)
+            return
           }
         }
       }
+
       const requiredFields = ['normParameterId', 'remark']
 
       const validationMessage = validateFields(data, requiredFields)

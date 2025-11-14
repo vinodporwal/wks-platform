@@ -713,7 +713,12 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (lowerVertName === 'elastomer' || lowerVertName === 'pvc' || lowerVertName === 'vcm') {
+      if (lowerVertName === 'elastomer' || 
+        lowerVertName === 'pvc' || 
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'aromatic' ||
+        lowerVertName === 'pta' ||
+        lowerVertName === 'pet' ) {
         response = await DataService.shutdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,
@@ -745,18 +750,18 @@ const ShutDown = ({ permissions }) => {
       
       if(lowerVertName == 'elastomer' || lowerVertName ==='pvc' || lowerVertName ==='vcm'){
         response = await DataService.ImportShutdownElastomerDetails(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      } else {
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      } else{
         response = await DataService.ImportShutdownDetails(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       }
 
       if (response?.code === 200) {

@@ -11,24 +11,24 @@ import moment from '../../../../node_modules/moment/moment'
 import { useSelector } from 'react-redux'
 const TurnaroundReport = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
-    const {
-      verticalChange,
-      yearChanged,
-      oldYear,
-      plantID,
-      plantObject,
-      siteObject,
-      verticalObject,
-      year,
-      screenTitle,
-    } = dataGridStore
-    const PLANT_ID = plantObject?.id
-    const SITE_ID = siteObject?.id
-    const VERTICAL_ID = verticalObject?.id
-    const VERTICAL_NAME = verticalObject?.name
-    const AOP_YEAR = year?.selectedYear
-    const vertName = verticalChange?.selectedVertical
-    const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -177,7 +177,7 @@ const TurnaroundReport = () => {
       const res = await DataService.getTurnaroundReportData(
         keycloak,
         'currentYear',
-        PLANT_ID, 
+        PLANT_ID,
         AOP_YEAR,
       )
       if (res?.code === 200) {
@@ -199,7 +199,7 @@ const TurnaroundReport = () => {
         keycloak,
         'previousYear',
         PLANT_ID,
-        AOP_YEAR
+        AOP_YEAR,
       )
       if (res?.code === 200) {
         setRows2(mapData(res, 'PY'))
@@ -320,6 +320,7 @@ const TurnaroundReport = () => {
         keycloak,
         rowsToUpdate,
         PLANT_ID,
+        AOP_YEAR,
       )
 
       // console.log(res)
@@ -353,7 +354,7 @@ const TurnaroundReport = () => {
   const handleCalculateMonthwiseAndTurnaround = async () => {
     try {
       setLoading(true)
-     
+
       const res = await DataService.calculateTurnAroundPlanReportData(
         PLANT_ID,
         AOP_YEAR,
