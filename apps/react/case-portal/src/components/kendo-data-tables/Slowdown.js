@@ -942,7 +942,7 @@ const SlowDown = ({ permissions }) => {
       let response
 
 
-    if(lowerVertName == 'elastomer' || lowerVertName == 'pvc' || lowerVertName == 'vcm'){
+    if(lowerVertName == 'elastomer' || lowerVertName == 'pvc' || lowerVertName == 'vcm' || lowerVertName == 'pta'){
             response = await DataService.ImportSlowdownElastomerDetails(
             rawFile,
             keycloak,
@@ -1050,8 +1050,10 @@ const SlowDown = ({ permissions }) => {
 
       uploadExcelBtn:
         lowerVertName === 'pe' || 
-        lowerVertName === 'pp' || lowerVertName == 'elastomer' || 
-        lowerVertName == 'pvc' || lowerVertName == 'vcm' ? true : false,
+        lowerVertName === 'pp' || 
+        lowerVertName == 'elastomer' || 
+        lowerVertName == 'pvc' || 
+        lowerVertName == 'vcm' || lowerVertName == 'pta' ? true : false,
     },
     isOldYear,
   )

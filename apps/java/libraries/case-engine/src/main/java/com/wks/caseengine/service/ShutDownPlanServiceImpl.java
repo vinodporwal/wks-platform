@@ -442,7 +442,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public AOPMessageVM importShutdownExcel(String year,UUID plantId, String maintenanceTypeName,MultipartFile file) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -485,7 +485,6 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 			}else {
 				data = readNonProductShutdown(file.getInputStream(), plantId, year);
 			}
-			data = readNonProductShutdown(file.getInputStream(), plantId, year);
 			List<ShutDownPlanDTO> failedList = saveShutdownPlantData(plantId, data);
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray = shutdownNonProductExport(year, plantId.toString(),maintenanceTypeName, true, failedList);
@@ -877,12 +876,11 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	}
 	public List<ShutDownPlanDTO> readNonValidationShutdown(InputStream inputStream, UUID plantFKId, String year) {
 	    List<ShutDownPlanDTO> dtoList = new ArrayList<>();
-	   
+	    String verticalName = plantsService.findVerticalNameByPlantId(plantFKId);
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
 	        FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
-
 	       
 	        if (rowIterator.hasNext())
 	            rowIterator.next();
@@ -906,7 +904,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                    dto.setSaveStatus("Failed");
 	                    dto.setErrDescription("Description is required.");
 	                    alreadyFailed = true;
-	                } else if (descriptions.contains(dto.getDiscription().trim())) {
+	                } else if (!verticalName.equalsIgnoreCase("PTA") && descriptions.contains(dto.getDiscription().trim())) {
 	                    dto.setSaveStatus("Failed");
 	                    dto.setErrDescription("Description cannot be duplicate within the uploaded file.");
 	                    alreadyFailed = true;
@@ -1430,6 +1428,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	@Override
 	public List<ShutDownPlanDTO> saveShutdownPlantData(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
 		String year=null;
+		String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		try {
 			UUID plantMaintenanceId = findIdByPlantIdAndMaintenanceTypeName(plantId, "Shutdown");
@@ -1493,8 +1492,6 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
 					// Save new record
 					plantMaintenanceTransactionRepository.save(plantMaintenanceTransaction);
-
-					String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 					
 					String description = shutDownPlanDTO.getDiscription();
 					if (verticalName.equalsIgnoreCase("MEG")) {
@@ -1552,7 +1549,19 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 							} else {
 								plantMaintenanceTransaction.setDurationInMins(0);
 							}
-							// plantMaintenanceTransaction.setDurationInMins(shutDownPlanDTO.getDurationInMins());
+							if(("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName))) {
+								if(plantMaintenanceTransaction.getMaintForMonth()!=(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1)) {
+									int month=plantMaintenanceTransaction.getMaintForMonth();
+						        	Long count=plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId,month,"Shutdown",year);
+						        	if(count==1) {
+						        		List<ShutdownNormsValue> shutdownNormsValues =shutdownNormsRepository.findByPlantFkIdAndFinancialYear(plantId,plantMaintenanceTransaction.getAuditYear());
+							        	for(ShutdownNormsValue shutdownNormsValue: shutdownNormsValues) {
+							        		setMonthShutdown(month,shutdownNormsValue);
+							        	}
+						        	}	
+								}
+							}
+							
 							plantMaintenanceTransaction
 									.setMaintForMonth(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1);
 							Date entityEndDate = plantMaintenanceTransaction.getMaintEndDateTime();
