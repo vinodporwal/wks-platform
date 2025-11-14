@@ -122,7 +122,6 @@ const BusinessDemand = ({ permissions }) => {
 
       var rawData = Object.values(modifiedCells)
       const data = rawData.filter((row) => row.inEdit)
-      // var data = Object.values(unsavedChangesRef.current.unsavedRows)
       if (data.length == 0) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -156,14 +155,28 @@ const BusinessDemand = ({ permissions }) => {
             'march',
           ]
 
+          const SCALE = 100000
+
           const toPreciseInt = (num) => {
             if (num === null || num === undefined || num === '') return 0
             const n = Number(num)
             if (isNaN(n)) return 0
-            return Math.round(n * 100000)
+            return Math.round(n * SCALE)
           }
 
-          const expected = 100 * 100000
+          const formatFromIntRobust = (intVal) => {
+            const sign = intVal < 0 ? '-' : ''
+            const abs = Math.abs(intVal)
+            const integerPart = Math.floor(abs / SCALE)
+            const remainder = abs % SCALE
+            if (remainder === 0) return sign + String(integerPart)
+            const scaleDigits = String(SCALE).length - 1
+            let fracStr = String(remainder).padStart(scaleDigits, '0')
+            fracStr = fracStr.replace(/0+$/, '')
+            return sign + `${integerPart}.${fracStr}`
+          }
+
+          const expected = 100 * SCALE
           const failures = []
 
           for (const month of months) {
@@ -173,17 +186,16 @@ const BusinessDemand = ({ permissions }) => {
             )
 
             if (sumInt !== expected) {
-              failures.push({
-                month,
-                sumValue: (sumInt / 100000).toFixed(2),
-              })
+              failures.push({ month, sumInt })
             }
           }
 
           if (failures.length > 0) {
             const parts = failures.map((f) => {
-              const name = f.month.charAt(0).toUpperCase() + f.month.slice(1)
-              return `${name} - ${f.sumValue}`
+              const prettyMonth =
+                f.month.charAt(0).toUpperCase() + f.month.slice(1)
+              const prettySum = formatFromIntRobust(f.sumInt)
+              return `${prettyMonth} - ${prettySum}`
             })
 
             setSnackbarOpen(true)
