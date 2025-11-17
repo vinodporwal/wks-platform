@@ -104,25 +104,12 @@ const ConsumptionNormsHistorianBasis = () => {
 
         return {
           ...base,
-          // formatter that respects decimals present in original row value or falls back to 2 decimals
-          valueFormatter: (params) => {
-            if (params.value == null || params.value === '') return ''
-            const original = params.row?.[col.field] ?? params.value
-            const decimals = countDecimals(original) || 2
-            try {
-              return new Intl.NumberFormat('en-IN', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: Math.min(decimals, 3), // cap for safety
-              }).format(Number(params.value))
-            } catch (e) {
-              return String(params.value)
-            }
-          },
+
           renderCell: (params) => {
-            const original = params.row?.[col.field] ?? params.value
+            const original = params?.row?.[col?.field] ?? params?.value
             const decimals = countDecimals(original) || 2
             const text =
-              params.value == null || params.value === ''
+              params?.value == null || params?.value === ''
                 ? ''
                 : new Intl.NumberFormat('en-IN', {
                     maximumFractionDigits: Math.min(decimals, 3),

@@ -322,7 +322,7 @@ const NormalOpNormsScreenCracker = () => {
         setLoading(false)
       }
     },
-    [keycloak],
+    [keycloak, PLANT_ID, AOP_YEAR],
   )
 
   const fetchConstantsData = useCallback(async () => {
@@ -354,7 +354,7 @@ const NormalOpNormsScreenCracker = () => {
     } catch (error) {
       console.error('Error fetching constants data:', error)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
   // permission helper: if old year, getAdjustedPermissions blocks actions
   const getAdjustedPermissions = useCallback((permissions, isOldYearFlag) => {
     if (isOldYearFlag != 1) return permissions
@@ -732,6 +732,10 @@ const NormalOpNormsScreenCracker = () => {
     AOP_YEAR,
   ])
 
+  useEffect(() => {
+    setSelectedTab(0)
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
+
   // remark handlers
   const handleRemarkCellClick = useCallback((row) => {
     if (!row?.isEditable || READ_ONLY) return
@@ -909,7 +913,7 @@ const NormalOpNormsScreenCracker = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, fetchModeData, gradeId, keycloak, year])
+  }, [PLANT_ID, AOP_YEAR, fetchModeData, gradeId, keycloak, year])
 
   const handleCalculateFinalNorms = useCallback(async () => {
     setLoading(true)
@@ -1101,7 +1105,7 @@ const NormalOpNormsScreenCracker = () => {
       setSelectedTab(newValue)
       fetchAllData(gradeId)
     },
-    [gradeId, fetchAllData],
+    [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
   )
 
   const tabSx = {

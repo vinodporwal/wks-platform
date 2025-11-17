@@ -111,10 +111,10 @@
 
 .custom-data-grid .MuiDataGrid-columnHeaders {
   background-color: #fafafc;
-  color: black;
-  font-size: 0.8rem;
+  color: rgb(29, 27, 27);
+  font-size: 0.7rem;
   font-weight: bold;
-  border-bottom: 2px solid #dae0ef;
+  border-bottom: 1px solid #dae0ef;
   /* border-top-left-radius: 0; */
   /* border-top-right-radius: 0; */
   padding-left: auto;
@@ -136,7 +136,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   cursor: pointer;
   padding-left: 3px !important;
   padding-right: 4px !important;

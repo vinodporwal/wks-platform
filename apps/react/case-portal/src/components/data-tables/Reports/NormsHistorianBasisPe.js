@@ -106,28 +106,16 @@ const ProductionVolumeDataBasisPe = () => {
 
         return {
           ...base,
-          valueFormatter: (params) => {
-            if (params.value == null || params.value === '') return ''
-            const original = params.row?.[col.field] ?? params.value
-            const decimals = countDecimals(original) || 2
-            try {
-              return new Intl.NumberFormat('en-IN', {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: Math.min(decimals, 3), // cap for safety
-              }).format(Number(params.value))
-            } catch (e) {
-              return String(params.value)
-            }
-          },
+
           renderCell: (params) => {
-            const original = params.row?.[col.field] ?? params.value
+            const original = params?.row?.[col.field] ?? params?.value
             const decimals = countDecimals(original) || 2
             const text =
-              params.value == null || params.value === ''
+              params?.value == null || params?.value === ''
                 ? ''
                 : new Intl.NumberFormat('en-IN', {
                     maximumFractionDigits: Math.min(decimals, 3),
-                  }).format(Number(params.value))
+                  }).format(Number(params?.value))
             return (
               <div
                 title={String(params.value)}
@@ -526,20 +514,32 @@ const ProductionVolumeDataBasisPe = () => {
                       </Typography>
                     </CustomAccordionSummary>
                     <CustomAccordionDetails>
-                      <Box sx={{ width: '100%', margin: 0 }}>
+                      <Box
+                        sx={{
+                          width: '100%',
+                          margin: 0,
+                          height: d?.rows?.length > 50 ? 500 : 'auto',
+                        }}
+                      >
                         <DataGrid
                           rows={d.rows}
                           className='custom-data-grid'
                           columns={d.columns}
                           disableSelectionOnClick
-                          // disableColumnFilter
                           disableColumnSelector
                           disableDensitySelector
                           density='standard'
                           rowHeight={30}
-                          hideFooter={true}
-                          hideFooterPagination
-                          hideFooterSelectedRowCount
+                          // show default footer + pagination
+                          // allow only 100 rows per page
+
+                          pagination={d?.rows?.length > 99} // enable pagination only if > 99
+                          hideFooterPagination={d?.rows?.length <= 99} // hide pagination UI if <= 99
+                          hideFooter={d?.rows?.length === 0} // optional: hide whole footer when no rows
+                          pageSize={100}
+                          rowsPerPageOptions={[100]}
+                          // remove footer hiding flags you had before:
+                          hideFooterSelectedRowCount={false}
                           experimentalFeatures={{ newEditingApi: true }}
                         />
                       </Box>
