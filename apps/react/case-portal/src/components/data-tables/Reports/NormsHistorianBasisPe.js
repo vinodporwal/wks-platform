@@ -6,7 +6,6 @@ import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -17,6 +16,7 @@ import {
 } from 'utils/CustomAccrodian'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { DataGrid } from '@mui/x-data-grid'
 
 // -----------------------------------------------------------------------------
 // NormsHistorianBasisPe
@@ -27,7 +27,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const REPORT_TYPE_FOR_ALL = 'NormsHistorian' // <-- change to your backend's value if needed
 
-const NormsHistorianBasisPe = () => {
+const ProductionVolumeDataBasisPe = () => {
   const keycloak = useSession()
 
   const [dataMap, setDataMap] = useState({})
@@ -78,27 +78,74 @@ const NormsHistorianBasisPe = () => {
   const VALUE_FORMATOR = ValueFormatterProduction()
 
   const enrichColumns = useCallback((backendCols = []) => {
+    function countDecimals(value) {
+      if (value == null) return 0
+      const s = String(value).replace(/,/g, '').trim()
+      if (s.includes('.')) return s.split('.')[1].length
+      return 0
+    }
+
     return backendCols
       .filter((col) => col.field !== 'GRID_TYPE')
       .map((col) => {
         const isTextCol = col.type === 'string'
         const isNumberCol = col.type === 'number'
-        return {
+
+        const base = {
           ...col,
           title: col.title || col.field,
           filterable: true,
+          flex: 1,
           filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
-          align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
           editable: false,
-          isRightAlligned: isNumberCol ? 'numeric' : undefined,
+          headerAlign: 'left',
+          align: isNumberCol ? 'right' : 'left',
+        }
+
+        if (!isNumberCol) return base
+
+        return {
+          ...base,
+          valueFormatter: (params) => {
+            if (params.value == null || params.value === '') return ''
+            const original = params.row?.[col.field] ?? params.value
+            const decimals = countDecimals(original) || 2
+            try {
+              return new Intl.NumberFormat('en-IN', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: Math.min(decimals, 3), // cap for safety
+              }).format(Number(params.value))
+            } catch (e) {
+              return String(params.value)
+            }
+          },
+          renderCell: (params) => {
+            const original = params.row?.[col.field] ?? params.value
+            const decimals = countDecimals(original) || 2
+            const text =
+              params.value == null || params.value === ''
+                ? ''
+                : new Intl.NumberFormat('en-IN', {
+                    maximumFractionDigits: Math.min(decimals, 3),
+                  }).format(Number(params.value))
+            return (
+              <div
+                title={String(params.value)}
+                style={{
+                  width: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {text}
+              </div>
+            )
+          },
         }
       })
   }, [])
 
-  // ---------------------------------------------------------------------------
-  // Infer columns from row objects (returns [{ field, title, type }])
-  // ---------------------------------------------------------------------------
   function isValidDateString(str) {
     if (typeof str !== 'string') return false
 
@@ -110,12 +157,10 @@ const NormsHistorianBasisPe = () => {
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, // ISO format
     ]
 
-    // Check if string matches common date patterns
     const matchesPattern = datePatterns.some((pattern) =>
       pattern.test(str.trim()),
     )
 
-    // Additional check: if it contains only letters and numbers without date separators, it's likely not a date
     if (!matchesPattern && !/[-/,\s:]/.test(str)) {
       return false
     }
@@ -142,15 +187,12 @@ const NormsHistorianBasisPe = () => {
           detectedType = 'number'
           break
         }
-        // detect date-like strings
-        // Shivanand
 
         const d = new Date(v)
         if (!isNaN(d.getTime()) && isValidDateString(v)) {
           detectedType = 'date'
           break
         }
-        // numeric string (allow commas)
         const numericCandidate = String(v).replace(/[,]/g, '')
         if (!isNaN(Number(numericCandidate))) {
           detectedType = 'number'
@@ -163,9 +205,6 @@ const NormsHistorianBasisPe = () => {
     return cols
   }
 
-  // ---------------------------------------------------------------------------
-  // Normalize row values according to detected column types
-  // ---------------------------------------------------------------------------
   function normalizeRowValues(row = {}, columns = []) {
     const parsed = { ...row }
     columns.forEach((c) => {
@@ -192,10 +231,6 @@ const NormsHistorianBasisPe = () => {
     return parsed
   }
 
-  // ---------------------------------------------------------------------------
-  // Fetch all grids in one call and build dataMap + gridNames
-  // The backend is expected to return: apiResponse.data = [ { gridName, data: [...] }, ... ]
-  // ---------------------------------------------------------------------------
   const fetchAllGrids = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     // clear previous timers if any
@@ -301,7 +336,7 @@ const NormsHistorianBasisPe = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
+  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged, tabIndex])
 
   // ---------------------------------------------------------------------------
   // Excel export helpers (keeps your existing implementation compatible)
@@ -489,15 +524,20 @@ const NormsHistorianBasisPe = () => {
                     </CustomAccordionSummary>
                     <CustomAccordionDetails>
                       <Box sx={{ width: '100%', margin: 0 }}>
-                        <KendoDataGrid
+                        <DataGrid
                           rows={d.rows}
-                          columns={d.columns?.map((col) => ({
-                            ...col,
-                            format: `{0:0.###}`,
-                            widthT:
-                              d?.columns?.length > 20 ? '150px' : undefined,
-                          }))}
-                          permissions={{ isHeight: d?.rows?.length > 15 }}
+                          className='custom-data-grid'
+                          columns={d.columns}
+                          disableSelectionOnClick
+                          // disableColumnFilter
+                          disableColumnSelector
+                          disableDensitySelector
+                          density='standard'
+                          rowHeight={30}
+                          hideFooter={true}
+                          hideFooterPagination
+                          hideFooterSelectedRowCount
+                          experimentalFeatures={{ newEditingApi: true }}
                         />
                       </Box>
                     </CustomAccordionDetails>
@@ -514,4 +554,4 @@ const NormsHistorianBasisPe = () => {
   )
 }
 
-export default NormsHistorianBasisPe
+export default ProductionVolumeDataBasisPe
