@@ -23,10 +23,13 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
+import { getRoleName } from 'services/role-service'
 
 const AopDesignBasisNorms = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     sitePlantChange,
@@ -322,7 +325,7 @@ const AopDesignBasisNorms = () => {
         return response
       }
 
-      // Execution started — show user and refresh details
+      // Execution started � show user and refresh details
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Execution Started Successfully!',
@@ -355,7 +358,7 @@ const AopDesignBasisNorms = () => {
         ),
       ])
 
-      // all finished — check statuses
+      // all finished � check statuses
       const ok1 = r1?.code === 200
       const ok2 = r2?.code === 200
       const ok3 = r3?.code === 200
@@ -455,6 +458,7 @@ const AopDesignBasisNorms = () => {
                         onChange={(e) => setStartDate(e.value)}
                         style={{ height: '80px' }}
                         size={'medium'}
+                        disabled={READ_ONLY}
                       />{' '}
                     </Box>
                     {/* End Date */}
@@ -474,6 +478,7 @@ const AopDesignBasisNorms = () => {
                         onChange={(e) => setEndDate(e.value)}
                         style={{ height: '80px' }}
                         size={'medium'}
+                        disabled={READ_ONLY}
                       />{' '}
                     </Box>
                     {/* Load Button */}
@@ -483,7 +488,7 @@ const AopDesignBasisNorms = () => {
                         // onClick={onLoad}
                         onClick={handleOpenDialog}
                         className='btn-save'
-                        // disabled={!isLoadEnabled}
+                        disabled={READ_ONLY}
                         sx={{ alignSelf: 'flex-end' }}
                       >
                         Load
@@ -494,10 +499,12 @@ const AopDesignBasisNorms = () => {
 
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
-                    className='summary-title'
+                    className={
+                      READ_ONLY ? 'summary-title-disabled' : 'summary-title'
+                    }
                     sx={{
                       whiteSpace: 'normal',
-                      alignSelf: 'flex-end', // 👈 ensures it's bottom-aligned with the button
+                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
                     }}
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}

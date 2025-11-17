@@ -26,10 +26,14 @@ import {
 import moment from '../../../../node_modules/moment/moment'
 import getKendoProductionColumns from '../CommonHeader/KendoProdVolBHeader'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import ProductionVolumeDataBasisPe from './kendo-ProductionVolumeDataBasisPe'
+// import ProductionVolumeDataBasisPe from './kendo-ProductionVolumeDataBasisPe'
+import ProductionVolumeDataBasisPe from './ProductionVolumeDataBasisPe'
 
+import { getRoleName } from 'services/role-service'
 const ProductionVolumeDataBasis = () => {
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
+
   const units = ['TPH', 'TPD']
   const [selectedUnit, setSelectedUnit] = useState('TPH')
   const [rowsMC, setRowsMC] = useState([])
@@ -60,7 +64,6 @@ const ProductionVolumeDataBasis = () => {
   const [loading, setLoading] = useState(false)
   const [showGrids, setShowGrids] = useState({})
   const headerMap = generateHeaderNames(AOP_YEAR)
-
   const fetchData = async (reportType, setState, selectedUnit) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if (!selectedUnit) return
@@ -143,7 +146,9 @@ const ProductionVolumeDataBasis = () => {
       ])
       setLoading(false)
     }
-    fetchAllData()
+    if (lowerVertName == 'meg') {
+      fetchAllData()
+    }
   }, [oldYear, yearChanged, keycloak, PLANT_ID, selectedUnit])
 
   useEffect(() => {
@@ -231,6 +236,7 @@ const ProductionVolumeDataBasis = () => {
               variant='contained'
               onClick={exportAllGrids}
               className='btn-save'
+              disabled={READ_ONLY}
             >
               Export
             </Button>

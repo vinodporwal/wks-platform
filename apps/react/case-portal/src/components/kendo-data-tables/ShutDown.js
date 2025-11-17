@@ -14,6 +14,7 @@ import { ShutDownPpColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownAllColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownPTAColumns } from 'components/colums/ShutdownColumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
+import { getRoleName } from 'services/role-service'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -60,9 +61,11 @@ const ShutDown = ({ permissions }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
   const keycloak = useSession()
+
+  const READ_ONLY = getRoleName(keycloak)
   const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
@@ -238,11 +241,13 @@ const ShutDown = ({ permissions }) => {
         }
       }
 
-      if (lowerVertName == 'meg' || 
-        lowerVertName == 'elastomer' || 
+      if (
+        lowerVertName == 'meg' ||
+        lowerVertName == 'elastomer' ||
         lowerVertName == 'vcm' ||
-        lowerVertName == 'pvc') {
-         // Check for shutdown timeframe spanning multiple months
+        lowerVertName == 'pvc'
+      ) {
+        // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
         for (const row of allRecords) {
           const start = new Date(row.maintStartDateTime)
@@ -302,7 +307,11 @@ const ShutDown = ({ permissions }) => {
         // Slowdown and shutdown timeframe overlapping
         //THEN CHECK 1 SCREEN DATA WITH ANOTHER SCREEN
 
-        if (lowerVertName != 'elastomer' || lowerVertName != 'vcm' || lowerVertName != 'pvc') {
+        if (
+          lowerVertName != 'elastomer' ||
+          lowerVertName != 'vcm' ||
+          lowerVertName != 'pvc'
+        ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -713,12 +722,14 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (lowerVertName === 'elastomer' || 
-        lowerVertName === 'pvc' || 
+      if (
+        lowerVertName === 'elastomer' ||
+        lowerVertName === 'pvc' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'aromatic' ||
         lowerVertName === 'pta' ||
-        lowerVertName === 'pet' ) {
+        lowerVertName === 'pet'
+      ) {
         response = await DataService.shutdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,
@@ -747,21 +758,25 @@ const ShutDown = ({ permissions }) => {
     try {
       let response
 
-      
-      if(lowerVertName == 'elastomer' || lowerVertName ==='pvc' || lowerVertName ==='vcm'){
+      if (
+        lowerVertName == 'elastomer' ||
+        lowerVertName === 'pvc' ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta'
+      ) {
         response = await DataService.ImportShutdownElastomerDetails(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-      } else{
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
         response = await DataService.ImportShutdownDetails(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       }
 
       if (response?.code === 200) {
@@ -857,10 +872,14 @@ const ShutDown = ({ permissions }) => {
       titleName: `${SCREEN_NAME}`,
 
       uploadExcelBtn:
-        lowerVertName === 'pe' || 
-        lowerVertName === 'pp' || 
-        lowerVertName === 'elastomer' || 
-        lowerVertName === 'pvc' || lowerVertName === 'vcm' ? true : false,
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'elastomer' ||
+        lowerVertName === 'pvc' ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta'
+          ? true
+          : false,
     },
     isOldYear,
   )

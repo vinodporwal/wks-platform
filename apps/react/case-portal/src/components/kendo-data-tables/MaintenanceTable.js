@@ -8,10 +8,12 @@ import { validateFields } from 'utils/validationUtils'
 import crackercolumns from '../../assets/CrackerMaintenanceColumn.json'
 import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
-
+import { getRoleName } from 'services/role-service'
 const MaintenanceTable = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
+
   const {
     verticalChange,
     yearChanged,
@@ -70,6 +72,7 @@ const MaintenanceTable = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)

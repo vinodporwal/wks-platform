@@ -19,7 +19,7 @@ import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 // -----------------------------------------------------------------------------
-// ProductionVolumeDataBasisPe
+// NormsHistorianBasisPe
 // Updated to handle new API payload shape: apiResponse.data = [ { gridName, data: [...] }, ... ]
 // If your backend expects a special reportType to return the combined payload, change
 // the REPORT_TYPE_FOR_ALL constant below.
@@ -27,13 +27,14 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 
 const REPORT_TYPE_FOR_ALL = 'NormsHistorian' // <-- change to your backend's value if needed
 
-const ProductionVolumeDataBasisPe = () => {
+const NormsHistorianBasisPe = () => {
   const keycloak = useSession()
 
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
   const [tabIndex, setTabIndex] = useState(0)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -513,4 +514,4 @@ const ProductionVolumeDataBasisPe = () => {
   )
 }
 
-export default ProductionVolumeDataBasisPe
+export default NormsHistorianBasisPe

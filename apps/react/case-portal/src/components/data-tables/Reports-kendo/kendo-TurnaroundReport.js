@@ -9,26 +9,27 @@ import KendoDataTables from 'components/kendo-data-tables/index'
 import { validateFields } from 'utils/validationUtils'
 import moment from '../../../../node_modules/moment/moment'
 import { useSelector } from 'react-redux'
+import { getRoleName } from 'services/role-service'
 const TurnaroundReport = () => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
-    verticalChange,
-    yearChanged,
-    oldYear,
-    plantID,
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-  } = dataGridStore
-  const PLANT_ID = plantObject?.id
-  const SITE_ID = siteObject?.id
-  const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
-  const AOP_YEAR = year?.selectedYear
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+      verticalChange,
+      yearChanged,
+      oldYear,
+      plantID,
+      plantObject,
+      siteObject,
+      verticalObject,
+      year,
+      screenTitle,
+    } = dataGridStore
+    const PLANT_ID = plantObject?.id
+    const SITE_ID = siteObject?.id
+    const VERTICAL_ID = verticalObject?.id
+    const VERTICAL_NAME = verticalObject?.name
+    const AOP_YEAR = year?.selectedYear
+    const vertName = verticalChange?.selectedVertical
+    const lowerVertName = vertName?.toLowerCase() || 'meg'
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -51,13 +52,15 @@ const TurnaroundReport = () => {
 
   const [loading, setLoading] = useState(false)
   const keycloak = useSession()
-
+  const READ_ONLY = getRoleName(keycloak)
   const handleRemarkCellClick = (row) => {
+    if(READ_ONLY) return
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
   const handleRemarkCellClick2 = (row) => {
+    if(READ_ONLY) return
     setCurrentRemark2(row.remarks || '')
     setCurrentRowId2(row.id)
     setRemarkDialogOpen2(true)
