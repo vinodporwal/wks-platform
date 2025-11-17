@@ -330,7 +330,7 @@ const ProductionVolumeDataBasisPe = () => {
   }, [keycloak, enrichColumns])
 
   useEffect(() => {
-    setTabIndex(0)
+    // setTabIndex(0)
     fetchAllGrids()
     return () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
