@@ -331,10 +331,13 @@ const ProductionVolumeDataBasisPe = () => {
 
   useEffect(() => {
     // setTabIndex(0)
-    fetchAllGrids()
-    return () => {
-      timeoutIdsRef.current.forEach((t) => clearTimeout(t))
-      timeoutIdsRef.current = []
+
+    if (tabIndex == 0) {
+      fetchAllGrids()
+      return () => {
+        timeoutIdsRef.current.forEach((t) => clearTimeout(t))
+        timeoutIdsRef.current = []
+      }
     }
   }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged, tabIndex])
 

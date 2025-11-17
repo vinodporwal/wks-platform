@@ -32,7 +32,6 @@ const ConsumptionNormsHistorianBasis = () => {
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
-  const [tabIndex, setTabIndex] = useState(0)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -330,7 +329,6 @@ const ConsumptionNormsHistorianBasis = () => {
   }, [keycloak, enrichColumns])
 
   useEffect(() => {
-    setTabIndex(0)
     fetchAllGrids()
     return () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
