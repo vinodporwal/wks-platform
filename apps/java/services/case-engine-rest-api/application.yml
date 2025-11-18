@@ -76,6 +76,11 @@ spring:
       hikari:
         maximum-pool-size: 10
         minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 300000
+        max-lifetime: 250000     
+        validation-timeout: 5000
+        connection-test-query: SELECT 1
 
     # Configuration for Database 2
     db2:
@@ -89,6 +94,11 @@ spring:
       hikari:
         maximum-pool-size: 10
         minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 300000
+        max-lifetime: 250000      
+        validation-timeout: 5000
+        connection-test-query: SELECT 1
 
   jpa:
     hibernate:
@@ -104,6 +114,7 @@ spring:
     # port: 587
     # username: shrikant.mnt@gmail.com
     # password: "ldaortwzpbjadvez"
+    # fromEmail: shrikant.mnt@gmail.com
 
     # host: smtp.honeywell.com
     # port: 25

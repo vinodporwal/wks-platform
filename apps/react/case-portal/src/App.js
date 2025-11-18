@@ -97,11 +97,11 @@ const App = () => {
   }, [])
 
   async function forceLogoutIfUserNoMinimalRoleForSystem(keycloak) {
-    if (!accountStore.hasAnyRole(keycloak)) {
-      console.log('User dont have required roles.');
-      localStorage.removeItem('keycloakToken')
-      return keycloak.logout({ redirectUri: window.location.origin })
-    }
+    // if (!accountStore.hasAnyRole(keycloak)) {
+    //   console.log('User dont have required roles.');
+    //   localStorage.removeItem('keycloakToken')
+    //   return keycloak.logout({ redirectUri: window.location.origin })
+    // }
   }
 
   
