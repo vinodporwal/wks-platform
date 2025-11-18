@@ -106,8 +106,8 @@ const eventName = encodeURIComponent(faultEvent.events.eventName) || '';
 const selectedEventId = encodeURIComponent(faultEvent.events.eventPkId) || '';   
 const assetId = encodeURIComponent(faultEvent.assetId) || '';  
   
-const startTimeStamp = null;
-const endTimeStamp = null;
+let startTimeStamp = null;
+let endTimeStamp = null;
 if(startTimeStampRaw) {
   startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
 } 
