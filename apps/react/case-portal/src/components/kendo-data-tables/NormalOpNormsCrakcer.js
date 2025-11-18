@@ -137,8 +137,8 @@ const NormalOpNormsScreenCracker = () => {
   const valueFormat = ValueFormatterConsumption()
   // column defs
   const colDefs = useMemo(
-    () => getNormalOpNormColDef({ headerMap, valueFormat }),
-    [headerMap, valueFormat],
+    () => getNormalOpNormColDef({ headerMap, valueFormat, lowerVertName }),
+    [headerMap, valueFormat, lowerVertName],
   )
 
   const colDefsIndividual = useMemo(
@@ -320,7 +320,7 @@ const NormalOpNormsScreenCracker = () => {
         setLoading(false)
       }
     },
-    [keycloak],
+    [keycloak, PLANT_ID, AOP_YEAR],
   )
 
   const fetchConstantsData = useCallback(async () => {
@@ -352,7 +352,7 @@ const NormalOpNormsScreenCracker = () => {
     } catch (error) {
       console.error('Error fetching constants data:', error)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
   // permission helper: if old year, getAdjustedPermissions blocks actions
   const getAdjustedPermissions = useCallback((permissions, isOldYearFlag) => {
     if (isOldYearFlag != 1) return permissions
@@ -542,12 +542,12 @@ const NormalOpNormsScreenCracker = () => {
       if (res1?.code === 200 && res2?.code === 200) {
         const normalized1 = res1.data.map((obj) => ({
           ...obj,
-          normParameterFKId: obj.normParameterFKId.toUpperCase(),
+          normParameterFKId: obj.normParameterId.toUpperCase(),
         }))
 
         const normalized2 = res2.data.map((obj) => ({
           ...obj,
-          normParameterFKId: obj.normParameterFKId.toUpperCase(),
+          normParameterFKId: obj.normParameterId.toUpperCase(),
         }))
 
         const combinedData = [...normalized1, ...normalized2]
@@ -599,7 +599,7 @@ const NormalOpNormsScreenCracker = () => {
     } catch (err) {
       console.error('fetchFinalNorms', err)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const fetchModeData = useCallback(
     async (gradeIdParam) => {
@@ -710,6 +710,8 @@ const NormalOpNormsScreenCracker = () => {
       fetchData,
       fetchConstantsData,
       selectedTab,
+      PLANT_ID,
+      AOP_YEAR,
     ],
   )
 
@@ -723,7 +725,13 @@ const NormalOpNormsScreenCracker = () => {
     gradeId,
     plantObject?.id,
     selectedTab,
+    PLANT_ID,
+    AOP_YEAR,
   ])
+
+  useEffect(() => {
+    setSelectedTab(0)
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
   // remark handlers
   const handleRemarkCellClick = useCallback((row) => {
@@ -902,7 +910,7 @@ const NormalOpNormsScreenCracker = () => {
     } finally {
       setLoading(false)
     }
-  }, [PLANT_ID, fetchModeData, gradeId, keycloak, year])
+  }, [PLANT_ID, AOP_YEAR, fetchModeData, gradeId, keycloak, year])
 
   const handleCalculateFinalNorms = useCallback(async () => {
     setLoading(true)
@@ -1094,7 +1102,7 @@ const NormalOpNormsScreenCracker = () => {
       setSelectedTab(newValue)
       fetchAllData(gradeId)
     },
-    [gradeId, fetchAllData],
+    [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
   )
 
   const tabSx = {

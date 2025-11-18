@@ -57,6 +57,8 @@ import ProductCell from './Utilities-Kendo/ProductCell'
 import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
 import { NoSpinnerNumericEditorWithUOMValidation } from './Utilities-Kendo/numbericColumnsWithUOMValidation'
+import { useSession } from 'SessionStoreContext'
+import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -170,8 +172,11 @@ const KendoDataTables = ({
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
+  const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const keycloak = useSession()
 
   const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
@@ -1419,7 +1424,9 @@ const KendoDataTables = ({
                       }
                       editor='date'
                       hidden={col.hidden}
-                      columnMenu={DateColumnMenu}
+                      // columnMenu={DateColumnMenu}
+                      filter='date'
+                      columnMenu={ColumnMenuCheckboxFilterDate}
                       width={col?.widthT}
                       headerClassName={
                         isDateFilterActive.includes(col.field)
@@ -1474,7 +1481,9 @@ const KendoDataTables = ({
                       }
                       editor='date'
                       hidden={col.hidden}
-                      columnMenu={DateColumnMenu}
+                      filter='date'
+                      // columnMenu={DateColumnMenu}
+                      columnMenu={ColumnMenuCheckboxFilterDate}
                     />
                   )
                 }

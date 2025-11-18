@@ -181,10 +181,6 @@ const KendoDataTablesCrackerRunLength = ({
     const startYear = parseInt(AOP_YEAR?.split('-')[0], 10)
     const lowerLimit = new Date(startYear, 3, 1)
     const upperLimit = new Date(startYear + 1, 2, 31)
-
-    // console.log(lowerLimit)
-    // console.log(upperLimit)
-
     setLowerLimitDate(lowerLimit)
     setUpperLimitDate(upperLimit)
   }, [PLANT_ID, AOP_YEAR])
@@ -1060,7 +1056,7 @@ const KendoDataTablesCrackerRunLength = ({
       ]
 
       const response = await DataService.saveCrackerRunLength(
-        plantId,
+        PLANT_ID,
         payload,
         keycloak,
       )
@@ -1125,7 +1121,7 @@ const KendoDataTablesCrackerRunLength = ({
         setLoading1(false)
       }
     },
-    [keycloak],
+    [keycloak, AOP_YEAR, PLANT_ID],
   )
 
   const fetchDataNextYearCalculate = useCallback(
@@ -1227,7 +1223,7 @@ const KendoDataTablesCrackerRunLength = ({
         setLoading1(false)
       }
     },
-    [keycloak],
+    [keycloak, AOP_YEAR, PLANT_ID],
   )
 
   const handleCancelClick = () => {

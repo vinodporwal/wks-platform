@@ -779,7 +779,7 @@ const ConfigurationTable = () => {
                       <Button
                         variant='contained'
                         onClick={handleOpenDialog}
-                        className='btn-load'
+                        className='btn-save'
                         sx={{ alignSelf: 'flex-end' }}
                       >
                         Load
@@ -805,7 +805,7 @@ const ConfigurationTable = () => {
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: 'column', // ?? stack vertically
+                flexDirection: 'column',
                 alignItems: 'flex-start',
                 gap: 0,
                 mt: 1,
@@ -1365,7 +1365,7 @@ const ConfigurationTable = () => {
                     loading={loading}
                     setRows={setConstantsRows}
                     fetchData={fetchData}
-                    configType='ShutdownNorms'
+                    configType='Constant'
                     groupBy='TypeDisplayName'
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}

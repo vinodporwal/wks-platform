@@ -119,7 +119,11 @@ const AnnualAopCost = () => {
 
   const headerMap = generateHeaderNames(AOP_YEAR)
   const valueFormat = ValueFormatterProduction()
-  const colsProduction = getKendoColumns({ headerMap, type: 'Production', valueFormat })
+  const colsProduction = getKendoColumns({
+    headerMap,
+    type: 'Production',
+    valueFormat,
+  })
   const colsPrice = getKendoColumns({
     headerMap,
     type: 'Price',
@@ -128,8 +132,16 @@ const AnnualAopCost = () => {
     valueFormat,
   })
   const colsNorm = getKendoColumns({ headerMap, type: 'Norm', valueFormat })
-  const colsQuantity = getKendoColumns({ headerMap, type: 'Quantity', valueFormat })
-  const colsNormCost = getKendoColumns({ headerMap, type: 'NormCost', valueFormat })
+  const colsQuantity = getKendoColumns({
+    headerMap,
+    type: 'Quantity',
+    valueFormat,
+  })
+  const colsNormCost = getKendoColumns({
+    headerMap,
+    type: 'NormCost',
+    valueFormat,
+  })
 
   useEffect(() => {
     let isCancelled = false

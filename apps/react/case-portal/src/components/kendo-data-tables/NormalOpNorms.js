@@ -209,11 +209,13 @@ const NormalOpNormsScreen = () => {
 
   useEffect(() => {
     fetchAllData(gradeId)
-  }, [oldYear, yearChanged, keycloak, gradeId, PLANT_ID])
+  }, [oldYear, yearChanged, keycloak, gradeId, PLANT_ID, AOP_YEAR])
+
   const valueFormat = ValueFormatterConsumption()
   const colDefs = getNormalOpNormColDef({
     headerMap,
     valueFormat,
+    lowerVertName,
   })
 
   const colDefsIntermediateValues = [

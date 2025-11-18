@@ -1,11 +1,11 @@
 import { Box, Button, Typography } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
+import { DataGrid } from '@mui/x-data-grid'
 import {
   ExcelExport,
   ExcelExportColumn,
 } from '@progress/kendo-react-excel-export'
-import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -15,17 +15,16 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
-import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-
-const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
 
 const ConsumptionNormsHistorianBasis = () => {
   const keycloak = useSession()
+  const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
 
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
   const [tabIndex, setTabIndex] = useState(0)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -57,39 +56,95 @@ const ConsumptionNormsHistorianBasis = () => {
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [])
+  }, [keycloak, PLANT_ID, AOP_YEAR])
 
-  // Small helper used previously
-  function parseDDMMYYYY(dateStr) {
-    if (!dateStr) return null
-    const [day, month, year] = dateStr.split('-')
-    return new Date(`${year}-${month}-${day}`)
+  const enrichColumns = useCallback(
+    (backendCols = []) => {
+      function countDecimals(value) {
+        if (value == null) return 0
+        const s = String(value).replace(/,/g, '').trim()
+        if (s.includes('.')) return s.split('.')[1].length
+        return 0
+      }
+
+      const isManyColumns = backendCols.length > 15
+
+      return backendCols
+        .filter((col) => col.field !== 'GRID_TYPE')
+        .map((col) => {
+          const isTextCol = col.type === 'string'
+          const isNumberCol = col.type === 'number'
+
+          const base = {
+            ...col,
+            title: col.title || col.field,
+            filterable: true,
+
+            flex: isManyColumns ? undefined : 1,
+            width: isManyColumns ? 150 : undefined,
+            filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
+            editable: false,
+            headerAlign: 'left',
+            align: isNumberCol ? 'right' : 'left',
+          }
+
+          if (!isNumberCol) return base
+
+          return {
+            ...base,
+
+            renderCell: (params) => {
+              const original = params?.row?.[col.field] ?? params?.value
+              const decimals = countDecimals(original) || 2
+              const text =
+                params?.value == null || params?.value === ''
+                  ? ''
+                  : new Intl.NumberFormat('en-IN', {
+                      maximumFractionDigits: Math.min(decimals, 3),
+                    }).format(Number(params?.value))
+              return (
+                <div
+                  title={String(params.value)}
+                  style={{
+                    width: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'right',
+                  }}
+                >
+                  {text}
+                </div>
+              )
+            },
+          }
+        })
+    },
+    [keycloak, PLANT_ID, AOP_YEAR],
+  )
+
+  function isValidDateString(str) {
+    if (typeof str !== 'string') return false
+
+    // Common date patterns
+    const datePatterns = [
+      /^\d{1,2}[-/]\d{1,2}[-/]\d{4}$/, // DD-MM-YYYY or DD/MM/YYYY
+      /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/, // YYYY-MM-DD or YYYY/MM/DD
+      /^[A-Za-z]{3}\s+\d{1,2},\s+\d{4}/, // "Apr 1, 2025" format
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, // ISO format
+    ]
+
+    const matchesPattern = datePatterns.some((pattern) =>
+      pattern.test(str.trim()),
+    )
+
+    if (!matchesPattern && !/[-/,\s:]/.test(str)) {
+      return false
+    }
+
+    return matchesPattern
   }
 
-  const VALUE_FORMATOR = ValueFormatterProduction()
-
-  const enrichColumns = useCallback((backendCols = []) => {
-    return backendCols
-      .filter((col) => col.field !== 'GRID_TYPE')
-      .map((col) => {
-        const isTextCol = col.type === 'string'
-        const isNumberCol = col.type === 'number'
-        return {
-          ...col,
-          title: col.title || col.field,
-          filterable: true,
-          filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
-          align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: VALUE_FORMATOR } : {}),
-          editable: false,
-          isRightAlligned: isNumberCol ? 'numeric' : undefined,
-        }
-      })
-  }, [])
-
-  // ---------------------------------------------------------------------------
-  // Infer columns from row objects (returns [{ field, title, type }])
-  // ---------------------------------------------------------------------------
   function inferColumnsFromRows(rows = []) {
     const fieldSet = new Set()
     rows.forEach((r) => {
@@ -109,13 +164,12 @@ const ConsumptionNormsHistorianBasis = () => {
           detectedType = 'number'
           break
         }
-        // detect date-like strings
+
         const d = new Date(v)
-        if (!isNaN(d.getTime())) {
+        if (!isNaN(d.getTime()) && isValidDateString(v)) {
           detectedType = 'date'
           break
         }
-        // numeric string (allow commas)
         const numericCandidate = String(v).replace(/[,]/g, '')
         if (!isNaN(Number(numericCandidate))) {
           detectedType = 'number'
@@ -128,9 +182,6 @@ const ConsumptionNormsHistorianBasis = () => {
     return cols
   }
 
-  // ---------------------------------------------------------------------------
-  // Normalize row values according to detected column types
-  // ---------------------------------------------------------------------------
   function normalizeRowValues(row = {}, columns = []) {
     const parsed = { ...row }
     columns.forEach((c) => {
@@ -152,16 +203,13 @@ const ConsumptionNormsHistorianBasis = () => {
         parsed[c.field] = !isNaN(d.getTime()) ? d : null
         return
       }
-      // strings and objects left as-is (objects will be stringified during export)
     })
     return parsed
   }
 
-  // ---------------------------------------------------------------------------
-  // Fetch all grids in one call and build dataMap + gridNames
-  // The backend is expected to return: apiResponse.data = [ { gridName, data: [...] }, ... ]
-  // ---------------------------------------------------------------------------
   const fetchAllGrids = useCallback(async () => {
+    setGridNames([])
+    setDataMap({})
     if (!PLANT_ID || !AOP_YEAR) return
     // clear previous timers if any
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
@@ -232,7 +280,15 @@ const ConsumptionNormsHistorianBasis = () => {
       const newMap = {}
       gridsArray.forEach((g) => {
         const rawRows = Array.isArray(g.data) ? g.data : []
-        const inferredCols = inferColumnsFromRows(rawRows)
+        // BEFORE:
+        // const inferredCols = inferColumnsFromRows(rawRows)
+
+        // AFTER:
+        const inferredCols =
+          Array.isArray(g.columns) && g.columns.length
+            ? g.columns
+            : inferColumnsFromRows(rawRows)
+
         const enrichedCols = enrichColumns(inferredCols)
 
         const rowsWithId = rawRows.map((r, i) => {
@@ -249,20 +305,25 @@ const ConsumptionNormsHistorianBasis = () => {
     } finally {
       if (isMountedRef.current) setLoading(false)
     }
-  }, [keycloak, enrichColumns])
+  }, [keycloak, PLANT_ID, AOP_YEAR, enrichColumns])
 
   useEffect(() => {
-    setTabIndex(0)
-    fetchAllGrids()
-    return () => {
-      timeoutIdsRef.current.forEach((t) => clearTimeout(t))
-      timeoutIdsRef.current = []
+    if (tabIndex == 0) {
+      fetchAllGrids()
+      return () => {
+        timeoutIdsRef.current.forEach((t) => clearTimeout(t))
+        timeoutIdsRef.current = []
+      }
     }
-  }, [fetchAllGrids, PLANT_ID, oldYear, yearChanged])
-
-  // ---------------------------------------------------------------------------
-  // Excel export helpers (keeps your existing implementation compatible)
-  // ---------------------------------------------------------------------------
+  }, [
+    fetchAllGrids,
+    keycloak,
+    PLANT_ID,
+    AOP_YEAR,
+    oldYear,
+    yearChanged,
+    tabIndex,
+  ])
 
   // eslint-disable-next-line
   const INVALID_SHEET_CHARS_RE = /[\\\/\?\*\[\]\:]/g
@@ -336,11 +397,6 @@ const ConsumptionNormsHistorianBasis = () => {
     }
   }, [gridNames, dataMap])
 
-  const currentDateTime = new Date()
-    .toISOString()
-    .replace(/T/, ' ')
-    .replace(/:/g, '-')
-    .split('.')[0]
   const fileName = `Overall Consumption Basis.xlsx`
 
   const renderTitle = (t) => t
@@ -378,6 +434,11 @@ const ConsumptionNormsHistorianBasis = () => {
                   key={col.field}
                   field={col.field}
                   title={col.title || col.field}
+                  headerCellOptions={{
+                    background: '#d9e1f2', // light blue header
+                    color: '#000',
+                    bold: true,
+                  }}
                 />
               ))}
             </ExcelExport>
@@ -396,36 +457,52 @@ const ConsumptionNormsHistorianBasis = () => {
       </Box>
 
       <Box display='flex' flexDirection='column' gap={2}>
-        {tabIndex === 0 && (
-          <>
-            {gridNames.map((name) => {
-              const d = dataMap[name] || { rows: [], columns: [] }
-              return (
-                <div key={name}>
-                  <CustomAccordion defaultExpanded disableGutters>
-                    <CustomAccordionSummary
-                      aria-controls={`${name}-content`}
-                      id={`${name}-header`}
+        <>
+          {gridNames.map((name) => {
+            const d = dataMap[name] || { rows: [], columns: [] }
+            return (
+              <div key={name}>
+                <CustomAccordion defaultExpanded disableGutters>
+                  <CustomAccordionSummary
+                    aria-controls={`${name}-content`}
+                    id={`${name}-header`}
+                  >
+                    <Typography component='span' className='grid-title'>
+                      {renderTitle(name)}
+                    </Typography>
+                  </CustomAccordionSummary>
+                  <CustomAccordionDetails>
+                    <Box
+                      sx={{
+                        width: '100%',
+                        margin: 0,
+                        height: d?.rows?.length > 50 ? 500 : 'auto',
+                      }}
                     >
-                      <Typography component='span' className='grid-title'>
-                        {renderTitle(name)}
-                      </Typography>
-                    </CustomAccordionSummary>
-                    <CustomAccordionDetails>
-                      <Box sx={{ width: '100%', margin: 0 }}>
-                        <KendoDataGrid
-                          rows={d.rows}
-                          columns={d.columns}
-                          permissions={{ isHeight: d?.rows?.length > 15 }}
-                        />
-                      </Box>
-                    </CustomAccordionDetails>
-                  </CustomAccordion>
-                </div>
-              )
-            })}
-          </>
-        )}
+                      <DataGrid
+                        rows={d.rows}
+                        className='custom-data-grid'
+                        columns={d.columns}
+                        disableSelectionOnClick
+                        disableColumnSelector
+                        disableDensitySelector
+                        density='standard'
+                        rowHeight={30}
+                        pagination={d?.rows?.length > 99}
+                        hideFooterPagination={d?.rows?.length <= 99}
+                        hideFooter={d?.rows?.length < 30}
+                        pageSize={100}
+                        rowsPerPageOptions={[100]}
+                        hideFooterSelectedRowCount={false}
+                        experimentalFeatures={{ newEditingApi: true }}
+                      />
+                    </Box>
+                  </CustomAccordionDetails>
+                </CustomAccordion>
+              </div>
+            )
+          })}
+        </>
       </Box>
     </div>
   )

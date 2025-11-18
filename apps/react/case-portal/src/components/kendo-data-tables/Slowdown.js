@@ -431,11 +431,15 @@ const SlowDown = ({ permissions }) => {
       }
 
       // MEG specific checks
-      if (lowerVertName === 'meg' || 
+      if (
+        lowerVertName === 'meg' ||
         lowerVertName === 'elastomer' ||
         lowerVertName === 'vcm' ||
-        lowerVertName === 'pvc') {
+        lowerVertName === 'pvc' ||
+        lowerVertName === 'pta'
+      ) {
         // Month span check
+        //check timeframe Multiple month spilt into single
         for (const row of rows) {
           const start = new Date(row.maintStartDateTime)
           const end = new Date(row.maintEndDateTime)
@@ -456,7 +460,7 @@ const SlowDown = ({ permissions }) => {
           }
         }
 
-        // Overlap within Slowdown
+        // Overlap within Slowdown  of timeframe ovelaping
         for (let i = 0; i < rows.length; i++) {
           const a = rows[i]
           const aStart = new Date(a.maintStartDateTime).getTime()
@@ -474,7 +478,7 @@ const SlowDown = ({ permissions }) => {
               b.isError = true
               setSnackbarOpen(true)
               setSnackbarData({
-                message: `The slowdown timeframe for "${a.discription}" overlaps with "${b.discription}". Please ensure no overlapping of timeframes.`,
+                message: `The slowdown timeframe for "${a.discription || b.discription || 'this record'}" overlaps with "${b.discription}". Please ensure no overlapping of timeframes.`,
                 severity: 'error',
               })
               return
@@ -483,7 +487,11 @@ const SlowDown = ({ permissions }) => {
         }
 
         // Cross overlap the timeframe with Shutdown
-        if (lowerVertName != 'elastomer' || lowerVertName != 'vcm' || lowerVertName != 'pvc') {
+        if (
+          lowerVertName != 'elastomer' ||
+          lowerVertName != 'vcm' ||
+          lowerVertName != 'pvc'
+        ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -909,11 +917,20 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (lowerVertName == 'elastomer' || lowerVertName== 'pvc' || lowerVertName== 'vcm' ||
+      if (
+        lowerVertName == 'elastomer' ||
+        lowerVertName == 'pvc' ||
+        lowerVertName == 'vcm' ||
         lowerVertName === 'aromatics' ||
-        lowerVertName === 'pta' 
+        lowerVertName === 'pta'
       ) {
         response = await DataService.slowdownDetailsElastomerExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (lowerVertName === 'chemical' || lowerVertName === 'meg') {
+        response = await DataService.ExportSlowdownDetailsEOE(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -941,22 +958,33 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-
-    if(lowerVertName == 'elastomer' || lowerVertName == 'pvc' || lowerVertName == 'vcm' || lowerVertName == 'pta'){
-            response = await DataService.ImportSlowdownElastomerDetails(
-            rawFile,
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-      )
-          } else{
-            response = await DataService.ImportSlowdownDetails(
-            rawFile,
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-      )
-          }
+      if (
+        lowerVertName == 'elastomer' ||
+        lowerVertName == 'pvc' ||
+        lowerVertName == 'vcm' ||
+        lowerVertName == 'pta'
+      ) {
+        response = await DataService.ImportSlowdownElastomerDetails(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (lowerVertName === 'chemical' || lowerVertName === 'meg') {
+        response = await DataService.ImportSlowdownDetailsEOE(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.ImportSlowdownDetails(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -1049,11 +1077,16 @@ const SlowDown = ({ permissions }) => {
       titleName: SCREEN_NAME,
 
       uploadExcelBtn:
-        lowerVertName === 'pe' || 
-        lowerVertName === 'pp' || 
-        lowerVertName == 'elastomer' || 
-        lowerVertName == 'pvc' || 
-        lowerVertName == 'vcm' || lowerVertName == 'pta' ? true : false,
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName == 'elastomer' ||
+        lowerVertName == 'pvc' ||
+        lowerVertName == 'vcm' ||
+        lowerVertName == 'pta' ||
+        lowerVertName == 'chemical' ||
+        lowerVertName == 'meg'
+          ? true
+          : false,
     },
     isOldYear,
   )

@@ -27,7 +27,7 @@ import {
 import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import NormsHistorianBasisAromatics from './NormsHistorianBasisAromatics'
-import ProductionVolumeDataBasisPe from './NormsHistorianBasisPe'
+import NormsHistorianBasisPe from './NormsHistorianBasisPe'
 
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
@@ -82,6 +82,8 @@ const NormsHistorianBasis = () => {
 
   const fetchAllData = async (selectedUnit) => {
     if (!PLANT_ID || !AOP_YEAR) return
+    if (lowerVertName != 'meg') return
+
     if (!selectedUnit) return
     setLoading(true)
     let isCancelled = false
@@ -297,7 +299,7 @@ const NormsHistorianBasis = () => {
         ]
 
   if (lowerVertName != 'meg' && lowerVertName != 'aromatics') {
-    return <ProductionVolumeDataBasisPe />
+    return <NormsHistorianBasisPe />
   } else if (lowerVertName == 'aromatics') {
     return <NormsHistorianBasisAromatics />
   } else

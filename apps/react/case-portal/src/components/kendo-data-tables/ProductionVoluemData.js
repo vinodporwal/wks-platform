@@ -918,11 +918,16 @@ const ProductionvolumeData = ({ permissions }) => {
           ? true
           : false,
       downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      uploadExcelBtn: VERTICAL_NAME === 'vcm' ? false : (permissions?.hideUploadExcel ? false : true),
+      uploadExcelBtn:
+        VERTICAL_NAME === 'vcm'
+          ? false
+          : permissions?.hideUploadExcel
+            ? false
+            : true,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
       titleAndInformation:
-        'Maximum Ethylene Production achieved in the last 01 year historical data for 05 consecutive days in different furnace mode of operation.',
+        'Average Ethylene Production achieved in the last 01 year historical data in different furnace mode of operation.',
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
       titleName:
