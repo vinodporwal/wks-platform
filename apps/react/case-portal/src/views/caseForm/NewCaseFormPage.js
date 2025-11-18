@@ -93,6 +93,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
       console.log('*********data', data)
       const faultEvent = data[0];
 
+      console.log('###### ********* falutEvent: ', faultEvent)
+
       const startTimeStampRaw = faultEvent.startTime;
       const endTimeStampRaw = faultEvent.endTime;
 
@@ -104,8 +106,16 @@ const eventName = encodeURIComponent(faultEvent.events.eventName);
 const selectedEventId = encodeURIComponent(faultEvent.events.eventPkId);   
 const assetId = encodeURIComponent(faultEvent.assetId);  
 
-const startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
-const endTimeStamp = new Date(endTimeStampRaw.replace(" ", "T") + "Z").toISOString();
+if(startTimeStampRaw) {
+  const startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
+} else {
+  const startTimeStamp = null;
+}
+
+if(endTimeStampRaw) {
+const endTimeStamp = new Date(endTimeStampRaw.replace(" ", "T") + "Z").toISOString();  } else {
+  const endTimeStamp = null;
+}
 // const rootNode = '';
  //  const assetType = '';
 
@@ -137,12 +147,13 @@ console.log('apmUrl', event_TrendUrl)
     CaseService.getCaseDefinitionsById(keycloak, caseDefId)
       .then((data) => {
         setCaseDef(data)
-        
+        console.log('**** formkey : ', data.formKey)
        
         return FormService.getByKey(keycloak, data.formKey)
+        
       })
       .then((data) => {
-        console.log('new page form data', data)
+        console.log('**** new page form data', data)
         setForm(data)
 
         const level1 = data.structure.components[0]
@@ -348,6 +359,8 @@ console.log('apmUrl', event_TrendUrl)
 
   // ---------- SUBMIT FORM GUARD ----------
   const onSubmitForm = () => {
+
+    console.log('***** formData', formData)
    
     setLoading(true)
     const requiredFields = ['caseTitle']
