@@ -18,8 +18,7 @@ import {
 
 const ConsumptionNormsHistorianBasis = () => {
   const keycloak = useSession()
-  const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
-
+  const REPORT_TYPE_FOR_ALL = 'OverallConsumption'
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -51,13 +50,13 @@ const ConsumptionNormsHistorianBasis = () => {
   const exportRefs = useRef({})
 
   useEffect(() => {
+    isMountedRef.current = true
     return () => {
       isMountedRef.current = false
       timeoutIdsRef.current.forEach((t) => clearTimeout(t))
       timeoutIdsRef.current = []
     }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
-
+  }, [])
   const enrichColumns = useCallback(
     (backendCols = []) => {
       function countDecimals(value) {
