@@ -649,10 +649,11 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 					if (businessDemandDataDTO.getVerticalFKId() != null) {
 						businessDemand.setVerticalFKId(UUID.fromString(businessDemandDataDTO.getVerticalFKId()));
 					}
+					
 					businessDemandDataRepository.save(businessDemand);
 
 				}
-			} // TODO Auto-generated method stub
+			} 
 			
 			Plants plant = plantsRepository.findById((plantId))
 					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
@@ -663,6 +664,9 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			if(vertical.getName().equalsIgnoreCase("Cracker")) {
 				for(BusinessDemandDataDTO businessDemandDataDTO : businessDemandDataDTOList) {
 					String normParameterName=normParametersRepository.findNormParameterName(UUID.fromString(businessDemandDataDTO.getNormParameterId()));
+					if(normParameterName.equalsIgnoreCase("Ethane")) {
+						normParameterName = "Ethane-4F";
+					}
 					List<UUID> ids= normParametersRepository.findNormParameterIds(normParameterName,plantId);
 					for(UUID id:ids) {
 						for (int i = 1; i <= 12; i++) {	

@@ -749,7 +749,7 @@ const KendoDataTablesCracker = ({
                   className='btn-save'
                   onClick={saveModalOpen}
                   disabled={
-                    isButtonDisabled ||
+                    isButtonDisabled || READ_ONLY ||
                     (!summaryEdited && Object.keys(modifiedCells).length === 0)
                   }
                   {...(loading ? {} : {})}
