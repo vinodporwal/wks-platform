@@ -99,23 +99,21 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
       const endTimeStampRaw = faultEvent.endTime;
 
      
- const assetDisplayName = encodeURIComponent(faultEvent.AssetDisplayName);
- const assetName = encodeURIComponent(faultEvent.assetName);
+ const assetDisplayName = encodeURIComponent(faultEvent.AssetDisplayName) || '';
+ const assetName = encodeURIComponent(faultEvent.assetName) || '';
  
-const eventName = encodeURIComponent(faultEvent.events.eventName);
-const selectedEventId = encodeURIComponent(faultEvent.events.eventPkId);   
-const assetId = encodeURIComponent(faultEvent.assetId);  
-
+const eventName = encodeURIComponent(faultEvent.events.eventName) || '';
+const selectedEventId = encodeURIComponent(faultEvent.events.eventPkId) || '';   
+const assetId = encodeURIComponent(faultEvent.assetId) || '';  
+  
+const startTimeStamp = null;
+const endTimeStamp = null;
 if(startTimeStampRaw) {
-  const startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
-} else {
-  const startTimeStamp = null;
-}
+  startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
+} 
 
 if(endTimeStampRaw) {
-const endTimeStamp = new Date(endTimeStampRaw.replace(" ", "T") + "Z").toISOString();  } else {
-  const endTimeStamp = null;
-}
+ endTimeStamp = new Date(endTimeStampRaw.replace(" ", "T") + "Z").toISOString();  } 
 // const rootNode = '';
  //  const assetType = '';
 
