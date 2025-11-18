@@ -872,7 +872,8 @@ export const CaseList = ({ status, caseDefId }) => {
   // {hasWaitMsg && (<p>{waitOrErrMsg}</p>)}
   return (
     <div style={{ height: 650, width: '100%' }}>
-      {caseDefId && accountStore.isManagerUser(keycloak) && (
+      {/* {caseDefId && accountStore.isManagerUser(keycloak) && ( */}
+          {caseDefId && (
           <Button
             id='basic-button'
             onClick={handleNewCaseAction}
