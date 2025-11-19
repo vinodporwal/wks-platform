@@ -1038,6 +1038,17 @@ const KendoDataTablesCrackerRunLength = ({
     saveCrackerRunLength(singleRow)
   }
 
+  const getNextAopYear = (aopYear) => {
+    const parts = aopYear.split('-')
+    const currentStartYear = parseInt(parts[0], 10)
+    const nextStartYear = currentStartYear + 1
+    const nextEndYear = nextStartYear + 1
+    const formattedNextEndYear = String(nextEndYear).slice(-2)
+    return `${nextStartYear}-${formattedNextEndYear}`
+  }
+
+  const NEXT_AOP_YEAR = getNextAopYear(AOP_YEAR)
+
   const saveCrackerRunLength = async (singleRow) => {
     setLoading1(true)
     try {
@@ -1059,6 +1070,7 @@ const KendoDataTablesCrackerRunLength = ({
         PLANT_ID,
         payload,
         keycloak,
+        NEXT_AOP_YEAR,
       )
       if (response?.code == 200) {
         setSnackbarOpen1(true)

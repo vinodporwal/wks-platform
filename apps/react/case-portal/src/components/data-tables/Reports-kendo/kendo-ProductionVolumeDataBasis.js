@@ -61,8 +61,8 @@ const ProductionVolumeDataBasis = () => {
   const [loading, setLoading] = useState(false)
   const [showGrids, setShowGrids] = useState({})
   const headerMap = generateHeaderNames(AOP_YEAR)
-
   const fetchData = async (reportType, setState, selectedUnit) => {
+    if (lowerVertName != 'meg') return
     if (!PLANT_ID || !AOP_YEAR) return
     if (!selectedUnit) return
     try {

@@ -61,6 +61,10 @@ const ShutdownNorms = () => {
   const AOP_YEAR = year?.selectedYear
   const SCREEN_NAME = screenTitle?.title
   const headerMap = generateHeaderNames(AOP_YEAR)
+  const isPEPP = ['pe', 'pp'].includes(lowerVertName)
+  const textNote = isPEPP
+    ? '*Updating to All Grade will override the existing values.'
+    : '*Quantities are per day basis'
 
   const keycloak = useSession()
 
@@ -137,15 +141,8 @@ const ShutdownNorms = () => {
           await fetchData()
         }
         let data
-        if (['pe', 'pp'].includes(lowerVertName)) {
-          if (!gradeId) return
-          data = await ShutdownNormsApiService.getShutdownMonths(
-            keycloak,
-            gradeId,
-            PLANT_ID,
-            AOP_YEAR,
-          )
-        } else {
+
+        {
           data = await ShutdownNormsApiService.getShutdownMonths(
             keycloak,
             null,
@@ -163,7 +160,9 @@ const ShutdownNorms = () => {
       }
     }
 
-    loadData()
+    setTimeout(() => {
+      loadData()
+    }, 500)
   }, [
     oldYear,
     yearChanged,
@@ -172,6 +171,7 @@ const ShutdownNorms = () => {
     plantID,
     gradeId,
     lowerVertName,
+    AOP_YEAR,
   ])
 
   const isCellEditable = (params) => {
@@ -311,11 +311,7 @@ const ShutdownNorms = () => {
             originalRemark: item?.remarks?.trim(),
             materialFkId: item?.materialFkId?.toLowerCase(),
             Particulars: item.normParameterTypeDisplayName || 'Particulars',
-            isEditable: isPEorPP
-              ? false
-              : isElastomer
-                ? item?.isEditable
-                : true,
+            isEditable: isElastomer ? item?.isEditable : true,
           }
 
           return baseItem
@@ -490,9 +486,10 @@ const ShutdownNorms = () => {
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
 
-      showNote: lowerVertName === 'meg' ? true : false,
+      showNote: lowerVertName === 'meg' || isPEPP ? true : false,
+      showNoteWhileSaving: isPEPP ? true : false,
 
-      saveBtn: lowerVertName === 'pe' || lowerVertName === 'pp' ? false : true,
+      saveBtn: true,
       showCalculate:
         lowerVertName == 'meg' ||
         lowerVertName == 'elastomer' ||
@@ -576,7 +573,7 @@ const ShutdownNorms = () => {
         calculatebtnClicked={calculatebtnClicked}
         plantID={plantID}
         grades={grades}
-        note='*Quantities are per day basis'
+        note={textNote}
       />
     </div>
   )
