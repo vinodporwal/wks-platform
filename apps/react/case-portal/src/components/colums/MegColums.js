@@ -372,7 +372,6 @@ export const NormalOpNormMegColumns = [
     hidden: true,
   },
 ]
-
 export const CrackerColums = [
   {
     field: 'Particulars',
@@ -584,7 +583,7 @@ export const ShutdownConsumptionMegColumns = [
   {
     field: 'remarks',
     headerName: 'Remark',
-    widthT: 160,
+    // widthT: 160,
     editable: false,
   },
   {

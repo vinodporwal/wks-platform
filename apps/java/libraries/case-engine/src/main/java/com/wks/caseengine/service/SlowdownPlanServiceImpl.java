@@ -47,6 +47,8 @@ import com.wks.caseengine.entity.PlantMaintenance;
 import com.wks.caseengine.entity.PlantMaintenanceTransaction;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
+import com.wks.caseengine.entity.ShutdownNormsValue;
+import com.wks.caseengine.entity.SlowdownNormsValue;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -56,6 +58,7 @@ import com.wks.caseengine.repository.PlantMaintenanceTransactionRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.ShutDownPlanRepository;
+import com.wks.caseengine.repository.SlowdownNormsRepository;
 import com.wks.caseengine.repository.SlowdownPlanRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
@@ -99,7 +102,12 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	
 	@Autowired
 	private ShutDownPlanRepository shutDownPlanRepository;
+	
+	@Autowired
+	private SlowdownNormsRepository slowdownNormsRepository;
 
+	@Autowired
+	private PlantsService plantsService;
 
 	@Override
 	public List<ShutDownPlanDTO> findSlowdownDetailsByPlantIdAndType(UUID plantId, String maintenanceTypeName,
@@ -649,7 +657,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public AOPMessageVM importNonProductSlowdown(String year,UUID plantId, String maintenanceTypeName,MultipartFile file) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -1006,6 +1014,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 		}
 		return dtoList;
 	}
+
 	public List<ShutDownPlanDTO> readNonProductSlowdown(InputStream inputStream, UUID plantFKId, String year) {
 	    List<ShutDownPlanDTO> dtoList = new ArrayList<>();
 	    List<LocalDateTime[]> validTimeRanges = new ArrayList<>(); 
@@ -1273,9 +1282,10 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	public List<ShutDownPlanDTO> saveShutdownData(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
 	    String year = null;
 	    List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
-	    
+	    String verticalName = plantsService.findVerticalNameByPlantId(plantId);
 	    DateTimeFormatter COMPARISON_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"); 
-
+	    Boolean monthChange=false;
+	    int changedMonth=0;
 	    try {
 	        UUID plantMaintenanceId = shutDownPlanService.findIdByPlantIdAndMaintenanceTypeName(plantId, "Slowdown");
 	        if (plantMaintenanceId == null) {
@@ -1315,6 +1325,11 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    continue;
 	                }
 	                isUpdate = true;
+	                
+	                if(plantMaintenanceTransaction.getMaintForMonth()!=(shutDownPlanDTO.getMaintStartDateTime().getMonth() + 1)) {
+	                	changedMonth=plantMaintenanceTransaction.getMaintForMonth();
+	                	monthChange=true;
+	                }
 	            }
 	            String originalDesc = plantMaintenanceTransaction.getDiscription();
 	            String originalStart = plantMaintenanceTransaction.getMaintStartDateTime() != null ? 
@@ -1378,6 +1393,17 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    failedList.add(shutDownPlanDTO);
 	                    continue; // Skip saving this record
 	                }
+	                if(("ELASTOMER".equalsIgnoreCase(verticalName)) || ("AROMATICS".equalsIgnoreCase(verticalName)) || ("PTA".equalsIgnoreCase(verticalName))) {
+						if(monthChange) {	
+				        	Long count=plantMaintenanceTransactionRepository.countByPlantAndMonth(plantId,changedMonth,"Slowdown",year);
+				        	if(count==1) {
+				        		List<SlowdownNormsValue> shutdownNormsValues =slowdownNormsRepository.findByPlantFkIdAndFinancialYear(plantId,plantMaintenanceTransaction.getAuditYear());
+					        	for(SlowdownNormsValue shutdownNormsValue: shutdownNormsValues) {
+					        		setMonth(changedMonth,shutdownNormsValue);
+					        	}
+				        	}	
+						}
+					}
 	            }
 
 	            slowdownPlanRepository.save(plantMaintenanceTransaction);
@@ -1398,6 +1424,64 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	        throw new RuntimeException("Failed to save data", ex);
 	    }
 	}
+	
+	public void setMonth(int month,SlowdownNormsValue slowdownNormsValue) {
+		switch (month) {
+	    case 1:
+	    	slowdownNormsValue.setJanuary(0.0);
+	        slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 2:
+	    	slowdownNormsValue.setFebruary(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 3:
+	    	slowdownNormsValue.setMarch(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 4:
+	    	slowdownNormsValue.setApril(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 5:
+	    	slowdownNormsValue.setMay(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 6:
+	    	slowdownNormsValue.setJune(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 7:
+	    	slowdownNormsValue.setJuly(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 8:
+	    	slowdownNormsValue.setAugust(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 9:
+	    	slowdownNormsValue.setSeptember(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 10:
+	    	slowdownNormsValue.setOctober(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 11:
+	    	slowdownNormsValue.setNovember(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    case 12:
+	    	slowdownNormsValue.setDecember(0.0);
+	    	slowdownNormsRepository.save(slowdownNormsValue);
+	        break;
+	    default:
+	        // optionally handle invalid month values
+	        throw new IllegalArgumentException("Invalid month: " + month);
+	    }
+		
+	}
+
 	
 	@Override
 	public List<ShutDownPlanDTO> saveRampUpData(UUID plantId, List<ShutDownPlanDTO> shutDownPlanDTOList) {
