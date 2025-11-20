@@ -20,7 +20,7 @@ import { GridRowModes } from '../../../node_modules/@mui/x-data-grid/models/grid
 import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-
+import { getRoleName } from 'services/role-service'
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -42,7 +42,6 @@ const SlowDown = ({ permissions }) => {
   const SCREEN_NAME = screenTitle?.title
 
   const FORMATE_DECIMAL = ValueFormatterProduction()
-
   const vertName = verticalChange?.selectedVertical
   const plantName = plantObject?.name
   const isOldYear = oldYear?.oldYear
@@ -66,6 +65,7 @@ const SlowDown = ({ permissions }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -102,6 +102,7 @@ const SlowDown = ({ permissions }) => {
   }
 
   const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
@@ -865,9 +866,9 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.AROMATICS:
         return SlowDownAromaticsColumns
       case verticalEnums.PVC:
-        return SlowDownElastomerColumns 
+        return SlowDownElastomerColumns
       case verticalEnums.VCM:
-        return SlowDownElastomerColumns 
+        return SlowDownElastomerColumns
       default:
         return SlowDownMegColumns
     }

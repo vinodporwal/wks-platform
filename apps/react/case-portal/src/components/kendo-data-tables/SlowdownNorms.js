@@ -20,7 +20,7 @@ import SlowdownNormForMeg from './SlowdownNormForMeg'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
-
+import { getRoleName } from 'services/role-service'
 const SlowdownNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [loading, setLoading] = useState(false)
@@ -88,7 +88,7 @@ const SlowdownNorms = () => {
   // }
 
   const keycloak = useSession()
-
+  const READ_ONLY = getRoleName(keycloak)
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -203,7 +203,7 @@ const SlowdownNorms = () => {
   })
 
   const handleRemarkCellClick = (row) => {
-    if (!row?.isEditable) return
+    if (!row?.isEditable || READ_ONLY) return
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)

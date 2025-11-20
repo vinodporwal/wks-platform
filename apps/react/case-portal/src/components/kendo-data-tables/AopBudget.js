@@ -19,8 +19,11 @@ import { Grid, TextField } from '../../../node_modules/@mui/material/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 import { AOPMaintenanceApiService } from 'services/aop-maintenance-api-service'
+import { getRoleName } from 'services/role-service'
 export default function AopBudget() {
   const keycloak = useSession()
+
+  const READ_ONLY = getRoleName(keycloak)
 
   const [row, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -372,13 +375,14 @@ export default function AopBudget() {
   const handleCalculateP = () => {}
 
   const handleRemarkCellClick = useCallback((row) => {
-    if (!row?.IsEditable) return
+    if (!row?.IsEditable || READ_ONLY) return
     setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
 
   const handleRemarkCellClickP = useCallback((row) => {
+    if(READ_ONLY) return
     setCurrentRemarkP(row.remark || '')
     setCurrentRowIdP(row.id)
     setRemarkDialogOpenP(true)
@@ -720,6 +724,7 @@ export default function AopBudget() {
             </Grid>
 
             <TextArea
+              disabled={READ_ONLY}
               className={textAreaRedDesign ? 'textarea-error' : ''}
               value={designBasis}
               rows={3}
@@ -752,6 +757,7 @@ export default function AopBudget() {
             </Grid>
 
             <TextArea
+              disabled={READ_ONLY}
               className={textAreaRedRemark ? 'textarea-error' : ''}
               value={designRemarks}
               rows={3}

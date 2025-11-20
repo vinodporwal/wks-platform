@@ -25,8 +25,11 @@ import { Typography } from '../../../node_modules/@mui/material/index.js'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
+import { getRoleName } from 'services/role-service.js'
 const DecokingConfig = () => {
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
+
   const tabs = ['IBR Plan']
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -70,6 +73,7 @@ const DecokingConfig = () => {
   const [ibrScreen2Rows, setIbrScreen2Rows] = useState([])
   const [globalTaStartDate, setGlobalTaStartDate] = useState(null)
   const [globalTaEndDate, setGlobalTaEndDate] = useState(null)
+
   useEffect(() => {
     if (!globalTaStartDate || !globalTaEndDate || ibrScreen2Rows.length === 0)
       return
@@ -96,11 +100,13 @@ const DecokingConfig = () => {
   }, [globalTaStartDate, globalTaEndDate])
 
   const handleRemarkCellClick2 = (dataItem) => {
+    if (READ_ONLY) return
     setCurrentRemarkSdTa(dataItem.remarks || '')
     setCurrentRowId2(dataItem.id)
     setRemarkDialogOpenSdTa(true)
   }
   const handleRemarkCellClickRunLength = (dataItem) => {
+    if (READ_ONLY) return
     setCurrentRemarkRunLength(dataItem.remarks || '')
     setCurrentRowId3(dataItem.id)
     setRemarkDialogOpenRunLength(true)
@@ -275,6 +281,7 @@ const DecokingConfig = () => {
     },
     [activeTabIndex, keycloak, setRowsForTab, AOP_YEAR, PLANT_ID],
   )
+
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, fetchData])
@@ -1006,6 +1013,8 @@ const DecokingConfig = () => {
               onChange={(e) => setGlobalTaStartDate(e.value)}
               style={{ height: '80px' }}
               size={'medium'}
+              disabled={READ_ONLY}
+
               // min={getAopYearLimits().startLimit}
               // max={
               //   globalTaEndDate ? globalTaEndDate : getAopYearLimits().endLimit
@@ -1024,6 +1033,8 @@ const DecokingConfig = () => {
               onChange={(e) => setGlobalTaEndDate(e.value)}
               style={{ height: '80px' }}
               size={'medium'}
+              disabled={READ_ONLY}
+
               // min={
               //   globalTaStartDate
               //     ? globalTaStartDate

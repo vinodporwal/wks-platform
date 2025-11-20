@@ -27,9 +27,12 @@ import { NormalOperationNormsApiService } from 'services/normal-operation-norms-
 import moment from '../../../node_modules/moment/moment'
 import AopDesignBasisNorms from './AopDesignBasisNorms'
 import useValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import { getRoleName } from 'services/role-service'
 const CrakcerConstants = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     sitePlantChange,
@@ -407,6 +410,7 @@ const CrakcerConstants = () => {
                     onChange={(e) => setStartDate(e.value)}
                     style={{ height: '80px' }}
                     size={'medium'}
+                    disabled={READ_ONLY}
                   />
                   <Box
                     sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
@@ -424,6 +428,7 @@ const CrakcerConstants = () => {
                       onChange={(e) => setEndDate(e.value)}
                       style={{ height: '80px' }}
                       size={'medium'}
+                      disabled={READ_ONLY}
                     />
                   </Box>
                   {!isOldYearFlag && (
@@ -432,6 +437,7 @@ const CrakcerConstants = () => {
                       onClick={handleOpenDialog}
                       className='btn-load'
                       sx={{ alignSelf: 'flex-end' }}
+                      disabled={READ_ONLY}
                     >
                       Load
                     </Button>
@@ -440,7 +446,9 @@ const CrakcerConstants = () => {
 
                 {configurationExecutionDetails[0]?.ModifiedOn && (
                   <Typography
-                    className='summary-title'
+                    className={
+                      READ_ONLY ? 'summary-title-disabled' : 'summary-title'
+                    }
                     sx={{ whiteSpace: 'normal' }} // <-- added alignSelf
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
@@ -675,6 +683,7 @@ const CrakcerConstants = () => {
   }, [modifiedCellsConstants, summary])
 
   const handleRemarkCellClickConstants = (row) => {
+    if (READ_ONLY) return
     setCurrentRemarkConstants(row.remarks || '')
     setCurrentRowIdConstants(row.id)
     setRemarkDialogOpenConstants(true)

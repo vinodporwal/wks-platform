@@ -29,8 +29,11 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 // import ProductionVolumeDataBasisPe from './kendo-ProductionVolumeDataBasisPe'
 import ProductionVolumeDataBasisPe from './ProductionVolumeDataBasisPe'
 
+import { getRoleName } from 'services/role-service'
 const ProductionVolumeDataBasis = () => {
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
+
   const units = ['TPH', 'TPD']
   const [selectedUnit, setSelectedUnit] = useState('TPH')
   const [rowsMC, setRowsMC] = useState([])
@@ -234,6 +237,7 @@ const ProductionVolumeDataBasis = () => {
               variant='contained'
               onClick={exportAllGrids}
               className='btn-save'
+              disabled={READ_ONLY}
             >
               Export
             </Button>

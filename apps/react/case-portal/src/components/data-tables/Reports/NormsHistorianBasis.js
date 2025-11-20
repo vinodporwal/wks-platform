@@ -28,9 +28,10 @@ import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeade
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 // import NormsHistorianBasisAromatics from './NormsHistorianBasisAromatics'
 import NormsHistorianBasisPe from './NormsHistorianBasisPe'
-
+import { getRoleName } from 'services/role-service'
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
 
   const [rowsHistorianValues, setHistorianValues] = useState([])
   const [rowsMcuAndNormGrid, setMcuAndNormGrid] = useState([])
@@ -347,6 +348,7 @@ const NormsHistorianBasis = () => {
               variant='contained'
               onClick={exportAllGrids}
               className='btn-save'
+              disabled={READ_ONLY}
             >
               Export
             </Button>

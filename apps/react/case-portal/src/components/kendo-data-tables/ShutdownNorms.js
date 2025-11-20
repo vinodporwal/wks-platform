@@ -12,6 +12,7 @@ import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import { getRoleName } from 'services/role-service'
 
 const ShutdownNorms = () => {
   const [gradeId, setGradeId] = useState(null)
@@ -67,7 +68,7 @@ const ShutdownNorms = () => {
     : '*Quantities are per day basis'
 
   const keycloak = useSession()
-
+  const READ_ONLY = getRoleName(keycloak)
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -160,9 +161,7 @@ const ShutdownNorms = () => {
       }
     }
 
-    setTimeout(() => {
-      loadData()
-    }, 500)
+    loadData()
   }, [
     oldYear,
     yearChanged,
@@ -171,7 +170,6 @@ const ShutdownNorms = () => {
     plantID,
     gradeId,
     lowerVertName,
-    AOP_YEAR,
   ])
 
   const isCellEditable = (params) => {
@@ -185,7 +183,7 @@ const ShutdownNorms = () => {
   })
 
   const handleRemarkCellClick = (row) => {
-    if (!row?.isEditable) return
+    if (!row?.isEditable || READ_ONLY) return
     setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)

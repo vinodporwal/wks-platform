@@ -13,11 +13,13 @@ import { Box } from '@mui/material'
 
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
+import { getRoleName } from 'services/role-service'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak)
 
   const [open1, setOpen1] = useState(false)
 
@@ -59,7 +61,6 @@ const ConsumptionNorms = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
   const [_plantID, set_PlantID] = useState('')
   const dispatch = useDispatch()
   const [gradeId, setGradeId] = useState(null)
@@ -70,6 +71,7 @@ const ConsumptionNorms = () => {
     rowsBeforeChange: {},
   })
   const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
     setCurrentRemark(row.aopRemarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
