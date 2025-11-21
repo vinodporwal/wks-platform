@@ -66,7 +66,8 @@ const SlowdownNorms = () => {
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
-
+  const plantName= plantObject?.name.toLowerCase()
+  const siteName= siteObject?.name.toLowerCase()
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('TPH')
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -75,7 +76,6 @@ const SlowdownNorms = () => {
 
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -584,6 +584,13 @@ const SlowdownNorms = () => {
     return <td>{displayName}</td>
   }
 
+  if (
+    lowerVertName === 'pp' &&
+    siteName === 'nmd' &&
+    plantName === 'pp'
+  ) {
+    return null // Or: return <div>Screen hidden for this configuration.</div>
+  }
   return (
     <div>
       <Backdrop
