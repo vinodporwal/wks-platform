@@ -100,6 +100,8 @@ export const CaseList = ({ status, caseDefId }) => {
   const currentPath = location.pathname;
   // If either businessKey or caseNo is present in the URL we should treat this as a "view" request
   const queryHasBusinessKey = searchParams.has('businessKey') || searchParams.has('caseNo');
+  const taskId = searchParams.get('taskId');
+
   // Only treat '/case/create' as an auto-create path. '/case-list/create' should show the list page.
   const isCaseCreatePath = currentPath && currentPath === '/case/create';
   const isCaseViewPath = queryHasBusinessKey || (currentPath && (currentPath === '/case/view' || currentPath === '/case-list/view'));
@@ -111,18 +113,29 @@ export const CaseList = ({ status, caseDefId }) => {
   // role based access control
   const[isCaseViewer, setIsCaseViewer] = useState(false);
   const[isCaseEditor, setIsCaseEditor] = useState(false);
+  const[isAdmin, setIsAdmin] = useState(false);
+  const[isCaseCreator, setIsCaseCreator] = useState(false);
+  const[groups, setGroups] = useState([]);
+
+
 
 
   useEffect(() => {
     const token = keycloak.tokenParsed;
     
+    console.log("*** token : ", token);
     const clientId = token?.azp || token?.client_id; 
     
     const clientRoles = token?.resource_access?.[clientId]?.roles || [];
     console.log("*** clientRoles : ", clientRoles);
+    const groups = token?.groups || [];
+    setGroups(groups);
       
     setIsCaseViewer(clientRoles.includes('case_viewer'));
     setIsCaseEditor(clientRoles.includes('case_editor'));  
+    setIsAdmin(clientRoles.includes('admin'));
+    setIsCaseCreator(clientRoles.includes('case_creator'));
+
     console.log("*** isCaseEditor : ", isCaseEditor);
     console.log("*** isCaseViewer : ", isCaseViewer);
   }, [keycloak]);
@@ -130,6 +143,19 @@ export const CaseList = ({ status, caseDefId }) => {
   
   if(isCaseCreatePath && !isCaseDefValid)
   {
+    const location = useLocation();
+
+    // console.log("*** location : ", location);
+    // const path = location.pathname; 
+    // console.log("*** path : ", path);
+    
+    // // Split by "/" and get the element after "case-list"
+    // const segment = path.split("/")[2];  // index 2 = 'create'
+  
+    // console.log(segment);
+    // console.log("*** segment : ", segment);
+
+
     const isCaseDefPresentInRoute = searchParams.has('case_def');
     caseDefId = isCaseDefPresentInRoute ? searchParams.get('case_def') : 'create';
     if(!caseDefId || caseDefId.length === 0 || caseDefId.trim().length === 0) {
@@ -255,7 +281,7 @@ export const CaseList = ({ status, caseDefId }) => {
                 caseNumber,
               };
             });
-
+  console.log('updatedCases: ', updatedCases);
             setCases(updatedCases);
             setFilter({
               ...filter,
@@ -293,6 +319,22 @@ export const CaseList = ({ status, caseDefId }) => {
                 window.history.replaceState(null, '', newUrl);
                 return;
               }
+            //  else clear variables from URL
+            //  else {
+            //   console.log('clearing variables from URL..........')
+            //   searchParamsWindow.delete('assetName');
+            //   searchParamsWindow.delete('hierarchyName');
+            //   searchParamsWindow.delete('sourceSystem');
+            //   searchParamsWindow.delete('eventIds');
+            //   searchParamsWindow.delete('businessKey');
+            //   searchParamsWindow.delete('caseNo');
+            //   searchParamsWindow.delete('caseNumber');
+            //   searchParamsWindow.delete('caseTitle');
+            //   searchParamsWindow.delete('caseStatus');
+            //   searchParamsWindow.delete('caseAssignedTo');
+            //   const newUrl = `${window.location.pathname}?${searchParamsWindow.toString()}`;
+            //   window.history.replaceState(null, '', newUrl);
+            //  }
             }
 
             // If not found, fallback to full list fetch behavior
@@ -879,7 +921,7 @@ export const CaseList = ({ status, caseDefId }) => {
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
             variant='contained'
-            disabled={isCaseViewer || isCaseEditor}
+            disabled={ (isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
           >
             {t('pages.caselist.action.newcase')}
           </Button>
@@ -1005,6 +1047,9 @@ export const CaseList = ({ status, caseDefId }) => {
           keycloak={keycloak}
           isCaseViewer={isCaseViewer}
           isCaseEditor={isCaseEditor}
+          isAdmin={isAdmin}
+          isCaseCreator={isCaseCreator}
+          taskId={taskId}
         />
       )}
       {/*openNewCaseForm && (

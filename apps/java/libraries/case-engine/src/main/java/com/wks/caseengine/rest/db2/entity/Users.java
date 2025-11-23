@@ -38,8 +38,7 @@ public class Users {
     @Column(name = "UserClusteredId", nullable = false)
     private Integer userClusteredId;
 
-    @Column(name = "GroupId", length = 100)
-    private String groupId;
+    
 
 	public String getUserPkId() {
 		return userPkId;

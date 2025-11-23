@@ -42,14 +42,15 @@ import lombok.Setter;
 @Setter
 public class CommandContext {
 
-	@Value("${case.engine.case-creation-process}")
+	@Value("${case.engine.case-creation-process:case-creation-process}")
 	private String caseCreationProcess;
 
-	@Value("${case.engine.email-to-case-process}")
+	@Value("${case.engine.email-to-case-process:email-to-case-process}")
 	private String emailToCaseProcess;
 
-	@Value("${case.engine.email-to-case-outbound-process}")
+	@Value("${case.engine.email-to-case-outbound-process:email-to-case-outbound-process}")
 	private String emailToCaseOutboundProcess;
+
 
 	@Autowired
 	private SecurityContextTenantHolder securityContextTenantHolder;

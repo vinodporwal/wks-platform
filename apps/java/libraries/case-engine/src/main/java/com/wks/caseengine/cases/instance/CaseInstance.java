@@ -47,6 +47,9 @@ public class CaseInstance {
 
 	private CaseOwner owner;
 
+	private String eventTrendUrl;
+	private String eventReportUrl;
+
 	@Default
 	private List<CaseComment> comments = new ArrayList<>();
 
@@ -110,4 +113,20 @@ public class CaseInstance {
                         attribute -> attribute           // Value mapper: keeps the whole CaseAttribute object
                 ));
     }
+
+	public String getEventTrendUrl() {
+		return eventTrendUrl;
+	}
+
+	public String getEventReportUrl() {
+		return eventReportUrl;
+	}
+
+	public void setEventTrendUrl(String eventTrendUrl) {
+		this.eventTrendUrl = eventTrendUrl;
+	}
+
+	public void setEventReportUrl(String eventReportUrl) {
+		this.eventReportUrl = eventReportUrl;
+	}
 }

@@ -14,6 +14,7 @@ package com.wks.bpm.engine.client;
 import java.util.List;
 import java.util.Optional;
 
+
 import com.wks.bpm.engine.BpmEngine;
 import com.wks.bpm.engine.exception.ProcessDefinitionNotFoundException;
 import com.wks.bpm.engine.exception.ProcessInstanceNotFoundException;
@@ -24,6 +25,7 @@ import com.wks.bpm.engine.model.spi.ProcessInstance;
 import com.wks.bpm.engine.model.spi.ProcessMessage;
 import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.Task;
+
 
 /**
  * @author victor.franca
@@ -73,5 +75,12 @@ public interface BpmEngineClient {
 
 	void sendMessage(final ProcessMessage processMesage, final Optional<List<ProcessVariable>> correlateKeys,
 			final BpmEngine bpmEngine);
+
+    boolean processExistsForBusinessKey(String businessKey);
+	boolean isTaskActive(String businessKey, String taskDefinitionKey);
+	boolean taskExists(String taskId);
+	void completeTaskWithbusinessKey(String businessKey, String taskDefinitionKey, List<ProcessVariable> variables);
+
+  
 
 }

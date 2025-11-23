@@ -57,7 +57,11 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 		// return commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
 CaseInstance changedInstance =  commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
 
+System.out.println("****** In CaseInstanceServiceImpl after CommandExecutorImpl return value....");
+
     if(changedInstance.getBusinessKey().equals(caseInstance.getBusinessKey())) {
+
+		System.out.println("****** case: update existingcase instance");
 
     try {
         commandContext.getCaseInstanceRepository().update(changedInstance.getId(), changedInstance);
@@ -65,6 +69,10 @@ CaseInstance changedInstance =  commandExecutor.execute(new StartCaseInstanceWit
         System.out.println("error while updating caseInstance");
           throw new RuntimeException(e);
     }
+}
+
+else {
+	  commandContext.getCaseInstanceRepository().save(changedInstance);
 }
 return changedInstance;
 

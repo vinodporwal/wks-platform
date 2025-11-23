@@ -37,6 +37,8 @@ export const TaskList = ({ businessKey, callback }) => {
     caseInstanceId: businessKey,
   })
 
+  const [isAdmin, setIsAdmin] = useState(false)
+
   useEffect(() => {
     if (Config.WebsocketsEnabled) {
       const websocketUrl = Config.WebsocketUrl
@@ -50,6 +52,13 @@ export const TaskList = ({ businessKey, callback }) => {
       }
     }
   }, [])
+
+  useEffect(() => {
+    const token = keycloak.tokenParsed;
+    const clientId = token?.azp || token?.client_id; 
+    const clientRoles = token?.resource_access?.[clientId]?.roles || [];
+   setIsAdmin(clientRoles.includes('admin'));
+  }, [keycloak])
 
   const handleNewTaskSubmit = () => {
     // Perform any necessary validation on the new task data
@@ -83,13 +92,17 @@ export const TaskList = ({ businessKey, callback }) => {
   return (
     <React.Fragment>
       {fetching && <Typography>Loading...</Typography>}
-      <Button
+      
+     <Button
         variant='contained'
+        disabled={!isAdmin}
         startIcon={<AddCircleOutline />}
         onClick={() => setModalOpen(true)}
-      >
+      >   
         {t('pages.caseform.actions.newTask')}
       </Button>
+     
+
       {tasks && tasks.length > 0 && (
         <React.Fragment>
           <List
@@ -139,16 +152,20 @@ export const TaskList = ({ businessKey, callback }) => {
                   )}
                 </Box>
                 <ListItemSecondaryAction>
-                  <IconButton
+                 <IconButton
                     edge='end'
+                    disabled={!isAdmin}
                     aria-label='complete'
                     onClick={() => {
+                      e.stopPropagation();
+                      if (!isAdmin) return;
                       setTask(task)
                       setOpen(true)
                     }}
                   >
                     <PlayCircle color='primary' />
-                  </IconButton>
+                  </IconButton>   
+               
                 </ListItemSecondaryAction>
               </ListItem>
             ))}

@@ -15,6 +15,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 
+
+
 import kotlin.collections.UArraySortingKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,8 +89,15 @@ public class CaseEmailServiceImpl implements CaseEmailService {
 //	@Override
 	public void send(String from1, String[] to, String subject, String[] cc, String bcc,
 			List<MultipartFile> attachments, String templateName, Map<String, Object> placeholders) {
+			System.out.println("********** CaseEmailServiceImpl send method **********");
+
+			if(templateName.equals("task-notification")) {  
+
+				System.out.println("********** Task Notification **********");
+			}
 		 try {
 	            MimeMessage message = mailSender.createMimeMessage();
+			  
 	            MimeMessageHelper helper = new MimeMessageHelper(message, true);
 	            helper.setFrom(from);
 

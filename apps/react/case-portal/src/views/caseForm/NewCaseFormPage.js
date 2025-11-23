@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import CloseIcon from '@mui/icons-material/Close'
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive' // Missing import
@@ -52,8 +52,11 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   const [currentParams, setCurrentParams] = useState([])
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const[eventTrendUrl, setEventTrendUrl] = useState('')
-  const[eventReportUrl, setEventReportUrl] = useState('')
+  //const[eventTrendUrl, setEventTrendUrl] = useState('')
+  const eventTrendUrlRef = useRef('')
+ // const[eventReportUrl, setEventReportUrl] = useState('')
+ const eventReportUrlRef = useRef('')
+  
 
   // const realmRoles = keycloak.idTokenParsed.realm_access?.roles || []
   // const clientRoles = keycloak.idTokenParsed.resource_access
@@ -83,6 +86,8 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
       console.error('eventIds parameter not found in the URL');
       return;
     }
+
+    console.log('creating APM URL based on selected event..........')
 
     // Split on commas, spaces, or other separators, then take the first part
     const firstEventId = eventIds.split(/[,\s]+/)[0];
@@ -123,8 +128,10 @@ const event_ReportUrl = `https://apm-exxonmobil-useast.connectedplant.honeywell.
 
 console.log('apmUrl', event_TrendUrl)
 
-    setEventTrendUrl(event_TrendUrl)
-    setEventReportUrl(event_ReportUrl)
+  //  setEventTrendUrl(event_TrendUrl)
+  eventTrendUrlRef.current = event_TrendUrl
+  //  setEventReportUrl(event_ReportUrl)
+  eventReportUrlRef.current = event_ReportUrl
     })
     .catch((err) => {
       console.error(err.message)
@@ -137,6 +144,7 @@ console.log('apmUrl', event_TrendUrl)
   useEffect(() => { 
     
     const params = window.location.search
+    console.log('##### **** calling createApmUrlBasedOnSelectedEvent..........')
     setCurrentParams(params)
     createApmUrlBasedOnSelectedEvent();
   }, [])
@@ -355,8 +363,27 @@ console.log('apmUrl', event_TrendUrl)
     return
   }
 
+  const handleEventTrendClick = () => {
+    console.log('handleEventTrendClick..........')
+    console.log('eventTrendUrl: ', eventTrendUrlRef.current)
+    if (eventTrendUrlRef.current) {
+      window.open(eventTrendUrlRef.current, "_blank");
+    }
+  }
+
+  const handleEventLinkClick = () => {
+    console.log('handleEventLinkClick..........')
+    console.log('eventReportUrl: ', eventReportUrlRef.current)
+    if (eventReportUrlRef.current) {
+      window.open(eventReportUrlRef.current, "_blank");
+    }
+  }
+
   // ---------- SUBMIT FORM GUARD ----------
   const onSubmitForm = () => {
+
+    console.log('onSubmitForm...... eventReportUrl: ', eventReportUrlRef.current)
+    console.log('onSubmitForm...... eventTrendUrl: ', eventTrendUrlRef.current)
 
     console.log('***** formData', formData)
    
@@ -405,6 +432,8 @@ console.log('apmUrl', event_TrendUrl)
         },
         attributes: caseAttributes,
          caseUrl: buildCreateUrl(window.location.href),
+        eventTrendUrl: eventTrendUrlRef.current,
+        eventReportUrl: eventReportUrlRef.current,
       //  caseUrl: (() => { 
       //   const uri = window.location.pathname;
       //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
@@ -438,8 +467,8 @@ console.log('apmUrl', event_TrendUrl)
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            eventTrendUrl: eventTrendUrl,
-            eventReportUrl: eventReportUrl,
+            eventTrendUrl: eventTrendUrlRef.current,
+            eventReportUrl: eventReportUrlRef.current,
 
         /*   caseUrl: (() => { 
              const uri = window.location.pathname;
@@ -515,7 +544,8 @@ console.log('apmUrl', event_TrendUrl)
             <Typography sx={{ ml: 2, flex: 1 }} component='div'>
               {caseDef.name} 
             </Typography>
-            {eventTrendUrl && (
+
+            {/* {eventTrendUrl && (
               <Button 
                 color='inherit' 
                 onClick={() => window.open(eventTrendUrl, '_blank')}
@@ -532,7 +562,8 @@ console.log('apmUrl', event_TrendUrl)
               >
                 Event Report
               </Button>
-            )}
+            )} */}
+
             { <Button color='inherit' onClick={onSave}>
               Save As Draft
             </Button>}			
@@ -582,6 +613,13 @@ console.log('apmUrl', event_TrendUrl)
                 } else if (event.component.key === 'onSave') {
                   // onSubmitRecommendation()
                   onSave()
+                }
+
+                else if (event.component.key === 'btnEventTrend') {
+                  handleEventTrendClick()
+                }
+                else if (event.component.key === 'btnEventLink') {
+                  handleEventLinkClick()
                 }
               }}
             />

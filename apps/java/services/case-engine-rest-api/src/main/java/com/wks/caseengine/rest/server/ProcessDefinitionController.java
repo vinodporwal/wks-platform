@@ -30,6 +30,7 @@ import com.wks.bpm.engine.exception.ProcessDefinitionNotFoundException;
 import com.wks.bpm.engine.model.spi.ProcessDefinition;
 import com.wks.bpm.engine.model.spi.ProcessInstance;
 import com.wks.bpm.engine.model.spi.ProcessVariable;
+import com.wks.bpm.engine.model.spi.Task;
 import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,13 +50,26 @@ public class ProcessDefinitionController {
 		String businessKey = processDefinitionStartDto.getBusinessKey();
 		Optional<List<ProcessVariable>> processVariables = Optional
 				.ofNullable(processDefinitionStartDto.getProcessVariables());
+
+		ProcessInstance processInstance = null;	
 		if (processVariables.isEmpty()) {
-			return ResponseEntity
-					.ok(processEngineClientFacade.startProcess(key, Optional.ofNullable(businessKey), Optional.empty()));
+			processInstance = processEngineClientFacade.startProcess(key, Optional.ofNullable(businessKey), Optional.empty());
+			if(processInstance == null) {
+				return ResponseEntity.badRequest().build();
+			}
+			return ResponseEntity.ok(processInstance);
 		} else {
-			return ResponseEntity
-					.ok(processEngineClientFacade.startProcess(key, Optional.ofNullable(businessKey), processVariables.get()));
+			// return ResponseEntity
+			// 		.ok(processEngineClientFacade.startProcess(key, Optional.ofNullable(businessKey), processVariables.get()));
+			processInstance = processEngineClientFacade.startProcess(key, Optional.ofNullable(businessKey), processVariables.get());
+			if(processInstance == null) {
+				return ResponseEntity.badRequest().build();
+			}
+			return ResponseEntity.ok(processInstance);
 		}
+
+	
+	//variables.isEmpty() ? Optional.empty() : Optional.of(variables)
 	}
 
 	@GetMapping(value = "/{processDefinitionId}/xml", produces = MediaType.APPLICATION_XML_VALUE)
@@ -70,6 +84,38 @@ public class ProcessDefinitionController {
 	@GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ProcessDefinition[]> find() {
 		return ResponseEntity.ok(processEngineClientFacade.findProcessDefinitions());
+	}
+
+	@GetMapping("/task/{taskDefKey}")
+	public ResponseEntity<Task> getTask(@PathVariable final String taskDefKey) {
+		return ResponseEntity.ok(processEngineClientFacade.getTask(taskDefKey));
+	}
+
+	@PostMapping("/complete-task/{taskId}")
+	public ResponseEntity<Void> completeTask(@PathVariable final String taskId, @RequestBody final List<ProcessVariable> processVariables) {
+		processEngineClientFacade.complete(taskId, processVariables);
+		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/exists-for-business-key/{businessKey}")
+	public ResponseEntity<Boolean> processExistsForBusinessKey(@PathVariable final String businessKey) {
+		return ResponseEntity.ok(processEngineClientFacade.processExistsForBusinessKey(businessKey));
+	}
+
+	@GetMapping("/is-task-active/{businessKey}/{taskDefKey}")
+	public ResponseEntity<Boolean> isTaskActive(@PathVariable final String businessKey, @PathVariable final String taskDefKey) {
+		return ResponseEntity.ok(processEngineClientFacade.isTaskActive(businessKey, taskDefKey));
+	}
+
+	@GetMapping("/task-exists/{taskId}")
+	public ResponseEntity<Boolean> taskExists(@PathVariable final String taskId) {
+		return ResponseEntity.ok(processEngineClientFacade.taskExists(taskId));
+	}
+
+	@PostMapping("/complete-task-with-business-key/{businessKey}/{taskDefKey}")
+	public ResponseEntity<Void> completeTaskWithbusinessKey(@PathVariable final String businessKey, @PathVariable final String taskDefKey, @RequestBody(required = false) final List<ProcessVariable> variables) {
+		processEngineClientFacade.completeTaskWithbusinessKey(businessKey, taskDefKey, variables);
+		return ResponseEntity.noContent().build();
 	}
 
 }

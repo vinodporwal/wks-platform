@@ -4,10 +4,10 @@
     <bpmn:startEvent id="aot-start" name="Start">
       <bpmn:outgoing>Flow_019o3dg</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:sequenceFlow id="Flow_019o3dg" sourceRef="aot-start" targetRef="aot-createcase" />
-    <bpmn:sequenceFlow id="Flow_0xufcen" sourceRef="aot-createcase" targetRef="aot-split" />
-    <bpmn:parallelGateway id="aot-split" name="Parallel split" camunda:asyncAfter="true">
-      <bpmn:incoming>Flow_0xufcen</bpmn:incoming>
+    <bpmn:sequenceFlow id="Flow_019o3dg" sourceRef="aot-start" targetRef="aot-split" />
+   
+    <bpmn:parallelGateway id="aot-split" name="Parallel split">
+      <bpmn:incoming>Flow_019o3dg</bpmn:incoming>
       <bpmn:outgoing>Flow_1g9jhff</bpmn:outgoing>
       <bpmn:outgoing>Flow_033pjpn</bpmn:outgoing>
       <bpmn:outgoing>Flow_1vfpy78</bpmn:outgoing>
@@ -23,10 +23,10 @@
     </bpmn:parallelGateway>
     <bpmn:sequenceFlow id="Flow_1ienreq" sourceRef="aot-machineryengr" targetRef="aot-combine" />
     <bpmn:sequenceFlow id="Flow_1eybbzf" sourceRef="aot-modsengr" targetRef="aot-combine" />
-    <bpmn:task id="aot-publish" name="Publish Asset">
+    <bpmn:userTask id="aot-publish" name="Publish Asset">
       <bpmn:incoming>Flow_1w4iicr</bpmn:incoming>
       <bpmn:outgoing>Flow_0xj348w</bpmn:outgoing>
-    </bpmn:task>
+    </bpmn:userTask>
     <bpmn:sequenceFlow id="Flow_1w4iicr" sourceRef="aot-combine" targetRef="aot-publish" />
     <bpmn:endEvent id="aot-end" name="End">
       <bpmn:incoming>Flow_0xj348w</bpmn:incoming>
@@ -34,21 +34,33 @@
     <bpmn:sequenceFlow id="Flow_0xj348w" sourceRef="aot-publish" targetRef="aot-end" />
     <bpmn:sequenceFlow id="Flow_1em8sq9" sourceRef="aot-processengr" targetRef="aot-combine" />
     <bpmn:userTask id="aot-processengr" name="Process Engineer" camunda:formKey="assetonboarding-proceng">
+	 <bpmn:extensionElements>
+    <camunda:taskListener
+      event="create"
+      class="com.wks.bpm.engine.camunda.plugin.notify.NotifyAssigneeTaskListener" />
+     </bpmn:extensionElements>
       <bpmn:incoming>Flow_1g9jhff</bpmn:incoming>
       <bpmn:outgoing>Flow_1em8sq9</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:userTask id="aot-machineryengr" name="Machinery Engineer" camunda:formKey="assetonboarding-macheng2">
+	<bpmn:extensionElements>
+   <camunda:taskListener
+       event="create"
+       class="com.wks.bpm.engine.camunda.plugin.notify.NotifyAssigneeTaskListener" />
+     </bpmn:extensionElements>
       <bpmn:incoming>Flow_033pjpn</bpmn:incoming>
       <bpmn:outgoing>Flow_1ienreq</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:userTask id="aot-modsengr" name="Mods Engineer" camunda:formKey="assetonboarding-modseng">
+	<bpmn:extensionElements>
+    <camunda:taskListener
+     event="create"
+     class="com.wks.bpm.engine.camunda.plugin.notify.NotifyAssigneeTaskListener" />
+     </bpmn:extensionElements>
       <bpmn:incoming>Flow_1vfpy78</bpmn:incoming>
       <bpmn:outgoing>Flow_1eybbzf</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="aot-createcase" name="Start Asset Onboarding" camunda:formKey="assetonboarding-createcase">
-      <bpmn:incoming>Flow_019o3dg</bpmn:incoming>
-      <bpmn:outgoing>Flow_0xufcen</bpmn:outgoing>
-    </bpmn:userTask>
+   
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="assettrain-onboarding">
@@ -89,18 +101,12 @@
       <bpmndi:BPMNShape id="Activity_1a2inaq_di" bpmnElement="aot-modsengr">
         <dc:Bounds x="530" y="300" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_1m2egt5" bpmnElement="aot-createcase">
-        <dc:Bounds x="270" y="80" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
+    
       <bpmndi:BPMNEdge id="Flow_019o3dg_di" bpmnElement="Flow_019o3dg">
         <di:waypoint x="218" y="120" />
         <di:waypoint x="270" y="120" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0xufcen_di" bpmnElement="Flow_0xufcen">
-        <di:waypoint x="370" y="120" />
-        <di:waypoint x="425" y="120" />
-      </bpmndi:BPMNEdge>
+     
       <bpmndi:BPMNEdge id="Flow_1g9jhff_di" bpmnElement="Flow_1g9jhff">
         <di:waypoint x="475" y="120" />
         <di:waypoint x="530" y="120" />

@@ -79,21 +79,26 @@
         </table>
     </div>
 	
-	<div style="margin-top: 20px; display: flex; gap: 10px;">
-    <div th:if="${eventTrendUrl != null}">
-        <a th:href="${eventTrendUrl}" 
-           style="background-color: #2F8B8B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-            Event Trend
-        </a>
-    </div>
+	<table role="presentation" style="margin-top:20px;">
+    <tr>
+        <td th:if="${eventTrendUrl != null}" style="padding-right:10px;">
+            <a th:href="${eventTrendUrl}"
+               style="background:#2F8B8B; color:#ffffff; padding:10px 20px;
+                      text-decoration:none; border-radius:5px; display:inline-block;">
+                Event Trend
+            </a>
+        </td>
 
-    <div th:if="${eventReportUrl != null}">
-        <a th:href="${eventReportUrl}" 
-           style="background-color: #2F8B8B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-            Event Report
-        </a>
-    </div>
-</div>
+        <td th:if="${eventReportUrl != null}">
+            <a th:href="${eventReportUrl}"
+               style="background:#2F8B8B; color:#ffffff; padding:10px 20px;
+                      text-decoration:none; border-radius:5px; display:inline-block;">
+                Event Report
+            </a>
+        </td>
+    </tr>
+</table>
+
 
 
 </div>

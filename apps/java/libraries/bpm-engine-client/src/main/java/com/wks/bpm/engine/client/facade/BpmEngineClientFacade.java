@@ -69,4 +69,10 @@ public interface BpmEngineClientFacade {
 
 	void sendMessage(ProcessMessage processMesage, Optional<List<ProcessVariable>> messageCorrelateKeys);
 
+	boolean processExistsForBusinessKey(String businessKey);
+
+	boolean isTaskActive(String businessKey, String taskDefinitionKey);
+	boolean taskExists(String taskId);
+	void completeTaskWithbusinessKey(String businessKey, String taskDefinitionKey, List<ProcessVariable> variables);
+
 }

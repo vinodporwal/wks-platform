@@ -42,6 +42,11 @@ services:
             - GE_USERS_API=${GE_USERS_API}
             - GE_CREATE_CASE_API=${GE_CREATE_CASE_API}
             - GE_CASE_STATUS_API=${GE_CASE_STATUS_API}
+            - KAFKA_ENABLED=true
+            - KAFKA_URL=${KAFKA_URL}
+            - KAFKA_TOPIC_CASE_CREATE=${KAFKA_TOPIC_CASE_CREATE}
+            - KAFKA_TOPIC_CASE_EMAIL_OUTBOUND=${KAFKA_TOPIC_CASE_EMAIL_OUTBOUND}
+            - REACT_FRONTEND_URL=${REACT_FRONTEND_URL}
         depends_on:
             mongodb:
                 condition: service_healthy

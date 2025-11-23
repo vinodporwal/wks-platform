@@ -32,9 +32,13 @@ import org.camunda.community.rest.client.api.VariableInstanceApi;
 import org.camunda.community.rest.client.dto.ActivityInstanceDto;
 import org.camunda.community.rest.client.dto.CompleteTaskDto;
 import org.camunda.community.rest.client.dto.CorrelationMessageDto;
+import org.camunda.community.rest.client.dto.ProcessInstanceDto;
+import org.camunda.community.rest.client.dto.ProcessInstanceQueryDto;
+import org.camunda.community.rest.client.dto.ProcessInstanceQueryDtoSorting;
 import org.camunda.community.rest.client.dto.ProcessInstanceWithVariablesDto;
 import org.camunda.community.rest.client.dto.StartProcessInstanceDto;
 import org.camunda.community.rest.client.dto.TaskDto;
+import org.camunda.community.rest.client.dto.TaskQueryDto;
 import org.camunda.community.rest.client.dto.UserIdDto;
 import org.camunda.community.rest.client.dto.VariableValueDto;
 import org.camunda.community.rest.client.invoker.ApiException;
@@ -200,6 +204,20 @@ public class C7EngineClient implements BpmEngineClient {
 			final List<ProcessVariable> processVariables, final BpmEngine bpmEngine) {
 
 				System.out.println("**********StartProcess.....");
+
+				// ENFORCE RULE: Only one running process per businessKey
+				String bk = businessKey.orElse(null);
+
+				if (bk != null) {
+					boolean existing = processExistsForBusinessKey(bk);
+			
+					if (existing) {
+					
+							System.out.println("A process is already running for businessKey = " + bk);
+							return null;
+						
+					}
+				}
 
 		try {
 
@@ -380,8 +398,9 @@ public class C7EngineClient implements BpmEngineClient {
 			CompleteTaskDto requestDto = new CompleteTaskDto();
 			requestDto.variables(c7VariablesMapper.toEngineFormat(variables));
 			taskApi.complete(taskId, requestDto);
+			System.out.println("Completed Camunda task (Engeneering task) " + taskId);
 		} catch (ApiException e) {
-			log.error("Error completing camunda task", e);
+			log.error("(Engineering task) Error completing camunda task", e);
 			e.printStackTrace();
 		}
 	}
@@ -424,5 +443,140 @@ public class C7EngineClient implements BpmEngineClient {
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	public boolean processExistsForBusinessKey(String businessKey) {
+		ProcessInstanceQueryDto query = new ProcessInstanceQueryDto();
+		query.setBusinessKey(businessKey);
+		query.setSuspended(false);
+	
+		try {
+			List<ProcessInstanceDto> list = processInstanceApi.queryProcessInstances(null, null, query);
+			
+			return !list.isEmpty();   // true → process exists
+		} catch (ApiException e) {
+			log.error("Error querying process instances", e);
+			return false;
+		}
+	}
+
+	@Override
+	public boolean  isTaskActive(String businessKey, String taskDefinitionKey) {
+		ProcessInstanceQueryDto query = new ProcessInstanceQueryDto();
+		query.setBusinessKey(businessKey);
+		query.setSuspended(false);
+	
+		try {
+			ProcessInstanceDto processInstanceDto = processInstanceApi.queryProcessInstances(null, null, query).get(0);
+			String processInstanceId = processInstanceDto.getId();
+
+			TaskQueryDto taskQuery = new TaskQueryDto();
+           taskQuery.setProcessInstanceId(processInstanceId);
+            taskQuery.setTaskDefinitionKey(taskDefinitionKey);
+			
+
+       List<TaskDto> taskDtos = taskApi.queryTasks(null, null, taskQuery);
+       return !taskDtos.isEmpty();
+		} catch (ApiException e) {
+			log.error("Error querying tasks", e);
+			return false;
+		}
+	}
+
+	@Override
+	public boolean taskExists(String taskId) {
+		// 1. Check runtime task
+		try {
+			taskApi.getTask(taskId);
+			return true;  // task is active
+		} catch (ApiException ex) {
+			if (ex.getCode() != 404) {
+				// Other error → log and return false
+				log.error("Error querying runtime task {}", taskId, ex);
+				return false;
+			}
+			
+		}
+		return false;
+
+	}
+
+	@Override
+	public void completeTaskWithbusinessKey(String businessKey, String taskDefinitionKey, 
+                            List<ProcessVariable> variables) {
+
+    // 1. Find running process instance for the businessKey
+    ProcessInstanceQueryDto piQuery = new ProcessInstanceQueryDto();
+    piQuery.setBusinessKey(businessKey);
+
+    List<ProcessInstanceDto> instances = new ArrayList<>();
+	try {
+		instances = processInstanceApi.queryProcessInstances(null, null, piQuery);
+	} catch (ApiException e) {
+		log.error(" completeTaskWithbusinessKey Error querying process instances", e);
+		e.printStackTrace();
+	}
+
+    if (instances.isEmpty()) {
+        log.warn(" CompleteTaskWithBusinessKey: No active process found for businessKey={}", businessKey);
+        return;
+    }
+
+    String processInstanceId = instances.get(0).getId();
+
+    // 2. Find the active task with the given taskDefinitionKey
+    TaskQueryDto tQuery = new TaskQueryDto();
+    tQuery.setProcessInstanceId(processInstanceId);
+    tQuery.setTaskDefinitionKey(taskDefinitionKey);
+
+    List<TaskDto> tasks = new ArrayList<>();
+	try {
+		tasks = taskApi.queryTasks(null, null, tQuery);
+	} catch (ApiException e) {
+		log.error(" CompleteTaskWithBusinessKey: Error querying tasks", e);
+		e.printStackTrace();
+	}
+
+    if (tasks.isEmpty()) {
+        log.warn(" CompleteTaskWithBusinessKey: Task with definitionKey={} not active for businessKey={}",
+                 taskDefinitionKey, businessKey);
+        return;
+    }
+
+    TaskDto task = tasks.get(0);
+
+    // 3. Prepare complete request
+    CompleteTaskDto completeDto = new CompleteTaskDto();
+   
+	 if (variables != null && !variables.isEmpty()) {
+    completeDto.variables(c7VariablesMapper.toEngineFormat(variables));  
+
+         }
+
+    // 4. Complete the task
+    try {
+        taskApi.complete(task.getId(), completeDto);
+        log.info(" CompleteTaskWithBusinessKey: Completed task {} (definitionKey={}) for businessKey={}",
+                 task.getId(), taskDefinitionKey, businessKey);
+       
+
+    } catch (ApiException ex) {
+        log.error(" CompleteTaskWithBusinessKey: Error completing task {} for businessKey={}", task.getId(), businessKey, ex);
+       
+    }
+}
+
+// @Override
+// 	public void complete(final String taskId, final List<ProcessVariable> variables, final BpmEngine bpmEngine) {
+// 		try {
+// 			CompleteTaskDto requestDto = new CompleteTaskDto();
+// 			requestDto.variables(c7VariablesMapper.toEngineFormat(variables));
+// 			taskApi.complete(taskId, requestDto);
+// 		} catch (ApiException e) {
+// 			log.error("Error completing camunda task", e);
+// 			e.printStackTrace();
+// 		}
+// 	}
+
 
 }

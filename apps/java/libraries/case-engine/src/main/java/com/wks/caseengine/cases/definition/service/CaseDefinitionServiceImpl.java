@@ -422,7 +422,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         System.out.println("Getting data..");
         System.out.println("Is Draft :"+caseData.getIsDraft());
         System.out.println("**************************************IN SAVE CASE*************************************************");
+        System.out.println("eventTrendUrl(): "+caseData.getEventTrendUrl());
+        System.out.println("eventReportUrl(): "+caseData.getEventReportUrl());
         if(caseNo==null || caseNo.length()==0) {
+            System.out.println("saving new case details....");
             caseNo = CaseNoGenerator();
             caseData.setCaseNo(caseNo);
             //	caseData.setCaseUrl(caseData.getCaseUrl()+"&caseNo="+caseNo);
@@ -468,6 +471,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         //sending Emails part
         System.out.println("**************************************sending Emails part*************************************************");
         System.out.println("************************************ Is Draft"+ caseData.getIsDraft());
+       
         if(!caseData.getIsDraft().equals("y")) {
             attributeValue = attributeValue.replace("\\\"", "\"");
             System.out.println("Attribute Value: " + attributeValue);
@@ -523,8 +527,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     data.put("environment", "");
                     data.put("mainAsset", mainAsset);
                     data.put("subAssets", subAssetList);
-                    data.put("eventTrendUrl", caseDetails.getEventTrendUrl());
-                    data.put("eventReportUrl", caseDetails.getEventReportUrl());
+                    data.put("eventTrendUrl", caseData.getEventTrendUrl());
+                    data.put("eventReportUrl", caseData.getEventReportUrl());
                     caseTitle = "CASE MANAGEMENT :"+ caseTitle;
 
                     caseEmailService.send(from, assignedTo , caseTitle, reviewers, null, null, "email-template", data);

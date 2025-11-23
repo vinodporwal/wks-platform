@@ -64,10 +64,10 @@ public class Case {
     @Column(name = "case_url")
     private String caseUrl;
 
-	@Transient
+	 @Transient
 	private String eventTrendUrl;
 
-	@Transient
+	 @Transient
 	private String eventReportUrl;
 
 

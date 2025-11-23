@@ -82,7 +82,9 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 
 		CaseInstance.CaseInstanceBuilder caseInstanceBuilder = CaseInstance.builder().businessKey(businessKey)
 				.attributes(caseInstanceParam.getAttributes()).caseDefinitionId(caseInstanceParam.getCaseDefinitionId())
-				.owner(caseInstanceParam.getOwner());
+				.owner(caseInstanceParam.getOwner())
+				.eventTrendUrl(caseInstanceParam.getEventTrendUrl())
+				.eventReportUrl(caseInstanceParam.getEventReportUrl());
 
 		Optional<CaseStage> firstStage = caseDefinition.getStages().stream()
 				.sorted(Comparator.comparing(CaseStage::getIndex)).findFirst();
@@ -95,9 +97,11 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 		ProcessVariable caseInstanceProcessVariable = generateCaseInstanceProcessVariable(commandContext,
 				preparedCaseInstance);
 
-		commandContext.getProcessInstanceService().start(commandContext.getCaseCreationProcess(),
-				Optional.of(businessKey), Optional.of(caseInstanceProcessVariable));
+		// commandContext.getProcessInstanceService().start(commandContext.getCaseCreationProcess(),
+		// 		Optional.of(businessKey), Optional.of(caseInstanceProcessVariable));
+		
 
+         System.out.println("****** before startcaseinstancewithvaluescmd returns preparedCaseInstance");
 		return preparedCaseInstance;
 		}
 	}

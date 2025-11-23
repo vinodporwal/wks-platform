@@ -1,30 +1,36 @@
 package com.wks.bpm.engine.camunda.plugin.notify;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.camunda.bpm.engine.delegate.DelegateTask;
 import org.camunda.bpm.engine.delegate.TaskListener;
 
-/**
- * Task listener to be executed when a user task is created
- */
+
+
+
+
 public class NotifyAssigneeTaskListener implements TaskListener {
+
+
 
 	public static List<String> assigneeList = new ArrayList<String>();
 
 	private KafkaProducer<String, String> kafkaProducer;
-
 	private static NotifyAssigneeTaskListener instance = null;
-
 	private String kafkaUrl = System.getenv("KAFKA_URL");
-	private String topic = System.getenv("KAFKA_TOPIC_CREATE_HUMAN_TASK");
+//	private String topic = System.getenv("KAFKA_TOPIC_CREATE_HUMAN_TASK");
+     private String topic = "case-create";
 
-	protected NotifyAssigneeTaskListener() {
+	public NotifyAssigneeTaskListener() {
 		// Initialize Kafka producer configuration
+		
 		Properties props = new Properties();
 		props.put("bootstrap.servers", kafkaUrl);
 		props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -49,14 +55,32 @@ public class NotifyAssigneeTaskListener implements TaskListener {
 
 	@Override
 	public void notify(DelegateTask delegateTask) {
+
+		System.out.println("********** notify()   NotifyAssigneeTaskListener **********");
+		System.out.println("taksName: " + delegateTask.getName());
 		String businessKey = delegateTask.getExecution().getProcessInstance().getBusinessKey();
 		String taskName = delegateTask.getName();
-		String assigneeEmail = delegateTask.getAssignee();
+		String taskDefKey = delegateTask.getTaskDefinitionKey();
+		String taskId = delegateTask.getId();
 
-		String json = "{\"businessKey\": \"" + businessKey + "\",\"taskName\": \"" + taskName + "\",\"owner\": {\"email\": \""
-				+ assigneeEmail + "\" }}";
+	//	String json = "{\"businessKey\": \"" + businessKey + "\", \"taskName\": \"" + taskName + "\", \"taskDefKey\": \"" + taskDefKey + "\", \"taskId\": \"" + taskId + "\" }}";
+
+	String json = String.format(
+    "{\"businessKey\": \"%s\", \"taskName\": \"%s\", \"taskDefKey\": \"%s\", \"taskId\": \"%s\"}",
+    businessKey, taskName, taskDefKey, taskId
+);
+
+	// ObjectMapper mapper = new ObjectMapper();
+	// Map<String, String> map = new HashMap<>();
+	// map.put("businessKey", businessKey);
+	// map.put("taskName", taskName);
+	// map.put("taskDefKey", taskDefKey);
+	// map.put("taskId", taskId);
+
+	// String json = mapper.writeValueAsString(map);
+	// publishToKafka(topic, "taskDefKey", json);
 
 		publishToKafka(topic, "taskDefKey", json);
-	}
 
+}
 }

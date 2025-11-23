@@ -16,8 +16,10 @@ import org.camunda.bpm.engine.impl.cfg.ProcessEnginePlugin;
  */
 public class UserTaskParseListenerPlugin extends AbstractProcessEnginePlugin {
 
+
 	@Override
 	public void preInit(ProcessEngineConfigurationImpl processEngineConfiguration) {
+		
 		List<BpmnParseListener> preParseListeners = processEngineConfiguration.getCustomPreBPMNParseListeners();
 		if (preParseListeners == null) {
 			preParseListeners = new ArrayList<BpmnParseListener>();

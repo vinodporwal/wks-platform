@@ -28,7 +28,7 @@ import Typography from '@mui/material/Typography'
 import { CaseStatus } from 'common/caseStatus'
 import { StorageService } from 'plugins/storage'
 import PropTypes from 'prop-types'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState , useRef} from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProcessDefService } from 'services/ProcessDefService'
 import { Comments } from 'views/caseComment/Comments'
@@ -43,6 +43,7 @@ import Config from '../../consts'
 import { buildCreateUrl } from 'utils/util'
 import { Formio } from 'formiojs'
 import { Form } from '@formio/react'
+import { use } from 'react';
 
 Formio.options = {
   vm: {
@@ -50,7 +51,7 @@ Formio.options = {
   }
 }
 
-export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = false, isCaseEditor = false }) => {
+export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = false, isCaseEditor = false, taskId = null, isAdmin = false, isCaseCreator = false }) => {
   const [caseDef, setCaseDef] = useState(null)
   const [form, setForm] = useState(null)
   const [formData, setFormData] = useState(null)
@@ -81,20 +82,106 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false)
   const [apiBody, setApiBody] = useState(null)
   const [loading, setLoading] = useState(false)
+  
+  const [processErrorSnackbarOpen, setProcessErrorSnackbarOpen] = useState(false)
+  const [processSuccessSnackbarOpen, setProcessSuccessSnackbarOpen] = useState(false)
+  const [taskCompletedSnackbarOpen, setTaskCompletedSnackbarOpen] = useState(false)
+
+// if the task is completed use this state to show modal and block code execution
+  const [isBlocked, setIsBlocked] = useState(true);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const[taskExists, setTaskExists] = useState(false);
+  const [processExistsForBusinessKey, setProcessExistsForBusinessKey] = useState(false)
+
+  const isLastStageofProcessRef = useRef(false);
+  
+
+
+
+console.log('*****  taskId:  ', taskId);
 
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing)
   }
 
+ useEffect(() => {
+
+ // if the task with given taskId is completed or does not exitst then logout the user
+ // applicable only for task url
+  if(taskId) {
+   
+    ProcessDefService.taskExists(keycloak, taskId)
+    .then((data) => {
+     if(!data) {
+      console.log("Task does not exist.... logging out the user")
+     
+       setIsBlocked(true);
+      // setShowBlockedModal(true);
+       setTaskExists(true);
+      // Show task completed message before logout
+      setTaskCompletedSnackbarOpen(true)
+      // Logout after a short delay to allow user to see the message
+      setTimeout(() => {
+        keycloak.logout({ redirectUri: window.location.origin })
+      }, 2000)
+     }
+     else {
+      setIsBlocked(false);
+      console.log("Task exists....")
+     }
+    })
+    .catch((err) => {
+      console.error('Error checking task existence', err)
+    })
+    
+  }
+ }, [taskId])
+
   useEffect(() => {
+   // do not execute the effect if the task does not exits
+    if(taskId && isBlocked) return;
+    console.log("useEffect isBlocked: ", isBlocked)
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
+
+ 
+
+    // taskAssignedTo = taskId ? ProcessDefService.getTaskByTaskId(keycloak, taskId).assignee : null;
+    // console.log('*****  taskAssignedTo:  ', taskAssignedTo);
     getCaseInfo(aCase)
     //   FileService.downloadForPrintPreview(aCase.documents[0], keycloak),
     // )
-  }, [open, aCase])
+  }, [open, aCase, isBlocked  ])
 
   useEffect(() => {
+
+     // If the processExistsForBusinessKey then check if the process has reached the last stage. This is to set the case status to
+    // 'closed' in the payload of caseInstance.
+
+      if(processExistsForBusinessKey) {  
+     if(!taskId) {   //skip the logic if the taskId is present to prevent unnecessary API call
+      if(aCase.caseDefinitionId === 'create-Asset')  {
+        console.log("checking if the process has reached the last stage....")
+          
+            ProcessDefService.isTaskActive(keycloak, aCase.businessKey, 'aot-publish').then((isTaskActive) => { 
+                 if(isTaskActive) {
+                  console.log("############### process has reached the last stage")
+                  isLastStageofProcessRef.current = true;
+
+                 }
+            } )
+
+        }
+      }  
+    }
+
+   }, [processExistsForBusinessKey])
+    
+
+  useEffect(() => {
+    if(taskId && isBlocked) return;
     if (activeStage) {
+      console.log(" #######################################################3")
+      console.log("aCase : ", aCase)
       const stage = caseDef.stages.find((o) => o.name === activeStage)
        console.log('CaseForm : Stage : ', stage)
       // const stageProcesses = stage ? stage.processesDefinitions : []
@@ -103,7 +190,18 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
           console.log('CaseForm : Process Definitions : ', data)
        // const autoStartProcesses =    data.filter((o) => o.autoStart === false)
         // setManualInitProcessDefs(autoStartProcesses)
-        setManualInitProcessDefs(data)
+        let filteredProcessDefs = data;
+
+       if(aCase.caseDefinitionId === 'create-Asset')
+
+        filteredProcessDefs =    data.filter((o) => {  
+             return o.name === 'XOM Asset Train Onboarding'
+           })
+
+           console.log("filteredProcessDefs : ", filteredProcessDefs)
+
+          
+        setManualInitProcessDefs(filteredProcessDefs)
         })
         .catch((err) => {
           console.error('Error fetching stage processes', err)
@@ -115,7 +213,7 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
       //   : undefined
       // setManualInitProcessDefs(autoStartProcesses)
     }
-  }, [activeStage])
+  }, [activeStage, isBlocked])
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget)
@@ -176,19 +274,99 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
         )
 
         const formData = await FormService.getByKey(keycloak, data.formKey)
+       
+        const processExists = await ProcessDefService.processExistsForBusinessKey(keycloak, aCase.businessKey)
+        console.log(" ****processExists : ", processExists)
+        setProcessExistsForBusinessKey(processExists)
 
+        // show task tabs if the process exists and the form is asset-train-create-case  or if the process has been completed
+        if(processExists || aCase.caseStatus === '3'){
+         
+
+            if(data.formKey === 'asset-train-create-case') {
+              formData.structure.components[0].components.forEach((c) => { 
+                
+                if(c.title === 'Mods Engineer Checklist' || c.title === 'Process Engineer Checklist' || c.title === 'Machinery Engineer Checklist')
+                  c.hidden = false; 
+              })
+            }
+        }
+    // show only the task form if the taskId is present
+        if(taskId) {
+              const task = await ProcessDefService.getTaskByTaskId(keycloak, taskId)
+              console.log(" ****task : ", task)
+
+            if(task.taskDefinitionKey === 'aot-processengr') {
+                formData.structure.components[0].components.forEach((c) => { 
+                  // if(c.title === 'Columns') {
+                  //   return;
+                  // }
+                  if(c.title != 'Process Engineer Checklist' && c.label != 'Columns') // also show the submit button
+                    c.hidden = true; 
+                  else 
+                    c.hidden = false;
+                  c.collapsible = false;
+                  c.collapsed = false;
+                }) 
+            }
+
+            if(task.taskDefinitionKey === 'aot-machineryengr')  {
+              formData.structure.components[0].components.forEach((c) => { 
+                // if(c.title === 'Columns') {
+                //   return;
+                // }
+                if(c.title != 'Machinery Engineer Checklist' && c.label != 'Columns') // also show the submit button
+                  c.hidden = true; 
+                else 
+                  c.hidden = false;
+                c.collapsible = false;
+                c.collapsed = false;
+              }) 
+            }
+
+            if(task.taskDefinitionKey === 'aot-modsengr') {
+              formData.structure.components[0].components.forEach((c) => { 
+                // if(c.title === 'Columns') {
+                //   return;
+                // }
+                if(c.title != 'Mods Engineer Checklist' && c.label != 'Columns') // also show the submit button
+                  c.hidden = true; 
+                else 
+                  c.hidden = false;
+                c.collapsible = false;
+                c.collapsed = false;
+              }) 
+            }
+              
+              
+        }
+
+        // for role based access control. if the user has editor role, disable only two fields else if is the user is not a admin or isCaseViewer then disable all the feilds 
+
+        // if isCaseCreator then do not disable the fields regardless of other conditons
         if(data.formKey === 'case-management-system'){
-        if(isCaseEditor){
+        if((isCaseEditor ||!isAdmin || isCaseViewer) && !isCaseCreator){
+
           console.log("*** isCaseEditor : ", isCaseEditor)
           formData.structure.components[0].components.forEach((c) => {
+
+            if(isCaseEditor)  {
             if(c.title === 'Analysis' || c.title === 'Value Realization' || c.label === 'Columns')
              return;
 
-              c.disabled = isCaseEditor
+              c.disabled = isCaseEditor 
+             }
+             else c.disabled = true;
           })
       
         }
       }
+
+     
+
+
+
+
         setFormStructure(formData)
         let updatedFormStructure = null
         if (formData && formData.structure && formData.structure.components) {
@@ -203,6 +381,10 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
         let caseData = null;
         try {
           if (aCase && aCase.businessKey) {
+            // const processExists = await ProcessDefService.processExistsForBusinessKey(keycloak, aCase.businessKey)
+            // console.log(" ****processExists : ", processExists)
+            // setProcessExistsForBusinessKey(processExists)
+
             const resp = await CaseService.getCaseByBusinessKey(
               keycloak,
               aCase.caseDefinitionId,
@@ -412,9 +594,9 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
         setActiveStage(caseData.stage)
         console.log('CaseForm : Active Stage : ', caseData.stage)
       })
-      .catch((err) => {
-        console.log(err.message)
-      })
+      // .catch((err) => {
+      //   console.log(err.message)
+      // })
     // .finally(() => {
     //   setLoading(false)
     // })
@@ -805,6 +987,12 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
 
   const onSubmitForm = () => {
 
+    
+       console.log("***** formData stringify *****   ", JSON.stringify(formData))
+       console.log("***** formData *****   ", formData)
+
+     localStorage.setItem('formData1', JSON.stringify(formData))
+   
     console.log("in caseForm : onSubmitForm.........");
     const currentParams = window.location.search
     setCurrentParams(currentParams)
@@ -815,14 +1003,40 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
     const eventIdsParam = urlParams.get('eventIds')
     const sourceSystem = urlParams.get('sourceSystem') || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
-    const caseAttributes = Object.keys(formData.data).map((key) => ({
-      name: key,
-      value:
-        typeof formData.data[key] !== 'object'
-          ? formData.data[key]
-          : JSON.stringify(formData.data[key]),
-      type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
-    }))
+    // const caseAttributes = Object.keys(formData.data).map((key) => ({
+    //   name: key,
+    //   value:
+    //     typeof formData.data[key] !== 'object'
+    //       ? formData.data[key]
+    //       : JSON.stringify(formData.data[key]),
+    //   type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
+    // }))
+
+    if(isLastStageofProcessRef.current === true) {
+      formData.data.container = {...formData.data.container, caseStatus: 3};
+    }
+
+    const caseAttributes = Object.keys(formData.data).map((key) => {
+      console.log("key : ", key)
+
+      let value = formData.data[key];
+      let type = typeof value !== "object" ? "String" : "Json";
+    
+      if (typeof value === "object") {
+        value = JSON.stringify(value);
+      }
+    
+      // if (isLastStageofProcessRef.current === true && key === "caseStatus") {
+      //   value = "3"; 
+      // }
+    
+      return { name: key, value, type };
+    });
+    
+
+
+   
+
 
     // First API call to createCase to get the businessKey
     CaseService.createCase(
@@ -885,6 +1099,51 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
         )
       })
       .then((data) => {
+      // complete the task if this is the task form
+        if(taskId){ 
+          console.error('caseForm: In complete task block')
+          ProcessDefService.completeTask(keycloak, taskId, caseAttributes)
+          .then(() => {
+            console.log(' Engineering Task completed successfully: ', taskId)
+          })
+          .catch((err) => {
+            console.error('Error completing Engineering task: ', taskId, err)
+          })
+        }
+      // logic to end the business process if the process has reached the last stage ie all three forms are submitted. applicable only for asset train onboarding process.
+
+      //  if(!taskId) {   //skip the logic if the taskId is present to prevent unnecessary API call
+      // if(aCase.caseDefinitionId === 'create-Asset')  {
+      //   console.log("checking if the process has reached the last stage....")
+          
+      //       ProcessDefService.isTaskActive(keycloak, aCase.businessKey, 'aot-publish').then((isTaskActive) => { 
+      //            if(isTaskActive) {
+      //             console.log("############### process has reached the last stage")
+      //             ProcessDefService.completeTaskWithbusinessKey(keycloak, aCase.businessKey, 'aot-publish', caseAttributes).then((data) => {
+      //               console.log("Task completed successfully: ")
+      //             }).catch((err) => {
+      //               console.error("Error completing task: ", err)
+      //             })
+
+      //            }
+      //       } )
+
+      //   }
+      // }
+
+            // logic to end the business process if the process has reached the last stage ie all three forms are submitted. applicable only for asset train onboarding process.
+
+      if(!taskId) { //skip the logic if the taskId is present to prevent unnecessary API call
+        if(isLastStageofProcessRef.current) { 
+          console.log("process has reached the last stage completing the final task to end the process....")
+          ProcessDefService.completeTaskWithbusinessKey(keycloak, aCase.businessKey, 'aot-publish', caseAttributes).then((data) => {
+            console.log("Final task completed successfully to end the process: ")
+          }).catch((err) => {
+            console.error("Error completing final task : ", err) 
+          })
+        }  
+      }
+
         setLastCreatedCase(data)
         setSnackOpen(true) // Show success notification
         setTimeout(() => {
@@ -945,17 +1204,30 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
     setOpenProcessesDialog(false)
   }
 
+  const handleEventTrendClick = () => {
+    window.open(aCase.eventTrendUrl, '_blank')
+  }
+  const handleEventLinkClick = () => {
+    console.log('CaseForm : handleEventLinkClick')
+    window.open(aCase.eventReportUrl, '_blank')
+  }
+
   const startProcess = (key) => {
+    handleCloseProcessesDialog()
     console.log('CaseForm : startProcess : ', key)
 
     ProcessDefService.start(keycloak, key, aCase.businessKey).then((data) => {
-      console.log('CaseForm : process started : ', data)
+      console.log('CaseForm : process started for businessKey: ', aCase.businessKey, ' : ', data)
+      // Show success snackbar notification
+      
+      setProcessSuccessSnackbarOpen(true)
     }).catch((err) => {
       console.error('Error starting process', err)
+      // Close the dialog
+      handleCloseProcessesDialog()
+      // Show snackbar notification
+      setProcessErrorSnackbarOpen(true)
     })
-    
-    // Close the dialog
-    handleCloseProcessesDialog()
   }
 
   // Function to get label for a given category value from localStorage
@@ -1361,29 +1633,33 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
                   </Button>
                 </React.Fragment>
               )}
-              {!isCaseViewer && <Button
+              <Button
                 color='inherit'
                 onClick={handleFollowClick}
                 startIcon={<NotificationsActiveIcon />}
+                disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
               >
                 {isFollowing ? 'Unfollow' : 'Follow'}
-              </Button> }
+              </Button> 
               <Button color='inherit' onClick={printCaseDetails}>
                 {'Print'}
               </Button>
 
-              {!isCaseViewer && <Button color='inherit' onClick={onSave}>
+               <Button color='inherit' onClick={onSave} disabled={(!isAdmin || isCaseViewer || isCaseEditor) && !isCaseCreator}>
                 {'Save'}
-              </Button>}
-              {/* Case Actions Menu */}
-              {!isCaseViewer && <IconButton
+              </Button>
+            
+
+              {/* start process three dot button */}
+               <IconButton
                 edge='end'
+                disabled={(!isAdmin || isCaseViewer || isCaseEditor) && !isCaseCreator}
                 color='inherit'
                 onClick={handleMenuOpen}
                 aria-label='manual-actions'
               >
                 <MoreVertIcon />
-              </IconButton>}
+              </IconButton>
               <Menu
                 anchorEl={anchorEl}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -1402,7 +1678,8 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
             </Toolbar>
           </AppBar>
 
-          <Box
+{/* hide the stages if the taskId is present */}
+    {  taskId == null && (<Box
             sx={{
               pl: 10,
               pr: 10,
@@ -1428,27 +1705,32 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
               })}
             </Stepper>
           </Box>
-
+          )}
           <Grid container spacing={2} sx={{ paddingLeft: 1, paddingRight: 1 }}>
             <Grid item xs={12}>
-              <Box>
-                <Tabs value={mainTabIndex} onChange={handleMainTabChanged}>
+
+              {/* hide the tabs if the taskId is present */}
+          {taskId == null && (<Box>
+                <Tabs value={mainTabIndex} onChange={handleMainTabChanged} >
                   <Tab
                     label={t('pages.caseform.tabs.details')}
+                    disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
                     {...a11yProps(0)}
                   />
                   <Tab
                     label={t('pages.caseform.tabs.attachments')}
+                    disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
                     {...a11yProps(1)}
-                    disabled={isCaseViewer}
+                   
                   />
                   <Tab
                     label={t('pages.caseform.tabs.comments')}
+                    disabled={(isCaseViewer || isCaseEditor || !isAdmin) && !isCaseCreator}
                     {...a11yProps(2)}
-                    disabled={isCaseViewer}
+                  
                   />
                 </Tabs>
-              </Box>
+              </Box> )}
               <Box
                 sx={{ border: 1, borderColor: 'divider', borderRadius: '5px' }}
               >
@@ -1476,16 +1758,61 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
                       {/* <Tooltip title={form.toolTip}>
                         <QuestionCircleOutlined />
                       </Tooltip> */}
-                    </Box>
+                    </Box>  
+
+
+                    {showBlockedModal && (
+  <div
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(0,0,0,0.6)',   // dark overlay
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: '#fff',
+        padding: '30px',
+        borderRadius: '10px',
+        minWidth: '300px',
+        textAlign: 'center',
+        boxShadow: '0 0 20px rgba(0,0,0,0.3)',
+      }}
+    >
+      <h2>Task Not Found</h2>
+      <p>The task you are trying to access no longer exists.</p>
+
+      <button
+        onClick={() => window.location.href = "/case-list"}
+        style={{
+          marginTop: '20px',
+          padding: '10px 20px',
+          cursor: 'pointer',
+        }}
+      >
+        Go Back
+      </button>
+    </div>
+  </div>
+)}
+
+                    
                     {isFormData && (
                       <Form
                         form={form.structure}
                          submission={formData}
-                      //  submission={{ ...formData, isEditor }}
-                        options={{
-                          readOnly: isCaseViewer,
-                          fileService: new StorageService(),
-                        }}
+                    //   submission={{ ...formData, processExistsForBusinessKey }}
+                        // options={{
+                        //   readOnly: isCaseViewer,
+                        //   fileService: new StorageService(),
+                        // }}
                         // onSubmit={(submission) => {
                         //   console.log('Validation passed:', true)
                         //   console.log('Form data:', submission)
@@ -1510,6 +1837,13 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
                             onSave()
                           }  else if (event.component.key === 'analysisSubmit') {
                             onAnalysisSave()
+                          }
+                            
+                          else if (event.component.key === 'btnEventTrend') {
+                            handleEventTrendClick()
+                          }
+                          else if (event.component.key === 'btnEventLink') {
+                            handleEventLinkClick()
                           }
                         }}
                       />
@@ -1594,6 +1928,98 @@ export const CaseForm = ({ open, handleClose, aCase, keycloak, isCaseViewer = fa
                       onClose={handleCloseSnack}
                       action={snackAction}
                     />
+                    <Snackbar
+                      open={processErrorSnackbarOpen}
+                      autoHideDuration={3000}
+                      onClose={() => setProcessErrorSnackbarOpen(false)}
+                      anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+                    >
+                      <SnackbarContent
+                        message={
+                          <div>
+                            <Typography
+                              variant='body1'
+                              color='error'
+                              component='div'
+                              sx={{ fontSize: '1.1rem', fontWeight: 500 }}
+                            >
+                              Business process already exists
+                            </Typography>
+                          </div>
+                        }
+                        action={
+                          <Button
+                            color='secondary'
+                            size='small'
+                            onClick={() => setProcessErrorSnackbarOpen(false)}
+                          >
+                            Ok
+                          </Button>
+                        }
+                      />
+                    </Snackbar>
+
+                 
+
+                    {/* show the success snackbar notification if the process is started successfully */}
+                    <Snackbar
+                      open={processSuccessSnackbarOpen}
+                      autoHideDuration={3000}
+                      onClose={() => setProcessSuccessSnackbarOpen(false)}
+                      anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+                    >
+                      <SnackbarContent
+                        message={
+                          <div>
+                            <Typography
+                              variant='body1'
+                              component='div'
+                              sx={{ fontSize: '1.1rem', fontWeight: 500, color: 'success.main' }}
+                            >
+                              Process started successfully
+                            </Typography>
+                          </div>
+                        }
+                        action={
+                          <Button
+                            color='secondary'
+                            size='small'
+                            onClick={() => setProcessSuccessSnackbarOpen(false)}
+                          >
+                            Ok
+                          </Button>
+                        }
+                      />
+                    </Snackbar>
+                    <Snackbar
+                      open={taskCompletedSnackbarOpen}
+                      autoHideDuration={2000}
+                      onClose={() => setTaskCompletedSnackbarOpen(false)}
+                      anchorOrigin={{ vertical: 'center', horizontal: 'center' }}
+                    >
+                      <SnackbarContent
+                        message={
+                          <div>
+                            <Typography
+                              variant='body1'
+                              component='div'
+                              sx={{ fontSize: '1.1rem', fontWeight: 500 }}
+                            >
+                              Task already completed
+                            </Typography>
+                          </div>
+                        }
+                        action={
+                          <Button
+                            color='secondary'
+                            size='small'
+                            onClick={() => setTaskCompletedSnackbarOpen(false)}
+                          >
+                            Ok
+                          </Button>
+                        }
+                      />
+                    </Snackbar>
                   </Grid>
                 </TabPanel>
                 <TabPanel value={mainTabIndex} index={1}>

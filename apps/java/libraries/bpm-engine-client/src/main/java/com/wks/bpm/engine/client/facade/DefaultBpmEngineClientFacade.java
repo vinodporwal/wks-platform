@@ -167,4 +167,24 @@ public class DefaultBpmEngineClientFacade implements BpmEngineClientFacade {
 
 	}
 
+	@Override
+	public boolean processExistsForBusinessKey(String businessKey) {
+		return getEngineClient().processExistsForBusinessKey(businessKey);
+	}
+
+	@Override
+	public boolean isTaskActive(String businessKey, String taskDefinitionKey) {
+		return getEngineClient().isTaskActive(businessKey, taskDefinitionKey);
+	}
+
+	@Override
+	public boolean taskExists(String taskId) {
+		return getEngineClient().taskExists(taskId);
+	}
+	
+	@Override
+	public void completeTaskWithbusinessKey(String businessKey, String taskDefinitionKey, List<ProcessVariable> variables) {
+		getEngineClient().completeTaskWithbusinessKey(businessKey, taskDefinitionKey, variables);
+	}
+
 }

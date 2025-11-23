@@ -28,4 +28,9 @@ public class CaseAttribute {
 	private String value;
 	private String type;
 
+	@Override
+	public String toString() {
+		return "CaseAttribute [name=" + name + ", value=" + value + ", type=" + type + "]";
+	}
+
 }

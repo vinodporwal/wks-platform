@@ -151,4 +151,24 @@ public class C8EngineClient implements BpmEngineClient {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public boolean processExistsForBusinessKey(String businessKey) {
+		return false;
+	}
+
+	@Override
+	public boolean isTaskActive(String businessKey, String taskDefinitionKey) {
+		return false;
+	}
+
+	@Override
+	public boolean taskExists(String taskId) {
+		return false;
+	}
+
+	@Override
+	public void completeTaskWithbusinessKey(String businessKey, String taskDefinitionKey, List<ProcessVariable> variables) {
+	
+	}
+
 }

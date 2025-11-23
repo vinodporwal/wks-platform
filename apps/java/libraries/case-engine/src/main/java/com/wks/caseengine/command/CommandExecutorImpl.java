@@ -28,7 +28,10 @@ public class CommandExecutorImpl implements CommandExecutor {
 	private CommandContext commandContext;
 
 	public <T> T execute(final Command<T> command) {
+	
 		T t = command.execute(commandContext);
+
+		System.out.println("****** after startwithvaluescmd.... in commandexecutorimpl");
 
 		if (commandContext.getSecurityContextTenantHolder().getUserId().isPresent()) {
 			log.debug("Command {} executed by user {}", command.getClass().getSimpleName(),
