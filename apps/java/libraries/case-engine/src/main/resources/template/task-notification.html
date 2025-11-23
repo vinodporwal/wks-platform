@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>task assignment</title>
+    <style>
+        .header {
+            background-color: #2F8B8B;
+            color: white;
+            padding: 10px;
+        }
+        .content {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .case-details {
+            margin: 15px 0;
+        }
+        .label {
+            font-weight: bold;
+            width: 120px;
+            display: inline-block;
+            
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h2>New Task has been assigned to you</h2>
+</div>
+
+<div class="content">
+    
+	 <div class="case-details">
+        <h3>Task Details:</h3>
+
+       
+        
+        <p th:if="${taskName != null}"><span class="label">Task Name:</span> <span th:text="${taskName}">task name placeholder</span></p>
+        <!-- <p th:if="${caseName != null}"><span class="label">Case:</span> <span th:text="${caseName}">case title placeholder</span></p> -->
+       
+
+	
+	<div style="margin-top: 40px; display: flex; gap: 10px;">
+    <div th:if="${taskFormUrl != null}">
+        <a th:href="${taskFormUrl}" 
+           style="background-color: #2F8B8B; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Complete Task
+        </a>
+    </div>
+
+</div>
+
+
+</div>
+</body>
+</html>
