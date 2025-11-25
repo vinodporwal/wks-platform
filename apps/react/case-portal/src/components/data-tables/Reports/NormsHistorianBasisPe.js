@@ -99,19 +99,15 @@ const NormsHistorianBasisPe = () => {
             ...base,
             renderCell: (params) => {
               const original = params?.row?.[col.field] ?? params?.value
-              // don't default to 2 here — respect 0
               const decimals = countDecimals(original)
-              // clamp decimals to [0,3]
               const decimalsToShow = Math.min(Math.max(decimals, 0), 3)
 
               const text =
                 params?.value == null || params?.value === ''
                   ? ''
                   : decimalsToShow === 0
-                    ? // integer ? show as is (no decimals)
-                      String(Number(params.value))
-                    : // decimal ? keep detected decimals (max 3)
-                      Number(params.value).toFixed(decimalsToShow)
+                    ? String(Number(params.value))
+                    : Number(params.value).toFixed(decimalsToShow)
 
               return (
                 <div
