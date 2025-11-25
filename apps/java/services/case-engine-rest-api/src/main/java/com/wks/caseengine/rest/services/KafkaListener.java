@@ -29,8 +29,8 @@ public class KafkaListener {
 
  //  private  String topic = System.getenv("KAFKA_TOPIC_CREATE_HUMAN_TASK");
 
-  @Autowired
-  private KeycloakService keycloakService;
+//   @Autowired
+//   private KeycloakService keycloakService;
 
   @Autowired
   private TaskServiceImpl taskService;
