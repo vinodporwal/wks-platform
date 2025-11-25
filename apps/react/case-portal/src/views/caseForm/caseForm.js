@@ -159,7 +159,7 @@ console.log('*****  taskId:  ', taskId);
 
       if(processExistsForBusinessKey) {  
      if(!taskId) {   //skip the logic if the taskId is present to prevent unnecessary API call
-      if(aCase.caseDefinitionId === 'create-Asset')  {
+      if(aCase.caseDefinitionId === 'create-Asset' || aCase.caseDefinitionId === 'asset-onboarding')  {
         console.log("checking if the process has reached the last stage....")
           
             ProcessDefService.isTaskActive(keycloak, aCase.businessKey, 'aot-publish').then((isTaskActive) => { 
@@ -192,7 +192,7 @@ console.log('*****  taskId:  ', taskId);
         // setManualInitProcessDefs(autoStartProcesses)
         let filteredProcessDefs = data;
 
-       if(aCase.caseDefinitionId === 'create-Asset')
+       if(aCase.caseDefinitionId === 'create-Asset' || aCase.caseDefinitionId === 'asset-onboarding')
 
         filteredProcessDefs =    data.filter((o) => {  
              return o.name === 'XOM Asset Train Onboarding'
@@ -1821,7 +1821,7 @@ console.log('*****  taskId:  ', taskId);
                         // }}
                         onCustomEvent={(event) => {
                           console.log("in caseForm : onCustomEvent.........");
-                          
+                          console.log('event: ', event)
                           if (isCaseViewer) {
                             return; // Prevent any form submission for case viewers
                           }
