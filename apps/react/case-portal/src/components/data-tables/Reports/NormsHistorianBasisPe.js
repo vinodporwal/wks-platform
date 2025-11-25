@@ -66,8 +66,11 @@ const NormsHistorianBasisPe = () => {
       function countDecimals(value) {
         if (value == null) return 0
         const s = String(value).replace(/,/g, '').trim()
-        if (s.includes('.')) return s.split('.')[1].length
-        return 0
+        if (!s.includes('.')) return 0
+        const frac = s.split('.')[1] || ''
+        // remove trailing zeros from the fractional part (so 2024.0 -> 0 decimals)
+        const fracNoTrailing = frac.replace(/0+$/, '')
+        return fracNoTrailing.length
       }
 
       const isManyColumns = backendCols.length > 15
@@ -82,7 +85,6 @@ const NormsHistorianBasisPe = () => {
             ...col,
             title: col.title || col.field,
             filterable: true,
-
             flex: isManyColumns ? undefined : 1,
             width: isManyColumns ? 150 : undefined,
             filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
@@ -95,16 +97,22 @@ const NormsHistorianBasisPe = () => {
 
           return {
             ...base,
-
             renderCell: (params) => {
               const original = params?.row?.[col.field] ?? params?.value
-              const decimals = countDecimals(original) || 2
+              // don't default to 2 here — respect 0
+              const decimals = countDecimals(original)
+              // clamp decimals to [0,3]
+              const decimalsToShow = Math.min(Math.max(decimals, 0), 3)
+
               const text =
                 params?.value == null || params?.value === ''
                   ? ''
-                  : new Intl.NumberFormat('en-IN', {
-                      maximumFractionDigits: Math.min(decimals, 3),
-                    }).format(Number(params?.value))
+                  : decimalsToShow === 0
+                    ? // integer ? show as is (no decimals)
+                      String(Number(params.value))
+                    : // decimal ? keep detected decimals (max 3)
+                      Number(params.value).toFixed(decimalsToShow)
+
               return (
                 <div
                   title={String(params.value)}
@@ -400,7 +408,7 @@ const NormsHistorianBasisPe = () => {
     }
   }, [gridNames, dataMap])
 
-  const fileName = `Norms Historian Basis.xlsx`
+  const fileName = `${VERTICAL_NAME}-Norms Historian Basis.xlsx`
 
   const renderTitle = (t) => t
 

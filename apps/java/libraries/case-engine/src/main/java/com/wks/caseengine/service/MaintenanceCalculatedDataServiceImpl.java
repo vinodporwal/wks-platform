@@ -259,13 +259,16 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 			
 			sumMap.put("id", null);
 			sumMap.put("monthName", "Total");
-
-			// Finally add this summary map to your data (or return separately)
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(
+							UUID.fromString(plantId), year, "Furnace-run-length");	
 			data.add(sumMap);
-
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("data", data);
+			map.put("aopCalculation", aopCalculation);
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("Data fetched successfully");
-			aopMessageVM.setData(data);
+			aopMessageVM.setData(map);
 			return aopMessageVM;
 
 		} catch (IllegalArgumentException e) {
@@ -333,7 +336,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        }
 
 	        // Header style
-	        CellStyle headerStyle = createBoldBorderedStyle(workbook);
+	        CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
 
 	        // Gray style for the total row
 	        CellStyle grayStyle = workbook.createCellStyle();
@@ -892,33 +895,6 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
 	}
 	
-	private CellStyle createBorderedStyle(Workbook wb) {
-		CellStyle style = wb.createCellStyle();
-		style.setBorderBottom(BorderStyle.THIN);
-		style.setBorderTop(BorderStyle.THIN);
-		style.setBorderLeft(BorderStyle.THIN);
-		style.setBorderRight(BorderStyle.THIN);
-		return style;
-	}
-
-	private CellStyle createBoldStyle(Workbook wb) {
-		Font font = wb.createFont();
-		font.setBold(true);
-		CellStyle style = wb.createCellStyle();
-		style.setFont(font);
-		return style;
-	}
-
-	private CellStyle createBoldBorderedStyle(Workbook workbook) {
-		CellStyle style = createBorderedStyle(workbook);
-		Font font = workbook.createFont();
-		font.setBold(true);
-		style.setFont(font);
-		return style;
-	}
-
-
-
 	@Override
 	public AOPMessageVM updateBudgetMaintenance(List<BudgetMaintenanceDto> budgetMaintenanceDtos) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();

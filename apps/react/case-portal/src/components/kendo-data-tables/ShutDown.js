@@ -10,6 +10,7 @@ import { validateFields } from 'utils/validationUtils'
 import { verticalEnums } from 'enums/verticalEnums'
 import KendoDataTables from './index'
 import { ShutDownPeColumns } from 'components/colums/ShutdownColumn'
+import { ShutDownPeColumnsldpe12 } from 'components/colums/ShutdownColumn'
 import { ShutDownPpColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownAllColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownPTAColumns } from 'components/colums/ShutdownColumn'
@@ -21,6 +22,7 @@ const ShutDown = ({ permissions }) => {
   const [allProducts, setAllProducts] = useState([])
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
+
   const {
     verticalChange,
     yearChanged,
@@ -42,8 +44,11 @@ const ShutDown = ({ permissions }) => {
 
   const lowerVertName = vertName?.toLowerCase()
   const plantName = plantObject?.name
-
+  const siteName = siteObject?.name
   const isOldYear = oldYear?.oldYear
+
+  const DELETE_NOTE =
+    'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
@@ -64,6 +69,8 @@ const ShutDown = ({ permissions }) => {
   const keycloak = useSession()
 
   const READ_ONLY = getRoleName(keycloak)
+
+  const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
@@ -139,7 +146,15 @@ const ShutDown = ({ permissions }) => {
       }
       let requiredFields
       if (lowerVertName === 'pe') {
-        requiredFields = ['discription', 'remark']
+        if (
+          siteName?.toLowerCase() === 'nmd' &&
+          (plantName?.toLowerCase() === 'lldpe1' ||
+            plantName?.toLowerCase() === 'lldpe2')
+        ) {
+          requiredFields = ['discription', 'remark', 'productName1']
+        } else {
+          requiredFields = ['discription', 'remark']
+        }
       } else if (lowerVertName === 'pta') {
         requiredFields = ['discriptionDrpdwn', 'remark']
       } else if (lowerVertName === 'pp') {
@@ -522,7 +537,7 @@ const ShutDown = ({ permissions }) => {
 
   useEffect(() => {
     fetchData()
-  }, [oldYear, yearChanged, keycloak, PLANT_ID])
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
   const findDuration = (v, row) => {
     if (row.durationInHrs) return row.durationInHrs
@@ -658,10 +673,13 @@ const ShutDown = ({ permissions }) => {
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
       case verticalEnums.PE:
-        // if (plantName?.toLowerCase() != 'ldpe') {
-        //   return ShutDownAllColumns
-        // }
-
+        if (
+          siteName?.toLowerCase() === 'nmd' &&
+          (plantName?.toLowerCase() === 'lldpe1' ||
+            plantName?.toLowerCase() === 'lldpe2')
+        ) {
+          return ShutDownPeColumnsldpe12
+        }
         return ShutDownPeColumns
 
       case verticalEnums.PP:
@@ -723,7 +741,7 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'elastomer' ||
         lowerVertName === 'pvc' ||
         lowerVertName === 'vcm' ||
-        lowerVertName === 'aromatic' ||
+        lowerVertName === 'aromatics' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pet'
       ) {
@@ -864,6 +882,7 @@ const ShutDown = ({ permissions }) => {
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
+      showNoteWhileDeleting: IS_PE_PP_VERTICAL ? true : false,
 
       showTitleNameBusiness: true,
       titleName: `${SCREEN_NAME}`,
@@ -922,6 +941,7 @@ const ShutDown = ({ permissions }) => {
         allDescriptionDrpdwn={allDescriptionDrpdwn}
         handleExcelUpload={handleExcelUpload}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
+        deleteNoteOnDeleteDialogeBox={DELETE_NOTE}
       />
     </div>
   )

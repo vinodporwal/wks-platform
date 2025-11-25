@@ -62,10 +62,12 @@ const ShutdownNorms = () => {
   const AOP_YEAR = year?.selectedYear
   const SCREEN_NAME = screenTitle?.title
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const isPEPP = ['pe', 'pp'].includes(lowerVertName)
-  const textNote = isPEPP
-    ? '*Updating to All Grade will override the existing values.'
+  const IS_PE_PP_VERTICAL = ['pe', 'pp'].includes(lowerVertName)
+  const textNote = IS_PE_PP_VERTICAL
+    ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
     : '*Quantities are per day basis'
+  const textNoteWhileSaving =
+    'Warning : Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
 
   const keycloak = useSession()
   const READ_ONLY = getRoleName(keycloak)
@@ -104,7 +106,7 @@ const ShutdownNorms = () => {
   // 1) Load grades list if vertical requires it
   useEffect(() => {
     const loadGrades = async () => {
-      if (['pe', 'pp'].includes(lowerVertName)) {
+      if (IS_PE_PP_VERTICAL) {
         try {
           const response =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -135,7 +137,7 @@ const ShutdownNorms = () => {
     const loadData = async () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
-        if (['pe', 'pp'].includes(lowerVertName)) {
+        if (IS_PE_PP_VERTICAL) {
           if (!gradeId) return
           await fetchData(gradeId)
         } else {
@@ -170,6 +172,7 @@ const ShutdownNorms = () => {
     plantID,
     gradeId,
     lowerVertName,
+    AOP_YEAR,
   ])
 
   const isCellEditable = (params) => {
@@ -259,6 +262,7 @@ const ShutdownNorms = () => {
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
+
     try {
       setLoading(true)
       setRows([])
@@ -296,7 +300,6 @@ const ShutdownNorms = () => {
 
       let formattedData = []
 
-      const isPEorPP = ['pe', 'pp'].includes(lowerVertName)
       const isElastomer = ['elastomer'].includes(lowerVertName)
 
       if (lowerVertName != 'cracker') {
@@ -456,7 +459,32 @@ const ShutdownNorms = () => {
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
   }
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
 
+    try {
+      let response
+      if (IS_PE_PP_VERTICAL) {
+        response = await NormalOperationNormsApiService.shutdownnormsppExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -484,15 +512,16 @@ const ShutdownNorms = () => {
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
 
-      showNote: lowerVertName === 'meg' || isPEPP ? true : false,
-      showNoteWhileSaving: isPEPP ? true : false,
+      showNote: lowerVertName === 'meg' || IS_PE_PP_VERTICAL ? true : false,
+      showNoteWhileSaving: IS_PE_PP_VERTICAL ? true : false,
 
       saveBtn: true,
       showCalculate:
         lowerVertName == 'meg' ||
         lowerVertName == 'elastomer' ||
         lowerVertName == 'aromatics' ||
-        lowerVertName == 'pta'
+        lowerVertName == 'pta' ||
+        IS_PE_PP_VERTICAL
           ? false
           : true,
       showCalculateVisibility:
@@ -502,23 +531,19 @@ const ShutdownNorms = () => {
           ? true
           : false,
 
-      showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
-      marginBottom:
-        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
-      dropdownLabel:
-        lowerVertName === 'pe' || lowerVertName === 'pp'
-          ? 'Select Grade'
-          : 'Select Mode',
+      showG: IS_PE_PP_VERTICAL ? true : false,
+      marginBottom: IS_PE_PP_VERTICAL ? true : false,
+      dropdownLabel: 'Select Grade',
       allAction: true,
-      downloadExcelBtnFromUI: true,
-
+      downloadExcelBtnFromUI: IS_PE_PP_VERTICAL ? false : true,
+      downloadExcelBtn: IS_PE_PP_VERTICAL ? true : false,
       showTitleNameBusiness: true,
 
       titleName:
         lowerVertName === 'elastomer'
           ? `Shutdown Consumption (Norms/Quantity)`
           : SCREEN_NAME,
-      ExcelName: `${VERTICAL_NAME}_${SCREEN_NAME}`,
+      ExcelName: `${VERTICAL_NAME}-${SCREEN_NAME}`,
     },
     isOldYear,
   )
@@ -568,10 +593,12 @@ const ShutdownNorms = () => {
         groupBy='Particulars'
         permissions={adjustedPermissions}
         handleGradeChange={handleGradeChange}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
         calculatebtnClicked={calculatebtnClicked}
         plantID={plantID}
         grades={grades}
         note={textNote}
+        noteOnSaveDialogeBox={textNoteWhileSaving}
       />
     </div>
   )
