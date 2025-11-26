@@ -372,6 +372,7 @@ const ProductionNorms = ({ permissions }) => {
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
+      setRows([])
       setLoading(true)
       const response = await ProductionNormsApiService.getAOPData(
         keycloak,
@@ -647,6 +648,7 @@ const ProductionNorms = ({ permissions }) => {
   const fetchDataByProducts = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
+      setRowsByProducts([])
       setLoading(true)
 
       const response = await ProductionNormsApiService.getAOPData(
@@ -657,7 +659,7 @@ const ProductionNorms = ({ permissions }) => {
       )
 
       if (response?.code != 200) {
-        setRows([])
+        setRowsByProducts([])
         setLoading(false)
         setSnackbarOpen(true)
         setSnackbarData({
@@ -770,14 +772,14 @@ const ProductionNorms = ({ permissions }) => {
     setSelectedUnit(unit)
   }
   const isCellEditable = (params) => params.row.id !== 'total'
-  
+
   // const downloadExcelForConfiguration = async () => {
   //     setSnackbarOpen(true)
   //     setSnackbarData({
   //       message: 'Excel download started!',
   //       severity: 'success',
   //     })
-  
+
   //     try {
   //       let response
   //       if ( lowerVertName === 'pta') {
@@ -825,9 +827,12 @@ const ProductionNorms = ({ permissions }) => {
           addButton: permissions?.addButton ?? false,
           deleteButton: permissions?.deleteButton ?? false,
           editButton: permissions?.editButton ?? false,
-          showUnit: lowerVertName === 'vcm' || 
-          lowerVertName === 'pta' ||
-          lowerVertName === 'cracker' ? true : permissions?.showUnit ?? true,
+          showUnit:
+            lowerVertName === 'vcm' ||
+            lowerVertName === 'pta' ||
+            lowerVertName === 'cracker'
+              ? true
+              : permissions?.showUnit ?? true,
           saveWithRemark: permissions?.saveWithRemark ?? true,
           showCalculate: permissions?.showCalculate ?? true,
           allAction: permissions?.allAction ?? true,
@@ -844,23 +849,24 @@ const ProductionNorms = ({ permissions }) => {
               : false,
           saveBtn: permissions?.saveBtn ?? false,
           units:
-          lowerVertName === 'cracker'
-            ? ['MT/Month', 'TPH']
-            : ['MT', 'KT'],
+            lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
-          downloadExcelBtnFromUI: lowerVertName === 'vcm' || lowerVertName === 'pta' || lowerVertName === 'cracker'
-          ? true
-          : !permissions?.hideExportBtn,
+          downloadExcelBtnFromUI:
+            lowerVertName === 'vcm' ||
+            lowerVertName === 'pta' ||
+            lowerVertName === 'cracker'
+              ? true
+              : !permissions?.hideExportBtn,
           // downloadExcelBtn: lowerVertName === 'pta'
           // ? true
           // : false,
           ExcelName: `${lowerVertName}_Month wise Production plan`,
-           unitForExcelToadd:
-          lowerVertName === 'cracker'
-            ? selectedUnit || 'MT/Month'
-            : lowerVertName === 'vcm' || lowerVertName === 'pta'
-            ? selectedUnit || 'MT'
-            : null,
+          unitForExcelToadd:
+            lowerVertName === 'cracker'
+              ? selectedUnit || 'MT/Month'
+              : lowerVertName === 'vcm' || lowerVertName === 'pta'
+                ? selectedUnit || 'MT'
+                : null,
         },
         isOldYear,
       ),
@@ -883,7 +889,8 @@ const ProductionNorms = ({ permissions }) => {
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
-      downloadExcelBtnFromUI: lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
+      downloadExcelBtnFromUI:
+        lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
       ExcelName: `${lowerVertName}_Production Target`,
       customHeight: permissions?.customHeight,
     },
@@ -933,13 +940,13 @@ const ProductionNorms = ({ permissions }) => {
         unsavedChangesRef={unsavedChangesRef}
         permissions={adjustedPermissions}
         selectedUOM={'UOM'}
-       // downloadExcelForConfiguration={downloadExcelForConfiguration}
+        // downloadExcelForConfiguration={downloadExcelForConfiguration}
         note={
           !permissions?.hideNoteText &&
           lowerVertName !== 'cracker' &&
           lowerVertName !== 'elastomer' &&
           lowerVertName !== 'aromatics' &&
-          lowerVertName !== 'vcm'   && 
+          lowerVertName !== 'vcm' &&
           lowerVertName !== 'pta'
             ? '* MT per Annum'
             : ''

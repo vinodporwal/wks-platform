@@ -9,7 +9,10 @@ import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { DataService } from 'services/DataService'
-import { Typography } from '../../../../node_modules/@mui/material/index'
+import {
+  CircularProgress,
+  Typography,
+} from '../../../../node_modules/@mui/material/index'
 
 const specificConsumptionCategories = () => [
   {
@@ -42,6 +45,14 @@ const specificConsumptionCategories = () => [
   },
 ]
 
+// Categories that should have norms grid with their custom titles
+const categoriesWithNorms = {
+  RawMaterial: 'Raw Material',
+  CatChem: 'Cat Chem',
+  UtilityConsumption: 'Utilities',
+  ByProducts: 'By Products',
+}
+
 export default function SpecificConsumptionNorm() {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -62,9 +73,11 @@ export default function SpecificConsumptionNorm() {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
   const [loading, setLoading] = useState(false)
   const [reports, setReports] = useState({})
+  const [normsData, setNormsData] = useState({})
+  const [normColumns, setNormColumns] = useState([])
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -78,10 +91,24 @@ export default function SpecificConsumptionNorm() {
   const [otherVariableRows, setOtherVariableRows] = useState([])
   const valueFormat = ValueFormatterConsumption()
 
-  // ...existing code...
+  // Function to generate dynamic norm columns from backend data
+  const generateNormColumns = (columnsFromBackend) => {
+    if (!columnsFromBackend || columnsFromBackend.length === 0) {
+      // Default columns if backend doesn't provide them
+      return [
+        { field: 'NormName', title: 'Particular', editable: false, flex: 1 },
+        { field: 'UOM', title: 'UOM', editable: false, width: 100 },
+      ]
+    }
+    return columnsFromBackend
+  }
+
   const loadAll = async () => {
     setLoading(true)
     const out = {}
+    const normsOut = {}
+    let dynamicColumns = []
+
     await Promise.all(
       specificConsumptionCategories().map(async ({ key }) => {
         const { columns } = await MockSpecificConsumptionNormsAPI.getReport({
@@ -100,14 +127,48 @@ export default function SpecificConsumptionNorm() {
           key === 'PackingConsumables' &&
           apiResp?.data?.packingConsumablesData
         ) {
-          rows = apiResp.data.packingConsumablesData // Use as is for Packing Consumables
+          rows = apiResp.data.packingConsumablesData
         } else if (apiResp?.data?.plantProductionData) {
-          rows = apiResp.data.plantProductionData // Use as is for all other categories
+          rows = apiResp.data.plantProductionData
         }
-        out[key] = { columns, rows }
+      out[key] = { columns, rows }
+    }),
+  )
+
+  await Promise.all(
+    Object.keys(categoriesWithNorms).map(async (key) => {
+          try {
+            const normsResp = await DataService.getConsumptionNorms(
+              keycloak,
+              key,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+            const normsRows = normsResp?.data?.data || []
+            const allNormsColumns = normsResp?.data?.columns || []
+            normsOut[key] = normsRows
+
+            const columnToSkip = 'NormParameterTypeName'
+
+            const normsColumns = allNormsColumns.filter(
+              (col) => col.field !== columnToSkip,
+            )
+
+            if (normsColumns.length > 0 && dynamicColumns.length === 0) {
+              dynamicColumns = normsColumns.map((col) => ({
+                ...col,
+                format: valueFormat,
+              }))
+            }
+          } catch (error) {
+            console.error(`Error loading norms for ${key}:`, error)
+            normsOut[key] = []
+          }
       }),
     )
     setReports(out)
+    setNormsData(normsOut)
+    setNormColumns(generateNormColumns(dynamicColumns))
     setLoading(false)
   }
 
@@ -120,7 +181,9 @@ export default function SpecificConsumptionNorm() {
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
-      />
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
       <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
         {'Specific Consumption Norms'}
@@ -129,7 +192,7 @@ export default function SpecificConsumptionNorm() {
       {specificConsumptionCategories().map(({ key, title }) => {
         const rpt = reports[key] || {}
         return (
-          <Box key={key} sx={{ mt: 1 }}>
+          <Box key={key} sx={{ mt: 0 }}>
             <KendoDataTablesReports
               columns={rpt.columns || []}
               rows={rpt.rows || []}
@@ -145,6 +208,35 @@ export default function SpecificConsumptionNorm() {
           </Box>
         )
       })}
+
+      {/* Section title for norms grids */}
+      <Typography component='div' className='grid-title' sx={{ mt: 0, mb: 0 }}>
+        {'Grade Wise Specific Consumption Norms'}
+      </Typography>
+
+      {/* Then, render all norms grids */}
+      {Object.keys(categoriesWithNorms).map((key) => {
+        const norms = normsData[key] || []
+        const normsTitle = categoriesWithNorms[key]
+
+        return (
+          <Box key={`norms-${key}`} sx={{ mt: 0 }}>
+            <KendoDataTablesReports
+              columns={normColumns}
+              rows={norms}
+              title={normsTitle}
+              setRows={() => {}}
+              permissions={{
+                textAlignment: 'center',
+                showCalculate: false,
+                showFinalSubmit: false,
+                showTitle: true,
+              }}
+            />
+          </Box>
+        )
+      })}
+
       <Notification
         open={snackbarOpen}
         message={snackbarData.message}
