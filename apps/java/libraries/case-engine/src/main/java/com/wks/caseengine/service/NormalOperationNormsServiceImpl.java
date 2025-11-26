@@ -241,7 +241,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					for (int month = 1; month <= 12; month++) {
 						Double oldVal = getMonthlyValue(value, month);
 						Double newVal = getMonthlyValue(dto, month);
-
+						System.out.println("oldVal="+oldVal);
+						System.out.println("newVal="+newVal);
+						System.out.println("value.getRemarks()="+value.getRemarks());
+						System.out.println("dto.getRemarks()="+dto.getRemarks());;
 						if(newVal != null && !Objects.equals(oldVal, newVal) && value.getRemarks().equals(dto.getRemarks())) {
 							dto.setErrDescription("Please add/update remark");
 							dto.setSaveStatus("Failed");
@@ -351,84 +354,96 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 							// January
 							double newJan = Optional.ofNullable(mCUNormsValueDTO.getJanuary()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getJanuary(), newJan)) {
+							double oldJan = Optional.ofNullable(mCUNormsValueGrade.getJanuary()).orElse(0.0); 
+							if (isDifferent(oldJan, newJan)) {
 							    mCUNormsValueGrade.setJanuary(newJan);
 							    changed = true;
 							}
 
 							// February
 							double newFeb = Optional.ofNullable(mCUNormsValueDTO.getFebruary()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getFebruary(), newFeb)) {
+							double oldFeb = Optional.ofNullable(mCUNormsValueGrade.getFebruary()).orElse(0.0); 
+							if (isDifferent(oldFeb, newFeb)) {
 							    mCUNormsValueGrade.setFebruary(newFeb);
 							    changed = true;
 							}
 
 							// March
 							double newMar = Optional.ofNullable(mCUNormsValueDTO.getMarch()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getMarch(), newMar)) {
+							double oldMar = Optional.ofNullable(mCUNormsValueGrade.getMarch()).orElse(0.0); 
+							if (isDifferent(oldMar, newMar)) {
 							    mCUNormsValueGrade.setMarch(newMar);
 							    changed = true;
 							}
 
 							// April
 							double newApr = Optional.ofNullable(mCUNormsValueDTO.getApril()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getApril(), newApr)) {
+							double oldApr = Optional.ofNullable(mCUNormsValueGrade.getApril()).orElse(0.0);
+							if (isDifferent(oldApr, newApr)) {
 							    mCUNormsValueGrade.setApril(newApr);
 							    changed = true;
 							}
 
 							// May
 							double newMay = Optional.ofNullable(mCUNormsValueDTO.getMay()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getMay(), newMay)) {
+							double oldMay = Optional.ofNullable(mCUNormsValueGrade.getMay()).orElse(0.0);
+							if (isDifferent(oldMay, newMay)) {
 							    mCUNormsValueGrade.setMay(newMay);
 							    changed = true;
 							}
 
 							// June
 							double newJun = Optional.ofNullable(mCUNormsValueDTO.getJune()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getJune(), newJun)) {
+							double oldJun = Optional.ofNullable(mCUNormsValueGrade.getJune()).orElse(0.0);
+							if (isDifferent(oldJun, newJun)) {
 							    mCUNormsValueGrade.setJune(newJun);
 							    changed = true;
 							}
 
 							// July
 							double newJul = Optional.ofNullable(mCUNormsValueDTO.getJuly()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getJuly(), newJul)) {
+							 double oldJul = Optional.ofNullable(mCUNormsValueGrade.getJuly()).orElse(0.0);
+							if (isDifferent(oldJul, newJul)) {
 							    mCUNormsValueGrade.setJuly(newJul);
 							    changed = true;
 							}
 
 							// August
 							double newAug = Optional.ofNullable(mCUNormsValueDTO.getAugust()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getAugust(), newAug)) {
+							double oldAug = Optional.ofNullable(mCUNormsValueGrade.getAugust()).orElse(0.0);
+							if (isDifferent(oldAug, newAug)) {
 							    mCUNormsValueGrade.setAugust(newAug);
 							    changed = true;
 							}
 
 							// September
 							double newSep = Optional.ofNullable(mCUNormsValueDTO.getSeptember()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getSeptember(), newSep)) {
+							double oldSep = Optional.ofNullable(mCUNormsValueGrade.getSeptember()).orElse(0.0);
+							if (isDifferent(oldSep, newSep)) {
 							    mCUNormsValueGrade.setSeptember(newSep);
 							    changed = true;
 							}
 
 							// October
 							double newOct = Optional.ofNullable(mCUNormsValueDTO.getOctober()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getOctober(), newOct)) {
+							double oldOct = Optional.ofNullable(mCUNormsValueGrade.getOctober()).orElse(0.0);
+							if (isDifferent(oldOct, newOct)) {
 							    mCUNormsValueGrade.setOctober(newOct);
 							    changed = true;
 							}
 
 							// November
 							double newNov = Optional.ofNullable(mCUNormsValueDTO.getNovember()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getNovember(), newNov)) {
+							double oldNov = Optional.ofNullable(mCUNormsValueGrade.getNovember()).orElse(0.0);
+							if (isDifferent(oldNov, newNov)) {
 							    mCUNormsValueGrade.setNovember(newNov);
 							    changed = true;
 							}
 
 							// December
 							double newDec = Optional.ofNullable(mCUNormsValueDTO.getDecember()).orElse(0.0);
-							if (isDifferent(mCUNormsValueGrade.getDecember(), newDec)) {
+							double oldDec = Optional.ofNullable(mCUNormsValueGrade.getDecember()).orElse(0.0);
+							if (isDifferent(oldDec, newDec)) {
 							    mCUNormsValueGrade.setDecember(newDec);
 							    changed = true;
 							}
@@ -457,13 +472,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 								mCUNormsValueGrade.setFinancialYear(mCUNormsValueDTO.getFinancialYear());
 							}
 							
-							
-
-							
 							mCUNormsValueGrade.setMcuVersion("V1");
 							mCUNormsValueGrade.setUpdatedBy(Utility.getUserName());
 							mCUNormsValueGrade.setModifiedOn(new Date());
-							mCUNormsValueGrade.setGradeFkId(UUID.fromString(gradeId));
+							mCUNormsValueGrade.setGradeFkId(UUID.fromString(mCUNormsValueDTO.getGradeId()));
 							System.out.println("Data Saved Succussfully" + mCUNormsValue);
 							if(changed && mCUNormsValueGrade.getRemarks().equals(mCUNormsValueDTO.getRemarks())) {
 								mCUNormsValueDTO.setErrDescription("Please add/update remark");
@@ -503,84 +515,96 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 							// January
 							double newJan = Optional.ofNullable(mCUNormsValueDTO.getJanuary()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getJanuary(), newJan)) {
+							double oldJan = Optional.ofNullable(mCUNormsValue.getJanuary()).orElse(0.0);
+							if (isDifferent(oldJan, newJan)) {
 							    mCUNormsValue.setJanuary(newJan);
 							    changed = true;
 							}
 
 							// February
 							double newFeb = Optional.ofNullable(mCUNormsValueDTO.getFebruary()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getFebruary(), newFeb)) {
+							double oldFeb = Optional.ofNullable(mCUNormsValue.getFebruary()).orElse(0.0);
+							if (isDifferent(oldFeb, newFeb)) {
 							    mCUNormsValue.setFebruary(newFeb);
 							    changed = true;
 							}
 
 							// March
 							double newMar = Optional.ofNullable(mCUNormsValueDTO.getMarch()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getMarch(), newMar)) {
+							double oldMar = Optional.ofNullable(mCUNormsValue.getMarch()).orElse(0.0);
+							if (isDifferent(oldMar, newMar)) {
 							    mCUNormsValue.setMarch(newMar);
 							    changed = true;
 							}
 
 							// April
 							double newApr = Optional.ofNullable(mCUNormsValueDTO.getApril()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getApril(), newApr)) {
+							double oldApr = Optional.ofNullable(mCUNormsValue.getApril()).orElse(0.0);
+							if (isDifferent(oldApr, newApr)) {
 							    mCUNormsValue.setApril(newApr);
 							    changed = true;
 							}
 
 							// May
 							double newMay = Optional.ofNullable(mCUNormsValueDTO.getMay()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getMay(), newMay)) {
+							double oldMay = Optional.ofNullable(mCUNormsValue.getMay()).orElse(0.0);
+							if (isDifferent(oldMay, newMay)) {
 							    mCUNormsValue.setMay(newMay);
 							    changed = true;
 							}
 
 							// June
 							double newJun = Optional.ofNullable(mCUNormsValueDTO.getJune()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getJune(), newJun)) {
+							double oldJun = Optional.ofNullable(mCUNormsValue.getJune()).orElse(0.0);
+							if (isDifferent(oldJun, newJun)) {
 							    mCUNormsValue.setJune(newJun);
 							    changed = true;
 							}
 
 							// July
 							double newJul = Optional.ofNullable(mCUNormsValueDTO.getJuly()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getJuly(), newJul)) {
+							double oldJul = Optional.ofNullable(mCUNormsValue.getJuly()).orElse(0.0);
+							if (isDifferent(oldJul, newJul)) {
 							    mCUNormsValue.setJuly(newJul);
 							    changed = true;
 							}
 
 							// August
 							double newAug = Optional.ofNullable(mCUNormsValueDTO.getAugust()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getAugust(), newAug)) {
+							 double oldAug = Optional.ofNullable(mCUNormsValue.getAugust()).orElse(0.0);
+							if (isDifferent(oldAug, newAug)) {
 							    mCUNormsValue.setAugust(newAug);
 							    changed = true;
 							}
 
 							// September
 							double newSep = Optional.ofNullable(mCUNormsValueDTO.getSeptember()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getSeptember(), newSep)) {
+							double oldSep = Optional.ofNullable(mCUNormsValue.getSeptember()).orElse(0.0);
+							if (isDifferent(oldSep, newSep)) {
 							    mCUNormsValue.setSeptember(newSep);
 							    changed = true;
 							}
 
 							// October
 							double newOct = Optional.ofNullable(mCUNormsValueDTO.getOctober()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getOctober(), newOct)) {
+							 double oldOct = Optional.ofNullable(mCUNormsValue.getOctober()).orElse(0.0);
+							if (isDifferent(oldOct, newOct)) {
 							    mCUNormsValue.setOctober(newOct);
 							    changed = true;
 							}
 
 							// November
 							double newNov = Optional.ofNullable(mCUNormsValueDTO.getNovember()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getNovember(), newNov)) {
+							double oldNov = Optional.ofNullable(mCUNormsValue.getNovember()).orElse(0.0);
+							if (isDifferent(oldNov, newNov)) {
 							    mCUNormsValue.setNovember(newNov);
 							    changed = true;
 							}
 
 							// December
 							double newDec = Optional.ofNullable(mCUNormsValueDTO.getDecember()).orElse(0.0);
-							if (isDifferent(mCUNormsValue.getDecember(), newDec)) {
+							double oldDec = Optional.ofNullable(mCUNormsValue.getDecember()).orElse(0.0);
+							if (isDifferent(oldDec, newDec)) {
 							    mCUNormsValue.setDecember(newDec);
 							    changed = true;
 							}
@@ -881,7 +905,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 	    Map<String, String> nameIdMap = new HashMap<>();
 	    for (Map<String, String> info : gradeInfoList) {
-	        String sanitizedName = sanitizeSheetName(info.get("displayName"));
+	        String sanitizedName = Utility.sanitizeSheetName(info.get("displayName"));
 	        nameIdMap.put(sanitizedName, info.get("gradeId"));
 	    }
 	    return nameIdMap;
@@ -897,7 +921,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                continue;
 	            }
 	            String sheetName = sheet.getSheetName();
-	            String gradeId = gradeMap.get(sanitizeSheetName(sheetName));
+	            String gradeId = gradeMap.get(Utility.sanitizeSheetName(sheetName));
 	           
 	            
 	            Iterator<Row> rowIterator = sheet.iterator();
@@ -933,7 +957,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	                    dto.setRemarks(getStringCellValue(row.getCell(15), dto));
 	                    dto.setId(getStringCellValue(row.getCell(16), dto)); 
 	                    dto.setGradeId(gradeId);
-	                    dto.setSaveStatus("Success"); 
 
 	                } catch (Exception e) {
 	                    e.printStackTrace();
@@ -1016,19 +1039,31 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 
 	private static Double getNumericCellValue(Cell cell, MCUNormsValueDTO dto) {
-		if (cell == null)
-			return null;
-		if (cell.getCellType() == CellType.NUMERIC) {
-			return cell.getNumericCellValue();
-		} else if (cell.getCellType() == CellType.STRING) {
-			try {
-				return Double.parseDouble(cell.getStringCellValue().trim());
-			} catch (NumberFormatException e) {
-				dto.setSaveStatus("Failed");
-				dto.setErrDescription("Please enter numeric values");
-			}
-		}
-		return null;
+	    if (cell == null) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } else if (cell.getCellType() == CellType.STRING) {
+	        
+	        String cellValue = cell.getStringCellValue().trim();
+
+	        if (cellValue.isEmpty()) {
+	            return null; 
+	        }
+
+	        try {
+	            return Double.parseDouble(cellValue);
+	        } catch (NumberFormatException e) {
+	            
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    } else if (cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+	    return null;
 	}
 
 	public static Boolean getBooleanCellValue(Cell cell, MCUNormsValueDTO dto) {
@@ -1097,13 +1132,13 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			AOPMessageVM gradesVM = getNormalOperationNormsGrades(year, plantFKId.toString());
 			List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
 			Workbook workbook = new XSSFWorkbook();
-			CellStyle lockedStyle = createLockedStyle(workbook);
-			CellStyle unlockedStyle = createUnlockedStyle(workbook);
+			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
 
 			for (Map<String, String> gradeInfo : gradeInfoList) {
 				
 				String currentGradeId = gradeInfo.get("gradeId");
-				String sheetName = sanitizeSheetName(gradeInfo.get("displayName"));
+				String sheetName = Utility.sanitizeSheetName(gradeInfo.get("displayName"));
 				
 				AOPMessageVM aopMessageVM =null;
 				List<MCUNormsValueDTO> currentDtoList = new ArrayList<>();
@@ -1176,7 +1211,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					for (int col = 0; col < headerRowData.size(); col++) {
 						Cell cell = headerRow.createCell(col);
 						cell.setCellValue(headerRowData.get(col));
-						cell.setCellStyle(createBoldBorderedStyle(workbook));
+						cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 					}
 				}
 				
@@ -1229,25 +1264,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		return null;
 	}
 	
-	private String sanitizeSheetName(String name) {
-        if (name == null || name.trim().isEmpty()) return "Sheet";
-        String sanitized = name.replaceAll("[\\\\/\\?\\*:\\[\\]]", "_");
-        return sanitized.substring(0, Math.min(sanitized.length(), 31));
-    }
 	
-	private CellStyle createLockedStyle(Workbook workbook) {
-        CellStyle lockedStyle = workbook.createCellStyle();
-        lockedStyle.setLocked(true);
-        lockedStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-        lockedStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        return lockedStyle;
-    }
-	
-	private CellStyle createUnlockedStyle(Workbook workbook) {
-        CellStyle unlockedStyle = workbook.createCellStyle();
-        unlockedStyle.setLocked(false);
-        return unlockedStyle;
-    }
 	
 	public byte[] createExcel(String year, UUID plantFKId, boolean isAfterSave, List<MCUNormsValueDTO> dtoList,String mode,String gradeId) {
 		try {
@@ -1329,7 +1346,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				for (int col = 0; col < headerRowData.size(); col++) {
 					Cell cell = headerRow.createCell(col);
 					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(createBoldBorderedStyle(workbook));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
 			for (List<Object> rowData : rows) {
@@ -1403,31 +1420,6 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		}
 
 		return months;
-	}
-
-	private CellStyle createBorderedStyle(Workbook wb) {
-		CellStyle style = wb.createCellStyle();
-		style.setBorderBottom(BorderStyle.THIN);
-		style.setBorderTop(BorderStyle.THIN);
-		style.setBorderLeft(BorderStyle.THIN);
-		style.setBorderRight(BorderStyle.THIN);
-		return style;
-	}
-
-	private CellStyle createBoldStyle(Workbook wb) {
-		Font font = wb.createFont();
-		font.setBold(true);
-		CellStyle style = wb.createCellStyle();
-		style.setFont(font);
-		return style;
-	}
-
-	private CellStyle createBoldBorderedStyle(Workbook workbook) {
-		CellStyle style = createBorderedStyle(workbook);
-		Font font = workbook.createFont();
-		font.setBold(true);
-		style.setFont(font);
-		return style;
 	}
 
 	@Override

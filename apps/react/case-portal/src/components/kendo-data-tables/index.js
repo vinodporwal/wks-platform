@@ -136,6 +136,7 @@ const KendoDataTables = ({
   calculatebtnClicked = () => {},
   selectedUsers = [],
   groupBy = null,
+  totalRowConfiguration = null,
   selectedUOM = 'MT/Month',
   note = '',
   titleName = '',
@@ -152,6 +153,8 @@ const KendoDataTables = ({
   disableRedHighlight = false,
   showThreeColors = false,
   resetDataChanges = () => {},
+  noteOnSaveDialogeBox = '',
+  deleteNoteOnDeleteDialogeBox = '',
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -189,10 +192,30 @@ const KendoDataTables = ({
     ? [
         {
           field: groupBy,
+          aggregates: totalRowConfiguration,
           dir: undefined,
         },
       ]
     : []
+
+  const MyFooterCustomCell = (props) => {
+    const field = props.field
+    const aggObj = props.dataItem?.aggregates?.[field]
+
+    let cellContent = ''
+    if (aggObj) {
+      const aggKey = Object.keys(aggObj)[0]
+      const value = aggObj[aggKey]
+      // cellContent = typeof value === 'number' ? value.toFixed(4) : String(value)
+      cellContent = value != null ? String(value) : ''
+    }
+
+    return (
+      <td {...props.tdProps} colSpan={1}>
+        {cellContent}
+      </td>
+    )
+  }
 
   const fileInputRef = useRef(null)
 
@@ -208,6 +231,11 @@ const KendoDataTables = ({
 
   const handleRowClick = (e) => {
     if (READ_ONLY) {
+      setEdit({})
+      return
+    }
+
+    if (e?.dataItem?.aggregates) {
       setEdit({})
       return
     }
@@ -1335,7 +1363,6 @@ const KendoDataTables = ({
                 // height: `${calculatedVH}vh`,
               }}
               modifiedCells={modifiedCells}
-              // columnVirtualization={true}
               autoProcessData={true}
               defaultGroup={initialGroup}
               data={rows}
@@ -1357,6 +1384,14 @@ const KendoDataTables = ({
               sortable={{
                 mode: 'multiple',
               }}
+              // groupable={{
+              //   enabled: false,
+              //   footer: 'visible',
+              //   showGroupPanel: false,
+              // }}
+              // cells={{
+              //   groupFooter: MyFooterCustomCell,
+              // }}
               allRedCell={allRedCell}
               allRedCell2={allRedCell2}
               size='small'
@@ -1533,8 +1568,12 @@ const KendoDataTables = ({
                       title={col.title}
                       editable={col.editable || true}
                       cells={{
-                        data: (cellProps) => <LimitCellEditor {...cellProps} 
-                        READ_ONLY={READ_ONLY}/>,
+                        data: (cellProps) => (
+                          <LimitCellEditor
+                            {...cellProps}
+                            READ_ONLY={READ_ONLY}
+                          />
+                        ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
@@ -2291,7 +2330,9 @@ const KendoDataTables = ({
         <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
         <DialogContent>
           <DialogContentText id='alert-dialog-description'>
-            Are you sure you want to delete this row?
+            {permissions?.showNoteWhileDeleting
+              ? `Are you sure you want to delete this row?   ${deleteNoteOnDeleteDialogeBox}`
+              : 'Are you sure you want to delete this row?'}{' '}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -2312,7 +2353,7 @@ const KendoDataTables = ({
         <DialogContent>
           <DialogContentText id='alert-dialog-description'>
             {permissions?.showNoteWhileSaving
-              ? `Are you sure you want to save these changes? ${note}`
+              ? `Are you sure you want to save these changes?   ${noteOnSaveDialogeBox}`
               : 'Are you sure you want to save these changes?'}{' '}
           </DialogContentText>
         </DialogContent>
@@ -2370,7 +2411,10 @@ const KendoDataTables = ({
         <DialogActions>
           <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
           {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
-          <Button onClick={handleRemarkSave} disabled={READ_ONLY || !currentRemark?.trim()}>
+          <Button
+            onClick={handleRemarkSave}
+            disabled={READ_ONLY || !currentRemark?.trim()}
+          >
             Add
           </Button>
         </DialogActions>

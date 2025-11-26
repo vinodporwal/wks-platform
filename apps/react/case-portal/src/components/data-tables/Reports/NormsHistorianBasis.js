@@ -60,6 +60,7 @@ const NormsHistorianBasis = () => {
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
 
   const isOldYear = oldYear?.oldYear
@@ -83,7 +84,6 @@ const NormsHistorianBasis = () => {
   const fetchAllData = async (selectedUnit) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if (lowerVertName != 'meg') return
-
     if (!selectedUnit) return
     setLoading(true)
     let isCancelled = false
@@ -251,7 +251,7 @@ const NormsHistorianBasis = () => {
     }
   }
 
-  const fileName = `Norms Historian Basis ${new Date().toISOString().split('.')[0].replace(/:/g, '-')}.xlsx`
+  const fileName = `${VERTICAL_NAME}-Norms Historian Basis.xlsx`
 
   const handleUnitChange = (unit) => {
     setLoading(true)
