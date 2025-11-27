@@ -92,6 +92,7 @@ public class Camunda7DataImportCommandRunner implements CommandLineRunner {
 		if (importDir != null && !importDir.isEmpty()) {
 			listFiles(importDir).forEach(fileName -> {
 				File file = new File(fileName);
+				System.out.println("camunda7DataImportCommandRunner file name : " + fileName);
 
 				RestTemplate restTemplate = new RestTemplate();
 
