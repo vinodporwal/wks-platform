@@ -24,6 +24,7 @@ import SelectivityData from './SelectivityData'
 import { DataService } from 'services/DataService'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service.js'
+import { OptimizerDataApiService } from 'services/optimizer-api-service'
 // Constants
 const MONTHS = [
   'april',
@@ -126,9 +127,8 @@ const NormalOpNormsScreenCracker = () => {
   const [currentRowId4, setCurrentRowId4] = useState(null)
   const [currentRowIdFinalNorms, setCurrentRowIdFinalNorms] = useState(null)
 
-  // default gradeId same as earlier (you used '4F' default)
-  const [gradeId, setGradeId] = useState('4F')
-  const [gradeDisplayName, setGradeDisplayName] = useState('4F')
+  const [gradeId, setGradeId] = useState('')
+  const [gradeDisplayName, setGradeDisplayName] = useState('')
 
   const [calculationObject, setCalculationObject] = useState({})
   const [selectedTab, setSelectedTab] = useState(0)
@@ -140,7 +140,7 @@ const NormalOpNormsScreenCracker = () => {
   // column defs
   const colDefs = useMemo(
     () => getNormalOpNormColDef({ headerMap, valueFormat, lowerVertName }),
-    [headerMap, valueFormat, lowerVertName],
+    [headerMap, valueFormat, lowerVertName, AOP_YEAR, PLANT_ID],
   )
 
   const colDefsIndividual = useMemo(
@@ -153,7 +153,7 @@ const NormalOpNormsScreenCracker = () => {
         editable: false,
       },
       { field: 'materialDisplayName', title: 'Particulars' },
-      { field: 'uom', title: 'UOM', editable: false },
+      { field: 'uom', title: 'UOM', editable: false, widthT: 85 },
       {
         field: 'april',
         title: 'Value',
@@ -161,6 +161,7 @@ const NormalOpNormsScreenCracker = () => {
         align: 'right',
         format: valueFormat,
         type: 'number',
+        widthT: 120,
       },
       { field: 'remark', title: 'Remarks', widthT: 200, editable: true },
     ],
@@ -290,13 +291,21 @@ const NormalOpNormsScreenCracker = () => {
       setProductionRows([])
       setLoading(true)
 
+      var data = []
+
       try {
-        const data = await DataService.getCatalystSelectivityData(
+        const res = await DataService.getCatalystSelectivityData(
           keycloak,
           gradeId,
           PLANT_ID,
           AOP_YEAR,
         )
+
+        if (res?.code != 200) {
+          return
+        } else {
+          data = res?.data
+        }
 
         const distinctReportTypes = [
           ...new Set(data.map((item) => item.normType).filter(Boolean)),
@@ -676,27 +685,64 @@ const NormalOpNormsScreenCracker = () => {
     [AOP_YEAR, PLANT_ID, keycloak, lowerVertName],
   )
 
+  const fetchGrades = useCallback(
+    async (type) => {
+      try {
+        const resp = await OptimizerDataApiService.fetchModes(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          type,
+        )
+
+        if (
+          resp?.code === 200 &&
+          Array.isArray(resp.data) &&
+          resp.data.length > 0
+        ) {
+          const mapped = resp.data.map((item) => ({
+            name: item.name,
+            displayName: item.displayName,
+            gradeId: item.name,
+          }))
+
+          setGrades(mapped)
+
+          fetchAllDataNormsSelection(mapped[0]?.gradeId)
+        } else {
+          setGrades([])
+        }
+      } catch (err) {
+        console.error('Error fetching grades:', err)
+        setGrades([])
+      }
+    },
+    [keycloak, PLANT_ID, AOP_YEAR, selectedTab],
+  )
+
   const fetchAllData = useCallback(
-    async (gId) => {
+    async (gId, tabIndex) => {
       setLoading(true)
       try {
-        setGrades([
-          { name: '4F', displayName: '4F', gradeId: '4F' },
-          { name: '5F', displayName: '5F', gradeId: '5F' },
-          { name: '4F+D', displayName: '4F+D', gradeId: '4F+D' },
-          { name: 'Monthly', displayName: 'Monthly', gradeId: 'Monthly' },
-        ])
+        // setGrades([
+        //   { name: '4F', displayName: '4F', gradeId: '4F' },
+        //   { name: '5F', displayName: '5F', gradeId: '5F' },
+        //   { name: '4F+D', displayName: '4F+D', gradeId: '4F+D' },
+        //   { name: 'Monthly', displayName: 'Monthly', gradeId: 'Monthly' },
+        // ])
 
         const promises = []
 
         // Load data based on selected tab
-        if (selectedTab === 0) {
+        if (tabIndex === 0) {
           promises.push(fetchData(gId))
-        } else if (selectedTab === 1) {
+        } else if (tabIndex === 1) {
           promises.push(fetchConstantsData())
-        } else if (selectedTab === 3) {
-          promises.push(fetchModeData(gId))
-        } else if (selectedTab === 4) {
+        }
+        // else if (tabIndex === 3) {
+        //   promises.push(fetchModeData(gId))
+        // }
+        else if (tabIndex === 4) {
           promises.push(fetchFinalNorms())
         }
 
@@ -718,6 +764,26 @@ const NormalOpNormsScreenCracker = () => {
     ],
   )
 
+  const fetchAllDataNormsSelection = useCallback(
+    async (gId) => {
+      setLoading(true)
+      try {
+        const promises = []
+
+        if (selectedTab === 3) {
+          promises.push(fetchModeData(gId))
+        }
+
+        await Promise.all(promises)
+      } catch (err) {
+        console.error('fetchAllData', err)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [fetchModeData, selectedTab, PLANT_ID, AOP_YEAR],
+  )
+
   useEffect(() => {
     fetchAllData(gradeId)
   }, [
@@ -735,6 +801,18 @@ const NormalOpNormsScreenCracker = () => {
   useEffect(() => {
     setSelectedTab(0)
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
+    if (selectedTab == 3) {
+      fetchGrades('2')
+    }
+  }, [selectedTab, keycloak, PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
+    if (!gradeId && grades.length > 0) {
+      setGradeId(grades[0].gradeId)
+    }
+  }, [grades, gradeId])
 
   // remark handlers
   const handleRemarkCellClick = useCallback((row) => {
@@ -1082,10 +1160,14 @@ const NormalOpNormsScreenCracker = () => {
   }, [gradeId, keycloak])
 
   // grade handlers
-  const handleGradeChange = useCallback((gId, gDisplayName) => {
-    setGradeId(gId)
-    setGradeDisplayName(gDisplayName)
-  }, [])
+  const handleGradeChange = useCallback(
+    (gId, gDisplayName) => {
+      setGradeId(gId)
+      setGradeDisplayName(gDisplayName)
+      fetchAllDataNormsSelection(gId)
+    },
+    [PLANT_ID, AOP_YEAR, selectedTab],
+  )
 
   const onModeSelect = useCallback(
     (event) => {
@@ -1103,7 +1185,7 @@ const NormalOpNormsScreenCracker = () => {
     (_, newValue) => {
       setModifiedCells({})
       setSelectedTab(newValue)
-      fetchAllData(gradeId)
+      fetchAllData(gradeId, newValue)
     },
     [gradeId, fetchAllData, AOP_YEAR, PLANT_ID],
   )
