@@ -343,7 +343,7 @@ const SlowDown = ({ permissions }) => {
 
       // Select required fields based on vertical
       const requiredFields = ['discription', 'remark']
-      const requiredFieldsForElastomer = ['discription', 'remark', 'rate']
+      const requiredFieldsForElastomer = ['discription', 'remark', 'rate', 'durationInHrs']
       const requiredFieldsForPe = [
         'discription',
         'remark',
@@ -451,7 +451,6 @@ const SlowDown = ({ permissions }) => {
       // MEG specific checks
       if (
         lowerVertName === 'meg' ||
-        lowerVertName === 'elastomer' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pvc' ||
         lowerVertName === 'pta'
@@ -776,6 +775,7 @@ const SlowDown = ({ permissions }) => {
         const dynamicColDefs = data1.data.map((item) => ({
           field: item.field,
           title: item.title,
+          widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
           editable:
             item.field === 'particulars' || item.field.toLowerCase() === 'uom'
               ? false
@@ -1178,6 +1178,7 @@ const SlowDown = ({ permissions }) => {
           allProducts={allProducts}
           disableRedHighlight={true}
           handleExcelUpload={handleExcelUpload}
+          screenType="slowdown"
           downloadExcelForConfiguration={downloadExcelForConfiguration}
         />
       )}

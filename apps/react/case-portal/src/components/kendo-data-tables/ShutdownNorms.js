@@ -521,6 +521,7 @@ const ShutdownNorms = () => {
         lowerVertName == 'elastomer' ||
         lowerVertName == 'aromatics' ||
         lowerVertName == 'pta' ||
+        lowerVertName == 'vcm' ||
         IS_PE_PP_VERTICAL
           ? false
           : true,
@@ -540,7 +541,7 @@ const ShutdownNorms = () => {
       showTitleNameBusiness: true,
 
       titleName:
-        lowerVertName === 'elastomer'
+        lowerVertName === 'elastomer' || lowerVertName ===  'pta' || lowerVertName === 'vcm'
           ? `Shutdown Consumption (Norms/Quantity)`
           : SCREEN_NAME,
       ExcelName: `${VERTICAL_NAME}-${SCREEN_NAME}`,

@@ -131,12 +131,18 @@ const ConfigurationTable = () => {
       setLoading(true)
       var data = []
 
-      data = await DataService.getCatalystSelectivityData(
+      const res = await DataService.getCatalystSelectivityData(
         keycloak,
         gradeId,
         PLANT_ID,
         AOP_YEAR,
       )
+
+      if (res?.code != 200) {
+        return
+      } else {
+        data = res?.data
+      }
 
       if (token !== fetchDataTokenRef.current) {
         return
@@ -252,9 +258,7 @@ const ConfigurationTable = () => {
       if (fetchDataTokenRef.current === token) {
         setLoading(false)
       } else {
-        console.info(
-          'fetchData: not clearing loading because a newer fetch is active',
-        )
+        // value
       }
     }
   }
@@ -308,20 +312,26 @@ const ConfigurationTable = () => {
 
   const fetchDataConstantsMnnualEntry = async () => {
     setLoading(true)
+
+    var constantsRes = []
     const token = ++fetchConstantsManualTokenRef.current
     try {
-      var constantsRes = await DataService.getCatalystSelectivityData(
+      constantsRes = await DataService.getCatalystSelectivityData(
         keycloak,
         null,
         PLANT_ID,
         AOP_YEAR,
       )
 
+      if (constantsRes?.code != 200) {
+        return
+      }
+
       if (token !== fetchConstantsManualTokenRef.current) {
         return
       }
 
-      const formattedData = constantsRes.map((item, index) => ({
+      const formattedData = constantsRes?.data?.map((item, index) => ({
         ...item,
         idFromApi: item.id,
         id: index,
