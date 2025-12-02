@@ -1349,8 +1349,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 			if (site.getName().equalsIgnoreCase("HMD") || site.getName().equalsIgnoreCase("DMD")) {
 				steamLatentName = "HP.Latent.Heat";
-			} else if ((site.getName().equalsIgnoreCase("NMD"))) {
+			} else if ((site.getName().equalsIgnoreCase("NMD")) || site.getName().equalsIgnoreCase("C2")) {
 				steamLatentName = "MP.Latent.Heat";
+			} else {
+				steamLatentName = "HP.Latent.Heat";
 			}
 
 			for (ConfigurationDTO configurationDTO : configurationDTOList) {
@@ -2180,6 +2182,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
 						dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
 					} else {
+						
+						
 						dto.setNormType(getStringCellValue(row.getCell(0), dto));
 						dto.setProductName(getStringCellValue(row.getCell(1), dto));
 						dto.setUOM(getStringCellValue(row.getCell(2), dto));
@@ -2230,7 +2234,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						                                  
 						        dto.setErrDescription(errorDescription);
 						    }
-						}
+						}						
 					}
 
 				} catch (Exception e) {

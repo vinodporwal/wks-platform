@@ -99,7 +99,7 @@ export const monthMap = {
 const KendoDataTables = ({
   showCatChemUtilityCheckbox = false,
   showCatChemUtilityCheckbox2 = false,
-  screenType = "slowdown",
+  screenType = 'slowdown',
   rows = [],
   plantID = null,
   grades = [],
@@ -200,15 +200,26 @@ const KendoDataTables = ({
     : []
 
   const MyFooterCustomCell = (props) => {
+    const { tdProps } = props
     const field = props.field
+
+    const labelColumn = 'displayName'
+    if (field === labelColumn) {
+      return (
+        <td {...tdProps}>
+          <b>Total</b>
+        </td>
+      )
+    }
+
     const aggObj = props.dataItem?.aggregates?.[field]
 
     let cellContent = ''
+
     if (aggObj) {
       const aggKey = Object.keys(aggObj)[0]
       const value = aggObj[aggKey]
-      // cellContent = typeof value === 'number' ? value.toFixed(4) : String(value)
-      cellContent = value != null ? String(value) : ''
+      cellContent = value != null ? Number(value).toFixed(4) : ''
     }
 
     return (
@@ -231,8 +242,6 @@ const KendoDataTables = ({
   }
 
   const handleRowClick = (e) => {
-    // console.log('e', e)
-
     if (READ_ONLY) {
       setEdit({})
       return
@@ -264,9 +273,35 @@ const KendoDataTables = ({
     (e) => {
       setIsRowEdited(true)
 
-      const { dataItem, field, value } = e
+      const { dataItem, field } = e
+      let { value } = e
       if (dataItem?.isTotal) {
         return
+      }
+
+      if (permissions?.isTotalFooterActive) {
+        const monthsForTotalRow = [
+          'april',
+          'aug',
+          'dec',
+          'feb',
+          'jan',
+          'july',
+          'june',
+          'march',
+          'may',
+          'nov',
+          'oct',
+          'sep',
+        ]
+
+        if (monthsForTotalRow.includes(field)) {
+          if (value === '' || value == null) {
+            value = null
+          } else {
+            value = Number(value)
+          }
+        }
       }
 
       if (dataItem?.field === 'Particulars') return
@@ -325,39 +360,39 @@ const KendoDataTables = ({
             'durationInHrs' in updated
           ) {
             if (!(screenType === 'slowdown' && lowerVertName === 'elastomer')) {
-            if (
-              field === 'maintStartDateTime' ||
-              field === 'maintEndDateTime'
-            ) {
-              updated.durationInHrs = recalcDuration(
-                updated.maintStartDateTime,
-                updated.maintEndDateTime,
-              )
-            } else if (field === 'durationInHrs') {
-              const newEnd = recalcEndDate(
-                updated.maintStartDateTime,
-                value, // string like “10.20”
-              )
-              if (newEnd) {
-                updated.maintEndDateTime = newEnd
-              }
+              if (
+                field === 'maintStartDateTime' ||
+                field === 'maintEndDateTime'
+              ) {
+                updated.durationInHrs = recalcDuration(
+                  updated.maintStartDateTime,
+                  updated.maintEndDateTime,
+                )
+              } else if (field === 'durationInHrs') {
+                const newEnd = recalcEndDate(
+                  updated.maintStartDateTime,
+                  value, // string like “10.20”
+                )
+                if (newEnd) {
+                  updated.maintEndDateTime = newEnd
+                }
               }
             }
           }
           if (
-          lowerVertName === 'vcm' &&
-          (r.discription || '').trim() === 'Furnace Decoking'
-        ) {
-          if (field === 'maintStartDateTime' && value) {
-            const start = new Date(value)
-            if (!isNaN(start)) {
-              const end = new Date(start)
-              end.setHours(end.getHours() + 192)
-              updated.maintEndDateTime = end
-              updated.durationInHrs = '192.00'
+            lowerVertName === 'vcm' &&
+            (r.discription || '').trim() === 'Furnace Decoking'
+          ) {
+            if (field === 'maintStartDateTime' && value) {
+              const start = new Date(value)
+              if (!isNaN(start)) {
+                const end = new Date(start)
+                end.setHours(end.getHours() + 192)
+                updated.maintEndDateTime = end
+                updated.durationInHrs = '192.00'
+              }
             }
           }
-        }
 
           return updated
         }),
@@ -410,18 +445,18 @@ const KendoDataTables = ({
             'durationInHrs' in base
           ) {
             if (!(screenType === 'slowdown' && lowerVertName === 'elastomer')) {
-            if (
-              field === 'maintStartDateTime' ||
-              field === 'maintEndDateTime'
-            ) {
-              base.durationInHrs = recalcDuration(
-                base.maintStartDateTime,
-                base.maintEndDateTime,
-              )
-            } else if (field === 'durationInHrs') {
-              const newEnd = recalcEndDate(base.maintStartDateTime, value)
-              if (newEnd) base.maintEndDateTime = newEnd.toISOString()
-            }
+              if (
+                field === 'maintStartDateTime' ||
+                field === 'maintEndDateTime'
+              ) {
+                base.durationInHrs = recalcDuration(
+                  base.maintStartDateTime,
+                  base.maintEndDateTime,
+                )
+              } else if (field === 'durationInHrs') {
+                const newEnd = recalcEndDate(base.maintStartDateTime, value)
+                if (newEnd) base.maintEndDateTime = newEnd.toISOString()
+              }
             }
           }
 
@@ -1000,13 +1035,27 @@ const KendoDataTables = ({
     )
   }
 
+  // useEffect(() => {
+  //   console.log(selectedGrade)
+
+  //   if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
+  //     const firstGrade = grades[0]
+  //     setSelectedGrade(firstGrade.gradeId)
+  //     handleGradeChange(firstGrade.gradeId, firstGrade?.displayName)
+  //   }
+  // }, [grades, permissions?.showG, selectedGrade])
+
   useEffect(() => {
-    if (permissions?.showG && grades?.length > 0 && !selectedGrade) {
+    if (!permissions?.showG || !grades?.length) return
+    setSelectedGrade((prev) => {
+      if (prev) {
+        return prev
+      }
       const firstGrade = grades[0]
-      setSelectedGrade(firstGrade.gradeId)
       handleGradeChange(firstGrade.gradeId, firstGrade?.displayName)
-    }
-  }, [grades, permissions?.showG, selectedGrade])
+      return firstGrade.gradeId
+    })
+  }, [grades, permissions?.showG])
 
   useEffect(() => {
     setSelectedGrade(null)
@@ -1411,14 +1460,26 @@ const KendoDataTables = ({
               sortable={{
                 mode: 'multiple',
               }}
-              // groupable={{
-              //   enabled: false,
-              //   footer: 'visible',
-              //   showGroupPanel: false,
-              // }}
-              // cells={{
-              //   groupFooter: MyFooterCustomCell,
-              // }}
+              groupable={
+                permissions?.isTotalFooterActive
+                  ? {
+                      enabled: false,
+                      footer: 'visible',
+                      showGroupPanel: false,
+                    }
+                  : {
+                      enabled: false,
+                      footer: 'none',
+                      showGroupPanel: false,
+                    }
+              }
+              cells={
+                permissions?.isTotalFooterActive
+                  ? {
+                      groupFooter: MyFooterCustomCell,
+                    }
+                  : undefined
+              }
               allRedCell={allRedCell}
               allRedCell2={allRedCell2}
               size='small'
@@ -1631,28 +1692,29 @@ const KendoDataTables = ({
                   )
                 }
                 if (
-              col?.field === 'discription' && col?.type === 'discriptionDrpdwn'
-            ) {
-              return (
-                <GridColumn
-                  key='discription'
-                  field='discription'
-                  title={col.title || col.headerName || 'Particulars'}
-                  editable={col.editable || true}
-                  hidden={col.hidden}
-                  cells={{
-                    data: (cellProps) => (
-                      <ProductCell
-                        {...cellProps}
-                        allProducts={allDescriptionDrpdwn}
-                      />
-                    ),
-                    headerCell: SimpleHeaderWithTooltip,
-                  }}
-                  columnMenu={ColumnMenuCheckboxFilter}
-                />
-              )
-            }
+                  col?.field === 'discription' &&
+                  col?.type === 'discriptionDrpdwn'
+                ) {
+                  return (
+                    <GridColumn
+                      key='discription'
+                      field='discription'
+                      title={col.title || col.headerName || 'Particulars'}
+                      editable={col.editable || true}
+                      hidden={col.hidden}
+                      cells={{
+                        data: (cellProps) => (
+                          <ProductCell
+                            {...cellProps}
+                            allProducts={allDescriptionDrpdwn}
+                          />
+                        ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
 
                 if (col?.field === 'productName1') {
                   return (
