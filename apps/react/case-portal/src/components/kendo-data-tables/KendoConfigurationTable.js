@@ -33,7 +33,7 @@ import { getRoleName } from 'services/role-service'
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
 
   const fetchDataTokenRef = useRef(0)
   const fetchConstantsTokenRef = useRef(0)
@@ -55,8 +55,11 @@ const ConfigurationTable = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = oldYear?.oldYear
-  const isOldYearFlag = oldYear?.oldYear === 1
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
@@ -650,15 +653,39 @@ const ConfigurationTable = () => {
     }
   }
   const onLoad = async () => {
-    if (startDate && endDate && startDate > endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Please Choose Valid Dates!',
-        severity: 'warning',
-      })
+    if (startDate && endDate) {
+      const s = new Date(startDate)
+      const e = new Date(endDate)
 
-      return
+      s.setHours(0, 0, 0, 0)
+      e.setHours(0, 0, 0, 0)
+
+      if (s > e) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            'Please choose valid dates (start date must be before end date).',
+          severity: 'warning',
+        })
+        return
+      }
+
+      const minEnd = new Date(s)
+      minEnd.setFullYear(minEnd.getFullYear() + 1)
+
+      //CHECK THE DATES DIFFERENCE SHOULD BE MORE THAN 1 YEAR ONLY FOR PE OR PP
+      if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+        if (e < minEnd) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'End date must be at least 1 year after the start date',
+            severity: 'warning',
+          })
+          return
+        }
+      }
     }
+
     setLoading1(true)
     const startDateObj = configurationExecutionDetails.find(
       (item) => item.Name === 'StartDate',
@@ -826,7 +853,7 @@ const ConfigurationTable = () => {
                     </Box>
 
                     {/* Load Button */}
-                    {!isOldYearFlag && (
+                    {!isOldYear && (
                       <Button
                         variant='contained'
                         onClick={handleOpenDialog}
@@ -932,14 +959,14 @@ const ConfigurationTable = () => {
       const [start, end] = auditYear.split('-').map(Number)
       displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
     }
-    const megTabsDisplay = megTabs.map(tab =>
+    const megTabsDisplay = megTabs.map((tab) =>
       isAromatics && tab === 'Constants'
         ? 'User Input'
         : tab === 'Report Manual Entry'
-        ? `${tab} ${displayYear}`
-        : tab
+          ? `${tab} ${displayYear}`
+          : tab,
     )
-    
+
     return (
       <div>
         <Backdrop
@@ -958,7 +985,7 @@ const ConfigurationTable = () => {
 
           {(() => {
             const currentTab = megTabs[tabIndex]?.toLowerCase()
-            const currentTabDisplayName = 
+            const currentTabDisplayName =
               isAromatics && megTabs[tabIndex] === 'Constants'
                 ? 'User Input'
                 : megTabs[tabIndex]
@@ -1226,35 +1253,35 @@ const ConfigurationTable = () => {
   }
 
   if (lowerVertName === 'vcm') {
-  return (
-    <div>
-      <Backdrop
+    return (
+      <div>
+        <Backdrop
           sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
           open={!!loading1}
         >
           <CircularProgress color='inherit' />
         </Backdrop>
-      {ConfigurationAccordian}
-      <AopTabs
-        tabIndex={tabIndex}
-        setTabIndex={setTabIndex}
-        tabs={tabs.map((tabId) => {
-          const tabInfo = availableTabs.find(
-            (tab) => tab.id.toLowerCase() === tabId.toLowerCase()
-          )
-          return tabInfo ? tabInfo.displayName : tabId
-        })}
-      />
-      <Box>
+        {ConfigurationAccordian}
+        <AopTabs
+          tabIndex={tabIndex}
+          setTabIndex={setTabIndex}
+          tabs={tabs.map((tabId) => {
+            const tabInfo = availableTabs.find(
+              (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+            )
+            return tabInfo ? tabInfo.displayName : tabId
+          })}
+        />
+        <Box>
           {(() => {
-          const currentTabId = tabs[tabIndex]?.toLowerCase()
-          const currentTabInfo = availableTabs.find(
-            (tab) => tab.id.toLowerCase() === currentTabId
-          )
-          const currentTabDisplayName = currentTabInfo?.displayName
+            const currentTabId = tabs[tabIndex]?.toLowerCase()
+            const currentTabInfo = availableTabs.find(
+              (tab) => tab.id.toLowerCase() === currentTabId,
+            )
+            const currentTabDisplayName = currentTabInfo?.displayName
 
-          switch (currentTabId) {
-            case getTheId('Configuration'):
+            switch (currentTabId) {
+              case getTheId('Configuration'):
                 return (
                   <SelectivityData
                     rows={productionRows}
@@ -1262,7 +1289,7 @@ const ConfigurationTable = () => {
                     fetchData={fetchData}
                     setRows={setProductionRows}
                     configType='elastomer'
-                    groupBy='Particulars'
+                    groupBy='TypeDisplayName'
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
@@ -1270,7 +1297,7 @@ const ConfigurationTable = () => {
                     currentTabDisplayName={currentTabDisplayName}
                   />
                 )
-            case getTheId('Constant'):
+              case getTheId('Constant'):
                 return (
                   <SelectivityData
                     rows={productionRowsConstants}
@@ -1286,20 +1313,19 @@ const ConfigurationTable = () => {
                     currentTabDisplayName={currentTabDisplayName}
                   />
                 )
-            case getTheId('Report Manual Entry'):
+              case getTheId('Report Manual Entry'):
                 return (
                   <SelectivityData
-                    rows={productionRowsConstantsMannualEntry}
+                    rows={reportManualEntry}
                     loading={loading}
-                    fetchData={fetchDataConstantsMnnualEntry}
-                    setRows={setProductionRowsConstantsMannualEntry}
-                    configType='megConstantsMannualEntry'
-                    groupBy='Particulars'
-                    summaryEdited={summaryEdited}
+                    setRows={setReportManualEntry}
+                    fetchData={fetchData}
+                    configType='Report Manual Entry'
                     summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
-                    tabIndex='2'
                     currentTabDisplayName={currentTabDisplayName}
+                    groupBy='TypeDisplayName'
                   />
                 )
               default:

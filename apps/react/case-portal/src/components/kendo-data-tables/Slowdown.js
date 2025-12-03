@@ -45,9 +45,10 @@ const SlowDown = ({ permissions }) => {
   const FORMATE_DECIMAL = ValueFormatterProduction()
   const vertName = verticalChange?.selectedVertical
   const plantName = plantObject?.name
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
   const [errorRows, setErrorRows] = useState(new Set())
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCells2, setModifiedCells2] = React.useState({})
@@ -67,7 +68,8 @@ const SlowDown = ({ permissions }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
@@ -121,27 +123,31 @@ const SlowDown = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
-  
-  useEffect(() => {
-  if (!PLANT_ID || !AOP_YEAR) return
-  
-  const getAllDescriptionDrpdwn = async () => {
-    try {
-      // Use your VCM-specific API here
-      const data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
-      const descriptionObjList = data?.data.map((item) => ({
-        id: item.Name,
-        name: item.Name,
-        displayName: item.DisplayName,
-      }))
-      setAllDescriptionDrpdwn(descriptionObjList)
-    } catch (error) {
-      console.error('Error fetching VCM descriptions', error)
-    }
-  }
 
-  if (lowerVertName === 'vcm') getAllDescriptionDrpdwn()
-}, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    const getAllDescriptionDrpdwn = async () => {
+      try {
+        // Use your VCM-specific API here
+        const data = await DataService.dropdownValues(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        const descriptionObjList = data?.data.map((item) => ({
+          id: item.Name,
+          name: item.Name,
+          displayName: item.DisplayName,
+        }))
+        setAllDescriptionDrpdwn(descriptionObjList)
+      } catch (error) {
+        console.error('Error fetching VCM descriptions', error)
+      }
+    }
+
+    if (lowerVertName === 'vcm') getAllDescriptionDrpdwn()
+  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
   function addTimeOffset(dateTime) {
     if (!dateTime) return null
@@ -366,7 +372,12 @@ const SlowDown = ({ permissions }) => {
 
       // Select required fields based on vertical
       const requiredFields = ['discription', 'remark']
-      const requiredFieldsForElastomer = ['discription', 'remark', 'rate', 'durationInHrs']
+      const requiredFieldsForElastomer = [
+        'discription',
+        'remark',
+        'rate',
+        'durationInHrs',
+      ]
       const requiredFieldsForPe = [
         'discription',
         'remark',
@@ -463,11 +474,7 @@ const SlowDown = ({ permissions }) => {
           record.maintEndDateTime instanceof Date
             ? record.maintEndDateTime
             : new Date(record.maintEndDateTime)
-        if (
-          startDate &&
-          endDate &&
-          startDate.getTime() >= endDate.getTime()
-        ) {
+        if (startDate && endDate && startDate.getTime() >= endDate.getTime()) {
           record.isError = true
           setSnackbarOpen(true)
           setSnackbarData({
@@ -478,35 +485,37 @@ const SlowDown = ({ permissions }) => {
         }
       }
       if (lowerVertName === 'vcm') {
-  for (const row of rows) {
-    if (
-      (row.discription || '').trim() === 'Furnace Decoking' &&
-      row.maintStartDateTime &&
-      row.maintEndDateTime
-    ) {
-      const startDate = new Date(row.maintStartDateTime)
-      const endDate = new Date(row.maintEndDateTime)
-      const diffTime = endDate - startDate
-      const diffHours = diffTime / (1000 * 60 * 60)
-      if (diffHours !== 192) {
-        row.isError = true
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: `For "Furnace Decoking", the duration between Start Date and End Date must be exactly 192 hours (8 days).`,
-          severity: 'error',
-        })
-        return
+        for (const row of rows) {
+          if (
+            (row.discription || '').trim() === 'Furnace Decoking' &&
+            row.maintStartDateTime &&
+            row.maintEndDateTime
+          ) {
+            const startDate = new Date(row.maintStartDateTime)
+            const endDate = new Date(row.maintEndDateTime)
+            const diffTime = endDate - startDate
+            const diffHours = diffTime / (1000 * 60 * 60)
+            if (diffHours !== 192) {
+              row.isError = true
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `For "Furnace Decoking", the duration between Start Date and End Date must be exactly 192 hours (8 days).`,
+                severity: 'error',
+              })
+              return
+            }
+          }
+        }
       }
-    }
-  }
-}
 
       // MEG specific checks
       if (
         lowerVertName === 'meg' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pvc' ||
-        lowerVertName === 'pta'
+        lowerVertName === 'pta' ||
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp'
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
@@ -1231,7 +1240,7 @@ const SlowDown = ({ permissions }) => {
           allProducts={allProducts}
           disableRedHighlight={true}
           handleExcelUpload={handleExcelUpload}
-          screenType="slowdown"
+          screenType='slowdown'
           downloadExcelForConfiguration={downloadExcelForConfiguration}
           allDescriptionDrpdwn={allDescriptionDrpdwn}
         />

@@ -21,6 +21,7 @@ import { NormalOperationNormsApiService } from 'services/normal-operation-norms-
 import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
+import { SlowdownNormForMegServices } from 'services/SlowdownNormForMegServices'
 const SlowdownNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [loading, setLoading] = useState(false)
@@ -45,8 +46,9 @@ const SlowdownNorms = () => {
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
-  //const isOldYear = oldYear?.oldYear
-  const isOldYear = oldYear?.oldYear
+
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const isOldYear = false
 
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
@@ -88,7 +90,8 @@ const SlowdownNorms = () => {
   // }
 
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
 
@@ -456,6 +459,13 @@ const SlowdownNorms = () => {
           AOP_YEAR,
           keycloak,
         )
+      } else if (lowerVertName == 'vcm') {
+        response =
+          await SlowdownNormForMegServices.getSlowdownNormsCalculateForMeg({
+            keycloak,
+            PLANT_ID,
+            year: AOP_YEAR,
+          })
       } else {
         response = await DataService.handleCalculateSlowdownNorms(
           PLANT_ID,

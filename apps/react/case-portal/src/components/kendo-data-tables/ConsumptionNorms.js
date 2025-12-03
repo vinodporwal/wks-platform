@@ -10,7 +10,6 @@ import { validateFields } from 'utils/validationUtils'
 import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { Box } from '@mui/material'
-
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
@@ -19,9 +18,10 @@ const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
-
+  // const READ_ONLY = getRoleName(keycloak)
   const [open1, setOpen1] = useState(false)
+  const valueFormat = ValueFormatterConsumption()
+  const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
@@ -36,6 +36,7 @@ const ConsumptionNorms = () => {
     year,
     screenTitle,
   } = dataGridStore
+
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
@@ -44,7 +45,11 @@ const ConsumptionNorms = () => {
   const SCREEN_NAME = screenTitle?.title
   const headerMap = generateHeaderNames(AOP_YEAR)
 
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
@@ -66,10 +71,13 @@ const ConsumptionNorms = () => {
   const [gradeId, setGradeId] = useState(null)
   const [grades, setGrades] = useState([])
 
+  const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
+
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.aopRemarks || '')
@@ -228,7 +236,6 @@ const ConsumptionNorms = () => {
 
   const fetchGradeDropdowns = async () => {
     try {
-      setGrades([])
       const response =
         await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
           keycloak,
@@ -240,10 +247,10 @@ const ConsumptionNorms = () => {
         setGrades(response?.data)
       }
 
-      fetchData(gradeId)
+      fetchData(response?.data[0]?.gradeId)
     } catch (error) {
       setGrades([])
-      console.error('Error fetching Business Demand data:', error)
+      console.error('Error fetching data:', error)
     }
   }
 
@@ -262,7 +269,6 @@ const ConsumptionNorms = () => {
       }
 
       if (response?.data?.length === 0) {
-        // no grades ? clear selection and fetch blank data
         setGradeId(null)
         await fetchData(null)
         return
@@ -283,7 +289,7 @@ const ConsumptionNorms = () => {
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if ((lowerVertName === 'pe' || lowerVertName === 'pp') && !gradeId) return
+    if (isPEPP && !gradeId) return
     setLoading(true)
     try {
       var response
@@ -364,13 +370,13 @@ const ConsumptionNorms = () => {
   }
 
   useEffect(() => {
-    fetchData(gradeId)
+    // fetchData(gradeId)
     if (lowerVertName === 'pe' || lowerVertName === 'pp') {
       fetchGradeDropdowns()
+    } else {
+      fetchData(null)
     }
-  }, [PLANT_ID, oldYear, yearChanged, keycloak, selectedUnit, gradeId])
-
-  const valueFormat = ValueFormatterConsumption()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
@@ -426,6 +432,7 @@ const ConsumptionNorms = () => {
       console.error('Error!', error)
     }
   }
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -452,7 +459,6 @@ const ConsumptionNorms = () => {
       setSnackbarOpen(true)
     }
   }
-  const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -505,6 +511,7 @@ const ConsumptionNorms = () => {
 
   const handleGradeChange = (gradeId) => {
     setGradeId(gradeId)
+    fetchData(gradeId)
   }
 
   return (
@@ -548,7 +555,7 @@ const ConsumptionNorms = () => {
               setSnackbarData={setSnackbarData}
               handleCalculate={handleCalculate}
               handleRemarkCellClick={handleRemarkCellClick}
-              fetchData={fetchData}
+              // fetchData={fetchData}
               handleUnitChange={handleUnitChange}
               remarkDialogOpen={remarkDialogOpen}
               setRemarkDialogOpen={setRemarkDialogOpen}
@@ -561,6 +568,7 @@ const ConsumptionNorms = () => {
               handleGradeChange={handleGradeChange}
               calculatebtnClicked={calculatebtnClicked}
               downloadExcelForConfiguration={downloadExcelForConfiguration}
+              plantID={PLANT_ID}
             />
           </Box>
         }
