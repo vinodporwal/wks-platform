@@ -186,7 +186,7 @@ export const SlowDownPeColumns = [
 
   {
     field: 'rate',
-    title: 'Rate (TPH)',
+    title: 'Rate Reduce (TPH)',
     editable: true,
     type: 'number',
   },

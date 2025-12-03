@@ -526,13 +526,16 @@ const ConfigurationTable = () => {
       setEndDate(fallbackEndDate)
     }
   }, [configurationExecutionDetails, PLANT_ID])
+
   useEffect(() => {
     computeAndSetDates()
   }, [computeAndSetDates])
+
   const getTheId = (name) => {
     const tab = availableTabs.find((tab) => tab.name === name)
     return tab ? tab.id : null
   }
+
   function formatDate(date) {
     if (!date) return ''
     const year = date?.getFullYear()
@@ -736,6 +739,10 @@ const ConfigurationTable = () => {
           severity: 'success',
         })
         // setIsLoadEnabled(false)
+        if (lowerVertName == 'pe' || lowerVertName == 'pp') {
+          saveSummary(summary)
+          setSummaryEdited(false)
+        }
         getConfigurationExecutionDetails()
         setLoading(false)
       } else {
@@ -761,6 +768,25 @@ const ConfigurationTable = () => {
       setTabIndex(0)
     }
   }, [tabs])
+
+  const saveSummary = async (summary) => {
+    try {
+      const response = await DataService.saveSummaryAOPConsumptionNorm(
+        PLANT_ID,
+        AOP_YEAR,
+        summary,
+        keycloak,
+      )
+
+      return response
+    } catch (error) {
+      // console.error('Error saving Summary!', error)
+    } finally {
+      //
+      // setLoading(false)
+      getAopSummary()
+    }
+  }
 
   const startDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'StartDate',
@@ -859,7 +885,15 @@ const ConfigurationTable = () => {
                         onClick={handleOpenDialog}
                         className='btn-save'
                         sx={{ alignSelf: 'flex-end' }}
-                        disabled={READ_ONLY}
+                        // disabled={READ_ONLY || !summaryEdited}
+                        disabled={
+                          lowerVertName === 'pe' || lowerVertName === 'pp'
+                            ? READ_ONLY ||
+                              !summaryEdited ||
+                              !summary ||
+                              summary.trim() === ''
+                            : READ_ONLY
+                        }
                       >
                         Load
                       </Button>
