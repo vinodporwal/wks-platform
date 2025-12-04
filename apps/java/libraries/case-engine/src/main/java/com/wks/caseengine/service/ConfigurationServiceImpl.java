@@ -1381,6 +1381,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 					saveData(optionNormParameters.get(), i, year, attributeValue, configurationDTO);
 					if(configurationDTO.getSaveStatus()!=null && configurationDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 						failedList.add(configurationDTO);
+						break;
 					}
 
 					if (!steamLatentName.isEmpty() && attributeValue != null
@@ -1600,7 +1601,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		boolean attributeChanged = newValue != null
 		    && !newValue.equalsIgnoreCase(existingValue);
 
-		// Save only if there?s a meaningful change
+		if(newValue!=null && newValue.equalsIgnoreCase("0.0") && !existingRecord.isPresent()) {
+			return;
+		}
 		if (remarksChanged) {
 			// Update entity
 			normAttributeTransactions.setAttributeValue(newValue != null ? newValue : "0.0");

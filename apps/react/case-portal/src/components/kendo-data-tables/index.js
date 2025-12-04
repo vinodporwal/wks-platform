@@ -560,6 +560,7 @@ const KendoDataTables = ({
   }
 
   const handleAddRow = () => {
+    setEdit({})
     if (isButtonDisabled) return
     setIsButtonDisabled(true)
     const newRowId = rows.length
