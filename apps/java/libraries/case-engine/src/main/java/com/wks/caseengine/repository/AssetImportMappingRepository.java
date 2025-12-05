@@ -11,12 +11,11 @@ import java.util.Optional;
 @Repository
 public interface AssetImportMappingRepository extends JpaRepository<AssetImportMapping, UUID> {
 
-    
     List<AssetImportMapping> findByAssetId(UUID assetId);
 
-    
     List<AssetImportMapping> findByFinancialMonthId(UUID financialMonthId);
 
-    
     Optional<AssetImportMapping> findByAssetIdAndFinancialMonthId(UUID assetId, UUID financialMonthId);
+
+    List<AssetImportMapping> findByFinancialMonthIdIn(List<UUID> financialMonthIds);
 }
