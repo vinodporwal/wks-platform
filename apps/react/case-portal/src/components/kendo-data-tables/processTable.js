@@ -36,6 +36,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const lowerVertName = verticalObject?.name?.toLowerCase()
 
   const IS_OLD_YEAR = oldYear?.oldYear
+  const isOldYear = false
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const dataConfig = useMemo(
@@ -451,12 +452,16 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           uploadExcelBtn: viewOnly ? false : true,
           showRefresh: false,
           showCalculate: viewOnly ? false : true,
-          showCalculateVisibility: true,
+          // showCalculateVisibility: true,
+
+          //BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
+          showCalculateVisibility: false,
+
           showNote: true,
         },
-        oldYear?.oldYear,
+        isOldYear,
       ),
-    [oldYear],
+    [isOldYear],
   )
 
   return (

@@ -8,7 +8,7 @@ import { remarkColumn } from 'components/Utilities/remarkColumn'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { Box } from '../../../node_modules/@mui/material/index'
 import { getRoleName } from 'services/role-service'
-
+import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
 const ProductionAopView = ({
   handleCalculate,
   fetchSecondGridData,
@@ -100,7 +100,7 @@ const ProductionAopView = ({
     if (READ_ONLY) return
     // do not delete commented code
     // try {
-    //   const cases = await DataService.getCaseId(keycloak)
+    //   const cases = await AOPWorkFlowService.getCaseId(keycloak)
     //   console.log(cases?.workflowList?.length)
     //   if (cases?.workflowList?.length !== 0) return
     setCurrentRemark(row.remark || '')
@@ -114,11 +114,12 @@ const ProductionAopView = ({
     if (!PLANT_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await DataService.getWorkflowDataProduction(
+      const response = await AOPWorkFlowService.getWorkflowDataProduction(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
+
       setCalculationObject(response?.data?.aopCalculation)
       // Correct path is response.data.data
       const apiData = response?.data?.data
@@ -205,7 +206,7 @@ const ProductionAopView = ({
   const saveChanges = async () => {
     try {
       // console.log(rows, 'workflowDto')
-      await DataService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
+      await AOPWorkFlowService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
       // console.log(response, 'response')
       setSnackbarData({
         message: 'Data Saved Successfully!',
@@ -270,7 +271,7 @@ const ProductionAopView = ({
           showCalculate: !isOldYear,
           showTitle: true,
           showCalculateVisibility:
-        Object.keys(calculationObject || {}).length > 0 ? true : false,
+            Object.keys(calculationObject || {}).length > 0 ? true : false,
         }}
       />
       {/* </Box> */}

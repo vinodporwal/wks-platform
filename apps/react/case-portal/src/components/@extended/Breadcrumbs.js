@@ -191,18 +191,18 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   let itemTitle = ''
 
   // collapse item
-  if (main && main.type === 'collapse') {
-    mainContent = (
-      // <Typography component={Link} to={document.location.pathname} variant="h6" sx={{ textDecoration: 'none' }} color="textSecondary">
-      <Typography
-        variant='h6'
-        sx={{ textDecoration: 'none' }}
-        color='textSecondary'
-      >
-        {main.title}
-      </Typography>
-    )
-  }
+  // if (main && main.type === 'collapse') {
+  //   mainContent = (
+  //     // <Typography component={Link} to={document.location.pathname} variant="h6" sx={{ textDecoration: 'none' }} color="textSecondary">
+  //     <Typography
+  //       variant='h6'
+  //       sx={{ textDecoration: 'none' }}
+  //       color='textSecondary'
+  //     >
+  //       {main.title}
+  //     </Typography>
+  //   )
+  // }
 
   // items
   if (item && item.type === 'item') {
@@ -242,7 +242,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           {/* {title1} */}
           <Tooltip title={`Basis`}>
             <IconButton
-              size='medium'
+              size='small'
               sx={{
                 backgroundColor: 'transparent',
                 '&:hover': {
@@ -252,7 +252,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
               }}
               onClick={() => handleOpenPdfTemp(item?.id)}
             >
-              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+              <InfoIcon fontSize='small' sx={{ color: '#0100cb' }} />
             </IconButton>
           </Tooltip>
         </Typography>
@@ -354,7 +354,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
             <Grid
               container
-              sx={{ mt: 1, mb: 1, ml: 1 }}
+              sx={{ mt: 1, ml: 1 }}
               justifyContent='space-between'
               alignItems='center'
             >

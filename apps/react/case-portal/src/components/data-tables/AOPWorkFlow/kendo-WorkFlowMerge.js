@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 // import { CaseService } from 'services/CaseService'
 import { DataService } from 'services/DataService'
+import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
 // import { TaskService } from 'services/TaskService'
 import { useSession } from 'SessionStoreContext'
 import postmanData from '../../../assets/postmandata.json'
@@ -145,56 +146,61 @@ const WorkFlowMerge = () => {
         throw new Error('PLANT_ID or AOP_YEAR not found ')
       }
 
-      const [data, res1, res2, res3, res4, res5, res6, res7, res8] =
+      const [data, res1, res2, res3, res4, res5, res6, res7, res8, res9] =
         await Promise.all([
-          DataService.handleCalculateAnnualAopCostMiisContribution(
+          AOPWorkFlowService.handleCalculateAnnualAopCostMiisContribution(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
-          DataService.handleCalculateProductionVolData2(
+          AOPWorkFlowService.handleCalculateProductionVolData2(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
-          DataService.handleCalculatePlantProductionData(
+          AOPWorkFlowService.handleCalculatePlantProductionData(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
-          DataService.handleCalculateMonthwiseProduction(
+          AOPWorkFlowService.handleCalculateMonthwiseProduction(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
-          DataService.calculateTurnAroundPlanReportData(
+          AOPWorkFlowService.calculateTurnAroundPlanReportData(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
-          DataService.calculateAnnualProductionPlanData(
+          AOPWorkFlowService.calculateAnnualProductionPlanData(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
-          DataService.handleCalculatePlantConsumptionData(
+          AOPWorkFlowService.handleCalculatePlantConsumptionData(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
-          DataService.calculatePlantContributionReportData(
-            PLANT_ID,
-            AOP_YEAR,
-            keycloak,
-          ),
-
-          DataService.calculatePlantContributionSummaryYearly(
+          AOPWorkFlowService.calculatePlantContributionReportData(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
           ),
 
-          DataService.calculatePlantContributionBusinessDemand(
+          AOPWorkFlowService.calculatePlantContributionSummaryYearly(
+            PLANT_ID,
+            AOP_YEAR,
+            keycloak,
+          ),
+
+          AOPWorkFlowService.calculatePlantContributionBusinessDemand(
+            PLANT_ID,
+            AOP_YEAR,
+            keycloak,
+          ),
+          AOPWorkFlowService.calculateGradeSpecificConsumptionNorm(
             PLANT_ID,
             AOP_YEAR,
             keycloak,
@@ -203,7 +209,18 @@ const WorkFlowMerge = () => {
           Promise.resolve(null),
         ])
 
-      const responses = [data, res1, res2, res3, res4, res5, res6, res7, res8]
+      const responses = [
+        data,
+        res1,
+        res2,
+        res3,
+        res4,
+        res5,
+        res6,
+        res7,
+        res8,
+        res9,
+      ]
 
       const allSuccess = responses.every(
         (res) => res !== null && res !== undefined,
@@ -252,7 +269,7 @@ const WorkFlowMerge = () => {
       const payload = postmanData
 
       // Await the API call here to ensure completion
-      const data = await DataService.getExcel(
+      const data = await AOPWorkFlowService.getExcel(
         keycloak,
         payload,
         PLANT_ID,
@@ -282,7 +299,7 @@ const WorkFlowMerge = () => {
     if (READ_ONLY) return
     // do not delete commented code
     // try {
-    //   const cases = await DataService.getCaseId(keycloak)
+    //   const cases = await AOPWorkFlowService.getCaseId(keycloak)
     //   console.log(cases?.workflowList?.length)
     //   if (cases?.workflowList?.length !== 0) return
     setCurrentRemark(row.remark || '')
@@ -368,11 +385,8 @@ const WorkFlowMerge = () => {
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
-      const { headers, keys, results } = await DataService.getWorkflowData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      const { headers, keys, results } =
+        await AOPWorkFlowService.getWorkflowData(keycloak, PLANT_ID, AOP_YEAR)
       const numericKeys = getNumericKeysInAllRows(results)
       const formatted = results.map((row, idx) => ({
         id: idx,
@@ -402,7 +416,7 @@ const WorkFlowMerge = () => {
   const getCaseId = async () => {
     if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
     try {
-      const cases = await DataService.getCaseId(
+      const cases = await AOPWorkFlowService.getCaseId(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -472,7 +486,7 @@ const WorkFlowMerge = () => {
         // allData: rows,
         workflowYearDTO: rows,
       }
-      const result = await DataService.submitWorkFlow(payload, keycloak)
+      const result = await AOPWorkFlowService.submitWorkFlow(payload, keycloak)
       // console.log(result)
       if (result) {
         console.log('Workflow instance created successfully')
@@ -531,7 +545,7 @@ const WorkFlowMerge = () => {
         variables: caseData.attributes,
         workflowDTO: workflowDto,
       }
-      await DataService.completeTask(keycloak, payloadOfCompleteTask)
+      await AOPWorkFlowService.completeTask(keycloak, payloadOfCompleteTask)
       // await CaseService.addComment(keycloak, text, '', businessKey)
       setSnackbarData({
         message: 'Task completed and comment added!',
@@ -552,7 +566,7 @@ const WorkFlowMerge = () => {
   const saveChanges = async () => {
     try {
       // console.log(rows, 'workflowDto')
-      await DataService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
+      await AOPWorkFlowService.saveAnnualWorkFlowData(keycloak, rows, PLANT_ID)
       setSnackbarData({
         message: 'Data Saved Successfully!',
         severity: 'success',
@@ -651,7 +665,6 @@ const WorkFlowMerge = () => {
   // Pick tabs based on vertical
 
   let activeTabs = defaultTabs
-
   if (lowerVertName === 'cracker') {
     activeTabs = crackerTabs
   } else if (
@@ -719,7 +732,11 @@ const WorkFlowMerge = () => {
           ))}
         </Stepper>
 
-        <Typography component='div' className='text-note'>
+        <Typography
+          component='div'
+          className='text-note'
+          style={{ marginTop: 24 }}
+        >
           * Prices - MIIS BPC (Last Budget Year), Actual Values - MIIS
           Contribution (YTD).
         </Typography>

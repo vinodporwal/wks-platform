@@ -902,6 +902,10 @@ const KendoDataTablesCracker = ({
         onClose={closeSaveDialogeBox}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
@@ -919,6 +923,10 @@ const KendoDataTablesCracker = ({
       <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
       >
         <DialogTitle>Add Remark</DialogTitle>
         <DialogContent>

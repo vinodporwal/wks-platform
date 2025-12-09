@@ -8,6 +8,7 @@ import { DataService } from 'services/DataService'
 import { MockReportService } from './mockPlantContributionAPI'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
+import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
 
 export default function PlantContribution() {
   const keycloak = useSession()
@@ -67,7 +68,7 @@ export default function PlantContribution() {
   const FORMAT_VALUES_COST = lowerVertName == 'elastomer' ? '{0:0}' : '{0:0.00}'
   const FORMAT_VALUES_PRICE = '{0:0}'
   const FORMAT_VALUES_NORMS =
-    lowerVertName == 'meg' ? '{0:0.00000}' : '{0:0.00}'
+    lowerVertName == 'meg' || lowerVertName == 'elastomer' ? '{0:0.00000}' : '{0:0.00}'
 
   const loadAll = async () => {
     setLoading(true)
@@ -126,7 +127,7 @@ export default function PlantContribution() {
     try {
       setLoading(true)
 
-      const res = await DataService.calculatePlantContributionReportData(
+      const res = await AOPWorkFlowService.calculatePlantContributionReportData(
         PLANT_ID,
         AOP_YEAR,
         keycloak,
