@@ -16,12 +16,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import com.wks.caseengine.cases.definition.CaseStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,7 +39,9 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CaseInstance {
-
+    
+	@Id
+	@Field(name = "_id")
 	private String _id;
 
 	private String businessKey;
@@ -47,8 +52,11 @@ public class CaseInstance {
 
 	private CaseOwner owner;
 
-	private String eventTrendUrl;
-	private String eventReportUrl;
+	// private String eventTrendUrl;
+	// private String eventReportUrl;
+
+	private List<EventUrlItem> eventTrendUrls = new ArrayList<>();
+	private List<EventUrlItem> eventReportUrls = new ArrayList<>();
 
 	@Default
 	private List<CaseComment> comments = new ArrayList<>();
@@ -61,6 +69,8 @@ public class CaseInstance {
 
 	private String queueId;
 
+	private List<String>  eventIds;
+
 	public CaseInstance(String _id, String businessKey, String caseDefinitionId, String stage, String status) {
 		super();
 		this._id = _id;
@@ -70,7 +80,13 @@ public class CaseInstance {
 		this.status = status;
 	}
 
-	public String getId() {
+	@Data
+	public static class EventUrlItem {
+		private String urlId;
+		private String url;
+	}
+
+	public String getBusinessKey() {
 		return businessKey;
 	}
 
@@ -114,19 +130,23 @@ public class CaseInstance {
                 ));
     }
 
-	public String getEventTrendUrl() {
-		return eventTrendUrl;
-	}
+	public List<String> getEventIds() {  return eventIds; }
 
-	public String getEventReportUrl() {
-		return eventReportUrl;
-	}
+	public void setEventIds(List<String> eventIds) { this.eventIds = eventIds; }
 
-	public void setEventTrendUrl(String eventTrendUrl) {
-		this.eventTrendUrl = eventTrendUrl;
-	}
+	// public String getEventTrendUrl() {
+	// 	return eventTrendUrl;
+	// }
 
-	public void setEventReportUrl(String eventReportUrl) {
-		this.eventReportUrl = eventReportUrl;
-	}
+	// public String getEventReportUrl() {
+	// 	return eventReportUrl;
+	// }
+
+	// public void setEventTrendUrl(String eventTrendUrl) {
+	// 	this.eventTrendUrl = eventTrendUrl;
+	// }
+
+	// public void setEventReportUrl(String eventReportUrl) {
+	// 	this.eventReportUrl = eventReportUrl;
+	// }
 }

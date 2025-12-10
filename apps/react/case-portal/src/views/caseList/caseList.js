@@ -13,6 +13,7 @@ import Snackbar from '@mui/material/Snackbar'
 import TablePagination from '@mui/material/TablePagination'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import Typography from '@mui/material/Typography'
 import { useSession } from 'SessionStoreContext'
 import MainCard from 'components/MainCard'
 import Config from 'consts/index'
@@ -105,6 +106,8 @@ export const CaseList = ({ status, caseDefId }) => {
   // Only treat '/case/create' as an auto-create path. '/case-list/create' should show the list page.
   const isCaseCreatePath = currentPath && currentPath === '/case/create';
   const isCaseViewPath = queryHasBusinessKey || (currentPath && (currentPath === '/case/view' || currentPath === '/case-list/view'));
+
+  const isLinkCaseUrl = searchParams.has('linkIds');
   let createButtonRef = useRef(null);
   let caseBusinessKey = null;
   const [accepted, setAccepted] = useState(false);
@@ -116,6 +119,8 @@ export const CaseList = ({ status, caseDefId }) => {
   const[isAdmin, setIsAdmin] = useState(false);
   const[isCaseCreator, setIsCaseCreator] = useState(false);
   const[groups, setGroups] = useState([]);
+  // for link-case
+  const[showLinkCaseButton, setShowLinkCaseButton] = useState(false);
 
 
 
@@ -240,6 +245,7 @@ export const CaseList = ({ status, caseDefId }) => {
   useEffect(() => {
     const isNavToView = (isCaseViewPath && !error && caseBusinessKey);
 
+
     if (queryHasBusinessKey && caseBusinessKey) {
       // Use getCasesById (which returns cases filtered by asset/hierarchy) and try to match the caseNo
 
@@ -255,6 +261,9 @@ export const CaseList = ({ status, caseDefId }) => {
             const caseList = Array.isArray(resp) ? resp : [];
 
             const updatedCases = caseList.map((singleCase) => {
+
+              // for link-case
+             
               let caseTitle = '';
               let caseNumber = singleCase.caseNo || singleCase.businessKey || singleCase.caseNumber;
 
@@ -282,6 +291,7 @@ export const CaseList = ({ status, caseDefId }) => {
               };
             });
   console.log('updatedCases: ', updatedCases);
+   console.log("#### cases are being set 2 : ", updatedCases)
             setCases(updatedCases);
             setFilter({
               ...filter,
@@ -409,6 +419,9 @@ export const CaseList = ({ status, caseDefId }) => {
       // XOM - Route changes - End
 
     })
+
+    // for link-case
+
   }, [])
 
   const makeColumns = () => {
@@ -441,7 +454,11 @@ export const CaseList = ({ status, caseDefId }) => {
             return ''
           }			
 		}
+
+    
       },
+
+   
       {
         field: 'caseTitle',
         headerName: t('pages.caselist.datagrid.columns.caseTitle'),
@@ -573,6 +590,22 @@ export const CaseList = ({ status, caseDefId }) => {
 	//	  return row ? row?.caseAssignedTo : '';
         },
       },
+
+         // **************
+
+         {
+          field: 'Assigned By',
+          headerName: 'Assigned By',
+          width: 150,
+      valueGetter: (value, row) => {
+        
+             return row.owner.name || '';
+          
+      }
+  
+      
+        },
+        // **************
       // {
       //   field: 'ownerName',
       //   headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),
@@ -696,6 +729,14 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   const handleNewCaseAction = () => {
+   if(isLinkCaseUrl) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkIdsValue = urlParams.get('linkIds');
+    urlParams.delete('linkIds');
+    urlParams.set('eventIds', linkIdsValue);
+    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+    window.history.replaceState(null, '', newUrl);
+  }
     setLastCreatedCase(null)
     setNewCaseDefId(caseDefId)
     setOpenNewCaseForm(true)
@@ -759,6 +800,7 @@ export const CaseList = ({ status, caseDefId }) => {
   CaseService.filterCase(keycloak, caseDefId, status, next)
       .then((resp) => {
         const { data, paging } = resp
+        console.log("#### cases are being set 3 : ", data)
         setCases(data)
         setFilter({
           ...filter,
@@ -784,6 +826,7 @@ export const CaseList = ({ status, caseDefId }) => {
     CaseService.filterCase(keycloak, caseDefId, status, prior)
       .then((resp) => {
         const { data, paging } = resp
+        console.log("#### cases are being set 4 : ", data)
         setCases(data)
         setFilter({
           ...filter,
@@ -871,7 +914,7 @@ export const CaseList = ({ status, caseDefId }) => {
               .then((resp) => {
                 const { data, paging } = resp
 
-                console.log('Setting case 333')
+                console.log('cases are being set 5 : ', data)
                 setCases(data)
                 setFilter({
                   ...filter,
@@ -916,7 +959,7 @@ export const CaseList = ({ status, caseDefId }) => {
     <div style={{ height: 650, width: '100%' }}>
       {/* {caseDefId && accountStore.isManagerUser(keycloak) && ( */}
           {caseDefId && (
-          <Button
+     showLinkCaseButton ? null :     <Button
             id='basic-button'
             onClick={handleNewCaseAction}
 			ref={createButtonRef}
@@ -944,39 +987,79 @@ export const CaseList = ({ status, caseDefId }) => {
             <CalendarMonthIcon />
           </ToggleButton>
         </ToggleButtonGroup>
-      )}
-      <MainCard sx={{ mt: 2 }} content={false}>
-        <Box>
-          {view === 'list' && (
-            <div>
-              <Suspense fallback={<div>Loading...</div>}>
-                <DataGrid
+      )}  
+       {showLinkCaseButton ? (
+                <Box
                   sx={{
                     height: 500,
                     width: '99%',
                     backgroundColor: '#ffffff',
                     mt: 1,
-                    '& .MuiDataGrid-cell': {
-                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in cells
-                    },
-                    '& .MuiDataGrid-columnHeader': {
-                      borderRight: '1px solid #e0e0e0', // Light gray border for column separation in header
-                    },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
                   }}
-                  rows={cases}
-                  columns={makeColumns()}
-                  getRowId={(row) => {
-                  //  return generateRandom();
-                 //   return row.businessKey ?? row.caseNo ?? row.id ?? row._id ?? generateRandom();
-                      return row?.businessKey ?? row?.caseNo ?? row?.id ?? row?._id ?? generateRandom();
+                >
+                  <Typography variant="h6" color="textSecondary">
+                    No existing cases found for the selected events.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      // Change 'linkIds' to 'eventIds' in URL before opening form
+                      const urlParams = new URLSearchParams(window.location.search);
+                      if (urlParams.has('linkIds')) {
+                        const linkIdsValue = urlParams.get('linkIds');
+                        urlParams.delete('linkIds');
+                        urlParams.set('eventIds', linkIdsValue);
+                        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+                        window.history.replaceState(null, '', newUrl);
+                      }
+                      setNewCaseDefId(caseDefId);
+                      setOpenNewCaseForm(true);
+                    }}
+                  >
+                    Create New Case
+                  </Button>
+                </Box>
+              ) :
+    (  <MainCard sx={{ mt: 2 }} content={false}>
+        <Box>
+          {view === 'list' && (
+            <div>
+              
+                <Suspense fallback={<div>Loading...</div>}>
+                  <DataGrid
+                    sx={{
+                      height: 500,
+                      width: '99%',
+                      backgroundColor: '#ffffff',
+                      mt: 1,
+                      '& .MuiDataGrid-cell': {
+                        borderRight: '1px solid #e0e0e0', // Light gray border for column separation in cells
+                      },
+                      '& .MuiDataGrid-columnHeader': {
+                        borderRight: '1px solid #e0e0e0', // Light gray border for column separation in header
+                      },
+                    }}
+                    rows={cases}
+                    columns={makeColumns()}
+                    getRowId={(row) => {
+                    //  return generateRandom();
+                   //   return row.businessKey ?? row.caseNo ?? row.id ?? row._id ?? generateRandom();
+                        return row?.businessKey ?? row?.caseNo ?? row?.id ?? row?._id ?? generateRandom();
 
-                    //console.log((isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id)
-                    //return (isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id
-                  }}
-                  loading={fetching}
-                  components={{ Pagination: CustomPagination }}
-                />
-              </Suspense>
+                      //console.log((isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id)
+                      //return (isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id
+                    }}
+                    loading={fetching}
+                    components={{ Pagination: CustomPagination }}
+                  />
+                </Suspense>
+              
             </div>
           )}
           {/*{view === 'list' && (
@@ -1035,7 +1118,7 @@ export const CaseList = ({ status, caseDefId }) => {
             </Suspense>
           )}  		  
         </Box>
-      </MainCard>
+      </MainCard>    )  }
 
       <br />
 
@@ -1082,94 +1165,124 @@ export const CaseList = ({ status, caseDefId }) => {
       )}
     </div>
   )
+
+  function fetchCases(
+    setFetching,
+    keycloak,
+    caseDefId,
+    setStages,
+    status,
+    filter,
+    setCases,
+    setFilter,
+    navToView = null
+  ) {
+    setFetching(true)
+    console.log("Case List : fetchCases", keycloak, caseDefId, status, filter)
+
+    CaseService.getCaseDefinitionsById(keycloak, caseDefId)
+      .then((resp) => {
+        resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
+        setStages(resp.stages)
+        return CaseService.filterCase(keycloak, caseDefId, status, filter)
+      })
+      .then((resp) => {
+        let { data, paging } = resp
+        console.log('resp', resp)
+
+        // for link-case
+        if(isLinkCaseUrl) {  
+  
+          const eventIds = searchParams.get('linkIds');
+          if(eventIds) {
+            const eventIdsArray = eventIds.split(',');
+            console.log('eventIdsArray: ', eventIdsArray);
+            data = data.filter((singleCase) => {
+              return singleCase.eventIds ?   singleCase.eventIds.some((eventId) => eventIdsArray.includes(eventId)) : false;
+            });
+
+            if(data.length === 0) {  
+              setShowLinkCaseButton(true);
+
+            }
+           
+             
+          }
+          else {
+            console.log('eventIds not found in the URL');
+          }
+        }
+        else { 
+          console.log('isLinkCaseUrl is false');
+        }
+
+
+        const updatedCases = data.map((singleCase) => {
+          let caseTitle = "";
+          let caseNumber = "";
+  
+          try {
+            const containerValue = singleCase.attributes.find(
+              (attr) => attr.name === "container"
+            )?.value;
+  
+            if (containerValue) {
+              const parsedValue = JSON.parse(containerValue);
+              caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
+              caseNumber = parsedValue?.textField || parsedValue.caseNo;
+            }
+          } catch (error) {
+            console.error("Error parsing container value:", error);
+          }
+  
+          return {
+            ...singleCase,
+            caseTitle,
+            caseNumber,
+          };
+        });
+      
+      const uniqueUpdatedCases = updatedCases.filter((obj, index, self) =>
+          index === self.findIndex((t) => t.businessKey === obj.businessKey)
+        );
+        console.log("#### cases are being set: ", uniqueUpdatedCases)
+        setCases(uniqueUpdatedCases)
+        setFilter({
+          ...filter,
+          cursors: paging.cursors,
+          hasPrevious: paging.hasPrevious,
+          hasNext: paging.hasNext,
+        })
+      
+        if (navToView && navToView[0]) {
+          const target = String(navToView[1]);
+          const selectedCase = uniqueUpdatedCases.find((c) => {
+            if (!c) return false;
+            const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
+            try {
+              const attributes =
+                typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
+              const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
+              const parsedContainer = containerValue ? JSON.parse(containerValue) : {};
+              candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
+            } catch (e) {
+              // ignore parse errors
+            }
+            return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
+          });
+  
+          if (selectedCase && navToView[2]) {
+            navToView[2]({ ...selectedCase });
+            navToView[3](true);
+            navToView[4](true);
+            navToView[5](false);
+            navToView[6]();
+          }
+        }
+      })
+      .finally(() => {
+        setFetching(false)
+      })
+    }
 }
 
-function fetchCases(
-  setFetching,
-  keycloak,
-  caseDefId,
-  setStages,
-  status,
-  filter,
-  setCases,
-  setFilter,
-  navToView = null
-) {
-  setFetching(true)
-  console.log("Case List : fetchCases", keycloak, caseDefId, status, filter)
-
-  CaseService.getCaseDefinitionsById(keycloak, caseDefId)
-    .then((resp) => {
-      resp.stages.sort((a, b) => a.index - b.index).map((o) => o.name)
-      setStages(resp.stages)
-      return CaseService.filterCase(keycloak, caseDefId, status, filter)
-    })
-    .then((resp) => {
-      const { data, paging } = resp
-      console.log('resp', resp)
-      const updatedCases = data.map((singleCase) => {
-        let caseTitle = "";
-        let caseNumber = "";
-
-        try {
-          const containerValue = singleCase.attributes.find(
-            (attr) => attr.name === "container"
-          )?.value;
-
-          if (containerValue) {
-            const parsedValue = JSON.parse(containerValue);
-            caseTitle = parsedValue?.textField5 || parsedValue?.caseTitle;
-            caseNumber = parsedValue?.textField || parsedValue.caseNo;
-          }
-        } catch (error) {
-          console.error("Error parsing container value:", error);
-        }
-
-        return {
-          ...singleCase,
-          caseTitle,
-          caseNumber,
-        };
-      });
-	  
-	  const uniqueUpdatedCases = updatedCases.filter((obj, index, self) =>
-        index === self.findIndex((t) => t.businessKey === obj.businessKey)
-      );
-      setCases(uniqueUpdatedCases)
-      setFilter({
-        ...filter,
-        cursors: paging.cursors,
-        hasPrevious: paging.hasPrevious,
-        hasNext: paging.hasNext,
-      })
-	  
-      if (navToView && navToView[0]) {
-        const target = String(navToView[1]);
-        const selectedCase = uniqueUpdatedCases.find((c) => {
-          if (!c) return false;
-          const candidates = [c.businessKey, c.caseNumber, c.caseNo, c.caseTitle];
-          try {
-            const attributes =
-              typeof c.attributes === 'string' ? JSON.parse(c.attributes) : c.attributes;
-            const containerValue = attributes?.find((attr) => attr.name === 'container')?.value;
-            const parsedContainer = containerValue ? JSON.parse(containerValue) : {};
-            candidates.push(parsedContainer.caseNo, parsedContainer.businessKey, parsedContainer.caseNumber);
-          } catch (e) {
-            // ignore parse errors
-          }
-          return candidates.some((fld) => fld !== undefined && fld !== null && String(fld) === target);
-        });
-
-        if (selectedCase && navToView[2]) {
-          navToView[2]({ ...selectedCase });
-          navToView[3](true);
-          navToView[4](true);
-          navToView[5](false);
-          navToView[6]();
-        }
-      }
-    })
-    .finally(() => {
-      setFetching(false)
-    })
-  }

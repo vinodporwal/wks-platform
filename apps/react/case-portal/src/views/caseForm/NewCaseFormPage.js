@@ -53,9 +53,12 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   const [validationSnackbarOpen, setValidationSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   //const[eventTrendUrl, setEventTrendUrl] = useState('')
-  const eventTrendUrlRef = useRef('')
+ 
  // const[eventReportUrl, setEventReportUrl] = useState('')
+ const eventTrendUrlRef = useRef('')
  const eventReportUrlRef = useRef('')
+  const eventTrendUrlArrayRef = useRef([])
+  const eventReportUrlArrayRef = useRef([])
   
 
   // const realmRoles = keycloak.idTokenParsed.realm_access?.roles || []
@@ -75,71 +78,131 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
   // console.log('all roles: ',  allRoles)
   console.log("NewCaseFormPage.. creating new case for caseDefId: ", caseDefId);
 
-  const createApmUrlBasedOnSelectedEvent = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.size === 0) {
-      console.log('No URL parameters found.. No APM URL will be created');
-      return;  }
-    const eventIds = urlParams.get('eventIds');
+//   const createApmUrlBasedOnSelectedEvent = () => {
+//     const urlParams = new URLSearchParams(window.location.search);
+//     if (urlParams.size === 0) {
+//       console.log('No URL parameters found.. No APM URL will be created');
+//       return;  }
+//     const eventIds = urlParams.get('eventIds');
 
-    if (!eventIds) {
-      console.error('eventIds parameter not found in the URL');
-      return;
-    }
+//     if (!eventIds) {
+//       console.error('eventIds parameter not found in the URL');
+//       return;
+//     }
 
-    console.log('creating APM URL based on selected event..........')
+//     console.log('creating APM URL based on selected event..........')
 
-    // Split on commas, spaces, or other separators, then take the first part
-    const firstEventId = eventIds.split(/[,\s]+/)[0];
+//     // Split on commas, spaces, or other separators, then take the first part
+//     const firstEventId = eventIds.split(/[,\s]+/)[0];
        
-    const encodedEventId = encodeURIComponent(firstEventId);
-    CaseDefService.getFaultEvent(keycloak, encodedEventId)
-    .then((data) => {
-      console.log('*********data', data)
-      const faultEvent = data[0];
+//     const encodedEventId = encodeURIComponent(firstEventId);
+//     CaseDefService.getFaultEvent(keycloak, encodedEventId)
+//     .then((data) => {
+//       console.log('*********data', data)
+//       const faultEvent = data[0];
 
-      console.log('###### ********* falutEvent: ', faultEvent)
+//       console.log('###### ********* falutEvent: ', faultEvent)
 
-      const startTimeStampRaw = faultEvent.startTime;
-      const endTimeStampRaw = faultEvent.endTime;
+//       const startTimeStampRaw = faultEvent.startTime;
+//       const endTimeStampRaw = faultEvent.endTime;
 
      
- const assetDisplayName = encodeURIComponent(faultEvent.AssetDisplayName) || '';
- const assetName = encodeURIComponent(faultEvent.assetName) || '';
+//  const assetDisplayName = encodeURIComponent(faultEvent.AssetDisplayName) || '';
+//  const assetName = encodeURIComponent(faultEvent.assetName) || '';
  
-const eventName = encodeURIComponent(faultEvent.events.eventName) || '';
-const selectedEventId = encodeURIComponent(faultEvent.events.eventPkId) || '';   
-const assetId = encodeURIComponent(faultEvent.assetId) || '';  
+// const eventName = encodeURIComponent(faultEvent.events.eventName) || '';
+// const selectedEventId = encodeURIComponent(faultEvent.events.eventPkId) || '';   
+// const assetId = encodeURIComponent(faultEvent.assetId) || '';  
   
-let startTimeStamp = null;
-let endTimeStamp = null;
-if(startTimeStampRaw) {
-  startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
-} 
+// let startTimeStamp = null;
+// let endTimeStamp = null;
+// if(startTimeStampRaw) {
+//   startTimeStamp = new Date(startTimeStampRaw.replace(" ", "T") + "Z").toISOString();
+// } 
 
-if(endTimeStampRaw) {
- endTimeStamp = new Date(endTimeStampRaw.replace(" ", "T") + "Z").toISOString();  } 
-// const rootNode = '';
- //  const assetType = '';
+// if(endTimeStampRaw) {
+//  endTimeStamp = new Date(endTimeStampRaw.replace(" ", "T") + "Z").toISOString();  } 
+// // const rootNode = '';
+//  //  const assetType = '';
 
-const event_TrendUrl = `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${assetName}&assetDisplayName=${assetDisplayName}&period=Custom+Range&startTimeStamp=${startTimeStamp}&endTimeStamp=${endTimeStamp}&selectedEventId=${selectedEventId}&eventName=${eventName}&eventId=${selectedEventId}&assetId=${assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+// const event_TrendUrl = `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${assetName}&assetDisplayName=${assetDisplayName}&period=Custom+Range&startTimeStamp=${startTimeStamp}&endTimeStamp=${endTimeStamp}&selectedEventId=${selectedEventId}&eventName=${eventName}&eventId=${selectedEventId}&assetId=${assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
 
-const event_ReportUrl = `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${selectedEventId}`
+// const event_ReportUrl = `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${selectedEventId}`
 
-console.log('apmUrl', event_TrendUrl)
+// console.log('apmUrl', event_TrendUrl)
 
-  //  setEventTrendUrl(event_TrendUrl)
-  eventTrendUrlRef.current = event_TrendUrl
-  //  setEventReportUrl(event_ReportUrl)
-  eventReportUrlRef.current = event_ReportUrl
-    })
-    .catch((err) => {
-      console.error(err.message)
-    })
+//   //  setEventTrendUrl(event_TrendUrl)
+//   eventTrendUrlRef.current = event_TrendUrl
+//   //  setEventReportUrl(event_ReportUrl)
+//   eventReportUrlRef.current = event_ReportUrl
+//     })
+//     .catch((err) => {
+//       console.error(err.message)
+//     })
 
 
 
+//   }
+
+const createApmUrlBasedOnSelectedEvent = () => {
+
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.size === 0) {
+    console.log('No URL parameters found.. No APM URL will be created');
+    return;  }
+  const eventIds = urlParams.get('eventIds');
+
+  if (!eventIds) {
+    console.error('eventIds parameter not found in the URL');
+    return;
   }
+
+  console.log('creating APM URL based on selected event..........')
+
+ 
+  const encodedEventIds = encodeURIComponent(eventIds);
+
+  CaseDefService.getFaultEvent(keycloak, encodedEventIds).then((data) => {  
+      console.log('falut event data : ', data)
+
+      const mappedData = data.map((item) => {  
+        return { 
+          assetDisplayName: encodeURIComponent(item.AssetDisplayName) || '',
+          eventName: encodeURIComponent(item.events.eventName) || '',
+          selectedEventId: encodeURIComponent(item.events.eventPkId) || '',
+          assetId: encodeURIComponent(item.assetId) || '',
+          assetName: encodeURIComponent(item.assetName) || '',
+          startTimeStamp:  item.startTime ?  new Date(item.startTime.replace(" ", "T") + "Z").toISOString() : null,
+          endTimeStamp:  item.endTime ?  new Date(item.endTime.replace(" ", "T") + "Z").toISOString() : null
+        }
+      })
+
+      console.log('mapped data : ', mappedData)
+
+      const eventrendUrlArray = mappedData.map((item) => ({
+      
+         urlId : item.selectedEventId,
+         url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/Forge/APM/ShellUI/#/trends?rootNode=${item.assetName}&assetDisplayName=${item.assetDisplayName}&period=Custom+Range&startTimeStamp=${item.startTimeStamp}&endTimeStamp=${item.endTimeStamp}&selectedEventId=${item.selectedEventId}&eventName=${item.eventName}&eventId=${item.selectedEventId}&assetId=${item.assetId}&hierarchyName=Planthierarchy&hierarchyLevel=null`
+        
+      }))
+
+      const eventReportUrlArray = mappedData.map((item) => ({
+        urlId : item.selectedEventId,
+        url: `https://apm-exxonmobil-useast.connectedplant.honeywell.com/ReportServer/Pages/ReportViewer.aspx?%2fDailyFaultReport_Test&rs:Command=Render&EventID=${item.selectedEventId}`
+      }))
+
+
+      eventTrendUrlArrayRef.current = eventrendUrlArray
+      eventReportUrlArrayRef.current = eventReportUrlArray
+
+  })
+
+
+
+}
+
+
 
   useEffect(() => { 
     
@@ -363,19 +426,35 @@ console.log('apmUrl', event_TrendUrl)
     return
   }
 
-  const handleEventTrendClick = () => {
+  const handleEventTrendClick = (eventPkId) => {
     console.log('handleEventTrendClick..........')
-    console.log('eventTrendUrl: ', eventTrendUrlRef.current)
-    if (eventTrendUrlRef.current) {
-      window.open(eventTrendUrlRef.current, "_blank");
+    // console.log('eventTrendUrl: ', eventTrendUrlRef.current)
+    // if (eventTrendUrlRef.current) {
+    //   window.open(eventTrendUrlRef.current, "_blank");
+    // }
+
+    console.log('eventTrendUrlArray: ', eventTrendUrlArrayRef.current, 'eventPkId: ', eventPkId)
+
+    if(eventTrendUrlArrayRef.current?.find((item) => item.urlId === eventPkId)) {
+      window.open(eventTrendUrlArrayRef.current.find((item) => item.urlId === eventPkId).url, "_blank");
+    }
+    else {
+      console.log('eventPkId not found in eventTrendUrlArray: ', eventPkId)
     }
   }
 
-  const handleEventLinkClick = () => {
+  const handleEventLinkClick = (eventPkId) => {
     console.log('handleEventLinkClick..........')
-    console.log('eventReportUrl: ', eventReportUrlRef.current)
-    if (eventReportUrlRef.current) {
-      window.open(eventReportUrlRef.current, "_blank");
+    // console.log('eventReportUrl: ', eventReportUrlRef.current)
+    // if (eventReportUrlRef.current) {
+    //   window.open(eventReportUrlRef.current, "_blank");
+    // }
+
+    if(eventReportUrlArrayRef.current?.find((item) => item.urlId === eventPkId)) {
+      window.open(eventReportUrlArrayRef.current.find((item) => item.urlId === eventPkId).url, "_blank");
+    }
+    else {
+      console.log('eventPkId not found in eventReportUrlArray: ', eventPkId)
     }
   }
 
@@ -432,8 +511,11 @@ console.log('apmUrl', event_TrendUrl)
         },
         attributes: caseAttributes,
          caseUrl: buildCreateUrl(window.location.href),
-        eventTrendUrl: eventTrendUrlRef.current,
-        eventReportUrl: eventReportUrlRef.current,
+        // eventTrendUrl: eventTrendUrlRef.current,
+        // eventReportUrl: eventReportUrlRef.current,
+        eventTrendUrls: eventTrendUrlArrayRef.current,
+        eventReportUrls: eventReportUrlArrayRef.current,
+        eventIds: eventIds
       //  caseUrl: (() => { 
       //   const uri = window.location.pathname;
       //   return uri === '/case-list/create' ? '/case-list/create?' : buildCreateUrl(window.location.href);
@@ -467,8 +549,10 @@ console.log('apmUrl', event_TrendUrl)
             },
             attributes: caseAttributes,
             caseUrl: buildCreateUrl(window.location.href),
-            eventTrendUrl: eventTrendUrlRef.current,
-            eventReportUrl: eventReportUrlRef.current,
+            // eventTrendUrl: eventTrendUrlRef.current,
+            // eventReportUrl: eventReportUrlRef.current,
+            eventTrendUrls: eventTrendUrlArrayRef.current,
+            eventReportUrls: eventReportUrlArrayRef.current,
 
         /*   caseUrl: (() => { 
              const uri = window.location.pathname;
@@ -477,7 +561,10 @@ console.log('apmUrl', event_TrendUrl)
 
 
            // assignedTo: {emailId: formData.data.container.caseAssignedTo}
-           assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+         //  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+
+         assignedTo: formData.data.container.caseAssignedTo.email.map(email => ({ emailId: email }))
+         
           }),
         )
       })
@@ -616,10 +703,10 @@ console.log('apmUrl', event_TrendUrl)
                 }
 
                 else if (event.component.key === 'btnEventTrend') {
-                  handleEventTrendClick()
+                  handleEventTrendClick(event.data.eventPkId)
                 }
                 else if (event.component.key === 'btnEventLink') {
-                  handleEventLinkClick()
+                  handleEventLinkClick(event.data.eventPkId)
                 }
               }}
             />

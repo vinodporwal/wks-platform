@@ -1204,12 +1204,25 @@ console.log('*****  taskId:  ', taskId);
     setOpenProcessesDialog(false)
   }
 
-  const handleEventTrendClick = () => {
-    window.open(aCase.eventTrendUrl, '_blank')
+  const handleEventTrendClick = (eventPkId) => {
+  //  window.open(aCase.eventTrendUrl, '_blank')
+  if(aCase.eventTrendUrls?.find((item) => item.urlId === eventPkId)) {
+    window.open(aCase.eventTrendUrls.find((item) => item.urlId === eventPkId).url, '_blank')
   }
-  const handleEventLinkClick = () => {
-    console.log('CaseForm : handleEventLinkClick')
-    window.open(aCase.eventReportUrl, '_blank')
+  else {
+    console.log('eventPkId not found in eventTrendUrls: ', eventPkId)
+  }
+
+
+  }
+  const handleEventLinkClick = (eventPkId) => {
+  //  window.open(aCase.eventReportUrl, '_blank')
+  if(aCase.eventReportUrls?.find((item) => item.urlId === eventPkId)) {
+    window.open(aCase.eventReportUrls.find((item) => item.urlId === eventPkId).url, '_blank')
+  }
+  else {
+    console.log('eventPkId not found in eventReportUrls: ', eventPkId)
+  }
   }
 
   const startProcess = (key) => {
@@ -1840,10 +1853,10 @@ console.log('*****  taskId:  ', taskId);
                           }
                             
                           else if (event.component.key === 'btnEventTrend') {
-                            handleEventTrendClick()
+                            handleEventTrendClick(event.data.eventPkId)
                           }
                           else if (event.component.key === 'btnEventLink') {
-                            handleEventLinkClick()
+                            handleEventLinkClick(event.data.eventPkId)
                           }
                         }}
                       />

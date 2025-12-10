@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer;
 import com.wks.caseengine.rest.db2.entity.*;
@@ -50,6 +51,7 @@ import com.wks.caseengine.cases.definition.command.DeleteCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.FindCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.GetCaseDefinitionCmd;
 import com.wks.caseengine.cases.definition.command.UpdateCaseDefinitionCmd;
+import com.wks.caseengine.cases.instance.CaseInstance.EventUrlItem;
 import com.wks.caseengine.cases.instance.email.CaseEmailServiceImpl;
 import com.wks.caseengine.command.CommandExecutor;
 import com.wks.caseengine.rest.db1.repository.EventEnrichmentRepository;
@@ -422,8 +424,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         System.out.println("Getting data..");
         System.out.println("Is Draft :"+caseData.getIsDraft());
         System.out.println("**************************************IN SAVE CASE*************************************************");
-        System.out.println("eventTrendUrl(): "+caseData.getEventTrendUrl());
-        System.out.println("eventReportUrl(): "+caseData.getEventReportUrl());
+        // System.out.println("eventTrendUrl(): "+caseData.getEventTrendUrl());
+        // System.out.println("eventReportUrl(): "+caseData.getEventReportUrl());
+        System.out.println("eventTrendUrls(): "+caseData.getEventTrendUrls());
+        System.out.println("eventReportUrls(): "+caseData.getEventReportUrls());
         if(caseNo==null || caseNo.length()==0) {
             System.out.println("saving new case details....");
             caseNo = CaseNoGenerator();
@@ -471,6 +475,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
         //sending Emails part
         System.out.println("**************************************sending Emails part*************************************************");
         System.out.println("************************************ Is Draft"+ caseData.getIsDraft());
+        System.out.println("eventTrendUrls: " + caseData.getEventTrendUrls());
+       
        
         if(!caseData.getIsDraft().equals("y")) {
             attributeValue = attributeValue.replace("\\\"", "\"");
@@ -503,7 +509,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     row.put("eventCategory", item.path("textField4").asText());
                     row.put("faultStart", item.path("TextFaultStartTimeDate").asText());
                     row.put("faultEnd", item.path("TextFaultEndTimeDate").asText());
+                    row.put("eventPkId", item.path("eventPkId").asText());
+              
                     subAssetList.add(row);
+                    System.out.println("eventPkIds: from attributes : "  + item.path("eventPkId").asText());
                 }
 
                 String[] reviewers = new String[analysisTeam.size()];
@@ -515,6 +524,27 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     }
 
                 }
+             Map<String, String>  eventTrendUrlsMap = new HashMap<>();
+                if(caseData.getEventTrendUrls() != null) {  
+                    eventTrendUrlsMap = caseData.getEventTrendUrls()
+                    .stream()
+                    .collect(Collectors.toMap(
+                        Case.EventUrlItem::getUrlId,
+                        Case.EventUrlItem::getUrl
+                    ));
+
+                }
+
+                Map<String, String>  eventReportUrlsMap = new HashMap<>();
+                if(caseData.getEventReportUrls() != null) {  
+                    eventReportUrlsMap = caseData.getEventReportUrls()
+                    .stream()
+                    .collect(Collectors.toMap(
+                        Case.EventUrlItem::getUrlId,
+                        Case.EventUrlItem::getUrl
+                    ));
+                }
+
                 if(!caseStatusValue.equals("Under Analysis")) {
                     System.out.println("Calling mail send method...");
 //			    	String from = "amol.borse@honeywell.com";
@@ -527,8 +557,10 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     data.put("environment", "");
                     data.put("mainAsset", mainAsset);
                     data.put("subAssets", subAssetList);
-                    data.put("eventTrendUrl", caseData.getEventTrendUrl());
-                    data.put("eventReportUrl", caseData.getEventReportUrl());
+                    // data.put("eventTrendUrls", caseData.getEventTrendUrls());
+                    // data.put("eventReportUrls", caseData.getEventReportUrls());
+                    data.put("eventTrendUrlsMap", eventTrendUrlsMap);
+                    data.put("eventReportUrlsMap", eventReportUrlsMap);
                     caseTitle = "CASE MANAGEMENT :"+ caseTitle;
 
                     caseEmailService.send(from, assignedTo , caseTitle, reviewers, null, null, "email-template", data);

@@ -64,7 +64,7 @@ System.out.println("****** In CaseInstanceServiceImpl after CommandExecutorImpl 
 		System.out.println("****** case: update existingcase instance");
 
     try {
-        commandContext.getCaseInstanceRepository().update(changedInstance.getId(), changedInstance);
+        commandContext.getCaseInstanceRepository().update(changedInstance.getBusinessKey(), changedInstance);
     } catch(Exception e) {
         System.out.println("error while updating caseInstance");
           throw new RuntimeException(e);

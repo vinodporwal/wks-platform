@@ -62,6 +62,7 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 		} catch (DatabaseRecordNotFoundException e) {
 
 			System.out.println("StartCaseInstanceWithValuesCMD *************Creating new case Instance************");
+			System.out.println("CaseInstanceParam :" + caseInstanceParam.toString());
 
 
 		CaseDefinition caseDefinition = retrieveCaseDefinition(commandContext);
@@ -83,8 +84,11 @@ public class StartCaseInstanceWithValuesCmd implements Command<CaseInstance> {
 		CaseInstance.CaseInstanceBuilder caseInstanceBuilder = CaseInstance.builder().businessKey(businessKey)
 				.attributes(caseInstanceParam.getAttributes()).caseDefinitionId(caseInstanceParam.getCaseDefinitionId())
 				.owner(caseInstanceParam.getOwner())
-				.eventTrendUrl(caseInstanceParam.getEventTrendUrl())
-				.eventReportUrl(caseInstanceParam.getEventReportUrl());
+				// .eventTrendUrl(caseInstanceParam.getEventTrendUrl())
+				// .eventReportUrl(caseInstanceParam.getEventReportUrl());
+				.eventTrendUrls(caseInstanceParam.getEventTrendUrls())
+				.eventReportUrls(caseInstanceParam.getEventReportUrls())
+				.eventIds(caseInstanceParam.getEventIds());
 
 		Optional<CaseStage> firstStage = caseDefinition.getStages().stream()
 				.sorted(Comparator.comparing(CaseStage::getIndex)).findFirst();

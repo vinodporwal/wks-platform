@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.*;
+import lombok.Data;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -64,12 +66,17 @@ public class Case {
     @Column(name = "case_url")
     private String caseUrl;
 
-	 @Transient
-	private String eventTrendUrl;
+	//  @Transient
+	// private String eventTrendUrl;
 
-	 @Transient
-	private String eventReportUrl;
+	//  @Transient
+	// private String eventReportUrl;
 
+	@Transient
+	private List<EventUrlItem> eventTrendUrls = new ArrayList<>();
+
+	@Transient
+	private List<EventUrlItem> eventReportUrls = new ArrayList<>();
 
 //    @JoinColumn(name = "assigned_to", nullable = true)
 //    private Users assignedTo;
@@ -80,6 +87,11 @@ public class Case {
       inverseJoinColumns = @JoinColumn(name = "user_id")  )
       List<Users> assignedTo = new ArrayList<>();
 
+      @Data
+	  public static class EventUrlItem {
+        private String urlId;
+        private String url;
+    }
 
 	public String getCaseNo() {
 		return caseNo;
@@ -200,21 +212,33 @@ public class Case {
 		this.assignedTo = assignedTo;
 	}
 
-	public String getEventTrendUrl() {
-		return eventTrendUrl;
-	}
-	public void setEventTrendUrl(String eventTrendUrl) {
-		this.eventTrendUrl = eventTrendUrl;
-	}
+	// public String getEventTrendUrl() {
+	// 	return eventTrendUrl;
+	// }
+	// public void setEventTrendUrl(String eventTrendUrl) {
+	// 	this.eventTrendUrl = eventTrendUrl;
+	// }
 
-	public String getEventReportUrl() {
-			return eventReportUrl;
-	}
-	public void setEventReportUrl(String eventReportUrl) {
-		this.eventReportUrl = eventReportUrl;
-	}
+	// public String getEventReportUrl() {
+	// 		return eventReportUrl;
+	// }
+	// public void setEventReportUrl(String eventReportUrl) {
+	// 	this.eventReportUrl = eventReportUrl;
+	// }
 
-
+	public List<EventUrlItem> getEventTrendUrls() {
+		return eventTrendUrls;
+	}
+	public void setEventTrendUrls(List<EventUrlItem> eventTrendUrls) {
+		this.eventTrendUrls = eventTrendUrls;
+	}
+	
+	public List<EventUrlItem> getEventReportUrls() {
+		return eventReportUrls;
+	}
+	public void setEventReportUrls(List<EventUrlItem> eventReportUrls) {
+		this.eventReportUrls = eventReportUrls;
+	}
 
 	@Override
 	public String toString() {
