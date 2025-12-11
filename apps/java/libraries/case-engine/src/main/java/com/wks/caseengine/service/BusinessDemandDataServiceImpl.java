@@ -443,7 +443,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	                dto.setJan(getNumericCellValue(row.getCell(11), dto));
 	                dto.setFeb(getNumericCellValue(row.getCell(12), dto));
 	                dto.setMarch(getNumericCellValue(row.getCell(13), dto));
-	                
+	                dto.setPlantId(plantFKId.toString());
 	                String normParameterId = getStringCellValue(row.getCell(16), dto);
 	                dto.setNormParameterId(normParameterId); 
 	                boolean isProduction = false;
@@ -459,7 +459,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	                }
 	                dto.setRemark(getStringCellValue(row.getCell(14), dto));
 	                dto.setId(getStringCellValue(row.getCell(15), dto));
-	                dto.setPlantId(plantFKId!=null ? plantFKId.toString():"");
+	                
 	                
 	                Plants plant = plantsRepository.findById(plantFKId)
 	                        .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
@@ -613,6 +613,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		List<BusinessDemandDataDTO> failedList = new ArrayList<>();
 		try {
 			for (BusinessDemandDataDTO businessDemandDataDTO : businessDemandDataDTOList) {
+				plantId=UUID.fromString(businessDemandDataDTO.getPlantId());
 				if (businessDemandDataDTO.getSaveStatus() != null
 						&& businessDemandDataDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
 					failedList.add(businessDemandDataDTO);
@@ -644,14 +645,14 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 
 				businessDemand.setNov(businessDemandDataDTO.getNov());
 				businessDemand.setOct(businessDemandDataDTO.getOct());
-
+				
 				if (businessDemandDataDTO.getPlantId() != null && !businessDemandDataDTO.getPlantId().isEmpty()) {
 					businessDemand.setPlantId(UUID.fromString(businessDemandDataDTO.getPlantId()));
 					businessDemand.setRemark(businessDemandDataDTO.getRemark());
 					businessDemand.setSep(businessDemandDataDTO.getSep());
 					businessDemand.setYear(businessDemandDataDTO.getYear());
 					year=businessDemandDataDTO.getYear();
-					plantId=UUID.fromString(businessDemandDataDTO.getPlantId());
+					
 					if (businessDemandDataDTO.getSiteFKId() != null) {
 						businessDemand.setSiteFKId(UUID.fromString(businessDemandDataDTO.getSiteFKId()));
 					}
@@ -697,6 +698,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			}
 			return failedList;
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException("Failed to save data", ex);
 		}
 

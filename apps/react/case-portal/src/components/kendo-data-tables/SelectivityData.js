@@ -268,17 +268,17 @@ const SelectivityData = (props) => {
       } else {
         payload = newRow.map((row) => ({
           apr: row.apr || row.ConstantValue || null,
-          may: row.may || null,
-          jun: row.jun || null,
-          jul: row.jul || null,
-          aug: row.aug || null,
-          sep: row.sep || null,
-          oct: row.oct || null,
-          nov: row.nov || null,
-          dec: row.dec || null,
-          jan: row.jan || null,
-          feb: row.feb || null,
-          mar: row.mar || null,
+          may: row.apr || row.ConstantValue || null,
+          jun: row.apr || row.ConstantValue || null,
+          jul: row.apr || row.ConstantValue || null,
+          aug: row.apr || row.ConstantValue || null,
+          sep: row.apr || row.ConstantValue || null,
+          oct: row.apr || row.ConstantValue || null,
+          nov: row.apr || row.ConstantValue || null,
+          dec: row.apr || row.ConstantValue || null,
+          jan: row.apr || row.ConstantValue || null,
+          feb: row.apr || row.ConstantValue || null,
+          mar: row.apr || row.ConstantValue || null,
           UOM: '',
           auditYear: AOP_YEAR,
           normParameterFKId: row.normParameterFKId || row.NormParameter_FK_Id,
@@ -536,7 +536,10 @@ const SelectivityData = (props) => {
       titleName:
         props?.currentTabDisplayName === 'Report Manual Entry'
           ? `${props?.currentTabDisplayName} (${prevYearFormatted})`
-          : props?.currentTabDisplayName,
+          : props?.currentTabDisplayName === 'Constant' &&
+              lowerVertName === 'aromatics'
+            ? 'User Input'
+            : props?.currentTabDisplayName,
 
       // showG: props?.configType === 'cracker_configuration' ? true : false,
       showG: false,
@@ -586,7 +589,9 @@ const SelectivityData = (props) => {
         if (
           lowerVertName == 'pe' ||
           lowerVertName == 'pp' ||
-          lowerVertName == 'pta'
+          lowerVertName == 'pta' ||
+          lowerVertName == 'aromatics' ||
+          lowerVertName == 'vcm'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,
@@ -630,6 +635,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          `${VERTICAL_NAME}_Production Norms Basis - Constant`,
         )
       }
 

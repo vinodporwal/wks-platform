@@ -23,12 +23,16 @@ import {
   DialogContentText,
   DialogTitle,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '../../../node_modules/@mui/material/index'
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 import { getRoleName } from 'services/role-service'
+import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
+import QualityParameters from './QualityParameters'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -111,6 +115,8 @@ const ConfigurationTable = () => {
     useState([])
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
   const [gradeId, setGradeId] = React.useState(null)
+  const [revision, setRevision] = useState('1')
+  const [revisionDetails, setRevisionDetails] = useState([])
 
   // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
   //   usePermissions()
@@ -163,8 +169,7 @@ const ConfigurationTable = () => {
       if (
         lowerVertName == verticalEnums.MEG ||
         lowerVertName == verticalEnums.CRACKER ||
-        lowerVertName == verticalEnums.ELASTOMER ||
-        lowerVertName === 'aromatics'
+        lowerVertName == verticalEnums.ELASTOMER
       ) {
         data = data?.filter(
           (item) =>
@@ -345,6 +350,13 @@ const ConfigurationTable = () => {
         Particulars: item.normType,
       }))
 
+      //Consition Missing For ELASTOMER VERTICAL #1
+      const distinctReportTypes = [
+        ...new Set(formattedData.map((item) => item.normType).filter(Boolean)),
+      ]
+      //Consition Missing For ELASTOMER VERTICAL #2
+      setReportTypes(distinctReportTypes)
+
       var data = formattedData?.filter(
         (item) => item?.Particulars == 'Report Manual Entry',
       )
@@ -434,6 +446,35 @@ const ConfigurationTable = () => {
       setLoading(false)
     }
   }
+
+  const getRevision = async () => {
+    try {
+      var response = await DataService.getRevision(keycloak, PLANT_ID, AOP_YEAR)
+      if (response?.code == 200) {
+        setRevision(response?.data[0]?.attributeValue)
+        setRevisionDetails(response?.data[0])
+      } else {
+        setRevision(1)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setRevision(1)
+    }
+  }
+  const updateRevision = async (Payload) => {
+    try {
+      var response = await DataService.updateRevision(
+        keycloak,
+        Payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      fetchData()
+    } catch (error) {
+      console.error('Error updating data:', error)
+    }
+  }
+
   const getConfigurationAvailableTabs = async () => {
     setLoading(true)
     try {
@@ -494,6 +535,10 @@ const ConfigurationTable = () => {
         lowerVertName != 'meg' &&
         lowerVertName != 'elastomer'
       ) {
+        if (lowerVertName === 'aromatics') {
+          getRevision()
+        }
+
         getConfigurationTabsMatrix()
         getConfigurationAvailableTabs()
         fetchGradeData()
@@ -808,6 +853,15 @@ const ConfigurationTable = () => {
     setGradeId(gradeId)
   }
 
+  const handleRevisionChange = async (num) => {
+    setRevision(num)
+    if (!revisionDetails || revisionDetails.length === 0) return
+    const payload = { ...revisionDetails }
+    payload.attributeValueVersion = num
+    payload.attributeValue = num
+    await updateRevision([payload])
+  }
+
   const ConfigurationAccordian = useMemo(() => {
     return (
       <Box sx={{ mb: '0px' }}>
@@ -981,17 +1035,15 @@ const ConfigurationTable = () => {
 
   if (
     (lowerVertName == 'meg' ||
-      lowerVertName === 'aromatics' ||
-      lowerVertName == 'pvc') &&
-    lowerVertName !== 'cracker' &&
-    lowerVertName !== 'elastomer'
+      lowerVertName == 'pvc' ||
+      lowerVertName == 'elastomer') &&
+    lowerVertName !== 'cracker'
   ) {
-    const isAromatics = lowerVertName === 'aromatics'
-
-    const megTabs = isAromatics
-      ? ['Configuration', 'Constants', 'PIO Impact']
-      : ['Configuration', 'Constants', 'Report Manual Entry']
-
+    // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
+    const megTabs =
+      lowerVertName === 'elastomer'
+        ? ['Constants', 'Report Manual Entry']
+        : ['Configuration', 'Constants', 'Report Manual Entry']
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -999,11 +1051,7 @@ const ConfigurationTable = () => {
       displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
     }
     const megTabsDisplay = megTabs.map((tab) =>
-      isAromatics && tab === 'Constants'
-        ? 'User Input'
-        : tab === 'Report Manual Entry'
-          ? `${tab} ${displayYear}`
-          : tab,
+      tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
     )
 
     return (
@@ -1024,10 +1072,7 @@ const ConfigurationTable = () => {
 
           {(() => {
             const currentTab = megTabs[tabIndex]?.toLowerCase()
-            const currentTabDisplayName =
-              isAromatics && megTabs[tabIndex] === 'Constants'
-                ? 'User Input'
-                : megTabs[tabIndex]
+            const currentTabDisplayName = megTabs[tabIndex]
 
             switch (currentTab) {
               case 'configuration':
@@ -1132,257 +1177,6 @@ const ConfigurationTable = () => {
     )
   }
 
-  if (lowerVertName === 'cracker') {
-    const crackerTabs = ['Configuration', 'Constants']
-    const auditYear = AOP_YEAR
-    let displayYear = ''
-    if (auditYear) {
-      const [start, end] = auditYear.split('-').map(Number)
-      displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
-    }
-    return (
-      <div>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading1}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-        {ConfigurationAccordian}
-        <Box>
-          <AopTabs
-            tabIndex={tabIndex}
-            setTabIndex={setTabIndex}
-            tabs={crackerTabs}
-          />
-          {(() => {
-            const currentTab = crackerTabs[tabIndex]?.toLowerCase()
-            const currentTabDisplayName = crackerTabs[tabIndex]
-
-            switch (currentTab) {
-              case 'configuration':
-                return (
-                  <SelectivityData
-                    rows={productionRows}
-                    loading={loading}
-                    fetchData={fetchData}
-                    setRows={setProductionRows}
-                    configType='cracker_configuration'
-                    groupBy='Particulars'
-                    summary={debouncedSummary}
-                    summaryEdited={summaryEdited}
-                    onSummaryEditChange={setSummaryEdited}
-                    tabIndex='0'
-                    setGradeId={handleGradeChange}
-                    currentTabDisplayName={currentTabDisplayName}
-                  />
-                )
-              case 'constants':
-                return (
-                  <SelectivityData
-                    rows={productionRowsConstants}
-                    loading={loading}
-                    fetchData={fetchDataConstants}
-                    setRows={setProductionRowsConstants}
-                    configType='cracker_constants'
-                    groupBy='Particulars'
-                    summaryEdited={summaryEdited}
-                    summary={debouncedSummary}
-                    onSummaryEditChange={setSummaryEdited}
-                    tabIndex='1'
-                    currentTabDisplayName={currentTabDisplayName}
-                  />
-                )
-
-              default:
-                return null
-            }
-          })()}
-        </Box>
-        <Notification
-          open={snackbarOpen}
-          message={snackbarData?.message || ''}
-          severity={snackbarData?.severity || 'info'}
-          onClose={() => setSnackbarOpen(false)}
-        />
-        {ConfigurationDialog}
-      </div>
-    )
-  }
-
-  if (lowerVertName === 'elastomer') {
-    const elastomerTabs = ['Constants', 'Report Manual Entry']
-    const auditYear = AOP_YEAR
-    let displayYear = ''
-    if (auditYear) {
-      const [start, end] = auditYear.split('-').map(Number)
-      displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
-    }
-    return (
-      <div>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading1}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-        {ConfigurationAccordian}
-
-        <Box>
-          {true && (
-            <AopTabs
-              tabIndex={tabIndex}
-              setTabIndex={setTabIndex}
-              tabs={elastomerTabs.map((tab) =>
-                tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
-              )}
-            />
-          )}
-
-          {(() => {
-            const currentTab = elastomerTabs[tabIndex]?.toLowerCase()
-            const currentTabDisplayName = elastomerTabs[tabIndex]
-            switch (currentTab) {
-              case 'constants':
-                return (
-                  <SelectivityData
-                    rows={productionRowsConstants}
-                    loading={loading}
-                    fetchData={fetchDataConstants}
-                    setRows={setProductionRowsConstants}
-                    configType='megConstants'
-                    groupBy='Particulars'
-                    summaryEdited={summaryEdited}
-                    summary={debouncedSummary}
-                    onSummaryEditChange={setSummaryEdited}
-                    tabIndex='1'
-                    currentTabDisplayName={currentTabDisplayName}
-                  />
-                )
-              case 'report manual entry':
-                return (
-                  <SelectivityData
-                    rows={productionRowsConstantsMannualEntry}
-                    loading={loading}
-                    fetchData={fetchDataConstantsMnnualEntry}
-                    setRows={setProductionRowsConstantsMannualEntry}
-                    configType='megConstantsMannualEntry'
-                    groupBy='Particulars'
-                    summaryEdited={summaryEdited}
-                    summary={debouncedSummary}
-                    onSummaryEditChange={setSummaryEdited}
-                    tabIndex='2'
-                    currentTabDisplayName={currentTabDisplayName}
-                  />
-                )
-              default:
-                return null
-            }
-          })()}
-        </Box>
-        <Notification
-          open={snackbarOpen}
-          message={snackbarData?.message || ''}
-          severity={snackbarData?.severity || 'info'}
-          onClose={() => setSnackbarOpen(false)}
-        />
-        {ConfigurationDialog}
-      </div>
-    )
-  }
-
-  if (lowerVertName === 'vcm') {
-    return (
-      <div>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading1}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-        {ConfigurationAccordian}
-        <AopTabs
-          tabIndex={tabIndex}
-          setTabIndex={setTabIndex}
-          tabs={tabs.map((tabId) => {
-            const tabInfo = availableTabs.find(
-              (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
-            )
-            return tabInfo ? tabInfo.displayName : tabId
-          })}
-        />
-        <Box>
-          {(() => {
-            const currentTabId = tabs[tabIndex]?.toLowerCase()
-            const currentTabInfo = availableTabs.find(
-              (tab) => tab.id.toLowerCase() === currentTabId,
-            )
-            const currentTabDisplayName = currentTabInfo?.displayName
-
-            switch (currentTabId) {
-              case getTheId('Configuration'):
-                return (
-                  <SelectivityData
-                    rows={productionRows}
-                    loading={loading}
-                    fetchData={fetchData}
-                    setRows={setProductionRows}
-                    configType='elastomer'
-                    groupBy='TypeDisplayName'
-                    summary={debouncedSummary}
-                    summaryEdited={summaryEdited}
-                    onSummaryEditChange={setSummaryEdited}
-                    tabIndex='0'
-                    currentTabDisplayName={currentTabDisplayName}
-                  />
-                )
-              case getTheId('Constant'):
-                return (
-                  <SelectivityData
-                    rows={productionRowsConstants}
-                    loading={loading}
-                    fetchData={fetchDataConstants}
-                    setRows={setProductionRowsConstants}
-                    configType='megConstants'
-                    groupBy='Particulars'
-                    summaryEdited={summaryEdited}
-                    summary={debouncedSummary}
-                    onSummaryEditChange={setSummaryEdited}
-                    tabIndex='1'
-                    currentTabDisplayName={currentTabDisplayName}
-                  />
-                )
-              case getTheId('Report Manual Entry'):
-                return (
-                  <SelectivityData
-                    rows={reportManualEntry}
-                    loading={loading}
-                    setRows={setReportManualEntry}
-                    fetchData={fetchData}
-                    configType='Report Manual Entry'
-                    summary={debouncedSummary}
-                    summaryEdited={summaryEdited}
-                    onSummaryEditChange={setSummaryEdited}
-                    currentTabDisplayName={currentTabDisplayName}
-                    groupBy='TypeDisplayName'
-                  />
-                )
-              default:
-                return null
-            }
-          })()}
-        </Box>
-        <Notification
-          open={snackbarOpen}
-          message={snackbarData?.message || ''}
-          severity={snackbarData?.severity || 'info'}
-          onClose={() => setSnackbarOpen(false)}
-        />
-        {ConfigurationDialog}
-      </div>
-    )
-  }
-
   return (
     <div>
       <Backdrop
@@ -1413,9 +1207,59 @@ const ConfigurationTable = () => {
             const tabInfo = availableTabs.find(
               (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
             )
-            if (tabInfo) return tabInfo?.displayName || 'loading..'
+
+            const originalName = tabInfo.displayName
+
+            // Condition: aromatics + constant/constants
+            if (
+              lowerVertName === 'aromatics' &&
+              ['constant', 'constants'].includes(originalName?.toLowerCase())
+            ) {
+              return 'User Input'
+            }
+
+            return originalName
           })}
         />
+
+        {lowerVertName === 'aromatics' && (
+          <Box mt={0.5}>
+            <ButtonGroup aria-label='revision group'>
+              {['1', '2', '3'].map((num) => {
+                const selected = revision === num
+
+                return (
+                  <Button
+                    key={num}
+                    onClick={() => handleRevisionChange(num)}
+                    variant={selected ? 'contained' : 'outlined'}
+                    size='small'
+                    sx={{
+                      textTransform: 'none',
+                      fontSize: '0.75rem',
+                      padding: '1px 7px',
+                      minWidth: '36px',
+                      mr: 0.5,
+                      ...(selected && {
+                        bgcolor: '#0100cb',
+                        color: '#fff',
+                        borderColor: '#0100cb',
+                        fontWeight: 'bold',
+                      }),
+                      ...(!selected && {
+                        borderColor: '#000000ff',
+                        color: '#000000ff',
+                        fontWeight: 'bold',
+                      }),
+                    }}
+                  >
+                    {`Rev ${num}`}
+                  </Button>
+                )
+              })}
+            </ButtonGroup>
+          </Box>
+        )}
 
         <Box>
           {(() => {
@@ -1558,6 +1402,7 @@ const ConfigurationTable = () => {
                     summaryEdited={summaryEdited}
                     onSummaryEditChange={setSummaryEdited}
                     currentTabDisplayName={currentTabDisplayName}
+                    groupBy='TypeDisplayName'
                   />
                 )
 
@@ -1575,6 +1420,25 @@ const ConfigurationTable = () => {
                     currentTabDisplayName={currentTabDisplayName}
                   />
                 )
+              case getTheId('Constants'):
+                return (
+                  <SelectivityData
+                    rows={productionRowsConstants}
+                    loading={loading}
+                    fetchData={fetchDataConstants}
+                    setRows={setProductionRowsConstants}
+                    configType='megConstants'
+                    groupBy='Particulars'
+                    summaryEdited={summaryEdited}
+                    summary={debouncedSummary}
+                    onSummaryEditChange={setSummaryEdited}
+                    tabIndex='1'
+                    currentTabDisplayName={currentTabDisplayName}
+                  />
+                )
+
+              case getTheId('Quality'):
+                return <QualityParameters />
 
               default:
                 return null

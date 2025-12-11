@@ -385,8 +385,11 @@ const WorkFlowMerge = () => {
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
-      const { headers, keys, results } =
-        await AOPWorkFlowService.getWorkflowData(keycloak, PLANT_ID, AOP_YEAR)
+      const { headers, keys, results } = await AOPWorkFlowService.getWorkflowData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       const numericKeys = getNumericKeysInAllRows(results)
       const formatted = results.map((row, idx) => ({
         id: idx,

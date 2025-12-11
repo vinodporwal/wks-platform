@@ -48,6 +48,70 @@ export function getColDefsDesignCapacity(headerMap = {}, valueFormat) {
     },
   ]
 }
+export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
+  return [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 200,
+      editable: false,
+    },
+    {
+      field: 'april',
+      title: 'PAREX#1',
+      editable: true,
+      align: 'left',
+      widthT: 200,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'may',
+      title: 'PAREX#2',
+      editable: true,
+      align: 'left',
+      widthT: 200,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'june',
+      title: 'PAREX#3',
+      editable: true,
+      align: 'left',
+      widthT: 200,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'total',
+      title: 'Total',
+      editable: false,
+      align: 'left',
+      widthT: 200,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'remarks',
+      title: 'Remark',
+      editable: true,
+      align: 'left',
+      headerAlign: 'left',
+    },
+  ]
+}
 
 export function getColDefsDesignCapacityPEPP(headerMap = {}, valueFormat) {
   return [
@@ -79,6 +143,75 @@ export function getColDefsMaxAchievedCapacity(headerMap = {}, valueFormat) {
     },
     { field: 'productName', title: 'Particulars', widthT: 100, editable: true },
     ...generateMonthColumnsFixedWidth(headerMap, true, valueFormat),
+  ]
+}
+export function getColDefsMaxAchievedCapacityAROMATICS(
+  headerMap = {},
+  valueFormat,
+) {
+  return [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 200,
+      editable: true,
+    },
+    {
+      field: 'april',
+      title: 'PAREX#1',
+      align: 'left',
+      widthT: 200,
+      editable: true,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'may',
+      title: 'PAREX#2',
+      align: 'left',
+      widthT: 200,
+      editable: true,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'june',
+      title: 'PAREX#3',
+      editable: true,
+      widthT: 200,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'total',
+      title: 'Total',
+      editable: false,
+      align: 'left',
+      widthT: 200,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+    {
+      field: 'remarks',
+      title: 'Remark',
+      editable: true,
+      align: 'left',
+      headerAlign: 'left',
+      
+    },
+    
   ]
 }
 

@@ -80,7 +80,6 @@ export const dateFields1 = [
   'targetDate',
 ]
 
-export const hiddenFields = []
 export const monthMap = {
   january: 1,
   february: 2,
@@ -132,6 +131,7 @@ const KendoDataTables = ({
   handleLoad = () => {},
   fetchData = () => {},
   handleUnitChange = () => {},
+  handleYearChange = () => {},
   handleGradeChange = () => {},
   handleRemarkCellClick = () => {},
   calculatebtnClicked = () => {},
@@ -139,6 +139,7 @@ const KendoDataTables = ({
   groupBy = null,
   totalRowConfiguration = null,
   selectedUOM = 'MT/Month',
+  selectedPackagingYear = 'Budget',
   note = '',
   titleName = '',
   gridName,
@@ -1248,6 +1249,42 @@ const KendoDataTables = ({
                   ))}
                 </TextField>
               )}
+
+              {permissions?.showPackagingYear && (
+                <TextField
+                  select
+                  value={
+                    selectedPackagingYear || permissions?.packagingYears?.[0]
+                  }
+                  onChange={(e) => {
+                    handleYearChange(e.target.value)
+                  }}
+                  className='dropdown-select'
+                  variant='outlined'
+                  label='Select'
+                  InputLabelProps={{
+                    shrink: true,
+                    sx: {
+                      fontWeight: 'bold',
+                    },
+                  }}
+                  SelectProps={{
+                    MenuProps: {
+                      disableScrollLock: true,
+                    },
+                  }}
+                >
+                  <MenuItem value='' disabled>
+                    Select
+                  </MenuItem>
+
+                  {permissions?.packagingYears?.map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
             </Box>
 
             {/* Right side - All other actions */}
@@ -1517,12 +1554,14 @@ const KendoDataTables = ({
               allRedCell2={allRedCell2}
               size='small'
               pageable={
-                rows?.length > 100
-                  ? {
-                      buttonCount: 4,
-                      pageSizes: [10, 50, 100],
-                    }
-                  : false
+                permissions?.makePagable === false
+                  ? false
+                  : rows?.length > 100
+                    ? {
+                        buttonCount: 4,
+                        pageSizes: [10, 50, 100],
+                      }
+                    : false
               }
             >
               {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}

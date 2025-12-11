@@ -131,6 +131,8 @@ export const DataService = {
   getConsumptionNorms,
   dropdownValues,
   slowdownconsumptionExport,
+  getRevision,
+  updateRevision,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -1832,7 +1834,12 @@ async function getConfigurationExcel(keycloak, reportType, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function getConfigurationExcelConstants(keycloak, PLANT_ID, AOP_YEAR) {
+async function getConfigurationExcelConstants(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  FILE_NAME,
+) {
   const url = `${Config.CaseEngineUrl}/task/configuration-constants-export-excel?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
 
   const headers = {
@@ -1852,7 +1859,7 @@ async function getConfigurationExcelConstants(keycloak, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Production & Norms Basis - Constants.xlsx'
+    a.download = FILE_NAME || 'Production & Norms Basis - Constants.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2939,5 +2946,41 @@ export async function slowdownconsumptionExport(keycloak, plantId, year) {
   } catch (e) {
     console.error('Error exporting Shutdown Excel:', e)
     return Promise.reject(e)
+  }
+}
+
+async function getRevision(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-version?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function updateRevision(keycloak, payload, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/configuration-version?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
