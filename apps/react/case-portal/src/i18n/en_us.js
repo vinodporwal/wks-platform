@@ -34,7 +34,7 @@ const defs = {
     spyroOutput: 'Optimizer Output',
     spyroMenu: 'Optimizer Menu',
     decokingActivities: 'Maintenance Details (Furnace & SAD plan)',
-    maintenanceDetails: 'Maintenance Details',
+    maintenanceDetails: 'Net Production Hours',
     consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
     productionNorms: 'Month wise Production plan',
     catalystSelectivity: 'Production & Norms Basis',
@@ -237,7 +237,7 @@ const defs = {
       title: 'Production / Norms Plan',
       subPages: {
         productMCUVal: 'Production Target',
-        maintenanceDetails: 'Maintenance Details',
+        maintenanceDetails: 'Net Production Hours',
         consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
         productionNorms: 'Month wise Production plan',
         catalystSelectivity: 'Production & Norms Basis',

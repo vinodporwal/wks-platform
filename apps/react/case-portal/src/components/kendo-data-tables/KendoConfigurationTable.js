@@ -650,15 +650,39 @@ const ConfigurationTable = () => {
     }
   }
   const onLoad = async () => {
-    if (startDate && endDate && startDate > endDate) {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Please Choose Valid Dates!',
-        severity: 'warning',
-      })
+    if (startDate && endDate) {
+      const s = new Date(startDate)
+      const e = new Date(endDate)
 
-      return
+      s.setHours(0, 0, 0, 0)
+      e.setHours(0, 0, 0, 0)
+
+      if (s > e) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            'Please choose valid dates (start date must be before end date).',
+          severity: 'warning',
+        })
+        return
+      }
+
+      const minEnd = new Date(s)
+      minEnd.setFullYear(minEnd.getFullYear() + 1)
+
+      //CHECK THE DATES DIFFERENCE SHOULD BE MORE THAN 1 YEAR ONLY FOR PE OR PP
+      if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+        if (e < minEnd) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'End date must be at least 1 year after the start date',
+            severity: 'warning',
+          })
+          return
+        }
+      }
     }
+
     setLoading1(true)
     const startDateObj = configurationExecutionDetails.find(
       (item) => item.Name === 'StartDate',
@@ -932,6 +956,14 @@ const ConfigurationTable = () => {
       const [start, end] = auditYear.split('-').map(Number)
       displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
     }
+    const megTabsDisplay = megTabs.map((tab) =>
+      isAromatics && tab === 'Constants'
+        ? 'User Input'
+        : tab === 'Report Manual Entry'
+          ? `${tab} ${displayYear}`
+          : tab,
+    )
+
     return (
       <div>
         <Backdrop
@@ -945,14 +977,15 @@ const ConfigurationTable = () => {
           <AopTabs
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={megTabs.map((tab) =>
-              tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
-            )}
+            tabs={megTabsDisplay}
           />
 
           {(() => {
             const currentTab = megTabs[tabIndex]?.toLowerCase()
-            const currentTabDisplayName = megTabs[tabIndex]
+            const currentTabDisplayName =
+              isAromatics && megTabs[tabIndex] === 'Constants'
+                ? 'User Input'
+                : megTabs[tabIndex]
 
             switch (currentTab) {
               case 'configuration':
@@ -1217,13 +1250,6 @@ const ConfigurationTable = () => {
   }
 
   if (lowerVertName === 'vcm') {
-    const elastomerTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const auditYear = AOP_YEAR
-    let displayYear = ''
-    if (auditYear) {
-      const [start, end] = auditYear.split('-').map(Number)
-      displayYear = `(${start - 1}-${(end - 1).toString().slice(-2)})`
-    }
     return (
       <div>
         <Backdrop
@@ -1233,19 +1259,26 @@ const ConfigurationTable = () => {
           <CircularProgress color='inherit' />
         </Backdrop>
         {ConfigurationAccordian}
+        <AopTabs
+          tabIndex={tabIndex}
+          setTabIndex={setTabIndex}
+          tabs={tabs.map((tabId) => {
+            const tabInfo = availableTabs.find(
+              (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+            )
+            return tabInfo ? tabInfo.displayName : tabId
+          })}
+        />
         <Box>
-          <AopTabs
-            tabIndex={tabIndex}
-            setTabIndex={setTabIndex}
-            tabs={elastomerTabs.map((tab) =>
-              tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
-            )}
-          />
           {(() => {
-            const currentTab = elastomerTabs[tabIndex]?.toLowerCase()
-            const currentTabDisplayName = elastomerTabs[tabIndex]
-            switch (currentTab) {
-              case 'configuration':
+            const currentTabId = tabs[tabIndex]?.toLowerCase()
+            const currentTabInfo = availableTabs.find(
+              (tab) => tab.id.toLowerCase() === currentTabId,
+            )
+            const currentTabDisplayName = currentTabInfo?.displayName
+
+            switch (currentTabId) {
+              case getTheId('Configuration'):
                 return (
                   <SelectivityData
                     rows={productionRows}
@@ -1261,7 +1294,7 @@ const ConfigurationTable = () => {
                     currentTabDisplayName={currentTabDisplayName}
                   />
                 )
-              case 'constants':
+              case getTheId('Constant'):
                 return (
                   <SelectivityData
                     rows={productionRowsConstants}
@@ -1277,7 +1310,7 @@ const ConfigurationTable = () => {
                     currentTabDisplayName={currentTabDisplayName}
                   />
                 )
-              case 'report manual entry':
+              case getTheId('Report Manual Entry'):
                 return (
                   <SelectivityData
                     rows={productionRowsConstantsMannualEntry}

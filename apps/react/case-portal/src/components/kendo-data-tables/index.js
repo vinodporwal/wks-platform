@@ -100,6 +100,7 @@ export const monthMap = {
 const KendoDataTables = ({
   showCatChemUtilityCheckbox = false,
   showCatChemUtilityCheckbox2 = false,
+  screenType = "slowdown",
   rows = [],
   plantID = null,
   grades = [],
@@ -328,6 +329,7 @@ const KendoDataTables = ({
             'maintEndDateTime' in updated &&
             'durationInHrs' in updated
           ) {
+            if (!(screenType === 'slowdown' && lowerVertName === 'elastomer')) {
             if (
               field === 'maintStartDateTime' ||
               field === 'maintEndDateTime'
@@ -344,8 +346,24 @@ const KendoDataTables = ({
               if (newEnd) {
                 updated.maintEndDateTime = newEnd
               }
+              }
             }
           }
+          if (
+          lowerVertName === 'vcm' &&
+          (r.discription || '').trim() === 'Furnace Decoking'
+        ) {
+          if (field === 'maintStartDateTime' && value) {
+            const start = new Date(value)
+            if (!isNaN(start)) {
+              const end = new Date(start)
+              end.setHours(end.getHours() + 192)
+              updated.maintEndDateTime = end
+              updated.durationInHrs = '192.00'
+            }
+          }
+        }
+
           return updated
         }),
       )
@@ -396,6 +414,7 @@ const KendoDataTables = ({
             'maintEndDateTime' in base &&
             'durationInHrs' in base
           ) {
+            if (!(screenType === 'slowdown' && lowerVertName === 'elastomer')) {
             if (
               field === 'maintStartDateTime' ||
               field === 'maintEndDateTime'
@@ -407,6 +426,7 @@ const KendoDataTables = ({
             } else if (field === 'durationInHrs') {
               const newEnd = recalcEndDate(base.maintStartDateTime, value)
               if (newEnd) base.maintEndDateTime = newEnd.toISOString()
+            }
             }
           }
 
@@ -447,7 +467,7 @@ const KendoDataTables = ({
         }
       })
     },
-    [setRows, setModifiedCells, setCustomModifiedCells],
+    [setRows, setModifiedCells, setCustomModifiedCells, lowerVertName],
   )
 
   useEffect(() => {
@@ -1611,6 +1631,29 @@ const KendoDataTables = ({
                     />
                   )
                 }
+                if (
+              col?.field === 'discription' && col?.type === 'discriptionDrpdwn'
+            ) {
+              return (
+                <GridColumn
+                  key='discription'
+                  field='discription'
+                  title={col.title || col.headerName || 'Particulars'}
+                  editable={col.editable || true}
+                  hidden={col.hidden}
+                  cells={{
+                    data: (cellProps) => (
+                      <ProductCell
+                        {...cellProps}
+                        allProducts={allDescriptionDrpdwn}
+                      />
+                    ),
+                    headerCell: SimpleHeaderWithTooltip,
+                  }}
+                  columnMenu={ColumnMenuCheckboxFilter}
+                />
+              )
+            }
 
                 if (col?.field === 'productName1') {
                   return (

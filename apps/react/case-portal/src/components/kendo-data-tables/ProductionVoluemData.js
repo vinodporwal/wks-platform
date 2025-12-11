@@ -937,7 +937,7 @@ const ProductionvolumeData = ({ permissions }) => {
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Current Operating Capacity (Ethylene)'
-          : 'Current Operating Capacity',
+          : 'Proposed Operating Capacity',
     },
     isOldYear,
   )

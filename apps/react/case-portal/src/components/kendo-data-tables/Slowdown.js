@@ -8,6 +8,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
 import { SlowDownElastomerColumns } from 'components/colums/ElastomerColums'
+import { SlowDownVcmColumns } from 'components/colums/VcmColums'
 import { SlowDownAromaticsColumns } from 'components/colums/AromaticsColumns'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
 import { SlowDownPeColumns } from 'components/colums/PeColums'
@@ -64,6 +65,7 @@ const SlowDown = ({ permissions }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
   const keycloak = useSession()
   const READ_ONLY = getRoleName(keycloak)
 
@@ -119,6 +121,27 @@ const SlowDown = ({ permissions }) => {
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
+  
+  useEffect(() => {
+  if (!PLANT_ID || !AOP_YEAR) return
+  
+  const getAllDescriptionDrpdwn = async () => {
+    try {
+      // Use your VCM-specific API here
+      const data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
+      const descriptionObjList = data?.data.map((item) => ({
+        id: item.Name,
+        name: item.Name,
+        displayName: item.DisplayName,
+      }))
+      setAllDescriptionDrpdwn(descriptionObjList)
+    } catch (error) {
+      console.error('Error fetching VCM descriptions', error)
+    }
+  }
+
+  if (lowerVertName === 'vcm') getAllDescriptionDrpdwn()
+}, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
   function addTimeOffset(dateTime) {
     if (!dateTime) return null
@@ -343,7 +366,7 @@ const SlowDown = ({ permissions }) => {
 
       // Select required fields based on vertical
       const requiredFields = ['discription', 'remark']
-      const requiredFieldsForElastomer = ['discription', 'remark', 'rate']
+      const requiredFieldsForElastomer = ['discription', 'remark', 'rate', 'durationInHrs']
       const requiredFieldsForPe = [
         'discription',
         'remark',
@@ -405,7 +428,7 @@ const SlowDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate) {
+      if (duplicate && lowerVertName !== 'vcm') {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -432,11 +455,18 @@ const SlowDown = ({ permissions }) => {
           })
           return
         }
+        const startDate =
+          record.maintStartDateTime instanceof Date
+            ? record.maintStartDateTime
+            : new Date(record.maintStartDateTime)
+        const endDate =
+          record.maintEndDateTime instanceof Date
+            ? record.maintEndDateTime
+            : new Date(record.maintEndDateTime)
         if (
-          record.maintStartDateTime &&
-          record.maintEndDateTime &&
-          record.maintStartDateTime.getTime() >=
-            record.maintEndDateTime.getTime()
+          startDate &&
+          endDate &&
+          startDate.getTime() >= endDate.getTime()
         ) {
           record.isError = true
           setSnackbarOpen(true)
@@ -447,11 +477,33 @@ const SlowDown = ({ permissions }) => {
           return
         }
       }
+      if (lowerVertName === 'vcm') {
+  for (const row of rows) {
+    if (
+      (row.discription || '').trim() === 'Furnace Decoking' &&
+      row.maintStartDateTime &&
+      row.maintEndDateTime
+    ) {
+      const startDate = new Date(row.maintStartDateTime)
+      const endDate = new Date(row.maintEndDateTime)
+      const diffTime = endDate - startDate
+      const diffHours = diffTime / (1000 * 60 * 60)
+      if (diffHours !== 192) {
+        row.isError = true
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `For "Furnace Decoking", the duration between Start Date and End Date must be exactly 192 hours (8 days).`,
+          severity: 'error',
+        })
+        return
+      }
+    }
+  }
+}
 
       // MEG specific checks
       if (
         lowerVertName === 'meg' ||
-        lowerVertName === 'elastomer' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pvc' ||
         lowerVertName === 'pta'
@@ -776,7 +828,7 @@ const SlowDown = ({ permissions }) => {
         const dynamicColDefs = data1.data.map((item) => ({
           field: item.field,
           title: item.title,
-widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
+          widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
           editable:
             item.field === 'particulars' || item.field.toLowerCase() === 'uom'
               ? false
@@ -886,7 +938,7 @@ widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
       case verticalEnums.PVC:
         return SlowDownElastomerColumns
       case verticalEnums.VCM:
-        return SlowDownElastomerColumns
+        return SlowDownVcmColumns
       default:
         return SlowDownMegColumns
     }
@@ -1179,7 +1231,9 @@ widthT: item.field.toLowerCase() === 'uom' ? 90 : 150,
           allProducts={allProducts}
           disableRedHighlight={true}
           handleExcelUpload={handleExcelUpload}
+          screenType="slowdown"
           downloadExcelForConfiguration={downloadExcelForConfiguration}
+          allDescriptionDrpdwn={allDescriptionDrpdwn}
         />
       )}
 
