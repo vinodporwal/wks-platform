@@ -1208,17 +1208,16 @@ const ConfigurationTable = () => {
               (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
             )
 
-            const originalName = tabInfo.displayName
-
-            // Condition: aromatics + constant/constants
-            if (
-              lowerVertName === 'aromatics' &&
-              ['constant', 'constants'].includes(originalName?.toLowerCase())
-            ) {
-              return 'User Input'
+            if (tabInfo) {
+              const originalName = tabInfo.displayName
+              if (
+                lowerVertName === 'aromatics' &&
+                ['constant', 'constants'].includes(originalName?.toLowerCase())
+              ) {
+                return 'User Input'
+              }
+              return originalName
             }
-
-            return originalName
           })}
         />
 
