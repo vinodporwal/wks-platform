@@ -284,10 +284,10 @@ const AromaticsProductionGrids = ({ permissions }) => {
       setLoading(false)
       return response
     } catch (error) {
-      console.error('Error saving Design Capacity:', error)
+      console.error('Error saving data:', error)
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Error saving Design Capacity!',
+        message: 'Error saving data!',
         severity: 'error',
       })
       setLoading(false)
@@ -398,7 +398,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
           AOP_YEAR,
           keycloak,
         )
-      console.log('Save Max Achieved Capacity response:', response)
+      // console.log('Save Max Achieved Capacity response:', response)
 
       // ? ONLY fetch if save was successful
       if (response && response.code === 200) {
@@ -774,7 +774,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
         setRowsDesignCapacity([])
       }
     } catch (error) {
-      console.error('Error fetching Design Capacity:', error)
+      console.error('Error fetching data:', error)
       setRowsDesignCapacity([])
     } finally {
       setLoading(false)
@@ -800,13 +800,9 @@ const AromaticsProductionGrids = ({ permissions }) => {
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => {
           const april =
-            isTPD && item.april
-              ? (item.april * 24).toFixed(2)
-              : item.april || null
-          const may =
-            isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null
-          const june =
-            isTPD && item.june ? (item.june * 24).toFixed(2) : item.june || null
+            isTPD && item.april ? item.april * 24 : item.april || null
+          const may = isTPD && item.may ? item.may * 24 : item.may || null
+          const june = isTPD && item.june ? item.june * 24 : item.june || null
 
           // Calculate total after conversion
           const total = [april, may, june]
@@ -818,6 +814,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
             ...item,
             idFromApi: item?.id,
             productName: item?.materialDisplayName,
+            originalRemark: item?.remarks?.trim() || null,
             april,
             may,
             june,
@@ -904,7 +901,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
       showCalculate: false,
     }
   }
-  
+
   const adjustedPermissionsGrid1 = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? false,
@@ -918,7 +915,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
       saveBtn: true,
       units: ['TPH', 'TPD'],
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      titleName: 'Max Achieved Based On Current Unit Performance',
+      titleName: 'Max Achievable Based On Current Unit Performance',
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
       titleAndInformation:
@@ -927,7 +924,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
       downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
-      ExcelName: `${VERTICAL_NAME}_Max Achieved Capacity`,
+      ExcelName: `${VERTICAL_NAME}_Max Achievable Based On Current Unit Performance`,
     },
     isOldYear,
   )
@@ -947,7 +944,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       downloadExcelBtnFromUI: permissions?.hideDownloadExcel ? false : true,
-      ExcelName: `${VERTICAL_NAME}_Design Capacity`,
+      ExcelName: `${VERTICAL_NAME}_Max Achieved `,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
       titleAndInformation:
@@ -955,7 +952,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
 
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
-      titleName:'Max Achieved',
+      titleName: 'Max Achieved',
     },
     isOldYear,
   )

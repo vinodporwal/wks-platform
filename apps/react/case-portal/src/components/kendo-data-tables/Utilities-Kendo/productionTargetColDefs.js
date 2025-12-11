@@ -141,7 +141,12 @@ export function getColDefsMaxAchievedCapacity(headerMap = {}, valueFormat) {
       editable: true,
       hidden: true,
     },
-    { field: 'productName', title: 'Particulars', widthT: 100, editable: true },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 100,
+      editable: false,
+    },
     ...generateMonthColumnsFixedWidth(headerMap, true, valueFormat),
   ]
 }
@@ -161,7 +166,7 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       field: 'productName',
       title: 'Particulars',
       widthT: 200,
-      editable: true,
+      editable: false,
     },
     {
       field: 'april',
