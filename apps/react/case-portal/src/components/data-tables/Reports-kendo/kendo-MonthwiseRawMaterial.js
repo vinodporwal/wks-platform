@@ -627,14 +627,14 @@ const MonthwiseRawMaterial = () => {
           />
         )}
 
-      {lowerVertName == 'pe' ||
-        lowerVertName == 'pp' ||
-        lowerVertName == 'vcm' ||
-        (lowerVertName == 'elastomer' && (
-          <Typography component='div' className='grid-title' sx={{ mb: 1 }}>
-            {'Monthwise Consumption (T-18)'}
-          </Typography>
-        ))}
+      {(lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'elastomer') && (
+        <Typography component='div' className='grid-title' sx={{ mb: 1 }}>
+          {'Monthwise Consumption (T-18)'}
+        </Typography>
+      )}
 
       {Object.entries(normRows).map(([normName, rows]) => (
         <div key={normName}>
