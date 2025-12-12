@@ -11,7 +11,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useSelector } from 'react-redux'
-
+import YearDropdownEditor from './Utilities-Kendo/YearDropdownEditor'
 import {
   Box,
   Button,
@@ -60,6 +60,7 @@ import { NoSpinnerNumericEditorWithUOMValidation } from './Utilities-Kendo/numbe
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
+import MonthsDropdownEditor from './Utilities-Kendo/MonthsDropdownEditor'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -185,9 +186,9 @@ const KendoDataTables = ({
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
 
-  const { verticalChange, oldYear } = dataGridStore
+  const { verticalChange, oldYear, year } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
-
+  const AOP_YEAR = year?.selectedYear
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const vertName = verticalChange?.selectedVertical
@@ -678,7 +679,33 @@ const KendoDataTables = ({
       isColumnMenuSortActive(field, sort)
     )
   }
+  const ElastomerMonthDisplayCell = (props) => {
+    const { dataItem, field, tdProps } = props
+    const value = dataItem[field]
 
+    const monthNames = {
+      1: 'January',
+      2: 'February',
+      3: 'March',
+      4: 'April',
+      5: 'May',
+      6: 'June',
+      7: 'July',
+      8: 'August',
+      9: 'September',
+      10: 'October',
+      11: 'November',
+      12: 'December',
+    }
+
+    const displayValue = monthNames[value] || value
+
+    return (
+      <td {...tdProps} title={displayValue}>
+        {displayValue}
+      </td>
+    )
+  }
   const MonthDisplayCell = (props) => {
     const { dataItem, field, tdProps, children } = props
     const value = dataItem[field]
@@ -1936,13 +1963,35 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
-                      width={col.width}
                       hidden={col.hidden}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
-                        edit: { text: MonthDropdownEditor },
-                        data: MonthDisplayCell,
+                        data: (props) => (
+                          <MonthsDropdownEditor
+                            {...props}
+                            AOP_YEAR={AOP_YEAR}
+                          />
+                        ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                if (col.type === 'yeardropdown') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        data: (props) => (
+                          <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
+                        ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}

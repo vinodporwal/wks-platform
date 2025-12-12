@@ -1221,7 +1221,7 @@ const ConfigurationTable = () => {
           })}
         />
 
-        {lowerVertName === 'aromatics' && (
+        {lowerVertName === 'aromatics' && availableTabs?.length > 0 && (
           <Box mt={0.5}>
             <ButtonGroup aria-label='revision group'>
               {['1', '2', '3'].map((num) => {

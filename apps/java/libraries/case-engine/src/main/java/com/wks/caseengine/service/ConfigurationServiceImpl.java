@@ -701,10 +701,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 				}
 				
-				/*
-				 * if(verticalName.equalsIgnoreCase("AROMATICS")) {
-				 * configurationDTO.setVersion(row[22] != null ? row[22].toString() : ""); }
-				 */
+				
+				  if(verticalName.equalsIgnoreCase("AROMATICS")) {
+					  configurationDTO.setVersion(row[22] != null ? row[22].toString() : ""); 
+			      }
+				 
 
 				if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
 						|| verticalName.equalsIgnoreCase("CRACKER")
@@ -1620,7 +1621,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		boolean remarksChanged = !isBlank(dtoRemarks);
 		  
 
-		boolean attributeChanged = newValue != null
+		boolean attributeChanged = newValue != null 
 		    && !newValue.equalsIgnoreCase(existingValue);
 
 		if(newValue!=null && newValue.equalsIgnoreCase("0.0") && !existingRecord.isPresent()) {
@@ -1913,14 +1914,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                + "    NP.DisplayOrder "
 	                + "ORDER BY NP.TypeDisplayOrder, NP.DisplayOrder";
 
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("year", year);
-			query.setParameter("plantFKId", plantFKId);
-			query.setParameter("version", version);
-			return query.getResultList();
-		} catch (Exception e) {
-			throw new RuntimeException("Error fetching data with dynamic view name", e);
-		}
+	        Query query = entityManager.createNativeQuery(sql);
+	        query.setParameter("year", year);
+	        query.setParameter("plantFKId", plantFKId);
+	        query.setParameter("version", version);
+	        return query.getResultList();
+	    } catch (Exception e) {
+	        throw new RuntimeException("Error fetching data with dynamic view name", e);
+	    }
 	}
 	
 	public List<Object[]> findByYearAndPlantFkIdAROMATICSExcel(String year, UUID plantFKId, String viewName, String version,String reportType) {
@@ -2279,6 +2280,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
 						dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
 					} else {
+						
+						
 						dto.setNormType(getStringCellValue(row.getCell(0), dto));
 						dto.setProductName(getStringCellValue(row.getCell(1), dto));
 						dto.setUOM(getStringCellValue(row.getCell(2), dto));
@@ -2329,7 +2332,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						                                  
 						        dto.setErrDescription(errorDescription);
 						    }
-						}
+						}						
 					}
 
 				} catch (Exception e) {
@@ -3049,7 +3052,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		String spName = "spScrn" + verticalName + "GetRevision";
 
 		// call the helper which executes the SP
-		List<Object[]> versions = getConfigurationVersionSP(spName, year);
+		List<Object[]> versions = getConfigurationVersionSP(spName, year,plantId);
 
 		for (Object[] row : versions) {
 			ConfigurationVersionDTO dto = new ConfigurationVersionDTO();
@@ -3066,13 +3069,13 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 
 	@Transactional
-	public List<Object[]> getConfigurationVersionSP(String procedureName, String aopYear) {
+	public List<Object[]> getConfigurationVersionSP(String procedureName, String aopYear,String plantId) {
 		try {
-			String sql = "EXEC " + procedureName + " @AOPYear = :aopYear";
+			String sql = "EXEC " + procedureName + " @AOPYear = :aopYear,@plantId = :plantId";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("aopYear", aopYear);
-
+			query.setParameter("plantId", plantId);
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid argument passed to procedure", e);
