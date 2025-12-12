@@ -60,7 +60,6 @@ import { NoSpinnerNumericEditorWithUOMValidation } from './Utilities-Kendo/numbe
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
-import MonthsDropdownEditor from './Utilities-Kendo/MonthsDropdownEditor'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -1963,16 +1962,13 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
+                      width={col.width}
                       hidden={col.hidden}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
-                        data: (props) => (
-                          <MonthsDropdownEditor
-                            {...props}
-                            AOP_YEAR={AOP_YEAR}
-                          />
-                        ),
+                        edit: { text: MonthDropdownEditor },
+                        data: ElastomerMonthDisplayCell,
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
@@ -1985,12 +1981,18 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
+                      width={col.width}
                       hidden={col.hidden}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
+                        edit: { text: YearDropdownEditor },
+                        //data: YearDropdownEditor,
                         data: (props) => (
-                          <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
+                          <YearDropdownEditor
+                            {...props}
+                            AOP_YEAR={AOP_YEAR}
+                          />
                         ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
