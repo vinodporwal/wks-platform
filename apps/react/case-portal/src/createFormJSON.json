@@ -180,6 +180,85 @@
                                                 "spellcheck": true,
                                                 "truncateMultipleSpaces": false,
                                                 "defaultValue": null
+                                            },
+                                             {
+                                                "label": "Case Owner",
+                                                "applyMaskOn": "change",
+                                                "disabled": true,
+                                                "tableView": true,
+                                                "key": "caseOwner",
+                                                "type": "textfield",
+                                                "input": true,
+                                                "id": "e6yfpr9",
+                                                "placeholder": "",
+                                                "prefix": "",
+                                                "customClass": "mt-3 mb-3",
+                                                "suffix": "",
+                                                "multiple": false,
+                                                "protected": false,
+                                                "unique": false,
+                                                "persistent": true,
+                                                "hidden": true,
+                                                "clearOnHide": true,
+                                                "hideLabel": false,
+                                                "refreshOn": "",
+                                                "redrawOn": "",
+                                                "modalEdit": false,
+                                                "dataGridLabel": false,
+                                                "labelPosition": "top",
+                                                "description": "",
+                                                "errorLabel": "",
+                                                "tooltip": "",
+                                               
+                                                "tabindex": "",
+                                                "autofocus": false,
+                                                "dbIndex": false,
+                                                "customDefaultValue": "",
+                                                "calculateValue": "",
+                                                "calculateServer": false,
+                                                "widget": {
+                                                    "type": "input"
+                                                },
+                                                "attributes": {},
+                                                "validateOn": "change",
+                                                "validate": {
+                                                    "required": false,
+                                                    "custom": "",
+                                                    "customPrivate": false,
+                                                    "strictDateValidation": false,
+                                                    "multiple": false,
+                                                    "unique": false,
+                                                    "minLength": "",
+                                                    "maxLength": "",
+                                                    "pattern": ""
+                                                },
+                                                "conditional": {
+                                                    "eq": "",
+                                                    "show": null,
+                                                    "when": null
+                                                },
+                                                "overlay": {
+                                                    "style": "",
+                                                    "left": "",
+                                                    "top": "",
+                                                    "width": "",
+                                                    "height": ""
+                                                },
+                                                "allowCalculateOverride": false,
+                                                "encrypted": false,
+                                                "showCharCount": false,
+                                                "showWordCount": false,
+                                                "properties": {},
+                                                "allowMultipleMasks": false,
+                                                "addons": [],
+                                                "mask": false,
+                                                "inputType": "text",
+                                                "inputFormat": "plain",
+                                                "inputMask": "",
+                                                "displayMask": "",
+                                                "spellcheck": true,
+                                                "truncateMultipleSpaces": false,
+                                                "defaultValue": null
                                             }
                                         ],
                                         "offset": 0,
@@ -189,6 +268,7 @@
                                         "currentWidth": 2,
                                         "width": 2
                                     },
+                                   
                                     {
                                         "components": [
                                             {
@@ -284,7 +364,7 @@
                                                 "widget": "choicesjs",
                                                 "customClass": "custom-select-height",
                                                 "tableView": true,
-                                              "calculateValue": "const callUserApi = async () => {\r\n  // Check if options are already stored in localStorage\r\n  const cachedOptions = localStorage.getItem('caseAssignedOptions');\r\n  if (cachedOptions) {\r\n    component.data.values = JSON.parse(cachedOptions); // Use cached data\r\n    console.log('Using cached caseAssignedOptions');\r\n    return JSON.parse(cachedOptions);\r\n  }\r\n\r\n  // Get the authorization token from localStorage\r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n\r\n  // Determine the base URL based on the environment (localhost or production)\r\n  const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n\r\n  try {\r\n    // Fetch users\r\n    const response = await fetch(`${baseUrl}/case-definition/users`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    // Fetch groups\r\n  const responseGrp = await fetch(`${baseUrl}/case-definition/groups`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    // Validate both responses\r\n    if (!response.ok) {\r\n      throw new Error(`User API call failed with status: ${response.status}`);\r\n   }\r\n\r\n else console.log('users fetched sucessfully') \r\n   if (!responseGrp.ok) {\r\n      throw new Error(`Group API call failed with status: ${responseGrp.status}`);\r\n     }\r\n\r\n  else console.log('groups fetched sucessfully') \r\n   // Parse response JSON\r\n    const data = await response.json();      // users\r\n    const grpData = await responseGrp.json(); // groups\r\n\r\n    // Convert users to options\r\n    const userOptions = data.map(user => ({\r\n      label: user.userId,\r\n      value: [user.emailId]\r\n    }));\r\n\r\n    // Convert groups to options\r\n    const grpOptions = grpData.map(group => ({\r\n      label: group.groupId,\r\n      value: group.users.map(user => user.emailId)\r\n    }));\r\n\r\n    // Combine and return both\r\n    const allOptions = [...userOptions, ...grpOptions];\r\n\r\n    // Optionally cache the result\r\n    localStorage.setItem('caseAssignedOptions', JSON.stringify(allOptions));\r\n\r\n    return allOptions;\r\n  } catch (error) {\r\n    console.error('Error calling the User or Group API:', error);\r\n  }\r\n};\r\n\r\n// Example usage of the function\r\ncallUserApi().then(userOptions => {\r\n  if (userOptions) {\r\n    \r\n component.data.values = userOptions.map(opt => ({ \r\n label: opt.label, \r\n value: { \r\n email: opt.value,  \r\n label: opt.label \r\n  } \r\n })); \r\n   // Assign the result to the component's data\r\n  }\r\n});",
+                                              "calculateValue": "const callUserApi = async () => {\r\n  // Check if options are already stored in localStorage\r\n  const cachedOptions = localStorage.getItem('caseAssignedOptions');\r\n  if (cachedOptions) {\r\n    component.data.values = JSON.parse(cachedOptions); // Use cached data\r\n    return JSON.parse(cachedOptions);\r\n  }\r\n\r\n  // Get the authorization token from localStorage\r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n\r\n  // Determine the base URL based on the environment (localhost or production)\r\n  const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n\r\n  try {\r\n    // Fetch users\r\n    const response = await fetch(`${baseUrl}/case-definition/users`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    // Fetch groups\r\n  const responseGrp = await fetch(`${baseUrl}/case-definition/groups`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    // Validate both responses\r\n    if (!response.ok) {\r\n      throw new Error(`User API call failed with status: ${response.status}`);\r\n   }\r\n\r\n else console.log('users fetched sucessfully') \r\n   if (!responseGrp.ok) {\r\n      throw new Error(`Group API call failed with status: ${responseGrp.status}`);\r\n     }\r\n\r\n  else console.log('groups fetched sucessfully') \r\n   // Parse response JSON\r\n    const data = await response.json();      // users\r\n    const grpData = await responseGrp.json(); // groups\r\n\r\n    // Convert users to options\r\n    const userOptions = data.map(user => ({\r\n      label: user.userId,\r\n      value: [user.emailId]\r\n    }));\r\n\r\n    // Convert groups to options\r\n    const grpOptions = grpData.map(group => ({\r\n      label: group.groupId,\r\n      value: group.users.map(user => user.emailId)\r\n    }));\r\n\r\n    // Combine and return both\r\n    const allOptions = [...userOptions, ...grpOptions];\r\n\r\n    // Optionally cache the result\r\n    localStorage.setItem('caseAssignedOptions', JSON.stringify(allOptions));\r\n\r\n    return allOptions;\r\n  } catch (error) {\r\n    console.error('Error calling the User or Group API:', error);\r\n  }\r\n};\r\n\r\n// Example usage of the function\r\ncallUserApi().then(userOptions => {\r\n  if (userOptions) {\r\n    \r\n component.data.values = userOptions.map(opt => ({ \r\n label: opt.label, \r\n value: { \r\n email: opt.value,  \r\n label: opt.label \r\n  } \r\n })); \r\n   // Assign the result to the component's data\r\n  }\r\n});",
 											  "validate": {
                                                     "required": true,
                                                     "custom": "",
@@ -386,18 +466,8 @@
                                                 "customOptions": {},
                                                 "useExactSearch": false,
                                                 "defaultValue": null
-                                            },
-                                            {
-                                                "label": "Case Assigned To Label",
-                                                "key": "caseAssignedToLabel",
-                                                "type": "hidden",
-                                                "input": true,
-                                                "persistent": true,
-                                                "calculateValue": "value = data.caseAssignedTo?.label || '';",
-                                                "customConditional": "",
-                                                "hidden": true,
-                                                "clearOnHide": false
-                                              }
+                                            }
+                                      
                                               
                                         ],
                                         "size": "md",
@@ -2025,7 +2095,7 @@
                                                 "customClass": "custom-select-height",
                                                 "tableView": true,
                                                 "multiple": true,
-                                                "calculateValue": "const callUserApi = async () => {\r\n  // Check if options exist in localStorage\r\n  const cachedOptions \u003d localStorage.getItem(\u0027caseAssignedOptions\u0027);\r\n  if (cachedOptions) {\r\n    component.data.values \u003d JSON.parse(cachedOptions); // Use cached options\r\n    console.log(\u0027Using cached caseAssignedOptions\u0027);\r\n    return JSON.parse(cachedOptions);\r\n  }\r\n  \r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n  \r\n    const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n\r\n  try {\r\n    const response = await fetch(`${baseUrl}/case-definition/users`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n\r\n    const data = await response.json();\r\n    const userOptions = data.map(user => ({\r\n      label: user.userId, // Use userId as the display label\r\n      value: user.emailId, // Use userId as the unique value\r\n    }));\r\n\r\n    return userOptions;\r\n  } catch (error) {\r\n    console.error('Error calling the User API:', error);\r\n  }\r\n};\r\n\r\n// Example of using the callUserApi function\r\ncallUserApi().then(userOptions => {\r\n  if (userOptions) {\r\n    component.data.values = userOptions; // Assign the fetched options to component's data\r\n  }\r\n});\r\n",
+                                                "calculateValue": "const callUserApi = async () => {\r\n  // Check if options exist in localStorage\r\n  const cachedOptions \u003d localStorage.getItem(\u0027caseAssignedOptions\u0027);\r\n  if (cachedOptions) {\r\n    component.data.values \u003d JSON.parse(cachedOptions); // Use cached options\r\n     return JSON.parse(cachedOptions);\r\n  }\r\n  \r\n  const token = localStorage.getItem('keycloakToken');\r\n\r\n  if (!token) {\r\n    console.error('Token not found in localStorage');\r\n    return;\r\n  }\r\n  \r\n    const baseUrl = window.location.hostname.includes('localhost')\r\n    ? 'http://localhost:8081'\r\n    : localStorage.getItem('baseUrl') || '';\r\n\r\n  try {\r\n    const response = await fetch(`${baseUrl}/case-definition/users`, {\r\n      method: 'GET',\r\n      headers: {\r\n        'Content-Type': 'application/json',\r\n        'Authorization': `Bearer ${token}`\r\n      }\r\n    });\r\n\r\n    if (!response.ok) {\r\n      throw new Error(`API call failed with status: ${response.status}`);\r\n    }\r\n\r\n    const data = await response.json();\r\n    const userOptions = data.map(user => ({\r\n      label: user.userId, // Use userId as the display label\r\n      value: user.emailId, // Use userId as the unique value\r\n    }));\r\n\r\n    return userOptions;\r\n  } catch (error) {\r\n    console.error('Error calling the User API:', error);\r\n  }\r\n};\r\n\r\n// Example of using the callUserApi function\r\ncallUserApi().then(userOptions => {\r\n  if (userOptions) {\r\n    component.data.values = userOptions; // Assign the fetched options to component's data\r\n  }\r\n});\r\n",
                                                 "validate": {
                                                     "multiple": true,
                                                     "required": false,

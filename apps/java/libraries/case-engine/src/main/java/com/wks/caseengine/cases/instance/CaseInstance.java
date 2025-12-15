@@ -134,19 +134,4 @@ public class CaseInstance {
 
 	public void setEventIds(List<String> eventIds) { this.eventIds = eventIds; }
 
-	// public String getEventTrendUrl() {
-	// 	return eventTrendUrl;
-	// }
-
-	// public String getEventReportUrl() {
-	// 	return eventReportUrl;
-	// }
-
-	// public void setEventTrendUrl(String eventTrendUrl) {
-	// 	this.eventTrendUrl = eventTrendUrl;
-	// }
-
-	// public void setEventReportUrl(String eventReportUrl) {
-	// 	this.eventReportUrl = eventReportUrl;
-	// }
 }

@@ -76,7 +76,7 @@ export const NewCaseFormPage = ({ open = true, caseDefId = 'create', handleFormC
     console.log("keycloak access token parsed : ", keycloak.tokenParsed);
   // const allRoles = [...realmRoles, ...clientRoles]
   // console.log('all roles: ',  allRoles)
-  console.log("NewCaseFormPage.. creating new case for caseDefId: ", caseDefId);
+ 
 
 //   const createApmUrlBasedOnSelectedEvent = () => {
 //     const urlParams = new URLSearchParams(window.location.search);
@@ -207,7 +207,6 @@ const createApmUrlBasedOnSelectedEvent = () => {
   useEffect(() => { 
     
     const params = window.location.search
-    console.log('##### **** calling createApmUrlBasedOnSelectedEvent..........')
     setCurrentParams(params)
     createApmUrlBasedOnSelectedEvent();
   }, [])
@@ -465,6 +464,16 @@ const createApmUrlBasedOnSelectedEvent = () => {
     console.log('onSubmitForm...... eventTrendUrl: ', eventTrendUrlRef.current)
 
     console.log('***** formData', formData)
+
+ let caseAssignedToLabelAndValue = formData.data.container.caseAssignedTo
+   formData.data.container.caseAssignedTo = caseAssignedToLabelAndValue.email
+
+   // set case owner
+   formData.data.container.caseOwner = keycloak.idTokenParsed.name || '';
+
+
+
+
    
     setLoading(true)
     const requiredFields = ['caseTitle']
@@ -487,6 +496,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
     const sourceSystem = urlParams.get('sourceSystem') || 'default'
     const eventIds = eventIdsParam ? eventIdsParam.split(',') : []
     const caseAttributes = Object.keys(formData.data).map((key) => ({
+
       name: key,
       value:
         typeof formData.data[key] !== 'object'
@@ -553,6 +563,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
             // eventReportUrl: eventReportUrlRef.current,
             eventTrendUrls: eventTrendUrlArrayRef.current,
             eventReportUrls: eventReportUrlArrayRef.current,
+            assignedToLabel: caseAssignedToLabelAndValue.label,
 
         /*   caseUrl: (() => { 
              const uri = window.location.pathname;
@@ -561,10 +572,10 @@ const createApmUrlBasedOnSelectedEvent = () => {
 
 
            // assignedTo: {emailId: formData.data.container.caseAssignedTo}
-         //  assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
+           assignedTo: formData.data.container.caseAssignedTo.map(email => ({ emailId: email }))
 
-         assignedTo: formData.data.container.caseAssignedTo.email.map(email => ({ emailId: email }))
-         
+    //     assignedTo: formData.data.container.caseAssignedTo.email.map(email => ({ emailId: email }))
+
           }),
         )
       })

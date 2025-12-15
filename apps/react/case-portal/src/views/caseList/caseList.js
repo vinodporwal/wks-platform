@@ -515,6 +515,10 @@ export const CaseList = ({ status, caseDefId }) => {
                 value: 3,
               },
               {
+                label: 'Overdue',
+                value: 4,
+              },
+              {
                 label: 'Rejected',
                 value: 10002,
               },
@@ -562,7 +566,7 @@ export const CaseList = ({ status, caseDefId }) => {
         flex: 1,
         valueGetter: (value, row) => {
 
- try {
+           try {
 			
 			
             const attributes =
@@ -591,8 +595,6 @@ export const CaseList = ({ status, caseDefId }) => {
         },
       },
 
-         // **************
-
          {
           field: 'Assigned By',
           headerName: 'Assigned By',
@@ -605,7 +607,7 @@ export const CaseList = ({ status, caseDefId }) => {
   
       
         },
-        // **************
+ 
       // {
       //   field: 'ownerName',
       //   headerName: t('pages.caselist.datagrid.columns.caseOwnerName'),

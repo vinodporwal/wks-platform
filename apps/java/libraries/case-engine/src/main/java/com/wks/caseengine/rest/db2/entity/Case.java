@@ -18,6 +18,7 @@ import com.wks.caseengine.rest.model.ListToStringConverter;
 
 @Entity
 @Table(name ="Cases")
+@Data
 public class Case {
 	@Id
     @Column(name = "case_no", nullable = false, unique = true)
@@ -93,153 +94,10 @@ public class Case {
         private String url;
     }
 
-	public String getCaseNo() {
-		return caseNo;
-	}
+	@Transient
+	private String assignedToLabel;
 
-	public void setCaseNo(String caseNo) {
-		this.caseNo = caseNo;
-	}
-
-	public String getCaseDefinitionId() {
-		return caseDefinitionId;
-	}
-
-	public void setCaseDefinitionId(String caseDefinitionId) {
-		this.caseDefinitionId = caseDefinitionId;
-	}
-
-	public OwnerDetails getOwner() {
-		return owner;
-	}
-
-	public void setOwner(OwnerDetails owner) {
-		this.owner = owner;
-	}
-
-	public List<Attribute> getAttributes() {
-		return attributes;
-	}
-
-	public void setAttributes(List<Attribute> attributes) {
-		this.attributes = attributes;
-	}
-
-	public List<String> getEventIds() {
-		return eventIds;
-	}
-
-	public void setEventIds(List<String> eventIds) {
-		this.eventIds = eventIds;
-	}
-
-	public String getAssetName() {
-		return assetName;
-	}
-
-	public void setAssetName(String assetName) {
-		this.assetName = assetName;
-	}
-
-	public String getHierarchyName() {
-		return hierarchyName;
-	}
-
-	public void setHierarchyName(String hierarchyName) {
-		this.hierarchyName = hierarchyName;
-	}
-
-	public String getSourceSystem() {
-		return sourceSystem;
-	}
-
-	public void setSourceSystem(String sourceSystem) {
-		this.sourceSystem = sourceSystem;
-	}
-
-	public String getHierarchyNodePKID() {
-		return hierarchyNodePKID;
-	}
-
-	public void setHierarchyNodePKID(String hierarchyNodePKID) {
-		this.hierarchyNodePKID = hierarchyNodePKID;
-	}
-
-	public String getBusinessKey() {
-		return businessKey;
-	}
-
-	public void setBusinessKey(String businessKey) {
-		this.businessKey = businessKey;
-	}
-
-	public String getIsDraft() {
-		return isDraft;
-	}
-
-	public void setIsDraft(String isDraft) {
-		this.isDraft = isDraft;
-	}
 	
-	public String getCreationDate() {
-		return creationDate;
-	}
-
-	public void setCreationDate(String creationDate) {
-		this.creationDate = creationDate;
-	}
-
-	public CaseStatus getStatus() {
-		return status;
-	}
-
-	public void setStatus(CaseStatus status) {
-		this.status = status;
-	}
-
-	public String getCaseUrl() {
-		return caseUrl;
-	}
-
-	public void setCaseUrl(String caseUrl) {
-		this.caseUrl = caseUrl;
-	}
-
-	public List<Users> getAssignedTo() {
-		return assignedTo;
-	}
-	public void setAssignedTo(List<Users> assignedTo) {
-		this.assignedTo = assignedTo;
-	}
-
-	// public String getEventTrendUrl() {
-	// 	return eventTrendUrl;
-	// }
-	// public void setEventTrendUrl(String eventTrendUrl) {
-	// 	this.eventTrendUrl = eventTrendUrl;
-	// }
-
-	// public String getEventReportUrl() {
-	// 		return eventReportUrl;
-	// }
-	// public void setEventReportUrl(String eventReportUrl) {
-	// 	this.eventReportUrl = eventReportUrl;
-	// }
-
-	public List<EventUrlItem> getEventTrendUrls() {
-		return eventTrendUrls;
-	}
-	public void setEventTrendUrls(List<EventUrlItem> eventTrendUrls) {
-		this.eventTrendUrls = eventTrendUrls;
-	}
-	
-	public List<EventUrlItem> getEventReportUrls() {
-		return eventReportUrls;
-	}
-	public void setEventReportUrls(List<EventUrlItem> eventReportUrls) {
-		this.eventReportUrls = eventReportUrls;
-	}
-
 	@Override
 	public String toString() {
 		return "Case [caseNo=" + caseNo + ", caseDefinitionId=" + caseDefinitionId + ", owner=" + owner

@@ -180,7 +180,7 @@ console.log('*****  taskId:  ', taskId);
   useEffect(() => {
     if(taskId && isBlocked) return;
     if (activeStage) {
-      console.log(" #######################################################3")
+    
       console.log("aCase : ", aCase)
       const stage = caseDef.stages.find((o) => o.name === activeStage)
        console.log('CaseForm : Stage : ', stage)
@@ -274,6 +274,16 @@ console.log('*****  taskId:  ', taskId);
         )
 
         const formData = await FormService.getByKey(keycloak, data.formKey)
+
+       console.log(" ****formData : ", formData)
+
+       // unhide the caaseOwner field in case update form
+             if(data.formKey === 'case-management-system'){
+       
+          formData.structure.components[0].components[0].components[0].columns[0].components[1].hidden = false;
+      
+      }
+       
        
         const processExists = await ProcessDefService.processExistsForBusinessKey(keycloak, aCase.businessKey)
         console.log(" ****processExists : ", processExists)
@@ -291,6 +301,7 @@ console.log('*****  taskId:  ', taskId);
               })
             }
         }
+
     // show only the task form if the taskId is present
         if(taskId) {
               const task = await ProcessDefService.getTaskByTaskId(keycloak, taskId)
@@ -576,7 +587,9 @@ console.log('*****  taskId:  ', taskId);
           ),
         )
         setDocuments(caseData?.documents)
+        
         if(caseData && caseData.attributes) {
+         
 		  setFormData({
             data: caseData.attributes.reduce(
               (obj, item) =>
@@ -1815,7 +1828,7 @@ console.log('*****  taskId:  ', taskId);
     </div>
   </div>
 )}
-
+{console.log('***** formData at render', formData)}
                     
                     {isFormData && (
                       <Form

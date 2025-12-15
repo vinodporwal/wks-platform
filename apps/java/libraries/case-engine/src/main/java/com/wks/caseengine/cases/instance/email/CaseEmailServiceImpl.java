@@ -11,13 +11,11 @@
  */
 package com.wks.caseengine.cases.instance.email;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
 
 
 
-import kotlin.collections.UArraySortingKt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -29,8 +27,6 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import com.wks.caseengine.command.CommandExecutor;
-
-import jakarta.activation.DataSource;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.util.ByteArrayDataSource;

@@ -515,7 +515,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     System.out.println("eventPkIds: from attributes : "  + item.path("eventPkId").asText());
                 }
 
-                String[] reviewers = new String[analysisTeam.size()];
+             //   String[] reviewers = new String[analysisTeam.size()];
+             // adding 1 to the size of the reviewers array to add the case owner in the reviewers array 
+             String[] reviewers = new String[analysisTeam.size() + 1];
                 if (analysisTeam.isArray()) {
                     int counter = 0;
                     for (JsonNode dataGridEntry : analysisTeam) {
@@ -524,6 +526,12 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     }
 
                 }
+
+                // adding the case owner in reviewers so that the owner receives an email when a new case is created
+                reviewers[reviewers.length -1] = caseData.getOwner().getEmail();
+                System.out.println("reviewers: " + reviewers);
+
+
              Map<String, String>  eventTrendUrlsMap = new HashMap<>();
                 if(caseData.getEventTrendUrls() != null) {  
                     eventTrendUrlsMap = caseData.getEventTrendUrls()
@@ -561,6 +569,8 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
                     // data.put("eventReportUrls", caseData.getEventReportUrls());
                     data.put("eventTrendUrlsMap", eventTrendUrlsMap);
                     data.put("eventReportUrlsMap", eventReportUrlsMap);
+                    data.put("assignedToLabel", caseData.getAssignedToLabel());
+                    data.put("assignedBy", caseData.getOwner().getName());
                     caseTitle = "CASE MANAGEMENT :"+ caseTitle;
 
                     caseEmailService.send(from, assignedTo , caseTitle, reviewers, null, null, "email-template", data);
