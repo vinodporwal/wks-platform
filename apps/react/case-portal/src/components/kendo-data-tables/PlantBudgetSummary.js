@@ -50,6 +50,7 @@ export default function PlantBudgetSummary() {
   }
 
   useEffect(() => {
+    setLoading(true)
     fetchData()
   }, [PLANT_ID, AOP_YEAR, keycloak])
 

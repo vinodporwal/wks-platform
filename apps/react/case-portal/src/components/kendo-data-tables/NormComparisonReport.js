@@ -48,6 +48,7 @@ export default function NormComparisonReport() {
   }
 
   useEffect(() => {
+    setLoading(true)
     fetchData()
   }, [PLANT_ID, AOP_YEAR, keycloak])
 
