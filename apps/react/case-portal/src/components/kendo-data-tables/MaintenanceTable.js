@@ -30,6 +30,12 @@ const MaintenanceTable = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const vertName = verticalChange?.selectedVertical
@@ -170,6 +176,28 @@ const MaintenanceTable = () => {
     ...getMonthlyColumns(),
     isEditableField,
   ]
+  // Base function to generate column set
+  const generateColumnsPEPP = (nameWidthT) => [
+    {
+      field: 'Name',
+      title: 'Description',
+      align: 'left',
+      headerAlign: 'left',
+      widthT: nameWidthT,
+      editable: false,
+      isEditable: false,
+    },
+    ...getMonthlyColumns(),
+    isEditableField,
+
+    {
+      field: 'allMonthsTotal',
+      title: 'Total Hrs',
+      type: 'number',
+      format: '{0:n2}',
+      editable: false,
+    },
+  ]
 
   const generateColumnsELASTOMER = (nameWidthT) => [
     {
@@ -193,8 +221,8 @@ const MaintenanceTable = () => {
 
   // Column sets
   const productionColumnsMEG = generateColumns(390)
-  const productionColumnsPE = generateColumns(150)
-  const productionColumnsPP = generateColumns(220)
+  const productionColumnsPE = generateColumnsPEPP(150)
+  const productionColumnsPP = generateColumnsPEPP(220)
   const productionColumnsNonMEG = generateColumns(200)
   const productionColumnsELASTOMER = generateColumnsELASTOMER(200)
 
@@ -248,7 +276,7 @@ const MaintenanceTable = () => {
           saveBtn: dataConfig.isCracker,
           allAction: true,
           downloadExcelBtnFromUI: true,
-          ExcelName: SCREEN_NAME,
+          ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
           showRefresh: false,
           showTitleNameBusiness: true,
           titleName: SCREEN_NAME,
@@ -257,8 +285,7 @@ const MaintenanceTable = () => {
       ),
     [isOldYear, AOP_YEAR, PLANT_ID, SCREEN_NAME],
   )
-  if (
-    lowerVertName == 'elastomer') {
+  if (lowerVertName == 'elastomer') {
     return <ElastomerMaintenanceTable />
   }
 

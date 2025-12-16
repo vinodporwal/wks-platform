@@ -1795,7 +1795,13 @@ async function exportSpyroInputExcel(keycloak, mode, PLANT_ID, AOP_YEAR) {
 }
 
 //--
-async function getConfigurationExcel(keycloak, reportType, PLANT_ID, AOP_YEAR) {
+async function getConfigurationExcel(
+  keycloak,
+  reportType,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_EXPORT_TITLE,
+) {
   const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}`
 
   const headers = {
@@ -1823,7 +1829,8 @@ async function getConfigurationExcel(keycloak, reportType, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Production & Norms Basis.xlsx'
+
+    a.download = `${EXCEL_EXPORT_TITLE}_Production & Norms Basis.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2310,7 +2317,12 @@ async function getCrackerNextYearData(keycloak, qParams, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-async function getRecipeExcel(keycloak, PLANT_ID, AOP_YEAR) {
+async function getRecipeExcel(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_EXPORT_TITLE,
+) {
   const url = `${Config.CaseEngineUrl}/task/recipe-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
 
   const headers = {
@@ -2332,7 +2344,7 @@ async function getRecipeExcel(keycloak, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Production & Norms Basis Recipe.xlsx'
+    a.download = `${EXCEL_EXPORT_TITLE}_Production & Norms Basis Recipe.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2363,12 +2375,18 @@ async function saveRecipeExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-async function getShutdownRateExcel(keycloak, type, PLANT_ID, AOP_YEAR) {
+async function getShutdownRateExcel(
+  keycloak,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_EXPORT_TITLE,
+) {
   const url = `${Config.CaseEngineUrl}/task/shutdown-rate-export?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${type}`
 
   const EXCEL_NAME = type
-    ? `Production & Norms Basis ${type}.xlsx`
-    : `Production & Norms Basis.xlsx`
+    ? `${EXCEL_EXPORT_TITLE}_Production & Norms Basis ${type}.xlsx`
+    : `${EXCEL_EXPORT_TITLE}_Production & Norms Basis.xlsx`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -2541,7 +2559,12 @@ export async function ImportShutdownNonProduct(file, keycloak, plantId, year) {
     return Promise.reject(e)
   }
 }
-export async function exportShutdownNonProductWise(keycloak, plantId, year) {
+export async function exportShutdownNonProductWise(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
   const maintenanceTypeName = 'Shutdown'
   const url = `${Config.CaseEngineUrl}/task/shutdown-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
   const headers = {
@@ -2561,7 +2584,7 @@ export async function exportShutdownNonProductWise(keycloak, plantId, year) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'shutdown.xlsx'
+    a.download = `${EXCEL_EXPORT_TITLE}_Shutdown Activities.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2572,7 +2595,12 @@ export async function exportShutdownNonProductWise(keycloak, plantId, year) {
   }
 }
 
-export async function exportShutdownNonProduct(keycloak, plantId, year) {
+export async function exportShutdownNonProduct(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
   const maintenanceTypeName = 'Shutdown'
   const url = `${Config.CaseEngineUrl}/task/shutdown-export-non-product?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
   const headers = {
@@ -2592,7 +2620,7 @@ export async function exportShutdownNonProduct(keycloak, plantId, year) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'shutdown.xlsx'
+    a.download = `${EXCEL_EXPORT_TITLE}_Shutdown Activities.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2674,7 +2702,12 @@ export async function ImportSlowdownElastomerDetails(
   }
 }
 
-export async function slowdownDetailsExport(keycloak, plantId, year) {
+export async function slowdownDetailsExport(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
   const maintenanceTypeName = 'Slowdown'
   const url = `${Config.CaseEngineUrl}/task/slowdown-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
   const headers = {
@@ -2694,7 +2727,7 @@ export async function slowdownDetailsExport(keycloak, plantId, year) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'slowdown.xlsx'
+    a.download = `${EXCEL_EXPORT_TITLE}_Slowdown_Activities.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2705,7 +2738,12 @@ export async function slowdownDetailsExport(keycloak, plantId, year) {
   }
 }
 
-export async function ExportSlowdownDetailsEOE(keycloak, plantId, year) {
+export async function ExportSlowdownDetailsEOE(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
   const maintenanceTypeName = 'Slowdown'
   const url = `${Config.CaseEngineUrl}/task/slowdown-rate-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
   const headers = {
@@ -2725,7 +2763,7 @@ export async function ExportSlowdownDetailsEOE(keycloak, plantId, year) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'slowdown.xlsx'
+    a.download = `${EXCEL_EXPORT_TITLE}_Slowdown_Activities.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2735,7 +2773,12 @@ export async function ExportSlowdownDetailsEOE(keycloak, plantId, year) {
     return Promise.reject(e)
   }
 }
-export async function slowdownDetailsElastomerExport(keycloak, plantId, year) {
+export async function slowdownDetailsElastomerExport(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
   const maintenanceTypeName = 'Slowdown'
   const url = `${Config.CaseEngineUrl}/task/slowdown-export-non-product?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
   const headers = {
@@ -2755,7 +2798,7 @@ export async function slowdownDetailsElastomerExport(keycloak, plantId, year) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'slowdown.xlsx'
+    a.download = `${EXCEL_EXPORT_TITLE}_Slowdown_Activities.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2770,6 +2813,7 @@ async function getConfigurationExcelType(
   PLANT_ID,
   AOP_YEAR,
   reportType,
+  EXCEL_EXPORT_TITLE,
 ) {
   const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
@@ -2780,8 +2824,8 @@ async function getConfigurationExcelType(
 
   const body = JSON.stringify(reportType)
   const EXCEL_NAME = reportType
-    ? `Production & Norms Basis ${reportType}.xlsx`
-    : `Production & Norms Basis.xlsx`
+    ? `${EXCEL_EXPORT_TITLE}_Production & Norms Basis ${reportType}.xlsx`
+    : `${EXCEL_EXPORT_TITLE}_Production & Norms Basis.xlsx`
 
   try {
     const resp = await fetch(url, {

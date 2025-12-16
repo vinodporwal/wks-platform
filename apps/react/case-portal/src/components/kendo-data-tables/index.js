@@ -678,6 +678,15 @@ const KendoDataTables = ({
       isColumnMenuSortActive(field, sort)
     )
   }
+
+  const ElastomerYearDisplayCell = ({ dataItem, field, tdProps }) => {
+    return (
+      <td {...tdProps} title={dataItem[field]}>
+        {dataItem[field]}
+      </td>
+    )
+  }
+
   const ElastomerMonthDisplayCell = (props) => {
     const { dataItem, field, tdProps } = props
     const value = dataItem[field]
@@ -1975,6 +1984,10 @@ const KendoDataTables = ({
                     />
                   )
                 }
+
+                const YearDropdownEditorWrapper = (props) => (
+                  <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
+                )
                 if (col.type === 'yeardropdown') {
                   return (
                     <GridColumn
@@ -1983,17 +1996,11 @@ const KendoDataTables = ({
                       title={col.title || col.headerName}
                       width={col.width}
                       hidden={col.hidden}
-                      editable={col?.editable ? true : false}
+                      editable={!!col?.editable}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
-                        edit: { text: YearDropdownEditor },
-                        //data: YearDropdownEditor,
-                        data: (props) => (
-                          <YearDropdownEditor
-                            {...props}
-                            AOP_YEAR={AOP_YEAR}
-                          />
-                        ),
+                        edit: { text: YearDropdownEditorWrapper }, // ✅ REQUIRED
+                        data: ElastomerYearDisplayCell,
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}

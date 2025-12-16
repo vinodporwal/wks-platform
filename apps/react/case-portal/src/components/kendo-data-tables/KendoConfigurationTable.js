@@ -70,7 +70,9 @@ const ConfigurationTable = () => {
   const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(false)
   const [loading1, setLoading1] = useState(false)
+  const [dateEdited, setDateEdited] = useState(false)
   const [summaryEdited, setSummaryEdited] = useState(false)
+
   const [configurationRows, setConfigurationRows] = useState([])
   const [startUpRows, setStartUpRows] = useState([])
   const [otherLossRows, setOtherLossRows] = useState([])
@@ -114,22 +116,64 @@ const ConfigurationTable = () => {
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
     useState([])
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
+  const [openConfirmDialogRev, setOpenConfirmDialogRev] = useState(false)
   const [gradeId, setGradeId] = React.useState(null)
   const [revision, setRevision] = useState('1')
   const [revisionDetails, setRevisionDetails] = useState([])
+
+  const [selectedRevNum, setSelectedRevNum] = useState(null)
 
   // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
   //   usePermissions()
 
   const handleOpenDialog = () => {
+    const isPEorPP = lowerVertName === 'pe' || lowerVertName === 'pp'
+
+    if (isPEorPP) {
+      if (!summaryEdited && !summary) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please add AOP Design Basis.',
+          severity: 'error',
+        })
+        return
+      }
+
+      if (!summaryEdited && summary) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Please update AOP Design Basis.',
+          severity: 'error',
+        })
+        return
+      }
+    }
+
     setOpenConfirmDialog(true)
   }
+
   const handleCloseDialog = () => {
     setOpenConfirmDialog(false)
   }
+
   const handleConfirmLoad = () => {
     setOpenConfirmDialog(false)
     onLoad()
+  }
+
+  const handleOpenDialogRev = (num) => {
+    setSelectedRevNum(num)
+    setOpenConfirmDialogRev(true)
+  }
+
+  const handleCloseDialogRev = () => {
+    setOpenConfirmDialogRev(false)
+    setSelectedRevNum(null)
+  }
+
+  const handleConfirmLoadRev = () => {
+    setOpenConfirmDialogRev(false)
+    handleRevisionChange(selectedRevNum)
   }
 
   const fetchData = async (gradeId = null) => {
@@ -461,6 +505,7 @@ const ConfigurationTable = () => {
       setRevision(1)
     }
   }
+
   const updateRevision = async (Payload) => {
     try {
       var response = await DataService.updateRevision(
@@ -520,6 +565,9 @@ const ConfigurationTable = () => {
     setTabIndex(0)
     carryForwardRecords()
     getConfigurationExecutionDetails()
+    setSummaryEdited(false)
+    setDateEdited(false)
+    setSelectedRevNum(null)
   }, [PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
@@ -588,6 +636,7 @@ const ConfigurationTable = () => {
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   }
+
   function formatDateForText(date, time = false) {
     if (!date) return ''
     const parsedDate = new Date(date)
@@ -607,6 +656,7 @@ const ConfigurationTable = () => {
     }
     return formatted
   }
+
   const getAopSummary = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
@@ -621,6 +671,7 @@ const ConfigurationTable = () => {
       console.error('Error fetching data:', error)
     }
   }
+
   const onLoadTest = async (startDateObj, endDateObj) => {
     setLoading1(true)
 
@@ -662,6 +713,7 @@ const ConfigurationTable = () => {
       setLoading1(false)
     }
   }
+
   useEffect(() => {
     if (!PLANT_ID || !AOP_YEAR) {
       return
@@ -760,6 +812,7 @@ const ConfigurationTable = () => {
       if (lowerVertName == 'pe' || lowerVertName == 'pp') {
         saveSummary(summary)
         setSummaryEdited(false)
+        setDateEdited(false)
       }
 
       const payload = [
@@ -810,6 +863,7 @@ const ConfigurationTable = () => {
     } finally {
       setLoading(false)
       setLoading1(false)
+      setDateEdited(false)
     }
   }
 
@@ -909,7 +963,10 @@ const ConfigurationTable = () => {
                         id='start-date'
                         format='dd-MM-yyyy'
                         value={startDate}
-                        onChange={(e) => setStartDate(e.value)}
+                        onChange={(e) => {
+                          setStartDate(e.value)
+                          setDateEdited(true)
+                        }}
                         style={{ height: '80px' }}
                         size='medium'
                         disabled={READ_ONLY}
@@ -930,7 +987,10 @@ const ConfigurationTable = () => {
                         id='end-date'
                         format='dd-MM-yyyy'
                         value={endDate}
-                        onChange={(e) => setEndDate(e.value)}
+                        onChange={(e) => {
+                          setEndDate(e.value)
+                          setDateEdited(true)
+                        }}
                         style={{ height: '80px' }}
                         size='medium'
                         disabled={READ_ONLY}
@@ -947,10 +1007,7 @@ const ConfigurationTable = () => {
                         // disabled={READ_ONLY || !summaryEdited}
                         disabled={
                           lowerVertName === 'pe' || lowerVertName === 'pp'
-                            ? READ_ONLY ||
-                              !summaryEdited ||
-                              !summary ||
-                              summary.trim() === ''
+                            ? READ_ONLY || !dateEdited
                             : READ_ONLY
                         }
                       >
@@ -1016,6 +1073,7 @@ const ConfigurationTable = () => {
         onClose={handleCloseDialog}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        disableScrollLock
       >
         <DialogTitle id='alert-dialog-title'>{'Load?'}</DialogTitle>
         <DialogContent>
@@ -1032,6 +1090,31 @@ const ConfigurationTable = () => {
       </Dialog>
     )
   }, [openConfirmDialog])
+
+  const ConfigurationDialogRev = useMemo(() => {
+    return (
+      <Dialog
+        open={openConfirmDialogRev}
+        onClose={handleCloseDialogRev}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+      >
+        <DialogTitle id='alert-dialog-title'>{'Change?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id='alert-dialog-description'>
+            {`Are you sure you want to change the Revision`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialogRev}>Cancel</Button>
+          <Button onClick={handleConfirmLoadRev} autoFocus>
+            Change
+          </Button>
+        </DialogActions>
+      </Dialog>
+    )
+  }, [openConfirmDialogRev])
 
   if (
     (lowerVertName == 'meg' ||
@@ -1173,6 +1256,7 @@ const ConfigurationTable = () => {
           onClose={() => setSnackbarOpen(false)}
         />
         {ConfigurationDialog}
+        {ConfigurationDialogRev}
       </div>
     )
   }
@@ -1193,7 +1277,7 @@ const ConfigurationTable = () => {
         onClose={() => setSnackbarOpen(false)}
       />
       {ConfigurationDialog}
-
+      {ConfigurationDialogRev}
       <div
         style={{
           display: 'flex',
@@ -1221,7 +1305,7 @@ const ConfigurationTable = () => {
           })}
         />
 
-        {lowerVertName === 'aromatics' && availableTabs?.length > 0 && (
+        {lowerVertName === 'aromatics' && tabs?.length > 0 && (
           <Box mt={0.5}>
             <ButtonGroup aria-label='revision group'>
               {['1', '2', '3'].map((num) => {
@@ -1230,7 +1314,7 @@ const ConfigurationTable = () => {
                 return (
                   <Button
                     key={num}
-                    onClick={() => handleRevisionChange(num)}
+                    onClick={() => handleOpenDialogRev(num)}
                     variant={selected ? 'contained' : 'outlined'}
                     size='small'
                     sx={{
