@@ -468,7 +468,10 @@ const createApmUrlBasedOnSelectedEvent = () => {
  let caseAssignedToLabelAndValue = formData.data.container.caseAssignedTo
    formData.data.container.caseAssignedTo = caseAssignedToLabelAndValue.email
 
-   // set case owner
+   // set caseAssignedToLabel in attributes
+   formData.data.container.caseAssignedToLabel = caseAssignedToLabelAndValue.label
+
+   // set case owner in attributes
    formData.data.container.caseOwner = keycloak.idTokenParsed.name || '';
 
 
@@ -505,7 +508,7 @@ const createApmUrlBasedOnSelectedEvent = () => {
       type: typeof formData.data[key] !== 'object' ? 'String' : 'Json',
     }))
 
-    console.log('Cleaned URL', buildCreateUrl(window.location.href))
+    console.log('Case Attributes: ', caseAttributes)
     CaseService.createCase(
       keycloak,
       JSON.stringify({
