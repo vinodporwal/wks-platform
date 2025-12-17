@@ -313,7 +313,7 @@ const SelectivityData = (props) => {
         saveSummary(props?.summary)
         props?.onSummaryEditChange(false)
 
-        if (props?.configType !== 'grades' && lowerVertName !== 'cracker') {
+        if (props?.configType !== 'grades') {
           props?.fetchData(gradeId)
         }
       } else {
