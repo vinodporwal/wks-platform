@@ -55,8 +55,8 @@ spring:
       password: ${SQL_SERVER_1_PASSWORD}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
-        maximum-pool-size: 10
-        minimum-idle: 5
+        maximum-pool-size: 90
+        minimum-idle: 30
     # Configuration for Database 2
     db2:
       # url: jdbc:sqlserver://216.48.180.83;databaseName=CaseManagement;trustServerCertificate=true
@@ -65,8 +65,8 @@ spring:
       password: ${SQL_SERVER_2_PASSWORD}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
-        maximum-pool-size: 10
-        minimum-idle: 5
+        maximum-pool-size: 90
+        minimum-idle: 30
   jpa:
     hibernate:
       ddl-auto: update
