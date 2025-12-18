@@ -1,18 +1,18 @@
 server:
-   port: 8081
+  port: 8081
 
 logging:
-   level:
-      root: INFO
-      com.wks: INFO
-      com.wks.api.security: INFO
-      com.wks.caseengine: INFO
-      com.wks.caseengine.command: INFO
-      com.wks.caseengine.pagination: INFO
-      org.springframework.web.client.RestTemplate: INFO
-      org.springframework.security: INFO
-      org.apache.http: INFO
-      httpclient.wire: INFO
+  level:
+    root: INFO
+    com.wks: INFO
+    com.wks.api.security: INFO
+    com.wks.caseengine: INFO
+    com.wks.caseengine.command: INFO
+    com.wks.caseengine.pagination: INFO
+    org.springframework.web.client.RestTemplate: INFO
+    org.springframework.security: INFO
+    org.apache.http: INFO
+    httpclient.wire: INFO
 
 spring.mvc.converters.preferred-json-mapper: gson
 
@@ -55,9 +55,9 @@ spring:
       password: ${SQL_SERVER_1_PASSWORD}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
-        maximum-pool-size: 20
-        minimum-idle: 5
-        leakDetectionThreshold: 20000
+        maximum-pool-size: 80
+        minimum-idle: 20
+        leakDetectionThreshold: 5000
 
     # Configuration for Database 2
     db2:
@@ -67,9 +67,9 @@ spring:
       password: ${SQL_SERVER_2_PASSWORD}
       driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
       hikari:
-        maximum-pool-size: 20
-        minimum-idle: 5
-        leakDetectionThreshold: 20000
+        maximum-pool-size: 80
+        minimum-idle: 20
+        leakDetectionThreshold: 5000
 
   jpa:
     hibernate:
