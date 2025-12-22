@@ -242,6 +242,9 @@ const MaintenanceTable = () => {
     case 'elastomer':
       basecols = productionColumnsELASTOMER
       break
+    case 'pet':
+      basecols = productionColumnsPP
+      break
     default:
       basecols = productionColumnsNonMEG
       break

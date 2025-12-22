@@ -756,7 +756,8 @@ const KendoDataTables = ({
       case 'Expression':
         color = '#f51717ff'
         break
-      case 'BestAchieved(Indv)':
+      // case 'BestAchieved(Indv)':
+      case 'BestAchieved(Indiv)':
         color = '#1565c0'
         break
       default:

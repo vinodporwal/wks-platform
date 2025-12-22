@@ -1239,6 +1239,7 @@ const NormalOpNormsScreenCracker = () => {
           setGradeId={handleGradeChange}
           reportTypes={reportTypes}
           onSummaryEditChange={setSummaryEdited}
+          isCalculationParam='true'
         />
       )}
       {/* {selectedTab === 1 && (
@@ -1468,7 +1469,7 @@ const NormalOpNormsScreenCracker = () => {
               </span>{' '}
               - Best Achieved (MinCC)&nbsp;&nbsp;
               <span style={{ color: 'blue', fontWeight: 'bold' }}>Blue</span> -
-              Best Achieved (Indv)&nbsp;&nbsp;
+              Best Achieved (Indiv)&nbsp;&nbsp;
               <span style={{ color: 'orange', fontWeight: 'bold' }}>
                 Orange
               </span>{' '}

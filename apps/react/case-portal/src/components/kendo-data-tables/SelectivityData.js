@@ -297,6 +297,7 @@ const SelectivityData = (props) => {
           payload,
           keycloak,
           AOP_YEAR,
+          props?.isCalculationParam,
         )
       }
 
@@ -603,7 +604,8 @@ const SelectivityData = (props) => {
           lowerVertName == 'pp' ||
           lowerVertName == 'pta' ||
           lowerVertName == 'aromatics' ||
-          lowerVertName == 'vcm'
+          lowerVertName == 'vcm' ||
+          lowerVertName == 'elastomer'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,
@@ -700,6 +702,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          props?.isCalculationParam,
         )
       } else {
         response = await DataService.saveConfigurationExcelConstants(

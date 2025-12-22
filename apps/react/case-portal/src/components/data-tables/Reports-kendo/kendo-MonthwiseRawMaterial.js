@@ -359,7 +359,8 @@ const MonthwiseRawMaterial = () => {
       if (
         lowerVertName != 'pe' &&
         lowerVertName != 'pp' &&
-        lowerVertName != 'elastomer'
+        lowerVertName != 'elastomer' &&
+        lowerVertName !== 'pet'
       ) {
         var res2 = await AOPWorkFlowService.getMonthwiseRawData(
           keycloak,
@@ -597,8 +598,10 @@ const MonthwiseRawMaterial = () => {
 
       {lowerVertName !== 'pe' &&
         lowerVertName !== 'pp' &&
+        lowerVertName !== 'pet' &&
         lowerVertName !== 'vcm' &&
-        lowerVertName !== 'elastomer' && (
+        lowerVertName !== 'elastomer' &&
+        lowerVertName !== 'pta' && (
           <KendoDataTablesReports
             rows={row2}
             columns={columns}
@@ -628,6 +631,7 @@ const MonthwiseRawMaterial = () => {
         )}
 
       {(lowerVertName === 'pe' ||
+        lowerVertName === 'pet' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pp' ||
         lowerVertName === 'vcm' ||

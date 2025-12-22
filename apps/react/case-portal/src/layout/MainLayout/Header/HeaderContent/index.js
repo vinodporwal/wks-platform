@@ -359,6 +359,21 @@ export default function HeaderContent({ keycloak }) {
     }
   }
 
+  const verticalFromDashboard = useSelector(
+    (state) => state.dataGridStore.verticalChangeFromDashboard,
+  )
+
+  useEffect(() => {
+    if (verticalFromDashboard?.id) {
+      setSelectedVertical('')
+      handleVertChange({
+        target: {
+          value: verticalFromDashboard.id,
+        },
+      })
+    }
+  }, [verticalFromDashboard])
+
   return (
     <>
       <Box
@@ -489,7 +504,7 @@ export default function HeaderContent({ keycloak }) {
             {headerLoading ? (
               <DropdownSkeleton />
             ) : (
-              <FormControl sx={{ width: 100 }}>
+              <FormControl sx={{ width: 110}}>
                 <Select
                   value={selectedPlant}
                   onChange={handlePlantChange}
