@@ -212,8 +212,7 @@ const ConfigurationTable = () => {
 
       if (
         lowerVertName == verticalEnums.MEG ||
-        lowerVertName == verticalEnums.CRACKER ||
-        lowerVertName == verticalEnums.ELASTOMER
+        lowerVertName == verticalEnums.CRACKER
       ) {
         data = data?.filter(
           (item) =>
