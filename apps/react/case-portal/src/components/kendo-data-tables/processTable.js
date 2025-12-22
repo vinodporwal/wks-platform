@@ -13,7 +13,7 @@ import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
 const MaintenanceProcessTable = ({ viewOnly }) => {
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -32,8 +32,13 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
   const plantName = plantObject?.name?.toLowerCase()
-  const siteName = siteObject?.name?.toLowerCase() 
+  const siteName = siteObject?.name?.toLowerCase()
   const lowerVertName = verticalObject?.name?.toLowerCase()
+
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const isOldYear = false
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
   const dataConfig = useMemo(
     () => ({
       serviceFn: () =>
@@ -62,7 +67,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
-  const [calculationObject, setCalculationObject] = useState([]) 
+  const [calculationObject, setCalculationObject] = useState([])
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     // if (!row?.isEditable) return
@@ -112,24 +117,24 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         November: 30,
         December: 31,
       }
-      for (const row of data) {
-        const month = row.monthName
-        if (month && monthDays[month]) {
-          const sum =
-            Number(row.fourF || 0) +
-            Number(row.fiveF || 0) +
-            Number(row.fourFD || 0)
-          if (sum !== monthDays[month]) {
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: `Sum of 4F, 5F, and 4F with Demo for ${month} must be ${monthDays[month]} days. Current sum: ${sum}`,
-              severity: 'error',
-            })
-            setLoading(false)
-            return
-          }
-        }
-      }
+      // for (const row of data) {
+      //   const month = row.monthName
+      //   if (month && monthDays[month]) {
+      //     const sum =
+      //       Number(row.fourF || 0) +
+      //       Number(row.fiveF || 0) +
+      //       Number(row.fourFD || 0)
+      //     if (sum !== monthDays[month]) {
+      //       setSnackbarOpen(true)
+      //       setSnackbarData({
+      //         message: `Sum of 4F, 5F, and 4F with Demo for ${month} must be ${monthDays[month]} days. Current sum: ${sum}`,
+      //         severity: 'error',
+      //       })
+      //       setLoading(false)
+      //       return
+      //     }
+      //   }
+      // }
       // --- END VALIDATION ---
 
       const validationMessage = validateFields(data, ['remarks'])
@@ -404,7 +409,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
     hidden: true,
   }
 
-  let basecols 
+  let basecols
   if (siteName === 'dmd') {
     basecols = crackercolumnsDMD
   } else if (siteName === 'nmd') {
@@ -412,7 +417,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   } else {
     basecols = crackercolumns
   }
-  
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -429,7 +433,6 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       allAction: false,
       uploadExcelBtn: false,
       downloadExcelBtn: false,
-
     }
   }
 
@@ -449,12 +452,16 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           uploadExcelBtn: viewOnly ? false : true,
           showRefresh: false,
           showCalculate: viewOnly ? false : true,
-          showCalculateVisibility: true,
+          // showCalculateVisibility: true,
+
+          //BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
+          showCalculateVisibility: false,
+
           showNote: true,
         },
-        oldYear?.oldYear,
+        isOldYear,
       ),
-    [oldYear],
+    [isOldYear],
   )
 
   return (

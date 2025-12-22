@@ -28,7 +28,7 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 const DecokingConfig = () => {
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
 
   const tabs = ['IBR Plan']
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -48,11 +48,14 @@ const DecokingConfig = () => {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
   const SCREEN_NAME = screenTitle?.title
-  const siteName = siteObject?.name?.toLowerCase() 
+  const siteName = siteObject?.name?.toLowerCase()
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -811,13 +814,16 @@ const DecokingConfig = () => {
       showTitleName: true,
       showAccordian: true,
       showCalculate: true,
-      showCalculateVisibility:
-        Object.keys(calculationObject || {}).length > 0 ? true : false,
+      // showCalculateVisibility:
+      //   Object.keys(calculationObject || {}).length > 0 ? true : false,
+
+      //BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
+      showCalculateVisibility: false,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       byDefCollaps: false,
       showTitleNameBusiness: true,
-      titleName: 'Furnace Actual and Proposed Runlength',
+      titleName: '',
     },
     isOldYear,
   )
@@ -993,9 +999,9 @@ const DecokingConfig = () => {
   }
   const rowClass = (row) => (row.isError ? 'row-error' : '')
   const filteredIbrGridThree =
-  siteName === 'dmd'
-    ? ibrGridThree.filter((col) => col.field !== 'demo')
-    : ibrGridThree;
+    siteName === 'dmd'
+      ? ibrGridThree.filter((col) => col.field !== 'demo')
+      : ibrGridThree
   return (
     <Box>
       <Backdrop
@@ -1017,13 +1023,8 @@ const DecokingConfig = () => {
               value={globalTaStartDate}
               onChange={(e) => setGlobalTaStartDate(e.value)}
               style={{ height: '80px' }}
-              size={'medium'}
+              size={'small'}
               disabled={READ_ONLY}
-
-              // min={getAopYearLimits().startLimit}
-              // max={
-              //   globalTaEndDate ? globalTaEndDate : getAopYearLimits().endLimit
-              // }
             />
           </Box>
 
@@ -1037,15 +1038,8 @@ const DecokingConfig = () => {
               value={globalTaEndDate}
               onChange={(e) => setGlobalTaEndDate(e.value)}
               style={{ height: '80px' }}
-              size={'medium'}
+              size={'small'}
               disabled={READ_ONLY}
-
-              // min={
-              //   globalTaStartDate
-              //     ? globalTaStartDate
-              //     : getAopYearLimits().startLimit
-              // }
-              // max={getAopYearLimits().endLimit}
             />
           </Box>
         </Box>

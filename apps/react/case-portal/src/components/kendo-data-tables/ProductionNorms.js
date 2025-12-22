@@ -39,9 +39,12 @@ const ProductionNorms = ({ permissions }) => {
   const VERTICAL_ID = verticalObject?.id
   const AOP_YEAR = year?.selectedYear
 
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
+  const plantName = plantObject?.name?.toLowerCase()
+  const SITE_NAME_LOWERCASE = siteObject?.name?.toLowerCase()
 
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
@@ -626,7 +629,8 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'meg' &&
           lowerVertName !== 'cracker' &&
           lowerVertName !== 'elastomer' &&
-          lowerVertName !== 'vcm'
+          lowerVertName !== 'vcm' &&
+          lowerVertName !== 'pta'
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
@@ -947,7 +951,10 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'elastomer' &&
           lowerVertName !== 'aromatics' &&
           lowerVertName !== 'vcm' &&
-          lowerVertName !== 'pta'
+          lowerVertName !== 'pe' &&
+          lowerVertName !== 'pp' &&
+          lowerVertName !== 'pta' &&
+          lowerVertName !== 'pet'
             ? '* MT per Annum'
             : ''
         }

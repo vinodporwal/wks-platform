@@ -29,6 +29,9 @@ import Profile from './Profile/index'
 // import Logo from '../../../assets/images/ril-logo2.png'
 import Logo from 'assets/images/ril-logo2.png'
 import DropdownSkeleton from 'utils/DropdownSkeleton'
+import { useNavigate } from '../../../../../node_modules/react-router-dom/dist/index'
+import { openDrawer } from 'store/reducers/menu'
+
 // import { Skeleton } from '../../../../../node_modules/@progress/kendo-react-indicators/index'
 
 // Utility to parse the Keycloak ?allowed? JSON
@@ -72,6 +75,21 @@ export default function HeaderContent({ keycloak }) {
   const [selectedSite, setSelectedSite] = useState('')
   const [selectedPlant, setSelectedPlant] = useState('')
 
+  const HIDE_VERTICAL_DROPDOWN =
+    keycloak?.realmAccess?.roles?.includes('maintenance_users')
+  // const roles = keycloak?.realmAccess?.roles || []
+
+  const HIDE_DASHBOARD_DROPDOWN = [
+    '/dashboard',
+    '/user-management',
+    '/user-form',
+  ].includes(location.pathname)
+
+  if (['/dashboard'].includes(location.pathname))
+    dispatch(openDrawer({ drawerOpen: false }))
+
+  // const HIDE_DASHBOARD_DROPDOWN = false
+
   useEffect(() => {
     let parsed = []
     try {
@@ -98,12 +116,17 @@ export default function HeaderContent({ keycloak }) {
       // }, 2000)
     }
   }
+  const verticalFromDashboard = useSelector(
+    (state) => state.dataGridStore.verticalChangeFromDashboard,
+  )
 
   useEffect(() => {
     fetchAllSites()
-  }, [keycloak])
+  }, [keycloak, verticalFromDashboard])
 
   useEffect(() => {
+    // console.log(1)
+
     if (!fullDetails.length || !Object.keys(allowedMap).length) return
 
     const avail = fullDetails
@@ -135,6 +158,7 @@ export default function HeaderContent({ keycloak }) {
   }, [fullDetails, allowedMap, selectedVertical, dispatch])
 
   useEffect(() => {
+    // console.log(2)
     if (!selectedVertical) {
       setSites([])
       setSelectedSite('')
@@ -171,6 +195,7 @@ export default function HeaderContent({ keycloak }) {
   }, [selectedVertical, fullDetails, allowedMap, dispatch])
 
   useEffect(() => {
+    // console.log(3)
     if (!selectedSite) {
       setPlants([])
       setSelectedPlant('')
@@ -206,6 +231,7 @@ export default function HeaderContent({ keycloak }) {
   }, [selectedSite, selectedVertical, fullDetails, allowedMap, dispatch])
 
   useEffect(() => {
+    // console.log(4)
     async function fetchYears() {
       // setHeaderLoading(true)
       try {
@@ -278,6 +304,7 @@ export default function HeaderContent({ keycloak }) {
       dispatch(setPlantID({ plantId: plantObj.id, plantName: plantObj.name }))
     }
   }
+
   const handleVertChange = (e) => {
     const newVId = e.target.value
 
@@ -303,7 +330,9 @@ export default function HeaderContent({ keycloak }) {
       )
     }
   }
+
   useEffect(() => {
+    // console.log(5)
     if (!selectedVertical) return
     const vert = verticals.find((v) => v.id === selectedVertical)
     if (!vert) return
@@ -321,6 +350,7 @@ export default function HeaderContent({ keycloak }) {
       }),
     )
   }, [selectedVertical, verticals, dispatch])
+
   const handleSiteChange = (e) => {
     const newSiteId = e.target.value
     setSelectedSite(newSiteId)
@@ -352,6 +382,36 @@ export default function HeaderContent({ keycloak }) {
     }
   }
 
+  useEffect(() => {
+    if (!verticalFromDashboard?.id) return
+
+    // Prevent unnecessary re-run
+    if (verticalFromDashboard.id === selectedVertical) return
+
+    setSelectedVertical(verticalFromDashboard.id)
+  }, [verticalFromDashboard?.id])
+
+  const navigate = useNavigate()
+
+  // useEffect(() => {
+  //   if (!selectedVertical) return
+
+  //   // Route only when vertical came from dashboard
+  //   if (selectedVertical === verticalFromDashboard?.id) {
+  //     navigate('/production-norms-plan/configuration', { replace: true })
+  //   }
+  // }, [selectedVertical])
+
+  // const { drawerOpen: open } = useSelector((state) => state.menu)
+
+  useEffect(() => {
+    if (!verticalFromDashboard?.id) return
+    setTimeout(() => {
+      dispatch(openDrawer({ drawerOpen: true }))
+    }, 1500)
+    navigate('/production-norms-plan/configuration', { replace: true })
+  }, [verticalFromDashboard?.trigger])
+
   return (
     <>
       <Box
@@ -369,15 +429,17 @@ export default function HeaderContent({ keycloak }) {
             <img src={Logo} alt='RIL Logo' style={{ height: 32 }} />
           </Box>
 
-          <Box sx={{ ml: 1 }}>
-            <Typography
-              variant='body2'
-              color='white'
-              className='custom-title-font'
-            >
-              {screenTitleName}
-            </Typography>
-          </Box>
+          {!HIDE_DASHBOARD_DROPDOWN && (
+            <Box sx={{ ml: 1 }}>
+              <Typography
+                variant='body2'
+                color='white'
+                className='custom-title-font'
+              >
+                {screenTitleName}
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         {/* RIGHT SIDE: Dropdowns */}
@@ -395,9 +457,12 @@ export default function HeaderContent({ keycloak }) {
                   value={selectedYear}
                   onChange={handleYearChange}
                   className='custom-title-dropdown-content'
-                  MenuProps={{
-                    PaperProps: { style: { maxHeight: 200 } },
-                  }}
+                  MenuProps={
+                    ({
+                      PaperProps: { style: { maxHeight: 200 } },
+                    },
+                    { disableScrollLock: true })
+                  }
                 >
                   {aopYears.map((y) => (
                     <MenuItem key={y.AOPYear} value={y.AOPYear}>
@@ -410,87 +475,101 @@ export default function HeaderContent({ keycloak }) {
           </Box>
 
           {/* Vertical */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body2' className='custom-title-dropdown'>
-              Vertical:
-            </Typography>
-            {headerLoading ? (
-              <DropdownSkeleton />
-            ) : (
-              <FormControl sx={{ width: 100 }}>
-                <Select
-                  value={selectedVertical}
-                  onChange={handleVertChange}
-                  className='custom-title-dropdown-content'
-                  MenuProps={{
-                    PaperProps: { style: { maxHeight: 200 } },
-                  }}
-                >
-                  {verticals.map((v) => (
-                    <MenuItem key={v.id} value={v.id}>
-                      {v.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          </Box>
+          {!(HIDE_VERTICAL_DROPDOWN || HIDE_DASHBOARD_DROPDOWN) && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant='body2' className='custom-title-dropdown'>
+                Vertical:
+              </Typography>
+
+              {headerLoading ? (
+                <DropdownSkeleton />
+              ) : (
+                <FormControl sx={{ width: 100 }}>
+                  <Select
+                    value={selectedVertical}
+                    onChange={handleVertChange}
+                    className='custom-title-dropdown-content'
+                    MenuProps={{
+                      PaperProps: { style: { maxHeight: 200 } },
+                      disableScrollLock: true,
+                    }}
+                  >
+                    {verticals.map((v) => (
+                      <MenuItem key={v.id} value={v.id}>
+                        {v.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          )}
 
           {/* Site */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body2' className='custom-title-dropdown'>
-              Site:
-            </Typography>
-            {headerLoading ? (
-              <DropdownSkeleton />
-            ) : (
-              <FormControl sx={{ width: 80 }}>
-                <Select
-                  value={selectedSite}
-                  onChange={handleSiteChange}
-                  disabled={!sites.length}
-                  className='custom-title-dropdown-content'
-                  MenuProps={{
-                    PaperProps: { style: { maxHeight: 200 } },
-                  }}
-                >
-                  {sites.map((s) => (
-                    <MenuItem key={s.id} value={s.id}>
-                      {s.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          </Box>
+          {!HIDE_DASHBOARD_DROPDOWN && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant='body2' className='custom-title-dropdown'>
+                Site:
+              </Typography>
+              {headerLoading ? (
+                <DropdownSkeleton />
+              ) : (
+                <FormControl sx={{ width: 80 }}>
+                  <Select
+                    value={selectedSite}
+                    onChange={handleSiteChange}
+                    disabled={!sites.length}
+                    className='custom-title-dropdown-content'
+                    MenuProps={
+                      ({
+                        PaperProps: { style: { maxHeight: 200 } },
+                      },
+                      { disableScrollLock: true })
+                    }
+                  >
+                    {sites.map((s) => (
+                      <MenuItem key={s.id} value={s.id}>
+                        {s.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          )}
 
           {/* Plant */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body2' className='custom-title-dropdown'>
-              Plant:
-            </Typography>
-            {headerLoading ? (
-              <DropdownSkeleton />
-            ) : (
-              <FormControl sx={{ width: 100 }}>
-                <Select
-                  value={selectedPlant}
-                  onChange={handlePlantChange}
-                  disabled={!plants.length}
-                  className='custom-title-dropdown-content'
-                  MenuProps={{
-                    PaperProps: { style: { maxHeight: 200 } },
-                  }}
-                >
-                  {plants.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      {p.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          </Box>
+          {!HIDE_DASHBOARD_DROPDOWN && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant='body2' className='custom-title-dropdown'>
+                Plant:
+              </Typography>
+              {headerLoading ? (
+                <DropdownSkeleton />
+              ) : (
+                <FormControl sx={{ width: 110 }}>
+                  <Select
+                    value={selectedPlant}
+                    onChange={handlePlantChange}
+                    disabled={!plants.length}
+                    className='custom-title-dropdown-content'
+                    MenuProps={
+                      ({
+                        PaperProps: { style: { maxHeight: 200 } },
+                      },
+                      { disableScrollLock: true })
+                    }
+                  >
+                    {plants.map((p) => (
+                      <MenuItem key={p.id} value={p.id}>
+                        {p.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+          )}
         </Stack>
       </Box>
 

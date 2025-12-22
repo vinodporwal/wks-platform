@@ -36,12 +36,20 @@ const SelectivityData = (props) => {
   const VERTICAL_NAME = verticalObject?.name
   const SCREEN_NAME = screenTitle?.title
 
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
@@ -289,6 +297,7 @@ const SelectivityData = (props) => {
           payload,
           keycloak,
           AOP_YEAR,
+          props?.isCalculationParam,
         )
       }
 
@@ -305,7 +314,7 @@ const SelectivityData = (props) => {
         saveSummary(props?.summary)
         props?.onSummaryEditChange(false)
 
-        if (props?.configType !== 'grades' && lowerVertName !== 'cracker') {
+        if (props?.configType !== 'grades') {
           props?.fetchData(gradeId)
         }
       } else {
@@ -486,6 +495,9 @@ const SelectivityData = (props) => {
   } else {
     FORMATE_VALUE = ValueFormatterProduction()
   }
+  if (props?.configType == 'PIO Impact' && lowerVertName == 'pta') {
+    FORMATE_VALUE = '{0:0.000}'
+  }
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
@@ -531,7 +543,10 @@ const SelectivityData = (props) => {
       titleName:
         props?.currentTabDisplayName === 'Report Manual Entry'
           ? `${props?.currentTabDisplayName} (${prevYearFormatted})`
-          : props?.currentTabDisplayName,
+          : props?.currentTabDisplayName === 'Constant' &&
+              lowerVertName === 'aromatics'
+            ? 'User Input'
+            : props?.currentTabDisplayName,
 
       // showG: props?.configType === 'cracker_configuration' ? true : false,
       showG: false,
@@ -563,7 +578,12 @@ const SelectivityData = (props) => {
 
     try {
       if (props?.configType === 'grades') {
-        await DataService.getRecipeExcel(keycloak, PLANT_ID, AOP_YEAR)
+        await DataService.getRecipeExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
 
         //NEW BUILD 17 NOV
       } else if (
@@ -576,18 +596,23 @@ const SelectivityData = (props) => {
           props?.configType,
           PLANT_ID,
           AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
         )
       } else if (props?.tabIndex != 1) {
         if (
           lowerVertName == 'pe' ||
           lowerVertName == 'pp' ||
-          lowerVertName == 'pta'
+          lowerVertName == 'pta' ||
+          lowerVertName == 'aromatics' ||
+          lowerVertName == 'vcm' ||
+          lowerVertName == 'elastomer'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,
             PLANT_ID,
             AOP_YEAR,
             [props?.configType],
+            EXCEL_EXPORT_TITLE,
           )
         } else {
           var report_t = []
@@ -618,6 +643,7 @@ const SelectivityData = (props) => {
             report_t,
             PLANT_ID,
             AOP_YEAR,
+            EXCEL_EXPORT_TITLE,
           )
         }
       } else {
@@ -625,6 +651,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          `${EXCEL_EXPORT_TITLE}_Production Norms Basis - Constant`,
         )
       }
 
@@ -675,6 +702,7 @@ const SelectivityData = (props) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          props?.isCalculationParam,
         )
       } else {
         response = await DataService.saveConfigurationExcelConstants(
@@ -809,8 +837,6 @@ const SelectivityData = (props) => {
       setLoading(false)
     }
   }
-
-  // console.log('props?.groupBy', props?.groupBy)
 
   if (props?.configType == 'grades') {
     return (

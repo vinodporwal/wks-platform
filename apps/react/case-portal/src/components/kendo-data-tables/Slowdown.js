@@ -42,12 +42,19 @@ const SlowDown = ({ permissions }) => {
   const AOP_YEAR = year?.selectedYear
   const SCREEN_NAME = screenTitle?.title
 
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
   const FORMATE_DECIMAL = ValueFormatterProduction()
   const vertName = verticalChange?.selectedVertical
   const plantName = plantObject?.name
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
   const [errorRows, setErrorRows] = useState(new Set())
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCells2, setModifiedCells2] = React.useState({})
@@ -67,11 +74,13 @@ const SlowDown = ({ permissions }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
+    lowerVertName === 'pet' ||
     lowerVertName == 'elastomer' ||
     lowerVertName == 'pvc' ||
     lowerVertName == 'vcm' ||
@@ -80,6 +89,7 @@ const SlowDown = ({ permissions }) => {
     lowerVertName == 'meg'
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_PET = lowerVertName === 'pet'
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -394,7 +404,7 @@ const SlowDown = ({ permissions }) => {
           ? requiredFieldsForElastomer
           : lowerVertName === 'meg'
             ? requiredFieldsForMeg
-            : IS_PE_PP
+            : IS_PE_PP || IS_PET
               ? requiredFieldsForPe
               : requiredFields
 
@@ -513,7 +523,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pvc' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pe' ||
-        lowerVertName === 'pp'
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet'
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
@@ -867,7 +878,7 @@ const SlowDown = ({ permissions }) => {
         var data = []
         if (lowerVertName == 'meg')
           data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
-        else if (IS_PE_PP) {
+        else if (IS_PE_PP || IS_PET) {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
           data = await DataService.getAllProductsAll(
@@ -885,7 +896,7 @@ const SlowDown = ({ permissions }) => {
               displayName: product.displayName,
               realId: product.id,
             }))
-        } else if (IS_PE_PP) {
+        } else if (IS_PE_PP || IS_PET) {
           productList = data?.data.map((product) => ({
             id: product.displayName,
             displayName: product.displayName,
@@ -946,6 +957,8 @@ const SlowDown = ({ permissions }) => {
         return SlowDownElastomerColumns
       case verticalEnums.VCM:
         return SlowDownVcmColumns
+      case verticalEnums.PET:
+        return SlowDownPeColumns 
       default:
         return SlowDownMegColumns
     }
@@ -1006,18 +1019,21 @@ const SlowDown = ({ permissions }) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
         )
       } else if (lowerVertName === 'chemical' || lowerVertName === 'meg') {
         response = await DataService.ExportSlowdownDetailsEOE(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
         )
       } else {
         response = await DataService.slowdownDetailsExport(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
         )
       }
     } catch (error) {
@@ -1271,7 +1287,7 @@ const SlowDown = ({ permissions }) => {
             allAction: true,
             onlyCellUpdate: true,
             downloadExcelBtnFromUI: true,
-            ExcelName: `${lowerVertName}-Slowdown Activities Configuration`,
+            ExcelName: `${EXCEL_EXPORT_TITLE}-Slowdown Activities(Configuration)`,
             showTitleNameBusiness: true,
             titleName: 'Configuration',
           }}

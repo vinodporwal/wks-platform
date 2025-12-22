@@ -26,7 +26,7 @@ const categories = () => {
 
 export default function PlantContributionLastFourYears() {
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -44,9 +44,12 @@ export default function PlantContributionLastFourYears() {
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
   const [loading, setLoading] = useState(false)
   const [reports, setReports] = useState({})
   const [snackbarData, setSnackbarData] = useState({
@@ -67,7 +70,7 @@ export default function PlantContributionLastFourYears() {
   const FORMAT_VALUES_COST = lowerVertName == 'elastomer' ? '{0:0}' : '{0:0.00}'
   const FORMAT_VALUES_PRICE = '{0:0}'
   const FORMAT_VALUES_NORMS =
-    lowerVertName == 'meg' ? '{0:0.00000}' : '{0:0.00}'
+    lowerVertName == 'meg' || lowerVertName == 'elastomer' ? '{0:0.00000}' : '{0:0.00}'
 
   const loadAll = async () => {
     setLoading(true)

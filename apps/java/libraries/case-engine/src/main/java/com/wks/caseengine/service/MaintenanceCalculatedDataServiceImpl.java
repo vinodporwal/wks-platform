@@ -326,7 +326,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        }
 
 	        List<String> innerHeaders = new ArrayList<>(Arrays.asList(
-	            "Month", "5F", "4f", "4F With Demo", "IBR/Coil Replacement", "Shutdown(TA)",
+	            "Month", "5F", "4F/5F+D", "4F With Demo", "IBR/Coil Replacement", "Shutdown(TA)",
 	            "Slowdown", "SAD", "BBU", "BBD", "Demo SAD", "Demo SD", "Demo BBU/BBD",
 	            "Demo HHS", "MNT", "Total", "No of Days", "No of SADs", "Remarks", "Id"
 	        ));
@@ -420,7 +420,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	    double sumFiveF = 0;
 	    double sumTotal = 0;
 	    double sumTotalSAD = 0;
-	    double sumNumberOfDays = 0;
+	    int sumNumberOfDays = 0;
 	    double sumDemoHHS=0;
 
 	    for (Object[] row : results) {
@@ -451,7 +451,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        dto.setTotal(row[16] != null ? Double.parseDouble(row[16].toString()) : 0.0);
 	        dto.setFourFHours(row[17] != null ? Double.parseDouble(row[17].toString()) : 0.0);
 	        dto.setTotalSAD(row[21] != null ? Double.parseDouble(row[21].toString()) : 0.0);
-	        dto.setNumberOfDays(row[22] != null ? Double.parseDouble(row[22].toString()) : 0.0);
+	        dto.setNumberOfDays(row[22] != null ? Integer.parseInt(row[22].toString()) : 0);
 
 	        // Accumulate totals
 	        sumCoilReplacement += dto.getCoilReplacement();
@@ -573,6 +573,9 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 					decokeMaintenance.setSad(decokePlanningDTO.getSad());
 					decokeMaintenance.setSlowdown(decokePlanningDTO.getSlowdown());
 					decokeMaintenance.setTotal(decokePlanningDTO.getTotal());
+					decokeMaintenance.setCoilReplacement(decokePlanningDTO.getCoilReplacement());
+					decokeMaintenance.setNumberOfDays(decokePlanningDTO.getNumberOfDays());
+					decokeMaintenance.setTotalSAD(decokePlanningDTO.getTotalSAD());
 					decokeMaintenanceList.add(decokeMaintenanceRepository.save(decokeMaintenance));
 				}
 			}
@@ -650,6 +653,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 					dto.setFourF(getNumericCellValue(row.getCell(2), dto));
 					dto.setFourFD(getNumericCellValue(row.getCell(3), dto));
 					dto.setCoilReplacement(getNumericCellValue(row.getCell(4), dto));
+					dto.setIbr(getNumericCellValue(row.getCell(4), dto));
 					dto.setShutdown(getNumericCellValue(row.getCell(5), dto));
 					dto.setSlowdown(getNumericCellValue(row.getCell(6), dto));
 					dto.setSad(getNumericCellValue(row.getCell(7), dto));
@@ -661,7 +665,7 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 					dto.setDemoHSS(getNumericCellValue(row.getCell(13), dto));
 					dto.setMnt(getNumericCellValue(row.getCell(14), dto));
 					dto.setTotal(getNumericCellValue(row.getCell(15), dto));
-					dto.setNumberOfDays(getNumericCellValue(row.getCell(16), dto));
+					dto.setNumberOfDays(getIntegerCellValue(row.getCell(16), dto));
 					dto.setTotalSAD(getNumericCellValue(row.getCell(17), dto));
 					dto.setRemarks(getStringCellValue(row.getCell(18), dto));
 					
@@ -1178,6 +1182,44 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		}
 		return null;
 	}
+	
+	private static Integer getIntegerCellValue(Cell cell, DecokePlanningDTO dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        double value = cell.getNumericCellValue();
+	        
+	        if (value % 1 != 0) {
+	            setError(dto);
+	            return null;
+	        }
+	        return (int) value;
+	    } 
+
+	    else if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        
+	        if (val.isEmpty()) {
+	            return null; 
+	        }
+	        
+	        try {
+	            return Integer.parseInt(val);
+	        } catch (NumberFormatException e) {
+	            setError(dto);
+	            return null;
+	        }
+	    }
+
+	    return null;
+	}
+
+	private static void setError(DecokePlanningDTO dto) {
+	    dto.setSaveStatus("Failed");
+	    dto.setErrDescription("Please enter numeric values");
+	}
 
 	public static Boolean getBooleanCellValue(Cell cell) {
 		if (cell == null)
@@ -1456,6 +1498,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	public AOPMessageVM getMaintenanceReportURLs(String plantId, String year, String type) {
 		try {
 			List<MaintenanceReportURLDTO> maintenanceReportURLDTOs = new ArrayList<MaintenanceReportURLDTO>();
+			Boolean isPlantWise=false;
+			List<MaintenanceReportURLDTO> isPlantWiseURLDTOs = new ArrayList<MaintenanceReportURLDTO>();
 			List<Object[]> obj = findByYearAndPlantIdAndType(year, UUID.fromString(plantId),type, "vwMaintenanceReports");
 			for(Object[] row:obj) {
 				MaintenanceReportURLDTO maintenanceReportURLDTO = new MaintenanceReportURLDTO();
@@ -1464,11 +1508,25 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 				maintenanceReportURLDTO.setPlantId(row[2]!=null ? row[2].toString():"");
 				maintenanceReportURLDTO.setAopYear(row[3]!=null ? row[3].toString():"");
 				maintenanceReportURLDTO.setReportURL(row[4]!=null ? row[4].toString():"");
-				maintenanceReportURLDTOs.add(maintenanceReportURLDTO);
+				maintenanceReportURLDTO.setIsPlantWise(
+					    row[5] != null ? Boolean.valueOf(row[5].toString()) : null
+					);
+				if(maintenanceReportURLDTO.getIsPlantWise()) {
+					if(maintenanceReportURLDTO.getPlantId().equalsIgnoreCase(plantId)) {
+						isPlantWiseURLDTOs.add(maintenanceReportURLDTO);
+						isPlantWise=true;
+					}
+				}else {
+					maintenanceReportURLDTOs.add(maintenanceReportURLDTO);
+				}
 			}
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			aopMessageVM.setCode(200);
-			aopMessageVM.setData(maintenanceReportURLDTOs);
+			if(isPlantWise) {
+				aopMessageVM.setData(isPlantWiseURLDTOs);
+			}else {
+				aopMessageVM.setData(maintenanceReportURLDTOs);
+			}
 			aopMessageVM.setMessage("Data fetched successfully");
 			return aopMessageVM;
 		}catch (IllegalArgumentException e) {
@@ -1476,12 +1534,11 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
-		
 	}
 	
 	public List<Object[]> findByYearAndPlantIdAndType(String year, UUID plantId,String type, String viewName) {
 		try {
-			String sql = "SELECT " + "Id, ReportCode, PlantId, AOPYear, ReportURL "
+			String sql = "SELECT " + "Id, ReportCode, PlantId, AOPYear, ReportURL, isPlantWise "
 					 + "FROM " + viewName + " "
 					+ "WHERE ReportCode = :type";
 					

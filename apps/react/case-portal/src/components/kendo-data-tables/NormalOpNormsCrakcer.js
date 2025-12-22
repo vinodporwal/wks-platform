@@ -18,13 +18,16 @@ import { useDispatch, useSelector } from 'react-redux'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import { useSession } from 'SessionStoreContext'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
-import CrakcerConstants from './CrackerConstants'
+
 import KendoDataTables from './index'
 import SelectivityData from './SelectivityData'
 import { DataService } from 'services/DataService'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service.js'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import CrakcerConstantsBestAchieved from './CrakcerConstantsBestAchieved'
+import CrakcerConstants from './CrakcerConstants'
+import { validateFields } from 'utils/validationUtils'
 // Constants
 const MONTHS = [
   'april',
@@ -82,7 +85,8 @@ const NormalOpNormsScreenCracker = () => {
   const { verticalChange, yearChanged, oldYear, plantObject, year } =
     dataGridStore || {}
 
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical || ''
@@ -90,7 +94,9 @@ const NormalOpNormsScreenCracker = () => {
 
   const dispatch = useDispatch()
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [loading, setLoading] = useState(false)
@@ -243,7 +249,7 @@ const NormalOpNormsScreenCracker = () => {
         format: valueFormat,
       })),
       { field: 'isEditable', title: 'isEditable', hidden: true },
-      { field: 'remarks', title: 'Remark', widthT: 140, editable: true },
+      { field: 'remark', title: 'Remark', widthT: 140, editable: true },
     ],
     [headerMap, valueFormat],
   )
@@ -334,36 +340,6 @@ const NormalOpNormsScreenCracker = () => {
     [keycloak, PLANT_ID, AOP_YEAR],
   )
 
-  const fetchConstantsData = useCallback(async () => {
-    setProductionRowsConstants([])
-    try {
-      const constantsRes =
-        await DataService.getCatalystSelectivityDataConstants(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      if (constantsRes?.code !== 200) {
-        setProductionRowsConstants([])
-        return
-      }
-
-      const data = constantsRes?.data
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.Remarks,
-        srNo: index + 1,
-        Particulars: item.NormTypeName,
-        remarks: item.Remarks,
-      }))
-
-      setProductionRowsConstants(formattedData)
-    } catch (error) {
-      console.error('Error fetching constants data:', error)
-    }
-  }, [keycloak, PLANT_ID, AOP_YEAR])
   // permission helper: if old year, getAdjustedPermissions blocks actions
   const getAdjustedPermissions = useCallback((permissions, isOldYearFlag) => {
     if (isOldYearFlag != 1) return permissions
@@ -711,6 +687,10 @@ const NormalOpNormsScreenCracker = () => {
           fetchAllDataNormsSelection(mapped[0]?.gradeId)
         } else {
           setGrades([])
+          setRowsExpression([])
+          setRows([])
+          setRowsExpression([])
+          setRowsBestAchivedIndividual([])
         }
       } catch (err) {
         console.error('Error fetching grades:', err)
@@ -736,8 +716,6 @@ const NormalOpNormsScreenCracker = () => {
         // Load data based on selected tab
         if (tabIndex === 0) {
           promises.push(fetchData(gId))
-        } else if (tabIndex === 1) {
-          promises.push(fetchConstantsData())
         }
         // else if (tabIndex === 3) {
         //   promises.push(fetchModeData(gId))
@@ -757,7 +735,7 @@ const NormalOpNormsScreenCracker = () => {
       fetchModeData,
       fetchFinalNorms,
       fetchData,
-      fetchConstantsData,
+
       selectedTab,
       PLANT_ID,
       AOP_YEAR,
@@ -800,13 +778,17 @@ const NormalOpNormsScreenCracker = () => {
 
   useEffect(() => {
     setSelectedTab(0)
+    setGrades([])
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
+    setGrades([])
+    setGradeId(null)
+
     if (selectedTab == 3) {
       fetchGrades('2')
     }
-  }, [selectedTab, keycloak, PLANT_ID, AOP_YEAR])
+  }, [selectedTab, keycloak, PLANT_ID, AOP_YEAR, fetchGrades])
 
   useEffect(() => {
     if (!gradeId && grades.length > 0) {
@@ -867,6 +849,18 @@ const NormalOpNormsScreenCracker = () => {
         return
       }
 
+      //REMARKS VALIDATION REMOVED
+
+      // const requiredFields = ['remark']
+      // const validationMessage = validateFields(rowsToSave, requiredFields)
+      // if (validationMessage) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: validationMessage,
+      //     severity: 'error',
+      //   })
+      //   return
+      // }
       setLoading(true)
       try {
         const payload = mapGridRowToPayload(rowsToSave, savingAllMonthValues)
@@ -1180,6 +1174,8 @@ const NormalOpNormsScreenCracker = () => {
     [grades, handleGradeChange],
   )
 
+  const [summaryEdited, setSummaryEdited] = useState(false)
+
   // tabs
   const handleTabChange = useCallback(
     (_, newValue) => {
@@ -1242,9 +1238,11 @@ const NormalOpNormsScreenCracker = () => {
           tabIndex='0'
           setGradeId={handleGradeChange}
           reportTypes={reportTypes}
+          onSummaryEditChange={setSummaryEdited}
+          isCalculationParam='true'
         />
       )}
-      {selectedTab === 1 && (
+      {/* {selectedTab === 1 && (
         <SelectivityData
           rows={productionRowsConstants}
           loading={loading}
@@ -1254,10 +1252,13 @@ const NormalOpNormsScreenCracker = () => {
           groupBy='Particulars'
           tabIndex='1'
         />
-      )}
+      )} */}
+
+      {/* Constant Tab */}
+      {selectedTab === 1 && <CrakcerConstants />}
 
       {/* Criteria Tab */}
-      {selectedTab === 2 && <CrakcerConstants />}
+      {selectedTab === 2 && <CrakcerConstantsBestAchieved />}
 
       {/* Norms Selection Tab */}
       {selectedTab === 3 && (
@@ -1271,6 +1272,7 @@ const NormalOpNormsScreenCracker = () => {
                 value={gradeId || ''}
                 label='Mode'
                 onChange={onModeSelect}
+                MenuProps={{ disableScrollLock: true }}
               >
                 {grades.map((g) => (
                   <MenuItem key={g.gradeId} value={g.gradeId}>
@@ -1467,7 +1469,7 @@ const NormalOpNormsScreenCracker = () => {
               </span>{' '}
               - Best Achieved (MinCC)&nbsp;&nbsp;
               <span style={{ color: 'blue', fontWeight: 'bold' }}>Blue</span> -
-              Best Achieved (Indv)&nbsp;&nbsp;
+              Best Achieved (Indiv)&nbsp;&nbsp;
               <span style={{ color: 'orange', fontWeight: 'bold' }}>
                 Orange
               </span>{' '}

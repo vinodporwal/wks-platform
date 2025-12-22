@@ -18,7 +18,7 @@ const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
   const [open1, setOpen1] = useState(false)
   const valueFormat = ValueFormatterConsumption()
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
@@ -45,7 +45,17 @@ const ConsumptionNorms = () => {
   const SCREEN_NAME = screenTitle?.title
   const headerMap = generateHeaderNames(AOP_YEAR)
 
-  const isOldYear = oldYear?.oldYear
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
@@ -68,6 +78,7 @@ const ConsumptionNorms = () => {
   const [grades, setGrades] = useState([])
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const isPET = lowerVertName === 'pet'
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -180,7 +191,7 @@ const ConsumptionNorms = () => {
         }
       }
 
-      if (lowerVertName == 'pe' || lowerVertName == 'pp') {
+      if (lowerVertName == 'pe' || lowerVertName == 'pp' || lowerVertName == 'pet') {
         try {
           setLoading(true)
 
@@ -285,12 +296,12 @@ const ConsumptionNorms = () => {
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if (isPEPP && !gradeId) return
+    if ((isPEPP || isPET) && !gradeId) return
     setLoading(true)
     try {
       var response
       setRows([])
-      if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+      if (lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet') {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
           gradeId,
@@ -367,7 +378,7 @@ const ConsumptionNorms = () => {
 
   useEffect(() => {
     // fetchData(gradeId)
-    if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+    if (lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet') {
       fetchGradeDropdowns()
     } else {
       fetchData(null)
@@ -391,7 +402,7 @@ const ConsumptionNorms = () => {
   const handleCalculateMeg = async () => {
     try {
       const data =
-        await ConsumptionNormsApiService.handleCalculateonsumptionNorms(
+        await ConsumptionNormsApiService.handleCalculateConsumptionNorms(
           PLANT_ID,
           AOP_YEAR,
           keycloak,
@@ -405,7 +416,7 @@ const ConsumptionNorms = () => {
           severity: 'success',
         })
 
-        if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+        if (lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet') {
           fetchGradeDropdownsAfterCalc()
         } else {
           fetchData(null)
@@ -438,12 +449,15 @@ const ConsumptionNorms = () => {
 
     try {
       let response
-      if (lowerVertName === 'pe' || lowerVertName === 'pp') {
-        response = await ConsumptionNormsApiService.OverallconsumptionppExport(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+      if (lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet') {
+        response =
+          await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            EXCEL_EXPORT_TITLE,
+            SCREEN_NAME,
+          )
       }
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -489,15 +503,15 @@ const ConsumptionNorms = () => {
       showRefresh: false,
       noColor: false,
       customHeight: defaultCustomHeight,
-      showG: lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+      showG: lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet' ? true : false,
       marginBottom:
-        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
+        lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet' ? true : false,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
-        lowerVertName === 'pe' || lowerVertName === 'pp' ? false : true,
+        lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet' ? false : true,
       downloadExcelBtn:
-        lowerVertName === 'pe' || lowerVertName === 'pp' ? true : false,
-      ExcelName: `${lowerVertName}_${SCREEN_NAME}`,
+        lowerVertName === 'pe' || lowerVertName === 'pp' || lowerVertName === 'pet' ? true : false,
+      ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       showTitleNameBusiness: true,
       titleName: `${SCREEN_NAME}`,

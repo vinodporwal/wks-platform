@@ -119,9 +119,10 @@ const KendoDataTablesCrackerRunLength = ({
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = oldYear?.oldYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerVertName = vertName?.toLowerCase()
   const SCREEN_NAME = screenTitle?.title
 
   const startYear = parseInt(AOP_YEAR?.split('-')[0], 10)
@@ -150,7 +151,8 @@ const KendoDataTablesCrackerRunLength = ({
 
   const keycloak = useSession()
 
-  const READ_ONLY = getRoleName(keycloak)
+  // const READ_ONLY = getRoleName(keycloak)
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const [loading1, setLoading1] = useState(false)
   const [open, setOpen] = useState(false)
@@ -1398,7 +1400,7 @@ const KendoDataTablesCrackerRunLength = ({
       )}
 
       <Box className='kendo-data-grid'>
-        {!permissions?.showAccordian ? (
+        {permissions?.showAccordian ? (
           <CustomAccordion
             defaultExpanded={!permissions?.byDefCollaps}
             disableGutters
@@ -1477,6 +1479,10 @@ const KendoDataTablesCrackerRunLength = ({
         onClose={closeSaveDialogeBox}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
@@ -1497,7 +1503,11 @@ const KendoDataTablesCrackerRunLength = ({
         onClose={closeSaveDialogeBoxSingleRow}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
-        sx={{ zIndex: 2000 }} // Works in most cases
+        sx={{ zIndex: 2000 }} // Works in most cases disableScrollLock
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
@@ -1516,6 +1526,10 @@ const KendoDataTablesCrackerRunLength = ({
       <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
       >
         <DialogTitle>Add Remark</DialogTitle>
         <DialogContent>
@@ -1679,13 +1693,13 @@ const KendoDataTablesCrackerRunLength = ({
               Export
             </button>
 
-            <button
+            {/* <button
               className='btn-save'
               onClick={onFileChange}
               disabled={rowsPopUp?.length === 0}
             >
               Import
-            </button>
+            </button> */}
           </div>
 
           <div style={{ marginTop: '12px' }}>{renderGridDayWise()}</div>

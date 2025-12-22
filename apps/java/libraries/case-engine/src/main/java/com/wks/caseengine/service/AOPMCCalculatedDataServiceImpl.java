@@ -7,14 +7,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-
+import com.wks.caseengine.repository.MCUMaxCapacityRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.ScreenMappingRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
-import com.wks.caseengine.rest.entity.Plant;
 import com.wks.caseengine.utility.Utility;
-
+import jakarta.persistence.Query;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -23,11 +22,11 @@ import java.util.Locale;
 import java.util.UUID;
 import javax.sql.DataSource;
 
-import org.apache.poi.ss.usermodel.BorderStyle;
+
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
+
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Font;
+
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -41,6 +40,7 @@ import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
 import com.wks.caseengine.entity.AOPMCCalculatedData;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.MCUDesignCapacity;
+import com.wks.caseengine.entity.MCUMaxCapacity;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
@@ -97,6 +97,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	
 	@Autowired
 	private NormAttributeTransactionsRepository normAttributeTransactionRepository;
+	
+	@Autowired
+	private MCUMaxCapacityRepository mcuMaxCapacityRepository;
 
 	// Inject or set your DataSource (e.g., via constructor or setter)
 	public AOPMCCalculatedDataServiceImpl(DataSource dataSource) {
@@ -107,7 +110,19 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public AOPMessageVM getAOPMCCalculatedData(String plantId, String year) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
-			List<Object[]> obj = aOPMCCalculatedDataRepository.getDataMCUValuesAllData(year, plantId);
+			String view = "";
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			if(vertical.getName().equalsIgnoreCase("PTA")) {
+				view="vw"+vertical.getName()+"_"+site.getName()+"_AOPMCValues";
+			}else {
+				view="vwAOPMCValues";
+			}
+			List<Object[]> obj = getDataMCUValuesAllData(year, plantId,view);
 			List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
 			for (Object[] row : obj) {
@@ -150,12 +165,43 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+    public List<Object[]> getDataMCUValuesAllData(String year, String plantId, String viewName) {
+        String sql = "SELECT TOP (1000) "
+                   + "Id, Site_FK_Id, Plant_FK_Id, Material_FK_Id, "
+                   + "April, May, June, July, August, September, October, November, December, "
+                   + "January, February, March, "
+                   + "FinancialYear, Remarks, CreatedOn, ModifiedOn, MCUVersion, UpdatedBy, "
+                   + "Vertical_FK_Id, NormParameterDisplayOrder, ProductName "
+                   + "FROM " + viewName + " " 
+                   + "WHERE PLANT_FK_ID = :plantId "
+                   + "AND FinancialYear = :year "
+                   + "ORDER BY NormParameterDisplayOrder";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("year", year);
+        query.setParameter("plantId", plantId);
+
+        return query.getResultList();
+    }
 
 	@Override
 	public AOPMessageVM getMaxAchievedCapacity(String plantId, String year) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
-			List<Object[]> obj = aOPMCCalculatedDataRepository.getMaxAchievedCapacityData(year, plantId);
+			String view = "";
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			if(vertical.getName().equalsIgnoreCase("PTA")) {
+				view="vw"+vertical.getName()+"_"+site.getName()+"_AOPMCValuesMaxAchivedCapacity";
+			}else {
+				view="vwAOPMCValuesMaxAchivedCapacity";
+			}
+			List<Object[]> obj = getMaxAchievedCapacityData(year, plantId,view);
 			List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
 			for (Object[] row : obj) {
@@ -191,6 +237,23 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+    public List<Object[]> getMaxAchievedCapacityData(String year, String plantId, String viewName) {
+        String sql = "SELECT TOP (1000) "
+                   + "Id, Material_FK_Id, MaterialDisplayName, "
+                   + "April, May, June, July, August, September, October, November, December, "
+                   + "January, February, March, "
+                   + "FinancialYear, Remarks, CreatedOn, ModifiedOn, UpdatedBy, PlantId "
+                   + "FROM " + viewName + " " 
+                   + "WHERE PlantId = :plantId "
+                   + "AND FinancialYear = :year";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("year", year);
+        query.setParameter("plantId", plantId);
+
+        return query.getResultList();
+    }
 
 	@Override
 	public AOPMessageVM getDesignCapacity(String plantId, String year) {
@@ -272,7 +335,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 							.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 					
 					if(vertical.getName().equalsIgnoreCase("Cracker")) {
-					//	updateMaxEthyleneProduction( aOPMCCalculatedDataDTO, plant, year);
+						updateMaxEthyleneProduction( aOPMCCalculatedDataDTO, plant, year);
 					}
 					
 					aOPMCCalculatedData = aOPMCCalculatedDataOptional.get();
@@ -772,6 +835,48 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 			e.printStackTrace();
 		}
 		// TODO Auto-generated method stub
+		return aopMessageVM;
+	}
+
+	@Override
+	public AOPMessageVM updateMaxAchievedCapacity(String plantId, String year,
+			List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<MCUMaxCapacity> mcuMaxCapacities = new ArrayList<MCUMaxCapacity>();
+		try {
+			for(AOPMCCalculatedDataDTO aopMCCalculatedDataDTO: aopMCCalculatedDataDTOs) {
+				MCUMaxCapacity mcuMaxCapacity=null;
+				Optional<MCUMaxCapacity> mcuMaxCapacityOpt = mcuMaxCapacityRepository.findById(UUID.fromString(aopMCCalculatedDataDTO.getId()));
+				if(mcuMaxCapacityOpt.isPresent()) {
+					mcuMaxCapacity=mcuMaxCapacityOpt.get();
+				}else {
+					aopMessageVM.setCode(201);
+					aopMessageVM.setData(aopMCCalculatedDataDTOs);
+					aopMessageVM.setMessage("No record found with id = "+aopMCCalculatedDataDTO.getId());
+					return aopMessageVM;
+				}
+				mcuMaxCapacity.setApril(aopMCCalculatedDataDTO.getApril());
+				mcuMaxCapacity.setMay(aopMCCalculatedDataDTO.getMay());
+				mcuMaxCapacity.setJune(aopMCCalculatedDataDTO.getJune());
+				mcuMaxCapacity.setJuly(aopMCCalculatedDataDTO.getJuly());
+				mcuMaxCapacity.setAugust(aopMCCalculatedDataDTO.getAugust());
+				mcuMaxCapacity.setSeptember(aopMCCalculatedDataDTO.getSeptember());
+				mcuMaxCapacity.setOctober(aopMCCalculatedDataDTO.getOctober());
+				mcuMaxCapacity.setNovember(aopMCCalculatedDataDTO.getNovember());
+				mcuMaxCapacity.setDecember(aopMCCalculatedDataDTO.getDecember());
+				mcuMaxCapacity.setJanuary(aopMCCalculatedDataDTO.getJanuary());
+				mcuMaxCapacity.setFebruary(aopMCCalculatedDataDTO.getFebruary());
+				mcuMaxCapacity.setMarch(aopMCCalculatedDataDTO.getMarch());
+				mcuMaxCapacity.setRemarks(aopMCCalculatedDataDTO.getRemarks());
+				mcuMaxCapacities.add(mcuMaxCapacityRepository.save(mcuMaxCapacity));
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(mcuMaxCapacities);
+		aopMessageVM.setMessage("Data updated successfully");
 		return aopMessageVM;
 	}
 
