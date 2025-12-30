@@ -195,29 +195,24 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
   let mainContent
   let itemContent
-  let itemContentDashboard
   let breadcrumbContent = <Typography />
   let itemTitle = ''
 
-  itemContentDashboard = (
-    <Button
-      variant='outlined'
-      size='small'
-      className='btn-dashboard'
-      disableRipple
-      onClick={() => {
-        // dispatch(
-        //   setVerticalChangeFromDashboard({
-        //     id: '21F54684-3AB2-43C8-8459-D1A7C8F158F0',
-        //   }),
-        // )
-        navigate('/dashboard')
-      }}
-    >
-      Go to Dashboard
-    </Button>
-  )
+  // collapse item
+  // if (main && main.type === 'collapse') {
+  //   mainContent = (
+  //     // <Typography component={Link} to={document.location.pathname} variant="h6" sx={{ textDecoration: 'none' }} color="textSecondary">
+  //     <Typography
+  //       variant='h6'
+  //       sx={{ textDecoration: 'none' }}
+  //       color='textSecondary'
+  //     >
+  //       {main.title}
+  //     </Typography>
+  //   )
+  // }
 
+  // items
   if (item && item.type === 'item') {
     itemTitle = item.title
     var title1 = itemTitle
@@ -368,9 +363,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
             <Grid
               container
-              sx={{ mt: 1, px: 1, width: '100%' }}
+              sx={{ mt: 1, ml: 1 }}
+              justifyContent='space-between'
               alignItems='center'
-              wrap='nowrap'
             >
               <Grid item>
                 {loading ? (
@@ -379,7 +374,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                     width={100}
                     height={30}
                     animation='wave'
-                    sx={{ mt: 0.5, mb: 1 }}
+                    sx={{ mt: 0.5 }}
                   />
                 ) : (
                   <Typography
@@ -399,8 +394,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                     {itemContent}
                   </Typography>
                 )}
+              </Grid>
 
-                {/* <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
+              {/* <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Grid item>
                   <Chip
                     color='primary'
@@ -411,10 +407,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                   />
                 </Grid>
               </Stack> */}
-              </Grid>
-              {/* SPACER (THIS IS THE KEY) */}
-              <Box sx={{ flexGrow: 1 }} />
-              <Grid item>{itemContentDashboard}</Grid>{' '}
             </Grid>
 
             {/* HIDE THE TITLE NAME */}

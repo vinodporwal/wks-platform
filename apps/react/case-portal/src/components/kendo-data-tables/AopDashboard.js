@@ -1,260 +1,381 @@
-import React from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Chip } from '@progress/kendo-react-buttons'
-import { useDispatch } from 'react-redux'
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+} from '@progress/kendo-react-layout'
+import { Box, Grid, Stack, Typography } from '@mui/material'
+import { useDispatch, useSelector } from 'react-redux'
+import Notification from 'components/Utilities/Notification'
+import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
+import { DataService } from 'services/DataService'
+import { useSession } from 'SessionStoreContext'
 import { setVerticalChangeFromDashboard } from 'store/reducers/dataGridStore'
 import '../../dashboard.css'
-
-import { Box } from '@mui/material'
-import Backdrop from '@mui/material/Backdrop'
-import CircularProgress from '@mui/material/CircularProgress'
-import Typography from '@mui/material/Typography'
-import { useGridApiRef } from '@mui/x-data-grid'
-import kendoGetEnhancedColDefs from 'components/data-tables/CommonHeader/kendoBusinessDemColDef'
-import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
-import { useSession } from 'SessionStoreContext'
 import {
-  CustomAccordion,
-  CustomAccordionDetails,
-  CustomAccordionSummary,
-} from 'utils/CustomAccrodian'
-import { validateFields } from 'utils/validationUtils'
-import KendoDataTables from './index'
-import ProductionvolumeData from './ProductionVoluemData'
-import PropaneBusiness from 'components/kendo-data-tables/PropaneBusiness'
-import { getRoleName } from 'services/role-service'
+  Backdrop,
+  CircularProgress,
+} from '../../../node_modules/@mui/material/index'
 
-import { useNavigate } from 'react-router-dom'
-
-/* ---------------- DATA ---------------- */
-
-const ID_MAP = {
-  PET: '343EE904-E809-4201-92C5-13FEC09CE091',
-  CRUDE: '905BEC3F-EBE6-4C43-BC09-1724901BBA86',
-  ELASTOMER: 'E7EA9AEC-A2F2-4F06-8370-2E298BA8FAAC',
-  PTA: '77355617-C31D-457E-B886-42A02B8CC808',
-  PE: 'BF5D7508-96EB-496E-BEB0-4828CB1A1B11',
-  AROMATICS: '96C448F9-645C-4604-A4D5-6EE854B40F26',
-  Cracker: '90A693BE-9709-4C8E-9EA2-884AA8A60063',
-  Maintenance: '3A9D6A3D-B7A5-41E4-86C8-8947476E4A54',
-  PVC: '4411270B-AA0F-466F-8CB7-8D4C0C3A740D',
-  CPP: 'C14A03AE-FAB3-4B64-8D40-9CD4C69BF763',
-  MEG: '5CC84A47-9717-4142-8E66-B60EBE0CF703',
-  PP: 'F928E832-BC0A-4783-8206-DFD064EAD8F7',
-  VCM: '261E1737-AE3C-4F57-AEA8-FACF33A89996',
-}
-
-const data = [
-  {
-    plant: 'NMD',
-    rows: [
-      { id: ID_MAP.MEG, name: 'MEG', status: 'Go Live' },
-      { id: ID_MAP.PE, name: 'PE', status: 'Pre UAT' },
-      { id: ID_MAP.PP, name: 'PP', status: 'Pre UAT' },
-      { id: ID_MAP.Cracker, name: 'Cracker', status: 'UAT' },
-      { id: ID_MAP.CPP, name: 'CPP', status: 'Development' },
-    ],
-  },
-  {
-    plant: 'HMD',
-    rows: [
-      { id: ID_MAP.PVC, name: 'PVC', status: 'Development' },
-      { id: ID_MAP.PE, name: 'PE', status: 'Pre UAT' },
-      { id: ID_MAP.MEG, name: 'MEG', status: 'Go Live' },
-      { id: ID_MAP.PP, name: 'PP', status: 'Pre UAT' },
-      { id: ID_MAP.ELASTOMER, name: 'ELASTOMER', status: 'Development' },
-      { id: ID_MAP.PTA, name: 'PTA', status: 'Development' },
-    ],
-  },
-  {
-    plant: 'DMD',
-    rows: [
-      { id: ID_MAP.Maintenance, name: 'Maintenance', status: 'Development' },
-      { id: ID_MAP.PVC, name: 'PVC', status: 'Development' },
-      { id: ID_MAP.MEG, name: 'MEG', status: 'Go Live' },
-      { id: ID_MAP.PTA, name: 'PTA', status: 'Development' },
-      { id: ID_MAP.VCM, name: 'VCM', status: 'Development' },
-      { id: ID_MAP.PET, name: 'PET', status: 'Development' },
-      { id: ID_MAP.PE, name: 'PE', status: 'Pre UAT' },
-      { id: ID_MAP.Cracker, name: 'Cracker', status: 'UAT' },
-    ],
-  },
-  {
-    plant: 'VMD',
-    rows: [
-      { id: ID_MAP.PE, name: 'PE', status: 'Pre UAT' },
-      { id: ID_MAP.Maintenance, name: 'Maintenance', status: 'Development' },
-      { id: ID_MAP.Cracker, name: 'Cracker', status: 'UAT' },
-      { id: ID_MAP.ELASTOMER, name: 'ELASTOMER', status: 'Development' },
-      { id: ID_MAP.PP, name: 'PP', status: 'Pre UAT' },
-      { id: ID_MAP.MEG, name: 'MEG', status: 'Go Live' },
-    ],
-  },
-  {
-    plant: 'C2',
-    rows: [
-      { id: ID_MAP.PE, name: 'PE', status: 'Pre UAT' },
-      { id: ID_MAP.MEG, name: 'MEG', status: 'Go Live' },
-    ],
-  },
-  {
-    plant: 'JMD',
-    rows: [
-      { id: ID_MAP.Maintenance, name: 'Maintenance', status: 'Development' },
-      { id: ID_MAP.PE, name: 'PE', status: 'Pre UAT' },
-    ],
-  },
-  {
-    plant: 'DTA',
-    rows: [
-      { id: ID_MAP.PP, name: 'PP', status: 'Pre UAT' },
-      { id: ID_MAP.AROMATICS, name: 'AROMATICS', status: 'Pre UAT' },
-    ],
-  },
-]
-
-/* ---------------- STATUS → COLOR ---------------- */
-
-const getStatusStyle = (status) => {
-  switch (status) {
-    case 'Development':
-      return { backgroundColor: '#e0e0e0', color: '#000' }
-    case 'Pre UAT':
-      return { backgroundColor: '#ffb74d', color: '#000' }
-    case 'UAT':
-      return { backgroundColor: '#64b5f6', color: '#000' }
-    case 'Go Live':
-      return { backgroundColor: '#2e7d32', color: '#fff' }
-    default:
-      return { backgroundColor: '#e0e0e0', color: '#000' }
-  }
-}
-
-/* ---------------- COMPONENT ---------------- */
-
-const AopDashboard = () => {
+export default function AopDashboardCompact() {
   const dispatch = useDispatch()
   const keycloak = useSession()
 
-  const [open1, setOpen1] = useState(false)
-  const [deleteId, setDeleteId] = useState(null)
-  const dataGridStore = useSelector((state) => state.dataGridStore)
+  // store slice
   const {
-    verticalChange,
     yearChanged,
     oldYear,
-    plantID,
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-  } = dataGridStore
+    plantObject = {},
+    siteObject = {},
+    verticalObject = {},
+    year = {},
+  } = useSelector((s) => s.dataGridStore || {})
+
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
-  const isOldYear = false
-  const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
-
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase()
-
-  const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
-  const IS_PTA_VERTICAL = lowerVertName === 'pta'
-  const IS_PET_VERTICAL = lowerVertName === 'pet'
-
-  const SCREEN_NAME = screenTitle?.title
-  const apiRef = useGridApiRef()
-  const [rows, setRows] = useState()
-  const headerMap = generateHeaderNames(AOP_YEAR)
-  const [snackbarData, setSnackbarData] = useState({
+  // local UI state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
     message: '',
     severity: 'info',
   })
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
-  const unsavedChangesRef = React.useRef({
-    unsavedRows: {},
-    rowsBeforeChange: {},
-  })
+  const [fullDetails, setFullDetails] = useState([])
+  const [allowedMap, setAllowedMap] = useState({})
+  const [allowedMapForSites, setAllowedMapForSites] = useState({})
+  const [verticals, setVerticals] = useState([])
+  const [sites, setSites] = useState([])
+  const [statusData, setStatusData] = useState([])
+  const [siteGroupedRows, setSiteGroupedRows] = useState([])
+  const [idMap, setIdMap] = useState({})
 
-  const navigate = useNavigate()
+  // ------------------ helpers ------------------
+  const showSnackbar = useCallback((message, severity = 'info') => {
+    setSnackbar({ open: true, message, severity })
+  }, [])
 
-  const handleChipClick = (id) => {
-    // console.log(id)
-
-    dispatch(
-      setVerticalChangeFromDashboard({
-        id,
-        trigger: Date.now(),
-      }),
-    )
-
-    // navigate('/production-norms-plan/configuration')
+  function parseAllowed(raw) {
+    const map = {}
+    raw.forEach((vObj) => {
+      const vid = Object.keys(vObj)[0]
+      map[vid] = {}
+      vObj[vid].forEach((siteObj) => {
+        const sid = Object.keys(siteObj)[0]
+        map[vid][sid] = siteObj[sid]
+      })
+    })
+    return map
   }
 
-  const fetchData = async () => {
-    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
-    setLoading(true)
+  const buildIdMap = useCallback((details = []) => {
+    return details.reduce((acc, item) => {
+      if (!item?.name || !item?.id) return acc
+      const key = item.name.toUpperCase().replace(/\s+/g, '_')
+      acc[key] = item.id
+      return acc
+    }, {})
+  }, [])
+
+  // pulse animation utility (relies on .pulse CSS class in dashboard.css)
+  const pulseElement = (el) => {
+    if (!el) return
+    el.classList.add('pulse')
+    window.setTimeout(() => el.classList.remove('pulse'), 400)
+  }
+
+  // ------------------ event handlers ------------------
+
+  const handleChipClick = useCallback(
+    (event, vid, sid) => {
+      setLoading(true)
+      // find vertical
+      const vertical = verticals.find((v) => v.vid === vid)
+
+      // check vertical access
+      if (!vertical) {
+        showSnackbar('Access Denied!', 'error')
+        setLoading(false)
+        return
+      }
+
+      // check site access (if site is involved)
+      if (sid && !vertical.sids.includes(sid)) {
+        showSnackbar('Access Denied!', 'error')
+        setLoading(false)
+        return
+      }
+
+      // visual feedback
+      pulseElement(event.currentTarget)
+
+      console.log('sid', sid)
+      console.log('vid', vid)
+
+      dispatch(
+        setVerticalChangeFromDashboard({ vid, trigger: Date.now(), sid }),
+      )
+    },
+    [dispatch, verticals, showSnackbar],
+  )
+
+  // ------------------ data fetching ------------------
+
+  const fetchAllSites = useCallback(async () => {
     try {
-      var data = await BusinessDemandDataApiService.getDashboardData(
+      let parsedPlants = []
+      try {
+        parsedPlants = JSON.parse(keycloak?.idTokenParsed?.plants || '[]')
+      } catch (e) {
+        console.warn('Token parse error', e)
+      }
+
+      setAllowedMap(parseAllowed(parsedPlants))
+
+      const allSites = await DataService.getAllSites(keycloak)
+      const details = allSites || []
+      setFullDetails(details)
+      setIdMap(buildIdMap(details))
+    } catch (error) {
+      console.error('Error fetching all sites', error)
+      setFullDetails([])
+      setIdMap({})
+    }
+  }, [buildIdMap, keycloak])
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setLoading(true)
+    setSiteGroupedRows([])
+
+    try {
+      const res = await BusinessDemandDataApiService.getDashboardData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
+      const apiRows = res?.data?.data || []
 
-      console.log(data)
+      setStatusData(apiRows)
 
-      setLoading(false)
+      let idx = 0
+
+      const grouped = Object.values(
+        apiRows.reduce((acc, item) => {
+          const site = item.site_name || 'Unknown Site'
+          if (!acc[site]) acc[site] = { site, rows: [] }
+
+          acc[site].rows.push({
+            idx: idx++,
+            id: idMap[item.vertical_name] ?? item.vertical_id,
+            sId: item.site_id,
+            verticalName: item.vertical_name,
+            status: item.status,
+            status_color: item.status_color,
+            status_text_color: item.status_text_color,
+          })
+
+          return acc
+        }, {}),
+      )
+
+      setSiteGroupedRows(grouped)
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error fetching dashboard data', error)
+    } finally {
       setLoading(false)
     }
-  }
+  }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, idMap, keycloak])
 
+  // keep verticals list in sync with allowedMap + fullDetails
   useEffect(() => {
-    fetchData()
+    if (!fullDetails.length || !Object.keys(allowedMap).length) return
+
+    const result = fullDetails
+      // keep only allowed verticals
+      .filter((v) => allowedMap[v.id])
+      // enrich with siteIds
+      .map((v) => ({
+        vid: v.id,
+        vname: v.displayName,
+        sids: Object.keys(allowedMap[v.id]),
+      }))
+
+    // console.log('finalVerticals', result)
+    setVerticals(result)
+  }, [fullDetails, allowedMap])
+
+  // initial + reactive fetches
+  useEffect(() => {
+    fetchAllSites()
+    fetchDashboardData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
+  // memoized status summary
+  const statusSummary = useMemo(() => {
+    const map = {}
+    statusData.forEach((r) => {
+      const key = r.status || 'Other'
+      if (!map[key]) {
+        map[key] = {
+          count: 0,
+          backgroundColor: r.status_color || '#e2e8f0',
+          color: r.status_text_color
+            ? `#${r.status_text_color.replace('#', '')}`
+            : '#1e293b',
+        }
+      }
+      map[key].count += 1
+    })
+    return map
+  }, [statusData])
+
+  const statusKeys = Object.keys(statusSummary)
+
   return (
-    <div className='dashboard-container'>
-      <h6 className='dashboard-header'>Digital AOP Dashboard</h6>
+    <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
 
-      {data.map((section) => (
-        <div key={section.plant} className='plant-section'>
-          <div className='plant-title'>{section.plant}</div>
+      <Box className='dashboard-root'>
+        <Typography className='dashboard-title'>
+          Digital AOP Dashboard
+        </Typography>
 
-          <div className='chip-grid'>
-            {section.rows.map((row) => (
-              <div key={row.id} className='chip-item'>
-                <div className='chip-label'>{row.name}</div>
+        <Grid container spacing={1}>
+          {siteGroupedRows.map((section) => {
+            const total = section.rows.length
 
-                <Chip
-                  text={row.status}
-                  onClick={() => handleChipClick(row.id)}
-                  style={{
-                    ...getStatusStyle(row.status),
-                    width: '100%',
-                    justifyContent: 'center',
-                    fontWeight: 600,
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+            // --- NEW: build a per-section (local) status summary ---
+            const localStatusSummary = section.rows.reduce((acc, r) => {
+              const key = r.status || 'Other'
+              if (!acc[key]) {
+                acc[key] = {
+                  count: 0,
+                  backgroundColor: r.status_color || '#e2e8f0',
+                  color: r.status_text_color
+                    ? `#${r.status_text_color.replace('#', '')}`
+                    : '#1e293b',
+                }
+              }
+              acc[key].count += 1
+              return acc
+            }, {})
+
+            const localStatusKeys = Object.keys(localStatusSummary)
+
+            return (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={section.site}>
+                <Card className='plant-card'>
+                  <CardHeader className='plant-card-header'>
+                    <CardTitle className='plant-card-title'>
+                      {section.site}
+                    </CardTitle>
+
+                    <div className='section-details'>
+                      <div className='detail-pill'>
+                        <strong>{total}</strong>
+                        <span className='detail-label'> Verticals</span>
+                      </div>
+
+                      <div className='status-breakdown'>
+                        {localStatusKeys.map((key) => {
+                          const { count, backgroundColor, color } =
+                            localStatusSummary[key]
+
+                          return (
+                            <div
+                              key={key}
+                              className='status-pill'
+                              style={{ background: backgroundColor, color }}
+                              title={`${key}: ${count}`}
+                            >
+                              <span className='status-label'>{key}</span>
+                              <span className='status-count'>{count}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardBody className='plant-card-body'>
+                    <Stack spacing={0.5}>
+                      {section.rows.map((row) => {
+                        // console.log('row', row)
+
+                        const statusStyle = localStatusSummary[row.status] || {}
+
+                        // inline styles for the whole row
+                        const rowInlineStyle = {
+                          background: statusStyle.backgroundColor || undefined,
+                          color: statusStyle.color || undefined,
+                          borderRadius: 6,
+                          padding: '6px 10px',
+                          transition:
+                            'background-color 160ms ease, transform 120ms ease',
+                        }
+
+                        // make the chip visually "transparent" so row color shows through
+                        const chipInlineStyle = {
+                          background: 'transparent',
+                          color: statusStyle.color || undefined,
+                          boxShadow: 'none',
+                          border: '1px solid rgba(0,0,0,0.06)', // optional: subtle boundary
+                        }
+
+                        const chipInlineStyleForVertical = {
+                          background: 'transparent',
+                          color: statusStyle.color || undefined,
+                        }
+
+                        return (
+                          <Stack
+                            key={`${row.sId}-${row.id}-${row.idx}`}
+                            direction='row'
+                            alignItems='center'
+                            justifyContent='space-between'
+                            className='plant-row'
+                            onClick={(e) => handleChipClick(e, row.id, row.sId)}
+                            style={rowInlineStyle}
+                          >
+                            <Typography style={chipInlineStyleForVertical}>
+                              {row.verticalName}
+                            </Typography>
+
+                            <Chip
+                              text={row.status}
+                              size='small'
+                              className='small-chip'
+                              style={chipInlineStyle}
+                            />
+                          </Stack>
+                        )
+                      })}
+                    </Stack>
+                  </CardBody>
+                </Card>
+              </Grid>
+            )
+          })}
+        </Grid>
+
+        <Notification
+          open={snackbar.open}
+          message={snackbar.message || ''}
+          severity={snackbar.severity || 'info'}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        />
+      </Box>
     </div>
   )
 }
-
-export default AopDashboard

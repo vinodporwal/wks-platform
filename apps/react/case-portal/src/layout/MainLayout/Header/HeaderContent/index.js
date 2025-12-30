@@ -75,6 +75,10 @@ export default function HeaderContent({ keycloak }) {
   const [selectedSite, setSelectedSite] = useState('')
   const [selectedPlant, setSelectedPlant] = useState('')
 
+  const verticalFromDashboard = useSelector(
+    (state) => state.dataGridStore.verticalChangeFromDashboard,
+  )
+
   const HIDE_VERTICAL_DROPDOWN =
     keycloak?.realmAccess?.roles?.includes('maintenance_users')
   // const roles = keycloak?.realmAccess?.roles || []
@@ -111,22 +115,16 @@ export default function HeaderContent({ keycloak }) {
       console.error('Error fetching data', error)
       setFullDetails([])
     } finally {
-      // setTimeout(() => {
       setHeaderLoading(false)
-      // }, 2000)
     }
   }
-  const verticalFromDashboard = useSelector(
-    (state) => state.dataGridStore.verticalChangeFromDashboard,
-  )
 
   useEffect(() => {
     fetchAllSites()
-  }, [keycloak, verticalFromDashboard])
+    // }, [keycloak, verticalFromDashboard])
+  }, [keycloak])
 
   useEffect(() => {
-    // console.log(1)
-
     if (!fullDetails.length || !Object.keys(allowedMap).length) return
 
     const avail = fullDetails
@@ -158,7 +156,6 @@ export default function HeaderContent({ keycloak }) {
   }, [fullDetails, allowedMap, selectedVertical, dispatch])
 
   useEffect(() => {
-    // console.log(2)
     if (!selectedVertical) {
       setSites([])
       setSelectedSite('')
@@ -195,7 +192,6 @@ export default function HeaderContent({ keycloak }) {
   }, [selectedVertical, fullDetails, allowedMap, dispatch])
 
   useEffect(() => {
-    // console.log(3)
     if (!selectedSite) {
       setPlants([])
       setSelectedPlant('')
@@ -231,7 +227,6 @@ export default function HeaderContent({ keycloak }) {
   }, [selectedSite, selectedVertical, fullDetails, allowedMap, dispatch])
 
   useEffect(() => {
-    // console.log(4)
     async function fetchYears() {
       // setHeaderLoading(true)
       try {
@@ -308,7 +303,6 @@ export default function HeaderContent({ keycloak }) {
   const handleVertChange = (e) => {
     const newVId = e.target.value
 
-    // Immediately clear dependent selections
     setSelectedSite('')
     setSelectedPlant('')
 
@@ -332,7 +326,6 @@ export default function HeaderContent({ keycloak }) {
   }
 
   useEffect(() => {
-    // console.log(5)
     if (!selectedVertical) return
     const vert = verticals.find((v) => v.id === selectedVertical)
     if (!vert) return
@@ -381,15 +374,71 @@ export default function HeaderContent({ keycloak }) {
       )
     }
   }
+  // THIS IS A WORKING PART
+  // useEffect(() => {
+  //   if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) return
 
+  //   if (
+  //     verticalFromDashboard?.vid === selectedVertical &&
+  //     verticalFromDashboard?.sid === selectedSite
+  //   )
+  //     return
+
+  //   setSelectedVertical(verticalFromDashboard?.vid)
+
+  //   setTimeout(() => {
+  //     const site = sites.find((s) => s?.id === verticalFromDashboard?.sid)
+
+  //     if (!site) {
+  //       console.log('site nahi mili ', site)
+  //     }
+  //     if (!site) return
+
+  //     setSelectedSite(site?.id)
+
+  //     dispatch(
+  //       setSiteObject({
+  //         id: site?.id,
+  //         name: site?.displayName ?? site?.name ?? '',
+  //       }),
+  //     )
+  //   }, 1000)
+  // }, [
+  //   verticalFromDashboard?.vid,
+  //   verticalFromDashboard?.sid,
+  //   selectedVertical,
+  // ])
+
+  // Option 1: Split into two separate effects
+  // Effect 1: Update vertical when dashboard passes data
   useEffect(() => {
-    if (!verticalFromDashboard?.id) return
+    if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) return
 
-    // Prevent unnecessary re-run
-    if (verticalFromDashboard.id === selectedVertical) return
+    if (verticalFromDashboard?.vid === selectedVertical) return
 
-    setSelectedVertical(verticalFromDashboard.id)
-  }, [verticalFromDashboard?.id])
+    setSelectedVertical(verticalFromDashboard?.vid)
+  }, [verticalFromDashboard?.vid])
+
+  // Effect 2: Update site AFTER vertical is set and sites are populated
+  useEffect(() => {
+    if (!verticalFromDashboard?.sid || !sites.length) return
+
+    const site = sites.find((s) => s?.id === verticalFromDashboard?.sid)
+
+    if (!site) {
+      console.log('Site not found:', verticalFromDashboard?.sid)
+      return
+    }
+
+    setSelectedSite(site?.id)
+
+    dispatch(
+      setSiteObject({
+        id: site?.id,
+        name: site?.displayName ?? site?.name ?? '',
+      }),
+    )
+  }, [verticalFromDashboard?.sid, sites, dispatch])
 
   const navigate = useNavigate()
 
@@ -397,7 +446,7 @@ export default function HeaderContent({ keycloak }) {
   //   if (!selectedVertical) return
 
   //   // Route only when vertical came from dashboard
-  //   if (selectedVertical === verticalFromDashboard?.id) {
+  //   if (selectedVertical === verticalFromDashboard?.vid) {
   //     navigate('/production-norms-plan/configuration', { replace: true })
   //   }
   // }, [selectedVertical])
@@ -405,7 +454,9 @@ export default function HeaderContent({ keycloak }) {
   // const { drawerOpen: open } = useSelector((state) => state.menu)
 
   useEffect(() => {
-    if (!verticalFromDashboard?.id) return
+    if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) {
+      return
+    }
     setTimeout(() => {
       dispatch(openDrawer({ drawerOpen: true }))
     }, 1500)

@@ -1162,6 +1162,7 @@ async function saveCatalystData(
   if (isCalculationParam) {
     url = `${Config.CaseEngineUrl}/task/production-norms?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&calculation=true`
   }
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -1815,6 +1816,7 @@ async function getConfigurationExcel(
   PLANT_ID,
   AOP_YEAR,
   EXCEL_EXPORT_TITLE,
+  EXCEL_EXPORT_TITLE_II,
 ) {
   const url = `${Config.CaseEngineUrl}/task/configuration-export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}`
 
@@ -1825,6 +1827,10 @@ async function getConfigurationExcel(
   }
 
   const body = JSON.stringify(reportType)
+
+  const fileName = EXCEL_EXPORT_TITLE_II
+    ? `${EXCEL_EXPORT_TITLE}_${EXCEL_EXPORT_TITLE_II}.xlsx`
+    : `${EXCEL_EXPORT_TITLE}_Production & Norms Basis.xlsx`
 
   try {
     const resp = await fetch(url, {
@@ -1844,7 +1850,7 @@ async function getConfigurationExcel(
     const a = document.createElement('a')
     a.href = urlBlob
 
-    a.download = `${EXCEL_EXPORT_TITLE}_Production & Norms Basis.xlsx`
+    a.download = fileName
     document.body.appendChild(a)
     a.click()
     a.remove()
