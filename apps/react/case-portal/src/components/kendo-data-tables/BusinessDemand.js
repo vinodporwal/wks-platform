@@ -488,7 +488,12 @@ const BusinessDemand = ({ permissions }) => {
   return (
     <div>
       <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        sx={{
+          color: '#fff',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backdropFilter: 'blur(8px)',
+          background: 'rgba(0, 0, 0, 0.5)',
+        }}
         open={!!loading}
       >
         <CircularProgress color='inherit' />

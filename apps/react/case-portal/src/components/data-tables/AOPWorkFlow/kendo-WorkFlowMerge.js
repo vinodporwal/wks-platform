@@ -47,6 +47,7 @@ import TurnaroundReportCracker from '../Reports/TurnaroundReportCracker'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import SpecificConsumptionNorm from '../Reports-kendo/SpecificConsumptionnorm'
 import { getRoleName } from 'services/role-service'
+import AopTabs from 'components/AopTabs'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -732,13 +733,10 @@ const WorkFlowMerge = () => {
           ))}
         </Stepper>
 
-        <Typography
-          component='div'
-          className='text-note'
-          style={{ marginTop: 24 }}
-        >
-          * Prices - MIIS BPC (Last Budget Year), Actual Values - MIIS
-          Contribution (YTD).
+        <Typography component='div' className='info-note'>
+          <span className='info-note__asterisk'>*</span>
+          Prices -MIIS BPC (Last Budget Year), Actual Values -MIIS Contribution
+          (YTD).
         </Typography>
 
         <Stack
@@ -749,19 +747,10 @@ const WorkFlowMerge = () => {
         >
           {/* LEFT: Tabs */}
 
-          <Tabs
-            value={tabIndex}
-            onChange={(e, newIndex) => setTabIndex(newIndex)}
-            variant='scrollable'
-            scrollButtons='auto'
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 10px 0px',
-              minHeight: '28px',
-            }}
-            textColor='primary'
-            indicatorColor='primary'
+          <AopTabs
+            tabIndex={tabIndex}
+            setTabIndex={setTabIndex}
+            tabs={activeTabs}
           >
             {activeTabs.map((label, idx) => (
               <Tab
@@ -776,7 +765,7 @@ const WorkFlowMerge = () => {
                 }}
               />
             ))}
-          </Tabs>
+          </AopTabs>
 
           {/* RIGHT: Buttons */}
           <Stack direction='row' spacing={1} alignItems='center'>

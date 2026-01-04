@@ -1,7 +1,6 @@
 package com.wks.caseengine.rest.server;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +46,8 @@ public class DecokingActivitiesController {
 	}
 	
 	@PostMapping(value="/decoking-activities/ibr")
-	public AOPMessageVM updateDecokingActivitiesIBRData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType, @RequestBody List<Map<String, Object>> payloadList) {
-		return decokingActivitiesService.updateDecokingActivitiesIBRData(year,plantId,reportType,payloadList);
+	public AOPMessageVM updateDecokingActivitiesIBRData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType, @RequestBody List<CrackerConfigurationDTO> crackerConfigurationDTOList) {
+		return decokingActivitiesService.updateDecokingActivitiesIBRData(year,plantId,reportType,crackerConfigurationDTOList);
 	}
 
 	@GetMapping(value = "/run-length-export-excel")
@@ -84,8 +83,8 @@ public class DecokingActivitiesController {
 	}
 	
 	@PostMapping(value="/decoking-activities/run-length")
-	public AOPMessageVM updateDecokingActivitiesRunLengthData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType,  @RequestBody List<Map<String, Object>> payloadList) {
-		return decokingActivitiesService.updateDecokingActivitiesRunLengthData(year,plantId,reportType,payloadList);
+	public AOPMessageVM updateDecokingActivitiesRunLengthData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType, @RequestBody List<DecokeRunLengthDTO> decokeRunLengthDTOList) {
+		return decokingActivitiesService.updateDecokingActivitiesRunLengthData(year,plantId,reportType,decokeRunLengthDTOList);
 	}
 	@GetMapping(value="/calculate/decoking-activities")
 	public AOPMessageVM calculateDecokingActivities(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType) {

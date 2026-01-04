@@ -19,6 +19,7 @@ import {
 } from 'utils/CustomAccrodian'
 import { getRoleName } from 'services/role-service.js'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const REPORT_TYPE_FOR_ALL = 'OverallConsumption' // <-- change to your backend's value if needed
 
 // ---------------------------------------------------------------------------
@@ -297,6 +298,7 @@ export default function BestAchievedNorms() {
   // ---------------------------------------------------------------------------
   // Fetch all grids in one call and build dataMap + gridNames (batched setState)
   // ---------------------------------------------------------------------------
+
   const fetchAllGrids = useCallback(async () => {
     // clear previous timers if any
     timeoutIdsRef.current.forEach((t) => clearTimeout(t))
@@ -313,23 +315,35 @@ export default function BestAchievedNorms() {
         AOP_YEAR,
       )
 
+      const responseForModes = await OptimizerDataApiService.fetchModes(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        '1',
+      )
+
+      const modes = responseForModes?.data
+
+      // '5F','4F','4F+D',
+      // Removed hard-coded modes; modes are now passed from API response
+
       const code1 = NormalOperationNormsApiService.BestAchivedColorCodes(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        '4F',
+        modes[0]?.name || '5F',
       )
       const code2 = NormalOperationNormsApiService.BestAchivedColorCodes(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        '5F',
+        modes[1]?.name || '4F',
       )
       const code3 = NormalOperationNormsApiService.BestAchivedColorCodes(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        '4F+D',
+        modes[2]?.name || '4F+D',
       )
 
       const [res1, res2, res3] = await Promise.all([code1, code2, code3])
@@ -601,13 +615,7 @@ export default function BestAchievedNorms() {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        // show backdrop during data loading OR while exporting the workbook
-        open={!!loading || !!isExporting}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
         <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> - Propane

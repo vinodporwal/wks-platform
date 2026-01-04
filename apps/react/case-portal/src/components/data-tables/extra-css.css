@@ -1,57 +1,118 @@
-.btn-save {
-  background-color: #0100cb;
+/* ===============================
+   COMMON BUTTON BASE
+================================ */
+.btn-save,
+.btn-load,
+.btn-approve,
+.btn-dashboard {
+  background: linear-gradient(135deg, #1e40af, #2563eb);
   color: #ffffff;
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 6px 22px;
   text-transform: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  min-width: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  min-width: 90px;
   border: none;
   cursor: pointer;
-  margin-bottom: 2px;
-}
-.btn-save2 {
-  border-radius: 20px;
-  padding: 6px 22px;
-  text-transform: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  width: 7rem;
-  cursor: pointer;
-  /* height: 2rem; */
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
 }
 
-.btn-save:hover {
-  background-color: #143b6f;
+/* ===============================
+   SAVE / LOAD BUTTON
+================================ */
+.btn-save,
+.btn-load {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.btn-save:hover,
+.btn-load:hover {
+  background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(30, 64, 175, 0.45);
+}
+
+.btn-save:disabled,
+.btn-load:disabled {
+  background: linear-gradient(135deg, #94a3b8, #c7d2fe);
+  color: #ffffff;
+  opacity: 0.75;
+  cursor: not-allowed;
   box-shadow: none;
 }
 
-.btn-save:disabled {
-  background-color: #8d8dec;
-  color: #ffffff;
-  opacity: 0.7;
-  cursor: not-allowed;
+/* ===============================
+   APPROVE BUTTON (STRONG ACTION)
+================================ */
+.btn-approve {
+  background: linear-gradient(135deg, #059669, #047857);
+  font-size: 0.85rem;
+  min-width: 110px;
+  float: right;
 }
+
+.btn-approve:hover {
+  background: linear-gradient(135deg, #047857, #065f46);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(5, 150, 105, 0.45);
+}
+
+.btn-approve:disabled {
+  background: linear-gradient(135deg, #9ca3af, #d1d5db);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ===============================
+   ACTION CONTAINERS
+================================ */
 .action-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-box2 {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap; /* optional: allows wrap on small screens */
+  gap: 6px;
+  padding: 0;
 }
 
 .action-inner {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
 }
 
+/* ===============================
+   UNIT CHIP (PILL STYLE)
+================================ */
 .unit-chip {
-  border-radius: 4px;
-  padding: 8px 24px;
-  text-transform: none;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: 10px;
+  padding: 8px 26px;
+  font-size: 0.85rem;
+  font-weight: 600;
   height: 40px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35);
+}
+
+/* ===============================
+   DASHBOARD BUTTON
+================================ */
+.btn-dashboard {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  margin-bottom: 10px;
+}
+
+.btn-dashboard:hover {
+  background: linear-gradient(135deg, #6d28d9, #4c1d95);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.45);
 }

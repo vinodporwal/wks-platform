@@ -33,6 +33,7 @@ import {
   FileUpload,
 } from '../../../node_modules/@mui/icons-material/index'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const jioColors = {
   primaryBlue: '#387ec3',
@@ -673,12 +674,7 @@ const DataGridTable = ({
           </Grid>
         )} */}
 
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
 
         <DataGrid
           autoHeight={true}

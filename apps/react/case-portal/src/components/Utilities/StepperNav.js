@@ -40,9 +40,7 @@ export default function StepperNav() {
   } = dataGridStore
 
   const PLANT_NAME = plantObject?.name?.toLowerCase()
-
   const SITE_NAME = siteObject?.name?.toLowerCase()
-
   const [steps, setSteps] = useState([])
 
   const { items: menuItems } = useMenuContext()
@@ -91,6 +89,7 @@ export default function StepperNav() {
     } else {
       setSteps(newSteps)
     }
+
     const currentSlug = location.pathname.split('/').pop()
     const found = newSteps.some((s) => s.key === currentSlug)
 
@@ -116,59 +115,137 @@ export default function StepperNav() {
     return text.length <= 12 ? text : `${text.slice(0, 12)}…`
   }
 
-  // shared Stepper element so we don't duplicate mapping logic
+  useEffect(() => {
+    const el = document.querySelector('.MuiStep-root.Mui-active')
+    el?.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    })
+  }, [activeStep])
+
+  // shared Stepper element with modern styling
   const StepperElement = (
     <Stepper
       nonLinear
       alternativeLabel
       activeStep={activeStep >= 0 ? activeStep : 0}
       sx={{
+        minWidth: 'max-content', // 🔥 IMPORTANT
+
         '& .MuiStepLabel-label': {
-          fontWeight: 'normal',
+          fontWeight: '500',
+          fontSize: '0.8125rem',
+          letterSpacing: '0.01em',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         },
         '& .MuiStepLabel-label.Mui-active': {
-          fontWeight: 'bold',
-          color: '#000',
+          fontWeight: '700',
+          color: '#0100cb',
+          fontSize: '0.875rem',
         },
         '& .MuiStepLabel-alternativeLabel': {
-          marginTop: '2px !important',
+          marginTop: '4px !important',
         },
         '& .MuiStepConnector-alternativeLabel': {
-          top: '16px',
+          top: '18px',
+        },
+        '& .MuiStepConnector-line': {
+          borderColor: '#e0e0e0',
+          borderTopWidth: '2px',
+          transition: 'all 0.3s ease',
+        },
+        '& .MuiStepConnector-root.Mui-active .MuiStepConnector-line': {
+          borderColor: '#bbbbbb',
+          background: 'linear-gradient(90deg, #0100cb 0%, #5b59ff 100%)',
+          borderTopWidth: '2px',
+        },
+        '& .MuiStepConnector-root.Mui-completed .MuiStepConnector-line': {
+          borderColor: '#bbbbbb',
         },
       }}
     >
-      {steps.map((step) => {
+      {steps.map((step, index) => {
         const abbrev = getAbbrev(step.label)
+        const isActive = activeStep === index
+
         return (
           <Step
             key={step.key}
             onClick={() => navigate(step.url)}
             sx={{
               cursor: 'pointer',
+              transition: 'transform 0.2s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+              },
+              '& .MuiStepIcon-root': {
+                fontSize: '1.75rem',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1))',
+              },
               '& .MuiStepIcon-root.Mui-active': {
+                color: '#55ce22ff',
+                transform: 'scale(1.15)',
+                filter: 'drop-shadow(0px 4px 8px rgba(1, 0, 203, 0.3))',
+              },
+              '& .MuiStepIcon-root.Mui-completed': {
                 color: '#0100cb',
+              },
+              '& .MuiStepIcon-root:hover': {
+                transform: 'scale(1.1)',
+                filter: 'drop-shadow(0px 4px 8px rgba(1, 0, 203, 0.25))',
               },
             }}
             aria-label={step.label}
           >
-            {/* Tooltip shows full label on hover; visible text is abbreviated */}
-            <StepLabel sx={{ cursor: 'pointer' }}>
-              <Tooltip title={step.label} enterDelay={200} arrow>
+            <StepLabel
+              sx={{
+                cursor: 'pointer',
+                '& .MuiStepLabel-iconContainer': {
+                  transition: 'all 0.3s ease',
+                },
+              }}
+            >
+              <Tooltip
+                title={step.label}
+                enterDelay={200}
+                arrow
+                slotProps={{
+                  tooltip: {
+                    sx: {
+                      bgcolor: 'rgba(65, 63, 63, 0.9)',
+                      backdropFilter: 'blur(8px)',
+                      fontSize: '0.8125rem',
+                      py: 0,
+                      px: 2,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    },
+                  },
+                  arrow: {
+                    sx: {
+                      color: 'rgba(0, 0, 0, 0.9)',
+                    },
+                  },
+                }}
+              >
                 <Typography
                   variant='caption'
                   sx={{
                     minWidth: 28,
-                    maxWidth: 80,
+                    maxWidth: 64,
                     display: 'inline-block',
                     textAlign: 'center',
-                    whiteSpace: 'nowrap', // *** Prevent wrapping ***
-                    overflow: 'hidden', // *** Hide overflow text ***
-                    textOverflow: 'ellipsis', // *** Show "…" automatically ***
-                    fontWeight: (theme) =>
-                      activeStep === steps.findIndex((s) => s.key === step.key)
-                        ? '700'
-                        : '500',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    fontWeight: isActive ? '700' : '500',
+                    color: isActive ? '#0100cb' : 'text.secondary',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      color: '#0100cb',
+                      fontWeight: '600',
+                    },
                   }}
                 >
                   {step.label}
@@ -185,7 +262,7 @@ export default function StepperNav() {
     <>
       {USE_FIXED ? (
         <>
-          {/* Fixed to viewport (below AppBar if present) */}
+          {/* Fixed to viewport with modern glassmorphism effect */}
           <Box
             sx={{
               position: 'fixed',
@@ -193,19 +270,54 @@ export default function StepperNav() {
               left: drawerOpen ? `${drawerWidth + 12}px` : '12px',
               right: '12px',
               zIndex: (theme) => (theme.zIndex?.appBar ?? 1100) + 1,
-              bgcolor: 'background.paper',
-              boxShadow: 1,
-              borderBottom: '1px solid',
-              borderTop: '1px solid',
-              borderLeft: '1px solid',
-              borderRight: '1px solid',
-              borderColor: 'grey.700',
+              background:
+                'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',
+              backdropFilter: 'blur(12px)',
+              boxShadow:
+                '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)',
+              border: '1px solid',
+              borderColor: 'rgba(1, 0, 203, 0.12)',
+              borderRadius: '12px',
               py: 0,
-              transition: 'left 200ms ease',
-              maxHeight: '70px',
+              px: 0,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              maxHeight: '80px',
+              '&:hover': {
+                boxShadow:
+                  '0 6px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)',
+                borderColor: 'rgba(1, 0, 203, 0.2)',
+              },
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '2px',
+                background:
+                  'linear-gradient(90deg, transparent 0%, #0100cb 50%, transparent 100%)',
+                opacity: 0.6,
+                borderRadius: '12px 12px 0 0',
+              },
             }}
           >
-            <Box>{StepperElement}</Box>
+            <Box
+              sx={{
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                width: '100%',
+                scrollbarWidth: 'thin',
+                '&::-webkit-scrollbar': {
+                  height: 6,
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: 'rgba(1,0,203,0.4)',
+                  borderRadius: 4,
+                },
+              }}
+            >
+              {StepperElement}
+            </Box>
           </Box>
 
           {/* Spacer so fixed element doesn't cover content */}
@@ -214,7 +326,22 @@ export default function StepperNav() {
           />
         </>
       ) : (
-        <Box>{StepperElement}</Box>
+        <Box
+          sx={{
+            background:
+              'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            border: '1px solid',
+            borderColor: 'rgba(1, 0, 203, 0.12)',
+            borderRadius: '12px',
+            py: 0,
+            px: 0,
+            transition: 'all 0.3s ease',
+          }}
+        >
+          {StepperElement}
+        </Box>
       )}
     </>
   )

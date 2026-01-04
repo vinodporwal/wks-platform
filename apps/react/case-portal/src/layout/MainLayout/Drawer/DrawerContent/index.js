@@ -7,7 +7,9 @@ const DrawerContent = () => (
       '& .simplebar-content': {
         display: 'flex',
         flexDirection: 'column',
+        height: '100%', // Ensure it spans full height
       },
+      bgcolor: '#f8fafc', // Matches the start of your Navigation gradient
     }}
   >
     <Navigation />

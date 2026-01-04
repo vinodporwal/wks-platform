@@ -3,7 +3,7 @@ import NotificationTST from 'components/Utilities/NotificationTST'
 import { useState, useEffect, useRef } from 'react'
 
 export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
-  const initialValue = dataItem[field] ?? ''
+  const initialValue = dataItem?.[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)
 
@@ -13,18 +13,34 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
     severity: 'info',
   })
 
+  const isTST = dataItem?.productName?.trim().toLowerCase() === 'tst'
+
   const handleChange = (e) => {
     const val = e.target.value
-    if (val === '' || /^\d*(\.\d*)?$/.test(val)) {
-      if (dataItem?.productName?.trim().toLowerCase() === 'tst') {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Please enter a value between 100 and 370 !',
-          severity: 'warning',
-        })
-      }
+
+    // Allow empty value
+    if (val === '') {
       setLocalValue(val)
+      return
     }
+
+    // Allow only numbers + decimals
+    if (!/^\d*(\.\d*)?$/.test(val)) return
+
+    const numVal = Number(val)
+
+    // TST validation
+    if (isTST && (numVal < 100 || numVal > 370)) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Please enter a value between 100 and 370!',
+        severity: 'warning',
+      })
+    } else {
+      setSnackbarOpen(false)
+    }
+
+    setLocalValue(val)
   }
 
   useEffect(() => {
@@ -33,14 +49,18 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
       return
     }
 
-    const handler = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (localValue !== initialValue) {
-        onChange({ dataItem, field, value: localValue })
+        onChange({
+          dataItem,
+          field,
+          value: localValue === '' ? null : Number(localValue),
+        })
       }
     }, 300)
 
-    return () => clearTimeout(handler)
-  }, [localValue, dataItem, field, onChange, initialValue])
+    return () => clearTimeout(timer)
+  }, [localValue, initialValue, dataItem, field, onChange])
 
   return (
     <>
@@ -49,15 +69,16 @@ export const NoSpinnerNumericEditor = ({ dataItem, field, onChange }) => {
         onChange={handleChange}
         style={{
           fontSize: '0.8rem',
-          padding: '2px 2px',
-          height: '22px',
+          padding: '2px 4px',
+          height: '25px',
           lineHeight: '1rem',
         }}
       />
+
       <NotificationTST
         open={snackbarOpen}
-        message={snackbarData?.message || ''}
-        severity={snackbarData?.severity || 'info'}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
         onClose={() => setSnackbarOpen(false)}
       />
     </>

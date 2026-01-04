@@ -1,7 +1,6 @@
 import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
-// import { usePermissions } from 'hooks/usePermissions'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -36,7 +35,6 @@ const AopDesignBasis = () => {
   const hasExecutedRef = useRef(false)
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -109,9 +107,6 @@ const AopDesignBasis = () => {
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
   const [gradeId, setGradeId] = React.useState(null)
 
-  // const { isReadOnly, isReadWrite, isFullAccess, isApproveOnly } =
-  //   usePermissions()
-
   const handleOpenDialog = () => {
     setOpenConfirmDialog(true)
   }
@@ -182,7 +177,7 @@ const AopDesignBasis = () => {
       const minutes = String(parsedDate.getMinutes()).padStart(2, '0')
       const ampm = hours >= 12 ? 'PM' : 'AM'
       hours = hours % 12
-      hours = hours ? hours : 12 // 0 becomes 12
+      hours = hours ? hours : 12
       const formattedTime = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`
       formatted += ` ${formattedTime}`
     }
@@ -267,12 +262,9 @@ const AopDesignBasis = () => {
         await onLoadTest(startDateObj, endDateObj)
       } else {
         setConfigurationExecutionDetails(details)
-        // setLoading1(false)
       }
     } catch (error) {
       console.error('Error fetching getConfigurationExecutionDetails:', error)
-    } finally {
-      // setLoading1(false)
     }
   }
 
@@ -287,7 +279,6 @@ const AopDesignBasis = () => {
       getAopSummary()
 
       if (response && response.code === 200) {
-        // console.log('Carry forward successful, status 200.')
         getConfigurationExecutionDetails()
         setLoading1(false)
       } else {
@@ -297,8 +288,6 @@ const AopDesignBasis = () => {
       }
     } catch (error) {
       console.error('Error fetching getConfigurationExecutionDetails:', error)
-    } finally {
-      // setLoading1(false)
     }
   }
 
@@ -363,7 +352,6 @@ const AopDesignBasis = () => {
           message: 'Execution Started Successfully!',
           severity: 'success',
         })
-        // setIsLoadEnabled(false)
         getConfigurationExecutionDetails()
         setLoading(false)
       } else {
@@ -424,63 +412,144 @@ const AopDesignBasis = () => {
 
         setLoading(false)
         setSnackbarOpen(true)
-        // setIsEdited(false)
       } else {
         setSnackbarData({
           message: 'Saved Failed!',
           severity: 'error',
         })
         setLoading(false)
-        // setSnackbarOpen(true)
       }
 
-      //
-
-      // setLoading(false)
+      setLoading(false)
       return response
     } catch (error) {
       console.error('Error saving Summary!', error)
     } finally {
-      //
       setLoading(false)
     }
   }
 
   const ConfigurationAccordian = useMemo(() => {
     return (
-      <Box sx={{ mb: '0px' }}>
-        <Box display='flex' alignItems='center'>
-          <Typography className='text-note' variant='body2'>
+      <Box sx={{ mb: '16px' }}>
+        <Box
+          display='flex'
+          alignItems='center'
+          sx={{
+            mb: 2,
+            animation: 'fadeIn 0.5s ease-out',
+            '@keyframes fadeIn': {
+              from: { opacity: 0, transform: 'translateY(-10px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
+          <Typography
+            className='text-note'
+            variant='body2'
+            sx={{
+              fontWeight: 500,
+              color: 'text.secondary',
+              letterSpacing: '0.02em',
+            }}
+          >
             *AOP Design Basis Blue Print
           </Typography>
-          <Tooltip title='AOP Design Basis Blue Print'>
+          <Tooltip
+            title='AOP Design Basis Blue Print'
+            slotProps={{
+              tooltip: {
+                sx: {
+                  bgcolor: 'rgba(0, 0, 0, 0.9)',
+                  backdropFilter: 'blur(8px)',
+                  fontSize: '0.8125rem',
+                  py: 1,
+                  px: 1.5,
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                },
+              },
+            }}
+          >
             <IconButton
               size='medium'
               sx={{
                 ml: 1,
                 backgroundColor: 'transparent',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  backgroundColor: 'rgba(1, 0, 203, 0.08)',
+                  transform: 'scale(1.1)',
                 },
                 padding: '6px',
               }}
               onClick={() => aopDesignBasisBluePrint()}
             >
-              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+              <InfoIcon
+                fontSize='medium'
+                sx={{
+                  color: '#0100cb',
+                  transition: 'all 0.3s ease',
+                }}
+              />
             </IconButton>
           </Tooltip>
         </Box>
 
-        <CustomAccordion defaultExpanded disableGutters>
+        <CustomAccordion
+          defaultExpanded
+          disableGutters
+          sx={{
+            background:
+              'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',
+            backdropFilter: 'blur(12px)',
+            boxShadow:
+              '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)',
+            border: '1px solid rgba(1, 0, 203, 0.12)',
+            borderRadius: '12px !important',
+            overflow: 'hidden',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              boxShadow:
+                '0 6px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)',
+              borderColor: 'rgba(1, 0, 203, 0.2)',
+            },
+            '&::before': {
+              display: 'none',
+            },
+            '&.Mui-expanded': {
+              margin: '0 !important',
+            },
+          }}
+        >
           <CustomAccordionSummary
             aria-controls='meg-grid-content'
             id='meg-grid-header'
+            sx={{
+              background:
+                'linear-gradient(90deg, rgba(1, 0, 203, 0.03) 0%, rgba(91, 89, 255, 0.02) 100%)',
+              borderBottom: '1px solid rgba(1, 0, 203, 0.1)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background:
+                  'linear-gradient(90deg, rgba(1, 0, 203, 0.05) 0%, rgba(91, 89, 255, 0.03) 100%)',
+              },
+            }}
           >
-            <Typography className='accordian-title'>
+            <Typography
+              className='accordian-title'
+              sx={{
+                fontWeight: 600,
+                letterSpacing: '0.01em',
+              }}
+            >
               AOP Historical Period Basis for Production Target
             </Typography>
           </CustomAccordionSummary>
-          <CustomAccordionDetails>
+          <CustomAccordionDetails
+            sx={{
+              p: 3,
+            }}
+          >
             <Box
               sx={{
                 display: 'flex',
@@ -493,53 +562,114 @@ const AopDesignBasis = () => {
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1,
+                  gap: 2,
                   marginTop: '5px',
+                  flexWrap: 'wrap',
                 }}
               >
-                {' '}
                 {true && (
                   <Box
-                    sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 2,
+                      flexWrap: 'wrap',
+                    }}
                   >
                     {/* Start Date */}
                     <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0.5,
+                        transition: 'all 0.3s ease',
+                      }}
                     >
                       <Typography
                         className='button-title'
-                        sx={{ whiteSpace: 'nowrap' }}
+                        sx={{
+                          whiteSpace: 'nowrap',
+                          fontWeight: 500,
+                          fontSize: '0.875rem',
+                          color: 'text.primary',
+                        }}
                       >
                         Start Date
                       </Typography>
-                      <DatePicker
-                        id='start-date'
-                        format='dd-MM-yyyy'
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.value)}
-                        style={{ height: '80px' }}
-                        size={'medium'}
-                        disabled={READ_ONLY}
-                      />
+                      <Box
+                        sx={{
+                          '& .k-datepicker': {
+                            borderRadius: '8px',
+                            border: '1px solid rgba(1, 0, 203, 0.2)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              borderColor: 'rgba(1, 0, 203, 0.4)',
+                              boxShadow: '0 2px 8px rgba(1, 0, 203, 0.1)',
+                            },
+                            '&:focus-within': {
+                              borderColor: '#0100cb',
+                              boxShadow: '0 0 0 3px rgba(1, 0, 203, 0.1)',
+                            },
+                          },
+                        }}
+                      >
+                        <DatePicker
+                          id='start-date'
+                          format='dd-MM-yyyy'
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.value)}
+                          style={{ height: '80px' }}
+                          size={'medium'}
+                          disabled={READ_ONLY}
+                        />
+                      </Box>
                     </Box>
                     <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 0.5,
+                        transition: 'all 0.3s ease',
+                      }}
                     >
                       <Typography
                         className='button-title'
-                        sx={{ whiteSpace: 'nowrap' }}
+                        sx={{
+                          whiteSpace: 'nowrap',
+                          fontWeight: 500,
+                          fontSize: '0.875rem',
+                          color: 'text.primary',
+                        }}
                       >
                         End Date
                       </Typography>
-                      <DatePicker
-                        id='end-date'
-                        format='dd-MM-yyyy'
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.value)}
-                        style={{ height: '80px' }}
-                        size={'medium'}
-                        disabled={READ_ONLY}
-                      />{' '}
+                      <Box
+                        sx={{
+                          '& .k-datepicker': {
+                            borderRadius: '8px',
+                            border: '1px solid rgba(1, 0, 203, 0.2)',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              borderColor: 'rgba(1, 0, 203, 0.4)',
+                              boxShadow: '0 2px 8px rgba(1, 0, 203, 0.1)',
+                            },
+                            '&:focus-within': {
+                              borderColor: '#0100cb',
+                              boxShadow: '0 0 0 3px rgba(1, 0, 203, 0.1)',
+                            },
+                          },
+                        }}
+                      >
+                        <DatePicker
+                          id='end-date'
+                          format='dd-MM-yyyy'
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.value)}
+                          style={{ height: '80px' }}
+                          size={'medium'}
+                          disabled={READ_ONLY}
+                        />
+                      </Box>
                     </Box>
 
                     {/* Load Button */}
@@ -549,7 +679,32 @@ const AopDesignBasis = () => {
                         onClick={handleOpenDialog}
                         className='btn-save'
                         disabled={READ_ONLY}
-                        sx={{ alignSelf: 'flex-end' }}
+                        sx={{
+                          alignSelf: 'flex-end',
+                          background:
+                            'linear-gradient(135deg, #0100cb 0%, #5b59ff 100%)',
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          px: 3,
+                          py: 1,
+                          boxShadow: '0 4px 12px rgba(1, 0, 203, 0.25)',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '&:hover': {
+                            background:
+                              'linear-gradient(135deg, #0000b3 0%, #4947e6 100%)',
+                            boxShadow: '0 6px 16px rgba(1, 0, 203, 0.35)',
+                            transform: 'translateY(-2px)',
+                          },
+                          '&:active': {
+                            transform: 'translateY(0)',
+                          },
+                          '&:disabled': {
+                            background:
+                              'linear-gradient(135deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.08) 100%)',
+                            boxShadow: 'none',
+                          },
+                        }}
                       >
                         Load
                       </Button>
@@ -558,11 +713,35 @@ const AopDesignBasis = () => {
                     {!isOldYear && (
                       <Button
                         variant='contained'
-                        // onClick={onLoad}
                         onClick={saveSummary}
                         className='btn-save'
                         disabled={READ_ONLY || !summaryEdited}
-                        sx={{ alignSelf: 'flex-end' }}
+                        sx={{
+                          alignSelf: 'flex-end',
+                          background:
+                            'linear-gradient(135deg, #0100cb 0%, #5b59ff 100%)',
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          px: 3,
+                          py: 1,
+                          boxShadow: '0 4px 12px rgba(1, 0, 203, 0.25)',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '&:hover': {
+                            background:
+                              'linear-gradient(135deg, #0000b3 0%, #4947e6 100%)',
+                            boxShadow: '0 6px 16px rgba(1, 0, 203, 0.35)',
+                            transform: 'translateY(-2px)',
+                          },
+                          '&:active': {
+                            transform: 'translateY(0)',
+                          },
+                          '&:disabled': {
+                            background:
+                              'linear-gradient(135deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.08) 100%)',
+                            boxShadow: 'none',
+                          },
+                        }}
                       >
                         Save
                       </Button>
@@ -576,7 +755,15 @@ const AopDesignBasis = () => {
                     }
                     sx={{
                       whiteSpace: 'normal',
-                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
+                      alignSelf: 'flex-end',
+                      fontSize: '0.8125rem',
+                      color: 'text.secondary',
+                      fontStyle: 'italic',
+                      px: 2,
+                      py: 1,
+                      borderRadius: '6px',
+                      background: 'rgba(1, 0, 203, 0.03)',
+                      border: '1px solid rgba(1, 0, 203, 0.1)',
                     }}
                   >
                     {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
@@ -588,34 +775,69 @@ const AopDesignBasis = () => {
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: 'column', // ?? stack vertically
+                flexDirection: 'column',
                 alignItems: 'flex-start',
-                gap: 0,
-                mt: 1,
+                gap: 1,
+                mt: 3,
               }}
             >
               <Typography
                 className='button-title'
-                sx={{ whiteSpace: 'nowrap' }}
+                sx={{
+                  whiteSpace: 'nowrap',
+                  fontWeight: 500,
+                  fontSize: '0.875rem',
+                  color: 'text.primary',
+                }}
               >
                 AOP Design Basis
               </Typography>
 
-              <TextArea
-                disabled={READ_ONLY}
-                value={summary}
-                rows={6}
-                onChange={(e) => {
-                  setSummary(e.target.value)
-                  setSummaryEdited(true)
+              <Box
+                sx={{
+                  width: '100%',
+                  '& .k-textarea': {
+                    borderRadius: '8px',
+                    border: '1px solid rgba(1, 0, 203, 0.2)',
+                    transition: 'all 0.3s ease',
+                    fontFamily: 'inherit',
+                    '&:hover': {
+                      borderColor: 'rgba(1, 0, 203, 0.4)',
+                      boxShadow: '0 2px 8px rgba(1, 0, 203, 0.1)',
+                    },
+                    '&:focus, &:focus-within': {
+                      borderColor: '#0100cb',
+                      boxShadow: '0 0 0 3px rgba(1, 0, 203, 0.1)',
+                      outline: 'none',
+                    },
+                  },
                 }}
-              />
+              >
+                <TextArea
+                  disabled={READ_ONLY}
+                  value={summary}
+                  rows={6}
+                  onChange={(e) => {
+                    setSummary(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                />
+              </Box>
             </Box>
           </CustomAccordionDetails>
         </CustomAccordion>
       </Box>
     )
-  }, [startDate, endDate, summary, startDateFromConfig, endDateDateFromConfig])
+  }, [
+    startDate,
+    endDate,
+    summary,
+    startDateFromConfig,
+    endDateDateFromConfig,
+    READ_ONLY,
+    summaryEdited,
+    configurationExecutionDetails,
+  ])
 
   const ConfigurationDialog = useMemo(() => {
     return (
@@ -624,30 +846,125 @@ const AopDesignBasis = () => {
         onClose={handleCloseDialog}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+            background:
+              'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(1, 0, 203, 0.1)',
+          },
+        }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Load?'}</DialogTitle>
+        <DialogTitle
+          id='alert-dialog-title'
+          sx={{
+            fontWeight: 600,
+            fontSize: '1.25rem',
+            pb: 1,
+          }}
+        >
+          {'Load?'}
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{
+              color: 'text.secondary',
+              fontSize: '0.9375rem',
+            }}
+          >
             {`Are you sure you want to load data for the period from ${formatDateForText(startDate)} to ${formatDateForText(endDate)}?`}
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleConfirmLoad} autoFocus>
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2,
+            pt: 1,
+            gap: 1,
+          }}
+        >
+          <Button
+            onClick={handleCloseDialog}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 500,
+              px: 2,
+              color: 'text.secondary',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                background: 'rgba(0, 0, 0, 0.04)',
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmLoad}
+            autoFocus
+            variant='contained'
+            sx={{
+              background: 'linear-gradient(135deg, #0100cb 0%, #5b59ff 100%)',
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              boxShadow: '0 4px 12px rgba(1, 0, 203, 0.25)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #0000b3 0%, #4947e6 100%)',
+                boxShadow: '0 6px 16px rgba(1, 0, 203, 0.35)',
+                transform: 'translateY(-2px)',
+              },
+            }}
+          >
             Load
           </Button>
         </DialogActions>
       </Dialog>
     )
-  }, [openConfirmDialog])
+  }, [openConfirmDialog, startDate, endDate])
 
   return (
     <div>
       <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        sx={{
+          color: '#fff',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backdropFilter: 'blur(8px)',
+          background: 'rgba(0, 0, 0, 0.5)',
+        }}
         open={!!loading1}
       >
-        <CircularProgress color='inherit' />
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <CircularProgress
+            color='inherit'
+            size={48}
+            thickness={4}
+            sx={{
+              filter: 'drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3))',
+            }}
+          />
+          <Typography
+            sx={{
+              fontWeight: 500,
+              fontSize: '0.9375rem',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            Loading...
+          </Typography>
+        </Box>
       </Backdrop>
       {ConfigurationAccordian}
       <Notification

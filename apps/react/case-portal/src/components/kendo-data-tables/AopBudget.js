@@ -20,6 +20,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 import { AOPMaintenanceApiService } from 'services/aop-maintenance-api-service'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function AopBudget() {
   const keycloak = useSession()
 
@@ -685,12 +686,7 @@ export default function AopBudget() {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {PLANT_NAME?.toLowerCase() === 'eoeg' && (
         <Typography component='div' className='grid-title'>

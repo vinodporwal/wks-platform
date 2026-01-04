@@ -126,6 +126,23 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     }
   }
 
+  const infoIconSx = {
+    fontSize: 14,
+    color: '#64748b', // slate-500 (subtle)
+  }
+
+  const infoButtonSx = {
+    p: '2px',
+    borderRadius: '50%',
+    backgroundColor: '#f1f5f9',
+    border: '1px solid #e5e7eb',
+    '&:hover': {
+      backgroundColor: '#e5e7eb',
+    },
+    width: 0,
+    height: 0,
+  }
+
   async function handleOpenPdfTempSSRS(title) {
     try {
       let baseurl = ''
@@ -252,16 +269,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <IconButton
               size='small'
               disableRipple
-              sx={{
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                },
-                padding: '6px',
-              }}
+              sx={infoButtonSx}
               onClick={() => handleOpenPdfTemp(item?.id)}
             >
-              <InfoIcon fontSize='small' sx={{ color: '#0100cb' }} />
+              <InfoIcon sx={infoIconSx} />
             </IconButton>
           </Tooltip>
         </Typography>
@@ -281,18 +292,11 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           {/* {title1} */}
           <Tooltip title={`Report`}>
             <IconButton
-              size='medium'
-              sx={{
-                ml: 1,
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                },
-                padding: '6px',
-              }}
+              size='small'
+              sx={infoButtonSx}
               onClick={() => handleOpenPdfTempSSRS(item?.id)}
             >
-              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+              <InfoIcon sx={infoIconSx} /> {/* ?? was fontSize="medium" */}
             </IconButton>
           </Tooltip>
         </Typography>
@@ -318,9 +322,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           content={false}
         >
           {location?.pathname.startsWith('/production-norms-plan') && (
-            <Box>
-              <StepperNav />
-            </Box>
+            <Box>{/* <StepperNav /> */}</Box>
           )}
           <Grid
             container
@@ -363,50 +365,114 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
             <Grid
               container
-              sx={{ mt: 1, ml: 1 }}
+              sx={{
+                mt: 0.75,
+                mb: 1,
+                px: 2,
+                py: 0.5,
+                width: '100%',
+
+                /* Modern surface */
+                bgcolor: 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(6px)',
+
+                /* Border */
+                border: '1px solid rgba(1, 0, 203, 0.15)',
+                borderTop: '3px solid #82f160', // ?? modern accent
+                borderRadius: '10px',
+
+                /* Elevation */
+                boxShadow: `
+      0 1px 2px rgba(0,0,0,0.06),
+      0 4px 12px rgba(1,0,203,0.08)
+    `,
+
+                /* Micro interaction */
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  boxShadow: `
+        0 2px 4px rgba(0,0,0,0.08),
+        0 6px 18px rgba(1,0,203,0.12)
+      `,
+                  transform: 'translateY(-1px)',
+                },
+              }}
               justifyContent='space-between'
               alignItems='center'
             >
               <Grid item>
                 {loading ? (
-                  <Skeleton
-                    variant='text'
-                    width={100}
-                    height={30}
-                    animation='wave'
-                    sx={{ mt: 0.5 }}
-                  />
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <Skeleton variant='circular' width={16} height={16} />
+                    <Skeleton
+                      variant='text'
+                      width={180}
+                      height={20}
+                      animation='wave'
+                    />
+                  </Stack>
                 ) : (
-                  <Typography
-                    component='div'
-                    sx={{
-                      textDecoration: 'none',
-                      fontWeight: 800,
-                      color: 'black',
-                      fontSize: '0.7rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {VERTICAL_NAME} / {SITE_NAME} / {PLANT_NAME}{' '}
-                    {/* {getRoleName(verticalId, item?.id)} */}
-                    {/* {keycloak?.realmAccess?.roles[0]} */}
-                    {itemContent}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* Hierarchy Path */}
+                    <Typography
+                      component='div'
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        color: '#64748b', // Slate 500 for secondary text
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        fontFamily:
+                          '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                      }}
+                    >
+                      {VERTICAL_NAME}
+                      <Box
+                        component='span'
+                        sx={{ mx: 0.7, color: 'text.disabled' }}
+                      >
+                        •
+                      </Box>
+                      {SITE_NAME}
+                      <Box
+                        component='span'
+                        sx={{ mx: 0.7, color: 'text.disabled' }}
+                      >
+                        •
+                      </Box>
+                      <Box
+                        component='span'
+                        sx={{ color: '#1e293b', fontWeight: 800 }}
+                      >
+                        {PLANT_NAME}
+                      </Box>
+                    </Typography>
+
+                    {/* Status/Item Pill */}
+                    {itemContent && (
+                      <Box
+                        sx={{
+                          ml: 0,
+                          px: 0,
+                          py: 0,
+                          bgcolor: '#e0e7ff', // Soft Indigo background
+                          color: '#4338ca', // Indigo 700
+                          borderRadius: '20px',
+                          fontSize: '0.50rem',
+                          fontWeight: 800,
+                          display: 'flex',
+                          alignItems: 'center',
+                          border: '1px solid rgba(67, 56, 202, 0.1)',
+                        }}
+                      >
+                        {itemContent}
+                      </Box>
+                    )}
+                  </Box>
                 )}
               </Grid>
-
-              {/* <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
-                <Grid item>
-                  <Chip
-                    color='primary'
-                    variant='outlined'
-                    // label={getRoleName(verticalId, item?.id)}
-                    className='role-name'
-                    sx={{ border: 'none' }} // Remove the border
-                  />
-                </Grid>
-              </Stack> */}
             </Grid>
 
             {/* HIDE THE TITLE NAME */}

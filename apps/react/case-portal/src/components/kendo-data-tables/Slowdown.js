@@ -22,6 +22,7 @@ import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import AopTabs from 'components/AopTabs'
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -958,7 +959,7 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.VCM:
         return SlowDownVcmColumns
       case verticalEnums.PET:
-        return SlowDownPeColumns 
+        return SlowDownPeColumns
       default:
         return SlowDownMegColumns
     }
@@ -1183,39 +1184,12 @@ const SlowDown = ({ permissions }) => {
       </Backdrop>
 
       {lowerVertName === 'meg' && (
-        <Box style={{ margin: 0, padding: 0 }}>
-          <Tabs
-            value={selectedTab}
-            onChange={handleTabChange}
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 0px 0px',
-              minHeight: '28px',
-            }}
-          >
-            <Tab
-              label='Slowdown Details'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-
-            <Tab
-              label='Configuration'
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-            />
-          </Tabs>
+        <Box sx={{ m: 0, p: 0 }}>
+          <AopTabs
+            tabIndex={selectedTab}
+            setTabIndex={(index) => handleTabChange(null, index)}
+            tabs={['Slowdown Details', 'Configuration']}
+          />
         </Box>
       )}
 

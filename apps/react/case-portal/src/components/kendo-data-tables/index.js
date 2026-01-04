@@ -12,6 +12,19 @@ import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useSelector } from 'react-redux'
 import YearDropdownEditor from './Utilities-Kendo/YearDropdownEditor'
+import CloseIcon from '@mui/icons-material/Close'
+
+import ModeEditIcon from '@mui/icons-material/ModeEdit'
+import { styled } from '@mui/material/styles'
+
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 import {
   Box,
   Button,
@@ -61,6 +74,16 @@ import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import { keyframes } from '@mui/material/styles'
+
+// Subtle pulse for the info icon on load
+const softPulse = keyframes`
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.6; }
+`
+
 export const dateFields = [
   'maintStartDateTime',
   'maintEndDateTime',
@@ -94,6 +117,24 @@ export const monthMap = {
   november: 11,
   december: 12,
 }
+
+const CompactDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '12px',
+    width: '600px',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+  },
+}))
+
+const CompactTextField = styled(TextField)({
+  '& .MuiOutlinedInput-root': {
+    fontSize: '0.85rem',
+    backgroundColor: '#fff',
+    '& fieldset': { borderColor: '#e2e8f0' },
+    '&:hover fieldset': { borderColor: '#cbd5e1' },
+    '&.Mui-focused fieldset': { borderColor: '#0100cb' },
+  },
+})
 
 const KendoDataTables = ({
   showCatChemUtilityCheckbox = false,
@@ -1205,48 +1246,92 @@ const KendoDataTables = ({
               )}
 
               {permissions?.showTitleAndInformation && (
-                <Box display='flex' alignItems='center'>
+                <Box
+                  display='flex'
+                  alignItems='center'
+                  sx={{
+                    mb: permissions?.marginBottom ? '10px' : '2px',
+                    gap: 0.5, // Tight gap for density
+                  }}
+                >
                   <Typography
                     component='div'
-                    className='grid-title'
                     sx={{
-                      ...(permissions?.marginBottom && {
-                        marginBottom: '10px',
-                      }),
+                      fontSize: '0.85rem',
+                      fontWeight: 800,
+                      color: '#1e293b', // Slate 800
+                      letterSpacing: '0.2px',
+                      position: 'relative',
                     }}
                   >
                     {permissions?.titleName}
                   </Typography>
 
                   <MuiTooltip
+                    arrow
+                    placement='top'
                     title={
                       permissions?.titleAndInformation ||
                       'No information available'
                     }
+                    slotProps={{
+                      popper: {
+                        sx: {
+                          [`& .MuiTooltip-tooltip`]: {
+                            bgcolor: 'rgba(15, 23, 42, 0.95)',
+                            backdropFilter: 'blur(4px)',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)',
+                          },
+                        },
+                      },
+                    }}
                   >
                     <IconButton
-                      size='medium'
+                      size='small'
                       sx={{
-                        ml: 0,
-                        backgroundColor: 'transparent',
+                        padding: '2px',
+                        color: '#94a3b8', // Slate 400 (Quiet until hovered)
+                        transition: 'all 0.2s ease-in-out',
+                        animation: `${softPulse} 3s ease-in-out infinite`,
                         '&:hover': {
-                          backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                          backgroundColor: 'rgba(1, 0, 203, 0.08)',
+                          color: '#0100cb', // Turns brand blue on hover
+                          animation: 'none', // Stop pulse on interaction
+                          transform: 'rotate(10deg)',
                         },
-                        padding: '4px',
                       }}
                     >
-                      <HelpIcon fontSize='small' />
+                      <InfoOutlinedIcon sx={{ fontSize: '1rem' }} />
                     </IconButton>
                   </MuiTooltip>
                 </Box>
               )}
-
               {permissions?.showTitleNameBusiness && (
                 <Typography
                   component='div'
-                  className='grid-title'
                   sx={{
-                    ...(permissions?.marginBottom && { marginBottom: '10px' }),
+                    fontSize: '0.9rem', // Slightly larger than content for hierarchy
+                    fontWeight: 850, // "Super bold" for modern look
+                    color: '#0f172a', // Deep slate
+                    letterSpacing: '-0.2px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    position: 'relative',
+                    mb: permissions?.marginBottom ? '12px' : '4px',
+
+                    // Subtle accent line on the left to make it feel "Premium"
+                    '&:before': {
+                      content: '""',
+                      display: 'block',
+                      width: '3px',
+                      height: '14px',
+                      borderRadius: '4px',
+                      bgcolor: '#0100cb', // Your brand blue
+                    },
                   }}
                 >
                   {permissions?.titleName}
@@ -1346,7 +1431,8 @@ const KendoDataTables = ({
               {permissions?.addButton && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className='btn-add'
+                  startIcon={<AddIcon />}
                   onClick={handleAddRow}
                   disabled={isButtonDisabled || READ_ONLY}
                 >
@@ -1357,7 +1443,8 @@ const KendoDataTables = ({
               {permissions?.downloadExcelBtn && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className='btn-export'
+                  startIcon={<DownloadIcon fontSize='small' />}
                   onClick={downloadExcelForConfiguration}
                   disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
                 >
@@ -1370,10 +1457,11 @@ const KendoDataTables = ({
                   <Button
                     variant='contained'
                     onClick={triggerFileUpload}
+                    startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
                     disabled={
                       isButtonDisabled || READ_ONLY || rows?.length === 0
                     }
-                    className='btn-save'
+                    className='btn-import'
                   >
                     Import
                   </Button>
@@ -1392,6 +1480,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   className='btn-save'
+                  startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
                   onClick={saveModalOpen}
                   disabled={
                     isButtonDisabled ||
@@ -1424,6 +1513,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   onClick={handleCalculateBtn}
+                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                   disabled={
                     READ_ONLY ||
                     (rows?.length === 0
@@ -1431,7 +1521,7 @@ const KendoDataTables = ({
                       : isButtonDisabled ||
                         !permissions?.showCalculateVisibility)
                   }
-                  className='btn-save'
+                  className='btn-calculate'
                 >
                   Calculate
                 </Button>
@@ -1462,7 +1552,8 @@ const KendoDataTables = ({
               {permissions?.downloadExcelBtnFromUI && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className='btn-export'
+                  startIcon={<DownloadIcon fontSize='small' />}
                   onClick={excelExport}
                   disabled={READ_ONLY || rows?.length === 0}
                 >
@@ -1473,26 +1564,89 @@ const KendoDataTables = ({
               {permissions?.showUnit && (
                 <TextField
                   select
-                  value={selectedUnit || permissions?.units?.[0]}
+                  value={selectedUnit || permissions?.units?.[0] || ''}
                   onChange={(e) => {
                     setSelectedUnit(e.target.value)
                     handleUnitChange(e.target.value)
                   }}
-                  className='dropdown-select'
                   variant='outlined'
-                  label='Select UOM'
+                  size='small'
+                  disabled={rows?.length === 0}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          mr: 0.5,
+                          color: 'text.secondary',
+                          fontWeight: 700,
+                          fontSize: '0.6rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.4px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        Unit:
+                      </Typography>
+                    ),
+                  }}
+                  sx={{
+                    minWidth: 120,
+                    '& .MuiOutlinedInput-root': {
+                      height: '30px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                      borderRadius: '7px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      '& fieldset': {
+                        borderColor: 'rgba(0, 0, 0, 0.08)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#0100cb',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#0100cb',
+                        borderWidth: '1.2px',
+                      },
+                    },
+                    '& .MuiSelect-select': {
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '2px 6px !important',
+                    },
+                  }}
                   SelectProps={{
                     MenuProps: {
                       disableScrollLock: true,
+                      PaperProps: {
+                        sx: {
+                          borderRadius: '8px',
+                          mt: 0.5,
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                          '& .MuiMenuItem-root': {
+                            fontSize: '0.7rem',
+                            fontWeight: 500,
+                            minHeight: '26px',
+                            margin: '1px 4px',
+                            borderRadius: '5px',
+                            '&.Mui-selected': {
+                              bgcolor: 'rgba(1, 0, 203, 0.08)',
+                              color: '#0100cb',
+                              fontWeight: 700,
+                              '&:hover': {
+                                bgcolor: 'rgba(1, 0, 203, 0.12)',
+                              },
+                            },
+                          },
+                        },
+                      },
                     },
                   }}
-                  disabled={rows?.length === 0}
                 >
-                  <MenuItem value='' disabled>
-                    Select UOM
+                  <MenuItem value='' disabled sx={{ fontSize: '0.65rem' }}>
+                    <em>Select UOM</em>
                   </MenuItem>
 
-                  {/* Render the correct unit options dynamically */}
                   {permissions?.units?.map((unit) => (
                     <MenuItem key={unit} value={unit}>
                       {unit}
@@ -2579,54 +2733,233 @@ const KendoDataTables = ({
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
       />
-      <Dialog
+      <CompactDialog
         open={openDeleteDialogeBox}
         onClose={() => setOpenDeleteDialogeBox(false)}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
         disableScrollLock
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
-            {permissions?.showNoteWhileDeleting
-              ? `Are you sure you want to delete this row?   ${deleteNoteOnDeleteDialogeBox}`
-              : 'Are you sure you want to delete this row?'}{' '}
-          </DialogContentText>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#fef2f2', // soft red
+            borderBottom: '1px solid #fee2e2',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteOutlineIcon sx={{ fontSize: '1rem', color: '#dc2626' }} />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                color: '#7f1d1d',
+                letterSpacing: '0.4px',
+              }}
+            >
+              CONFIRM DELETE
+            </Typography>
+          </Box>
+
+          <IconButton
+            size='small'
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            sx={{ color: '#7f1d1d' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#7f1d1d',
+              lineHeight: 1.5,
+              fontWeight: 600,
+            }}
+          >
+            {permissions?.showNoteWhileDeleting ? (
+              <>
+                Are you sure you want to delete this row?
+                <Box
+                  sx={{
+                    mt: 1,
+                    p: 1,
+                    borderRadius: '6px',
+                    bgcolor: '#fee2e2',
+                    fontSize: '0.7rem',
+                    color: '#7f1d1d',
+                    fontWeight: 600,
+                  }}
+                >
+                  {deleteNoteOnDeleteDialogeBox}
+                </Box>
+              </>
+            ) : (
+              'Are you sure you want to delete this row?'
+            )}
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 1,
+              fontSize: '0.7rem',
+              color: '#991b1b',
+              fontWeight: 600,
+            }}
+          >
+            This action cannot be undone.
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
-          <Button onClick={deleteTheRecord} autoFocus disabled={READ_ONLY}>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setOpenDeleteDialogeBox(false)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              color: '#64748b',
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={deleteTheRecord}
+            variant='contained'
+            size='small'
+            disabled={READ_ONLY}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              bgcolor: '#dc2626',
+              borderRadius: '6px',
+              px: 3,
+              '&:hover': { bgcolor: '#b91c1c' },
+              '&:disabled': {
+                bgcolor: '#e5e7eb',
+                color: '#94a3b8',
+              },
+            }}
+          >
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
-      <Dialog
+      <CompactDialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
-            {permissions?.showNoteWhileSaving
-              ? `Are you sure you want to save these changes?   ${noteOnSaveDialogeBox}`
-              : 'Are you sure you want to save these changes?'}{' '}
-          </DialogContentText>
+        {/* Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            CONFIRM SAVE
+          </Typography>
+
+          <IconButton
+            size='small'
+            onClick={closeSaveDialogeBox}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        {/* Content */}
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <Typography
+            sx={{
+              fontSize: '0.75rem',
+              color: '#475569',
+              lineHeight: 1.5,
+              fontWeight: 500,
+            }}
+          >
+            {permissions?.showNoteWhileSaving ? (
+              <>
+                Are you sure you want to save these changes?
+                <Box
+                  sx={{
+                    mt: 1,
+                    p: 1,
+                    borderRadius: '6px',
+                    bgcolor: '#f1f5f9',
+                    fontSize: '0.7rem',
+                    color: '#334155',
+                    fontWeight: 600,
+                  }}
+                >
+                  {noteOnSaveDialogeBox}
+                </Box>
+              </>
+            ) : (
+              'Are you sure you want to save these changes?'
+            )}
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeSaveDialogeBox}>Cancel</Button>
-          <Button onClick={saveConfirmation} autoFocus>
+
+        {/* Actions */}
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={closeSaveDialogeBox}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              color: '#64748b',
+            }}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            onClick={saveConfirmation}
+            variant='contained'
+            size='small'
+            autoFocus
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              bgcolor: '#2563eb',
+              borderRadius: '6px',
+              px: 3,
+              '&:hover': { bgcolor: '#1e40af' },
+            }}
+          >
             Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
 
       <Dialog
         open={openResetDataDialogeBox}
@@ -2649,44 +2982,110 @@ const KendoDataTables = ({
         </DialogActions>
       </Dialog>
 
-      <Dialog
+      <CompactDialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}
         disableScrollLock
-        slotProps={{
-          backdrop: { disableScrollLock: true },
-        }}
+        slotProps={{ backdrop: { disableScrollLock: true } }}
       >
-        <DialogTitle>Add Remark</DialogTitle>
-        <DialogContent>
-          <TextField
+        {/* Compact Header */}
+        <DialogTitle
+          sx={{
+            p: 1.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              color: '#334155',
+              letterSpacing: '0.5px',
+            }}
+          >
+            ADD REMARK
+          </Typography>
+          <IconButton
+            size='small'
+            onClick={() => setRemarkDialogOpen(false)}
+            sx={{ color: '#64748b' }}
+          >
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 1.5, pt: '12px !important' }}>
+          <CompactTextField
             autoFocus
-            margin='dense'
-            id='remark'
-            label='Remark'
-            type='text'
+            placeholder='Type your remarks here...'
             fullWidth
-            variant='outlined'
-            sx={{ width: '100%', minWidth: '600px' }}
-            value={currentRemark || ''}
-            // value={remark}
-            onChange={(e) => setCurrentRemark(e.target.value)}
             multiline
-            rows={8}
+            rows={6}
+            value={currentRemark || ''}
             disabled={READ_ONLY}
+            onChange={(e) => setCurrentRemark(e.target.value)}
+            // Power-user shortcut: Ctrl + Enter to Save
+            onKeyDown={(e) => {
+              if (
+                e.ctrlKey &&
+                e.key === 'Enter' &&
+                currentRemark?.trim() &&
+                !READ_ONLY
+              ) {
+                handleRemarkSave()
+              }
+            }}
           />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+            <Typography
+              variant='caption'
+              sx={{
+                fontSize: '0.65rem',
+                color: 'text.disabled',
+                fontWeight: 600,
+              }}
+            >
+              {currentRemark?.length || 0} characters | Ctrl+Enter to save
+            </Typography>
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
-          {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
+
+        <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setRemarkDialogOpen(false)}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              color: '#64748b',
+            }}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleRemarkSave}
+            variant='contained'
+            size='small'
             disabled={READ_ONLY || !currentRemark?.trim()}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.75rem',
+              bgcolor: '#0100cb',
+              borderRadius: '6px',
+              px: 3,
+              '&:hover': { bgcolor: '#01008b' },
+            }}
           >
             Add
           </Button>
         </DialogActions>
-      </Dialog>
+      </CompactDialog>
     </div>
   )
 }

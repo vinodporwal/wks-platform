@@ -17,6 +17,7 @@ import {
 } from 'utils/CustomAccrodian'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service.js'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const BestAchievedIndividualNorms = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -333,12 +334,7 @@ const BestAchievedIndividualNorms = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>

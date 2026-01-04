@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { PIOImpactApiService } from 'services/Pio-Impact-api-service'
 import { useSession } from 'SessionStoreContext'
+import SettingsIcon from '@mui/icons-material/Settings'
 import {
   CustomAccordion,
   CustomAccordionDetails,
@@ -22,6 +23,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Stack,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -33,6 +35,21 @@ import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/ind
 import { getRoleName } from 'services/role-service'
 import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
 import QualityParameters from './QualityParameters'
+
+import { Zoom, IconButton } from '@mui/material'
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload'
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth'
+import PublishedWithChangesIcon from '@mui/icons-material/PublishedWithChanges'
+
+import CloseIcon from '@mui/icons-material/Close'
+
+import { Tooltip } from '@mui/material'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import SettingsInputComponentIcon from '@mui/icons-material/SettingsInputComponent'
+import SyncIcon from '@mui/icons-material/Sync'
+import HistoryIcon from '@mui/icons-material/History'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import { styled } from '@mui/material/styles'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -577,10 +594,7 @@ const ConfigurationTable = () => {
     getAopSummary()
 
     setTimeout(() => {
-      if (
-        lowerVertName != 'cracker' &&
-        lowerVertName != 'meg' 
-      ) {
+      if (lowerVertName != 'cracker' && lowerVertName != 'meg') {
         if (lowerVertName === 'aromatics') {
           getRevision()
         }
@@ -914,199 +928,475 @@ const ConfigurationTable = () => {
     await updateRevision([payload])
   }
 
+  const CompactAccordion = styled(CustomAccordion)({
+    mb: 0,
+    borderRadius: '8px !important',
+    boxShadow: 'none',
+    border: '1px solid #e2e8f0',
+    '&:before': { display: 'none' },
+  })
+
   const ConfigurationAccordian = useMemo(() => {
     return (
-      <Box sx={{ mb: '0px' }}>
-        <CustomAccordion defaultExpanded disableGutters>
+      <Box sx={{ mb: 1 }}>
+        <CompactAccordion defaultExpanded disableGutters>
           <CustomAccordionSummary
-            aria-controls='meg-grid-content'
-            id='meg-grid-header'
+            expandIcon={
+              <ExpandMoreIcon sx={{ fontSize: '1.1rem', color: '#0100cb' }} />
+            }
+            sx={{
+              minHeight: '36px !important',
+              px: 0.5,
+              bgcolor: 'rgba(1, 0, 203, 0.02)',
+              '& .MuiAccordionSummary-content': { my: '4px !important' },
+            }}
           >
-            <Typography className='accordian-title'>
-              AOP Historical Period Basis
-            </Typography>
-          </CustomAccordionSummary>
-          <CustomAccordionDetails>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-                mt: 0,
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  marginTop: '5px',
-                }}
+            <Stack direction='row' spacing={1} alignItems='center'>
+              <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
+              <Typography
+                sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#334155' }}
               >
-                {true && (
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}
-                  >
-                    {/* Start Date */}
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                Historical Period Basis
+              </Typography>
+            </Stack>
+          </CustomAccordionSummary>
+
+          <CustomAccordionDetails sx={{ p: 0.5, pt: 0 }}>
+            <Stack direction='column' spacing={1.5}>
+              {/* ROW 1: Start, End, Load, Last Refreshed */}
+              <Stack direction='row' spacing={2} alignItems='flex-start'>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box>
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        fontFamily: '"Inter", "Segoe UI", sans-serif',
+                        color: '#334155', // slate-700
+                        letterSpacing: '0.3px',
+                      }}
                     >
-                      <Typography
-                        className='button-title'
-                        sx={{ whiteSpace: 'nowrap' }}
-                      >
-                        Start Date
-                      </Typography>
+                      START
+                    </Typography>
+
+                    <Box sx={{ position: 'relative', width: '130px' }}>
                       <DatePicker
-                        id='start-date'
                         format='dd-MM-yyyy'
                         value={startDate}
                         onChange={(e) => {
                           setStartDate(e.value)
                           setDateEdited(true)
                         }}
-                        style={{ height: '80px' }}
-                        size='medium'
+                        style={{
+                          width: '130px',
+                          height: '28px',
+                          paddingRight: '28px',
+                        }}
                         disabled={READ_ONLY}
                       />
                     </Box>
-
-                    {/* End Date */}
-                    <Box
-                      sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        fontFamily: '"Inter", "Segoe UI", sans-serif',
+                        color: '#334155', // slate-700
+                        letterSpacing: '0.3px',
+                      }}
                     >
-                      <Typography
-                        className='button-title'
-                        sx={{ whiteSpace: 'nowrap' }}
-                      >
-                        End Date
-                      </Typography>
+                      END
+                    </Typography>
+
+                    <Box sx={{ position: 'relative', width: '130px' }}>
                       <DatePicker
-                        id='end-date'
                         format='dd-MM-yyyy'
                         value={endDate}
                         onChange={(e) => {
                           setEndDate(e.value)
                           setDateEdited(true)
                         }}
-                        style={{ height: '80px' }}
-                        size='medium'
+                        style={{
+                          width: '130px',
+                          height: '28px',
+                          paddingRight: '28px',
+                        }}
                         disabled={READ_ONLY}
                       />
                     </Box>
+                  </Box>
 
-                    {/* Load Button */}
-                    {!isOldYear && (
+                  {!isOldYear && (
+                    <Tooltip title='Load Data'>
                       <Button
                         variant='contained'
+                        className='btn-load'
+                        startIcon={<SyncIcon />}
                         onClick={handleOpenDialog}
-                        className='btn-save'
-                        sx={{ alignSelf: 'flex-end' }}
-                        // disabled={READ_ONLY || !summaryEdited}
                         disabled={READ_ONLY}
+                        sx={{
+                          height: 28,
+                          mt: 2,
+                          px: 1.5,
+                        }}
                       >
                         Load
                       </Button>
-                    )}
-                  </Box>
-                )}
+                    </Tooltip>
+                  )}
+                </Box>
 
                 {configurationExecutionDetails[0]?.ModifiedOn && (
-                  <Typography
-                    className={
-                      READ_ONLY ? 'summary-title-disabled' : 'summary-title'
-                    }
-                    sx={{
-                      whiteSpace: 'normal',
-                      alignSelf: 'flex-end', // ?? ensures it's bottom-aligned with the button
-                    }}
-                  >
-                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
-                  </Typography>
+                  <Box sx={{ alignSelf: 'center', mt: 2 }}>
+                    <Tooltip
+                      title={`Last Refreshed: ${formatDateForText(
+                        configurationExecutionDetails[0]?.ModifiedOn,
+                        true,
+                      )}`}
+                    >
+                      <Stack
+                        direction='row'
+                        spacing={0.5}
+                        alignItems='center'
+                        sx={{ opacity: 0.6 }}
+                      >
+                        <HistoryIcon sx={{ fontSize: '0.9rem' }} />
+                        <Typography
+                          sx={{
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Last Refreshed data on :{' '}
+                          {
+                            formatDateForText(
+                              configurationExecutionDetails[0]?.ModifiedOn,
+                            ).split(' ')[0]
+                          }
+                        </Typography>
+                      </Stack>
+                    </Tooltip>
+                  </Box>
                 )}
+              </Stack>
+
+              {/* ROW 2: AOP Design Basis - Full Width */}
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant='caption'
+                  sx={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    fontFamily: '"Inter", "Segoe UI", sans-serif',
+                    color: '#334155', // slate-700
+                    letterSpacing: '0.3px',
+                  }}
+                >
+                  AOP DESIGN BASIS
+                </Typography>
+                <textarea
+                  disabled={READ_ONLY}
+                  value={summary}
+                  rows={4}
+                  onChange={(e) => {
+                    setSummary(e.target.value)
+                    setSummaryEdited(true)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.8rem',
+                    fontFamily: 'inherit',
+                    resize: 'none',
+                    backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
+                  }}
+                />
               </Box>
-            </Box>
-
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: 0,
-                mt: 1,
-              }}
-            >
-              <Typography
-                className='button-title'
-                sx={{ whiteSpace: 'nowrap' }}
-              >
-                AOP Design Basis
-              </Typography>
-
-              <TextArea
-                disabled={READ_ONLY}
-                value={summary}
-                rows={3}
-                onChange={(e) => {
-                  setSummary(e.target.value)
-                  setSummaryEdited(true)
-                }}
-                // style={{ width: '50%' }}
-              />
-            </Box>
+            </Stack>
           </CustomAccordionDetails>
-        </CustomAccordion>
+        </CompactAccordion>
       </Box>
     )
   }, [startDate, endDate, summary, startDateFromConfig, endDateDateFromConfig])
 
+  // --- STYLING ---
+
+  const StyledConfirmDialog = styled(Dialog)(({ theme }) => ({
+    '& .MuiPaper-root': {
+      borderRadius: '24px',
+      padding: '12px',
+      backgroundColor: 'rgba(255, 255, 255, 0.98)',
+      backdropFilter: 'blur(16px)',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
+      border: '1px solid rgba(0, 0, 0, 0.05)',
+    },
+  }))
+
+  const DateHighlight = styled(Box)(({ theme }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    backgroundColor: 'rgba(1, 0, 203, 0.05)',
+    color: '#0100cb',
+    padding: '4px 12px',
+    borderRadius: '8px',
+    fontWeight: 700,
+    fontSize: '0.85rem',
+    margin: '0 4px',
+  }))
+
+  // --- COMPONENT ---
+
   const ConfigurationDialog = useMemo(() => {
     return (
-      <Dialog
+      <StyledConfirmDialog
         open={openConfirmDialog}
         onClose={handleCloseDialog}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
+        TransitionComponent={Zoom}
+        transitionDuration={300}
         disableScrollLock
       >
-        <DialogTitle id='alert-dialog-title'>{'Load?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
-            {`Are you sure you want to load data for the period from ${formatDateForText(startDate)} to ${formatDateForText(endDate)}?`}
+        {/* Header with Icon */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
+          <IconButton onClick={handleCloseDialog} size='small'>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pt: 0,
+          }}
+        >
+          <Box
+            sx={{
+              p: 0.5, // ? compact
+              borderRadius: '50%',
+              bgcolor: 'rgba(1, 0, 203, 0.1)',
+              color: '#0100cb',
+              mb: 0.5,
+              animation: 'pulse 2s infinite',
+            }}
+          >
+            <CloudDownloadIcon sx={{ fontSize: 32 }} /> {/* ? */}
+          </Box>
+
+          <DialogTitle
+            sx={{
+              textAlign: 'center',
+              fontWeight: 800,
+              fontSize: '1.15rem', // ?
+              color: '#1e293b',
+              pb: 0,
+            }}
+          >
+            Confirm Data Load
+          </DialogTitle>
+        </Box>
+
+        <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+          <DialogContentText
+            sx={{
+              color: '#64748b',
+              fontSize: '0.85rem', // ?
+              lineHeight: 1.45,
+            }}
+          >
+            You are about to synchronize data for the selected period:
           </DialogContentText>
+
+          <Box
+            sx={{
+              mt: 2, // ?
+              mb: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 0.75, // ?
+            }}
+          >
+            <DateHighlight>
+              <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
+              {formatDateForText(startDate)}
+            </DateHighlight>
+
+            <Typography
+              variant='caption'
+              fontWeight={900}
+              color='text.disabled'
+            >
+              TO
+            </Typography>
+
+            <DateHighlight>
+              <CalendarMonthIcon sx={{ fontSize: '0.9rem', mr: 0.5 }} />
+              {formatDateForText(endDate)}
+            </DateHighlight>
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleConfirmLoad} autoFocus>
-            Load
+
+        <DialogActions
+          sx={{
+            justifyContent: 'center',
+            gap: 1.5, // ?
+            pb: 0,
+            px: 0,
+          }}
+        >
+          <Button
+            onClick={handleCloseDialog}
+            sx={{
+              color: '#64748b',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem', // ?
+              px: 0, // ?
+            }}
+          >
+            No
+          </Button>
+
+          <Button
+            onClick={handleConfirmLoad}
+            variant='contained'
+            autoFocus
+            sx={{
+              bgcolor: '#0100cb',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem', // ?
+              px: 3, // ?
+              borderRadius: '10px', // ?
+              boxShadow: '0 8px 12px -3px rgba(1, 0, 203, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                bgcolor: '#01008b',
+                transform: 'scale(1.03)',
+                boxShadow: '0 12px 16px -3px rgba(1, 0, 203, 0.4)',
+              },
+            }}
+          >
+            Yes, Load Data
           </Button>
         </DialogActions>
-      </Dialog>
+      </StyledConfirmDialog>
     )
-  }, [openConfirmDialog])
+  }, [openConfirmDialog, startDate, endDate])
 
   const ConfigurationDialogRev = useMemo(() => {
     return (
-      <Dialog
+      <StyledConfirmDialog
         open={openConfirmDialogRev}
         onClose={handleCloseDialogRev}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
+        TransitionComponent={Zoom}
+        transitionDuration={300}
         disableScrollLock
       >
-        <DialogTitle id='alert-dialog-title'>{'Change?'}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
-            {`Are you sure you want to change the Revision`}
+        {/* Header */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: -1 }}>
+          <IconButton onClick={handleCloseDialogRev} size='small'>
+            <CloseIcon fontSize='small' />
+          </IconButton>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pt: 0,
+          }}
+        >
+          <Box
+            sx={{
+              p: 0.5,
+              borderRadius: '50%',
+              bgcolor: 'rgba(1, 0, 203, 0.1)',
+              color: '#0100cb',
+              mb: 0.5,
+            }}
+          >
+            <PublishedWithChangesIcon sx={{ fontSize: 32 }} />
+          </Box>
+
+          <DialogTitle
+            sx={{
+              textAlign: 'center',
+              fontWeight: 800,
+              fontSize: '1.15rem',
+              color: '#1e293b',
+              pb: 0,
+            }}
+          >
+            Confirm Revision Change
+          </DialogTitle>
+        </Box>
+
+        <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
+          <DialogContentText
+            sx={{
+              color: '#64748b',
+              fontSize: '0.85rem',
+              lineHeight: 1.45,
+            }}
+          >
+            Are you sure you want to change the revision?
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialogRev}>Cancel</Button>
-          <Button onClick={handleConfirmLoadRev} autoFocus>
-            Change
+
+        <DialogActions
+          sx={{
+            justifyContent: 'center',
+            gap: 1.5,
+            pb: 0,
+            px: 0,
+          }}
+        >
+          <Button
+            onClick={handleCloseDialogRev}
+            sx={{
+              color: '#64748b',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              px: 0,
+            }}
+          >
+            No
+          </Button>
+
+          <Button
+            onClick={handleConfirmLoadRev}
+            variant='contained'
+            autoFocus
+            sx={{
+              bgcolor: '#0100cb',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              px: 3,
+              borderRadius: '10px',
+              boxShadow: '0 8px 12px -3px rgba(1, 0, 203, 0.3)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                bgcolor: '#01008b',
+                transform: 'scale(1.03)',
+                boxShadow: '0 12px 16px -3px rgba(1, 0, 203, 0.4)',
+              },
+            }}
+          >
+            Yes, Change
           </Button>
         </DialogActions>
-      </Dialog>
+      </StyledConfirmDialog>
     )
   }, [openConfirmDialogRev])
 
@@ -1295,8 +1585,31 @@ const ConfigurationTable = () => {
         />
 
         {lowerVertName === 'aromatics' && tabs?.length > 0 && (
-          <Box mt={0.5}>
-            <ButtonGroup aria-label='revision group'>
+          <Box
+            mt={1}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              p: '3px',
+              bgcolor: 'rgba(0, 0, 0, 0.04)', // Light track background
+              borderRadius: '8px',
+              border: '1px solid rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <Typography
+              variant='caption'
+              sx={{
+                px: 1,
+                fontWeight: 700,
+                color: 'text.secondary',
+                fontSize: '0.65rem',
+                textTransform: 'uppercase',
+              }}
+            >
+              Revision
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: '2px' }}>
               {['1', '2', '3'].map((num) => {
                 const selected = revision === num
 
@@ -1304,35 +1617,43 @@ const ConfigurationTable = () => {
                   <Button
                     key={num}
                     onClick={() => handleOpenDialogRev(num)}
-                    variant={selected ? 'contained' : 'outlined'}
+                    variant='text'
                     size='small'
                     sx={{
                       textTransform: 'none',
-                      fontSize: '0.75rem',
-                      padding: '1px 7px',
-                      minWidth: '36px',
-                      mr: 0.5,
+                      fontSize: '0.72rem',
+                      minWidth: '45px',
+                      height: '24px',
+                      borderRadius: '6px',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+
+                      // Active State
                       ...(selected && {
-                        bgcolor: '#0100cb',
-                        color: '#fff',
-                        borderColor: '#0100cb',
-                        fontWeight: 'bold',
+                        bgcolor: '#fff',
+                        color: '#0100cb',
+                        boxShadow: '0 2px 6px rgba(1, 0, 203, 0.15)',
+                        fontWeight: 800,
+                        '&:hover': { bgcolor: '#fff' },
                       }),
+
+                      // Inactive State
                       ...(!selected && {
-                        borderColor: '#000000ff',
-                        color: '#000000ff',
-                        fontWeight: 'bold',
+                        color: 'text.secondary',
+                        fontWeight: 500,
+                        '&:hover': {
+                          bgcolor: 'rgba(1, 0, 203, 0.04)',
+                          color: '#0100cb',
+                        },
                       }),
                     }}
                   >
-                    {`Rev ${num}`}
+                    R{num}
                   </Button>
                 )
               })}
-            </ButtonGroup>
+            </Box>
           </Box>
         )}
-
         <Box>
           {(() => {
             const currentTabId = tabs[tabIndex]?.toLowerCase()
