@@ -64,6 +64,7 @@ import FeedStockAvailability from 'components/kendo-data-tables/FeedStockavailab
 import TurnaroundPlanTable from 'components/kendo-data-tables/TurnaroundPlanTable'
 import NormComparisonReport from 'components/kendo-data-tables/NormComparisonReport'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
+import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -283,6 +284,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='consumption-aop'>
                 <ConsumptionNorms />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'proposed-aop-consumption',
+            element: (
+              <PrivateRoute routeId='proposed-aop-consumption'>
+                <ProposedConsumptionNorms />
               </PrivateRoute>
             ),
           },
@@ -586,11 +596,11 @@ export const MainRoutes = (
       },
 
       {
-        path: 'aop-dashboard',
+        path: 'dashboard',
         element: (
-          <PrivateRoute routeId='aop-dashboard'>
-            <AopDashboard />
-          </PrivateRoute>
+          // <PrivateRoute routeId='dashboard'>
+          <AopDashboard />
+          // </PrivateRoute>
         ),
       },
 

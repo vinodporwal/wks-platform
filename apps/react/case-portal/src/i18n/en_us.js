@@ -97,7 +97,8 @@ const defs = {
     //SSRS
     normComparisonReport: 'Norm Comparison Report',
     packagingConsumables: 'Packaging Consumables',
-    aopDashboard: 'AOP Dashboard',
+    dashboard: 'AOP Dashboard',
+    proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
   },
   pages: {
     dashboard: {
@@ -294,7 +295,8 @@ const defs = {
         tcsoutput: 'TCS Output',
         pimsoutput: 'PIMS Output',
         packagingConsumables: 'Packaging Consumables',
-        aopDashboard: 'AOP Dashboard',
+        dashboard: 'AOP Dashboard',
+        proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
       },
     },
   },
