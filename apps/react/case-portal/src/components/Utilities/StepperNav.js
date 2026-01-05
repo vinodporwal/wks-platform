@@ -185,7 +185,7 @@ export default function StepperNav() {
                 filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1))',
               },
               '& .MuiStepIcon-root.Mui-active': {
-                color: '#55ce22ff',
+                color: '#51b17c',
                 transform: 'scale(1.15)',
                 filter: 'drop-shadow(0px 4px 8px rgba(1, 0, 203, 0.3))',
               },
@@ -240,10 +240,10 @@ export default function StepperNav() {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     fontWeight: isActive ? '700' : '500',
-                    color: isActive ? '#0100cb' : 'text.secondary',
+                    color: isActive ? '#12bd45ff' : 'text.secondary',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
-                      color: '#0100cb',
+                      color: '#3bcf1dff',
                       fontWeight: '600',
                     },
                   }}

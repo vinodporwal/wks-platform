@@ -2,13 +2,16 @@ import PropTypes from 'prop-types'
 import { useSelector } from 'react-redux'
 import Box from '@mui/material/Box'
 import List from '@mui/material/List'
+import ListSubheader from '@mui/material/ListSubheader'
 import Typography from '@mui/material/Typography'
 import NavItem from './NavItem'
 import NavCollapse from './NavCollapse'
 
+const GROUP_BG = '#122d41ff' // group background
+const GROUP_TEXT = '#ffffff' // PURE WHITE for visibility
+
 const NavGroup = ({ item }) => {
-  const menu = useSelector((state) => state.menu)
-  const { drawerOpen } = menu
+  const { drawerOpen } = useSelector((state) => state.menu)
 
   const navCollapse = item.children?.map((menuItem) => {
     switch (menuItem.type) {
@@ -20,9 +23,11 @@ const NavGroup = ({ item }) => {
         return (
           <Typography
             key={menuItem.id}
-            variant='h6'
-            color='error'
-            align='center'
+            sx={{
+              color: 'error.main',
+              textAlign: 'center',
+              fontSize: '0.75rem',
+            }}
           >
             Fix - Group Collapse or Items
           </Typography>
@@ -32,17 +37,40 @@ const NavGroup = ({ item }) => {
 
   return (
     <List
+      disablePadding
+      sx={{
+        mb: drawerOpen ? 0.75 : 0,
+        py: 0,
+        backgroundColor: GROUP_BG,
+      }}
       subheader={
         item.title &&
         drawerOpen && (
-          <Box sx={{ pl: 3, mb: 1.5 }}>
-            <Typography variant='subtitle2' color='textSecondary'>
+          <ListSubheader
+            disableSticky
+            sx={{
+              px: 1.25,
+              py: 0.6,
+              mb: 0.25,
+              backgroundColor: GROUP_BG,
+              lineHeight: 1,
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: GROUP_TEXT,
+                opacity: 0.9,
+              }}
+            >
               {item.title}
             </Typography>
-          </Box>
+          </ListSubheader>
         )
       }
-      sx={{ mb: drawerOpen ? 1.5 : 0, py: 0, zIndex: 0 }}
     >
       {navCollapse}
     </List>

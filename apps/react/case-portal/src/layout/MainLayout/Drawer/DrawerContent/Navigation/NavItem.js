@@ -4,199 +4,167 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
-import { useTheme } from '@mui/material/styles'
 import PropTypes from 'prop-types'
 import { useDispatch, useSelector } from 'react-redux'
 import { useEffect } from 'react'
 import { activeItem } from 'store/reducers/menu'
-// import useSafeNavigate from ''
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import { useSafeNavigate } from './useSafeNavigate'
-// import { Tooltip } from '../../../../../../node_modules/@mui/material/index'
-// import { setIsBlocked } from 'store/reducers/dataGridStore'
 import { useLocation } from 'react-router-dom'
+
+/* ===== MODERN SIDEBAR COLORS ===== */
+const ITEM_BASE = 'rgba(255,255,255,0.02)'
+const ITEM_HOVER = 'rgba(255,255,255,0.06)'
+const ITEM_ACTIVE = 'rgba(57,166,255,0.14)'
+const ACCENT = '#39a6ff'
+const TEXT = 'rgba(255,255,255,0.88)'
+const TEXT_MUTED = 'rgba(255,255,255,0.65)'
+
 const NavItem = ({ item, level }) => {
-  const theme = useTheme()
   const dispatch = useDispatch()
-  const menu = useSelector((state) => state.menu)
-  const { drawerOpen, openItem } = menu
+  const { drawerOpen, openItem } = useSelector((state) => state.menu)
   const { safeNavigate, confirmLeave, setDialogOpen, dialogOpen, itemHandler } =
     useSafeNavigate()
   const location = useLocation()
 
-  // const [openDialog, setOpenDialog] = useState(false)
+  const isSelected = openItem.includes(item.id)
+  const Icon = item.icon
 
-  const handleClick = (id) => {
-    // console.log(item)
+  const handleClick = () => {
     if (item.requiresConfirmation) {
       setDialogOpen(true)
     } else {
-      dispatch(activeItem({ openItem: [id] }))
-      itemHandler(id)
+      dispatch(activeItem({ openItem: [item.id] }))
+      itemHandler(item.id)
       safeNavigate(item.url)
     }
   }
 
-  const stayOnPage = () => {
-    // dispatch(setIsBlocked(false))
-    setDialogOpen(false)
-    // dispatch(activeItem({ openItem: [item.id] }))
-    // safeNavigate(item.url)
-
-    // console.log(item)
-  }
-
-  // const cancelNavigation = () => {
-  //   setDialogOpen(false)
-  // }
-
-  const Icon = item.icon
-  const itemIcon = Icon ? <Icon fontSize='small' /> : null
-
-  const isSelected = openItem.findIndex((id) => id === item.id) > -1
-
   useEffect(() => {
-    const currentIndex = location.pathname
-      .toString()
-      .split('/')
-      .findIndex((id) => id === item.id)
-
-    if (currentIndex > -1) {
-      dispatch(activeItem({ openItem: [item.id] }))
-    }
-  }, [])
-
-  useEffect(() => {
-    // runs on every URL change
-
-    if (location.pathname.split('/').includes(item.id)) {
+    if (location.pathname.includes(item.id)) {
       dispatch(activeItem({ openItem: [item.id] }))
     }
   }, [location.pathname, item.id, dispatch])
-
-  const textColor = 'text.primary'
 
   return (
     <>
       <ListItemButton
         disabled={item.disabled}
-        // onClick={() => {
-        //   itemHandler(item.id)
-        //   handleClick()
-        // }}
-        onClick={() => handleClick(item.id)}
+        onClick={handleClick}
         selected={isSelected}
         sx={{
-          zIndex: 1201,
-          pl: drawerOpen ? `${level * 8}px` : 1.5,
-          // pl: 2.5,
-          py: !drawerOpen && level === 1 ? 1 : 1,
-          ...(drawerOpen && {
+          mx: 0.75,
+          mb: 0.25,
+          px: drawerOpen ? 1.25 : 0.75,
+          py: 0.75,
+          borderRadius: '10px',
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'all 0.25s ease',
+
+          bgcolor: ITEM_BASE,
+          color: TEXT,
+
+          '&:hover': {
+            bgcolor: ITEM_HOVER,
+            transform: 'translateX(2px)',
+          },
+
+          '&.Mui-selected': {
+            bgcolor: ITEM_ACTIVE,
+            color: '#ffffff',
+            boxShadow: '0 6px 20px rgba(57,166,255,0.25)',
+
             '&:hover': {
-              bgcolor: '#0100cb',
-              color: 'white',
+              bgcolor: ITEM_ACTIVE,
             },
-            '&.Mui-selected': {
-              bgcolor: '#0100cb',
-              borderRight: `2px solid ${theme.palette.primary.main}`,
-              color: 'white',
-              borderRadius: 0,
-              '&:hover': {
-                bgcolor: '#0100cb',
-                color: 'white',
-              },
+
+            /* LEFT ACCENT BAR */
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: 8,
+              bottom: 8,
+              width: '3px',
+              borderRadius: '6px',
+              background: `linear-gradient(180deg, ${ACCENT}, #6fb9ff)`,
             },
-          }),
-          ...(!drawerOpen && {
-            '&:hover': {
-              bgcolor: '#0100cb',
-            },
-            '&.Mui-selected': {
-              bgcolor: '#0100cb',
-              '&:hover': {
-                bgcolor: '#0100cb',
-              },
-            },
-          }),
+          },
         }}
       >
-        {itemIcon && (
+        {/* ICON */}
+        {Icon && (
           <ListItemIcon
             sx={{
-              minWidth: 20,
+              minWidth: 30,
+              color: isSelected ? ACCENT : TEXT_MUTED,
+              transition: 'all 0.25s ease',
               '& svg': {
-                fontSize: '18px',
-                width: '18px',
-                height: '18px',
+                width: 18,
+                height: 18,
               },
-
-              color: isSelected ? 'white' : textColor,
-              ...(!drawerOpen && {
-                borderRadius: 1.5,
-                width: 36,
-                height: 36,
-                alignItems: 'center',
-                justifyContent: 'center',
-                '&:hover': {
-                  bgcolor: 'secondary.lighter',
-                },
-              }),
-              ...(!drawerOpen &&
-                isSelected && {
-                  bgcolor: '#0100cb',
-                  '&:hover': {
-                    bgcolor: '#0100cb',
-                  },
-                }),
             }}
           >
-            {itemIcon}
+            <Icon size={18} strokeWidth={1.7} />
           </ListItemIcon>
         )}
-        {(drawerOpen || (!drawerOpen && level !== 1)) && (
+
+        {/* TEXT */}
+        {(drawerOpen || level !== 1) && (
           <ListItemText
             primary={
-              // <Tooltip title={item.title} arrow>
               <Typography
-                variant='h6'
-                className={`sub-side-menu ${isSelected ? 'active' : ''}`}
+                sx={{
+                  fontSize: '0.8rem',
+                  fontWeight: isSelected ? 600 : 500,
+                  letterSpacing: '0.02em',
+                  color: isSelected ? '#ffffff' : TEXT,
+                  whiteSpace: 'nowrap',
+                }}
               >
                 {item.title}
               </Typography>
-              // </Tooltip>
             }
           />
         )}
-        {(drawerOpen || (!drawerOpen && level !== 1)) && item.chip && (
+
+        {/* CHIP */}
+        {(drawerOpen || level !== 1) && item.chip && (
           <Chip
-            color={item.chip.color}
-            variant={item.chip.variant}
-            size={item.chip.size}
+            size='small'
             label={item.chip.label}
-            avatar={item.chip.avatar && <Avatar>{item.chip.avatar}</Avatar>}
+            avatar={
+              item.chip.avatar ? <Avatar>{item.chip.avatar}</Avatar> : null
+            }
+            sx={{
+              ml: 0.75,
+              height: 18,
+              fontSize: '0.62rem',
+              fontWeight: 600,
+              bgcolor: 'rgba(255,255,255,0.18)',
+              color: '#ffffff',
+              borderRadius: '6px',
+            }}
           />
         )}
       </ListItemButton>
 
-      {/* Confirmation Dialog */}
+      {/* CONFIRMATION DIALOG */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
         <DialogTitle>Unsaved Changes</DialogTitle>
         <DialogContent>
           You have unsaved changes. Are you sure you want to leave this page?
         </DialogContent>
         <DialogActions>
-          <Button onClick={stayOnPage} color='error'>
+          <Button onClick={() => setDialogOpen(false)} color='inherit'>
             Stay
           </Button>
-          <Button
-            onClick={() => confirmLeave(item.id)}
-            color='primary'
-            autoFocus
-          >
+          <Button onClick={() => confirmLeave(item.id)} autoFocus>
             Leave
           </Button>
         </DialogActions>

@@ -1,10 +1,64 @@
 /* =========================================================
-   KENDO DATA GRID — MODERN, CLEAN, MULTI-COLOR UI
+   KENDO DATA GRID ï¿½ MODERN, CLEAN, MULTI-COLOR UI
    ========================================================= */
 
 /* ===============================
    GRID HEADER
    =============================== */
+
+.kendo-data-grid,
+.kendo-data-grid * {
+  font-family:
+    'Inter',
+    'Roboto',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 160ms ease;
+}
+
+/* alternating colors: odd = red, even = green */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:nth-child(odd)
+  td:first-child::before {
+  background: linear-gradient(180deg, #ef4444, #dc2626); /* red */
+}
+
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr:nth-child(even)
+  td:first-child::before {
+  background: linear-gradient(180deg, #10b981, #059669); /* green */
+}
+
+/* bar common style */
+.kendo-data-grid .k-grid-content .k-grid-table td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  transition:
+    background-color 220ms ease,
+    transform 180ms ease,
+    opacity 180ms ease;
+  box-shadow: 0 1px 4px rgba(11, 18, 32, 0.12);
+  transform-origin: center;
+}
+
 .kendo-data-grid .k-grid-header {
   background: linear-gradient(180deg, #f8fafc, #eef2f7);
   border-bottom: 2px solid #c7d2fe;

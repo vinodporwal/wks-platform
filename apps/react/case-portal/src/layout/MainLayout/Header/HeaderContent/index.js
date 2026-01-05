@@ -526,34 +526,59 @@ export default function HeaderContent({ keycloak }) {
           <Box
             sx={{
               ml: 0,
+              display: 'flex',
+              alignItems: 'center',
+              px: 1,
+              py: 0.5,
+              borderRadius: '10px',
+              background:
+                'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))',
+              backdropFilter: 'blur(6px)',
               transition: 'all 0.3s ease',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
               '&:hover': {
-                transform: 'scale(1.05)',
-                filter: 'drop-shadow(0 4px 8px rgba(255, 255, 255, 0.2))',
+                transform: 'translateY(-1px) scale(1.05)',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
               },
             }}
           >
-            <img
+            <Box
+              component='img'
               src={Logo}
               alt='RIL Logo'
-              style={{
+              sx={{
                 height: 32,
                 transition: 'all 0.3s ease',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
               }}
             />
           </Box>
 
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Box sx={{ ml: 0.5 }}>
+            <Box
+              sx={{
+                ml: 0.75,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                background:
+                  'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))',
+                backdropFilter: 'blur(6px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+              }}
+            >
               <Typography
                 variant='body2'
-                color='white'
                 className='custom-title-font'
                 sx={{
-                  fontWeight: 600,
-                  letterSpacing: '0.02em',
-                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                  fontSize: '0.9375rem',
+                  fontWeight: 1000,
+                  fontSize: '1rem',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  color: '#fff',
+                  lineHeight: 1,
                 }}
               >
                 {screenTitleName}

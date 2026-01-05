@@ -58,44 +58,63 @@ const NavCollapse = ({ menu, level }) => {
   }, [menu?.children, lowerVertName, plantName, level])
 
   const Icon = menu.icon
-  const menuIcon = menu.icon ? (
-    <Icon
-      strokeWidth={1.5}
-      size='1.2rem'
-      style={{ marginTop: 'auto', marginBottom: 'auto' }}
-    />
-  ) : (
-    <FiberManualRecordIcon
-      sx={{
-        width: selected === menu.id ? 6 : 5,
-        height: selected === menu.id ? 6 : 5,
-      }}
-      fontSize={level > 0 ? 'inherit' : 'medium'}
-    />
-  )
+  const menuIcon = menu.icon ? <Icon strokeWidth={1.6} size='1.1rem' /> : null
 
   return (
     <>
       <ListItemButton
-        sx={{
-          mb: 0.1,
-          alignItems: 'flex-start',
-          backgroundColor: level > 1 ? 'transparent !important' : 'inherit',
-          py: level > 1 ? 1 : 1.25,
-          pl: 1,
-        }}
-        selected={selected === menu.id}
         onClick={handleClick}
+        selected={selected === menu.id}
+        sx={{
+          mb: 0.5,
+          px: 2,
+          py: 1.25,
+          borderRadius: '10px',
+          alignItems: 'center',
+          position: 'relative',
+          transition: 'all 0.25s ease',
+
+          // base
+          backgroundColor: 'transparent',
+
+          // hover
+          '&:hover': {
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            transform: 'translateX(2px)',
+          },
+
+          // selected
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(144,202,249,0.14)',
+            '&:hover': {
+              backgroundColor: 'rgba(144,202,249,0.2)',
+            },
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: 8,
+              bottom: 8,
+              width: '3px',
+              borderRadius: '3px',
+              backgroundColor: theme.palette.primary.main,
+            },
+          },
+        }}
       >
-        <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 8 : 26 }}>
-          {menuIcon}
-        </ListItemIcon>
+        {menuIcon && (
+          <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+            {menuIcon}
+          </ListItemIcon>
+        )}
         <ListItemText
           primary={
             <Typography
-              variant={selected === menu.id ? 'h6' : 'body1'}
-              color='inherit'
-              className='side-menu'
+              sx={{
+                fontSize: '0.9rem',
+                fontWeight: selected === menu.id ? 600 : 500,
+                letterSpacing: '0.02em',
+              }}
             >
               {menu.title}
             </Typography>
@@ -133,16 +152,6 @@ const NavCollapse = ({ menu, level }) => {
           disablePadding
           sx={{
             position: 'relative',
-            '&:after': {
-              content: "''",
-              position: 'absolute',
-              left: '10px',
-              top: 0,
-              height: '100%',
-              width: '1px',
-              opacity: 1,
-              background: theme.palette.primary.light,
-            },
           }}
         >
           {menus}

@@ -433,14 +433,14 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                         component='span'
                         sx={{ mx: 0.7, color: 'text.disabled' }}
                       >
-                        •
+                        |
                       </Box>
                       {SITE_NAME}
                       <Box
                         component='span'
                         sx={{ mx: 0.7, color: 'text.disabled' }}
                       >
-                        •
+                        |
                       </Box>
                       <Box
                         component='span'
