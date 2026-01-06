@@ -122,7 +122,7 @@
 }
 
 /* Vertical Cell Divider */
-.kendo-data-grid .k-grid-content .k-grid-table td:after {
+/* .kendo-data-grid .k-grid-content .k-grid-table td:after {
   content: '';
   position: absolute;
   right: 0;
@@ -130,7 +130,7 @@
   transform: translateY(-50%);
   height: 60%;
   border-right: 1px solid rgba(148, 163, 184, 0.6);
-}
+} */
 
 /* ===============================
    SELECTION

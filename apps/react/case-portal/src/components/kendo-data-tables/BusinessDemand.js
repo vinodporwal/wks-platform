@@ -506,7 +506,16 @@ const BusinessDemand = ({ permissions }) => {
               aria-controls='meg-grid-content'
               id='meg-grid-header'
             >
-              <Typography component='span' className='accordian-title'>
+              <Typography
+                component='span'
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  color: '#334155', // slate-700
+                  letterSpacing: '0.02em',
+                  lineHeight: 1.4,
+                }}
+              >
                 Production Target (MT) (This is a reference for entering the
                 Business Demand value)
               </Typography>

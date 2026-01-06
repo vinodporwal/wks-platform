@@ -963,128 +963,129 @@ const ConfigurationTable = () => {
 
           <CustomAccordionDetails sx={{ p: 0.5, pt: 0 }}>
             <Stack direction='column' spacing={1.5}>
-              {/* ROW 1: Start, End, Load, Last Refreshed */}
-              <Stack direction='row' spacing={2} alignItems='flex-start'>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box>
-                    <Typography
-                      variant='caption'
-                      sx={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        fontFamily: '"Inter", "Segoe UI", sans-serif',
-                        color: '#334155', // slate-700
-                        letterSpacing: '0.3px',
-                      }}
-                    >
-                      START
-                    </Typography>
+              {/* ROW 1: All in ONE straight line */}
+              <Stack
+                direction='row'
+                spacing={2}
+                alignItems='flex-end' // ?? important
+                flexWrap='wrap'
+              >
+                {/* START */}
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      fontFamily: '"Inter", "Segoe UI", sans-serif',
+                      color: '#334155',
+                      letterSpacing: '0.3px',
+                    }}
+                  >
+                    START
+                  </Typography>
 
-                    <Box sx={{ position: 'relative', width: '130px' }}>
-                      <DatePicker
-                        format='dd-MM-yyyy'
-                        value={startDate}
-                        onChange={(e) => {
-                          setStartDate(e.value)
-                          setDateEdited(true)
-                        }}
-                        style={{
-                          width: '130px',
-                          height: '28px',
-                          paddingRight: '28px',
-                        }}
-                        disabled={READ_ONLY}
-                      />
-                    </Box>
-                  </Box>
-                  <Box>
-                    <Typography
-                      variant='caption'
-                      sx={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        fontFamily: '"Inter", "Segoe UI", sans-serif',
-                        color: '#334155', // slate-700
-                        letterSpacing: '0.3px',
-                      }}
-                    >
-                      END
-                    </Typography>
-
-                    <Box sx={{ position: 'relative', width: '130px' }}>
-                      <DatePicker
-                        format='dd-MM-yyyy'
-                        value={endDate}
-                        onChange={(e) => {
-                          setEndDate(e.value)
-                          setDateEdited(true)
-                        }}
-                        style={{
-                          width: '130px',
-                          height: '28px',
-                          paddingRight: '28px',
-                        }}
-                        disabled={READ_ONLY}
-                      />
-                    </Box>
-                  </Box>
-
-                  {!isOldYear && (
-                    <Tooltip title='Load Data'>
-                      <Button
-                        variant='contained'
-                        className='btn-load'
-                        startIcon={<SyncIcon />}
-                        onClick={handleOpenDialog}
-                        disabled={READ_ONLY}
-                        sx={{
-                          height: 28,
-                          mt: 2,
-                          px: 1.5,
-                        }}
-                      >
-                        Load
-                      </Button>
-                    </Tooltip>
-                  )}
+                  <DatePicker
+                    format='dd-MM-yyyy'
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.value)
+                      setDateEdited(true)
+                    }}
+                    style={{
+                      width: '130px',
+                      height: '28px',
+                    }}
+                    disabled={READ_ONLY}
+                  />
                 </Box>
 
-                {configurationExecutionDetails[0]?.ModifiedOn && (
-                  <Box sx={{ alignSelf: 'center', mt: 2 }}>
-                    <Tooltip
-                      title={`Last Refreshed: ${formatDateForText(
-                        configurationExecutionDetails[0]?.ModifiedOn,
-                        true,
-                      )}`}
+                {/* END */}
+                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      fontFamily: '"Inter", "Segoe UI", sans-serif',
+                      color: '#334155',
+                      letterSpacing: '0.3px',
+                    }}
+                  >
+                    END
+                  </Typography>
+
+                  <DatePicker
+                    format='dd-MM-yyyy'
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.value)
+                      setDateEdited(true)
+                    }}
+                    style={{
+                      width: '130px',
+                      height: '28px',
+                    }}
+                    disabled={READ_ONLY}
+                  />
+                </Box>
+
+                {/* LOAD BUTTON */}
+                {!isOldYear && (
+                  <Tooltip title='Load Data'>
+                    <Button
+                      variant='contained'
+                      className='btn-load'
+                      startIcon={<SyncIcon />}
+                      onClick={handleOpenDialog}
+                      disabled={READ_ONLY}
+                      sx={{
+                        height: 28,
+                        px: 1.5,
+                      }}
                     >
-                      <Stack
-                        direction='row'
-                        spacing={0.5}
-                        alignItems='center'
-                        sx={{ opacity: 0.6 }}
+                      Load
+                    </Button>
+                  </Tooltip>
+                )}
+
+                {/* LAST REFRESHED */}
+                {configurationExecutionDetails[0]?.ModifiedOn && (
+                  <Tooltip
+                    title={`Last Refreshed: ${formatDateForText(
+                      configurationExecutionDetails[0]?.ModifiedOn,
+                      true,
+                    )}`}
+                  >
+                    <Stack
+                      direction='row'
+                      spacing={0.5}
+                      alignItems='center'
+                      sx={{
+                        color: '#16a34a',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <HistoryIcon sx={{ fontSize: '0.9rem' }} />
+                      <Typography
+                        sx={{
+                          fontSize: '0.65rem',
+                          fontWeight: 600,
+                        }}
                       >
-                        <HistoryIcon sx={{ fontSize: '0.9rem' }} />
-                        <Typography
-                          sx={{
-                            fontSize: '0.65rem',
-                            fontWeight: 600,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          Last Refreshed data on :{' '}
-                          {
-                            formatDateForText(
-                              configurationExecutionDetails[0]?.ModifiedOn,
-                            ).split(' ')[0]
-                          }
-                        </Typography>
-                      </Stack>
-                    </Tooltip>
-                  </Box>
+                        Last Refreshed data on:{' '}
+                        {
+                          formatDateForText(
+                            configurationExecutionDetails[0]?.ModifiedOn,
+                          ).split(' ')[0]
+                        }
+                      </Typography>
+                    </Stack>
+                  </Tooltip>
                 )}
               </Stack>
 
-              {/* ROW 2: AOP Design Basis - Full Width */}
+              {/* ROW 2: AOP DESIGN BASIS */}
               <Box sx={{ width: '100%' }}>
                 <Typography
                   variant='caption'
@@ -1092,12 +1093,13 @@ const ConfigurationTable = () => {
                     fontSize: '0.65rem',
                     fontWeight: 700,
                     fontFamily: '"Inter", "Segoe UI", sans-serif',
-                    color: '#334155', // slate-700
+                    color: '#334155',
                     letterSpacing: '0.3px',
                   }}
                 >
                   AOP DESIGN BASIS
                 </Typography>
+
                 <textarea
                   disabled={READ_ONLY}
                   value={summary}

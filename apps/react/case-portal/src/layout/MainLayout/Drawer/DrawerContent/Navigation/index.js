@@ -10,13 +10,6 @@ import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import InputBase from '@mui/material/InputBase'
 
-const NAV_BG = '#041424' // container darkest
-const NAV_GROUP_BG = 'transparent'
-const NAV_BORDER = 'rgba(255,255,255,0.04)'
-const ACCENT = '#39a6ff' // accent for scrollbar / thin strip
-const BADGE_BG = '#0f3a5b'
-const BADGE_COLOR = '#e9f6ff'
-
 const Navigation = () => {
   const filteredMenu = useFilteredMenu()
 
@@ -32,7 +25,7 @@ const Navigation = () => {
             my: 0.5,
             fontSize: '0.65rem',
             bgcolor: '#7f1d1d',
-            color: '#fff',
+            color: '#ffffff',
           }}
         />
       )
@@ -44,8 +37,8 @@ const Navigation = () => {
         sx={{
           position: 'relative',
           borderRadius: '8px',
-          backgroundColor: NAV_GROUP_BG,
-          border: `1px solid ${NAV_BORDER}`,
+          backgroundColor: 'transparent',
+          border: 'none',
           overflow: 'hidden',
           px: 0.5,
           py: 0.25,
@@ -60,10 +53,10 @@ const Navigation = () => {
               top: 6,
               right: 8,
               height: 18,
-              fontSize: '0.62rem',
+              fontSize: '0.6rem',
               fontWeight: 700,
-              bgcolor: BADGE_BG,
-              color: BADGE_COLOR,
+              bgcolor: '#16a34a', // green ACTIVE badge
+              color: '#ffffff',
               borderRadius: '6px',
               zIndex: 2,
               px: 0.6,
@@ -81,16 +74,14 @@ const Navigation = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: `linear-gradient(180deg, ${NAV_BG} 0%, #170a3bff 100%)`,
-        borderRight: `1px solid ${NAV_BORDER}`,
+        background: '#f9fafb', // light sidebar bg
+        borderRight: '1px solid #e5e7eb',
         fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        color: '#ffffff',
+        color: '#111827', // dark text
       }}
     >
-      {/* Thin top accent for subtle color */}
-      <Box sx={{ height: 2, background: ACCENT }} />
-
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.03)', my: 0.5 }} />
+      {/* Thin top divider */}
+      <Divider sx={{ borderColor: '#e5e7eb', my: 0.5 }} />
 
       {/* Scrollable area */}
       <Box
@@ -102,13 +93,13 @@ const Navigation = () => {
           overflowX: 'hidden',
           position: 'relative',
           '&::-webkit-scrollbar': {
-            width: '8px',
+            width: '6px',
           },
           '&::-webkit-scrollbar-track': {
             background: 'transparent',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: `linear-gradient(180deg, ${ACCENT}, #6fb9ff)`,
+            background: '#c7d2fe',
             borderRadius: '999px',
           },
         }}

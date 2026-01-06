@@ -1,14 +1,14 @@
 import PropTypes from 'prop-types'
 import { useSelector } from 'react-redux'
-import Box from '@mui/material/Box'
 import List from '@mui/material/List'
 import ListSubheader from '@mui/material/ListSubheader'
 import Typography from '@mui/material/Typography'
 import NavItem from './NavItem'
 import NavCollapse from './NavCollapse'
 
-const GROUP_BG = '#122d41ff' // group background
-const GROUP_TEXT = '#ffffff' // PURE WHITE for visibility
+/* ===== LIGHT SIDEBAR GROUP STYLES ===== */
+const GROUP_BG = 'transparent'
+const GROUP_TEXT = '#9ca3af' // light gray section header
 
 const NavGroup = ({ item }) => {
   const { drawerOpen } = useSelector((state) => state.menu)
@@ -39,7 +39,7 @@ const NavGroup = ({ item }) => {
     <List
       disablePadding
       sx={{
-        mb: drawerOpen ? 0.75 : 0,
+        mb: drawerOpen ? 1 : 0,
         py: 0,
         backgroundColor: GROUP_BG,
       }}
@@ -50,20 +50,19 @@ const NavGroup = ({ item }) => {
             disableSticky
             sx={{
               px: 1.25,
-              py: 0.6,
+              py: 0.75,
               mb: 0.25,
-              backgroundColor: GROUP_BG,
+              backgroundColor: 'transparent',
               lineHeight: 1,
             }}
           >
             <Typography
               sx={{
-                fontSize: '0.68rem',
+                fontSize: '0.65rem',
                 fontWeight: 600,
-                letterSpacing: '0.08em',
+                letterSpacing: '0.1em',
                 textTransform: 'uppercase',
                 color: GROUP_TEXT,
-                opacity: 0.9,
               }}
             >
               {item.title}

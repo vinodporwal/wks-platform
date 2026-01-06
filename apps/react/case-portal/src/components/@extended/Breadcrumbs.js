@@ -128,7 +128,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
   const infoIconSx = {
     fontSize: 14,
-    color: '#64748b', // slate-500 (subtle)
+    color: '#023985ff', // slate-500 (subtle)
   }
 
   const infoButtonSx = {
@@ -366,9 +366,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <Grid
               container
               sx={{
-                mt: 0.75,
-                mb: 1,
-                px: 2,
+                mt: 1,
+                ml: 0.5,
+                mb: 0.5,
+                px: 0.5,
                 py: 0.5,
                 width: '100%',
 
@@ -379,7 +380,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                 /* Border */
                 border: '1px solid rgba(1, 0, 203, 0.15)',
                 borderTop: '3px solid #82f160', // ?? modern accent
-                borderRadius: '10px',
 
                 /* Elevation */
                 boxShadow: `

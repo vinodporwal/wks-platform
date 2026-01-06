@@ -240,10 +240,10 @@ export default function StepperNav() {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     fontWeight: isActive ? '700' : '500',
-                    color: isActive ? '#12bd45ff' : 'text.secondary',
+                    color: isActive ? '#303284' : 'text.secondary',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
-                      color: '#3bcf1dff',
+                      color: '#303284',
                       fontWeight: '600',
                     },
                   }}

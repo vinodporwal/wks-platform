@@ -80,10 +80,14 @@ const Profile = ({ keycloak }) => {
     <Box sx={{ flexShrink: 0, ml: 0.75 }}>
       <ButtonBase
         sx={{
-          p: 0.25,
-          bgcolor: open ? iconBackColorOpen : 'transparent',
-          borderRadius: 1,
-          '&:hover': { bgcolor: '#0100cb' },
+          p: 0.5,
+          borderRadius: '999px',
+          bgcolor: open ? 'rgba(255,255,255,0.12)' : 'transparent',
+          transition: 'all 0.25s ease',
+          '&:hover': {
+            bgcolor: 'rgba(255,255,255,0.18)',
+            transform: 'translateY(-1px)',
+          },
         }}
         aria-label='open profile'
         ref={anchorRef}
@@ -93,13 +97,23 @@ const Profile = ({ keycloak }) => {
       >
         <Stack direction='row' spacing={2} alignItems='center' sx={{ p: 0.5 }}>
           <Avatar
-            alt='profile user'
-            src={avatar2}
-            sx={{ width: 32, height: 32 }}
-          />
+            sx={{
+              width: 32,
+              height: 32,
+              fontSize: 14,
+              fontWeight: 700,
+              bgcolor: '#ff8d00',
+            }}
+          >
+            {keycloak?.idTokenParsed?.given_name?.charAt(0)?.toUpperCase()}
+          </Avatar>
           <Typography
-            variant='subtitle1'
-            sx={{ color: 'white', fontWeight: 'normal' }}
+            variant='subtitle2'
+            sx={{
+              color: 'white',
+              fontWeight: 600,
+              letterSpacing: '0.3px',
+            }}
           >
             {keycloak.idTokenParsed.given_name}
           </Typography>

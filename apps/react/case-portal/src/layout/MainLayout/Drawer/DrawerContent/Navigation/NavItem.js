@@ -16,13 +16,14 @@ import Button from '@mui/material/Button'
 import { useSafeNavigate } from './useSafeNavigate'
 import { useLocation } from 'react-router-dom'
 
-/* ===== MODERN SIDEBAR COLORS ===== */
-const ITEM_BASE = 'rgba(255,255,255,0.02)'
-const ITEM_HOVER = 'rgba(255,255,255,0.06)'
-const ITEM_ACTIVE = 'rgba(57,166,255,0.14)'
-const ACCENT = '#39a6ff'
-const TEXT = 'rgba(255,255,255,0.88)'
-const TEXT_MUTED = 'rgba(255,255,255,0.65)'
+/* ===== LIGHT SIDEBAR COLORS (MATCH SCREENSHOT) ===== */
+const ITEM_BASE = 'transparent'
+const ITEM_HOVER = '#eef2ff'
+const ITEM_ACTIVE = '#17206e'
+
+const TEXT = '#111827'
+const TEXT_MUTED = '#6b7280'
+const ICON_MUTED = '#9ca3af'
 
 const NavItem = ({ item, level }) => {
   const dispatch = useDispatch()
@@ -59,40 +60,24 @@ const NavItem = ({ item, level }) => {
         sx={{
           mx: 0.75,
           mb: 0.25,
-          px: drawerOpen ? 1.25 : 0.75,
+          px: 1.25,
           py: 0.75,
           borderRadius: '10px',
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'all 0.25s ease',
+          transition: 'all 160ms ease',
 
           bgcolor: ITEM_BASE,
           color: TEXT,
 
           '&:hover': {
             bgcolor: ITEM_HOVER,
-            transform: 'translateX(2px)',
           },
 
           '&.Mui-selected': {
             bgcolor: ITEM_ACTIVE,
             color: '#ffffff',
-            boxShadow: '0 6px 20px rgba(57,166,255,0.25)',
 
             '&:hover': {
               bgcolor: ITEM_ACTIVE,
-            },
-
-            /* LEFT ACCENT BAR */
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: 8,
-              bottom: 8,
-              width: '3px',
-              borderRadius: '6px',
-              background: `linear-gradient(180deg, ${ACCENT}, #6fb9ff)`,
             },
           },
         }}
@@ -102,8 +87,7 @@ const NavItem = ({ item, level }) => {
           <ListItemIcon
             sx={{
               minWidth: 30,
-              color: isSelected ? ACCENT : TEXT_MUTED,
-              transition: 'all 0.25s ease',
+              color: isSelected ? '#ffffff' : ICON_MUTED,
               '& svg': {
                 width: 18,
                 height: 18,
@@ -122,7 +106,6 @@ const NavItem = ({ item, level }) => {
                 sx={{
                   fontSize: '0.8rem',
                   fontWeight: isSelected ? 600 : 500,
-                  letterSpacing: '0.02em',
                   color: isSelected ? '#ffffff' : TEXT,
                   whiteSpace: 'nowrap',
                 }}
@@ -133,7 +116,7 @@ const NavItem = ({ item, level }) => {
           />
         )}
 
-        {/* CHIP */}
+        {/* ACTIVE CHIP */}
         {(drawerOpen || level !== 1) && item.chip && (
           <Chip
             size='small'
@@ -144,9 +127,9 @@ const NavItem = ({ item, level }) => {
             sx={{
               ml: 0.75,
               height: 18,
-              fontSize: '0.62rem',
-              fontWeight: 600,
-              bgcolor: 'rgba(255,255,255,0.18)',
+              fontSize: '0.6rem',
+              fontWeight: 700,
+              bgcolor: '#16a34a', // green ACTIVE badge
               color: '#ffffff',
               borderRadius: '6px',
             }}

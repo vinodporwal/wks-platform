@@ -93,8 +93,8 @@ const Notification = ({
       onClose={onClose}
       anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       sx={{
-        top: '75px !important',
-        right: '24px !important',
+        top: '0px !important',
+        right: '10px !important',
         zIndex: 9999,
       }}
     >

@@ -438,6 +438,11 @@ export default function HeaderContent({ keycloak }) {
     '& .MuiSelect-select': {
       py: 0.75,
       transition: 'all 0.3s ease',
+      color: '#ffffff',
+      fontWeight: 700,
+    },
+    '& .MuiSvgIcon-root': {
+      color: '#ffffff',
     },
     '&.Mui-disabled': {
       opacity: 0.5,
@@ -457,12 +462,12 @@ export default function HeaderContent({ keycloak }) {
         maxHeight: 200,
         borderRadius: '12px',
         marginTop: '4px',
-        background:
-          'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(0,0,0,0.75)',
+        backdropFilter: 'blur(6px)',
         boxShadow:
           '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
-        border: '1px solid rgba(1, 0, 203, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.06)',
+        color: '#fff',
       },
     },
     disableScrollLock: true,
@@ -473,6 +478,8 @@ export default function HeaderContent({ keycloak }) {
     borderRadius: '6px',
     mx: 0.5,
     my: 0.25,
+    color: '#ffffff',
+    fontWeight: 700,
     '&:hover': {
       background:
         'linear-gradient(90deg, rgba(1, 0, 203, 0.08) 0%, rgba(91, 89, 255, 0.06) 100%)',
@@ -481,7 +488,7 @@ export default function HeaderContent({ keycloak }) {
     '&.Mui-selected': {
       background:
         'linear-gradient(90deg, rgba(1, 0, 203, 0.12) 0%, rgba(91, 89, 255, 0.08) 100%)',
-      fontWeight: 600,
+      fontWeight: 700,
       '&:hover': {
         background:
           'linear-gradient(90deg, rgba(1, 0, 203, 0.15) 0%, rgba(91, 89, 255, 0.1) 100%)',
@@ -587,12 +594,16 @@ export default function HeaderContent({ keycloak }) {
           )}
         </Box>
 
-        {/* RIGHT SIDE: Dropdowns */}
+        {/* CENTERED DROPDOWNS */}
         <Stack
           direction='row'
           spacing={1.5}
           alignItems='center'
           sx={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
             animation: 'fadeInRight 0.5s ease-out',
             '@keyframes fadeInRight': {
               from: { opacity: 0, transform: 'translateX(20px)' },
@@ -606,9 +617,10 @@ export default function HeaderContent({ keycloak }) {
               variant='body2'
               className='custom-title-dropdown'
               sx={{
-                fontWeight: 500,
                 fontSize: '0.875rem',
                 textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                color: '#fff',
+                fontWeight: 700,
               }}
             >
               Year:
@@ -647,9 +659,10 @@ export default function HeaderContent({ keycloak }) {
                 variant='body2'
                 className='custom-title-dropdown'
                 sx={{
-                  fontWeight: 500,
                   fontSize: '0.875rem',
                   textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  color: '#ffffffff',
+                  fontWeight: 700,
                 }}
               >
                 Vertical:
@@ -686,9 +699,10 @@ export default function HeaderContent({ keycloak }) {
                 variant='body2'
                 className='custom-title-dropdown'
                 sx={{
-                  fontWeight: 500,
                   fontSize: '0.875rem',
                   textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  color: '#fff',
+                  fontWeight: 700,
                 }}
               >
                 Site:
@@ -725,9 +739,10 @@ export default function HeaderContent({ keycloak }) {
                 variant='body2'
                 className='custom-title-dropdown'
                 sx={{
-                  fontWeight: 500,
                   fontSize: '0.875rem',
                   textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  color: '#fff',
+                  fontWeight: 700,
                 }}
               >
                 Plant:
@@ -755,9 +770,10 @@ export default function HeaderContent({ keycloak }) {
             </Box>
           )}
         </Stack>
-      </Box>
 
-      {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        {/* RIGHT SIDE: Profile / Mobile */}
+        {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+      </Box>
     </>
   )
 }
