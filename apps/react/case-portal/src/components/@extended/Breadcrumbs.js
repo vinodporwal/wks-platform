@@ -366,8 +366,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <Grid
               container
               sx={{
-                mt: 1,
-                ml: 0.5,
+                mt: 4,
+                ml: 2,
+                mr: 2,
                 mb: 0.5,
                 px: 0.5,
                 py: 0.5,
