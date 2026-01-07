@@ -46,11 +46,13 @@ const MainLayout = ({ keycloak, authenticated }) => {
         }}
       >
         {/* Reserve header height */}
-        <Toolbar variant='dense' />
+        {/* <Toolbar variant='dense' /> */}
 
         {location.pathname.startsWith('/production-norms-plan') && (
           <StepperNav />
         )}
+
+        <Toolbar variant='dense' />
 
         <Breadcrumbs variant='dense' navigation={menu} divider={false} />
 

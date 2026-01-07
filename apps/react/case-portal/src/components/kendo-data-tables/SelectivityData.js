@@ -432,7 +432,8 @@ const SelectivityData = (props) => {
 
     if (
       verticalChange?.selectedVertical === 'PE' ||
-      verticalChange?.selectedVertical === 'PP'
+      verticalChange?.selectedVertical === 'PP' ||
+      verticalChange?.selectedVertical?.toLowerCase() === 'elastomer'
     )
       getAllGrades()
 
@@ -539,7 +540,7 @@ const SelectivityData = (props) => {
       showLoad: true,
       allAction: true,
 
-      showTitleNameBusiness: true,
+      showTitleNameBusiness: false,
       titleName:
         props?.currentTabDisplayName === 'Report Manual Entry'
           ? `${props?.currentTabDisplayName} (${prevYearFormatted})`

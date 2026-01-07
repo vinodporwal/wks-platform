@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 
 const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
   const tabRefs = useRef([])
+  const BOX_TABS = false // ?? change to false when needed
 
   useEffect(() => {
     const activeTab = tabRefs.current[tabIndex]
@@ -39,11 +40,16 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         sx={{
           minHeight: 20,
           width: 'max-content',
+
           '& .MuiTabs-flexContainer': {
-            gap: '4px',
+            gap: BOX_TABS ? '4px' : '12px',
           },
+
           '& .MuiTabs-indicator': {
-            display: 'none',
+            display: BOX_TABS ? 'none' : 'block',
+            height: '2px',
+            borderRadius: '2px',
+            backgroundColor: '#1258b3',
           },
         }}
       >
@@ -58,27 +64,34 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
               disableRipple
               sx={{
                 minHeight: 20,
-                px: '8px',
+                px: BOX_TABS ? '8px' : '4px',
                 fontSize: '0.65rem',
                 fontWeight: 600,
                 textTransform: 'none',
-                borderRadius: '6px',
+                borderRadius: BOX_TABS ? '6px' : 0,
 
                 color: isSelected ? '#0f172a' : '#475569',
-                bgcolor: isSelected ? '#ffffff' : 'transparent',
 
-                border: '1px solid',
-                borderColor: isSelected
-                  ? 'rgba(15,23,42,0.25)'
-                  : 'rgba(15,23,42,0.12)',
+                // ? BOX TABS MODE
+                bgcolor: BOX_TABS && isSelected ? '#ffffff' : 'transparent',
+                border: BOX_TABS ? '1px solid' : 'none',
+                borderColor:
+                  BOX_TABS && isSelected
+                    ? 'rgba(15,23,42,0.25)'
+                    : 'rgba(15,23,42,0.12)',
 
-                boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                boxShadow:
+                  BOX_TABS && isSelected
+                    ? '0 1px 3px rgba(0,0,0,0.12)'
+                    : 'none',
 
-                transition: 'background 140ms ease, box-shadow 140ms ease',
-
+                // ? FLAT TABS MODE
                 '&:hover': {
-                  bgcolor: '#ffffff',
+                  bgcolor: BOX_TABS ? '#ffffff' : 'transparent',
+                  color: '#0f172a',
                 },
+
+                transition: 'all 160ms ease',
               }}
             />
           )

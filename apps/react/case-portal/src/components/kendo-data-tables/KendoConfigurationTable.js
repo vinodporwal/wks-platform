@@ -1103,7 +1103,7 @@ const ConfigurationTable = () => {
                 <textarea
                   disabled={READ_ONLY}
                   value={summary}
-                  rows={4}
+                  rows={2}
                   onChange={(e) => {
                     setSummary(e.target.value)
                     setSummaryEdited(true)

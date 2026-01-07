@@ -6,9 +6,9 @@ import Typography from '@mui/material/Typography'
 import NavItem from './NavItem'
 import NavCollapse from './NavCollapse'
 
-/* ===== LIGHT SIDEBAR GROUP STYLES ===== */
+/* ===== COMPACT SIDEBAR GROUP STYLES ===== */
 const GROUP_BG = 'transparent'
-const GROUP_TEXT = '#9ca3af' // light gray section header
+const GROUP_TEXT = '#9ca3af'
 
 const NavGroup = ({ item }) => {
   const { drawerOpen } = useSelector((state) => state.menu)
@@ -26,7 +26,7 @@ const NavGroup = ({ item }) => {
             sx={{
               color: 'error.main',
               textAlign: 'center',
-              fontSize: '0.75rem',
+              fontSize: '0.65rem',
             }}
           >
             Fix - Group Collapse or Items
@@ -39,7 +39,7 @@ const NavGroup = ({ item }) => {
     <List
       disablePadding
       sx={{
-        mb: drawerOpen ? 1 : 0,
+        mb: drawerOpen ? 0.5 : 0,
         py: 0,
         backgroundColor: GROUP_BG,
       }}
@@ -49,8 +49,8 @@ const NavGroup = ({ item }) => {
           <ListSubheader
             disableSticky
             sx={{
-              px: 1.25,
-              py: 0.75,
+              px: 0.75, // ?? reduced left padding
+              py: 0.25,
               mb: 0.25,
               backgroundColor: 'transparent',
               lineHeight: 1,
@@ -58,9 +58,9 @@ const NavGroup = ({ item }) => {
           >
             <Typography
               sx={{
-                fontSize: '0.65rem',
+                fontSize: '0.6rem', // ?? smaller header
                 fontWeight: 600,
-                letterSpacing: '0.1em',
+                letterSpacing: '0.12em',
                 textTransform: 'uppercase',
                 color: GROUP_TEXT,
               }}

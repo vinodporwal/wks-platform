@@ -232,8 +232,9 @@ export default function StepperNav() {
                 <Typography
                   variant='caption'
                   sx={{
-                    minWidth: 28,
-                    maxWidth: 64,
+                    minWidth: 38,
+                    maxWidth: 100,
+                    lineHeight: 1.2,
                     display: 'inline-block',
                     textAlign: 'center',
                     whiteSpace: 'nowrap',
@@ -266,9 +267,9 @@ export default function StepperNav() {
           <Box
             sx={{
               position: 'fixed',
-              top: '45px',
-              left: drawerOpen ? `${drawerWidth + 12}px` : '12px',
-              right: '12px',
+              top: '55px',
+              left: drawerOpen ? `${drawerWidth + 8}px` : '5px',
+              right: '5px',
               zIndex: (theme) => (theme.zIndex?.appBar ?? 1100) + 1,
               background:
                 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',

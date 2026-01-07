@@ -42,6 +42,31 @@
   background: linear-gradient(180deg, #10b981, #059669); /* green */
 }
 
+/* explicitly remove bar from group header rows */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr.k-grouping-row
+  td:first-child::before {
+  display: none !important;
+}
+
+/* GROUP HEADER ROW */
+.kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row {
+  background: linear-gradient(180deg, #f1f5f9, #e2e8f0);
+  font-weight: 600;
+  color: #0f172a;
+  height: 34px;
+}
+
+/* Group row cells */
+.kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td {
+  background: transparent !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  /* padding: 2px 6px !important; */
+  font-size: 0.65rem !important;
+}
+
 /* bar common style */
 .kendo-data-grid .k-grid-content .k-grid-table td:first-child::before {
   content: '';
@@ -168,7 +193,7 @@
    NUMERIC ALIGNMENT
    =============================== */
 .k-grid .k-grid-content td.k-number-right {
-  text-align: right !important;
+  text-align: left !important;
 }
 
 /* ===============================

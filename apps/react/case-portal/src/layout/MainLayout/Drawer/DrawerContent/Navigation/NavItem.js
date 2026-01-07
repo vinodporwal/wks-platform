@@ -15,15 +15,15 @@ import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import { useSafeNavigate } from './useSafeNavigate'
 import { useLocation } from 'react-router-dom'
+import { Tooltip } from '../../../../../../node_modules/@mui/material/index'
 
-/* ===== LIGHT SIDEBAR COLORS (MATCH SCREENSHOT) ===== */
+/* ===== COMPACT SIDEBAR COLORS ===== */
 const ITEM_BASE = 'transparent'
-const ITEM_HOVER = '#eef2ff'
+const ITEM_HOVER = '#e5e7eb'
 const ITEM_ACTIVE = '#17206e'
 
-const TEXT = '#111827'
-const TEXT_MUTED = '#6b7280'
-const ICON_MUTED = '#9ca3af'
+const TEXT = '#374151'
+const ICON = '#6366f1'
 
 const NavItem = ({ item, level }) => {
   const dispatch = useDispatch()
@@ -58,26 +58,39 @@ const NavItem = ({ item, level }) => {
         onClick={handleClick}
         selected={isSelected}
         sx={{
-          mx: 0.75,
-          mb: 0.25,
-          px: 1.25,
-          py: 0.75,
+          minHeight: 30,
+          px: 1,
+          py: 0.5,
+          mx: 0,
+          mb: 0,
           borderRadius: '10px',
           transition: 'all 160ms ease',
 
-          bgcolor: ITEM_BASE,
-          color: TEXT,
+          fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+          fontSize: '0.82rem',
+          fontWeight: 500,
+
+          bgcolor: 'transparent',
+          color: '#3f3f46', // ?? soft dark gray (unselected text)
 
           '&:hover': {
-            bgcolor: ITEM_HOVER,
+            background:
+              'linear-gradient(135deg, rgba(18, 88, 179, 0.12) 0%, rgba(18, 88, 179, 0.22) 100%)',
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 10px rgba(18, 88, 179, 0.18)',
+            transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
           },
 
           '&.Mui-selected': {
-            bgcolor: ITEM_ACTIVE,
+            background: 'linear-gradient(135deg, #0b3d91 0%, #1258b3 100%)',
             color: '#ffffff',
+            fontWeight: 600,
 
             '&:hover': {
-              bgcolor: ITEM_ACTIVE,
+              background: 'linear-gradient(135deg, #0a347a 0%, #1a63c6 100%)',
+              transform: 'translateY(-1px)',
+              boxShadow: '0 6px 14px rgba(10, 60, 150, 0.35)',
+              transition: 'all 220ms cubic-bezier(0.4, 0, 0.2, 1)',
             },
           },
         }}
@@ -87,7 +100,7 @@ const NavItem = ({ item, level }) => {
           <ListItemIcon
             sx={{
               minWidth: 30,
-              color: isSelected ? '#ffffff' : ICON_MUTED,
+              color: !isSelected ? '#030303ff' : '#ffffff',
               '& svg': {
                 width: 18,
                 height: 18,
@@ -101,22 +114,41 @@ const NavItem = ({ item, level }) => {
         {/* TEXT */}
         {(drawerOpen || level !== 1) && (
           <ListItemText
+            sx={{
+              my: 0,
+              overflow: 'hidden', // important for ellipsis
+            }}
             primary={
-              <Typography
-                sx={{
-                  fontSize: '0.8rem',
-                  fontWeight: isSelected ? 600 : 500,
-                  color: isSelected ? '#ffffff' : TEXT,
-                  whiteSpace: 'nowrap',
-                }}
+              <Tooltip
+                title={item.title}
+                placement='right'
+                arrow
+                enterDelay={1000} // ?? avoids annoying instant pop
               >
-                {item.title}
-              </Typography>
+                <Typography
+                  sx={{
+                    fontFamily:
+                      '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                    fontSize: '0.82rem',
+                    fontWeight: isSelected ? 600 : 500,
+                    color: isSelected ? '#ffffff' : '#3f3f46',
+                    letterSpacing: '0.01em',
+
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '160px',
+                    cursor: 'default',
+                  }}
+                >
+                  {item.title}
+                </Typography>
+              </Tooltip>
             }
           />
         )}
 
-        {/* ACTIVE CHIP */}
+        {/* CHIP */}
         {(drawerOpen || level !== 1) && item.chip && (
           <Chip
             size='small'
@@ -125,19 +157,19 @@ const NavItem = ({ item, level }) => {
               item.chip.avatar ? <Avatar>{item.chip.avatar}</Avatar> : null
             }
             sx={{
-              ml: 0.75,
-              height: 18,
-              fontSize: '0.6rem',
+              ml: 0.5,
+              height: 16,
+              fontSize: '0.55rem',
               fontWeight: 700,
-              bgcolor: '#16a34a', // green ACTIVE badge
+              bgcolor: '#16a34a',
               color: '#ffffff',
-              borderRadius: '6px',
+              borderRadius: '1px',
             }}
           />
         )}
       </ListItemButton>
 
-      {/* CONFIRMATION DIALOG */}
+      {/* CONFIRMATION DIALOG (UNCHANGED) */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
         <DialogTitle>Unsaved Changes</DialogTitle>
         <DialogContent>

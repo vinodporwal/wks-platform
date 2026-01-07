@@ -1,14 +1,9 @@
 // Navigation.jsx
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
 import Divider from '@mui/material/Divider'
 import NavGroup from './NavGroup'
 import useFilteredMenu from 'hooks/useFilteredMenu'
-import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
-import InputBase from '@mui/material/InputBase'
 
 const Navigation = () => {
   const filteredMenu = useFilteredMenu()
@@ -22,8 +17,8 @@ const Navigation = () => {
           size='small'
           sx={{
             mx: 'auto',
-            my: 0.5,
-            fontSize: '0.65rem',
+            my: 0.25,
+            fontSize: '0.6rem',
             bgcolor: '#7f1d1d',
             color: '#ffffff',
           }}
@@ -36,12 +31,11 @@ const Navigation = () => {
         key={`${item.id}-${index}`}
         sx={{
           position: 'relative',
-          borderRadius: '8px',
           backgroundColor: 'transparent',
           border: 'none',
           overflow: 'hidden',
-          px: 0.5,
-          py: 0.25,
+          px: 0,
+          py: 0,
         }}
       >
         {item.badge && (
@@ -50,16 +44,16 @@ const Navigation = () => {
             size='small'
             sx={{
               position: 'absolute',
-              top: 6,
-              right: 8,
-              height: 18,
-              fontSize: '0.6rem',
+              top: 4,
+              right: 6,
+              height: 16,
+              fontSize: '0.55rem',
               fontWeight: 700,
-              bgcolor: '#16a34a', // green ACTIVE badge
+              bgcolor: '#16a34a',
               color: '#ffffff',
-              borderRadius: '6px',
+              borderRadius: '4px',
               zIndex: 2,
-              px: 0.6,
+              px: 0.5,
             }}
           />
         )}
@@ -74,37 +68,40 @@ const Navigation = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: '#f9fafb', // light sidebar bg
+        backgroundColor: '#f3f4f6',
         borderRight: '1px solid #e5e7eb',
         fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        color: '#111827', // dark text
+        color: '#374151',
+        fontSize: '0.75rem',
       }}
     >
-      {/* Thin top divider */}
-      <Divider sx={{ borderColor: '#e5e7eb', my: 0.5 }} />
+      {/* Thin divider */}
+      <Divider sx={{ borderColor: '#e5e7eb', my: 0.25 }} />
 
-      {/* Scrollable area */}
+      {/* Scrollable menu */}
       <Box
         sx={{
           flex: 1,
-          px: 0.5,
-          pb: 1,
+          px: 0, // ?? zero left padding
+          pb: 0.5,
           overflowY: 'auto',
           overflowX: 'hidden',
-          position: 'relative',
           '&::-webkit-scrollbar': {
-            width: '6px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: 'transparent',
+            width: '4px',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: '#c7d2fe',
+            background: '#d1d5db',
             borderRadius: '999px',
           },
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0, // ?? no gap between items
+          }}
+        >
           {navGroups}
         </Box>
       </Box>

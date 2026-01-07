@@ -538,11 +538,10 @@ export default function HeaderContent({ keycloak }) {
               px: 1,
               py: 0.5,
               borderRadius: '10px',
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05))',
+
               backdropFilter: 'blur(6px)',
               transition: 'all 0.3s ease',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+
               '&:hover': {
                 transform: 'translateY(-1px) scale(1.05)',
                 boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
@@ -556,7 +555,6 @@ export default function HeaderContent({ keycloak }) {
               sx={{
                 height: 32,
                 transition: 'all 0.3s ease',
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
               }}
             />
           </Box>

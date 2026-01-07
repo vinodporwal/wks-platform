@@ -1,4 +1,3 @@
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord'
 import Collapse from '@mui/material/Collapse'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -7,6 +6,8 @@ import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
 import { useTheme } from '@mui/material/styles'
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
 import { verticalEnums } from 'enums/verticalEnums'
 import PropTypes from 'prop-types'
 import { useMemo, useState } from 'react'
@@ -17,12 +18,15 @@ const NavCollapse = ({ menu, level }) => {
   const theme = useTheme()
   const [open, setOpen] = useState(true)
   const [selected, setSelected] = useState(menu.id)
+
   const { plantID, verticalChange } = useSelector(
     (state) => state.dataGridStore,
   )
+
   const plantName = plantID?.plantName
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const handleClick = () => {
     setOpen(!open)
     setSelected(!selected ? menu.id : null)
@@ -50,6 +54,7 @@ const NavCollapse = ({ menu, level }) => {
 
     const shouldFilterSlowdown =
       lowerVertName === verticalEnums.PE && plantName === 'LDPE'
+
     const menuItems = shouldFilterSlowdown
       ? menu.children.filter((item) => item.id !== 'slowdown-norms')
       : menu.children
@@ -58,7 +63,7 @@ const NavCollapse = ({ menu, level }) => {
   }, [menu?.children, lowerVertName, plantName, level])
 
   const Icon = menu.icon
-  const menuIcon = menu.icon ? <Icon strokeWidth={1.6} size='1.1rem' /> : null
+  const menuIcon = menu.icon ? <Icon strokeWidth={1.6} size='1rem' /> : null
 
   return (
     <>
@@ -66,92 +71,89 @@ const NavCollapse = ({ menu, level }) => {
         onClick={handleClick}
         selected={selected === menu.id}
         sx={{
-          mb: 0.5,
-          px: 2,
-          py: 1.25,
-          borderRadius: '10px',
+          minHeight: 32, // ?? compact height
+          px: 0.75, // ?? no left padding
+          py: 0.25,
+          borderRadius: 0,
           alignItems: 'center',
           position: 'relative',
-          transition: 'all 0.25s ease',
-
-          // base
           backgroundColor: 'transparent',
 
-          // hover
           '&:hover': {
-            backgroundColor: 'rgba(255,255,255,0.06)',
-            transform: 'translateX(2px)',
+            backgroundColor: '#e5e7eb',
           },
 
-          // selected
           '&.Mui-selected': {
-            backgroundColor: 'rgba(144,202,249,0.14)',
+            backgroundColor: '#e0e7ff',
             '&:hover': {
-              backgroundColor: 'rgba(144,202,249,0.2)',
+              backgroundColor: '#c7d2fe',
             },
             '&::before': {
               content: '""',
               position: 'absolute',
               left: 0,
-              top: 8,
-              bottom: 8,
-              width: '3px',
-              borderRadius: '3px',
+              top: 4,
+              bottom: 4,
+              width: '2px',
               backgroundColor: theme.palette.primary.main,
             },
           },
         }}
       >
         {menuIcon && (
-          <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
+          <ListItemIcon
+            sx={{
+              minWidth: 26,
+              color: '#277424ff',
+            }}
+          >
             {menuIcon}
           </ListItemIcon>
         )}
+
         <ListItemText
           primary={
             <Typography
               sx={{
-                fontSize: '0.9rem',
+                fontSize: '0.75rem',
                 fontWeight: selected === menu.id ? 600 : 500,
-                letterSpacing: '0.02em',
+                lineHeight: 1.2,
+                color: '#374151',
               }}
             >
               {menu.title}
             </Typography>
           }
-          secondary={
-            menu.caption && (
-              <Typography
-                variant='caption'
-                sx={{ ...theme.typography.subMenuCaption }}
-                display='block'
-                gutterBottom
-              >
-                {menu.caption}
-              </Typography>
-            )
-          }
+          sx={{ my: 0 }}
         />
+
         {open ? (
-          <IconChevronUp
-            stroke={1.5}
-            size='1rem'
-            style={{ marginTop: 'auto', marginBottom: 'auto' }}
+          <RemoveIcon
+            sx={{
+              fontSize: 13,
+              color: '#1d4ed8',
+              transform: 'rotate(0deg)',
+              transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
+            }}
           />
         ) : (
-          <IconChevronDown
-            stroke={1.5}
-            size='1rem'
-            style={{ marginTop: 'auto', marginBottom: 'auto' }}
+          <AddIcon
+            sx={{
+              fontSize: 13,
+              color: '#1d4ed8',
+              transform: 'rotate(90deg)',
+              transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
+            }}
           />
         )}
       </ListItemButton>
+
       <Collapse in={open} timeout='auto' unmountOnExit>
         <List
           component='div'
           disablePadding
           sx={{
-            position: 'relative',
+            pl: 0, // ?? no indent
           }}
         >
           {menus}

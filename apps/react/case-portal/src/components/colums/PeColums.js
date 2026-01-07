@@ -164,18 +164,25 @@ export const SlowDownPeColumns = [
     editable: true,
   },
 
-  {
-    field: 'maintStartDateTime',
-    title: 'SD- From',
-    type: 'dateTime',
-    editable: true,
-  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD- From',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
 
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD- To',
+  //   type: 'dateTime',
+  //   editable: true,
+  // },
   {
-    field: 'maintEndDateTime',
-    title: 'SD- To',
-    type: 'dateTime',
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
     editable: true,
+    width: 150,
   },
 
   {
@@ -405,6 +412,7 @@ export const ShutdownConsumptionPeColumns = [
   {
     field: 'remarks',
     headerName: 'Remark',
+
     editable: false,
   },
 
