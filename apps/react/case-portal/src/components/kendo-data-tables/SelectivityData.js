@@ -432,7 +432,8 @@ const SelectivityData = (props) => {
 
     if (
       verticalChange?.selectedVertical === 'PE' ||
-      verticalChange?.selectedVertical === 'PP'
+      verticalChange?.selectedVertical === 'PP' ||
+      verticalChange?.selectedVertical?.toLowerCase() === 'elastomer'
     )
       getAllGrades()
 

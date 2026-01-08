@@ -208,9 +208,13 @@ const ShutDown = ({ permissions }) => {
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
+        let message = validationMessage
+        if (IS_PE_PP_VERTICAL && validationMessage.includes('Remark')) {
+        message = 'Please update the field: Shutdown Basis'
+      }
         setSnackbarOpen(true)
         setSnackbarData({
-          message: validationMessage,
+          message: message,
           severity: 'error',
         })
         return
@@ -357,8 +361,7 @@ const ShutDown = ({ permissions }) => {
 
         if (
           lowerVertName != 'elastomer' &&
-          // VCM logic change
-          // lowerVertName != 'vcm' &&
+          lowerVertName != 'vcm' &&
           lowerVertName != 'pvc'
         ) {
           for (let i = 0; i < rows.length; i++) {
