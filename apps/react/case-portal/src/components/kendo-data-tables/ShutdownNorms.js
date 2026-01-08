@@ -557,6 +557,7 @@ const ShutdownNorms = () => {
         isVCMWithVMD || lowerVertName == 'elastomer'
           ? true
           : lowerVertName == 'meg' ||
+              lowerVertName == 'vcm' ||
               lowerVertName == 'aromatics' ||
               lowerVertName == 'pta' ||
               IS_PE_PP_VERTICAL ||
