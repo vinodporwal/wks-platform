@@ -16,6 +16,7 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 import ConsumptionNormsHistorianBasis from './ConsumptionNormsHistorianBasis'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const REPORT_TYPE_FOR_ALL = 'NormsHistorian'
 
 const NormsHistorianBasisPe = () => {
@@ -417,12 +418,7 @@ const NormsHistorianBasisPe = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
@@ -491,7 +487,7 @@ const NormsHistorianBasisPe = () => {
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            className='btn-save'
+            className='btn-export'
           >
             Export
           </Button>

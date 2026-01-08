@@ -19,6 +19,7 @@ import KendoDataTables from './index'
 import NormalOpNormsScreenCracker from './NormalOpNormsCrakcer'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const NormalOpNormsScreen = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
 
@@ -731,12 +732,7 @@ const NormalOpNormsScreen = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {lowerVertName != 'cracker' && (
         <KendoDataTables

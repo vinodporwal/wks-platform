@@ -14,6 +14,7 @@ import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopH
 import KendoDataTables from './index'
 import ProductionNormsCracker from './ProductionNormsCracker'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNorms = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
@@ -907,12 +908,7 @@ const ProductionNorms = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
         modifiedCells={modifiedCells}

@@ -29,6 +29,7 @@ import CrakcerConstantsBestAchieved from './CrakcerConstantsBestAchieved'
 import CrakcerConstants from './CrakcerConstants'
 import { validateFields } from 'utils/validationUtils'
 import CrackerConfiguration from './CrackerConfiguration'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 // Constants
 const MONTHS = [
   'april',
@@ -1147,12 +1148,7 @@ const NormalOpNormsScreenCracker = () => {
   // UI render
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box sx={{ margin: 0, padding: 0 }}>
         <Tabs

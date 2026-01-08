@@ -424,7 +424,7 @@ export default function HeaderContent({ keycloak }) {
   const selectStyle = {
     '& .MuiOutlinedInput-notchedOutline': {
       border: '1px solid rgba(255, 255, 255, 0.25)',
-      borderRadius: '8px',
+      borderRadius: '2px',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     },
     '&:hover .MuiOutlinedInput-notchedOutline': {
@@ -449,7 +449,7 @@ export default function HeaderContent({ keycloak }) {
     },
     background: 'rgba(255, 255, 255, 0.08)',
     backdropFilter: 'blur(8px)',
-    borderRadius: '8px',
+    borderRadius: '2px',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     '&:hover': {
       background: 'rgba(255, 255, 255, 0.12)',
@@ -538,10 +538,8 @@ export default function HeaderContent({ keycloak }) {
               px: 1,
               py: 0.5,
               borderRadius: '10px',
-
               backdropFilter: 'blur(6px)',
               transition: 'all 0.3s ease',
-
               '&:hover': {
                 transform: 'translateY(-1px) scale(1.05)',
                 boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
@@ -568,10 +566,9 @@ export default function HeaderContent({ keycloak }) {
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
-                background:
-                  'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))',
+                // background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))',
                 backdropFilter: 'blur(6px)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                // boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
               }}
             >
               <Typography

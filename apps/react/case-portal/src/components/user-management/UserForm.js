@@ -29,6 +29,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { DataService } from 'services/DataService'
 import i18n from '../../i18n'
 import { Chip } from '../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const UserForm = ({ keycloak }) => {
   const location = useLocation()
@@ -728,12 +729,7 @@ const UserForm = ({ keycloak }) => {
       }}
     >
       {loading ? (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
       ) : (
         <>
           <Box py={3}>

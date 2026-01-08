@@ -49,6 +49,7 @@ import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export const particulars = [
   'normParameterId',
@@ -234,15 +235,15 @@ const KendoDataTablesReciepe = ({
 
       const { dataItem, field, value } = e
       const itemId = dataItem.id
-    // Track which cell was edited
-    setEditedCells((prev) => ({
-      ...prev,
-      [itemId]: {
-        ...(prev[itemId] || {}),
-        [field]: true
-      }
-    }))
-    
+      // Track which cell was edited
+      setEditedCells((prev) => ({
+        ...prev,
+        [itemId]: {
+          ...(prev[itemId] || {}),
+          [field]: true,
+        },
+      }))
+
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
@@ -341,7 +342,7 @@ const KendoDataTablesReciepe = ({
   const saveConfirmation = async () => {
     saveChanges()
     setModifiedCells({})
-    setEditedCells({}) 
+    setEditedCells({})
     setOpenSaveDialogeBox(false)
     setEdit({})
   }
@@ -507,10 +508,10 @@ const KendoDataTablesReciepe = ({
         cell.normParameterFKId?.toLowerCase() === normId?.toLowerCase(),
     )
 
-  // Check if THIS SPECIFIC FIELD was edited
-  const isRedFromEdit = editedCells[rowId]?.[field] === true
+    // Check if THIS SPECIFIC FIELD was edited
+    const isRedFromEdit = editedCells[rowId]?.[field] === true
 
-  const isRed = isRedFromAllRedCell || isRedFromEdit
+    const isRed = isRedFromAllRedCell || isRedFromEdit
 
     return (
       <td
@@ -528,14 +529,7 @@ const KendoDataTablesReciepe = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
         <Box
@@ -584,7 +578,7 @@ const KendoDataTablesReciepe = ({
             {permissions?.addButton && (
               <Button
                 variant='contained'
-                className='btn-save'
+                className='btn-add'
                 onClick={handleAddRow}
                 disabled={true}
               >
@@ -597,7 +591,7 @@ const KendoDataTablesReciepe = ({
               shouldShowExportImportButtons() && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className='btn-export'
                   onClick={downloadExcelForConfiguration}
                   disabled={isButtonDisabled}
                 >
@@ -625,7 +619,7 @@ const KendoDataTablesReciepe = ({
                   <Button
                     variant='contained'
                     component='span'
-                    className='btn-save'
+                    className='btn-import'
                     disabled={isButtonDisabled}
                   >
                     Import
@@ -657,7 +651,7 @@ const KendoDataTablesReciepe = ({
                 variant='contained'
                 onClick={handleCalculateBtn}
                 disabled={isButtonDisabled}
-                className='btn-save'
+                className='btn-calculate'
               >
                 Calculate
               </Button>
@@ -667,7 +661,7 @@ const KendoDataTablesReciepe = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-save'
+                className='btn-export'
               >
                 Export
               </Button>

@@ -675,7 +675,6 @@ const DataGridTable = ({
         )} */}
 
         <LoaderBackdrop open={!!loading} />
-        </Backdrop>
 
         <DataGrid
           autoHeight={true}

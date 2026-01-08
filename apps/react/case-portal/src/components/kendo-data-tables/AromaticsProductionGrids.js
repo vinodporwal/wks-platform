@@ -23,6 +23,7 @@ import {
 } from './Utilities-Kendo/productionTargetColDefs'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const AromaticsProductionGrids = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
@@ -1153,12 +1154,7 @@ const AromaticsProductionGrids = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* MAX_ACHIEVED_CAPACITY */}
       {conditionForFirst && (

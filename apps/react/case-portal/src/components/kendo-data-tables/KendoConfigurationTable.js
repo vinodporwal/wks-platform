@@ -50,6 +50,7 @@ import SyncIcon from '@mui/icons-material/Sync'
 import HistoryIcon from '@mui/icons-material/History'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { styled } from '@mui/material/styles'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -1418,14 +1419,12 @@ const ConfigurationTable = () => {
       tab === 'Report Manual Entry' ? `${tab} ${displayYear}` : tab,
     )
 
+    // HERE LOADING1
+    //loading1
+
     return (
       <div>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading1}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading1} />
         {ConfigurationAccordian}
         <Box>
           <AopTabs
@@ -1542,14 +1541,12 @@ const ConfigurationTable = () => {
     )
   }
 
+  // HERE LOADING1
+  //loading1
+
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading1} />
       {ConfigurationAccordian}
       <Notification
         open={snackbarOpen}

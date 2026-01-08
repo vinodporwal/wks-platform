@@ -30,6 +30,7 @@ import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinpu
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const AopDesignBasis = () => {
   const hasExecutedRef = useRef(false)
@@ -928,44 +929,12 @@ const AopDesignBasis = () => {
     )
   }, [openConfirmDialog, startDate, endDate])
 
+  // HERE LOADING1
+  //loading1
+
   return (
     <div>
-      <Backdrop
-        sx={{
-          color: '#fff',
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backdropFilter: 'blur(8px)',
-          background: 'rgba(0, 0, 0, 0.5)',
-        }}
-        open={!!loading1}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
-          <CircularProgress
-            color='inherit'
-            size={48}
-            thickness={4}
-            sx={{
-              filter: 'drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3))',
-            }}
-          />
-          <Typography
-            sx={{
-              fontWeight: 500,
-              fontSize: '0.9375rem',
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-            }}
-          >
-            Loading...
-          </Typography>
-        </Box>
-      </Backdrop>
+      <LoaderBackdrop open={!!loading1} />
       {ConfigurationAccordian}
       <Notification
         open={snackbarOpen}

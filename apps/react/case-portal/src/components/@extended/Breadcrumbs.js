@@ -426,7 +426,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                         textTransform: 'uppercase',
                         letterSpacing: '0.4px',
                         fontFamily:
-                          '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                          '"Inter", "Open Sans", "Helvetica", "Arial", sans-serif',
                       }}
                     >
                       {VERTICAL_NAME}

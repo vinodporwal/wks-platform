@@ -11,6 +11,7 @@ import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrackerConfig = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -619,12 +620,7 @@ const CrackerConfig = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
         <AopTabs
           tabIndex={tabIndex}

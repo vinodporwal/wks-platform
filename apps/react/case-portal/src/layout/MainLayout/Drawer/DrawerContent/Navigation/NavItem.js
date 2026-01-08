@@ -66,7 +66,7 @@ const NavItem = ({ item, level }) => {
           borderRadius: '10px',
           transition: 'all 160ms ease',
 
-          fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+          fontFamily: '"Segoe UI", Open Sans, Helvetica, Arial, sans-serif',
           fontSize: '0.82rem',
           fontWeight: 500,
 
@@ -128,7 +128,7 @@ const NavItem = ({ item, level }) => {
                 <Typography
                   sx={{
                     fontFamily:
-                      '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                      '"Segoe UI", Open Sans, Helvetica, Arial, sans-serif',
                     fontSize: '0.82rem',
                     fontWeight: isSelected ? 600 : 500,
                     color: isSelected ? '#ffffff' : '#3f3f46',

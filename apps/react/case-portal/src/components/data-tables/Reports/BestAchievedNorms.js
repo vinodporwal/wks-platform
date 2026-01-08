@@ -213,7 +213,7 @@ export default function BestAchievedNorms() {
   const [allRedCellList, setAllRedCellList] = useState([])
   const redLookupRef = useRef(new Map())
 
-  // accordion expanded state — start with a Set so we can expand multiple independently
+  // accordion expanded state ï¿½ start with a Set so we can expand multiple independently
   const [expanded, setExpanded] = useState(() => new Set())
 
   // export control (dynamic ExcelExport mount)
@@ -641,7 +641,7 @@ export default function BestAchievedNorms() {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
+          className='btn-export'
           disabled={READ_ONLY}
         >
           Export

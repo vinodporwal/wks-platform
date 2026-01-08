@@ -275,7 +275,7 @@ const AnnualAopCost = () => {
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            className='btn-save'
+            className='btn-export'
             disabled={READ_ONLY}
           >
             Export

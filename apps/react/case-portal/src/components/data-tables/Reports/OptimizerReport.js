@@ -17,6 +17,7 @@ import {
 } from 'utils/CustomAccrodian'
 import { getRoleName } from 'services/role-service.js'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CALL_DELAY_MS = 20
 const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
@@ -475,12 +476,7 @@ const OptimizerReport = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box display='flex' justifyContent='flex-end' mb='2px' gap={1}>
         {isCracker && (
@@ -488,7 +484,7 @@ const OptimizerReport = () => {
             variant='contained'
             onClick={calculateMonthWiseData}
             disabled={READ_ONLY || calculating || loading}
-            className='btn-save'
+            className='btn-calculate'
             color='primary'
           >
             {calculating ? 'Calculating...' : 'Calculate'}
@@ -497,7 +493,7 @@ const OptimizerReport = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
+          className='btn-export'
           disabled={READ_ONLY}
         >
           Export

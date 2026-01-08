@@ -16,6 +16,7 @@ import './extra-css.css'
 // import '@progress/kendo-theme-bootstrap/dist/all.css'
 import '@progress/kendo-theme-fluent/dist/all.css'
 import '@progress/kendo-font-icons/dist/index.css'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 // import { useSelector } from 'react-redux'
 import Layout from 'layout/FooterLayout/index'

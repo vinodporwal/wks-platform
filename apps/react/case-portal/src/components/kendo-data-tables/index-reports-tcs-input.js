@@ -636,7 +636,7 @@ const KendoDataTablesReportsTcs = ({
             {permissions?.addButton && (
               <Button
                 variant='contained'
-                className='btn-save'
+                className='btn-add'
                 onClick={handleAddRow}
                 disabled={false}
               >
@@ -662,7 +662,7 @@ const KendoDataTablesReportsTcs = ({
                 variant='contained'
                 onClick={handleCalculateBtn}
                 disabled={isButtonDisabled}
-                className='btn-save'
+                className='btn-calculate'
               >
                 Calculate
               </Button>
@@ -672,7 +672,7 @@ const KendoDataTablesReportsTcs = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-save'
+                className='btn-export'
               >
                 Export
               </Button>
@@ -683,7 +683,7 @@ const KendoDataTablesReportsTcs = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-save'
+                className='btn-export'
               >
                 Export
               </Button>
@@ -694,7 +694,7 @@ const KendoDataTablesReportsTcs = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-save'
+                className='btn-import'
               >
                 Import
               </Button>

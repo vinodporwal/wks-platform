@@ -22,6 +22,7 @@ import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 import { SlowdownNormForMegServices } from 'services/SlowdownNormForMegServices'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const SlowdownNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [loading, setLoading] = useState(false)
@@ -585,15 +586,9 @@ const SlowdownNorms = () => {
   if (lowerVertName === 'pp' && siteName === 'nmd' && plantName === 'pp') {
     return null // Or: return <div>Screen hidden for this configuration.</div>
   }
-
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {lowerVertName === 'meg' ? (
         <SlowdownNormForMeg />
       ) : (

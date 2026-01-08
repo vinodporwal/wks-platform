@@ -20,6 +20,7 @@ import {
 import KendoDataGrid from 'components/Kendo-Report-DataGrid/index'
 import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeader'
 import { Button } from '../../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
@@ -170,12 +171,7 @@ const NormsHistorianBasis = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Export hidden ExcelExport instances */}
       <div style={{ display: 'none' }}>
@@ -218,7 +214,7 @@ const NormsHistorianBasis = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
+          className='btn-export'
         >
           Export
         </Button>

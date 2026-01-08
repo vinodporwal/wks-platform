@@ -1711,7 +1711,8 @@ const KendoDataTables = ({
                 // height: `${gridHeight}px`,
 
                 height:
-                  lowerVertName === 'meg' || supressGridHeight == true
+                  // lowerVertName === 'meg' || supressGridHeight == true
+                  supressGridHeight == true
                     ? undefined
                     : rows?.length > 10
                       ? `${calculatedVH}vh`

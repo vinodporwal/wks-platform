@@ -29,6 +29,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 // import NormsHistorianBasisAromatics from './NormsHistorianBasisAromatics'
 import NormsHistorianBasisPe from './NormsHistorianBasisPe'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -87,7 +88,6 @@ const NormsHistorianBasis = () => {
   const fetchAllData = async (selectedUnit) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if (lowerVertName != 'meg') return
-
     if (!selectedUnit) return
     setLoading(true)
     let isCancelled = false
@@ -307,12 +307,7 @@ const NormsHistorianBasis = () => {
   } else
     return (
       <div>
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
+        <LoaderBackdrop open={!!loading} />
 
         <div style={{ display: 'none' }}>
           {(lowerVertName === 'cracker'
@@ -351,7 +346,7 @@ const NormsHistorianBasis = () => {
             <Button
               variant='contained'
               onClick={exportAllGrids}
-              className='btn-save'
+              className='btn-export'
               disabled={READ_ONLY}
             >
               Export

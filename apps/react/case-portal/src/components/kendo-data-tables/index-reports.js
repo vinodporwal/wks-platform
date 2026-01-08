@@ -328,7 +328,7 @@ const KendoDataTablesReports = ({
         style={{
           cursor: 'pointer',
           color: rawValue ? 'inherit' : 'gray',
-          background: isDisabled ? '#e7e7e7' : undefined, // match column disabled bg
+          background: isDisabled ? '#f1f5f9' : undefined, // match column disabled bg
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -644,7 +644,7 @@ const KendoDataTablesReports = ({
             {permissions?.addButton && (
               <Button
                 variant='contained'
-                className='btn-save'
+                className='btn-add'
                 onClick={handleAddRow}
                 disabled={READ_ONLY}
               >
@@ -670,7 +670,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 onClick={handleCalculateBtn}
                 // disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                className='btn-calculate'
                 disabled={
                   READ_ONLY ||
                   (rows?.length === 0
@@ -686,7 +686,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                className='btn-export'
               >
                 Export
               </Button>
@@ -697,7 +697,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                className='btn-export'
               >
                 Export
               </Button>
@@ -708,7 +708,7 @@ const KendoDataTablesReports = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                className='btn-import'
               >
                 Import
               </Button>

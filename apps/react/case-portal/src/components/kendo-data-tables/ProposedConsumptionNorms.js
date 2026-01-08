@@ -14,6 +14,7 @@ import { ConsumptionNormsApiService } from 'services/consumption-norms-api-servi
 import { getRoleName } from 'services/role-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import KendoDataTables from './index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProposedConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -281,16 +282,18 @@ const ProposedConsumptionNorms = () => {
       setCalculationObject(response?.data?.aopCalculation)
 
       // const formattedData = response?.data?.aopProposedNormsDTOList?.map((item, index) => {
-      const formattedData = response?.data?.aopProposedNormsDTOList?.map((item, index) => {
-        return {
-          ...item,
-          idFromApi: item.id,
-          originalRemark: item.remarks?.trim() || null,
-          id: index,
-          Particulars: item.normParameterTypeDisplayName || 'Type',
-          isEditable: true,
-        }
-      })
+      const formattedData = response?.data?.aopProposedNormsDTOList?.map(
+        (item, index) => {
+          return {
+            ...item,
+            idFromApi: item.id,
+            originalRemark: item.remarks?.trim() || null,
+            id: index,
+            Particulars: item.normParameterTypeDisplayName || 'Type',
+            isEditable: true,
+          }
+        },
+      )
 
       setRows(formattedData)
       setLoading(false)
@@ -455,12 +458,7 @@ const ProposedConsumptionNorms = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <div>
         {
