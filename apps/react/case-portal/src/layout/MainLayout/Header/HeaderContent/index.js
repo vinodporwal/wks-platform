@@ -500,11 +500,12 @@ export default function HeaderContent({ keycloak }) {
     <>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
           width: '100%',
           position: 'relative',
+          px: 1,
           '&::after': {
             content: '""',
             position: 'absolute',
@@ -517,7 +518,7 @@ export default function HeaderContent({ keycloak }) {
           },
         }}
       >
-        {/* LEFT SIDE: Logo + Title */}
+        {/* LEFT SIDE: Logo + Title (grid column 1) */}
         <Box
           sx={{
             display: 'flex',
@@ -528,6 +529,10 @@ export default function HeaderContent({ keycloak }) {
               from: { opacity: 0, transform: 'translateX(-20px)' },
               to: { opacity: 1, transform: 'translateX(0)' },
             },
+
+            /* allow the left column to shrink and allow ellipsis */
+            minWidth: 0,
+            overflow: 'hidden',
           }}
         >
           <Box
@@ -544,31 +549,30 @@ export default function HeaderContent({ keycloak }) {
                 transform: 'translateY(-1px) scale(1.05)',
                 boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
               },
+              flex: '0 0 auto',
             }}
           >
             <Box
               component='img'
               src={Logo}
               alt='RIL Logo'
-              sx={{
-                height: 32,
-                transition: 'all 0.3s ease',
-              }}
+              sx={{ height: 32 }}
             />
           </Box>
 
           {!HIDE_DASHBOARD_DROPDOWN && (
             <Box
               sx={{
-                ml: 0.75,
-                px: 1.5,
+                ml: 0,
+                px: 0,
                 py: 0.5,
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
-                // background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))',
-                backdropFilter: 'blur(6px)',
-                // boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+
+                /* ensure title can shrink inside the left column */
+                minWidth: 0,
+                overflow: 'hidden',
               }}
             >
               <Typography
@@ -581,6 +585,12 @@ export default function HeaderContent({ keycloak }) {
                   textTransform: 'uppercase',
                   color: '#fff',
                   lineHeight: 1,
+
+                  /* ellipsis */
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: 'block',
                 }}
               >
                 {screenTitleName}
@@ -589,21 +599,20 @@ export default function HeaderContent({ keycloak }) {
           )}
         </Box>
 
-        {/* CENTERED DROPDOWNS */}
+        {/* CENTERED DROPDOWNS (grid column 2) */}
         <Stack
           direction='row'
           spacing={1.5}
           alignItems='center'
           sx={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
+            justifySelf: 'center',
             animation: 'fadeInRight 0.5s ease-out',
             '@keyframes fadeInRight': {
               from: { opacity: 0, transform: 'translateX(20px)' },
               to: { opacity: 1, transform: 'translateX(0)' },
             },
+            /* remove absolute positioning — grid will center it */
+            position: 'static',
           }}
         >
           {/* Year */}
@@ -766,8 +775,10 @@ export default function HeaderContent({ keycloak }) {
           )}
         </Stack>
 
-        {/* RIGHT SIDE: Profile / Mobile */}
-        {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        {/* RIGHT SIDE: Profile / Mobile (grid column 3) */}
+        <Box sx={{ justifySelf: 'end' }}>
+          {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        </Box>
       </Box>
     </>
   )

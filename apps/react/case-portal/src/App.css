@@ -343,9 +343,11 @@ body {
   color: #6366f1;
   font-weight: 600;
 }
-/* Calendar icon color */
 .k-datepicker .k-input-button .k-icon,
 .k-datepicker .k-input-button svg {
-  color: #303284 !important; /* for font icons */
-  fill: #303284 !important; /* for SVG icons */
+  color: #303284 !important;
+  fill: #303284 !important;
+  opacity: 1 !important;
+  stroke: #303284 !important;
+  stroke-width: 1.5px;
 }
