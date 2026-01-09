@@ -46,6 +46,9 @@ services:
             - GE_USERS_AUTHENTICATE_SYSTEMNAME=${GE_USERS_AUTHENTICATE_SYSTEMNAME}
             - GE_USERS_AUTHENTICATE_USERID=${GE_USERS_AUTHENTICATE_USERID}
             - GE_USERS_AUTHENTICATE_PASSWORD=${GE_USERS_AUTHENTICATE_PASSWORD}
+            - JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/etc/pki/java/cacerts -Djavax.net.ssl.trustStorePassword=${TRUSTSTORE_PASSWORD}
+        volumes:
+            - /etc/pki/java/cacerts:/etc/pki/java/cacerts:ro
         depends_on:
             mongodb:
                 condition: service_healthy

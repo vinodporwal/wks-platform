@@ -63,7 +63,9 @@ public interface CaseDefinitionService {
 
 	List<Users> getUserList();
 
-	List<com.wks.caseengine.rest.db2.entity.Users> getUsersList();
+	//List<com.wks.caseengine.rest.db2.entity.Users> getUsersList();
+
+	List<com.wks.caseengine.rest.model.UserDTO> getUsersList();
 
 	List<FunctionalLocation> getFunctionalLocations(String AssetName);
 

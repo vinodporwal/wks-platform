@@ -83,6 +83,7 @@ import com.wks.caseengine.rest.model.FaultHistoryModel;
 import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.HierarchyNodesModel;
 import com.wks.caseengine.rest.model.Recommendations;
+import com.wks.caseengine.rest.model.UserDTO;
 import com.wks.caseengine.rest.model.Users;
 
 import jakarta.persistence.EntityManager;
@@ -1035,9 +1036,9 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	}
 
 	@Override
-	public List<com.wks.caseengine.rest.db2.entity.Users> getUsersList() {
-		return usersRepository.findAll(); 
-
+	public List<UserDTO> getUsersList() {
+		//return usersRepository.findAll(); 
+		return (List<UserDTO>) usersRepository.findAllUserIdAndEmail(); 
 	}
 	
 	@Override
