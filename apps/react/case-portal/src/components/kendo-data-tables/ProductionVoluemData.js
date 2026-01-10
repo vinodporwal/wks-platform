@@ -573,16 +573,18 @@ const ProductionvolumeData = ({ permissions }) => {
   }
 
   const colDefs_percentage_summary = IS_PE_PP
-  ? getColDefsPercentageSummaryPEPP(headerMap, valueFormat)
-  : getColDefsPercentageSummary(headerMap, valueFormat)
+    ? getColDefsPercentageSummaryPEPP(headerMap, valueFormat)
+    : getColDefsPercentageSummary(headerMap, valueFormat)
 
-  const colDefs_design_capacity = IS_PE_PP || IS_PET
-    ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
-    : getColDefsDesignCapacity(headerMap, valueFormat)
+  const colDefs_design_capacity =
+    IS_PE_PP || IS_PET
+      ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
+      : getColDefsDesignCapacity(headerMap, valueFormat)
 
-  const colDefs_max_achieved_capacity = IS_PE_PP || IS_PET
-    ? getColDefsMaxAchievedCapacityPEPP(headerMap, valueFormat)
-    : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
+  const colDefs_max_achieved_capacity =
+    IS_PE_PP || IS_PET
+      ? getColDefsMaxAchievedCapacityPEPP(headerMap, valueFormat)
+      : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
 
   const colDefs_non_editable = getColDefsNonEditable(headerMap, valueFormat)
 
@@ -825,12 +827,13 @@ const ProductionvolumeData = ({ permissions }) => {
   }
 
   //POINT-1 Current MCU to be rename as Max Achieved capacity.
-  const percentageTitle = IS_PE_PP || IS_PET
-    ? // ? 'Current MCU'
-      'Max Achieved Capacity'
-    : VERTICAL_NAME === 'cracker'
-      ? 'Max Achieved Capacity (Ethylene)'
-      : 'Max Achieved Capacity'
+  const percentageTitle =
+    IS_PE_PP || IS_PET
+      ? // ? 'Current MCU'
+        'Max Achieved Capacity'
+      : VERTICAL_NAME === 'cracker'
+        ? 'Max Achieved Capacity (Ethylene)'
+        : 'Max Achieved Capacity'
   const adjustedPermissionsGrid1 = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? false,
@@ -882,11 +885,11 @@ const ProductionvolumeData = ({ permissions }) => {
       showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
 
       titleName:
-      VERTICAL_NAME === 'cracker'
-        ? 'Design Capacity (Ethylene)'
-        : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
-          ? 'Design Capacity (MCU from MCU Portal)'
-          : 'Design Capacity',
+        VERTICAL_NAME === 'cracker'
+          ? 'Design Capacity (Ethylene)'
+          : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
+            ? 'Design Capacity (MCU from MCU Portal)'
+            : 'Design Capacity',
     },
     isOldYear,
   )
@@ -910,10 +913,7 @@ const ProductionvolumeData = ({ permissions }) => {
           ? true
           : false,
       downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      uploadExcelBtn:
-         permissions?.hideUploadExcel
-            ? false
-            : true,
+      uploadExcelBtn: permissions?.hideUploadExcel ? false : true,
 
       showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
 

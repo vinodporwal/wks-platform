@@ -34,6 +34,7 @@ import { CaseList } from 'views/caseList/caseList'
 import { CaseDefList } from 'views/management/caseDef/caseDefList/caseDefList'
 import { FormList } from 'views/management/form/formList'
 import { ProcessDefList } from 'views/management/processDef/processDefList'
+
 import { QueueList } from 'views/management/queue/queueList'
 import { RecordTypeList } from 'views/management/recordType/recordTypeList'
 import { TaskList } from 'views/taskList/taskList'
@@ -56,13 +57,23 @@ import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
 import MaintenanceSummary from 'components/kendo-data-tables/MaintenanceSummary'
 import PlantBudgetSummary from 'components/kendo-data-tables/PlantBudgetSummary'
 import AopDesignBasis from 'components/kendo-data-tables/AopDesignBasis'
-import TcsInput from 'components/kendo-data-tables/TcsInput'
 import ProductionTargetBasis from 'components/data-tables/Reports/ProductionTargetBasis'
 
 import SiteMaintenanceSummary from 'components/kendo-data-tables/SiteMaintenanceSummary'
 import FeedStockAvailability from 'components/kendo-data-tables/FeedStockavailability'
 import TurnaroundPlanTable from 'components/kendo-data-tables/TurnaroundPlanTable'
 import NormComparisonReport from 'components/kendo-data-tables/NormComparisonReport'
+//CPP
+import Inputs from 'components/phase-two/CPP/Inputs/index'
+import PlantRequirement from 'components/phase-two/CPP/PlantRequirement'
+import FixedConsumption from 'components/phase-two/CPP/FixedConsumption'
+import Norms from 'components/phase-two/CPP/Norms'
+
+// TCS
+
+import TcsOutput from 'components/phase-two/TCS/TcsOutput/index'
+import PimsOutput from 'components/phase-two/TCS/PimsOutput/PimsOutput'
+import TcsInput from 'components/phase-two/TCS/TcsInput/index'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
 
@@ -211,6 +222,22 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='tcs-input'>
                 <TcsInput />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'tcs-output',
+            element: (
+              <PrivateRoute routeId='tcs-output'>
+                <TcsOutput />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'pims-output',
+            element: (
+              <PrivateRoute routeId='pims-output'>
+                <PimsOutput />
               </PrivateRoute>
             ),
           },
@@ -519,6 +546,44 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+        ],
+      },
+      {
+        path: 'utilityPlant',
+        children: [
+          {
+            path: 'norms',
+            element: (
+              <PrivateRoute routeId='norms'>
+                <Norms />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'plant-requirement',
+            element: (
+              <PrivateRoute routeId='plant-requirement'>
+                <PlantRequirement />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'fixed-consumption',
+            element: (
+              <PrivateRoute routeId='fixed-consumption'>
+                <FixedConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'inputs',
+            element: (
+              <PrivateRoute routeId='inputs'>
+                <Inputs />
+              </PrivateRoute>
+            ),
+          },
+          // ...other utilityPlant routes...
         ],
       },
 
