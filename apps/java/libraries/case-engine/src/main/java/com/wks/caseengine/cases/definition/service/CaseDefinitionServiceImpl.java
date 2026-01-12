@@ -1056,11 +1056,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		.map(String::trim) // remove spaces
 		.collect(Collectors.toList());
 
-		List<com.wks.caseengine.rest.db2.entity.Users> users = usersRepository.findByEmailIn(emailList);
-
-		return users.stream()
-		.map(u -> new UserDTO(u.getUserId(), u.getEmailId()))
-		.collect(Collectors.toList());
+		return usersRepository.findByEmailIn(emailList);
 	}
 
 	@Override

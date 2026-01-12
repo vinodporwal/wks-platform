@@ -16,7 +16,11 @@ import com.wks.caseengine.rest.model.UserDTO;
 public interface UsersRepository  extends JpaRepository<Users, String> {
     Users findByEmailId(String emailId);
 
-    List<Users> findByEmailIn(List<String> emails);  
+    @Query("""
+            SELECT new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId) FROM Users u
+            WHERE EmailId IN :emails
+            """)
+    List<UserDTO> findByEmailIn(@Param("emails") List<String> emails);  
 
     @Query("SELECT new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId) FROM Users u")
     List<UserDTO> findAllUserIdAndEmail();  
