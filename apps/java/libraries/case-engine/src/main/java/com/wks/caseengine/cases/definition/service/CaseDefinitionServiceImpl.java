@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1043,6 +1044,23 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<UserDTO> getUsersList() {
 		//return usersRepository.findAll(); 
 		return (List<UserDTO>) usersRepository.findAllUserIdAndEmail(); 
+	}
+
+	@Override
+	public List<UserDTO> getUsersByEmailIds(String emailIds) {
+		if (emailIds == null || emailIds.isEmpty()) {
+		return List.of();
+		}
+
+		List<String> emailList = Arrays.stream(emailIds.split(","))
+		.map(String::trim) // remove spaces
+		.collect(Collectors.toList());
+
+		List<com.wks.caseengine.rest.db2.entity.Users> users = usersRepository.findByEmailIn(emailList);
+
+		return users.stream()
+		.map(u -> new UserDTO(u.getUserId(), u.getEmailId()))
+		.collect(Collectors.toList());
 	}
 
 	@Override

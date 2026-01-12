@@ -12,6 +12,7 @@
 package com.wks.caseengine.rest.server;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,9 +195,15 @@ public class CaseDefinitionController {
     public List<Map<String, Object>> getUsers(
             @RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int skip,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String ids
     ) {
-        List<UserDTO> users = caseDefinitionService.searchUsers(search, limit, skip);
+		List<UserDTO> users = new ArrayList<UserDTO>();
+		if (ids != null && !ids.isEmpty()) {
+			users = caseDefinitionService.getUsersByEmailIds(ids);
+		}else {
+	        users = caseDefinitionService.searchUsers(search, limit, skip);
+		}
 
         return users.stream()
                 .map(user -> {
