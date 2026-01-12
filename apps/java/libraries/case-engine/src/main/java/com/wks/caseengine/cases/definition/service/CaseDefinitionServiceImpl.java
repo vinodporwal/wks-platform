@@ -27,6 +27,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -1039,6 +1043,17 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 	public List<UserDTO> getUsersList() {
 		//return usersRepository.findAll(); 
 		return (List<UserDTO>) usersRepository.findAllUserIdAndEmail(); 
+	}
+
+	@Override
+	public List<UserDTO> searchUsers(String search, int limit, int skip) {
+		int page = skip / limit;
+		Pageable pageable = PageRequest.of(page, limit, Sort.by("userId").ascending());
+
+		if (search == null || search.isBlank()) {
+			return usersRepository.findAllUserIdAndEmail();
+		}
+		return usersRepository.searchUsers(search.trim(), pageable).getContent();
 	}
 	
 	@Override

@@ -12,6 +12,7 @@
 package com.wks.caseengine.rest.server;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +51,7 @@ import com.wks.caseengine.rest.exception.RestResourceNotFoundException;
 import com.wks.caseengine.rest.model.FaultEvents;
 import com.wks.caseengine.rest.model.FunctionalLocation;
 import com.wks.caseengine.rest.model.Recommendations;
+import com.wks.caseengine.rest.model.UserDTO;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -186,6 +188,24 @@ public class CaseDefinitionController {
 		} catch (CaseDefinitionNotFoundException e) {
 			throw new RestResourceNotFoundException(e.getMessage());
 		}
+	}
+
+	@GetMapping("/users")
+    public List<Map<String, Object>> getUsers(
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int skip,
+            @RequestParam(required = false) String search
+    ) {
+        List<UserDTO> users = caseDefinitionService.searchUsers(search, limit, skip);
+
+        return users.stream()
+                .map(user -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("label", user.getUserId());
+                    map.put("value", user.getEmailId());
+                    return map;
+                })
+                .toList();  
 	}
 	
 	@GetMapping(value = "/users")
