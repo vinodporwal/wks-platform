@@ -1051,7 +1051,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		Pageable pageable = PageRequest.of(page, limit, Sort.by("userId").ascending());
 
 		if (search == null || search.isBlank()) {
-			return usersRepository.findAllUserIdAndEmail();
+			return usersRepository.findTopUsers(pageable).getContent();
 		}
 		return usersRepository.searchUsers(search.trim(), pageable).getContent();
 	}

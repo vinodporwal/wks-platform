@@ -16,8 +16,15 @@ import com.wks.caseengine.rest.model.UserDTO;
 public interface UsersRepository  extends JpaRepository<Users, String> {
     Users findByEmailId(String emailId);
 
-    @Query("SELECT TOP 1000 new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId) FROM Users u")
+    @Query("SELECT new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId) FROM Users u")
     List<UserDTO> findAllUserIdAndEmail();  
+
+    @Query("""
+        SELECT new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId)
+        FROM Users u
+        ORDER BY u.userId
+        """)
+    Page<UserDTO> findTopUsers(Pageable pageable);
 
     @Query("""
         SELECT new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId) FROM Users u
