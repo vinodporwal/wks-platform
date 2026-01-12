@@ -2086,11 +2086,11 @@ const loadOptions = async (keycloak) => {
     (item) => ({ label: item.name, value: item.id })
   );
 
-  const caseDefinitionUsers = await fetchAndCacheOptions(
-    () => CaseDefService.getCaseDefinitionUsers(keycloak),
-    'caseAssignedOptions',
-    (item) => ({ label: item.userId, value: item.emailId })
-  );
+  // const caseDefinitionUsers = await fetchAndCacheOptions(
+  //   () => CaseDefService.getCaseDefinitionUsers(keycloak),
+  //   'caseAssignedOptions',
+  //   (item) => ({ label: item.userId, value: item.emailId })
+  // );
   const caseDefinitionCategories = await fetchAndCacheOptions(
     () => CaseDefService.getCaseDefinitionCategories(keycloak),
     'categoryOptions',
