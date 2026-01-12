@@ -26,8 +26,8 @@ public interface UsersRepository  extends JpaRepository<Users, String> {
 
     @Query("""
         SELECT new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId) FROM Users u
-        WHERE LOWER(u.userId) LIKE LOWER(CONCAT('%', :search, '%'))
-        OR LOWER(u.emailId) LIKE LOWER(CONCAT('%', :search, '%'))
+        WHERE LOWER(u.userId) LIKE LOWER(CONCAT(:search, '%'))
+        OR LOWER(u.emailId) LIKE LOWER(CONCAT(:search, '%'))
         """)
     Page<UserDTO> searchUsers(@Param("search") String search, Pageable pageable);
 }
