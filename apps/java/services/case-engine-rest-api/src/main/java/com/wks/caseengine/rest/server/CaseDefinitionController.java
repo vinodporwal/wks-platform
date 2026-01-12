@@ -190,7 +190,7 @@ public class CaseDefinitionController {
 		}
 	}
 
-	@GetMapping("/users")
+	@GetMapping("/user")
     public List<Map<String, Object>> getUsers(
             @RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int skip,
