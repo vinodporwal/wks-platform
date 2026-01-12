@@ -21,9 +21,7 @@ public interface UsersRepository  extends JpaRepository<Users, String> {
 
     @Query("""
         SELECT new com.wks.caseengine.rest.model.UserDTO(u.userId, u.emailId)
-        FROM Users u
-        ORDER BY u.userId
-        """)
+        FROM Users u """)
     Page<UserDTO> findTopUsers(Pageable pageable);
 
     @Query("""
