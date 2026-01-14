@@ -801,7 +801,7 @@ const AopDesignBasis = () => {
                     borderRadius: '8px',
                     border: '1px solid rgba(1, 0, 203, 0.2)',
                     transition: 'all 0.3s ease',
-                    fontFamily: 'inherit',
+                    fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
                     '&:hover': {
                       borderColor: 'rgba(1, 0, 203, 0.4)',
                       boxShadow: '0 2px 8px rgba(1, 0, 203, 0.1)',

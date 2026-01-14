@@ -26,9 +26,8 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         WebkitOverflowScrolling: 'touch',
         p: 0.25,
         borderRadius: '8px',
-        bgcolor: '#f8fafc',
-        border: '1px solid rgba(0,0,0,0.05)',
-
+        // bgcolor: '#f8fafc',
+        // border: '1px solid rgba(0,0,0,0.05)',
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
       }}
@@ -42,7 +41,7 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
           width: 'max-content',
 
           '& .MuiTabs-flexContainer': {
-            gap: BOX_TABS ? '4px' : '12px',
+            gap: BOX_TABS ? '1px' : '1px',
           },
 
           '& .MuiTabs-indicator': {

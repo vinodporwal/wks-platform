@@ -39,10 +39,11 @@ const MainLayout = ({ keycloak, authenticated }) => {
         component='main'
         sx={{
           flex: 1,
-          minWidth: 0, // ? CRITICAL
+          minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden', // grid must scroll internally
+          backgroundColor: '#f9f9f9',
         }}
       >
         {/* Reserve header height */}

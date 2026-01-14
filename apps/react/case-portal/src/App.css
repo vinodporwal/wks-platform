@@ -1,14 +1,9 @@
 legend {
   width: auto;
 }
-
 header {
-  background: linear-gradient(
-    135deg,
-    #0b103f 0%,
-    #151a66 50%,
-    #1e237f 100%
-  ) !important;
+  background-color: #1d3665 !important;
+  background-image: none !important; /* Ensures the previous gradient is fully removed */
   box-shadow: 0 2px 12px rgba(5, 10, 80, 0.45) !important;
   color: #ffffff !important;
 }
@@ -311,9 +306,9 @@ main.MuiBox-root.css-vognfw {
   background: rgba(25, 118, 210, 0.08);
 }
 
-html {
+/* html {
   overflow-y: scroll;
-}
+} */
 
 body {
   background: transparent;

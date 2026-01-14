@@ -28,6 +28,7 @@ const defs = {
     dataForm: 'WKS Form',
     dataForm2: 'WKS Form2',
     productionNormsPlan: 'Production / Norms Plan',
+    targetDemand: 'Target & Demand',
     process: 'Process',
     productMCUVal: 'Production Target',
     spyroInput: 'Optimizer Input',

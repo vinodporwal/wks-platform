@@ -26,21 +26,23 @@
 }
 
 /* alternating colors: odd = red, even = green */
-.kendo-data-grid
+/* NO MORE REQUIRED */
+/* .kendo-data-grid
   .k-grid-content
   .k-grid-table
   tr:nth-child(odd)
   td:first-child::before {
-  background: linear-gradient(180deg, #ef4444, #dc2626); /* red */
-}
+  background: linear-gradient(180deg, #ef4444, #dc2626);
+} */
 
-.kendo-data-grid
+/* NO MORE REQUIRED */
+/* .kendo-data-grid
   .k-grid-content
   .k-grid-table
   tr:nth-child(even)
   td:first-child::before {
-  background: linear-gradient(180deg, #10b981, #059669); /* green */
-}
+  background: linear-gradient(180deg, #10b981, #059669); 
+} */
 
 /* explicitly remove bar from group header rows */
 .kendo-data-grid
@@ -53,10 +55,10 @@
 
 /* GROUP HEADER ROW */
 .kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row {
-  background: linear-gradient(180deg, #f1f5f9, #e2e8f0);
+  /* background: linear-gradient(180deg, #e9ecf0, #e2e8f0); */
   font-weight: 600;
   color: #0f172a;
-  height: 34px;
+  height: 30px;
 }
 
 /* Group row cells */

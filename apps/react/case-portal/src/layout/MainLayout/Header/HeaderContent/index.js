@@ -464,8 +464,8 @@ export default function HeaderContent({ keycloak }) {
         marginTop: '4px',
         background: 'rgba(0,0,0,0.75)',
         backdropFilter: 'blur(6px)',
-        boxShadow:
-          '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
+        // boxShadow:
+        //   '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
         border: '1px solid rgba(255, 255, 255, 0.06)',
         color: '#fff',
       },
@@ -506,6 +506,7 @@ export default function HeaderContent({ keycloak }) {
           width: '100%',
           position: 'relative',
           px: 1,
+          py: 0.125,
           '&::after': {
             content: '""',
             position: 'absolute',
@@ -611,7 +612,7 @@ export default function HeaderContent({ keycloak }) {
               from: { opacity: 0, transform: 'translateX(20px)' },
               to: { opacity: 1, transform: 'translateX(0)' },
             },
-            /* remove absolute positioning — grid will center it */
+            /* remove absolute positioning ? grid will center it */
             position: 'static',
           }}
         >
@@ -622,7 +623,7 @@ export default function HeaderContent({ keycloak }) {
               className='custom-title-dropdown'
               sx={{
                 fontSize: '0.875rem',
-                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                 color: '#fff',
                 fontWeight: 700,
               }}
@@ -664,7 +665,7 @@ export default function HeaderContent({ keycloak }) {
                 className='custom-title-dropdown'
                 sx={{
                   fontSize: '0.875rem',
-                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                   color: '#ffffffff',
                   fontWeight: 700,
                 }}
@@ -704,7 +705,7 @@ export default function HeaderContent({ keycloak }) {
                 className='custom-title-dropdown'
                 sx={{
                   fontSize: '0.875rem',
-                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                   color: '#fff',
                   fontWeight: 700,
                 }}
@@ -744,7 +745,7 @@ export default function HeaderContent({ keycloak }) {
                 className='custom-title-dropdown'
                 sx={{
                   fontSize: '0.875rem',
-                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
                   color: '#fff',
                   fontWeight: 700,
                 }}

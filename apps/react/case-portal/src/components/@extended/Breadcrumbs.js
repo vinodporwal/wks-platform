@@ -374,28 +374,23 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                 py: 0.5,
                 width: '100%',
 
-                /* Modern surface */
-                bgcolor: 'rgba(255, 255, 255, 0.85)',
-                backdropFilter: 'blur(6px)',
+                /*  Transparent to background */
+                bgcolor: 'transparent',
+                backdropFilter: 'none',
 
-                /* Border */
-                border: '1px solid rgba(1, 0, 203, 0.15)',
-                borderTop: '3px solid #82f160', // ?? modern accent
+                /*  Remove borders + radius */
+                border: 'none',
+                borderTop: 'none',
+                borderRadius: 0,
 
-                /* Elevation */
-                boxShadow: `
-      0 1px 2px rgba(0,0,0,0.06),
-      0 4px 12px rgba(1,0,203,0.08)
-    `,
+                /*  Remove elevation/shadow */
+                boxShadow: 'none',
 
-                /* Micro interaction */
-                transition: 'all 0.2s ease',
+                /*  Keep layout stable (no hover lift) */
+                transition: 'none',
                 '&:hover': {
-                  boxShadow: `
-        0 2px 4px rgba(0,0,0,0.08),
-        0 6px 18px rgba(1,0,203,0.12)
-      `,
-                  transform: 'translateY(-1px)',
+                  boxShadow: 'none',
+                  transform: 'none',
                 },
               }}
               justifyContent='space-between'
@@ -425,8 +420,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                         color: '#64748b', // Slate 500 for secondary text
                         textTransform: 'uppercase',
                         letterSpacing: '0.4px',
-                        fontFamily:
-                          '"Inter", "Open Sans", "Helvetica", "Arial", sans-serif',
+                        fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
                       }}
                     >
                       {VERTICAL_NAME}

@@ -68,9 +68,9 @@ const Navigation = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#ffffffff',
+        backgroundColor: '#e7e7e7',
         borderRight: '1px solid #e5e7eb',
-        fontFamily: '"Inter", "Open Sans", "Helvetica", "Arial", sans-serif',
+        fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
         color: '#374151',
         fontSize: '0.75rem',
       }}

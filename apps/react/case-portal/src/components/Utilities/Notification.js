@@ -35,7 +35,7 @@ const StyledAlert = styled(Alert)(({ theme, severity }) => ({
   fontWeight: 600,
   fontSize: '0.85rem',
   borderRadius: '16px', // Rounded for modern look
-  padding: '12px 20px',
+  padding: '6px 10px',
   boxShadow:
     '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
   border: '1px solid rgba(0, 0, 0, 0.05)',

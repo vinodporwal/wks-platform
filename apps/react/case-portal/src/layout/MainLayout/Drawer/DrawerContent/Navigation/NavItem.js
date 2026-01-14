@@ -63,10 +63,12 @@ const NavItem = ({ item, level }) => {
           py: 0.5,
           mx: 0,
           mb: 0,
-          borderRadius: '10px',
+          borderRadius: '0px',
           transition: 'all 160ms ease',
 
-          fontFamily: '"Segoe UI", Open Sans, Helvetica, Arial, sans-serif',
+          // fontFamily: '"Segoe UI", Open Sans, Helvetica, Arial, sans-serif',
+          fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+
           fontSize: '0.82rem',
           fontWeight: 500,
 
@@ -82,12 +84,12 @@ const NavItem = ({ item, level }) => {
           },
 
           '&.Mui-selected': {
-            background: 'linear-gradient(135deg, #0b3d91 0%, #1258b3 100%)',
+            background: 'linear-gradient(135deg, #0074bd 0%, #0074bd 100%)',
             color: '#ffffff',
             fontWeight: 600,
 
             '&:hover': {
-              background: 'linear-gradient(135deg, #0a347a 0%, #1a63c6 100%)',
+              background: 'linear-gradient(135deg, #0a347a 0%, #0074bd 100%)',
               transform: 'translateY(-1px)',
               boxShadow: '0 6px 14px rgba(10, 60, 150, 0.35)',
               transition: 'all 220ms cubic-bezier(0.4, 0, 0.2, 1)',
@@ -127,8 +129,7 @@ const NavItem = ({ item, level }) => {
               >
                 <Typography
                   sx={{
-                    fontFamily:
-                      '"Segoe UI", Open Sans, Helvetica, Arial, sans-serif',
+                    fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
                     fontSize: '0.82rem',
                     fontWeight: isSelected ? 600 : 500,
                     color: isSelected ? '#ffffff' : '#3f3f46',

@@ -263,7 +263,7 @@ export default function StepperNav() {
     <>
       {USE_FIXED ? (
         <>
-          {/* Fixed to viewport with modern glassmorphism effect */}
+          {/* Fixed to viewport but TRANSPARENT to background - no border, no radius, no bg */}
           <Box
             sx={{
               position: 'fixed',
@@ -271,34 +271,22 @@ export default function StepperNav() {
               left: drawerOpen ? `${drawerWidth + 8}px` : '5px',
               right: '5px',
               zIndex: (theme) => (theme.zIndex?.appBar ?? 1100) + 1,
-              background:
-                'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',
-              backdropFilter: 'blur(12px)',
-              boxShadow:
-                '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)',
-              border: '1px solid',
-              borderColor: 'rgba(1, 0, 203, 0.12)',
-              borderRadius: '12px',
+              background: 'transparent',
+              backdropFilter: 'none',
+              boxShadow: 'none',
+              border: 'none',
+              borderRadius: 0,
               py: 0,
               px: 0,
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               maxHeight: '80px',
               '&:hover': {
-                boxShadow:
-                  '0 6px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)',
-                borderColor: 'rgba(1, 0, 203, 0.2)',
+                // keep subtle hover transform but do not add borders/bg
+                transform: 'none',
               },
+              // remove decorative pseudo element that added a colored line
               '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '2px',
-                background:
-                  'linear-gradient(90deg, transparent 0%, #0100cb 50%, transparent 100%)',
-                opacity: 0.6,
-                borderRadius: '12px 12px 0 0',
+                content: 'none',
               },
             }}
           >
@@ -329,13 +317,11 @@ export default function StepperNav() {
       ) : (
         <Box
           sx={{
-            background:
-              'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.95) 100%)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-            border: '1px solid',
-            borderColor: 'rgba(1, 0, 203, 0.12)',
-            borderRadius: '12px',
+            background: 'transparent',
+            backdropFilter: 'none',
+            boxShadow: 'none',
+            border: 'none',
+            borderRadius: 0,
             py: 0,
             px: 0,
             transition: 'all 0.3s ease',

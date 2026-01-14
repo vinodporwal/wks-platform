@@ -85,7 +85,7 @@ const ConfigurationAccordian = ({
           sx={{
             minHeight: '36px !important',
             px: 0.5,
-            bgcolor: 'rgba(1, 0, 203, 0.02)',
+            bgcolor: '#ffffff',
             '& .MuiAccordionSummary-content': { my: '4px !important' },
           }}
         >
@@ -118,7 +118,7 @@ const ConfigurationAccordian = ({
                   sx={{
                     fontSize: '0.65rem',
                     fontWeight: 700,
-                    fontFamily: '"Inter", "Segoe UI", sans-serif',
+                    fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
                     color: '#334155',
                     letterSpacing: '0.3px',
                   }}
@@ -148,7 +148,7 @@ const ConfigurationAccordian = ({
                   sx={{
                     fontSize: '0.65rem',
                     fontWeight: 700,
-                    fontFamily: '"Inter", "Segoe UI", sans-serif',
+                    fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
                     color: '#334155',
                     letterSpacing: '0.3px',
                   }}
@@ -173,7 +173,7 @@ const ConfigurationAccordian = ({
 
               {/* LOAD BUTTON */}
               {!isOldYear && (
-                <Tooltip title='Load Data'>
+                <Tooltip title='Refresh Data'>
                   <Button
                     variant='contained'
                     className='btn-load'
@@ -185,7 +185,7 @@ const ConfigurationAccordian = ({
                       px: 1.5,
                     }}
                   >
-                    Load
+                    Refresh
                   </Button>
                 </Tooltip>
               )}
@@ -242,7 +242,7 @@ const ConfigurationAccordian = ({
                 sx={{
                   fontSize: '0.65rem',
                   fontWeight: 700,
-                  fontFamily: '"Inter", "Segoe UI", sans-serif',
+                  fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
                   color: '#334155',
                   letterSpacing: '0.3px',
                 }}
@@ -264,7 +264,7 @@ const ConfigurationAccordian = ({
                   borderRadius: '6px',
                   border: '1px solid #cbd5e1',
                   fontSize: '0.8rem',
-                  fontFamily: 'inherit',
+                  fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
                   resize: 'none',
                   backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
                 }}
@@ -1227,7 +1227,7 @@ const ConfigurationTable = () => {
               pb: 0,
             }}
           >
-            Confirm Data Load
+            Confirm Data Refresh
           </DialogTitle>
         </Box>
 
@@ -1313,7 +1313,7 @@ const ConfigurationTable = () => {
               },
             }}
           >
-            Yes, Load Data
+            Yes, Refresh Data
           </Button>
         </DialogActions>
       </StyledConfirmDialog>

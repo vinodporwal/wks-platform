@@ -7,8 +7,8 @@ import NavItem from './NavItem'
 import NavCollapse from './NavCollapse'
 
 /* ===== COMPACT SIDEBAR GROUP STYLES ===== */
-const GROUP_BG = 'transparent'
-const GROUP_TEXT = '#9ca3af'
+const GROUP_BG = 'transparent' // Changed to transparent for a cleaner look
+const GROUP_TEXT = '#9ca3af' // Your "Target & Demand" grey
 
 const NavGroup = ({ item }) => {
   const { drawerOpen } = useSelector((state) => state.menu)
@@ -39,7 +39,7 @@ const NavGroup = ({ item }) => {
     <List
       disablePadding
       sx={{
-        mb: drawerOpen ? 0.5 : 0,
+        mb: drawerOpen ? 1.5 : 0, // Increased spacing between groups
         py: 0,
         backgroundColor: GROUP_BG,
       }}
@@ -49,8 +49,8 @@ const NavGroup = ({ item }) => {
           <ListSubheader
             disableSticky
             sx={{
-              px: 0.75, // ?? reduced left padding
-              py: 0.25,
+              px: 2, // Standard alignment
+              py: 0.5, // Modern breathing room
               mb: 0.25,
               backgroundColor: 'transparent',
               lineHeight: 1,
@@ -58,11 +58,14 @@ const NavGroup = ({ item }) => {
           >
             <Typography
               sx={{
-                fontSize: '0.6rem', // ?? smaller header
-                fontWeight: 600,
-                letterSpacing: '0.12em',
+                // THE "TARGETS & DEMAND" STYLE
+                fontSize: '0.68rem',
+                fontWeight: 700, // Bold like the image
+                letterSpacing: '0.15em', // Key for that wide, modern look
                 textTransform: 'uppercase',
                 color: GROUP_TEXT,
+                fontFamily: '"Public Sans", sans-serif', // Modern UI choice
+                opacity: 0.8,
               }}
             >
               {item.title}

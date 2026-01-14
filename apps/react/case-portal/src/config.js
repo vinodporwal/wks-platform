@@ -1,7 +1,7 @@
 const config = {
   basename: '/',
   defaultPath: '/production-norms-plan/configuration',
-  fontFamily: "'Public Sans', sans-serif",
+  fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
   i18n: 'en',
   miniDrawer: false,
   container: true,

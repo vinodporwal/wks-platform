@@ -1,17 +1,22 @@
+import { useState, useMemo } from 'react'
+import { useSelector } from 'react-redux'
+import PropTypes from 'prop-types'
+
+// Material UI Imports
 import Collapse from '@mui/material/Collapse'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
-import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
+import Tooltip from '@mui/material/Tooltip' // Added Tooltip
 import { useTheme } from '@mui/material/styles'
-import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+
+// Icons
 import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
+
+// Internal Imports
 import { verticalEnums } from 'enums/verticalEnums'
-import PropTypes from 'prop-types'
-import { useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
 import NavItem from './NavItem'
 
 const NavCollapse = ({ menu, level }) => {
@@ -37,7 +42,6 @@ const NavCollapse = ({ menu, level }) => {
 
     const renderMenuItem = (item) => {
       const props = { key: item.id, level: level + 1 }
-
       switch (item.type) {
         case 'collapse':
           return <NavCollapse menu={item} {...props} />
@@ -54,7 +58,6 @@ const NavCollapse = ({ menu, level }) => {
 
     const shouldFilterSlowdown =
       lowerVertName === verticalEnums.PE && plantName === 'LDPE'
-
     const menuItems = shouldFilterSlowdown
       ? menu.children.filter((item) => item.id !== 'slowdown-norms')
       : menu.children
@@ -62,69 +65,72 @@ const NavCollapse = ({ menu, level }) => {
     return menuItems.map(renderMenuItem)
   }, [menu?.children, lowerVertName, plantName, level])
 
-  const Icon = menu.icon
-  const menuIcon = menu.icon ? <Icon strokeWidth={1.6} size='1rem' /> : null
-
   return (
     <>
       <ListItemButton
         onClick={handleClick}
         selected={selected === menu.id}
         sx={{
-          minHeight: 32, // ?? compact height
-          px: 0.75, // ?? no left padding
+          minHeight: 32,
+          px: 0.75,
           py: 0.25,
           borderRadius: 0,
           alignItems: 'center',
           position: 'relative',
           backgroundColor: 'transparent',
-
+          // 1. Bottom Border
+          borderBottom: '1px solid',
+          borderColor: '#d1d1d1',
           '&:hover': {
-            backgroundColor: '#e5e7eb',
+            backgroundColor: '#f3f4f6',
           },
-
+          // 2. Light "Blackish-Grey" Selected State
           '&.Mui-selected': {
-            backgroundColor: '#e0e7ff',
+            backgroundColor: '#e7e7e7', // Light grey selected background
             '&:hover': {
-              backgroundColor: '#c7d2fe',
+              backgroundColor: '#d1d1d1',
             },
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: 4,
-              bottom: 4,
-              width: '2px',
-              backgroundColor: theme.palette.primary.main,
+            // Keep text dark so it is visible
+            '& .MuiTypography-root': {
+              color: '#111827', // Darker text for contrast
+            },
+            // Keep icons blue (or change to black if preferred)
+            '& svg': {
+              color: '#1d4ed8 !important',
             },
           },
         }}
       >
-        {menuIcon && (
-          <ListItemIcon
-            sx={{
-              minWidth: 26,
-              color: '#277424ff',
-            }}
-          >
-            {menuIcon}
-          </ListItemIcon>
-        )}
-
         <ListItemText
           primary={
-            <Typography
-              sx={{
-                fontSize: '0.75rem',
-                fontWeight: selected === menu.id ? 600 : 500,
-                lineHeight: 1.2,
-                color: '#374151',
-              }}
+            <Tooltip
+              title={menu.title}
+              placement='right'
+              arrow
+              disableInteractive
             >
-              {menu.title}
-            </Typography>
+              <Typography
+                noWrap
+                sx={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#111827', // Default grey color
+                  fontFamily: '"Public Sans", sans-serif',
+                  lineHeight: 1.2,
+                  display: 'block',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  width: '100%',
+                }}
+              >
+                {menu.title}
+              </Typography>
+            </Tooltip>
           }
-          sx={{ my: 0 }}
+          sx={{ my: 0, overflow: 'hidden' }}
         />
 
         {open ? (
@@ -132,7 +138,7 @@ const NavCollapse = ({ menu, level }) => {
             sx={{
               fontSize: 13,
               color: '#1d4ed8',
-              transform: 'rotate(0deg)',
+              flexShrink: 0,
               transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
             }}
           />
@@ -141,6 +147,7 @@ const NavCollapse = ({ menu, level }) => {
             sx={{
               fontSize: 13,
               color: '#1d4ed8',
+              flexShrink: 0,
               transform: 'rotate(90deg)',
               transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
             }}
@@ -149,13 +156,7 @@ const NavCollapse = ({ menu, level }) => {
       </ListItemButton>
 
       <Collapse in={open} timeout='auto' unmountOnExit>
-        <List
-          component='div'
-          disablePadding
-          sx={{
-            pl: 0, // ?? no indent
-          }}
-        >
+        <List component='div' disablePadding sx={{ pl: 0 }}>
           {menus}
         </List>
       </Collapse>
