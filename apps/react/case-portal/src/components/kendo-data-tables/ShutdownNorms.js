@@ -430,7 +430,7 @@ const ShutdownNorms = () => {
           setGrades(fetchedGrades)
 
           if (fetchedGrades.length === 0) {
-            // no grades — clear selection and fetch blank data
+            // no grades � clear selection and fetch blank data
             setGradeId(null)
             await fetchData(null)
             return
@@ -525,6 +525,7 @@ const ShutdownNorms = () => {
     }
   }
 
+  //REVERTED
   const isVCMWithVMD =
     lowerVertName === 'vcm' && SITE_NAME?.toLowerCase() === 'vmd'
 
@@ -554,7 +555,7 @@ const ShutdownNorms = () => {
 
       //VCM(VMD) && elastomer we required to show calculate btn
       showCalculate:
-        isVCMWithVMD || lowerVertName == 'elastomer'
+        lowerVertName == 'elastomer'
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
