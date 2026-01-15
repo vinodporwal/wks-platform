@@ -51,6 +51,7 @@ const BusinessDemand = ({ permissions }) => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
 
+  const IS_ELASTOMER_VERTICAL = lowerVertName === 'elastomer'
   const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
   const IS_PTA_VERTICAL = lowerVertName === 'pta'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
@@ -145,7 +146,12 @@ const BusinessDemand = ({ permissions }) => {
       }
       //
 
-      if (IS_PE_PP_VERTICAL || IS_PTA_VERTICAL || IS_PET_VERTICAL) {
+      if (
+        IS_PE_PP_VERTICAL ||
+        IS_PTA_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_VERTICAL
+      ) {
         const productionRows = (rows || []).filter(
           (row) => row.Particulars?.toLowerCase() === 'production',
         )
@@ -355,7 +361,12 @@ const BusinessDemand = ({ permissions }) => {
       ExcelName: `${VERTICAL_NAME}_${SCREEN_NAME}`,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
       isTotalFooterActive:
-        IS_PE_PP_VERTICAL || IS_PTA_VERTICAL || IS_PET_VERTICAL ? true : false,
+        IS_PE_PP_VERTICAL ||
+        IS_PTA_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_VERTICAL
+          ? true
+          : false,
 
       downloadExcelBtn:
         lowerVertName == 'cracker' || IS_PE_PP_VERTICAL || IS_PET_VERTICAL

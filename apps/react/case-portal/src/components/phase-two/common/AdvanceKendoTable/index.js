@@ -43,6 +43,7 @@ import { getColumnMenuDateFilter } from '../utilities/ColumnMenuDateFilter'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
 import valueFormatterByUOM from '../commonUtilityFunctions'
 import DateTimePickerEditor from '../utilities/DatePickeronSelectedYr'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export const particulars = [
   'normParameterId',
@@ -132,6 +133,7 @@ const AdvanceKendoTable = ({
   paginationConfig = {},
   dateCalculationConfig = {},
   initialFieldValues = {},
+  customItemChange = null,
 }) => {
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
@@ -378,7 +380,22 @@ const AdvanceKendoTable = ({
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
-          const updated = { ...r, [field]: value }
+
+          // Handle nested field paths (e.g., "summer.kbpsd")
+          const fieldParts = field.split('.')
+          const updated = { ...r }
+
+          if (fieldParts.length === 1) {
+            // Simple field
+            updated[field] = value
+          } else if (fieldParts.length === 2) {
+            // Nested field (e.g., summer.kbpsd)
+            const [parent, child] = fieldParts
+            updated[parent] = { ...updated[parent], [child]: value }
+          } else {
+            // Deeper nesting (if needed in future)
+            updated[field] = value
+          }
 
           if (dateCalculationConfig) {
             const {
@@ -498,8 +515,13 @@ const AdvanceKendoTable = ({
           [itemId]: base,
         }
       })
+
+      // Call custom itemChange handler if provided
+      if (customItemChange) {
+        customItemChange(e, setRows)
+      }
     },
-    [setRows, setModifiedCells, setCustomModifiedCells],
+    [setRows, setModifiedCells, setCustomModifiedCells, customItemChange],
   )
 
   useEffect(() => {
@@ -568,9 +590,8 @@ const AdvanceKendoTable = ({
   const handleAddRow = () => {
     if (isButtonDisabled) return
     setIsButtonDisabled(true)
-    const newRowId = rows.length
-      ? Math.max(...rows.map((row) => row.id)) + 1
-      : 1
+    // Generate unique ID using timestamp to avoid NaN with non-numeric IDs
+    const newRowId = `new_row_${Date.now()}`
     console.log('columns', columns)
 
     // Helper function to extract all fields from columns including nested ones
@@ -594,6 +615,7 @@ const AdvanceKendoTable = ({
     const newRow = {
       id: newRowId,
       isNew: true,
+      isEditable: true, // Ensure new rows are editable
       ...Object.fromEntries(allFields.map((field) => [field, ''])),
       ...initialFieldValues, // Override with any initial values provided
     }
@@ -1514,14 +1536,7 @@ const AdvanceKendoTable = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      <LoaderBackdrop open={!!loading} />
 
       {(permissions?.allAction ?? true) && (
         <Box

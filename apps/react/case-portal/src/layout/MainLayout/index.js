@@ -43,7 +43,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden', // grid must scroll internally
-          backgroundColor: '#f9f9f9',
+          backgroundColor: '#ffffff',
         }}
       >
         {/* Reserve header height */}
@@ -58,8 +58,10 @@ const MainLayout = ({ keycloak, authenticated }) => {
         <Breadcrumbs variant='dense' navigation={menu} divider={false} />
 
         {/* Page content */}
-        <Box sx={{ flex: 1, overflow: 'auto', p: 1 }}>
-          <Outlet />
+        <Box className='outlet-wrapper'>
+          <Box className='outlet-border-box'>
+            <Outlet />
+          </Box>
         </Box>
       </Box>
     </Box>

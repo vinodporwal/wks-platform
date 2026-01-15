@@ -70,7 +70,8 @@ const Navigation = () => {
         flexDirection: 'column',
         backgroundColor: '#e7e7e7',
         borderRight: '1px solid #e5e7eb',
-        fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+        fontFamily:
+          "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
         color: '#374151',
         fontSize: '0.75rem',
       }}

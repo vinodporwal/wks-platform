@@ -707,7 +707,7 @@ const KendoDataTablesCracker = ({
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
-            columnMenu={col.filter ? ColumnMenuCheckboxFilter : undefined}
+            columnMenu={ColumnMenuCheckboxFilter}
             sortable={col?.filter}
           />
         )

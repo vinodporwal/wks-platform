@@ -22,6 +22,14 @@ import getKendoNormsHistorianColumns from '../CommonHeader/KendoNormHistoryHeade
 import { Button } from '../../../../node_modules/@mui/material/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -215,6 +223,7 @@ const NormsHistorianBasis = () => {
           variant='contained'
           onClick={exportAllGrids}
           className='btn-export'
+          startIcon={<DownloadIcon fontSize='small' />}
         >
           Export
         </Button>

@@ -420,27 +420,19 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                         color: '#64748b', // Slate 500 for secondary text
                         textTransform: 'uppercase',
                         letterSpacing: '0.4px',
-                        fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+                        fontFamily:
+                          "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                       }}
                     >
                       {VERTICAL_NAME}
-                      <Box
-                        component='span'
-                        sx={{ mx: 0.7, color: 'text.disabled' }}
-                      >
+                      <Box component='span' sx={{ mx: 0.7 }}>
                         |
                       </Box>
                       {SITE_NAME}
-                      <Box
-                        component='span'
-                        sx={{ mx: 0.7, color: 'text.disabled' }}
-                      >
+                      <Box component='span' sx={{ mx: 0.7 }}>
                         |
                       </Box>
-                      <Box
-                        component='span'
-                        sx={{ color: '#1e293b', fontWeight: 800 }}
-                      >
+                      <Box component='span' sx={{ mx: 0.7 }}>
                         {PLANT_NAME}
                       </Box>
                     </Typography>

@@ -132,6 +132,8 @@ export default function StepperNav() {
       activeStep={activeStep >= 0 ? activeStep : 0}
       sx={{
         minWidth: 'max-content', // 🔥 IMPORTANT
+        fontFamily:
+          "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
 
         '& .MuiStepLabel-label': {
           fontWeight: '500',
@@ -174,6 +176,8 @@ export default function StepperNav() {
             key={step.key}
             onClick={() => navigate(step.url)}
             sx={{
+              fontFamily:
+                "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
               cursor: 'pointer',
               transition: 'transform 0.2s ease',
               '&:hover': {
@@ -185,7 +189,7 @@ export default function StepperNav() {
                 filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1))',
               },
               '& .MuiStepIcon-root.Mui-active': {
-                color: '#51b17c',
+                color: '#0074bd',
                 transform: 'scale(1.15)',
                 filter: 'drop-shadow(0px 4px 8px rgba(1, 0, 203, 0.3))',
               },
@@ -243,6 +247,8 @@ export default function StepperNav() {
                     fontWeight: isActive ? '700' : '500',
                     color: isActive ? '#303284' : 'text.secondary',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    fontFamily:
+                      "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                     '&:hover': {
                       color: '#303284',
                       fontWeight: '600',
@@ -280,6 +286,8 @@ export default function StepperNav() {
               px: 0,
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               maxHeight: '80px',
+              fontFamily:
+                "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
               '&:hover': {
                 // keep subtle hover transform but do not add borders/bg
                 transform: 'none',

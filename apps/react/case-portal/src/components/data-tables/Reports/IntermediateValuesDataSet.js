@@ -18,6 +18,14 @@ import {
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
 
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 const GRID_NAME = 'Norms (Expression)'
 
 export default function IntermediateValuesDataSet() {
@@ -235,6 +243,7 @@ export default function IntermediateValuesDataSet() {
           variant='contained'
           onClick={exportAllGrids}
           className='btn-export'
+          startIcon={<DownloadIcon fontSize='small' />}
         >
           Export
         </Button>

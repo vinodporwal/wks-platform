@@ -39,7 +39,7 @@ const MainDrawer = ({ open }) => {
           WebkitBackdropFilter: 'blur(16px)',
 
           /* ?? Soft edge instead of hard border */
-          borderRight: '1px solid rgba(148,163,184,0.18)',
+          // borderRight: '1px solid rgba(148,163,184,0.18)',
 
           /* ?? Premium depth */
           boxShadow:

@@ -54,9 +54,9 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CompactAccordion = styled(CustomAccordion)({
   mb: 0,
-  borderRadius: '8px !important',
+  borderRadius: '0px !important',
   boxShadow: 'none',
-  border: '1px solid #e2e8f0',
+  borderBottom: '1px solid #bbc0c6',
   '&:before': { display: 'none' },
 })
 
@@ -92,7 +92,13 @@ const ConfigurationAccordian = ({
           <Stack direction='row' spacing={1} alignItems='center'>
             <SettingsIcon sx={{ color: '#0100cb', fontSize: '1rem' }} />
             <Typography
-              sx={{ fontWeight: 700, fontSize: '0.8rem', color: '#334155' }}
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                fontFamily:
+                  "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+                color: '#334155',
+              }}
             >
               AOP Historical Period Basis
             </Typography>
@@ -105,10 +111,10 @@ const ConfigurationAccordian = ({
             <Stack
               direction='row'
               sx={{
-                columnGap: 1, // horizontal spacing ONLY
-                rowGap: 0, // no spacing when wrapped
+                columnGap: 1,
+                rowGap: 0,
               }}
-              alignItems='flex-end' // ?? important
+              alignItems='flex-start' // ✅ changed (important)
               flexWrap='wrap'
             >
               {/* START */}
@@ -118,7 +124,8 @@ const ConfigurationAccordian = ({
                   sx={{
                     fontSize: '0.65rem',
                     fontWeight: 700,
-                    fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+                    fontFamily:
+                      "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                     color: '#334155',
                     letterSpacing: '0.3px',
                   }}
@@ -148,7 +155,8 @@ const ConfigurationAccordian = ({
                   sx={{
                     fontSize: '0.65rem',
                     fontWeight: 700,
-                    fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+                    fontFamily:
+                      "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                     color: '#334155',
                     letterSpacing: '0.3px',
                   }}
@@ -183,6 +191,7 @@ const ConfigurationAccordian = ({
                     sx={{
                       height: 28,
                       px: 1.5,
+                      mt: 'auto', // ✅ pushes button to bottom aligned with input
                     }}
                   >
                     Refresh
@@ -205,6 +214,8 @@ const ConfigurationAccordian = ({
                     sx={{
                       color: '#16a34a',
                       whiteSpace: 'nowrap',
+                      mt: 'auto', // ✅ pushes this line to bottom aligned with Refresh
+                      height: 28, // ✅ keeps same height
                     }}
                   >
                     <HistoryIcon sx={{ fontSize: '0.9rem' }} />
@@ -213,7 +224,7 @@ const ConfigurationAccordian = ({
                       sx={{
                         fontSize: '0.65rem',
                         fontWeight: 600,
-                        lineHeight: 1.4,
+                        lineHeight: 1.2, // ✅ tighter so it sits perfectly center
                       }}
                     >
                       Last refreshed on{' '}
@@ -242,7 +253,8 @@ const ConfigurationAccordian = ({
                 sx={{
                   fontSize: '0.65rem',
                   fontWeight: 700,
-                  fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+                  fontFamily:
+                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                   color: '#334155',
                   letterSpacing: '0.3px',
                 }}
@@ -264,7 +276,8 @@ const ConfigurationAccordian = ({
                   borderRadius: '6px',
                   border: '1px solid #cbd5e1',
                   fontSize: '0.8rem',
-                  fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+                  fontFamily:
+                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                   resize: 'none',
                   backgroundColor: READ_ONLY ? '#f8fafc' : '#fff',
                 }}
@@ -1163,7 +1176,7 @@ const ConfigurationTable = () => {
       backgroundColor: 'rgba(255, 255, 255, 0.98)',
       backdropFilter: 'blur(16px)',
       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
-      border: '1px solid rgba(0, 0, 0, 0.05)',
+      border: '5px solid red',
     },
   }))
 

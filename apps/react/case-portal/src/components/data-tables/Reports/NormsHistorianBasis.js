@@ -30,6 +30,13 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import NormsHistorianBasisPe from './NormsHistorianBasisPe'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 const NormsHistorianBasis = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -348,6 +355,7 @@ const NormsHistorianBasis = () => {
               onClick={exportAllGrids}
               className='btn-export'
               disabled={READ_ONLY}
+              startIcon={<DownloadIcon fontSize='small' />}
             >
               Export
             </Button>

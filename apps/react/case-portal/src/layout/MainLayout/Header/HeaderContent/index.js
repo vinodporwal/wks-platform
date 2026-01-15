@@ -429,28 +429,36 @@ export default function HeaderContent({ keycloak }) {
     },
     '&:hover .MuiOutlinedInput-notchedOutline': {
       border: '1px solid rgba(255, 255, 255, 0.4)',
-      boxShadow: '0 2px 8px rgba(255, 255, 255, 0.1)',
+      boxShadow: 'none', // ? remove glow
     },
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
       border: '1px solid rgba(255, 255, 255, 0.6)',
-      boxShadow: '0 4px 12px rgba(255, 255, 255, 0.15)',
+      boxShadow: 'none', // ? remove glow
     },
+
     '& .MuiSelect-select': {
       py: 0.75,
       transition: 'all 0.3s ease',
       color: '#ffffff',
       fontWeight: 700,
+      fontFamily:
+        "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
     },
+
     '& .MuiSvgIcon-root': {
       color: '#ffffff',
     },
+
     '&.Mui-disabled': {
       opacity: 0.5,
     },
+
     background: 'rgba(255, 255, 255, 0.08)',
-    backdropFilter: 'blur(8px)',
+    backdropFilter: 'none', // ? REMOVE BLUR
+    WebkitBackdropFilter: 'none', // ? REMOVE BLUR (Safari)
     borderRadius: '2px',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+
     '&:hover': {
       background: 'rgba(255, 255, 255, 0.12)',
     },
@@ -665,7 +673,8 @@ export default function HeaderContent({ keycloak }) {
                 className='custom-title-dropdown'
                 sx={{
                   fontSize: '0.875rem',
-                  // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  fontFamily:
+                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                   color: '#ffffffff',
                   fontWeight: 700,
                 }}
@@ -705,7 +714,8 @@ export default function HeaderContent({ keycloak }) {
                 className='custom-title-dropdown'
                 sx={{
                   fontSize: '0.875rem',
-                  // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  fontFamily:
+                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                   color: '#fff',
                   fontWeight: 700,
                 }}
@@ -745,7 +755,8 @@ export default function HeaderContent({ keycloak }) {
                 className='custom-title-dropdown'
                 sx={{
                   fontSize: '0.875rem',
-                  // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                  fontFamily:
+                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                   color: '#fff',
                   fontWeight: 700,
                 }}

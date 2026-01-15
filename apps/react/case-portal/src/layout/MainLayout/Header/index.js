@@ -5,6 +5,7 @@ import MenuRoundedIcon from '@mui/icons-material/MenuRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import DragHandleIcon from '@mui/icons-material/DragHandle'
 import MenuOpenIcon from '@mui/icons-material/MenuOpen'
+import MenuIcon from '@mui/icons-material/Menu'
 
 import { Toolbar, IconButton, Box, Zoom } from '@mui/material'
 
@@ -41,6 +42,9 @@ const Header = ({ open, handleDrawerToggle, keycloak }) => {
           mr: 1,
           width: 40,
           height: 40,
+          borderRight: '1px solid #000', // ? black right border
+          borderRadius: 0, // ? keeps it straight
+          pr: 1, // ? little space from border (optional)
         }}
       >
         <Box
@@ -51,34 +55,21 @@ const Header = ({ open, handleDrawerToggle, keycloak }) => {
             justifyContent: 'center',
           }}
         >
-          {/* Menu Icon Transition */}
-          <Zoom in={!open} timeout={300} unmountOnExit>
-            <DragHandleIcon
+          <Zoom in timeout={300}>
+            <MenuIcon
               sx={{
                 position: 'absolute',
-                color: 'rgba(255, 255, 255, 0.9)',
                 fontSize: '2rem',
-                transition: 'color 0.2s ease-in-out',
-                '&:hover': {
-                  color: '#00F5E1',
-                },
-              }}
-            />
-          </Zoom>
 
-          {/* Close Icon Transition */}
-          <Zoom in={open} timeout={300} unmountOnExit>
-            <CloseRoundedIcon
-              sx={{
-                position: 'absolute',
-                color: 'rgba(255, 255, 255, 0.9)',
-                fontSize: '2rem',
-                // Adds a subtle rotation as it zooms in
-                transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&:hover': {
-                  color: '#00F5E1',
-                },
+                color: open ? '#00F5E1' : 'rgba(255, 255, 255, 0.55)',
+
+                opacity: open ? 1 : 0.85,
+                filter: open
+                  ? 'drop-shadow(0 0 6px rgba(0, 245, 225, 0.55))'
+                  : 'none',
+
+                transition:
+                  'color 0.25s ease-in-out, filter 0.25s ease-in-out, opacity 0.25s ease-in-out',
               }}
             />
           </Zoom>
@@ -92,9 +83,9 @@ const Header = ({ open, handleDrawerToggle, keycloak }) => {
     position: 'fixed',
     color: 'inherit',
     elevation: 0,
-    sx: {
-      borderBottom: `1px solid ${theme.palette.divider}`,
-    },
+    // sx: {
+    //   borderBottom: `1px solid ${theme.palette.divider}`,
+    // },
   }
 
   return (

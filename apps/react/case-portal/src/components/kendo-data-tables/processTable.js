@@ -11,6 +11,7 @@ import crackercolumns from '../../assets/CrackerMaintenanceColumn.json'
 import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const MaintenanceProcessTable = ({ viewOnly }) => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -52,7 +53,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const [columns, setColumns] = useState([]);
+  const [columns, setColumns] = useState([])
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -183,20 +184,24 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       //   Remarks: row.Remarks ?? row.remark ?? '',
       // }))
       const excludeFields = [
-      'id', 'idFromApi', 'isEditable', 'originalRemark', 'inEdit'
-    ];
+        'id',
+        'idFromApi',
+        'isEditable',
+        'originalRemark',
+        'inEdit',
+      ]
 
-    // Dynamically build payload for each row
-    const payload = newRows.map(row => {
-      const obj = {};
-      Object.keys(row).forEach(key => {
-        if (!excludeFields.includes(key)) {
-          obj[key] = row[key];
-        }
-      });
-      return obj;
-    });
-      
+      // Dynamically build payload for each row
+      const payload = newRows.map((row) => {
+        const obj = {}
+        Object.keys(row).forEach((key) => {
+          if (!excludeFields.includes(key)) {
+            obj[key] = row[key]
+          }
+        })
+        return obj
+      })
+
       const response =
         await MaintenanceDetailsApiService.saveCrackerMaintenance(
           PLANT_ID,
@@ -241,13 +246,14 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       const resp = await dataConfig.serviceFn(keycloak)
       const raw = resp.data?.data
       setCalculationObject(resp?.data?.aopCalculation)
-      const hiddenKeys = ['Id', 'AOPYear', 'PlantId'];
-      const dynamicColumns = (resp.data?.columns || columns).map(col => ({
+      const hiddenKeys = ['Id', 'AOPYear', 'PlantId']
+      const dynamicColumns = (resp.data?.columns || columns).map((col) => ({
         ...col,
         editable: col.type === 'number' || col.field === 'Remarks',
-       hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
-      }));
-      setColumns(dynamicColumns);
+        hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
+        widthT: 120,
+      }))
+      setColumns(dynamicColumns)
 
       const formatted = (raw || []).map((item, idx, arr) => ({
         ...item,
@@ -488,12 +494,8 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
 
   return (
     <div>
-      <Backdrop
-        open={loading}
-        sx={{ color: '#fff', zIndex: (t) => t.zIndex.drawer + 1 }}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
+
       <KendoDataTables
         columns={columns}
         rows={rows}

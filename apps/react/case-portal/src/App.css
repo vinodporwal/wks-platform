@@ -56,7 +56,7 @@ header {
 .custom-title-dropdown-content {
   font-family: 'Open Sans', sans-serif !important;
   white-space: nowrap;
-  color: white;
+  color: white !important;
 }
 
 .custom-title-dropdown-content .MuiSelect-select {
@@ -345,4 +345,24 @@ body {
   opacity: 1 !important;
   stroke: #303284 !important;
   stroke-width: 1.5px;
+}
+.outlet-wrapper {
+  flex: 1;
+  overflow: hidden;
+  padding: 1px; /* p: 0.125 ˜ 1px (MUI spacing: 0.125 * 8 = 1px) */
+  margin-left: 8px;
+  margin-right: 5px;
+  margin-bottom: 10px;
+}
+
+.outlet-border-box {
+  border: 1px solid #d7d7d7;
+  border-radius: 0px; /* borderRadius: 1 in MUI ˜ 8px */
+  height: 100%;
+  box-sizing: border-box;
+  background-color: #fff;
+  overflow: auto;
+  padding: 0px; /* p: 0.125 ˜ 1px */
+  padding-top: 5px;
+  padding-bottom: 5px;
 }

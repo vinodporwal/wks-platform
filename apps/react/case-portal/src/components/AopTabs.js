@@ -24,10 +24,11 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         maxWidth: '100%',
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',
-        p: 0.25,
-        borderRadius: '8px',
+        p: 0.125,
+        borderRadius: '0px',
         // bgcolor: '#f8fafc',
         // border: '1px solid rgba(0,0,0,0.05)',
+        // borderTop: '1px solid #bbc0c6',
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
       }}
@@ -39,6 +40,8 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
         sx={{
           minHeight: 20,
           width: 'max-content',
+          fontFamily:
+            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif", // ? here
 
           '& .MuiTabs-flexContainer': {
             gap: BOX_TABS ? '1px' : '1px',
@@ -63,31 +66,39 @@ const AopTabs = ({ tabIndex, setTabIndex, tabs }) => {
               disableRipple
               sx={{
                 minHeight: 20,
-                px: BOX_TABS ? '8px' : '4px',
-                fontSize: '0.65rem',
+                px: '4px',
+                fontSize: '0.80rem',
                 fontWeight: 600,
                 textTransform: 'none',
-                borderRadius: BOX_TABS ? '6px' : 0,
+                fontFamily:
+                  "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+                borderRadius: 0,
 
                 color: isSelected ? '#0f172a' : '#475569',
+                bgcolor: 'transparent',
+                border: 'none',
 
-                // ? BOX TABS MODE
-                bgcolor: BOX_TABS && isSelected ? '#ffffff' : 'transparent',
-                border: BOX_TABS ? '1px solid' : 'none',
-                borderColor:
-                  BOX_TABS && isSelected
-                    ? 'rgba(15,23,42,0.25)'
-                    : 'rgba(15,23,42,0.12)',
+                boxShadow: 'none !important', // ? force remove shadow
 
-                boxShadow:
-                  BOX_TABS && isSelected
-                    ? '0 1px 3px rgba(0,0,0,0.12)'
-                    : 'none',
-
-                // ? FLAT TABS MODE
                 '&:hover': {
-                  bgcolor: BOX_TABS ? '#ffffff' : 'transparent',
+                  bgcolor: 'transparent',
                   color: '#0f172a',
+                  boxShadow: 'none !important',
+                },
+
+                '&:focus': {
+                  outline: 'none',
+                  boxShadow: 'none !important',
+                },
+
+                '&.Mui-focusVisible': {
+                  outline: 'none',
+                  boxShadow: 'none !important',
+                },
+
+                '&:active': {
+                  boxShadow: 'none !important',
+                  bgcolor: 'transparent',
                 },
 
                 transition: 'all 160ms ease',

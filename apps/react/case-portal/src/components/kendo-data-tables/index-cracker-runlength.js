@@ -18,6 +18,14 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import '../../kendo-data-grid.css'
 
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 //import { ibrGridThreePopUP, singleRowColumn } from './columnDefs'
 
 import Notification from 'components/Utilities/Notification'
@@ -763,7 +771,24 @@ const KendoDataTablesCrackerRunLength = ({
             />
           )
         }
-
+        if (col.type === 'date') {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              filter='date'
+              filterable={true}
+              columnMenu={ColumnMenuCheckboxFilter}
+              format='{0:dd-MM-yyyy}'
+              hidden={col.hidden}
+              headerClassName={isActive ? 'active-column' : ''}
+              cells={{
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+            />
+          )
+        }
         if (!col.editable) {
           return (
             <GridColumn
@@ -1199,7 +1224,8 @@ const KendoDataTablesCrackerRunLength = ({
           .filter((col) => col.field && col.field.trim() !== '')
           .map((col) => ({
             ...col,
-            editable: true,
+            editable:
+              col.field === 'Date' || col.field === 'Month' ? false : true,
             hidden: ['aopYear', 'plantId'].includes(col.field),
           }))
 
@@ -1298,7 +1324,8 @@ const KendoDataTablesCrackerRunLength = ({
             }
           })
 
-          setRowsPopUp(processedData)
+          const processedDataWithNewRow = [...processedData, newRow]
+          setRowsPopUp(processedDataWithNewRow)
           setSingleRow([newRow])
         } else {
           setRowsPopUp([])
@@ -1321,6 +1348,8 @@ const KendoDataTablesCrackerRunLength = ({
     setSingleRow([])
     setOpen(false)
     setStartDate(null)
+    setDynamicColumns([])
+    setDynamicColumnsConfig([])
   }
 
   const handleClose = () => {
@@ -1363,9 +1392,6 @@ const KendoDataTablesCrackerRunLength = ({
     )}
   </Box>
 
-  //HERE LOADING1
-  //loading1
-
   return (
     <Box>
       {(permissions?.allAction ?? false) && (
@@ -1400,6 +1426,7 @@ const KendoDataTablesCrackerRunLength = ({
                   className='btn-export'
                   onClick={downloadExcelForConfiguration}
                   disabled={isButtonDisabled || READ_ONLY}
+                  startIcon={<DownloadIcon fontSize='small' />}
                 >
                   Export
                 </Button>
@@ -1413,6 +1440,7 @@ const KendoDataTablesCrackerRunLength = ({
                       className='btn-import'
                       onClick={triggerFileUpload}
                       disabled={isButtonDisabled || READ_ONLY}
+                      startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
                     >
                       Import
                     </Button>
@@ -1432,6 +1460,7 @@ const KendoDataTablesCrackerRunLength = ({
                   variant='contained'
                   className='btn-save'
                   onClick={saveModalOpen}
+                  startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
                   disabled={
                     isButtonDisabled ||
                     Object.keys(modifiedCells).length === 0 ||
@@ -1446,6 +1475,7 @@ const KendoDataTablesCrackerRunLength = ({
                 <Button
                   variant='contained'
                   onClick={handleCalculateBtn}
+                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                   disabled={
                     READ_ONLY ||
                     (rows?.length === 0
@@ -1464,6 +1494,7 @@ const KendoDataTablesCrackerRunLength = ({
                   onClick={handleOpen}
                   className='btn-calculate'
                   disabled={READ_ONLY}
+                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                 >
                   Calculate For Next Year
                 </Button>

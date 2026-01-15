@@ -30,8 +30,6 @@ const defs = {
     dataForm2: 'WKS Form2',
     // Menu items for "Production / Norms Plan"
     productionNormsPlan: 'Plano de Produção / Normas',
-    targetDemand: 'Target & Demand',
-
     process: 'Process',
 
     productMCUVal: 'Valor MCU Produto',

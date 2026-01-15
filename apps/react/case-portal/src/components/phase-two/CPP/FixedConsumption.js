@@ -7,6 +7,7 @@ import { UtilityPlantApiServiceV2 } from 'services/phase-two-services/CPP/utilit
 import ValueFormatterPhaseTwo from 'components/phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const FixedConsumption = () => {
   const keycloak = useSession()
@@ -435,12 +436,7 @@ const FixedConsumption = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {/* <KendoDataTables */}
 
       <AdvanceKendoTable

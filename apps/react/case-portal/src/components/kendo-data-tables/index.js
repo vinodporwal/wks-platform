@@ -1427,15 +1427,14 @@ const KendoDataTables = ({
             </Box>
 
             {/* Right side - All other actions */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              {permissions?.UnitToShow && (
-                <Chip
-                  label={permissions.UnitToShow}
-                  variant='outlined'
-                  className='unit-chip'
-                />
-              )}
-
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                paddingBottom: 0.25,
+              }}
+            >
               {permissions?.addButton && (
                 <Button
                   variant='contained'
@@ -1532,17 +1531,6 @@ const KendoDataTables = ({
                   className='btn-calculate'
                 >
                   Calculate
-                </Button>
-              )}
-
-              {permissions?.showRefresh && (
-                <Button
-                  variant='contained'
-                  onClick={handleCalculateBtn}
-                  disabled={isButtonDisabled || READ_ONLY}
-                  className='btn-save'
-                >
-                  Refresh
                 </Button>
               )}
 
@@ -1705,12 +1693,12 @@ const KendoDataTables = ({
               style={{
                 flex: 1,
                 overflow: 'auto',
-                // height: 'auto',
+                height: undefined,
                 // height: permissions?.isHeight ? '60vh' : '60vh',
                 // height: '60vh',
                 // height: `${gridHeight}px`,
 
-                height:
+                height1:
                   // lowerVertName === 'meg' || supressGridHeight == true
                   supressGridHeight == true
                     ? undefined

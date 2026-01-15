@@ -43,6 +43,7 @@ import {
 } from './Utilities-Kendo/durationHelpers'
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 import { RemarkCell } from './Utilities-Kendo/RemarkCell'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export const particulars = [
   'normParameterId',
@@ -593,14 +594,7 @@ const KendoDataTablesReportsTcs = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      <LoaderBackdrop open={!!loading} />
 
       {(permissions?.allAction ?? true) && (
         <Box

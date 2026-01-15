@@ -26,6 +26,9 @@ const TEXT = '#374151'
 const ICON = '#6366f1'
 
 const NavItem = ({ item, level }) => {
+  // console.log('item', item)
+  const isDashboard = item.id === 'dashboard'
+
   const dispatch = useDispatch()
   const { drawerOpen, openItem } = useSelector((state) => state.menu)
   const { safeNavigate, confirmLeave, setDialogOpen, dialogOpen, itemHandler } =
@@ -60,40 +63,37 @@ const NavItem = ({ item, level }) => {
         sx={{
           minHeight: 30,
           px: 1,
-          py: 0.5,
+          py: 1,
           mx: 0,
           mb: 0,
-          borderRadius: '0px',
-          transition: 'all 160ms ease',
-
-          // fontFamily: '"Segoe UI", Open Sans, Helvetica, Arial, sans-serif',
-          fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
-
+          borderRadius: 0,
+          fontFamily:
+            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
           fontSize: '0.82rem',
           fontWeight: 500,
 
-          bgcolor: 'transparent',
-          color: '#3f3f46', // ?? soft dark gray (unselected text)
+          /* ? DASHBOARD ALWAYS DARK */
+          background: isDashboard
+            ? 'linear-gradient(135deg, #1d3665 0%, #1d3665 100%)'
+            : 'transparent',
+
+          color: isDashboard ? '#ffffff' : '#3f3f46',
 
           '&:hover': {
-            background:
-              'linear-gradient(135deg, rgba(18, 88, 179, 0.12) 0%, rgba(18, 88, 179, 0.22) 100%)',
-            transform: 'translateY(-1px)',
-            boxShadow: '0 4px 10px rgba(18, 88, 179, 0.18)',
-            transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+            background: isDashboard
+              ? 'linear-gradient(135deg, #1d3665 0%, #1d3665 100%)'
+              : 'linear-gradient(135deg, rgba(18,88,179,0.12) 0%, rgba(18,88,179,0.22) 100%)',
+            boxShadow: 'none',
+            transform: 'none',
           },
 
+          /* ?? IMPORTANT: override selected */
           '&.Mui-selected': {
-            background: 'linear-gradient(135deg, #0074bd 0%, #0074bd 100%)',
+            background: isDashboard
+              ? 'linear-gradient(135deg, #1d3665 0%, #1d3665 100%)'
+              : 'linear-gradient(135deg, #0074bd 0%, #0074bd 100%)',
             color: '#ffffff',
             fontWeight: 600,
-
-            '&:hover': {
-              background: 'linear-gradient(135deg, #0a347a 0%, #0074bd 100%)',
-              transform: 'translateY(-1px)',
-              boxShadow: '0 6px 14px rgba(10, 60, 150, 0.35)',
-              transition: 'all 220ms cubic-bezier(0.4, 0, 0.2, 1)',
-            },
           },
         }}
       >
@@ -102,7 +102,7 @@ const NavItem = ({ item, level }) => {
           <ListItemIcon
             sx={{
               minWidth: 30,
-              color: !isSelected ? '#030303ff' : '#ffffff',
+              color: isDashboard || isSelected ? '#ffffff' : '#030303',
               '& svg': {
                 width: 18,
                 height: 18,
@@ -129,10 +129,11 @@ const NavItem = ({ item, level }) => {
               >
                 <Typography
                   sx={{
-                    fontFamily: '"Roboto", Helvetica, Arial, sans-serif',
+                    fontFamily:
+                      "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                     fontSize: '0.82rem',
                     fontWeight: isSelected ? 600 : 500,
-                    color: isSelected ? '#ffffff' : '#3f3f46',
+                    color: isDashboard || isSelected ? '#ffffff' : '#3f3f46',
                     letterSpacing: '0.01em',
 
                     whiteSpace: 'nowrap',

@@ -9,6 +9,7 @@ import { MockReportService } from './mockPlantContributionAPI'
 import { useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
 import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function PlantContribution() {
   const keycloak = useSession()
@@ -244,14 +245,14 @@ export default function PlantContribution() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      ></Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Main Categories Except 'OtherVariableCost' and 'ProductionCostCalculations' */}
       {categories()
-        .filter(({ key }) => key !== 'OtherVariableCost' && key !== 'ProductionCostCalculations')
+        .filter(
+          ({ key }) =>
+            key !== 'OtherVariableCost' && key !== 'ProductionCostCalculations',
+        )
         .map(({ key, title }, idx) => {
           const rpt = reports[key] || {}
           return (

@@ -33,6 +33,7 @@ import valueFormatterByUOM, {
   recalcEndDate,
 } from '../commonUtilityFunctions'
 import { NoSpinnerNumericEditor } from '../utilities/numbericColumns'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export const hiddenFields = [
   'maintenanceId',
@@ -975,14 +976,7 @@ const NestedKendoTable = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      <LoaderBackdrop open={!!loading} />
 
       {(permissions?.allAction ?? true) && (
         <Box
