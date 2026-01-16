@@ -16,6 +16,9 @@ const MainLayout = ({ keycloak, authenticated }) => {
   const menu = { items: [...menuItems] }
   const location = useLocation()
 
+  const BG_COLOR = '#ffff'
+  const BG_COLOR_FULL = '#ffff'
+
   const handleDrawerToggle = useCallback(() => {
     dispatch(openDrawer({ drawerOpen: !open }))
   }, [dispatch, open])
@@ -42,20 +45,57 @@ const MainLayout = ({ keycloak, authenticated }) => {
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden', // grid must scroll internally
-          backgroundColor: '#ffffff',
+          overflow: 'hidden',
+          backgroundColor: BG_COLOR_FULL,
+          pt: '60px',
+
+          border: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
+          borderRadius: '6px',
         }}
       >
         {/* Reserve header height */}
         {/* <Toolbar variant='dense' /> */}
 
         {location.pathname.startsWith('/production-norms-plan') && (
-          <StepperNav />
+          <Box
+            sx={{
+              border: '1px solid rgba(0,0,0,0.12)',
+              m: 0,
+              p: 0,
+              display: 'flex',
+              alignItems: 'center',
+              ml: '8px',
+              mr: '5px',
+              backgroundColor: `${BG_COLOR}`,
+              boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
+              borderRadius: '6px',
+            }}
+          >
+            <StepperNav />
+          </Box>
         )}
 
-        <Toolbar variant='dense' />
+        {/* <Toolbar variant='dense' /> */}
+        <Box sx={{ height: 8 }} />
 
-        <Breadcrumbs variant='dense' navigation={menu} divider={false} />
+        <Box
+          sx={{
+            m: 0,
+            p: 0,
+            display: 'flex',
+            alignItems: 'center',
+            ml: '8px',
+            mr: '5px',
+            mb: '5px',
+            backgroundColor: `${BG_COLOR}`,
+            border: '1px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
+            borderRadius: '6px',
+          }}
+        >
+          <Breadcrumbs variant='dense' navigation={menu} divider={false} />
+        </Box>
 
         {/* Page content */}
         <Box className='outlet-wrapper'>

@@ -94,6 +94,7 @@ export const dateFields = [
   'fromDateReport',
 ]
 export const dateFields2 = ['fromDate', 'toDate']
+
 export const dateFields1 = [
   'ibrSD',
   'ibrED',
@@ -1321,7 +1322,7 @@ const KendoDataTables = ({
                 <Typography
                   component='div'
                   sx={{
-                    fontSize: '0.9rem', // Slightly larger than content for hierarchy
+                    fontSize: '0.8rem', // Slightly larger than content for hierarchy
                     fontWeight: 850, // "Super bold" for modern look
                     color: '#0f172a', // Deep slate
                     letterSpacing: '-0.2px',
@@ -1338,7 +1339,7 @@ const KendoDataTables = ({
                       width: '3px',
                       height: '14px',
                       borderRadius: '4px',
-                      bgcolor: '#0100cb', // Your brand blue
+                      bgcolor: '#0074bd', // Your brand blue
                     },
                   }}
                 >
@@ -1453,7 +1454,9 @@ const KendoDataTables = ({
                   className='btn-export'
                   startIcon={<DownloadIcon fontSize='small' />}
                   onClick={downloadExcelForConfiguration}
-                  disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                  // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                  //ANY ONE CAN EXPORT
+                  disabled={isButtonDisabled || rows?.length === 0}
                 >
                   Export
                 </Button>
@@ -1551,7 +1554,9 @@ const KendoDataTables = ({
                   className='btn-export'
                   startIcon={<DownloadIcon fontSize='small' />}
                   onClick={excelExport}
-                  disabled={READ_ONLY || rows?.length === 0}
+                  // disabled={READ_ONLY || rows?.length === 0}
+                  disabled={rows?.length === 0}
+                  //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -1693,12 +1698,12 @@ const KendoDataTables = ({
               style={{
                 flex: 1,
                 overflow: 'auto',
-                height: undefined,
+                height1: undefined,
                 // height: permissions?.isHeight ? '60vh' : '60vh',
                 // height: '60vh',
                 // height: `${gridHeight}px`,
 
-                height1:
+                height:
                   // lowerVertName === 'meg' || supressGridHeight == true
                   supressGridHeight == true
                     ? undefined
@@ -2868,12 +2873,7 @@ const KendoDataTables = ({
         <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
           <Button
             onClick={() => setOpenDeleteDialogeBox(false)}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              color: '#64748b',
-            }}
+            className='btn-no'
           >
             Cancel
           </Button>
@@ -2883,19 +2883,7 @@ const KendoDataTables = ({
             variant='contained'
             size='small'
             disabled={READ_ONLY}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              bgcolor: '#dc2626',
-              borderRadius: '6px',
-              px: 3,
-              '&:hover': { bgcolor: '#b91c1c' },
-              '&:disabled': {
-                bgcolor: '#e5e7eb',
-                color: '#94a3b8',
-              },
-            }}
+            className='btn-yes'
           >
             Delete
           </Button>
@@ -2975,15 +2963,7 @@ const KendoDataTables = ({
 
         {/* Actions */}
         <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
-          <Button
-            onClick={closeSaveDialogeBox}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              color: '#64748b',
-            }}
-          >
+          <Button onClick={closeSaveDialogeBox} className='btn-no'>
             Cancel
           </Button>
 
@@ -2992,15 +2972,7 @@ const KendoDataTables = ({
             variant='contained'
             size='small'
             autoFocus
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              bgcolor: '#2563eb',
-              borderRadius: '6px',
-              px: 3,
-              '&:hover': { bgcolor: '#1e40af' },
-            }}
+            className='btn-yes'
           >
             Save
           </Button>
@@ -3021,8 +2993,10 @@ const KendoDataTables = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeResetDataDialogeBox}>Cancel</Button>
-          <Button onClick={resetConfirmation} autoFocus>
+          <Button className='btn-no' onClick={closeResetDataDialogeBox}>
+            Cancel
+          </Button>
+          <Button className='btn-yes' onClick={resetConfirmation} autoFocus>
             Reset
           </Button>
         </DialogActions>
@@ -3102,15 +3076,7 @@ const KendoDataTables = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 1.5, pt: 0, gap: 1 }}>
-          <Button
-            onClick={() => setRemarkDialogOpen(false)}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              color: '#64748b',
-            }}
-          >
+          <Button onClick={() => setRemarkDialogOpen(false)} className='btn-no'>
             Cancel
           </Button>
           <Button
@@ -3118,15 +3084,7 @@ const KendoDataTables = ({
             variant='contained'
             size='small'
             disabled={READ_ONLY || !currentRemark?.trim()}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              bgcolor: '#0100cb',
-              borderRadius: '6px',
-              px: 3,
-              '&:hover': { bgcolor: '#01008b' },
-            }}
+            className='btn-yes'
           >
             Add
           </Button>

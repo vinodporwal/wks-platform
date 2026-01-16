@@ -492,7 +492,8 @@ const OptimizerReport = () => {
           <Button
             variant='contained'
             onClick={calculateMonthWiseData}
-            disabled={READ_ONLY || calculating || loading}
+            // disabled={READ_ONLY || calculating || loading}
+            disabled={calculating || loading}
             className='btn-calculate'
             color='primary'
           >
@@ -503,7 +504,7 @@ const OptimizerReport = () => {
           variant='contained'
           onClick={exportAllGrids}
           className='btn-export'
-          disabled={READ_ONLY}
+          // disabled={READ_ONLY}
           startIcon={<DownloadIcon fontSize='small' />}
         >
           Export

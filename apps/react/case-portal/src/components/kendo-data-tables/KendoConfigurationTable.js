@@ -222,9 +222,11 @@ const ConfigurationAccordian = ({
 
                     <Typography
                       sx={{
-                        fontSize: '0.65rem',
+                        fontSize: '0.75rem',
                         fontWeight: 600,
                         lineHeight: 1.2, // ✅ tighter so it sits perfectly center
+                        fontFamily:
+                          "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                       }}
                     >
                       Last refreshed on{' '}
@@ -1176,7 +1178,7 @@ const ConfigurationTable = () => {
       backgroundColor: 'rgba(255, 255, 255, 0.98)',
       backdropFilter: 'blur(16px)',
       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.2)',
-      border: '5px solid red',
+      border: '1px solid #ffffff',
     },
   }))
 
@@ -1223,7 +1225,7 @@ const ConfigurationTable = () => {
               p: 0.5, // ? compact
               borderRadius: '50%',
               bgcolor: 'rgba(1, 0, 203, 0.1)',
-              color: '#0100cb',
+              color: '#2563eb',
               mb: 0.5,
               animation: 'pulse 2s infinite',
             }}
@@ -1293,16 +1295,7 @@ const ConfigurationTable = () => {
             px: 0,
           }}
         >
-          <Button
-            onClick={handleCloseDialog}
-            sx={{
-              color: '#64748b',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.85rem', // ?
-              px: 0, // ?
-            }}
-          >
+          <Button onClick={handleCloseDialog} className='btn-save'>
             No
           </Button>
 
@@ -1310,21 +1303,7 @@ const ConfigurationTable = () => {
             onClick={handleConfirmLoad}
             variant='contained'
             autoFocus
-            sx={{
-              bgcolor: '#0100cb',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.85rem', // ?
-              px: 3, // ?
-              borderRadius: '10px', // ?
-              boxShadow: '0 8px 12px -3px rgba(1, 0, 203, 0.3)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                bgcolor: '#01008b',
-                transform: 'scale(1.03)',
-                boxShadow: '0 12px 16px -3px rgba(1, 0, 203, 0.4)',
-              },
-            }}
+            className='btn-save'
           >
             Yes, Refresh Data
           </Button>

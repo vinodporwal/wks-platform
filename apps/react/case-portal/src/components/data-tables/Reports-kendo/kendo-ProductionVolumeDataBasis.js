@@ -244,7 +244,7 @@ const ProductionVolumeDataBasis = () => {
               variant='contained'
               onClick={exportAllGrids}
               className='btn-export'
-              disabled={READ_ONLY}
+              // disabled={READ_ONLY}
               startIcon={<DownloadIcon fontSize='small' />}
             >
               Export

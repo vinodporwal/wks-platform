@@ -650,7 +650,8 @@ export default function BestAchievedNorms() {
           variant='contained'
           onClick={exportAllGrids}
           className='btn-export'
-          disabled={READ_ONLY}
+          // disabled={READ_ONLY}
+          //ANY ONE CAN EXPORT
           startIcon={<DownloadIcon fontSize='small' />}
         >
           Export

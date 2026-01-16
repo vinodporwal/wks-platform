@@ -1425,7 +1425,8 @@ const KendoDataTablesCrackerRunLength = ({
                   variant='contained'
                   className='btn-export'
                   onClick={downloadExcelForConfiguration}
-                  disabled={isButtonDisabled || READ_ONLY}
+                  // disabled={isButtonDisabled || READ_ONLY}
+                  disabled={isButtonDisabled}
                   startIcon={<DownloadIcon fontSize='small' />}
                 >
                   Export

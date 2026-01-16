@@ -285,7 +285,8 @@ const AnnualAopCost = () => {
             variant='contained'
             onClick={exportAllGrids}
             className='btn-export'
-            disabled={READ_ONLY}
+            //ANY ONE CAN EXPORT
+            // disabled={READ_ONLY}
             startIcon={<DownloadIcon fontSize='small' />}
           >
             Export

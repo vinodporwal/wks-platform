@@ -642,7 +642,14 @@ const KendoDataTablesReports = ({
           </Box>
 
           {/* RIGHT: Buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              paddingBottom: 0.25,
+            }}
+          >
             {permissions?.addButton && (
               <Button
                 variant='contained'
@@ -690,7 +697,8 @@ const KendoDataTablesReports = ({
               <Button
                 variant='contained'
                 onClick={handleExport}
-                disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                disabled={isButtonDisabled || rows?.length === 0}
                 className='btn-export'
                 startIcon={<DownloadIcon fontSize='small' />}
               >
@@ -702,7 +710,10 @@ const KendoDataTablesReports = ({
               <Button
                 variant='contained'
                 onClick={handleExport}
-                disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+
+                //ANY ONE CAN EXPORT
+                disabled={isButtonDisabled || rows?.length === 0}
                 className='btn-export'
                 startIcon={<DownloadIcon fontSize='small' />}
               >

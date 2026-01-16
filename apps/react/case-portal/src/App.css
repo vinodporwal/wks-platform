@@ -349,20 +349,22 @@ body {
 .outlet-wrapper {
   flex: 1;
   overflow: hidden;
-  padding: 1px; /* p: 0.125 ˜ 1px (MUI spacing: 0.125 * 8 = 1px) */
+  padding: 1px;
   margin-left: 8px;
   margin-right: 5px;
   margin-bottom: 10px;
 }
 
 .outlet-border-box {
-  border: 1px solid #d7d7d7;
-  border-radius: 0px; /* borderRadius: 1 in MUI ˜ 8px */
   height: 100%;
   box-sizing: border-box;
-  background-color: #fff;
+  background-color: #ffffff;
   overflow: auto;
-  padding: 0px; /* p: 0.125 ˜ 1px */
+  padding: 0px;
   padding-top: 5px;
   padding-bottom: 5px;
+
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
 }

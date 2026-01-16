@@ -184,7 +184,7 @@ export default function StepperNav() {
                 transform: 'translateY(-2px)',
               },
               '& .MuiStepIcon-root': {
-                fontSize: '1.75rem',
+                fontSize: '1.50rem',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1))',
               },
@@ -273,7 +273,7 @@ export default function StepperNav() {
           <Box
             sx={{
               position: 'fixed',
-              top: '55px',
+              // top: '55px',
               left: drawerOpen ? `${drawerWidth + 8}px` : '5px',
               right: '5px',
               zIndex: (theme) => (theme.zIndex?.appBar ?? 1100) + 1,

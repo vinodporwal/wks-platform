@@ -132,8 +132,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   }
 
   const infoButtonSx = {
-    p: '2px',
-    borderRadius: '50%',
+    p: '1px',
+
     backgroundColor: '#f1f5f9',
     border: '1px solid #e5e7eb',
     '&:hover': {
@@ -329,7 +329,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             direction='column'
             justifyContent='flex-start'
             alignItems='flex-start'
-            spacing={1}
+
             // sx={{ marginTop: '-18px' }}
           >
             {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
@@ -366,27 +366,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <Grid
               container
               sx={{
-                mt: 4,
-                ml: 2,
-                mr: 2,
-                mb: 0.5,
-                px: 0.5,
-                py: 0.5,
+                m: 0.5,
                 width: '100%',
-
-                /*  Transparent to background */
-                bgcolor: 'transparent',
-                backdropFilter: 'none',
-
-                /*  Remove borders + radius */
-                border: 'none',
-                borderTop: 'none',
-                borderRadius: 0,
-
-                /*  Remove elevation/shadow */
-                boxShadow: 'none',
-
-                /*  Keep layout stable (no hover lift) */
                 transition: 'none',
                 '&:hover': {
                   boxShadow: 'none',
