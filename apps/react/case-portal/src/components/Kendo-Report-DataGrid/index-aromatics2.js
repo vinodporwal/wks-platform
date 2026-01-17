@@ -75,7 +75,10 @@ const KendoDataGridAromatics2 = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          fontFamily:
+            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+        }}
       >
         <Tooltip
           position='top'

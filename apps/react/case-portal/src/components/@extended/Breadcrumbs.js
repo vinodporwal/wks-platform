@@ -44,6 +44,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const VERTICAL_NAME = verticalObject?.name
   const SITE_NAME = siteObject?.name
 
+  const location = useLocation()
+  const [main, setMain] = useState()
+  const [item, setItem] = useState()
+
   const [notification, setNotification] = useState({
     open: false,
     message: '',
@@ -88,8 +92,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   }
 
   async function handleOpenPdfTemp(title) {
-    // console.log('titletitle', title)
-    // console.log('SITE_NAME', SITE_NAME?.toLowerCase())
     var url = ''
     if (title == 'configuration' && SITE_NAME?.toLowerCase() == 'nmd')
       url = `${window.location.origin}/files/Digital AOP Automation for NMD EOEG_Rev02.pdf`
@@ -133,12 +135,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
   const infoButtonSx = {
     p: '1px',
-
-    backgroundColor: '#f1f5f9',
-    border: '1px solid #e5e7eb',
-    '&:hover': {
-      backgroundColor: '#e5e7eb',
-    },
     width: 0,
     height: 0,
   }
@@ -163,10 +159,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       return Promise.reject(e)
     }
   }
-
-  const location = useLocation()
-  const [main, setMain] = useState()
-  const [item, setItem] = useState()
 
   useEffect(() => {
     let title = item?.title
@@ -210,24 +202,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     location.pathname = '/dashboard/analytics'
   }
 
-  let mainContent
   let itemContent
   let breadcrumbContent = <Typography />
   let itemTitle = ''
-
-  // collapse item
-  // if (main && main.type === 'collapse') {
-  //   mainContent = (
-  //     // <Typography component={Link} to={document.location.pathname} variant="h6" sx={{ textDecoration: 'none' }} color="textSecondary">
-  //     <Typography
-  //       variant='h6'
-  //       sx={{ textDecoration: 'none' }}
-  //       color='textSecondary'
-  //     >
-  //       {main.title}
-  //     </Typography>
-  //   )
-  // }
 
   // items
   if (item && item.type === 'item') {
@@ -246,9 +223,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
     const normalizedTitle = itemTitle?.toLowerCase().replace(/\s/g, '')
 
-    // console.log('normalizedTitle', normalizedTitle)
-
-    // if (['productionaop', 'consumptionaop'].includes(normalizedTitle)) {
     if (
       [
         'production&normsbasis',
@@ -315,7 +289,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       location?.pathname !== '/dashboard'
     ) {
       breadcrumbContent = (
-        <MainCard
+        <Box
           border={false}
           sx={{ bgcolor: 'transparent' }}
           {...others}
@@ -329,40 +303,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             direction='column'
             justifyContent='flex-start'
             alignItems='flex-start'
-
-            // sx={{ marginTop: '-18px' }}
           >
-            {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
-            {/* <MuiBreadcrumbs aria-label='breadcrumb'> */}
-            {/* HIDE HOME OPTION FROM Navigators MENU */}
-            {/* <Typography
-                  component={Link}
-                  to='/home'
-                  color='textSecondary'
-                  variant='h6'
-                  sx={{ textDecoration: 'none' }}
-                >
-                  Home
-                </Typography> */}
-
-            {/* {mainContent} */}
-
-            {/* <Typography
-                  component='div'
-                  sx={{
-                    textDecoration: 'none',
-                    fontWeight: 800,
-                    color: 'black',
-                    // fontStyle: 'italic',
-                    fontSize: '1rem',
-                  }}
-                >
-                  {verticalName} / {siteName} / {plantName}
-                </Typography>
-                {itemContent}
-              </MuiBreadcrumbs>
-            </Grid> */}
-
             <Grid
               container
               sx={{
@@ -419,25 +360,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
                     </Typography>
 
                     {/* Status/Item Pill */}
-                    {itemContent && (
-                      <Box
-                        sx={{
-                          ml: 0,
-                          px: 0,
-                          py: 0,
-                          bgcolor: '#e0e7ff', // Soft Indigo background
-                          color: '#4338ca', // Indigo 700
-                          borderRadius: '20px',
-                          fontSize: '0.50rem',
-                          fontWeight: 800,
-                          display: 'flex',
-                          alignItems: 'center',
-                          border: '1px solid rgba(67, 56, 202, 0.1)',
-                        }}
-                      >
-                        {itemContent}
-                      </Box>
-                    )}
+                    {itemContent && <Box>{itemContent}</Box>}
                   </Box>
                 )}
               </Grid>
@@ -457,7 +380,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             severity={notification.severity}
             onClose={() => setNotification({ ...notification, open: false })}
           />
-        </MainCard>
+        </Box>
       )
     }
   }

@@ -120,10 +120,6 @@
    FULL ROW HOVER (RESTORED)
    =============================== */
 
-.kendo-data-grid .k-grid-content .k-grid-table tr:hover td {
-  background-color: #eff6ff !important;
-}
-
 /* ===============================
    SELECTION
    =============================== */
@@ -186,14 +182,8 @@
 .k-right-disabled,
 .k-number-right-disabled {
   background-color: #e3e3e3 !important;
-  color: #616161;
-}
-
-.disabled-cell,
-.non-editable-cell,
-.k-right-disabled,
-.k-number-right-disabled td {
-  border-color: rgb(169, 169, 169) !important; /* black grid lines */
+  border-right: 1px solid rgb(169, 169, 169) !important;
+  border-bottom: 1px solid rgb(169, 169, 169) !important;
 }
 
 /* ===============================
@@ -327,4 +317,51 @@
   tr
   > td:not(.k-group-cell):not(.k-hierarchy-cell) {
   padding-left: 6px !important;
+}
+/* NEW */
+
+.k-grid .k-grid-header .k-header {
+  padding: 0px 0px 4px 2px !important;
+  height: 20px;
+}
+.k-grid .k-grid-header .k-cell-inner,
+.k-grid .k-grid-header .k-link {
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.k-grid .k-grid-header th.show-menu-on-hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover .k-header-column-menu {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-header-column-menu {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+/* Make header inner relative */
+.k-grid .k-grid-header th.show-menu-on-hover .k-cell-inner {
+  position: relative !important;
+  padding-right: 0 !important; /* no extra space */
+}
+
+/* Column menu icon: take no layout space */
+.k-grid .k-grid-header th.show-menu-on-hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover .k-header-column-menu {
+  position: absolute !important;
+  right: 2px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease-in-out;
+}
+
+/* Show on hover */
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-header-column-menu {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }

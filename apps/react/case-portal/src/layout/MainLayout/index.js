@@ -47,7 +47,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
           flexDirection: 'column',
           overflow: 'hidden',
           backgroundColor: BG_COLOR_FULL,
-          pt: '60px',
+          pt: '55px',
 
           border: '1px solid rgba(0,0,0,0.08)',
           boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
@@ -77,7 +77,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
         )}
 
         {/* <Toolbar variant='dense' /> */}
-        <Box sx={{ height: 8 }} />
+        <Box sx={{ height: 4 }} />
 
         <Box
           sx={{
@@ -87,7 +87,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
             alignItems: 'center',
             ml: '8px',
             mr: '5px',
-            mb: '5px',
+            mb: '8px',
             backgroundColor: `${BG_COLOR}`,
             border: '1px solid rgba(0,0,0,0.08)',
             boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
