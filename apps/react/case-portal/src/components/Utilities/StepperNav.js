@@ -40,7 +40,9 @@ export default function StepperNav() {
   } = dataGridStore
 
   const PLANT_NAME = plantObject?.name?.toLowerCase()
+
   const SITE_NAME = siteObject?.name?.toLowerCase()
+
   const [steps, setSteps] = useState([])
 
   const { items: menuItems } = useMenuContext()
@@ -89,7 +91,6 @@ export default function StepperNav() {
     } else {
       setSteps(newSteps)
     }
-
     const currentSlug = location.pathname.split('/').pop()
     const found = newSteps.some((s) => s.key === currentSlug)
 
@@ -122,6 +123,8 @@ export default function StepperNav() {
       alternativeLabel
       activeStep={activeStep >= 0 ? activeStep : 0}
       sx={{
+        display: 'flex', // prevent wrapping so horizontal scroll is used instead
+        flexWrap: 'nowrap',
         '& .MuiStepLabel-label': {
           fontWeight: 'normal',
         },
@@ -148,6 +151,7 @@ export default function StepperNav() {
               '& .MuiStepIcon-root.Mui-active': {
                 color: '#0100cb',
               },
+              display: 'inline-flex', // keep each step inline for nowrap layout
             }}
             aria-label={step.label}
           >
@@ -204,7 +208,32 @@ export default function StepperNav() {
               maxHeight: '70px',
             }}
           >
-            <Box>{StepperElement}</Box>
+            {/* HORIZONTAL SCROLL WRAPPER - thin scrollbar only when needed */}
+            <Box
+              sx={{
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                whiteSpace: 'nowrap',
+                WebkitOverflowScrolling: 'touch',
+                px: 0.5,
+                // Thin webkit scrollbar
+                '&::-webkit-scrollbar': {
+                  height: '6px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  borderRadius: 3,
+                  backgroundColor: 'rgba(0,0,0,0.22)',
+                },
+                '&::-webkit-scrollbar-track': {
+                  backgroundColor: 'transparent',
+                },
+                // Firefox
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(0,0,0,0.22) transparent',
+              }}
+            >
+              {StepperElement}
+            </Box>
           </Box>
 
           {/* Spacer so fixed element doesn't cover content */}
@@ -213,7 +242,30 @@ export default function StepperNav() {
           />
         </>
       ) : (
-        <Box>{StepperElement}</Box>
+        // same thin-scroll wrapper for non-fixed mode
+        <Box
+          sx={{
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            whiteSpace: 'nowrap',
+            WebkitOverflowScrolling: 'touch',
+            px: 0.5,
+            '&::-webkit-scrollbar': {
+              height: '6px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              borderRadius: 3,
+              backgroundColor: 'rgba(0,0,0,0.22)',
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: 'transparent',
+            },
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(0,0,0,0.22) transparent',
+          }}
+        >
+          {StepperElement}
+        </Box>
       )}
     </>
   )

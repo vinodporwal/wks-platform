@@ -87,6 +87,7 @@ const NormsHistorianBasis = () => {
   const fetchAllData = async (selectedUnit) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if (lowerVertName != 'meg') return
+
     if (!selectedUnit) return
     setLoading(true)
     let isCancelled = false
@@ -351,7 +352,7 @@ const NormsHistorianBasis = () => {
               variant='contained'
               onClick={exportAllGrids}
               className='btn-save'
-              disabled={READ_ONLY}
+              //disabled={READ_ONLY}
             >
               Export
             </Button>
