@@ -228,11 +228,41 @@ const SlowDown = ({ permissions }) => {
         rateEO: null,
         rateEOE: null,
       }))
+      const slowDownDetailsPEPP = newRow.map((row) => ({
+        productId: (() => {
+          const matched = allProducts.find(
+            (p) => p.displayName === row.productName1,
+          )
+          return matched?.realId || null
+        })(),
+        productName: row.productName1,
+        discription: row.discription,
+        durationInHrs:
+          row.durationInHrs !== undefined &&
+          row.durationInHrs !== null &&
+          row.durationInHrs !== ''
+            ? row.durationInHrs
+            : (() => {
+                const v = findDuration('1', row)
+                if (!v) return null
+                const [h = '00', m = '00'] = String(v).split('.')
+                return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+              })(),
+        month: row.monthly,
+        remark: row.remark,
+        rate: row.rate,
+        audityear: AOP_YEAR,
+        id: row.idFromApi || null,
+        rateEO: null,
+        rateEOE: null,
+      }))
       const response = await DataService.saveSlowdownData(
         plantId,
         lowerVertName === 'elastomer'
           ? slowDownDetailsElastomer
-          : slowDownDetailsMEG,
+          : lowerVertName === 'pe' || lowerVertName === 'pp'
+            ? slowDownDetailsPEPP
+            : slowDownDetailsMEG,
         keycloak,
       )
 
@@ -345,36 +375,38 @@ const SlowDown = ({ permissions }) => {
         const y = date.getFullYear()
         return `${d}/${m}/${y}`
       }
-      for (const record of data) {
-        const startDate =
-          record.maintStartDateTime instanceof Date
-            ? record.maintStartDateTime
-            : new Date(record.maintStartDateTime)
-        const endDate =
-          record.maintEndDateTime instanceof Date
-            ? record.maintEndDateTime
-            : new Date(record.maintEndDateTime)
+      if (lowerVertName != 'pe' && lowerVertName !== 'pp') {
+        for (const record of data) {
+          const startDate =
+            record.maintStartDateTime instanceof Date
+              ? record.maintStartDateTime
+              : new Date(record.maintStartDateTime)
+          const endDate =
+            record.maintEndDateTime instanceof Date
+              ? record.maintEndDateTime
+              : new Date(record.maintEndDateTime)
 
-        // Validate date format: dd/mm/yyyy (by parsing and checking)
-        if (
-          startLimit &&
-          endLimit &&
-          (!startDate ||
-            !endDate ||
-            isNaN(startDate) ||
-            isNaN(endDate) ||
-            startDate < startLimit ||
-            startDate > endLimit ||
-            endDate < startLimit ||
-            endDate > endLimit)
-        ) {
-          record.isError = true
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year. `,
-            severity: 'error',
-          })
-          return
+          // Validate date format: dd/mm/yyyy (by parsing and checking)
+          if (
+            startLimit &&
+            endLimit &&
+            (!startDate ||
+              !endDate ||
+              isNaN(startDate) ||
+              isNaN(endDate) ||
+              startDate < startLimit ||
+              startDate > endLimit ||
+              endDate < startLimit ||
+              endDate > endLimit)
+          ) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year. `,
+              severity: 'error',
+            })
+            return
+          }
         }
       }
 
@@ -391,6 +423,8 @@ const SlowDown = ({ permissions }) => {
         'remark',
         'rate',
         'productName1',
+        'durationInHrs',
+        'monthly',
       ]
       const requiredFieldsForMeg = [
         'discription',
@@ -417,10 +451,13 @@ const SlowDown = ({ permissions }) => {
             value === undefined ||
             (typeof value === 'string' && value.trim() === '')
           ) {
+            let displayField = field
+            if (field === 'productName1') displayField = 'Particulars'
+            else if (field === 'monthly') displayField = 'Month'
             record.isError = true
             setSnackbarOpen(true)
             setSnackbarData({
-              message: `Required field "${field}" is missing for "${record.discription || 'this record'}".`,
+              message: `Required field "${displayField}" is missing for "${record.discription || 'this record'}".`,
               severity: 'error',
             })
             return
@@ -462,34 +499,40 @@ const SlowDown = ({ permissions }) => {
       }
 
       // Date required + Start < End check
-      for (const record of data) {
-        const startMissing = !record.maintStartDateTime
-        const endMissing = !record.maintEndDateTime
-        if (startMissing || endMissing) {
-          record.isError = true
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Start Date and End Date are required for all records.',
-            severity: 'error',
-          })
-          return
-        }
-        const startDate =
-          record.maintStartDateTime instanceof Date
-            ? record.maintStartDateTime
-            : new Date(record.maintStartDateTime)
-        const endDate =
-          record.maintEndDateTime instanceof Date
-            ? record.maintEndDateTime
-            : new Date(record.maintEndDateTime)
-        if (startDate && endDate && startDate.getTime() >= endDate.getTime()) {
-          record.isError = true
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `Start time must be before end time for "${record.discription || 'this record'}".`,
-            severity: 'error',
-          })
-          return
+      if (lowerVertName != 'pe' && lowerVertName !== 'pp') {
+        for (const record of data) {
+          const startMissing = !record.maintStartDateTime
+          const endMissing = !record.maintEndDateTime
+          if (startMissing || endMissing) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: 'Start Date and End Date are required for all records.',
+              severity: 'error',
+            })
+            return
+          }
+          const startDate =
+            record.maintStartDateTime instanceof Date
+              ? record.maintStartDateTime
+              : new Date(record.maintStartDateTime)
+          const endDate =
+            record.maintEndDateTime instanceof Date
+              ? record.maintEndDateTime
+              : new Date(record.maintEndDateTime)
+          if (
+            startDate &&
+            endDate &&
+            startDate.getTime() >= endDate.getTime()
+          ) {
+            record.isError = true
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Start time must be before end time for "${record.discription || 'this record'}".`,
+              severity: 'error',
+            })
+            return
+          }
         }
       }
       if (lowerVertName === 'vcm') {
@@ -519,11 +562,8 @@ const SlowDown = ({ permissions }) => {
       // MEG specific checks
       if (
         lowerVertName === 'meg' ||
-        lowerVertName === 'vcm' ||
         lowerVertName === 'pvc' ||
         lowerVertName === 'pta' ||
-        lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
         lowerVertName === 'pet'
       ) {
         // Month span check
@@ -747,6 +787,20 @@ const SlowDown = ({ permissions }) => {
         maintEndDateTime: new Date(item?.maintEndDateTime),
       }))
       setRowsShutdown(formattedDataShutDown)
+      const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ]
 
       const formattedData = data.map((item, index) => ({
         ...item,
@@ -757,6 +811,13 @@ const SlowDown = ({ permissions }) => {
         originalRemark: item.remark,
         maintStartDateTime: new Date(item?.maintStartDateTime),
         maintEndDateTime: new Date(item?.maintEndDateTime),
+        monthly:
+          item?.monthly ||
+          item?.month ||
+          (item?.maintStartDateTime
+            ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+            : ''),
+        //month: item?.month || '',
       }))
 
       setRows(formattedData)

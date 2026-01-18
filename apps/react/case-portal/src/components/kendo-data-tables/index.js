@@ -50,6 +50,7 @@ import {
 import LimitCellEditor from './Utilities-Kendo/LimitCellEditor'
 import MonthCell from './Utilities-Kendo/MonthCell'
 import MonthDropdownEditor from './Utilities-Kendo/MonthDropdownEditor'
+import MonthDropdownPEPP from './Utilities-Kendo/MonthDropdownPEPP'
 import { NoSpinnerNumericEditorNegative } from './Utilities-Kendo/negativeNumbericColumns'
 import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
 import { DurationEditor } from './Utilities-Kendo/numericViewCells'
@@ -525,9 +526,12 @@ const KendoDataTables = ({
 
       const updatedRows = prevRows.map((row) => {
         if (row.id === currentRowId) {
-          const keysToUpdate = ['aopRemarks', 'remarks', 'remark'].filter(
-            (key) => key in row,
-          )
+          const keysToUpdate = [
+            'aopRemarks',
+            'remarks',
+            'remark',
+            'Remarks',
+          ].filter((key) => key in row)
           keyToUpdate = keysToUpdate[0] || 'remark'
           updatedRow = { ...row, [keyToUpdate]: currentRemark, inEdit: true }
           return updatedRow
@@ -638,6 +642,7 @@ const KendoDataTables = ({
   }
 
   const saveModalOpen = async () => {
+    setEdit({})
     if (READ_ONLY) return
     setIsButtonDisabled(true)
     setOpenSaveDialogeBox(true)
@@ -680,6 +685,13 @@ const KendoDataTables = ({
   }
 
   const ElastomerYearDisplayCell = ({ dataItem, field, tdProps }) => {
+    return (
+      <td {...tdProps} title={dataItem[field]}>
+        {dataItem[field]}
+      </td>
+    )
+  }
+  const MonthDropdownPEPPDisplayCell = ({ dataItem, field, tdProps }) => {
     return (
       <td {...tdProps} title={dataItem[field]}>
         {dataItem[field]}
@@ -1349,7 +1361,7 @@ const KendoDataTables = ({
                   variant='contained'
                   className='btn-save'
                   onClick={downloadExcelForConfiguration}
-                  disabled={isButtonDisabled || READ_ONLY}
+                  disabled={isButtonDisabled || rows?.length === 0}
                 >
                   Export
                 </Button>
@@ -1360,7 +1372,9 @@ const KendoDataTables = ({
                   <Button
                     variant='contained'
                     onClick={triggerFileUpload}
-                    disabled={isButtonDisabled || READ_ONLY}
+                    disabled={
+                      isButtonDisabled || READ_ONLY || rows?.length === 0
+                    }
                     className='btn-save'
                   >
                     Import
@@ -1452,7 +1466,7 @@ const KendoDataTables = ({
                   variant='contained'
                   className='btn-save'
                   onClick={excelExport}
-                  disabled={READ_ONLY || rows?.length === 0}
+                  disabled={rows?.length === 0}
                 >
                   Export
                 </Button>
@@ -1474,6 +1488,7 @@ const KendoDataTables = ({
                       disableScrollLock: true,
                     },
                   }}
+                  disabled={rows?.length === 0}
                 >
                   <MenuItem value='' disabled>
                     Select UOM
@@ -1966,6 +1981,55 @@ const KendoDataTables = ({
                     />
                   )
                 }
+                // ...existing code...
+                if (col.type === 'monthDropdownPEPP') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: { text: MonthDropdownPEPP },
+                        data: (props) => {
+                          if (permissions?.MonthDropdownPEPPHighlight) {
+                            // Show orange highlight when edited
+                            const { dataItem, field, tdProps, children } = props
+                            const rowId = dataItem.id
+                            const value = dataItem[field]
+                            const isEdited =
+                              Object.prototype.hasOwnProperty.call(
+                                customModifiedCells?.[rowId] || {},
+                                field,
+                              )
+                            return (
+                              <td
+                                {...tdProps}
+                                title={value}
+                                style={{
+                                  color: isEdited ? 'orange' : undefined,
+                                  fontWeight: isEdited ? 'bold' : undefined,
+                                }}
+                              >
+                                {children}
+                              </td>
+                            )
+                          } else {
+                            // Original behavior for other screens
+                            return MonthDropdownPEPPDisplayCell(props)
+                          }
+                        },
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                // ...existing code...
+
                 if (col.type === 'monthDropdown') {
                   return (
                     <GridColumn

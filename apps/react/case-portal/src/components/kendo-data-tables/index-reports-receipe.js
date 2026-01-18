@@ -157,7 +157,7 @@ const KendoDataTablesReciepe = ({
   const { oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
-
+  const [editedCells, setEditedCells] = useState({}) // ADD THIS LINE after other useState declarations
   const shouldShowExportImportButtons = () => {
     const dataGridStore = useSelector((state) => state.dataGridStore)
     const {
@@ -234,6 +234,15 @@ const KendoDataTablesReciepe = ({
 
       const { dataItem, field, value } = e
       const itemId = dataItem.id
+      // Track which cell was edited
+      setEditedCells((prev) => ({
+        ...prev,
+        [itemId]: {
+          ...(prev[itemId] || {}),
+          [field]: true,
+        },
+      }))
+
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
@@ -331,6 +340,8 @@ const KendoDataTablesReciepe = ({
 
   const saveConfirmation = async () => {
     saveChanges()
+    setModifiedCells({})
+    setEditedCells({})
     setOpenSaveDialogeBox(false)
     setEdit({})
   }
@@ -371,7 +382,8 @@ const KendoDataTablesReciepe = ({
   const CustomRow = useCallback(
     ({ dataItem, className, ...rest }) => {
       const isDisabled =
-        !dataItem.isEditable && dataItem?.isEditable !== undefined
+        READ_ONLY ||
+        (!dataItem.isEditable && dataItem?.isEditable !== undefined)
       const rowClassName = isDisabled ? `custom-disabled-row` : className
       return (
         <tr {...rest?.trProps} className={rowClassName}>
@@ -487,6 +499,8 @@ const KendoDataTablesReciepe = ({
     const value = props.dataItem[props.field]
     const month = monthMap[props.field?.toLowerCase()]
     const normId = props.dataItem.materialFkId
+    const rowId = props.dataItem.id
+    const field = props.field
 
     const isRedFromAllRedCell = allRedCell.some(
       (cell) =>
@@ -494,12 +508,10 @@ const KendoDataTablesReciepe = ({
         cell.normParameterFKId?.toLowerCase() === normId?.toLowerCase(),
     )
 
-    // const isRedFromEdit =
-    //   editedCellMap?.[rowId]?.[props.field] !== undefined &&
-    //   editedCellMap?.[rowId]?.[props.field]?.toString() === value?.toString()
+    // Check if THIS SPECIFIC FIELD was edited
+    const isRedFromEdit = editedCells[rowId]?.[field] === true
 
-    // const isRed = isRedFromAllRedCell || isRedFromEdit
-    const isRed = isRedFromAllRedCell
+    const isRed = isRedFromAllRedCell || isRedFromEdit
 
     return (
       <td
@@ -507,6 +519,7 @@ const KendoDataTablesReciepe = ({
         title={value}
         style={{
           color: isRed ? 'orange' : undefined,
+          fontWeight: isRed ? 'bold' : undefined,
         }}
       >
         {props.children}
@@ -614,7 +627,7 @@ const KendoDataTablesReciepe = ({
                     variant='contained'
                     component='span'
                     className='btn-save'
-                    disabled={isButtonDisabled}
+                    disabled={isButtonDisabled || READ_ONLY}
                   >
                     Import
                   </Button>

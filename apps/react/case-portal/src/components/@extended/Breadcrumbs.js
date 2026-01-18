@@ -243,6 +243,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           <Tooltip title={`Basis`}>
             <IconButton
               size='small'
+              disableRipple
               sx={{
                 backgroundColor: 'transparent',
                 '&:hover': {

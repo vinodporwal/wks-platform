@@ -27,7 +27,7 @@ import Loadable from 'components/Loadable'
 import TextSubmitComponent from 'components/user-management/TextSubmitComponent'
 import UserForm from 'components/user-management/UserForm'
 import UserManagementTable from 'components/user-management/UserManagementTable'
-
+import QualityPackagingNorms from 'components/kendo-data-tables/QualityPackagingNorms'
 import MainLayout from 'layout/MainLayout'
 import { lazy } from 'react'
 import { CaseList } from 'views/caseList/caseList'
@@ -56,13 +56,23 @@ import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
 import MaintenanceSummary from 'components/kendo-data-tables/MaintenanceSummary'
 import PlantBudgetSummary from 'components/kendo-data-tables/PlantBudgetSummary'
 import AopDesignBasis from 'components/kendo-data-tables/AopDesignBasis'
-import TcsInput from 'components/kendo-data-tables/TcsInput'
 import ProductionTargetBasis from 'components/data-tables/Reports/ProductionTargetBasis'
 
 import SiteMaintenanceSummary from 'components/kendo-data-tables/SiteMaintenanceSummary'
 import FeedStockAvailability from 'components/kendo-data-tables/FeedStockavailability'
 import TurnaroundPlanTable from 'components/kendo-data-tables/TurnaroundPlanTable'
 import NormComparisonReport from 'components/kendo-data-tables/NormComparisonReport'
+//CPP
+import Inputs from 'components/aop-phase-two/cpp/Inputs/index'
+import PlantRequirement from 'components/aop-phase-two/cpp/PlantRequirement'
+import FixedConsumption from 'components/aop-phase-two/cpp/FixedConsumption'
+import Norms from 'components/aop-phase-two/cpp/Norms'
+
+// TCS
+
+import TcsOutput from 'components/aop-phase-two/tcs/TcsOutput/index'
+import PimsOutput from 'components/aop-phase-two/tcs/PimsOutput/PimsOutput'
+import TcsInput from 'components/aop-phase-two/tcs/TcsInput/index'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
 
@@ -211,6 +221,22 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='tcs-input'>
                 <TcsInput />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'tcs-output',
+            element: (
+              <PrivateRoute routeId='tcs-output'>
+                <TcsOutput />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'pims-output',
+            element: (
+              <PrivateRoute routeId='pims-output'>
+                <PimsOutput />
               </PrivateRoute>
             ),
           },
@@ -373,6 +399,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'quality-packaging-norms',
+            element: (
+              <PrivateRoute routeId='quality-packaging-norms'>
+                <QualityPackagingNorms />
+              </PrivateRoute>
+            ),
+          },
         ],
       },
 
@@ -519,6 +553,44 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+        ],
+      },
+      {
+        path: 'utilityPlant',
+        children: [
+          {
+            path: 'norms',
+            element: (
+              <PrivateRoute routeId='norms'>
+                <Norms />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'plant-requirement',
+            element: (
+              <PrivateRoute routeId='plant-requirement'>
+                <PlantRequirement />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'fixed-consumption',
+            element: (
+              <PrivateRoute routeId='fixed-consumption'>
+                <FixedConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'inputs',
+            element: (
+              <PrivateRoute routeId='inputs'>
+                <Inputs />
+              </PrivateRoute>
+            ),
+          },
+          // ...other utilityPlant routes...
         ],
       },
 

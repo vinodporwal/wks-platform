@@ -525,6 +525,10 @@ const ShutdownNorms = () => {
     }
   }
 
+  //REVERTED
+  const isVCMWithVMD =
+    lowerVertName === 'vcm' && SITE_NAME?.toLowerCase() === 'vmd'
+
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: false,
@@ -548,15 +552,20 @@ const ShutdownNorms = () => {
         : false,
 
       saveBtn: IS_PE_PP_VERTICAL_NMD_LLDPE ? false : true,
+
+      //VCM(VMD) && elastomer we required to show calculate btn
       showCalculate:
-        lowerVertName == 'meg' ||
-        lowerVertName == 'elastomer' ||
-        lowerVertName == 'aromatics' ||
-        lowerVertName == 'pta' ||
-        lowerVertName == 'vcm' ||
-        IS_PE_PP_VERTICAL || IS_PET_VERTICAL
-          ? false
-          : true,
+        lowerVertName == 'elastomer'
+          ? true
+          : lowerVertName == 'meg' ||
+              lowerVertName == 'vcm' ||
+              lowerVertName == 'aromatics' ||
+              lowerVertName == 'pta' ||
+              IS_PE_PP_VERTICAL ||
+              IS_PET_VERTICAL
+            ? false
+            : true,
+
       showCalculateVisibility:
         lowerVertName != 'meg' &&
         lowerVertName != 'pta' &&
@@ -568,7 +577,8 @@ const ShutdownNorms = () => {
       marginBottom: IS_PE_PP_VERTICAL || IS_PET_VERTICAL ? true : false,
       dropdownLabel: 'Select Grade',
       allAction: true,
-      downloadExcelBtnFromUI: IS_PE_PP_VERTICAL || IS_PET_VERTICAL ? false : true,
+      downloadExcelBtnFromUI:
+        IS_PE_PP_VERTICAL || IS_PET_VERTICAL ? false : true,
       downloadExcelBtn: IS_PE_PP_VERTICAL || IS_PET_VERTICAL ? true : false,
       showTitleNameBusiness: true,
 
