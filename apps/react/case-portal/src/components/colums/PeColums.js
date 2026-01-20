@@ -440,7 +440,7 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
   },
   {
     field: 'productName',
-    headerName: 'Particulars123',
+    headerName: 'Particulars',
     widthT: 120,
     editable: false,
   },
