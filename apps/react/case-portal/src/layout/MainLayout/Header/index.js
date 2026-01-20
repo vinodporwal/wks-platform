@@ -61,7 +61,7 @@ const Header = ({ open, handleDrawerToggle, keycloak }) => {
                 position: 'absolute',
                 fontSize: '2rem',
 
-                color: open ? '#00F5E1' : 'rgba(255, 255, 255, 0.55)',
+                color: open ? '#ffffff' : 'rgba(255, 255, 255, 0.55)',
 
                 opacity: open ? 1 : 0.85,
                 filter: open
