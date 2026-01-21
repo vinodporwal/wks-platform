@@ -186,9 +186,11 @@ const KendoDataTables = ({
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
 
-  const { verticalChange, oldYear, year } = dataGridStore
+  const { verticalChange, oldYear, year, plantObject } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const AOP_YEAR = year?.selectedYear
+  const PLANT_ID = plantObject?.id
+
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const vertName = verticalChange?.selectedVertical
@@ -831,7 +833,35 @@ const KendoDataTables = ({
     )
   }
   //
+  const SimpleHighlightCell = ({
+    dataItem,
+    field,
+    tdProps,
+    children,
+    customModifiedCells,
+    highlightField,
+    highlight = false,
+  }) => {
+    const rowId = dataItem.id
+    const value = dataItem[field]
+    const checkField = highlightField || field
+    const isEdited = !!(
+      customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
+    )
 
+    return (
+      <td
+        {...tdProps}
+        title={value}
+        style={{
+          color: highlight && isEdited ? 'orange' : undefined,
+          fontWeight: highlight && isEdited ? 'bold' : undefined,
+        }}
+      >
+        {children}
+      </td>
+    )
+  }
   const RedHighlightCell = (props) => {
     const {
       dataItem,
@@ -1055,6 +1085,46 @@ const KendoDataTables = ({
     handleExcelUpload(file)
     event.target.value = ''
   }
+  const DurationHighlightCell = ({
+    dataItem,
+    field,
+    tdProps,
+    children,
+    customModifiedCells,
+    highlightField,
+    highlight = true,
+  }) => {
+    const rowId = dataItem.id
+    const value = dataItem[field]
+    const checkField = highlightField || field
+    const isEdited = !!(
+      customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
+    )
+
+    // Format value to HH:MM
+    let display = value
+    if (value && !isNaN(value)) {
+      const [hoursStr, minsStr = '0'] = value.toString().split('.')
+      const hours = parseInt(hoursStr, 10)
+      const mins = parseInt(minsStr.padEnd(2, '0'), 10)
+      display = `${hours.toString().padStart(2, '0')}:${mins
+        .toString()
+        .padStart(2, '0')}`
+    }
+
+    return (
+      <td
+        {...tdProps}
+        title={display}
+        style={{
+          color: highlight && isEdited ? 'orange' : undefined,
+          fontWeight: highlight && isEdited ? 'bold' : undefined,
+        }}
+      >
+        {display}
+      </td>
+    )
+  }
 
   const DurationDisplayWithTooltipCell = (props) => {
     const value = props.dataItem[props.field]
@@ -1128,6 +1198,10 @@ const KendoDataTables = ({
   }, [plantID])
 
   useEffect(() => {
+    setEdit({})
+  }, [PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
     if (
       permissions?.units?.length > 0 &&
       (!selectedUnit || !permissions.units.includes(selectedUnit))
@@ -1135,6 +1209,7 @@ const KendoDataTables = ({
       const defaultUnit = permissions.units[0]
       setSelectedUnit(defaultUnit)
       handleUnitChange(defaultUnit)
+      // setEdit({})
     }
   }, [permissions])
 
@@ -1252,6 +1327,23 @@ const KendoDataTables = ({
                   }}
                 >
                   {permissions?.titleName}
+                </Typography>
+              )}
+
+              {permissions?.titleNameExtra && (
+                <Typography
+                  component='div'
+                  className='grid-title-extra'
+                  sx={{
+                    fontSize: '0.60rem', // little smaller
+                    fontWeight: 800,
+                    color: '#336063', // very light grey
+                    fontStyle: 'italic',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  *Enter Number of Continious / Discontinious GCOs per grade for
+                  each Month.
                 </Typography>
               )}
 
@@ -1477,6 +1569,7 @@ const KendoDataTables = ({
                   select
                   value={selectedUnit || permissions?.units?.[0]}
                   onChange={(e) => {
+                    setEdit({})
                     setSelectedUnit(e.target.value)
                     handleUnitChange(e.target.value)
                   }}
@@ -1625,26 +1718,6 @@ const KendoDataTables = ({
                 }
                 const isActive = isColumnActive(col?.field, filter, sort)
 
-                if (col.type === 'descLimit') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: descLimit },
-                        data: toolTipRendererdescLimit,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-
                 if (dateFields.includes(col.field)) {
                   return (
                     <GridColumn
@@ -1665,11 +1738,10 @@ const KendoDataTables = ({
                             : DateTimePickerEditor,
                         },
                         data: (props) => (
-                          <RedHighlightCell
+                          <SimpleHighlightCell
                             {...props}
                             customModifiedCells={customModifiedCells}
-                            allRedCell={allRedCell}
-                            disableRedHighlight={disableRedHighlight}
+                            highlight={permissions?.highlightDate || false} // Add this permission
                           />
                         ),
                         headerCell: SimpleHeaderWithTooltip,
@@ -1852,7 +1924,11 @@ const KendoDataTables = ({
                         data: (cellProps) => (
                           <ProductCell
                             {...cellProps}
+                            customModifiedCells={customModifiedCells}
+                            highlightField='productName1'
+                            rowId={cellProps.dataItem.id}
                             allProducts={allProducts}
+                            highlight={!!permissions?.highlightProductName1}
                           />
                         ),
                         headerCell: SimpleHeaderWithTooltip,
@@ -1895,9 +1971,38 @@ const KendoDataTables = ({
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: TextCellEditor },
-                        data: toolTipRenderer,
+                        data: (props) =>
+                          permissions?.highlightDiscription ? (
+                            <SimpleHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              highlight={true}
+                            />
+                          ) : (
+                            toolTipRenderer(props)
+                          ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
+                    />
+                  )
+                }
+
+                if (col.type === 'descLimit') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.widthT}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: { text: descLimit },
+                        data: toolTipRendererdescLimit,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
                     />
                   )
                 }
@@ -1994,41 +2099,22 @@ const KendoDataTables = ({
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: MonthDropdownPEPP },
-                        data: (props) => {
-                          if (permissions?.MonthDropdownPEPPHighlight) {
-                            // Show orange highlight when edited
-                            const { dataItem, field, tdProps, children } = props
-                            const rowId = dataItem.id
-                            const value = dataItem[field]
-                            const isEdited =
-                              Object.prototype.hasOwnProperty.call(
-                                customModifiedCells?.[rowId] || {},
-                                field,
-                              )
-                            return (
-                              <td
-                                {...tdProps}
-                                title={value}
-                                style={{
-                                  color: isEdited ? 'orange' : undefined,
-                                  fontWeight: isEdited ? 'bold' : undefined,
-                                }}
-                              >
-                                {children}
-                              </td>
-                            )
-                          } else {
-                            // Original behavior for other screens
-                            return MonthDropdownPEPPDisplayCell(props)
-                          }
-                        },
+                        data: (props) =>
+                          permissions?.MonthDropdownPEPPHighlight ? (
+                            <SimpleHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              highlight={true}
+                            />
+                          ) : (
+                            MonthDropdownPEPPDisplayCell(props)
+                          ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
                     />
                   )
                 }
-                // ...existing code...
 
                 if (col.type === 'monthDropdown') {
                   return (
@@ -2144,7 +2230,16 @@ const KendoDataTables = ({
                       }
                       cells={{
                         edit: { text: DurationEditor },
-                        data: DurationDisplayWithTooltipCell,
+                        data: (props) =>
+                          permissions?.highlightDuration ? (
+                            <DurationHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                            />
+                          ) : (
+                            DurationDisplayWithTooltipCell(props)
+                          ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       headerClassName={isActive ? 'active-column' : ''}
@@ -2308,6 +2403,40 @@ const KendoDataTables = ({
                       columnMenu={ColumnMenuCheckboxFilter}
                       filter='numeric'
                       format={col.format}
+                    />
+                  )
+                }
+                if (col.field === 'rate') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={
+                        col.title || col.headerName || 'Rate Reduced (TPH)'
+                      }
+                      width={col.widthT}
+                      editable={true}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      hidden={col.hidden}
+                      format={'{0:n2}'}
+                      className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                      cells={{
+                        edit: { text: NoSpinnerNumericEditor },
+                        data: (props) => (
+                          <SimpleHighlightCell
+                            {...props}
+                            customModifiedCells={customModifiedCells}
+                            highlight={!!permissions?.highlightRate}
+                          >
+                            {props.dataItem[props.field]}
+                          </SimpleHighlightCell>
+                        ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      headerClassName={isActive ? 'active-column' : ''}
                     />
                   )
                 }

@@ -9,15 +9,13 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { validateFields } from 'utils/validationUtils'
 import { verticalEnums } from 'enums/verticalEnums'
 import KendoDataTables from './index'
-import { ShutDownPeColumns } from 'components/colums/ShutdownColumn'
-import { ShutDownPeColumnsldpe12 } from 'components/colums/ShutdownColumn'
-import { ShutDownPpColumns } from 'components/colums/ShutdownColumn'
-import { ShutDownAllColumns } from 'components/colums/ShutdownColumn'
-import { ShutDownPTAColumns } from 'components/colums/ShutdownColumn'
+
+import { InclusionDateColumns } from 'components/colums/ShutdownColumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import { getRoleName } from 'services/role-service'
 import ElastomerShutDown from './ElastomerShutDown'
-const ShutDown = ({ permissions }) => {
+
+const InclusionDate = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
@@ -527,7 +525,6 @@ const ShutDown = ({ permissions }) => {
 
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
-    setModifiedCells({})
     try {
       setLoading(true)
       const data = await DataService.getShutDownPlantData(
@@ -597,128 +594,6 @@ const ShutDown = ({ permissions }) => {
     fetchData()
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
-  const findDuration = (v, row) => {
-    if (row.durationInHrs) return row.durationInHrs
-
-    if (row.maintStartDateTime && row.maintEndDateTime) {
-      const start = new Date(row.maintStartDateTime)
-      const end = new Date(row.maintEndDateTime)
-
-      if (!isNaN(start?.getTime()) && !isNaN(end?.getTime())) {
-        const durationInMs = end - start
-        const durationInMinutes = durationInMs / (1000 * 60)
-        const hours = Math.floor(durationInMinutes / 60)
-        const minutes = durationInMinutes % 60
-        return `${hours}.${minutes.toString().padStart(2, '0')}`
-      }
-    }
-
-    return ''
-  }
-
-  useEffect(() => {
-    const getAllProducts = async () => {
-      if (!PLANT_ID || !AOP_YEAR) return
-
-      try {
-        let data = []
-        if (lowerVertName === 'meg') {
-          data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
-        } else if (
-          lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet'
-        ) {
-          data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
-        } else {
-          data = await DataService.getAllProductsAll(
-            keycloak,
-            'Production',
-            PLANT_ID,
-          )
-        }
-        let productList = []
-        if (lowerVertName === 'meg') {
-          productList = data
-            .filter((product) => ['EO', 'EOE'].includes(product.displayName))
-            .map((product) => ({
-              id: product.displayName,
-              displayName: product.displayName,
-              realId: product.id,
-            }))
-        } else if (
-          lowerVertName === 'pe' ||
-          lowerVertName === 'pp' ||
-          lowerVertName === 'pet'
-        ) {
-          productList = data?.data.map((product) => ({
-            id: product.displayName,
-            displayName: product.displayName,
-            realId: product.id,
-          }))
-        } else {
-          productList = data.map((product) => ({
-            id: product.displayName,
-            displayName: product.displayName,
-            realId: product.id,
-          }))
-        }
-        setAllProducts(productList)
-      } catch (error) {
-        console.error('Error fetching products', error)
-      }
-    }
-    getAllProducts()
-  }, [oldYear, yearChanged, keycloak, PLANT_ID, lowerVertName])
-
-  useEffect(() => {
-    if (!PLANT_ID || !AOP_YEAR) return
-
-    const getAllDescriptionDrpdwn = async () => {
-      try {
-        let data = []
-        data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
-
-        // let data = {
-        //   code: 200,
-        //   message: 'Data fetched successfully',
-        //   data: [
-        //     {
-        //       DisplayName: 'Catalyst Full Topup',
-        //       Name: 'Catalyst Full Topup',
-        //     },
-        //     {
-        //       DisplayName: 'Catalyst Partial Topup',
-        //       Name: 'Catalyst Partial Topup',
-        //     },
-        //     {
-        //       DisplayName: 'Preheater Cleaning',
-        //       Name: 'Preheater Cleaning',
-        //     },
-        //     {
-        //       DisplayName: 'Preheater Cleaning',
-        //       Name: 'Other',
-        //     },
-        //   ],
-        // }
-
-        let descriptionObjList = []
-        {
-          descriptionObjList = data?.data.map((product) => ({
-            id: product.Name,
-            name: product.Name,
-            displayName: product.DisplayName,
-          }))
-        }
-        setAllDescriptionDrpdwn(descriptionObjList)
-      } catch (error) {
-        console.error('Error fetching products', error)
-      }
-    }
-
-    if (lowerVertName == 'pta') getAllDescriptionDrpdwn()
-  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
-
   useEffect(() => {
     if (lowerVertName == 'pta' && allDescriptionDrpdwn?.length > 0) {
       fetchData()
@@ -738,24 +613,10 @@ const ShutDown = ({ permissions }) => {
 
   const colDefs = useMemo(() => {
     switch (lowerVertName) {
-      case verticalEnums.PE:
-        if (
-          siteName?.toLowerCase() === 'nmd' &&
-          (plantName?.toLowerCase() === 'lldpe1' ||
-            plantName?.toLowerCase() === 'lldpe2')
-        ) {
-          return ShutDownPeColumnsldpe12
-        }
-        return ShutDownPeColumns
-
-      case verticalEnums.PP:
-        return ShutDownPpColumns
-
-      case verticalEnums.PTA:
-        return ShutDownPTAColumns
-
+      case verticalEnums.AROMATICS:
+        return InclusionDateColumns
       default:
-        return ShutDownAllColumns
+        return InclusionDateColumns
     }
   }, [lowerVertName, plantName])
 
@@ -956,20 +817,9 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pet'
           ? true
           : false,
-      highlightDiscription:
-        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
-      highlightRate:
-        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
-      highlightDate:
-        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
-      highlightDuration:
-        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
     },
     isOldYear,
   )
-  if (lowerVertName == 'elastomer') {
-    return <ElastomerShutDown permissions={permissions} />
-  }
 
   return (
     <div>
@@ -1019,4 +869,4 @@ const ShutDown = ({ permissions }) => {
   )
 }
 
-export default ShutDown
+export default InclusionDate

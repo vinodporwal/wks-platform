@@ -16,7 +16,14 @@ import { setScreenTitle } from 'store/reducers/dataGridStore'
 import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import StepperNav from 'components/Utilities/StepperNav'
-import { Box, Skeleton } from '../../../node_modules/@mui/material/index'
+import { useNavigate } from 'react-router-dom'
+
+import {
+  Box,
+  Button,
+  Skeleton,
+} from '../../../node_modules/@mui/material/index'
+import { setVerticalChangeFromDashboard } from 'store/reducers/dataGridStore'
 
 const Breadcrumbs = ({ navigation, title, ...others }) => {
   const keycloak = useSession()
@@ -25,6 +32,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     dataGridStore
 
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
 
   const PLANT_ID = plantObject?.id
@@ -82,17 +90,69 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   async function handleOpenPdfTemp(title) {
     // console.log('titletitle', title)
     // console.log('SITE_NAME', SITE_NAME?.toLowerCase())
+
     var url = ''
-    if (title == 'configuration' && SITE_NAME?.toLowerCase() == 'nmd')
+
+    //MEG
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'nmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'meg'
+    )
       url = `${window.location.origin}/files/Digital AOP Automation for NMD EOEG_Rev02.pdf`
-    if (title == 'configuration' && SITE_NAME?.toLowerCase() == 'c2')
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'c2' &&
+      VERTICAL_NAME?.toLowerCase() == 'meg'
+    )
       url = `${window.location.origin}/files/Digital AOP Automation for C2 MEG_Rev2.pdf`
-    if (title == 'configuration' && SITE_NAME?.toLowerCase() == 'dmd')
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'dmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'meg'
+    )
       url = `${window.location.origin}/files/Digital AOP Automation for DMD EOEG.pdf`
-    if (title == 'configuration' && SITE_NAME?.toLowerCase() == 'hmd')
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'hmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'meg'
+    )
       url = `${window.location.origin}/files/Digital AOP Automation for HMD MEG.pdf`
-    if (title == 'configuration' && SITE_NAME?.toLowerCase() == 'vmd')
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'vmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'meg'
+    )
       url = `${window.location.origin}/files/Digital AOP Automation for VMD EOEG_Rev2.pdf`
+
+    //PE NMD
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'nmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'pe'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for NMD PE_Revisedlogic_Rev6.pdf`
+    //PP NMD
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'nmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'pp'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for NMD PP_Rev1 (1).pdf`
+    //VCM VMD
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'vmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'vcm'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for VMD VCM_Rev0.pdf`
+    //VCM DMD
+    if (
+      title == 'configuration' &&
+      SITE_NAME?.toLowerCase() == 'dmd' &&
+      VERTICAL_NAME?.toLowerCase() == 'vcm'
+    )
+      url = `${window.location.origin}/files/Digital AOP Automation for DMD VCM_Rev0.pdf`
 
     try {
       const resp = await fetch(url, {
@@ -225,11 +285,13 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
     // if (['productionaop', 'consumptionaop'].includes(normalizedTitle)) {
     if (
-      [
-        'production&normsbasis',
-        // 'overallaopconsumption(norm/quantity)',
-      ].includes(normalizedTitle) &&
-      VERTICAL_NAME?.toLowerCase() == 'meg'
+      normalizedTitle === 'production&normsbasis' &&
+      (VERTICAL_NAME?.toLowerCase() === 'meg' ||
+        VERTICAL_NAME?.toLowerCase() === 'vcm' ||
+        (VERTICAL_NAME?.toLowerCase() === 'pe' &&
+          SITE_NAME?.toLowerCase() === 'nmd') ||
+        (VERTICAL_NAME?.toLowerCase() === 'pp' &&
+          SITE_NAME?.toLowerCase() === 'nmd'))
     ) {
       itemContent = (
         <Typography
@@ -299,7 +361,8 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     if (
       item.breadcrumbs !== false &&
       location?.pathname !== '/user-management' &&
-      location?.pathname !== '/user-form'
+      location?.pathname !== '/user-form' &&
+      location?.pathname !== '/dashboard'
     ) {
       breadcrumbContent = (
         <MainCard
