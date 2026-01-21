@@ -80,6 +80,8 @@ const ProductionvolumeData = ({ permissions }) => {
   const IS_PE_PP =
     verticalObject?.name?.toLowerCase() == 'pe' ||
     verticalObject?.name?.toLowerCase() == 'pp'
+
+  const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const IS_PET = verticalObject?.name?.toLowerCase() == 'pet'
 
@@ -88,7 +90,9 @@ const ProductionvolumeData = ({ permissions }) => {
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
   const [rowsFormattedAndNonEditable, setRowsFormattedAndNonEditable] =
     useState()
-  const valueFormat = ValueFormatterProduction()
+
+  const valueFormat_ = ValueFormatterProduction()
+
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -571,6 +575,8 @@ const ProductionvolumeData = ({ permissions }) => {
       return newRow
     })
   }
+
+  const valueFormat = IS_VCM ? '{0:0.000}' : valueFormat_
 
   const colDefs_percentage_summary = IS_PE_PP
     ? getColDefsPercentageSummaryPEPP(headerMap, valueFormat)
