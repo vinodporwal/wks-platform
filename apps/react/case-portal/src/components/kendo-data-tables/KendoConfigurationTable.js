@@ -1511,7 +1511,7 @@ const ConfigurationTable = () => {
                 return <QualityParameters />
 
               case getTheId('InclusionDate'):
-                return <InclusionDate />
+                return <ExclusionDate />
 
               default:
                 return null
