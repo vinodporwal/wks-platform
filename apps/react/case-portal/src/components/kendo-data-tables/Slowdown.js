@@ -418,7 +418,7 @@ const SlowDown = ({ permissions }) => {
       }
 
       // Select required fields based on vertical
-      const requiredFields = ['discription', 'remark']
+      const requiredFields = ['discription', 'remark', 'rate']
       const requiredFieldsForElastomer = [
         'discription',
         'remark',
@@ -462,6 +462,14 @@ const SlowDown = ({ permissions }) => {
             if (field === 'productName1') displayField = 'Particulars'
             else if (field === 'monthly') displayField = 'Month'
             record.isError = true
+            setRows((prevRows) =>
+              prevRows.map((row) => {
+                if (row.id === record.id) {
+                  return { ...row, isError: true }
+                }
+                return row
+              }),
+            )
             setSnackbarOpen(true)
             setSnackbarData({
               message: `Required field "${displayField}" is missing for "${record.discription || 'this record'}".`,
@@ -475,6 +483,11 @@ const SlowDown = ({ permissions }) => {
       const validationMessage = validateFields(data, chosenFields)
       if (validationMessage) {
         data.forEach((r) => (r.isError = true))
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            data.some((d) => d.id === row.id) ? { ...row, isError: true } : row,
+          ),
+        )
         setSnackbarOpen(true)
         setSnackbarData({
           message: validationMessage,
@@ -576,26 +589,28 @@ const SlowDown = ({ permissions }) => {
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
-        for (const row of rows) {
-          const start = new Date(row.maintStartDateTime)
-          const end = new Date(row.maintEndDateTime)
-          if (isNaN(start) || isNaN(end)) continue
 
-          const isSameMonth =
-            start.getMonth() === end.getMonth() &&
-            start.getFullYear() === end.getFullYear()
+        if (lowerVertName != 'vcm') {
+          for (const row of rows) {
+            const start = new Date(row.maintStartDateTime)
+            const end = new Date(row.maintEndDateTime)
+            if (isNaN(start) || isNaN(end)) continue
 
-          if (!isSameMonth) {
-            row.isError = true
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: `The slowdown timeframe for '${row.discription}' spans multiple months. Please split into separate entries.`,
-              severity: 'error',
-            })
-            return
+            const isSameMonth =
+              start.getMonth() === end.getMonth() &&
+              start.getFullYear() === end.getFullYear()
+
+            if (!isSameMonth) {
+              row.isError = true
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `The slowdown timeframe for '${row.discription}' spans multiple months. Please split into separate entries.`,
+                severity: 'error',
+              })
+              return
+            }
           }
         }
-
         // Overlap within Slowdown  of timeframe ovelaping
         for (let i = 0; i < rows.length; i++) {
           const a = rows[i]
@@ -773,6 +788,7 @@ const SlowDown = ({ permissions }) => {
 
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
     setLoading(true)
     try {
       const data = await DataService.getSlowDownPlantData(
@@ -1243,6 +1259,16 @@ const SlowDown = ({ permissions }) => {
       showTitleNameBusiness: true,
       titleName: SCREEN_NAME,
       uploadExcelBtn: SHOW_EXCEL_UPLOAD_BUTTON,
+      highlightDiscription:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      MonthDropdownPEPPHighlight:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightRate:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightDuration:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightProductName1:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
     },
     isOldYear,
   )

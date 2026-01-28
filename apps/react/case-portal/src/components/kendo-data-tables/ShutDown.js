@@ -201,6 +201,14 @@ const ShutDown = ({ permissions }) => {
           if (!record[field] || record[field].trim() === '') {
             record.isError = true
             rowsWithErrors.add(record.id)
+            setRows((prevRows) =>
+              prevRows.map((row) => {
+                if (row.id === record.id) {
+                  return { ...row, isError: true }
+                }
+                return row
+              }),
+            )
             break // Exit inner loop once we find one missing field
           }
         }
@@ -212,6 +220,11 @@ const ShutDown = ({ permissions }) => {
         if (IS_PE_PP_VERTICAL && validationMessage.includes('Remark')) {
           message = 'Please update the field: Shutdown Basis'
         }
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            data.some((d) => d.id === row.id) ? { ...row, isError: true } : row,
+          ),
+        )
         setSnackbarOpen(true)
         setSnackbarData({
           message: message,
@@ -300,33 +313,37 @@ const ShutDown = ({ permissions }) => {
       ) {
         // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
-        for (const row of allRecords) {
-          const start = new Date(row.maintStartDateTime)
-          const end = new Date(row.maintEndDateTime)
-          //shutdown timeframe for Multiple months
-          if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
 
-          const formatDate = (date) =>
-            date.toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })
+        if (lowerVertName != 'vcm') {
+          for (const row of allRecords) {
+            const start = new Date(row.maintStartDateTime)
+            const end = new Date(row.maintEndDateTime)
+            //shutdown timeframe for Multiple months
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) continue
 
-          const isSameMonth =
-            start.getMonth() === end.getMonth() &&
-            start.getFullYear() === end.getFullYear()
+            const formatDate = (date) =>
+              date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })
 
-          if (!isSameMonth) {
-            row.isError = true
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: `The shutdown timeframe for '${row.discription}' spans multiple months (from ${formatDate(start, 'dd MMM yyyy')} to ${formatDate(end, 'dd MMM yyyy')}). Please split it into separate entries for each month.`,
-              severity: 'error',
-            })
-            return
+            const isSameMonth =
+              start.getMonth() === end.getMonth() &&
+              start.getFullYear() === end.getFullYear()
+
+            if (!isSameMonth) {
+              row.isError = true
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `The shutdown timeframe for '${row.discription}' spans multiple months (from ${formatDate(start, 'dd MMM yyyy')} to ${formatDate(end, 'dd MMM yyyy')}). Please split it into separate entries for each month.`,
+                severity: 'error',
+              })
+              return
+            }
           }
         }
+
         //Shutdown timeframe overlapping of same time
         for (let i = 0; i < allRecords.length; i++) {
           const a = allRecords[i]
@@ -510,6 +527,7 @@ const ShutDown = ({ permissions }) => {
 
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
     try {
       setLoading(true)
       const data = await DataService.getShutDownPlantData(
@@ -938,6 +956,14 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pet'
           ? true
           : false,
+      highlightDiscription:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightRate:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightDate:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightDuration:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
     },
     isOldYear,
   )
