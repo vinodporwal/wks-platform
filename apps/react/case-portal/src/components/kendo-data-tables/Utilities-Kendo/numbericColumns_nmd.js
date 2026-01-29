@@ -1,7 +1,7 @@
 import { Input } from '@progress/kendo-react-inputs'
 import { useState, useEffect, useRef } from 'react'
 
-export const PostCrDaysEditor = ({ dataItem, field, onChange }) => {
+export const PostCrDaysEditorNMD = ({ dataItem, field, onChange }) => {
   // Check if isCr was true in the original data (before any edits)
   // We'll need to pass this as a prop or check modifiedCells
   // const wasOriginallyIsCr = dataItem.originalIsCr !== undefined
@@ -9,7 +9,7 @@ export const PostCrDaysEditor = ({ dataItem, field, onChange }) => {
   //   : dataItem.isCr;
 
   // const isEditable = wasOriginallyIsCr === true;
-  const isEditable = dataItem.IsCR === true
+  const isEditable = dataItem.isCr === true
   const initialValue = dataItem[field] ?? ''
   const [localValue, setLocalValue] = useState(initialValue)
   const isFirstRender = useRef(true)

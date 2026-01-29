@@ -482,7 +482,7 @@ const ShutdownNorms = () => {
           setGrades(fetchedGrades)
 
           if (fetchedGrades.length === 0) {
-            // no grades — clear selection and fetch blank data
+            // no grades � clear selection and fetch blank data
             setGradeId(null)
             await fetchData(null)
             return
@@ -549,13 +549,14 @@ const ShutdownNorms = () => {
     try {
       let response
       if (IS_PE_PP_VERTICAL) {
-        response = await NormalOperationNormsApiService.shutdownnormsppExport(
+        response = await NormalOperationNormsApiService.shutdownNormsExport(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           PLANT_NAME,
           SITE_NAME,
           VERTICAL_NAME,
+          gradeName == 'All Grade',
         )
       }
     } catch (error) {
@@ -579,6 +580,7 @@ const ShutdownNorms = () => {
           PLANT_ID,
           AOP_YEAR,
           gradeId,
+          gradeName == 'All Grade',
         )
 
       if (response?.code === 200) {

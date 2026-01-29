@@ -1,8 +1,6 @@
 export const ExclusionDateColumns = [
   {
-    field: 'maintenanceId',
-    title: 'Maintenance ID',
-    editable: false,
+    field: 'id',
     hidden: true,
   },
   {
@@ -23,6 +21,11 @@ export const ExclusionDateColumns = [
     title: 'Reason',
     editable: true,
     fixedWidth: '200px',
+  },
+
+  {
+    field: 'originalRemark',
+    hidden: true,
   },
 ]
 

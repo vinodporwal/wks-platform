@@ -1,7 +1,7 @@
 package com.wks.caseengine.rest.server;
 
 import java.util.List;
-import java.util.Map;
+
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,36 +22,37 @@ import com.wks.caseengine.dto.CrackerConfigurationDTO;
 import com.wks.caseengine.dto.DecokeRunLengthDTO;
 import com.wks.caseengine.dto.DecokingActivitiesDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.service.DecokingActivitiesService;
+import com.wks.caseengine.service.DecokingActivitiesNMDService;
+
 
 @RestController
 @RequestMapping("task")
-public class DecokingActivitiesController {
+public class DecokingActivitiesNMDController {
 	
 	@Autowired
-	private DecokingActivitiesService decokingActivitiesService;
+	private DecokingActivitiesNMDService decokingActivitiesService;
 	
-	@GetMapping(value="/decoking-activities")
+	@GetMapping(value="/decoking-activities-nmd")
 	public AOPMessageVM getDecokingActivitiesData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType) {
 		return decokingActivitiesService.getDecokingActivitiesData(year,plantId,reportType);
 	}
 	
-	@GetMapping(value="/decoking-activities/ibr")
+	@GetMapping(value="/decoking-activities/ibr-nmd")
 	public AOPMessageVM getDecokingActivitiesIBRData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType) {
 		return decokingActivitiesService.getDecokingActivitiesIBRData(year,plantId,reportType);
 	}
 	
-	@PostMapping(value="/decoking-activities")
+	@PostMapping(value="/decoking-activities-nmd")
 	public AOPMessageVM updateDecokingActivitiesData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType, @RequestBody List<DecokingActivitiesDTO> decokingActivitiesDTOList) {
 		return decokingActivitiesService.updateDecokingActivitiesData(year,plantId,reportType,decokingActivitiesDTOList);
 	}
 	
-	@PostMapping(value="/decoking-activities/ibr")
-	public AOPMessageVM updateDecokingActivitiesIBRData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType, @RequestBody List<Map<String, Object>> payloadList) {
-		return decokingActivitiesService.updateDecokingActivitiesIBRData(year,plantId,reportType,payloadList);
+	@PostMapping(value="/decoking-activities/ibr-nmd")
+	public AOPMessageVM updateDecokingActivitiesIBRData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType, @RequestBody List<CrackerConfigurationDTO> crackerConfigurationDTOList) {
+		return decokingActivitiesService.updateDecokingActivitiesIBRData(year,plantId,reportType,crackerConfigurationDTOList);
 	}
 
-	@GetMapping(value = "/run-length-export-excel")
+	@GetMapping(value = "/run-length-export-excel-nmd")
 	public ResponseEntity<byte[]> exportConfigurationReport(
 	         @RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType
 	        ) {
@@ -73,7 +74,7 @@ public class DecokingActivitiesController {
 	    }
 	}
 
-	@PostMapping(value = "/run-length-import-excel", consumes = "multipart/form-data")
+	@PostMapping(value = "/run-length-import-excel-nmd", consumes = "multipart/form-data")
 	public AOPMessageVM importExcel(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
@@ -83,30 +84,25 @@ public class DecokingActivitiesController {
 			return	decokingActivitiesService.importExcel(year,UUID.fromString(plantId),reportType, file); 
 	}
 	
-	@PostMapping(value="/decoking-activities/run-length")
-	public AOPMessageVM updateDecokingActivitiesRunLengthData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType,  @RequestBody List<Map<String, Object>> payloadList) {
-		return decokingActivitiesService.updateDecokingActivitiesRunLengthData(year,plantId,reportType,payloadList);
+	@PostMapping(value="/decoking-activities/run-length-nmd")
+	public AOPMessageVM updateDecokingActivitiesRunLengthData(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType, @RequestBody List<DecokeRunLengthDTO> decokeRunLengthDTOList) {
+		return decokingActivitiesService.updateDecokingActivitiesRunLengthData(year,plantId,reportType,decokeRunLengthDTOList);
 	}
-	@GetMapping(value="/calculate/decoking-activities")
+	@GetMapping(value="/calculate/decoking-activities-nmd")
 	public AOPMessageVM calculateDecokingActivities(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "reportType", required = false) String reportType) {
 		return decokingActivitiesService.calculateDecokingActivities(plantId,year);
 	}
 	
-	@GetMapping(value="/next-year/entry")
-	public AOPMessageVM getNextYearEntry(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "startDate", required = false) String startDate,@RequestParam(required = false) String H10_Actual,@RequestParam(required = false) String H11_Actual,@RequestParam(required = false) String H12_Actual,@RequestParam(required = false) String H13_Actual,@RequestParam( required = false) String H14_Actual) {
-		System.out.println("H10_Actual ="+H10_Actual);
-		System.out.println("H11_Actual ="+H11_Actual);
-		System.out.println("H12_Actual ="+H12_Actual);
-		System.out.println("H13_Actual = "+H13_Actual);
-		System.out.println("H14_Actual ="+H14_Actual);
-		return decokingActivitiesService.getNextYearEntry(plantId,year,H10_Actual,H11_Actual,H12_Actual,H13_Actual,H14_Actual,startDate);
+	@GetMapping(value="/next-year/entry-nmd")
+	public AOPMessageVM getNextYearEntry(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "startDate", required = false) String startDate,@RequestParam(value = "h10", required = false) String h10,@RequestParam(value = "h11", required = false) String h11,@RequestParam(value = "h12", required = false) String h12,@RequestParam(value = "h13", required = false) String h13,@RequestParam(value = "h14", required = false) String h14) {
+		return decokingActivitiesService.getNextYearEntry(plantId,year,h10,h11,h12,h13,h14,startDate);
 	}
-	@GetMapping(value="/next-year/configuration")
+	@GetMapping(value="/next-year/configuration-nmd")
 	public AOPMessageVM getNextYearConfiguration(@RequestParam(value = "year", required = false) String year,@RequestParam String plantId,@RequestParam(value = "startDate", required = false) String startDate) {
 		return decokingActivitiesService.getNextYearConfiguration(plantId,year,startDate);
 	}
 	
-	@GetMapping(value="/calculate-decoke-maintenance")
+	@GetMapping(value="/calculate-decoke-maintenance-nmd")
 	public AOPMessageVM calculateData(@RequestParam String plantId,@RequestParam String year){
     	try {
     		 return decokingActivitiesService.calculateData(plantId,year);
@@ -115,5 +111,5 @@ public class DecokingActivitiesController {
     		e.printStackTrace();
     	}
 		return null;
-	}
+	}	
 }

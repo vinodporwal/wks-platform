@@ -29,7 +29,7 @@ export const NormalOperationNormsApiService = {
   load3,
   getNormTransactionsForFinalNorms,
   getNormTransactionsForFinalNormsModeWise,
-  shutdownnormsppExport,
+  shutdownNormsExport,
 }
 
 async function BestAchivedColorCodes(keycloak, plantId, year, mode) {
@@ -439,9 +439,10 @@ async function saveShutdownNormsExcel(
   PLANT_ID,
   AOP_YEAR,
   GRADE_ID,
+  ALL_GRADE_FLAG,
 ) {
   let url = ''
-  url = `${Config.CaseEngineUrl}/task/shutdown-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  url = `${Config.CaseEngineUrl}/task/shutdown-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}&allGrade=${ALL_GRADE_FLAG}`
 
   if (GRADE_ID) {
     url += `&gradeId=${GRADE_ID}`
@@ -685,15 +686,20 @@ async function getNormTransactionsForFinalNorms(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-export async function shutdownnormsppExport(
+export async function shutdownNormsExport(
   keycloak,
   plantId,
   year,
   PLANT_NAME,
   SITE_NAME,
   VERTICAL_NAME,
+  ALL_GRADE_FLAG,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-consumption-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-consumption-export` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    `&allGrade=${ALL_GRADE_FLAG}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

@@ -79,6 +79,8 @@ export const dateFields1 = [
   'sdED',
   'sdSD',
   'targetDate',
+  'exclusionEndDate',
+  'exclusionStartDate',
 ]
 
 export const monthMap = {
@@ -109,6 +111,7 @@ const KendoDataTables = ({
   setRows,
   columns,
   summaryEdited,
+  revision,
   loading = false,
   supressGridHeight = false,
   typeRank = {},
@@ -1202,6 +1205,10 @@ const KendoDataTables = ({
   }, [PLANT_ID, AOP_YEAR])
 
   useEffect(() => {
+    setEdit({})
+  }, [revision])
+
+  useEffect(() => {
     if (
       permissions?.units?.length > 0 &&
       (!selectedUnit || !permissions.units.includes(selectedUnit))
@@ -1778,6 +1785,7 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
+                      width={col.fixedWidth || undefined}
                       cells={{
                         edit: {
                           date: [
@@ -2766,7 +2774,10 @@ const KendoDataTables = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             {permissions?.showNoteWhileDeleting
               ? `Are you sure you want to delete this row?   ${deleteNoteOnDeleteDialogeBox}`
               : 'Are you sure you want to delete this row?'}{' '}
@@ -2792,7 +2803,10 @@ const KendoDataTables = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             {permissions?.showNoteWhileSaving
               ? `Are you sure you want to save these changes?   ${noteOnSaveDialogeBox}`
               : 'Are you sure you want to save these changes?'}{' '}
@@ -2815,7 +2829,10 @@ const KendoDataTables = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Reset ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             Are you sure you want to reset these changes?
           </DialogContentText>
         </DialogContent>
@@ -2835,13 +2852,16 @@ const KendoDataTables = ({
           backdrop: { disableScrollLock: true },
         }}
       >
-        <DialogTitle>Add Remark</DialogTitle>
+        <DialogTitle>
+          {permissions?.reasonText ? 'Add Reason' : 'Add Remark'}
+        </DialogTitle>
+
         <DialogContent>
           <TextField
             autoFocus
             margin='dense'
             id='remark'
-            label='Remark'
+            label='Add'
             type='text'
             fullWidth
             variant='outlined'
