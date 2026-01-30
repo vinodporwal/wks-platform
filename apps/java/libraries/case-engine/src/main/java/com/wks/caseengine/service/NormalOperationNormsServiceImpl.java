@@ -824,7 +824,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			// Validate or sanitize viewName before using it directly in the query to
 			// prevent SQL injection
 			String sql = null;
-			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")) {
+			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET")) {
 				sql = "SELECT * FROM " + viewName
 						+ " WHERE FinancialYear = :financialYear AND Plant_FK_Id = :plantId AND Grade_FK_Id = :gradeId";
 			}else if (vertical.getName().equalsIgnoreCase("Cracker")) {
@@ -836,7 +836,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("financialYear", financialYear);
 			query.setParameter("plantId", plantId);
-			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")) {
+			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET")) {
 				query.setParameter("gradeId", UUID.fromString(gradeId));
 			}
 			if (vertical.getName().equalsIgnoreCase("Cracker")) {
