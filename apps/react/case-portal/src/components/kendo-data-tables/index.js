@@ -61,6 +61,7 @@ import { NoSpinnerNumericEditorWithUOMValidation } from './Utilities-Kendo/numbe
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
+import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -199,6 +200,7 @@ const KendoDataTables = ({
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
+  const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
 
   const initialGroup = groupBy
     ? [
@@ -355,6 +357,31 @@ const KendoDataTables = ({
         prev.map((r) => {
           if (r.id !== itemId) return r
           const updated = { ...r, [field]: value }
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'pta' &&
+            lowerSiteName === 'dmd'
+          ) {
+            updated.rate = 154
+          }
+
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'vcm' &&
+            field === 'discription'
+          ) {
+            const desc = (value || '').trim()
+            if (
+              desc === 'Furnace Decoking H-210' ||
+              desc === 'Furnace Decoking H-220'
+            ) {
+              updated.rate = 27
+            } else if (desc === 'Furnace Decoking H-1220') {
+              updated.rate = 26.458
+            } else if (desc === 'Furnace Decoking') {
+              updated.rate = ''
+            }
+          }
 
           // percentChange logic: adjust months if enabled and percentChange field changed
           if (field === 'percentChange' && permissions?.percentChangeLogic) {
@@ -395,15 +422,26 @@ const KendoDataTables = ({
           }
           if (
             lowerVertName === 'vcm' &&
-            (r.discription || '').trim() === 'Furnace Decoking'
+            [
+              'Furnace Decoking',
+              'Furnace Decoking H-210',
+              'Furnace Decoking H-220',
+              'Furnace Decoking H-1220',
+            ].includes((updated.discription || '').trim())
           ) {
             if (field === 'maintStartDateTime' && value) {
               const start = new Date(value)
               if (!isNaN(start)) {
                 const end = new Date(start)
                 end.setHours(end.getHours() + 192)
-                updated.maintEndDateTime = end
-                updated.durationInHrs = '192.00'
+                // Only update if different to avoid triggering another change
+                if (
+                  !updated.maintEndDateTime ||
+                  new Date(updated.maintEndDateTime).getTime() !== end.getTime()
+                ) {
+                  updated.maintEndDateTime = end
+                  updated.durationInHrs = '192.00'
+                }
               }
             }
           }
@@ -1724,6 +1762,44 @@ const KendoDataTables = ({
                   )
                 }
                 const isActive = isColumnActive(col?.field, filter, sort)
+
+                if (
+                  IS_VCM_VERTICAL &&
+                  (col.field === 'maintStartDateTime' ||
+                    col.field === 'maintEndDateTime')
+                ) {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      cells={{
+                        edit: {
+                          date: DateTimePickerEditor24HourFormat,
+                        },
+                        data: (props) => (
+                          <SimpleHighlightCell
+                            {...props}
+                            customModifiedCells={customModifiedCells}
+                            highlight={permissions?.highlightDate || false}
+                          />
+                        ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      format={'{0:dd-MM-yyyy HH:mm}'}
+                      editor='date'
+                      hidden={col.hidden}
+                      filter='date'
+                      columnMenu={ColumnMenuCheckboxFilterDate}
+                      width={col?.widthT}
+                      headerClassName={
+                        isDateFilterActive.includes(col.field)
+                          ? 'active-column'
+                          : ''
+                      }
+                    />
+                  )
+                }
 
                 if (dateFields.includes(col.field)) {
                   return (

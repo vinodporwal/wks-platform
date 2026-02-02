@@ -28,8 +28,7 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 import MaintenanceProcessTableNMD from './processTableNMD.js'
 import SDTAActivitiesGridNMD from './SDTAActivitiesGridNMD.js'
-const DecokingConfigNMD = ({ pid }) => {
-  console.log('pid', pid)
+const DecokingConfigNMD = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
 
