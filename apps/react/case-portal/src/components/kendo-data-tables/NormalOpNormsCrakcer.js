@@ -28,6 +28,7 @@ import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import CrakcerConstantsBestAchieved from './CrakcerConstantsBestAchieved'
 import CrakcerConstants from './CrakcerConstants'
 import { validateFields } from 'utils/validationUtils'
+import CrackerConfiguration from './CrackerConfiguration'
 // Constants
 const MONTHS = [
   'april',
@@ -91,6 +92,8 @@ const NormalOpNormsScreenCracker = () => {
   const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical || ''
   const lowerVertName = (vertName || '').toLowerCase()
+  const lowerSiteName = (plantObject?.siteName || '').toLowerCase()
+  const lowerPlantName = (plantObject?.name || '').toLowerCase()
 
   const dispatch = useDispatch()
   const keycloak = useSession()
@@ -145,8 +148,23 @@ const NormalOpNormsScreenCracker = () => {
   const valueFormat = ValueFormatterConsumption()
   // column defs
   const colDefs = useMemo(
-    () => getNormalOpNormColDef({ headerMap, valueFormat, lowerVertName }),
-    [headerMap, valueFormat, lowerVertName, AOP_YEAR, PLANT_ID],
+    () =>
+      getNormalOpNormColDef({
+        headerMap,
+        valueFormat,
+        lowerVertName,
+        lowerSiteName,
+        lowerPlantName,
+      }),
+    [
+      headerMap,
+      valueFormat,
+      lowerVertName,
+      AOP_YEAR,
+      PLANT_ID,
+      lowerSiteName,
+      lowerPlantName,
+    ],
   )
 
   const colDefsIndividual = useMemo(
@@ -288,56 +306,6 @@ const NormalOpNormsScreenCracker = () => {
       { field: 'remark', title: 'Remark', widthT: 140, editable: true },
     ],
     [headerMap, valueFormat],
-  )
-
-  const [reportTypes, setReportTypes] = useState([])
-
-  const fetchData = useCallback(
-    async (gradeId = null) => {
-      setProductionRows([])
-      setLoading(true)
-
-      var data = []
-
-      try {
-        const res = await DataService.getCatalystSelectivityData(
-          keycloak,
-          gradeId,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-
-        if (res?.code != 200) {
-          return
-        } else {
-          data = res?.data
-        }
-
-        const distinctReportTypes = [
-          ...new Set(data.map((item) => item.normType).filter(Boolean)),
-        ]
-
-        setReportTypes(distinctReportTypes)
-
-        const filteredData = data?.filter(
-          (item) => item.normType !== 'Report Manual Entry',
-        )
-        const formattedData = filteredData.map((item, index) => ({
-          ...item,
-          idFromApi: item.id,
-          id: index,
-          originalRemark: item.remarks,
-          srNo: index + 1,
-          Particulars: item.normType,
-        }))
-        setProductionRows(formattedData)
-      } catch (error) {
-        console.error('Error fetching configuration data:', error)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [keycloak, PLANT_ID, AOP_YEAR],
   )
 
   // permission helper: if old year, getAdjustedPermissions blocks actions
@@ -714,13 +682,13 @@ const NormalOpNormsScreenCracker = () => {
         const promises = []
 
         // Load data based on selected tab
-        if (tabIndex === 0) {
-          promises.push(fetchData(gId))
-        }
+        // if (tabIndex === 0) {
+        //   promises.push(fetchData(gId))
+        // }
         // else if (tabIndex === 3) {
         //   promises.push(fetchModeData(gId))
         // }
-        else if (tabIndex === 4) {
+        if (tabIndex === 4) {
           promises.push(fetchFinalNorms())
         }
 
@@ -731,15 +699,7 @@ const NormalOpNormsScreenCracker = () => {
         setLoading(false)
       }
     },
-    [
-      fetchModeData,
-      fetchFinalNorms,
-      fetchData,
-
-      selectedTab,
-      PLANT_ID,
-      AOP_YEAR,
-    ],
+    [fetchModeData, fetchFinalNorms, selectedTab, PLANT_ID, AOP_YEAR],
   )
 
   const fetchAllDataNormsSelection = useCallback(
@@ -1227,7 +1187,7 @@ const NormalOpNormsScreenCracker = () => {
           ))}
         </Tabs>
       </Box>
-      {selectedTab === 0 && (
+      {/* {selectedTab === 0 && (
         <SelectivityData
           rows={productionRows}
           loading={loading}
@@ -1238,10 +1198,9 @@ const NormalOpNormsScreenCracker = () => {
           tabIndex='0'
           setGradeId={handleGradeChange}
           reportTypes={reportTypes}
-          onSummaryEditChange={setSummaryEdited}
-          isCalculationParam='true'
         />
-      )}
+      )} */}
+      {selectedTab === 0 && <CrackerConfiguration tabIndex={0} />}
       {/* {selectedTab === 1 && (
         <SelectivityData
           rows={productionRowsConstants}

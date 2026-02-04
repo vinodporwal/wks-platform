@@ -259,7 +259,7 @@ const ProductionvolumeData = ({ permissions }) => {
       ]
 
       const designCapacityData = newRows.map((row) => {
-        const mapped = { id: row.idFromApi || row.id || null }
+        const mapped = { id: row.idFromApi || null }
         months.forEach((month) => {
           mapped[month] =
             isTPH && row[month] ? row[month] / 24 : row[month] || null
@@ -441,7 +441,7 @@ const ProductionvolumeData = ({ permissions }) => {
           const isTPH = selectedUnit == 'TPD'
           return {
             ...item,
-            idFromApi: item?.id,
+            idFromApi: item?.id || null,
             normParametersFKId: item?.materialFKId.toLowerCase(),
             remarks: item?.remarks?.trim() || null,
             originalRemark: item?.remarks?.trim() || null,
@@ -655,33 +655,49 @@ const ProductionvolumeData = ({ permissions }) => {
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => ({
           ...item,
-          id: item?.id,
+          id: index + 1,
+          idFromApi: item?.id || null,
           productName: item?.materialDisplayName,
           remarks: item?.remarks?.trim() || null,
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
           isEditable: IS_PE_PP || IS_PET || IS_VCM ? false : true,
 
-          april: isTPD && item.april ? item.april * 24 : item.april || null,
-          may: isTPD && item.may ? item.may * 24 : item.may || null,
-          june: isTPD && item.june ? item.june * 24 : item.june || null,
-          july: isTPD && item.july ? item.july * 24 : item.july || null,
-          august: isTPD && item.august ? item.august * 24 : item.august || null,
+          april:
+            isTPD && item.april ? item.april * 24 : item.april || item.april,
+          may: isTPD && item.may ? item.may * 24 : item.may || item.may,
+          june: isTPD && item.june ? item.june * 24 : item.june || item.june,
+          july: isTPD && item.july ? item.july * 24 : item.july || item.july,
+          august:
+            isTPD && item.august
+              ? item.august * 24
+              : item.august || item.august,
           september:
             isTPD && item.september
               ? item.september * 24
-              : item.september || null,
+              : item.september || item.september,
           october:
-            isTPD && item.october ? item.october * 24 : item.october || null,
+            isTPD && item.october
+              ? item.october * 24
+              : item.october || item.october,
           november:
-            isTPD && item.november ? item.november * 24 : item.november || null,
+            isTPD && item.november
+              ? item.november * 24
+              : item.november || item.november,
           december:
-            isTPD && item.december ? item.december * 24 : item.december || null,
+            isTPD && item.december
+              ? item.december * 24
+              : item.december || item.december,
           january:
-            isTPD && item.january ? item.january * 24 : item.january || null,
+            isTPD && item.january
+              ? item.january * 24
+              : item.january || item.january,
           february:
-            isTPD && item.february ? item.february * 24 : item.february || null,
-          march: isTPD && item.march ? item.march * 24 : item.march || null,
+            isTPD && item.february
+              ? item.february * 24
+              : item.february || item.february,
+          march:
+            isTPD && item.march ? item.march * 24 : item.march || item.march,
         }))
         setRowsDesignCapacity(formatted)
       } else {
@@ -714,7 +730,7 @@ const ProductionvolumeData = ({ permissions }) => {
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => ({
           ...item,
-          idFromApi: item?.id,
+          idFromApi: item?.id || null,
           productName: item?.materialDisplayName,
           april: isTPD && item.april ? item.april * 24 : item.april,
           may: isTPD && item.may ? item.may * 24 : item.may,
@@ -840,7 +856,7 @@ const ProductionvolumeData = ({ permissions }) => {
         VERTICAL_NAME == 'cracker'
           ? 'Maximum Ethylene Production achieved in the last 05 years historical data for 05 consecutive days in different furnace mode of operation.'
           : VERTICAL_NAME == 'vcm'
-            ? ''
+            ? `Maximum ${PLANT_NAME_NO_CASE} production achieved in the last five year historical data derived as average of top 10 percent data points.`
             : '',
 
       showTitleNameBusiness:
@@ -877,7 +893,7 @@ const ProductionvolumeData = ({ permissions }) => {
         VERTICAL_NAME == 'cracker'
           ? 'Design plant capacity for different furnace mode of operation as per licensor provided data.'
           : VERTICAL_NAME == 'vcm'
-            ? ''
+            ? 'Design plant capacity as per licensor provided data.'
             : '',
 
       showTitleNameBusiness:
@@ -922,7 +938,7 @@ const ProductionvolumeData = ({ permissions }) => {
         VERTICAL_NAME == 'cracker'
           ? 'Maximum Ethylene Production achieved in the last 01 years historical data for 05 consecutive days in different furnace mode of operation.'
           : VERTICAL_NAME == 'vcm'
-            ? ''
+            ? 'Steady state production operating capacity which is proposed for the AOP FY.'
             : '',
 
       showTitleNameBusiness:
@@ -946,7 +962,7 @@ const ProductionvolumeData = ({ permissions }) => {
         VERTICAL_NAME == 'cracker'
           ? 'Percentage Summary (Ethylene)'
           : VERTICAL_NAME == 'vcm'
-            ? ''
+            ? `Percentage summary represent a month-wise percentage summary, comparing each months value against the highest ${PLANT_NAME_NO_CASE} production rate over the past 12 months.`
             : '',
       showTitleNameBusiness:
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
