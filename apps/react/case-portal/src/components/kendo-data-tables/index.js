@@ -1,4 +1,5 @@
 import HelpIcon from '@mui/icons-material/Help'
+import InfoIcon from '@mui/icons-material/Info'
 import { Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
@@ -235,7 +236,7 @@ const KendoDataTables = ({
     const isShutdown = shutdownMonths.includes(monthNumber)
     const isSlowdown = slowdownMonths.includes(monthNumber)
     let color = ''
-    if (isShutdown || isSlowdown) color = 'rgb(219, 216, 216)'
+    if (isShutdown || isSlowdown) color = 'rgb(240, 235, 235)'
 
     return (
       <td
@@ -1421,7 +1422,7 @@ const KendoDataTables = ({
                         padding: '4px',
                       }}
                     >
-                      <HelpIcon fontSize='small' />
+                      <InfoIcon fontSize='small' />
                     </IconButton>
                   </MuiTooltip>
                 </Box>
@@ -1973,7 +1974,6 @@ const KendoDataTables = ({
                 }
                 if (
                   lowerVertName === 'vcm' &&
-                  lowerSiteName === 'dmd' &&
                   monthFields.includes(col.field)
                 ) {
                   return (
