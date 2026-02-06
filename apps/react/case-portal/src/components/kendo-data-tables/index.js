@@ -64,6 +64,7 @@ import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
+import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -422,6 +423,43 @@ const KendoDataTables = ({
         prev.map((r) => {
           if (r.id !== itemId) return r
           const updated = { ...r, [field]: value }
+
+          if (
+            screenType === 'slowdown' &&
+            lowerVertName === 'pta' &&
+            lowerSiteName === 'dmd'
+          ) {
+            if (!updated.rpfDownTime || isNaN(Number(updated.rpfDownTime))) {
+              updated.rpfDownTime = 28
+            }
+            let rpfDownTimeVal =
+              field === 'rpfDownTime' ? value : updated.rpfDownTime
+            let noOfRPFVal = field === 'noOfRPF' ? value : updated.noOfRPF
+
+            // Accept both "HH:MM" and "HH.MM" input
+            let minsPerRPF = 0
+            if (
+              typeof rpfDownTimeVal === 'string' &&
+              rpfDownTimeVal.includes(':')
+            ) {
+              const [h, m] = rpfDownTimeVal.split(':').map(Number)
+              minsPerRPF = (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m)
+            } else if (rpfDownTimeVal) {
+              const [h, m = '0'] = String(rpfDownTimeVal).split('.')
+              minsPerRPF =
+                parseInt(h || 0) * 60 + parseInt(m.padEnd(2, '0') || 0)
+            }
+
+            const nRPF = parseFloat(noOfRPFVal) || 0 // Use parseFloat for decimals
+            const totalMins = minsPerRPF * nRPF
+
+            // Convert back to HH.MM for storage
+            const hours = Math.floor(totalMins / 60)
+            const mins = Math.round(totalMins % 60)
+            updated.durationInHrs = `${hours.toString().padStart(2, '0')}.${mins
+              .toString()
+              .padStart(2, '0')}`
+          }
           if (
             screenType === 'slowdown' &&
             lowerVertName === 'pta' &&
@@ -445,6 +483,22 @@ const KendoDataTables = ({
               updated.rate = 26.458
             } else if (desc === 'Furnace Decoking') {
               updated.rate = ''
+            }
+          }
+
+          if (
+            screenType === 'shutdown' &&
+            lowerVertName === 'pta' &&
+            lowerSiteName === 'dmd' &&
+            ['discription', 'discriptionDrpdwn'].includes(field)
+          ) {
+            const desc = (value || '').trim()
+            if (desc === 'Flush SD') {
+              updated.durationInHrs = '158.00'
+            } else if (desc === 'Purif Flush') {
+              updated.durationInHrs = '16.00'
+            } else if (desc === 'Annual Turn Around') {
+              updated.durationInHrs = '684.00'
             }
           }
 
@@ -614,7 +668,13 @@ const KendoDataTables = ({
         }
       })
     },
-    [setRows, setModifiedCells, setCustomModifiedCells, lowerVertName],
+    [
+      setRows,
+      setModifiedCells,
+      setCustomModifiedCells,
+      lowerVertName,
+      lowerSiteName,
+    ],
   )
 
   useEffect(() => {
@@ -2419,6 +2479,28 @@ const KendoDataTables = ({
                           ) : (
                             DurationDisplayWithTooltipCell(props)
                           ),
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      headerClassName={isActive ? 'active-column' : ''}
+                    />
+                  )
+                }
+
+                if (col.field === 'rpfDownTime') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.widthT}
+                      editable={true}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                      hidden={col.hidden}
+                      format={'{0:n2}'}
+                      className='k-number-right'
+                      cells={{
+                        edit: { text: DurationEditor },
+                        data: (props) => DurationDisplayWithTooltipCell(props),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       headerClassName={isActive ? 'active-column' : ''}

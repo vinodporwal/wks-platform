@@ -130,9 +130,11 @@ export const DataService = {
   exportShutdownNonProductWise,
   exportShutdownNonProduct,
   slowdownDetailsExport,
+  ExportSlowdownDetailsPTADMD,
   ExportSlowdownDetailsEOE,
   slowdownDetailsElastomerExport,
   ImportSlowdownDetails,
+  ImportSlowdownPTADMDDetails,
   ImportSlowdownDetailsEOE,
   ImportSlowdownElastomerDetails,
   getConfigurationExcelType,
@@ -159,6 +161,7 @@ export const DataService = {
   ImportPlantTeamExcel,
   ImportPeopleInitiativeExcel,
   dropdownValuesDMD,
+  dropdownValueSlowdown,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -3037,6 +3040,32 @@ export async function ImportSlowdownDetails(file, keycloak, plantId, year) {
     return Promise.reject(e)
   }
 }
+export async function ImportSlowdownPTADMDDetails(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
+  const maintenanceTypeName = 'Slowdown'
+  const url = `${Config.CaseEngineUrl}/task/slowdown-import-non-product-dmd?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Slowdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
 
 export async function ImportSlowdownDetailsEOE(file, keycloak, plantId, year) {
   const maintenanceTypeName = 'Slowdown'
@@ -3095,6 +3124,42 @@ export async function slowdownDetailsExport(
 ) {
   const maintenanceTypeName = 'Slowdown'
   const url = `${Config.CaseEngineUrl}/task/slowdown-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_EXPORT_TITLE}_Slowdown_Activities.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Slowdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function ExportSlowdownDetailsPTADMD(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
+  const maintenanceTypeName = 'Slowdown'
+  const url = `${Config.CaseEngineUrl}/task/slowdown-export-non-product-dmd?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -3352,6 +3417,22 @@ async function dropdownValues(keycloak, PLANT_ID, AOP_YEAR) {
 async function dropdownValuesDMD(keycloak, PLANT_ID, AOP_YEAR) {
   // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const url = `${Config.CaseEngineUrl}/task/shutdown-description?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function dropdownValueSlowdown(keycloak, PLANT_ID, AOP_YEAR) {
+  // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/slowdown-description?plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
