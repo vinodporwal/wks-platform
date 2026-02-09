@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
@@ -48,7 +48,7 @@ const ImportPower = () => {
   const columns = [
     { field: 'id', title: 'ID', hidden: true },
     {
-      field: 'plant',
+      field: 'plantName',
       title: 'Plant',
       width: 150,
       minWidth: 150,
@@ -56,9 +56,34 @@ const ImportPower = () => {
       editable: false,
     },
     {
+      field: 'sourceName',
+      title: 'Utility/Material',
+      width: 150,
+      minWidth: 150,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'sapCode',
+      title: 'SAP Code',
+      width: 120,
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+    },
+    {
+      field: 'materialCode',
+      title: 'Material Code',
+      width: 120,
+      minWidth: 120,
+      type: 'text',
+      editable: false,
+      hidden: true,
+    },
+    {
       field: 'uom',
       title: 'UOM',
-      widthT: 60,
+      width: 80,
       minWidth: 80,
       type: 'text',
       editable: false,
@@ -215,7 +240,7 @@ const ImportPower = () => {
   const fetchImportConsumptionData = async (keycloak, PLANT_ID, AOP_YEAR) => {
     setLoading(true)
     try {
-      const res = await InputApiService.getImportPowerData(
+      const res = await InputApiService.getImportPowerCapacity(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -230,11 +255,71 @@ const ImportPower = () => {
 
       let tempRes = res.map((item, index) => {
         const transformed = {
-          id: item?.id || index + 1,
-          ...item,
+          sourceId: item?.sourceId,
+          sourceName: item?.sourceName,
+          plantName: item?.plantName,
+          sapCode: item?.sapCode,
+          materialCode: item?.materialCode,
+          uom: item?.uom,
+          april: item?.april,
+          may: item?.may,
+          june: item?.june,
+          july: item?.july,
+          aug: item?.august,
+          sept: item?.september,
+          oct: item?.october,
+          nov: item?.november,
+          dec: item?.december,
+          jan: item?.january,
+          feb: item?.february,
+          mar: item?.march,
+          remarks: item?.remarks,
+          id: item?.sourceId || index + 1,
         }
         return transformed
       })
+
+      // Calculate totals for each month
+      const totalRow = {
+        sourceId: '',
+        sourceName: '',
+        plantName: 'Total',
+        sapCode: '',
+        materialCode: '',
+        uom: tempRes.length > 0 ? tempRes[0].uom : 'Unit',
+        april: tempRes.reduce(
+          (sum, row) => sum + (parseFloat(row.april) || 0),
+          0,
+        ),
+        may: tempRes.reduce((sum, row) => sum + (parseFloat(row.may) || 0), 0),
+        june: tempRes.reduce(
+          (sum, row) => sum + (parseFloat(row.june) || 0),
+          0,
+        ),
+        july: tempRes.reduce(
+          (sum, row) => sum + (parseFloat(row.july) || 0),
+          0,
+        ),
+        aug: tempRes.reduce((sum, row) => sum + (parseFloat(row.aug) || 0), 0),
+        sept: tempRes.reduce(
+          (sum, row) => sum + (parseFloat(row.sept) || 0),
+          0,
+        ),
+        oct: tempRes.reduce((sum, row) => sum + (parseFloat(row.oct) || 0), 0),
+        nov: tempRes.reduce((sum, row) => sum + (parseFloat(row.nov) || 0), 0),
+        dec: tempRes.reduce((sum, row) => sum + (parseFloat(row.dec) || 0), 0),
+        jan: tempRes.reduce((sum, row) => sum + (parseFloat(row.jan) || 0), 0),
+        feb: tempRes.reduce((sum, row) => sum + (parseFloat(row.feb) || 0), 0),
+        mar: tempRes.reduce((sum, row) => sum + (parseFloat(row.mar) || 0), 0),
+        remarks: '',
+        id: 'TOTAL_ROW',
+        isTotal: true, // Flag to identify total row
+        isEditable: false,
+      }
+
+      // Add total row at the end
+      tempRes.push(totalRow)
+
       console.log('tempRes', tempRes)
       setRows(tempRes)
       setOriginalRows(tempRes)
@@ -247,6 +332,78 @@ const ImportPower = () => {
     }
   }
 
+  // Custom item change handler to recalculate totals in real-time
+  const customItemChange = useCallback((event, setRowsFunc) => {
+    const { field } = event
+
+    // Only recalculate totals for month fields
+    const monthFields = [
+      'april',
+      'may',
+      'june',
+      'july',
+      'aug',
+      'sept',
+      'oct',
+      'nov',
+      'dec',
+      'jan',
+      'feb',
+      'mar',
+    ]
+
+    if (!monthFields.includes(field)) {
+      return
+    }
+
+    // Update rows with recalculated totals
+    setRowsFunc((currentRows) => {
+      // Filter out the total row to calculate new totals
+      const dataRows = currentRows.filter((row) => !row.isTotal)
+
+      // Recalculate totals
+      const totalRow = {
+        sourceId: '',
+        sourceName: '',
+        plantName: 'Total',
+        sapCode: '',
+        materialCode: '',
+        uom: dataRows.length > 0 ? dataRows[0].uom : 'Unit',
+        april: dataRows.reduce(
+          (sum, row) => sum + (parseFloat(row.april) || 0),
+          0,
+        ),
+        may: dataRows.reduce((sum, row) => sum + (parseFloat(row.may) || 0), 0),
+        june: dataRows.reduce(
+          (sum, row) => sum + (parseFloat(row.june) || 0),
+          0,
+        ),
+        july: dataRows.reduce(
+          (sum, row) => sum + (parseFloat(row.july) || 0),
+          0,
+        ),
+        aug: dataRows.reduce((sum, row) => sum + (parseFloat(row.aug) || 0), 0),
+        sept: dataRows.reduce(
+          (sum, row) => sum + (parseFloat(row.sept) || 0),
+          0,
+        ),
+        oct: dataRows.reduce((sum, row) => sum + (parseFloat(row.oct) || 0), 0),
+        nov: dataRows.reduce((sum, row) => sum + (parseFloat(row.nov) || 0), 0),
+        dec: dataRows.reduce((sum, row) => sum + (parseFloat(row.dec) || 0), 0),
+        jan: dataRows.reduce((sum, row) => sum + (parseFloat(row.jan) || 0), 0),
+        feb: dataRows.reduce((sum, row) => sum + (parseFloat(row.feb) || 0), 0),
+        mar: dataRows.reduce((sum, row) => sum + (parseFloat(row.mar) || 0), 0),
+        remarks: '',
+        id: 'TOTAL_ROW',
+        isTotal: true,
+        isEditable: false,
+      }
+
+      // Return updated rows with recalculated total
+      return [...dataRows, totalRow]
+    })
+  }, [])
+
   // Permissions (adjust as needed)
   const permissions = {
     showAction: true,
@@ -257,7 +414,7 @@ const ImportPower = () => {
     allAction: true,
     showImport: true,
     showExport: true,
-    ExcelName: `Import Power - ${AOP_YEAR}`,
+    ExcelName: `Import Power Capacity - ${AOP_YEAR}`,
     showTitleNameBusiness: true,
     showTitle: true,
     titleName: screenTitle?.title,
@@ -308,7 +465,7 @@ const ImportPower = () => {
       data,
       originalRows,
       fieldsToCheck,
-      'plant',
+      'sourceName',
     )
 
     if (validationError) {
@@ -321,12 +478,48 @@ const ImportPower = () => {
       return
     }
 
-    const payload = modifiedData?.map(({ id, inEdit, ...rest }) => rest)
+    const payload = modifiedData?.map(
+      ({
+        id,
+        inEdit,
+        sourceId,
+        sourceName,
+        plantName,
+        sapCode,
+        materialCode,
+        uom,
+        aug,
+        sept,
+        oct,
+        nov,
+        dec,
+        jan,
+        feb,
+        mar,
+        ...rest
+      }) => ({
+        sourceId,
+        sourceName,
+        plantName,
+        sapCode,
+        materialCode,
+        uom,
+        august: aug,
+        september: sept,
+        october: oct,
+        november: nov,
+        december: dec,
+        january: jan,
+        february: feb,
+        march: mar,
+        ...rest,
+      }),
+    )
 
     try {
       console.log('payload', payload)
 
-      const response = await InputApiService.saveImportPower(
+      const response = await InputApiService.saveImportPowerCapacity(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -357,7 +550,7 @@ const ImportPower = () => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveImportPowerExcel(
+      const response = await InputApiService.saveImportPowerCapacityExcel(
         file,
         keycloak,
         PLANT_ID,
@@ -425,7 +618,11 @@ const ImportPower = () => {
     })
 
     try {
-      await InputApiService.exportImportPowerExcel(keycloak, PLANT_ID, AOP_YEAR)
+      await InputApiService.exportImportPowerCapacityExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
@@ -476,6 +673,7 @@ const ImportPower = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        customItemChange={customItemChange}
         //groupBy="plant"
       />
     </Box>

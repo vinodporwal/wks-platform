@@ -76,6 +76,19 @@ import TcsInput from 'components/aop-phase-two/tcs/TcsInput/index'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
 import Summary from 'components/aop-phase-two/cpp/Summary/index'
+import SenderReceiverMapping from 'components/aop-phase-two/cpp/SenderReceiverMapping'
+import ProductionNormsBasis from 'components/aop-phase-two/vgoht/production-norms-basis/index'
+import ShutdownActivities from 'components/aop-phase-two/vgoht/shutdown-activities/index'
+import SlowdownActivities from 'components/aop-phase-two/vgoht/slowdown-activities/index'
+import ProductionTarget from 'components/aop-phase-two/vgoht/production-target/index'
+import NetProductionHours from 'components/aop-phase-two/vgoht/net-production-hours/index'
+import MonthwiseProductionPlan from 'components/aop-phase-two/vgoht/monthwise-production-plan/index'
+import SteadyStateConsumption from 'components/aop-phase-two/vgoht/steady-state-consumption/index'
+import ShutdownConsumption from 'components/aop-phase-two/vgoht/shutdown-consumption/index'
+import SlowdownConsumption from 'components/aop-phase-two/vgoht/slowdown-consumption/index'
+import OverallAopConsumption from 'components/aop-phase-two/vgoht/overall-aop-consumption/index'
+import SiteBudgetSummary from 'components/kendo-data-tables/SiteBudgetSummary'
+import QualityPackagingBasis from 'components/data-tables/Reports/QualityPackagingBasis'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -206,17 +219,9 @@ export const MainRoutes = (
       },
 
       {
-        path: 'production-norms-plan',
+        path: 'tcs',
         children: [
-          {
-            path: 'business-demand',
-            element: (
-              <PrivateRoute routeId='business-demand'>
-                <BusinessDemand />
-              </PrivateRoute>
-            ),
-          },
-
+          //TCS Started
           {
             path: 'tcs-input',
             element: (
@@ -238,6 +243,21 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='pims-output'>
                 <PimsOutput />
+              </PrivateRoute>
+            ),
+          },
+        ],
+        //TCS Ended],
+      },
+
+      {
+        path: 'production-norms-plan',
+        children: [
+          {
+            path: 'business-demand',
+            element: (
+              <PrivateRoute routeId='business-demand'>
+                <BusinessDemand />
               </PrivateRoute>
             ),
           },
@@ -400,6 +420,89 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          //Vertical VGOHT Started
+          {
+            path: 'production-norms-basis',
+            element: (
+              <PrivateRoute routeId='production-norms-basis'>
+                <ProductionNormsBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-activities',
+            element: (
+              <PrivateRoute routeId='shutdown-activities'>
+                <ShutdownActivities />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-activities',
+            element: (
+              <PrivateRoute routeId='slowdown-activities'>
+                <SlowdownActivities />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'production-target',
+            element: (
+              <PrivateRoute routeId='production-target'>
+                <ProductionTarget />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs',
+            element: (
+              <PrivateRoute routeId='net-production-hrs'>
+                <NetProductionHours />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan'>
+                <MonthwiseProductionPlan />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption'>
+                <SteadyStateConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption'>
+                <ShutdownConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-consumption',
+            element: (
+              <PrivateRoute routeId='slowdown-consumption'>
+                <SlowdownConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption'>
+                <OverallAopConsumption />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical VGOHT Ended
           {
             path: 'quality-packaging-norms',
             element: (
@@ -542,6 +645,15 @@ export const MainRoutes = (
           },
 
           {
+            path: 'quality-packaging-basis',
+            element: (
+              <PrivateRoute routeId='quality-packaging-basis'>
+                <QualityPackagingBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
             path: 'monthwise-raw-material',
             element: <MonthwiseRawMaterial />,
           },
@@ -599,6 +711,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'sender-receiverMapping',
+            element: (
+              <PrivateRoute routeId='sender-receiverMapping'>
+                <SenderReceiverMapping />
+              </PrivateRoute>
+            ),
+          },
           // ...other utilityPlant routes...
         ],
       },
@@ -652,6 +772,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='plant-budget-summary'>
                 <PlantBudgetSummary />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'site-budget-summary',
+            element: (
+              <PrivateRoute routeId='site-budget-summary'>
+                <SiteBudgetSummary />
               </PrivateRoute>
             ),
           },

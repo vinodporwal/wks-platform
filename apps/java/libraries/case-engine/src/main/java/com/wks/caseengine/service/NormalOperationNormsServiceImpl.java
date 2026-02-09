@@ -115,8 +115,22 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	@Override
 	public AOPMessageVM getNormalOperationNormsData(String year, String plantId, String gradeId,String mode) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Boolean withGrade=false;
+		if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+			withGrade=true;
+		}
 		try {
-			List<Object[]> obj = getNormalOperationNormsDataFromView(year, UUID.fromString(plantId), gradeId,mode);
+			List<Object[]> obj=null;
+			if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")){
+				 String procedureName = vertical.getName()+"_"+site.getName()+"_"+"GetNormalOperationNorms";
+				 obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+			}else {
+				 obj = getNormalOperationNormsDataFromView(year, UUID.fromString(plantId), gradeId,mode);
+			}
+			
 			List<MCUNormsValueDTO> mCUNormsValueDTOList = new ArrayList<>();
 
 			for (Object[] row : obj) {
@@ -125,8 +139,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				mCUNormsValueDTO.setSiteFkId(row[1].toString());
 				mCUNormsValueDTO.setPlantFkId(row[2].toString());
 				mCUNormsValueDTO.setVerticalFkId(row[3].toString());
-				Verticals vertical = verticalRepository.findById(UUID.fromString(row[3].toString())).get();
-				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET")) {
+				
+				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade) {
 					mCUNormsValueDTO.setGradeId(row[4].toString());
 					mCUNormsValueDTO.setMaterialFkId(row[5].toString());
 					mCUNormsValueDTO.setApril(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
@@ -182,6 +196,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setUOM(row[26] != null ? row[26].toString() : null);
 					mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
 					mCUNormsValueDTO.setProductName(row[28] != null ? row[28].toString() : null);
+					if(vertical.getName().equalsIgnoreCase("VCM")) {
+						mCUNormsValueDTO.setWtAverage(row[29] != null ? Double.parseDouble(row[29].toString()) : null);
+					}
 				}
 				mCUNormsValueDTOList.add(mCUNormsValueDTO);
 			}
@@ -202,6 +219,23 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		}
 	}
 
+	public List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @PlantId = :plantId, @FinYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 	
 	@Override
 	public List<MCUNormsValueDTO> saveNormalOperationNormsData(List<MCUNormsValueDTO> mCUNormsValueDTOList,
@@ -236,6 +270,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					if(!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
 						continue;
 					}
+					
 					
 					for (int month = 1; month <= 12; month++) {
 						Double oldVal = getMonthlyValue(value, month);
@@ -288,11 +323,13 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 						Double oldVal = getMonthlyValue(value, month);
 						Double newVal = getMonthlyValue(dto, month);
 						
-						if(newVal != null && !Objects.equals(oldVal, newVal) && value.getRemarks().equals(dto.getRemarks())) {
-							dto.setErrDescription("Please add/update remark");
-							dto.setSaveStatus("Failed");
-							failedList.add(dto);
-							break;
+						Double normalizedNewVal = Optional.ofNullable(newVal).orElse(0.0);
+
+						if (newVal != null && !Objects.equals(oldVal, normalizedNewVal) && Objects.equals(value.getRemarks(), dto.getRemarks())) {
+						    dto.setErrDescription("Please add/update remark");
+						    dto.setSaveStatus("Failed");
+						    failedList.add(dto);
+						    break;
 						}
 
 						if (newVal != null && !Objects.equals(oldVal, newVal)) {
@@ -343,6 +380,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 								if(!normParametersOpt.isEmpty() && (!normParametersOpt.get().getIsEditable())) {
 									continue;
 								}
+								
 							}
 							
 							mCUNormsValueGrade.setId(UUID.fromString(mCUNormsValueDTO.getId()));
@@ -629,13 +667,13 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 							
 							mCUNormsValue.setMcuVersion("V1");
 							mCUNormsValue.setUpdatedBy(Utility.getUserName());
-							if(changed && mCUNormsValue.getRemarks().equals(mCUNormsValueDTO.getRemarks())) {
-								mCUNormsValueDTO.setErrDescription("Please add/update remark");
-								mCUNormsValueDTO.setSaveStatus("Failed");
-								failedList.add(mCUNormsValueDTO);
-								continue;
-							}
-							mCUNormsValue.setRemarks(mCUNormsValueDTO.getRemarks());
+							// Use Objects.equals to safely compare two strings even if one or both are null
+							if (changed && Objects.equals(mCUNormsValue.getRemarks(), mCUNormsValueDTO.getRemarks())) {
+							    mCUNormsValueDTO.setErrDescription("Please add/update remark");
+							    mCUNormsValueDTO.setSaveStatus("Failed");
+							    failedList.add(mCUNormsValueDTO);
+							    continue;
+							}							mCUNormsValue.setRemarks(mCUNormsValueDTO.getRemarks());
 							System.out.println("Data Saved Succussfully" + mCUNormsValue);
 							normalOperationNormsRepository.save(mCUNormsValue);
 						} else {
@@ -819,15 +857,23 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		try {
 			Plants plant = plantsRepository.findById(plantId).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Boolean withGrade=false;
+			if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
+				withGrade=true;
+			}
 			String viewName = "vwScrn" + vertical.getName() + "NormalOperationNorms";
+			if(withGrade) {
+				viewName = "vwScrn" + vertical.getName() + "NormalOperationNormsGrade";
+			}
 			// Validate or sanitize viewName before using it directly in the query to
 			// prevent SQL injection
 			String sql = null;
-			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")) {
+			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade) {
 				sql = "SELECT * FROM " + viewName
 						+ " WHERE FinancialYear = :financialYear AND Plant_FK_Id = :plantId AND Grade_FK_Id = :gradeId";
-			}else if (vertical.getName().equalsIgnoreCase("Cracker")) {
+			}
+			else if (vertical.getName().equalsIgnoreCase("Cracker")) {
 				sql = "SELECT * FROM " + viewName + " WHERE FinancialYear = :financialYear AND Plant_FK_Id = :plantId AND mode = :mode";
 			} else {
 				sql = "SELECT * FROM " + viewName + " WHERE FinancialYear = :financialYear AND Plant_FK_Id = :plantId";
@@ -836,7 +882,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("financialYear", financialYear);
 			query.setParameter("plantId", plantId);
-			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")) {
+			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade) {
 				query.setParameter("gradeId", UUID.fromString(gradeId));
 			}
 			if (vertical.getName().equalsIgnoreCase("Cracker")) {
@@ -1025,7 +1071,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 	public List<MCUNormsValueDTO> readConfigurations(InputStream inputStream, UUID plantFKId, String year) {
 		List<MCUNormsValueDTO> configList = new ArrayList<>();
-
+		Plants plant = plantsRepository.findById(plantFKId).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -1054,8 +1101,15 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
 					dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
 					dto.setMarch(getNumericCellValue(row.getCell(14), dto));
-					dto.setRemarks(getStringCellValue(row.getCell(15), dto));
-					dto.setId(getStringCellValue(row.getCell(16), dto));
+					if(vertical.getName().equalsIgnoreCase("VCM")) {
+						dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
+						dto.setId(getStringCellValue(row.getCell(17), dto));
+					}else {
+						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+						dto.setId(getStringCellValue(row.getCell(16), dto));
+					}
+					
 					// dto.setMaterialFkId(getStringCellValue(row.getCell(17), dto));
 					// dto.setIsEditable(getBooleanCellValue(row.getCell(18), dto));
 				} catch (Exception e) {
@@ -1345,7 +1399,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		try {
 			AOPMessageVM aopMessageVM = getNormalOperationNormsData(year, plantFKId.toString(), gradeId,mode);
 			List<Boolean> isEditable = new ArrayList<>();
-
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			if (!isAfterSave) {
 				Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
 				dtoList = (List<MCUNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
@@ -1386,6 +1441,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					list.add(dto.getJanuary());
 					list.add(dto.getFebruary());
 					list.add(dto.getMarch());
+					if(vertical.getName().equalsIgnoreCase("VCM")) {
+						list.add(dto.getWtAverage());
+					}
+					
 					list.add(dto.getRemarks());
 					list.add(dto.getId());
 					isEditable.add(dto.getIsEditable());
@@ -1405,6 +1464,9 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			innerHeaders.add("UOM");
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
+			if(vertical.getName().equalsIgnoreCase("VCM")) {
+				innerHeaders.add("Weighted Avg");
+			}
 			innerHeaders.add("Remarks");
 			innerHeaders.add("Id");
 			// innerHeaders.add("NormParamterId");
@@ -1452,7 +1514,11 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 				}
 			}
-			sheet.setColumnHidden(16, true);
+			if(vertical.getName().equalsIgnoreCase("VCM")) {
+				sheet.setColumnHidden(17, true);
+			}else {
+				sheet.setColumnHidden(16, true);
+			}
 			//sheet.setColumnHidden(18, true);
 			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
 

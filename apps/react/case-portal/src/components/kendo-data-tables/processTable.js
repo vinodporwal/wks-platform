@@ -11,6 +11,7 @@ import crackercolumns from '../../assets/CrackerMaintenanceColumn.json'
 import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
 import { getRoleName } from 'services/role-service'
+import MaintenanceProcessTableNMD from './processTableNMD'
 const MaintenanceProcessTable = ({ viewOnly }) => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -34,6 +35,12 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
   const plantName = plantObject?.name?.toLowerCase()
   const siteName = siteObject?.name?.toLowerCase()
   const lowerVertName = verticalObject?.name?.toLowerCase()
+
+  const PLANT_NAME_UPPERCASE = plantObject?.name
+  const SITE_NAME_UPPERCASE = siteObject?.name
+  const VERTICAL_NAME_UPPERCASE = verticalObject?.name
+
+  const EXCEL_NAME = `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Maintenance_Details_${AOP_YEAR}`
 
   const IS_OLD_YEAR = oldYear?.oldYear
   const isOldYear = false
@@ -248,10 +255,15 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       const hiddenKeys = ['Id', 'AOPYear', 'PlantId']
       const dynamicColumns = (resp.data?.columns || columns).map((col) => ({
         ...col,
-        editable: col.type === 'number' || col.field === 'Remarks',
+        editable:
+          col.field === 'NumberOfDays'
+            ? false
+            : col.type === 'number' || col.field === 'Remarks',
         hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
         widthT: 120,
+        crackerValidation: col.type === 'number' ? true : false,
       }))
+
       setColumns(dynamicColumns)
 
       const formatted = (raw || []).map((item, idx, arr) => ({
@@ -318,6 +330,7 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -479,10 +492,10 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
           uploadExcelBtn: viewOnly ? false : true,
           showRefresh: false,
           showCalculate: viewOnly ? false : true,
-          // showCalculateVisibility: true,
+          showCalculateVisibility: true,
 
           //BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
-          showCalculateVisibility: false,
+          // showCalculateVisibility: false,
 
           showNote: true,
         },
@@ -490,6 +503,10 @@ const MaintenanceProcessTable = ({ viewOnly }) => {
       ),
     [isOldYear],
   )
+
+  if (siteName == 'nmd') {
+    return <MaintenanceProcessTableNMD />
+  }
 
   return (
     <div>

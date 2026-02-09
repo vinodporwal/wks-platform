@@ -46,6 +46,7 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import { PostCrDaysEditor } from './Utilities-Kendo/numbericColumns_dmd'
 import { useSelector } from 'react-redux'
+import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -559,6 +560,32 @@ const KendoDataTablesCracker = ({
             />
           )
         }
+        if (
+          col.type === 'number' &&
+          ['Pre_CR_Days', 'ActualRunLength', 'Reduction'].includes(col?.field)
+        ) {
+          return (
+            <GridColumn
+              key={col.field}
+              field={col.field}
+              title={col.title || col.headerName}
+              hidden={col.hidden}
+              className={
+                col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'
+              }
+              editable={col?.editable ? true : false}
+              headerClassName={isActive ? 'active-column' : ''}
+              cells={{
+                edit: { text: NoSpinnerNumericEditorCrackerValidation },
+                data: toolTipRenderer,
+                headerCell: SimpleHeaderWithTooltip,
+              }}
+              filter='numeric'
+              format={col.format}
+              sortable={false}
+            />
+          )
+        }
         if (col.type === 'number') {
           return (
             <GridColumn
@@ -913,7 +940,10 @@ const KendoDataTablesCracker = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             Are you sure you want to save these changes?
           </DialogContentText>
         </DialogContent>

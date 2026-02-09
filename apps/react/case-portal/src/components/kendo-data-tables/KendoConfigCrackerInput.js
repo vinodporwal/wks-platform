@@ -28,9 +28,11 @@ const CrackerConfig = () => {
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
-  const SITE_NAME = siteObject?.name?.toLowerCase()
+
   const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
   const AOP_YEAR = year?.selectedYear
 
   const isOldYear = false
@@ -222,7 +224,7 @@ const CrackerConfig = () => {
 
   const fetchModes = useCallback(async () => {
     try {
-      var resp = await OptimizerDataApiService.fetchModes(
+      const resp = await OptimizerDataApiService.fetchModes(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -334,17 +336,6 @@ const CrackerConfig = () => {
             AOP_YEAR,
           )
 
-          if (
-            !(
-              spyroVM1?.code === 200 &&
-              Array.isArray(spyroVM1?.data) &&
-              spyroVM1.data.length > 0
-            )
-          ) {
-            setConstantsRows([])
-            return
-          }
-
           if (spyroVM1?.data && Array.isArray(spyroVM1.data)) {
             transformedData1 = spyroVM1.data.map((item, index) => ({
               id: item.NormParameterFKID || `row_${index}`,
@@ -371,23 +362,6 @@ const CrackerConfig = () => {
           PLANT_ID,
           AOP_YEAR,
         )
-
-        if (
-          !(
-            spyroVM?.code === 200 &&
-            Array.isArray(spyroVM?.data) &&
-            spyroVM.data.length > 0
-          )
-        ) {
-          setFeedRows([])
-          setCompositionRows([])
-          setHydrogenationRows([])
-          setRecoveryRows([])
-          setOptimizing([])
-          setConstantsRows([])
-          return
-        }
-
         setTimeout(() => {
           if (spyroVM?.data && Array.isArray(spyroVM.data)) {
             transformedData = spyroVM.data.map((item, index) => ({
@@ -597,6 +571,7 @@ const CrackerConfig = () => {
     })
 
     const mode = selectMode
+    const EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Input_${AOP_YEAR}`
 
     try {
       const response = await DataService.exportSpyroInputExcel(
@@ -604,6 +579,7 @@ const CrackerConfig = () => {
         mode,
         PLANT_ID,
         AOP_YEAR,
+        EXCEL_NAME,
       )
 
       if (response?.code === 200) {
