@@ -325,7 +325,9 @@ const SlowDown = ({ permissions }) => {
           ? slowDownDetailsElastomer
           : IS_PTA_DMD
             ? slowDownDetailsPTADMD
-            : lowerVertName === 'pe' || lowerVertName === 'pp'
+            : lowerVertName === 'pe' ||
+                lowerVertName === 'pp' ||
+                lowerVertName === 'pet'
               ? slowDownDetailsPEPP
               : slowDownDetailsMEG,
         keycloak,
