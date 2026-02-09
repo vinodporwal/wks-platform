@@ -11,6 +11,8 @@
  */
 package com.wks.caseengine.cases.instance.repository;
 
+import java.util.List;
+
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.CaseInstanceFilter;
@@ -37,5 +39,7 @@ public interface CaseInstanceRepository extends Repository<CaseInstance> {
 			throws DatabaseRecordNotFoundException;
 
     boolean existsByBusinessKey(String businessKey);
+
+	 List<CaseInstance> findCasesWithDueDateGreaterThanNow();
 
 }

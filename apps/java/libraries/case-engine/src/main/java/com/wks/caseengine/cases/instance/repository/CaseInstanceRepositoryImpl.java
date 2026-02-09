@@ -16,13 +16,17 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Sorts.descending;
 import static com.mongodb.client.model.Updates.set;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bson.BsonObjectId;
 import org.bson.conversions.Bson;
@@ -31,11 +35,12 @@ import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Sorts;
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseInstance;
 import com.wks.caseengine.cases.instance.CaseInstanceFilter;
@@ -75,6 +80,114 @@ public class CaseInstanceRepositoryImpl implements CaseInstanceRepository {
 
 		return results;
 	}
+
+	@Override
+	public List<CaseInstance> findCasesWithDueDateGreaterThanNow() {
+
+		List<String> updatedCases = new ArrayList<>();
+		List<String> notifiedCases = new ArrayList<>();
+		List<String> caseWithEmptyDueDate = new ArrayList<>();
+		List<String> casesNotOverDue = new ArrayList<>();
+		List<String> closedCases = new ArrayList<>();
+
+		List<CaseInstance> casesToNotify = new ArrayList<>();
+
+		List<CaseInstance> allCases = getCollection()
+		.find() 
+		.into(new ArrayList<>());
+
+		ObjectMapper mapper = new ObjectMapper();
+		
+		for (CaseInstance caseInstance : allCases) {
+	
+			// find the attribute with name = "container"
+			caseInstance.getAttributes().forEach(attr -> {
+				
+	
+				if (!"container".equals(attr.getName())) return;  // skip if the attribute is not "container"
+
+				
+
+					try {
+						// parse the json inside value
+						JsonNode node = mapper.readTree(attr.getValue());
+
+						if(node.get("caseStatus").asInt() == 3) { // skip if the case is closed 
+							closedCases.add( caseInstance.getBusinessKey() );
+							return;
+						}
+	
+						// extract dueDate
+						String dueDateStr = node.get("dueDate").asText();
+
+						if (dueDateStr == null || dueDateStr.isEmpty() ) {    // skip if the dueDate is not set
+							caseWithEmptyDueDate.add( caseInstance.getBusinessKey() );
+							return;  
+						}
+
+					//	System.out.println("dueDateStr: " + dueDateStr);
+	
+						// convert to Instant
+						Instant dueDate = Instant.parse(
+								OffsetDateTime.parse(dueDateStr).toInstant().toString()
+						);
+	
+						// compare with current time
+						if (!dueDate.isBefore(Instant.now())) {
+							casesNotOverDue.add( caseInstance.getBusinessKey() );
+							return; }  // skip if the case is not overDue
+
+							int status = node.get("caseStatus").asInt();
+
+							// if the case is overDue but the status is not set to overDue, set it to overDue
+							if(status != 4) {
+								ObjectNode obj = (ObjectNode) node;
+								obj.put("caseStatus", 4);
+                         
+								Bson filter = Filters.and(
+									Filters.eq("businessKey", caseInstance.getBusinessKey()),
+									Filters.elemMatch("attributes", Filters.eq("name", "container"))
+							);
+							
+							Bson update = Updates.set(
+									"attributes.$.value",
+									mapper.writeValueAsString(obj)
+							);
+							
+							getCollection().updateOne(filter, update);
+							
+							updatedCases.add(caseInstance.getBusinessKey());
+								
+							} 
+
+                          casesToNotify.add( caseInstance );
+						
+                           
+						   notifiedCases.add(caseInstance.getBusinessKey());
+             
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				
+			});
+		}
+	
+		System.out.println("Total Cases: " + allCases.size());
+		System.out.println("Closed Cases: " + closedCases.size() + " " + Arrays.toString(closedCases.toArray()));
+		System.out.println("Cases with empty dueDate: " + caseWithEmptyDueDate.size() + " " + Arrays.toString(caseWithEmptyDueDate.toArray()));
+		System.out.println("Cases not overDue: " + casesNotOverDue.size() + " " + Arrays.toString(casesNotOverDue.toArray()));
+		
+		System.out.println("Updated Cases: " + updatedCases.size() +  " " + Arrays.toString(updatedCases.toArray()));
+		System.out.println("Notified Cases: " + notifiedCases.size() + " " + Arrays.toString(notifiedCases.toArray()));
+
+		return casesToNotify;
+		
+		
+		
+		
+		
+	}
+	
 
 	@Override
 	public CaseInstance get(final String businessKey) throws DatabaseRecordNotFoundException {
@@ -222,5 +335,6 @@ else {
 	private MongoCollection<CaseInstance> getCollection() {
 		return connection.getCaseInstanceCollection();
 	}
+
 
 }

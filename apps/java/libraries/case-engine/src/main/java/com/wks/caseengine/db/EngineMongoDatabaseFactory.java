@@ -61,6 +61,7 @@ public class EngineMongoDatabaseFactory extends SimpleMongoClientDatabaseFactory
 
 		if (!tenantId.isEmpty()) {
 			log.debug("using tenate database {}", tenantId.get());
+			System.out.println("using tenate database " + tenantId.get());
 			return tenantId.get();
 //			return dbTenant;
 		}

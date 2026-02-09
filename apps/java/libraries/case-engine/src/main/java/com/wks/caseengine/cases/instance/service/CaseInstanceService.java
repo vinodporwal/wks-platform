@@ -39,4 +39,6 @@ public interface CaseInstanceService {
 
 	void deleteComment(final String businessKey, final String commentId);
 
+	void findCasesWithDueDateGreaterThanNow();
+
 }

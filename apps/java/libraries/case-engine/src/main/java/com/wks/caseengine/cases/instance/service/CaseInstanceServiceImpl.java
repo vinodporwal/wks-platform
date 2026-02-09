@@ -12,9 +12,18 @@
 package com.wks.caseengine.cases.instance.service;
 
 import com.wks.caseengine.command.CommandContext;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.cases.instance.CaseComment;
 import com.wks.caseengine.cases.instance.CaseDocument;
 import com.wks.caseengine.cases.instance.CaseInstance;
@@ -31,6 +40,8 @@ import com.wks.caseengine.cases.instance.command.StartCaseInstanceWithValuesCmd;
 import com.wks.caseengine.cases.instance.command.UpdateCaseInstanceCommentCmd;
 import com.wks.caseengine.command.CommandExecutor;
 import com.wks.caseengine.pagination.PageResult;
+import com.wks.caseengine.cases.instance.command.findOverdueCaseInstanceCmd;
+import com.wks.caseengine.cases.instance.email.CaseEmailServiceImpl;
 
 @Component
 public class CaseInstanceServiceImpl implements CaseInstanceService {
@@ -40,6 +51,12 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 
     @Autowired
     private CommandContext commandContext;
+
+	@Autowired
+	private CaseEmailServiceImpl emailservice;
+
+	@Value("${spring.data.mongodb.database.tenant}")
+	private String dbTenant;
 
 	@Override
 	public PageResult<CaseInstance> find(CaseInstanceFilter filters) {
@@ -57,7 +74,6 @@ public class CaseInstanceServiceImpl implements CaseInstanceService {
 		// return commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
 CaseInstance changedInstance =  commandExecutor.execute(new StartCaseInstanceWithValuesCmd(caseInstance));
 
-System.out.println("****** In CaseInstanceServiceImpl after CommandExecutorImpl return value....");
 
     if(changedInstance.getBusinessKey().equals(caseInstance.getBusinessKey())) {
 
@@ -112,5 +128,70 @@ return changedInstance;
 	public void deleteComment(final String businessKey, final String commentId) {
 		commandExecutor.execute(new DeleteCaseInstanceCommentCmd(businessKey, commentId));
 	}
+
+    @Override
+//	@Scheduled(cron = "0 34 14 * * *", zone = "Asia/Kolkata")
+	public void findCasesWithDueDateGreaterThanNow() {  
+
+	commandContext.getSecurityContextTenantHolder().setTenantId(dbTenant);
+	
+	List<CaseInstance> cases = commandExecutor.execute(new findOverdueCaseInstanceCmd());
+
+	for(CaseInstance caseInstance : cases) {
+		
+		caseInstance.getAttributes().forEach(attr -> {
+				
+				if (!"container".equals(attr.getName())) return;
+
+				try {
+                      ObjectMapper mapper = new ObjectMapper();
+					  JsonNode node = mapper.readTree(attr.getValue());
+
+					   JsonNode caseAssignedToNode = node.get("caseAssignedTo");
+					    List<String> caseAssignedTo = null;
+
+						   if(caseAssignedToNode == null || caseAssignedToNode.isNull()) { 
+							//caseAssignedTo = new String[0];
+							return; // skip if caseAssignedTo is null
+						   }
+						   else if(caseAssignedToNode.isArray()) { 
+							//caseAssignedTo = mapper.convertValue(caseAssignedToNode, String[].class);
+							caseAssignedTo = mapper.convertValue(caseAssignedToNode, List.class);
+						   }
+
+						   else if(caseAssignedToNode.isTextual()) {
+							//caseAssignedTo = new String[] { caseAssignedToNode.asText() };
+							caseAssignedTo = List.of(caseAssignedToNode.asText());
+						   }
+							
+						   String caseName = node.get("caseTitle").asText();
+						   //check for null
+						   String caseAssignedToLabel = node.path("caseAssignedToLabel").asText(null);
+						   String caseAssignedBy = node.path("caseOwner").asText(null);
+						   String  caseNo = caseInstance.getBusinessKey();
+						   String caseStatus = "Overdue";
+						   Map<String, Object> data = new HashMap<>();
+						   data.put("caseName", caseName);
+						   data.put("status", caseStatus);
+						   data.put("caseNumber" , caseNo);
+						   data.put("assignedTo", caseAssignedToLabel);
+						   data.put("assignedBy", caseAssignedBy);
+
+					
+					
+			 emailservice.send(caseAssignedTo.toArray(new String[0]), caseName, null, null, null,"reminder-notification", data);
+					  
+					
+				}catch(Exception e) {
+					e.printStackTrace();
+					
+				}
+		});
+	   
+	}
+
+}
+
+
 
 }
