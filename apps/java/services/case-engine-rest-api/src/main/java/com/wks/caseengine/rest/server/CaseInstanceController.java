@@ -51,6 +51,8 @@ public class CaseInstanceController {
 	@Autowired
 	private GsonBuilder gsonBuilder;
 
+
+
 	@GetMapping
 	public ResponseEntity<Object> find(@RequestParam(required = false) String status,
 			@RequestParam(required = false) String caseDefinitionId,
@@ -166,5 +168,14 @@ public class CaseInstanceController {
 		}
 		return ResponseEntity.noContent().build();
 	}
+
+	// tempearary api to test overDue case scheduler
+	@GetMapping(value = "/overdue")
+	public ResponseEntity<Void> findOverdueCases() {
+		caseInstanceService.findCasesWithDueDateGreaterThanNow();
+		return ResponseEntity.noContent().build();
+	}
+
+
 
 }
