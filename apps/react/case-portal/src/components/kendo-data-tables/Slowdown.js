@@ -705,7 +705,7 @@ const SlowDown = ({ permissions }) => {
         // Month span check
         //check timeframe Multiple month spilt into single
 
-        if (lowerVertName != 'vcm' || !IS_PTA_DMD || lowerVertName !== 'pet') {
+        if (lowerVertName != 'vcm' && !IS_PTA_DMD && lowerVertName !== 'pet') {
           for (const row of rows) {
             const start = new Date(row.maintStartDateTime)
             const end = new Date(row.maintEndDateTime)
@@ -739,6 +739,12 @@ const SlowDown = ({ permissions }) => {
               const bStart = new Date(b.maintStartDateTime).getTime()
               const bEnd = new Date(b.maintEndDateTime).getTime()
               if (isNaN(bStart) || isNaN(bEnd)) continue
+              if (
+                (a.discription && a.discription === 'Seasonal Impact') ||
+                (b.discription && b.discription === 'Seasonal Impact')
+              ) {
+                continue
+              }
 
               if (aStart < bEnd && bStart < aEnd) {
                 a.isError = true
@@ -773,6 +779,12 @@ const SlowDown = ({ permissions }) => {
               const bStart = new Date(b.maintStartDateTime).getTime()
               const bEnd = new Date(b.maintEndDateTime).getTime()
               if (isNaN(bStart) || isNaN(bEnd)) continue
+              if (
+                (a.discription && a.discription === 'Seasonal Impact') ||
+                (b.discription && b.discription === 'Seasonal Impact')
+              ) {
+                continue
+              }
 
               if (aStart < bEnd && bStart < aEnd) {
                 a.isError = true

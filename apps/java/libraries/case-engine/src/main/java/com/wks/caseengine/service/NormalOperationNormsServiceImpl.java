@@ -196,7 +196,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setUOM(row[26] != null ? row[26].toString() : null);
 					mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
 					mCUNormsValueDTO.setProductName(row[28] != null ? row[28].toString() : null);
-					if(vertical.getName().equalsIgnoreCase("VCM")) {
+					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
 						mCUNormsValueDTO.setWtAverage(row[29] != null ? Double.parseDouble(row[29].toString()) : null);
 					}
 				}
@@ -1101,7 +1101,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
 					dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
 					dto.setMarch(getNumericCellValue(row.getCell(14), dto));
-					if(vertical.getName().equalsIgnoreCase("VCM")) {
+					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
 						dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
 						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
 						dto.setId(getStringCellValue(row.getCell(17), dto));
@@ -1441,7 +1441,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					list.add(dto.getJanuary());
 					list.add(dto.getFebruary());
 					list.add(dto.getMarch());
-					if(vertical.getName().equalsIgnoreCase("VCM")) {
+					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
 						list.add(dto.getWtAverage());
 					}
 					
@@ -1464,7 +1464,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			innerHeaders.add("UOM");
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
-			if(vertical.getName().equalsIgnoreCase("VCM")) {
+			if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
 				innerHeaders.add("Weighted Avg");
 			}
 			innerHeaders.add("Remarks");
@@ -1514,7 +1514,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 
 				}
 			}
-			if(vertical.getName().equalsIgnoreCase("VCM")) {
+			if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
 				sheet.setColumnHidden(17, true);
 			}else {
 				sheet.setColumnHidden(16, true);
