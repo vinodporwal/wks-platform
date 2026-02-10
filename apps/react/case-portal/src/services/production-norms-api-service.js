@@ -12,7 +12,7 @@ export const ProductionNormsApiService = {
   getPriceDifferential,
   savePriceDifferential,
   saveOtherProductionNorms,
-  monthlyProductionC2rC3RNONNMD,
+  monthlyOtherProduction,
   handleCalculateOtherProduction,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
@@ -40,7 +40,7 @@ async function updateProductNormData(turnAroundDetails, keycloak) {
   }
 }
 async function handleCalculateOtherProduction(PLANT_ID, AOP_YEAR, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/other-production-norms?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/calculate-other-production?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
@@ -115,7 +115,7 @@ async function monthlyProductionC2rC3R(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function monthlyProductionC2rC3RNONNMD(keycloak, PLANT_ID, AOP_YEAR) {
+async function monthlyOtherProduction(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/other-production-norms?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',

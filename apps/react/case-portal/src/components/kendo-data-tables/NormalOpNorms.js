@@ -85,6 +85,7 @@ const NormalOpNormsScreen = () => {
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
+  const IS_VCM_VERTICAL = lowerVertName === 'vcm'
 
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -629,6 +630,7 @@ const NormalOpNormsScreen = () => {
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
+      highlightShutdownConsumption: IS_VCM_VERTICAL ? true : false,
     },
     isOldYear,
   )

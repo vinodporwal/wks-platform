@@ -19,7 +19,10 @@ const ProductionNormsCracker = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCellsC2C3R, setModifiedCellsC2C3R] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
-  const [calculationObject2, setCalculationObject2] = useState([])
+  const [
+    calculationObjectOtherProduction,
+    setCalculationObjectOtherProduction,
+  ] = useState([])
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
   const apiRef = useGridApiRef()
@@ -48,6 +51,13 @@ const ProductionNormsCracker = ({ permissions }) => {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+
+  const PLANT_NAME_UC = plantObject?.name?.toUpperCase()
+  const SITE_NAME_UC = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_UC = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_NAME = `${VERTICAL_NAME_UC}_${SITE_NAME_UC}_${PLANT_NAME_UC}_${AOP_YEAR}_Month_Wise_Production_Plan`
+  const EXCEL_NAME_OTHER_PRODUCTION = `${VERTICAL_NAME_UC}_${SITE_NAME_UC}_${PLANT_NAME_UC}_${AOP_YEAR}_Other_Production_Plan`
 
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
@@ -531,12 +541,11 @@ const ProductionNormsCracker = ({ permissions }) => {
           AOP_YEAR,
         )
       } else {
-        response =
-          await ProductionNormsApiService.monthlyProductionC2rC3RNONNMD(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-          )
+        response = await ProductionNormsApiService.monthlyOtherProduction(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       }
       let dataSet
 
@@ -544,7 +553,23 @@ const ProductionNormsCracker = ({ permissions }) => {
         dataSet = response
       } else {
         dataSet = response?.data?.configurationDTOList
-        setCalculationObject2(response?.data?.aopCalculation)
+
+        const shouldCalculate =
+          dataSet?.length > 0 && dataSet.every((item) => !item.id)
+
+        let calcObj = response?.data?.aopCalculation || {}
+
+        if (shouldCalculate) {
+          calcObj = {
+            ...calcObj,
+            isDummy: true,
+            dummyValue1: 0,
+            dummyValue2: 'AUTO_ADDED',
+            createdAt: new Date().toISOString(),
+          }
+        }
+
+        setCalculationObjectOtherProduction(calcObj)
       }
 
       var data = dataSet
@@ -570,6 +595,15 @@ const ProductionNormsCracker = ({ permissions }) => {
           id: index,
         }))
         .map(({ normParameterFKId, ...rest }) => rest)
+
+      // call calculate only if ALL records do not have id
+      // const shouldCalculate =
+      //   dataSet?.length > 0 &&
+      //   dataSet.every((item) => !item.id && !item.idFromApi)
+
+      // if (shouldCalculate) {
+      //   handleCalculateOtherProduction()
+      // }
 
       setRowsC2C3R(data)
       setLoading(false)
@@ -655,7 +689,7 @@ const ProductionNormsCracker = ({ permissions }) => {
           units: ['MT/Month', 'TPH'],
           customHeight: permissions?.customHeight,
           downloadExcelBtnFromUI: !permissions?.hideExportBtn,
-          ExcelName: `${lowerVertName}_Month wise Production plan`,
+          ExcelName: `${EXCEL_NAME}`,
           unitForExcelToadd: selectedUnit || 'MT/Month',
         },
         isOldYear,
@@ -673,22 +707,24 @@ const ProductionNormsCracker = ({ permissions }) => {
           editButton: false,
           showUnit: false,
           saveWithRemark: true,
-          showCalculate: true,
+          showCalculate: IS_NMD ? false : true,
           allAction: true,
           showNote: true,
           showTitleNameBusiness: false,
           titleName: '',
           saveBtn: true,
           downloadExcelBtnFromUI: true,
-
-          ExcelName: `${lowerVertName}_Other_Production`,
-
-          showCalculateVisibility:
-            calculationObject2 && Object.keys(calculationObject2).length > 0,
+          ExcelName: `${EXCEL_NAME_OTHER_PRODUCTION}`,
         },
         isOldYear,
       ),
-    [permissions, calculationObject2, lowerVertName, isOldYear],
+    [
+      permissions,
+      calculationObjectOtherProduction,
+      lowerVertName,
+      isOldYear,
+      IS_NMD,
+    ],
   )
 
   const handleRemarkCellClick = (dataItem) => {
