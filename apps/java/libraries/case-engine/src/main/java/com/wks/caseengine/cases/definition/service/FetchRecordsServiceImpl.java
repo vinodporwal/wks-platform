@@ -1,5 +1,6 @@
 package com.wks.caseengine.cases.definition.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -232,22 +233,33 @@ public class FetchRecordsServiceImpl {
 		return null;
 	}
 	
-	public List<FunctionalLocation> getFunctionalLocations(String dbName) {
+	public List<FunctionalLocation> getFunctionalLocations(String dbName, String assetName) {
 		try {
-			 String sql = "SELECT DISTINCT Description FROM [" + dbName + "].[dbo].Equipments WHERE Description NOT IN ('', 'FL Not Available') ORDER BY Description";
-			    
-			return jdbcTemplate.query(sql, new Object[]{}, (rs, rowNum) -> {
-				FunctionalLocation fl = new FunctionalLocation();
-				fl.setParentFLName(rs.getString("Description"));
-				fl.setAssetFL(rs.getString("Description"));
-				return fl;
-			});
-		} catch(Exception e) {
+			String sql = "SELECT DISTINCT e.Description " +
+					"FROM [" + dbName + "].[dbo].EquipmentTypes et " +
+					"JOIN [" + dbName + "].[dbo].Equipments e " +
+					"  ON e.EquipmentType_PK_ID = et.EquipmentType_PK_ID " +
+					"WHERE LOWER(REPLACE(et.DisplayName, ' ', '')) = LOWER(REPLACE(?, ' ', '')) " +
+					"  AND e.IsDeleted = 0 " +
+					"  AND e.Description IS NOT NULL " +
+					"  AND e.Description NOT IN ('', 'FL Not Available') " +
+					"ORDER BY e.Description";
+
+			return jdbcTemplate.query(
+					sql,
+					new Object[] { assetName },
+					(rs, rowNum) -> {
+						FunctionalLocation fl = new FunctionalLocation();
+						fl.setParentFLName(rs.getString("Description"));
+						fl.setAssetFL(rs.getString("Description"));
+						return fl;
+					});
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+		return new ArrayList<>();
 	}
-	
 	public List<FunctionalLocation> getAllFunctionalLocations() {
 	    try {
 	        String sql = "SELECT * FROM functional_location";
