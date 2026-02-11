@@ -132,47 +132,47 @@ function Documents({ aCase, initialValue, getCaseInfo, isAttachmentEnabled }) {
       spacing={2}
       sx={{ display: 'flex', flexDirection: 'column' }}
     >
-      <Box sx={{ padding: 5 }}>
-        <Grid
-          container
-          direction='column'
-          justifyContent='center'
-          alignItems='center'
-        >
-          <Avatar
-            style={{
-              backgroundColor: '#27CDF2',
-              fontSize: 40,
-              height: 60,
-              width: 60,
-              opacity: 0.5,
-            }}
-          >
-            <FilePdfOutlined />
-          </Avatar>
+      <Files
+        className='files-dropzone'
+        onChange={handleChange}
+        onError={handleError}
+        multiple
+        minFileSize={1024} // 1KB 
+        maxFileSize={20000000} // 20MB
+        clickable={isAttachmentEnabled} // Prevents clicking when disabled
+        disabled={!isAttachmentEnabled}
+      >
 
-          <br />
-
-          <Files
-            className='files-dropzone'
-            onChange={handleChange}
-            onError={handleError}
-            multiple
-            minFileSize={1024} // 1KB 
-            maxFileSize={20000000} // 20MB
-            clickable={isAttachmentEnabled} // Prevents clicking when disabled
-            disabled={!isAttachmentEnabled}
+        <Box sx={{ padding: 5 }}>
+          <Grid
+            container
+            direction='column'
+            justifyContent='center'
+            alignItems='center'
           >
+            <Avatar
+              style={{
+                backgroundColor: '#27CDF2',
+                fontSize: 40,
+                height: 60,
+                width: 60,
+                opacity: 0.5,
+              }}
+            >
+              <FilePdfOutlined />
+            </Avatar>
+
+            <br />
             <Typography variant='h4' color='textSecondary' sx={{ pr: 0.5, opacity: isAttachmentEnabled ? 1 : 0.5 }}>
               Drop files here or click to upload
             </Typography>
-          </Files>
-
-          <Fade in={fetching}>
-            <AnimatedCircularProgress value={percent} />
-          </Fade>
-        </Grid>
-      </Box>
+            <br />
+            <Fade in={fetching}>
+              <AnimatedCircularProgress value={percent} />
+            </Fade>
+          </Grid>
+        </Box>
+      </Files>
 
       {filesUploaded && filesUploaded.length > 0 && (
         <List sx={{ border: '1px dashed #d9d9d9' }}>

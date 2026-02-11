@@ -565,7 +565,7 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   return (
-    <div style={{ height: 650, width: '100%' }}>
+    <div style={{ height: '78vh', width: '100%' }}>
       {/* {caseDefId && (
         <div>
           <Button
@@ -601,7 +601,7 @@ export const CaseList = ({ status, caseDefId }) => {
               <Suspense fallback={<div>Loading...</div>}>
                 <DataGrid
                   sx={{
-                    height: 500,
+                    height: '78vh',
                     width: '100%',
                     backgroundColor: '#ffffff',
                     mt: 1,

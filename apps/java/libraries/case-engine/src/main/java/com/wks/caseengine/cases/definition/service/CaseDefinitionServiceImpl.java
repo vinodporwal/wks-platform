@@ -930,7 +930,7 @@ public class CaseDefinitionServiceImpl implements CaseDefinitionService {
 		// 	}
 		// }
 		// return fetchRecords.getAllFunctionalLocations(); 
-		return fetchRecords.getFunctionalLocations(db1Name);
+		return fetchRecords.getFunctionalLocations(db1Name, assetName);
 	}
 	
 	
