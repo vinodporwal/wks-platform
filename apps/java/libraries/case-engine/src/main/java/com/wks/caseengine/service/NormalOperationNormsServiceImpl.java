@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.AOPDTO;
 import com.wks.caseengine.dto.MCUNormsValueDTO;
 import com.wks.caseengine.dto.ModeWiseNormsDTO;
 import com.wks.caseengine.entity.AopCalculation;
@@ -42,6 +43,7 @@ import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AOPRepository;
 import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.MCUNormsValueGradeRepository;
 import com.wks.caseengine.repository.MCUNormsValueRepository;
@@ -106,6 +108,8 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	@Autowired
 	private MCUNormsValueRepository mcuNormsValueRepository;
 
+	@Autowired
+	private AOPRepository aopRepository;
 
 	// Inject or set your DataSource (e.g., via constructor or setter)
 	public NormalOperationNormsServiceImpl(DataSource dataSource) {
@@ -322,15 +326,17 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					for (int month = 1; month <= 12; month++) {
 						Double oldVal = getMonthlyValue(value, month);
 						Double newVal = getMonthlyValue(dto, month);
-						
-						Double normalizedNewVal = Optional.ofNullable(newVal).orElse(0.0);
 
-						if (newVal != null && !Objects.equals(oldVal, normalizedNewVal) && Objects.equals(value.getRemarks(), dto.getRemarks())) {
-						    dto.setErrDescription("Please add/update remark");
-						    dto.setSaveStatus("Failed");
-						    failedList.add(dto);
-						    break;
-						}
+						Double normalizedNewVal = Optional.ofNullable(newVal).orElse(0.0);
+						// if (!dto.getProductName().equalsIgnoreCase("Total Fuel")) {
+						// if (newVal != null && !Objects.equals(oldVal, normalizedNewVal)
+						// && Objects.equals(value.getRemarks(), dto.getRemarks())) {
+						// dto.setErrDescription("Please add/update remark");
+						// dto.setSaveStatus("Failed");
+						// failedList.add(dto);
+						// break;
+						// }
+						// }
 
 						if (newVal != null && !Objects.equals(oldVal, newVal)) {
 							NormsTransactions normsTransactions = new NormsTransactions();
@@ -696,6 +702,12 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				aopCalculation.setPlantId(plantFKId);
 				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 				aopCalculationRepository.save(aopCalculation);
+			}
+			if (vertical.getName().equalsIgnoreCase("VCM")) {
+				Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+				String procedure = vertical.getName() + "_" + site.getName() + "_CalculateTotalFuelNorms";
+				executeProcedure(procedure, plantFKId.toString(), year);
 			}
 			// TODO Auto-generated method stub
 			return failedList;
@@ -1071,6 +1083,10 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	}
 	public List<MCUNormsValueDTO> readConfigurations(InputStream inputStream, UUID plantFKId, String year) {
 		List<MCUNormsValueDTO> configList = new ArrayList<>();
+		List<MCUNormsValueDTO> ambientEthane = new ArrayList<>();
+		List<MCUNormsValueDTO> hydrogen = new ArrayList<>();
+		List<MCUNormsValueDTO> naturalGas = new ArrayList<>();
+		List<Object[]> obj = null;
 		Plants plant = plantsRepository.findById(plantFKId).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -1086,32 +1102,49 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				try {
 					dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 					dto.setProductName(getStringCellValue(row.getCell(1), dto));
+
+					// if (dto.getProductName().equalsIgnoreCase("Total Fuel")) {
+					if ("Total Fuel".equalsIgnoreCase(dto.getProductName())) {
+						// calculateTotalFuel(dto, hydrogen, ambientEthane,naturalGas, vertical,
+						// plantFKId, year);
+					} else {
+						dto.setApril(getNumericCellValue(row.getCell(3), dto));
+						dto.setMay(getNumericCellValue(row.getCell(4), dto));
+						dto.setJune(getNumericCellValue(row.getCell(5), dto));
+						dto.setJuly(getNumericCellValue(row.getCell(6), dto));
+						dto.setAugust(getNumericCellValue(row.getCell(7), dto));
+						dto.setSeptember(getNumericCellValue(row.getCell(8), dto));
+						dto.setOctober(getNumericCellValue(row.getCell(9), dto));
+						dto.setNovember(getNumericCellValue(row.getCell(10), dto));
+						dto.setDecember(getNumericCellValue(row.getCell(11), dto));
+						dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
+						dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
+						dto.setMarch(getNumericCellValue(row.getCell(14), dto));
+
+					}
 					dto.setUOM(getStringCellValue(row.getCell(2), dto));
 
 					dto.setFinancialYear(year);
-					dto.setApril(getNumericCellValue(row.getCell(3), dto));
-					dto.setMay(getNumericCellValue(row.getCell(4), dto));
-					dto.setJune(getNumericCellValue(row.getCell(5), dto));
-					dto.setJuly(getNumericCellValue(row.getCell(6), dto));
-					dto.setAugust(getNumericCellValue(row.getCell(7), dto));
-					dto.setSeptember(getNumericCellValue(row.getCell(8), dto));
-					dto.setOctober(getNumericCellValue(row.getCell(9), dto));
-					dto.setNovember(getNumericCellValue(row.getCell(10), dto));
-					dto.setDecember(getNumericCellValue(row.getCell(11), dto));
-					dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
-					dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
-					dto.setMarch(getNumericCellValue(row.getCell(14), dto));
-					if(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
+
+					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
 						dto.setWtAverage(getNumericCellValue(row.getCell(15), dto));
 						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
 						dto.setId(getStringCellValue(row.getCell(17), dto));
-					}else {
+					} else {
 						dto.setRemarks(getStringCellValue(row.getCell(15), dto));
 						dto.setId(getStringCellValue(row.getCell(16), dto));
 					}
-					
-					// dto.setMaterialFkId(getStringCellValue(row.getCell(17), dto));
-					// dto.setIsEditable(getBooleanCellValue(row.getCell(18), dto));
+					// if (dto.getProductName().equalsIgnoreCase("AMBIENT ETHANE")) {
+					// ambientEthane.add(dto);
+					// }
+					// if (dto.getProductName().equalsIgnoreCase("Hydrogen")
+					// && dto.getNormParameterTypeDisplayName().equalsIgnoreCase("Utility
+					// Consumption")) {
+					// hydrogen.add(dto);
+					// }
+					// if (dto.getProductName().equalsIgnoreCase("NATURAL GAS")) {
+					// naturalGas.add(dto);
+					// }
 				} catch (Exception e) {
 					e.printStackTrace();
 					dto.setErrDescription(e.getMessage());
@@ -1127,6 +1160,162 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		return configList;
 	}
 
+	private void calculateTotalFuel(MCUNormsValueDTO dto, List<MCUNormsValueDTO> hydrogen,
+			List<MCUNormsValueDTO> ambientEthane, List<MCUNormsValueDTO> naturalGas, Verticals vertical, UUID plantFKId,
+			String year) {
+
+		if (dto == null || hydrogen == null || hydrogen.isEmpty() ||
+				ambientEthane == null || ambientEthane.isEmpty() ||
+				naturalGas == null || naturalGas.isEmpty() || vertical == null) {
+			return;
+		}
+
+		String verticalName = vertical.getName() != null ? vertical.getName() : "Unknown";
+		String procedureName = verticalName + "_GetConfiguration_Constant";
+		Map<String, Double> constants = getConstantsMap(year, plantFKId != null ? plantFKId.toString() : "",
+				procedureName);
+
+		double h2Const = (constants != null && constants.get("H2") != null) ? constants.get("H2") : 0.0;
+		double ethConst = (constants != null && constants.get("Ethane") != null) ? constants.get("Ethane") : 0.0;
+
+		List<Object[]> obj = aopRepository.findByAOPYearAndPlantFkId(year, plantFKId, "Production");
+		List<AOPDTO> prodList = getMonthlyProduction(obj);
+
+		if (prodList == null || prodList.isEmpty() || prodList.get(0) == null) {
+			return;
+		}
+
+		AOPDTO prod = prodList.get(0);
+		MCUNormsValueDTO h2Data = hydrogen.get(0);
+		MCUNormsValueDTO ethData = ambientEthane.get(0);
+		MCUNormsValueDTO ngData = naturalGas.get(0);
+		dto.setApril(calculateFuelFormula(h2Data.getApril(), ethData.getApril(), ngData.getApril(), prod.getApril(),
+				h2Const, ethConst));
+		dto.setMay(calculateFuelFormula(h2Data.getMay(), ethData.getMay(), ngData.getMay(), prod.getMay(), h2Const,
+				ethConst));
+		dto.setJune(calculateFuelFormula(h2Data.getJune(), ethData.getJune(), ngData.getJune(), prod.getJune(), h2Const,
+				ethConst));
+		dto.setJuly(calculateFuelFormula(h2Data.getJuly(), ethData.getJuly(), ngData.getJuly(), prod.getJuly(), h2Const,
+				ethConst));
+		dto.setAugust(calculateFuelFormula(h2Data.getAugust(), ethData.getAugust(), ngData.getAugust(), prod.getAug(),
+				h2Const, ethConst));
+		dto.setSeptember(calculateFuelFormula(h2Data.getSeptember(), ethData.getSeptember(), ngData.getSeptember(),
+				prod.getSep(), h2Const, ethConst));
+		dto.setOctober(calculateFuelFormula(h2Data.getOctober(), ethData.getOctober(), ngData.getOctober(),
+				prod.getOct(), h2Const, ethConst));
+		dto.setNovember(calculateFuelFormula(h2Data.getNovember(), ethData.getNovember(), ngData.getNovember(),
+				prod.getNov(), h2Const, ethConst));
+		dto.setDecember(calculateFuelFormula(h2Data.getDecember(), ethData.getDecember(), ngData.getDecember(),
+				prod.getDec(), h2Const, ethConst));
+		dto.setJanuary(calculateFuelFormula(h2Data.getJanuary(), ethData.getJanuary(), ngData.getJanuary(),
+				prod.getJan(), h2Const, ethConst));
+		dto.setFebruary(calculateFuelFormula(h2Data.getFebruary(), ethData.getFebruary(), ngData.getFebruary(),
+				prod.getFeb(), h2Const, ethConst));
+		dto.setMarch(calculateFuelFormula(h2Data.getMarch(), ethData.getMarch(), ngData.getMarch(), prod.getMarch(),
+				h2Const, ethConst));
+	}
+
+	private Double calculateFuelFormula(Double h2Norm, Double ethNorm, Double ngGBT, Double prodVal, double h2CV,
+			double ethCV) {
+		double production = val(prodVal);
+		if (production == 0)
+			return 0.0;
+		double divisor = 1000000.0;
+		double A = (val(ethNorm) * production * 1000.0 * ethCV * 4.186 * 1.055) / divisor;
+
+		double B = (val(h2Norm) * production * 1000.0 * h2CV * 4.186 * 1.055) / divisor;
+
+		double C = val(ngGBT);
+
+		return (A + B + C) / production;
+	}
+
+	private double val(Double value) {
+		return value == null ? 0.0 : value;
+	}
+
+	public List<AOPDTO> getMonthlyProduction(List<Object[]> obj) {
+		List<AOPDTO> aopDTOList = new ArrayList<>();
+		for (Object[] row : obj) {
+			AOPDTO aopDTO = new AOPDTO();
+
+			aopDTO.setId(row[0] != null ? row[0].toString() : null);
+			aopDTO.setNormParameterName(row[1] != null ? row[1].toString() : null);
+			aopDTO.setNormParameterDisplayName(row[2] != null ? row[2].toString() : null);
+			aopDTO.setNormParameterTypeId(row[3] != null ? row[3].toString() : null);
+			aopDTO.setMaterialFKId(row[4] != null ? row[4].toString() : null);
+			aopDTO.setDisplayName(row[5] != null ? row[5].toString() : null);
+
+			aopDTO.setApril(safeParseDouble(row[6]));
+			aopDTO.setMay(safeParseDouble(row[7]));
+			aopDTO.setJune(safeParseDouble(row[8]));
+			aopDTO.setJuly(safeParseDouble(row[9]));
+			aopDTO.setAug(safeParseDouble(row[10]));
+			aopDTO.setSep(safeParseDouble(row[11]));
+			aopDTO.setOct(safeParseDouble(row[12]));
+			aopDTO.setNov(safeParseDouble(row[13]));
+			aopDTO.setDec(safeParseDouble(row[14]));
+			aopDTO.setJan(safeParseDouble(row[15]));
+			aopDTO.setFeb(safeParseDouble(row[16]));
+			aopDTO.setMarch(safeParseDouble(row[17]));
+			aopDTO.setAvgTPH(safeParseDouble(row[18]));
+			aopDTO.setRemark(row[19] != null ? row[19].toString() : null);
+			aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
+			aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
+			aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
+
+			aopDTOList.add(aopDTO);
+		}
+		return aopDTOList;
+
+	}
+
+	private Double safeParseDouble(Object obj) {
+		if (obj == null) {
+			return null;
+		}
+		String s = obj.toString().trim();
+		if (s.isEmpty()) {
+			return null;
+		}
+		try {
+			return Double.valueOf(s);
+		} catch (NumberFormatException ex) {
+			// Logging is optional but helpful to track bad data
+			System.err.println("Warning: could not parse to Double: '" + s + "'");
+			return null;
+		}
+	}
+
+	public Map<String, Double> getConstantsMap(String aopYear, String plantId, String procedure) {
+		Map<String, Double> constantsMap = new HashMap<>();
+		List<Object[]> obj = findConstantsByYearAndPlantFkId(aopYear, plantId, procedure);
+
+		for (Object[] row : obj) {
+			String displayName = (row[3] != null) ? row[3].toString() : null;
+			if (displayName != null) {
+				Double value = (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0;
+				constantsMap.put(displayName, value);
+			}
+		}
+		return constantsMap;
+	}
+
+	public List<Object[]> findConstantsByYearAndPlantFkId(String aopYear, String plantId, String procedureName) {
+		try {
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 	private static String getStringCellValue(Cell cell, MCUNormsValueDTO dto) {
 	    try {
 	        
@@ -1777,6 +1966,33 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 	    return finalResult;
 	}
 
-	
+	public int executeProcedure(String procedureName, String plantId,
+			String aopYear) {
+		try {
+
+			String callSql = "{call " + procedureName + "(?, ?)}";
+
+			try (Connection connection = dataSource.getConnection();
+					CallableStatement stmt = connection.prepareCall(callSql)) {
+				stmt.setString(1, plantId);
+				stmt.setString(2, aopYear);
+				int rowsAffected = stmt.executeUpdate();
+				if (!connection.getAutoCommit()) {
+					connection.commit();
+				}
+
+				return rowsAffected;
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return 0;
+			}
+
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 
 }
