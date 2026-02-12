@@ -50,6 +50,7 @@ export default function HeaderContent({ keycloak }) {
   const getSelectedVerticalStorage = localStorage.getItem('selectedVertical')
     ? JSON.parse(localStorage.getItem('selectedVertical'))
     : null
+
   const dispatch = useDispatch()
   const matchesXs = useMediaQuery((theme) => theme.breakpoints.down('md'))
 
@@ -118,6 +119,34 @@ export default function HeaderContent({ keycloak }) {
       .map((v) => ({ id: v.id, name: v.displayName }))
 
     setVerticals(avail)
+
+    // --- Startt snippet ---
+    /* first available vertical so dropdown won't be empty */
+    if (
+      selectedVertical &&
+      avail.length &&
+      !avail.some((v) => v.id === selectedVertical)
+    ) {
+      const defV = avail[0]
+      setSelectedVertical(defV.id)
+
+      localStorage.setItem('verticalId', defV.id)
+      localStorage.setItem(
+        'selectedVertical',
+        JSON.stringify({ id: defV.id, name: defV.name }),
+      )
+
+      dispatch(
+        setVerticalChange({
+          selectedVertical: defV.name,
+          selectedSite: '',
+          selectedPlant: '',
+        }),
+      )
+
+      dispatch(setVerticalObject({ id: defV.id, name: defV.name }))
+    }
+    // --- end snippet ---
 
     if (!selectedVertical && avail.length) {
       const defV = avail[0]
