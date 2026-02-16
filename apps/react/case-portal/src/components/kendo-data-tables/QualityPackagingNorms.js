@@ -25,6 +25,7 @@ import { QualityParameterService } from '../../services/QualityParameterService'
 import { t } from '../../../node_modules/i18next/index'
 import { format } from '../../../node_modules/date-fns/format'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import { validateFields } from 'utils/validationUtils'
 export default function QualityPackagingNorms() {
   const [rows, setRows] = useState([])
   const [priceDiffRows, setPriceDiffRows] = useState([])
@@ -87,6 +88,34 @@ export default function QualityPackagingNorms() {
   const defaultTabs = ['Quality', 'Packaging & Consumables']
   const [packagingRows, setPackagingRows] = useState([])
   const [rowsOtherCosts, setRowsOtherCosts] = useState([])
+  const [calculationObject, setCalculationObject] = useState([])
+
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+  const handleRemarkCellClickDiff = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemarkDiff(row.remark || '')
+    setCurrentRowIdDiff(row.id)
+    setRemarkDialogOpenDiff(true)
+  }
+
+  const handleRemarkCellClickPackaging = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemarkPackaging(row.remark || '')
+    setCurrentRowIdPackaging(row.id)
+    setRemarkDialogOpenPackaging(true)
+  }
+  const handleRemarkCellClickOtherCosts = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemarkOtherCosts(row.remark || '')
+    setCurrentRowIdOtherCosts(row.id)
+    setRemarkDialogOpenOtherCosts(true)
+  }
+
   function getPreviousYear(aopYear) {
     if (!aopYear) return ''
     const [start, end] = aopYear.split('-').map((s) => s.trim())
@@ -139,14 +168,15 @@ export default function QualityPackagingNorms() {
       field: 'budget',
       title: `Budget ${previousYear}`,
       editable: false,
-      type: 'number',
+      type: 'numberWithUOMValidation',
       format: valueFormat,
     },
+
     {
       field: 'actual',
       title: `Actual ${previousYear}`,
-      editable: false,
-      type: 'number',
+      editable: true,
+      type: 'numberWithUOMValidation',
       format: valueFormat,
     },
 
@@ -156,8 +186,13 @@ export default function QualityPackagingNorms() {
       width: 150,
       editable: true,
       editor: 'numeric',
-      type: 'number',
+      type: 'numberWithUOMValidation',
       format: valueFormat,
+    },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
     },
   ]
 
@@ -186,6 +221,8 @@ export default function QualityPackagingNorms() {
           normParameterTypeName: item.normParameterTypeName,
           isEditable: item.isEditable !== false,
           Particulars: item.normParameterTypeName,
+          remark: item.remark,
+          originalRemark: item.remark,
         }))
         setRows(mappedRows)
       } else {
@@ -225,8 +262,10 @@ export default function QualityPackagingNorms() {
         qualityType: item.displayName,
         percentage: item.percentage,
         normParameterTypeName: item.normParameterTypeName,
+        originalRemark: item.remark,
         remark: item.remark,
         Particulars: item.normParameterTypeName,
+        unit: '%',
       }))
       setPriceDiffRows(mappedPriceDiffRows)
     } catch (err) {
@@ -259,6 +298,7 @@ export default function QualityPackagingNorms() {
         PLANT_ID,
         AOP_YEAR,
       )
+      setCalculationObject(res?.data?.aopCalculation)
       if (res?.code === 200 && Array.isArray(res?.data?.data)) {
         const mappedRows = res.data.data.map((item, idx) => ({
           id: item.id || idx,
@@ -270,7 +310,10 @@ export default function QualityPackagingNorms() {
           budget: item.prevBudget,
           actual: item.prevActual,
           proposedNorm: item.proposedNorm,
+          sapMaterialCode: item.sapMaterialCode,
           Particulars: item.normParameterTypeName,
+          originalRemark: item.remark,
+          remark: item.remark,
         }))
         setPackagingRows(mappedRows)
       } else {
@@ -283,6 +326,42 @@ export default function QualityPackagingNorms() {
       setLoading(false)
     }
   }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  const handleCalculate = async () => {
+    try {
+      const data = await QualityParameterService.calculatePackagingData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchPackagingRows()
+        fetchOtherCostsRows()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
+  }
   // // Fetch for Other Costs
   const fetchOtherCostsRows = useCallback(async () => {
     setLoading(true)
@@ -303,8 +382,11 @@ export default function QualityPackagingNorms() {
           budget: item.prevBudget,
           actual: item.prevActual,
           proposedNorm: item.proposedNorm,
+          sapMaterialCode: item.sapMaterialCode,
           normParameterTypeName: item.normTypeName,
           Particulars: item.normTypeName,
+          originalRemark: item.remark,
+          remark: item.remark,
         }))
         setRowsOtherCosts(mappedRows)
       } else {
@@ -355,9 +437,18 @@ export default function QualityPackagingNorms() {
       field: 'percentage',
       title: 'Value (%)',
       editable: true,
-      type: 'number',
+      type: 'numberWithUOMValidation',
       format: valueFormat,
       widthT: 200,
+    },
+    {
+      field: 'unit',
+      hidden: true,
+    },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
     },
   ]
 
@@ -373,6 +464,12 @@ export default function QualityPackagingNorms() {
     {
       field: 'materialId',
       title: 'Material ID',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'sapMaterialCode',
+      title: 'SAP Material Code',
       editable: false,
     },
     {
@@ -403,7 +500,7 @@ export default function QualityPackagingNorms() {
     {
       field: 'actual',
       title: `Actual ${previousYear}`,
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormat,
     },
@@ -413,6 +510,11 @@ export default function QualityPackagingNorms() {
       editable: true,
       type: 'number',
       format: valueFormat,
+    },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
     },
   ]
 
@@ -427,6 +529,12 @@ export default function QualityPackagingNorms() {
     {
       field: 'materialId',
       title: 'Material ID',
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'sapMaterialCode',
+      title: 'SAP Material Code',
       editable: false,
     },
     {
@@ -465,14 +573,31 @@ export default function QualityPackagingNorms() {
       type: 'number',
       format: valueFormat,
     },
+    {
+      field: 'remark',
+      title: 'Remark',
+      editable: true,
+    },
   ]
   const saveChanges = React.useCallback(async () => {
     try {
-      if (Object.keys(modifiedCells).length === 0) {
+      var data = Object.values(modifiedCells)
+      if (data.length == 0) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'No Records to Save!',
           severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+      const requiredFields = ['remark']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
         })
         setLoading(false)
         return
@@ -529,11 +654,23 @@ export default function QualityPackagingNorms() {
 
   const savePriceDiffChanges = React.useCallback(async () => {
     try {
-      if (Object.keys(modifiedCellsDiff).length === 0) {
+      var data = Object.values(modifiedCellsDiff)
+      if (data.length == 0) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'No Records to Save!',
           severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+      const requiredFields = ['remark']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
         })
         setLoading(false)
         return
@@ -587,11 +724,23 @@ export default function QualityPackagingNorms() {
 
   const savePackagingChanges = useCallback(async () => {
     try {
-      if (Object.keys(modifiedCellsPackaging).length === 0) {
+      var data = Object.values(modifiedCellsPackaging)
+      if (data.length == 0) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'No Records to Save!',
           severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+      const requiredFields = ['remark']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
         })
         setLoading(false)
         return
@@ -650,7 +799,8 @@ export default function QualityPackagingNorms() {
 
   const saveOtherCostsChanges = useCallback(async () => {
     try {
-      if (Object.keys(modifiedCellsOtherCosts).length === 0) {
+      var data = Object.values(modifiedCellsOtherCosts)
+      if (data.length == 0) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'No Records to Save!',
@@ -659,7 +809,17 @@ export default function QualityPackagingNorms() {
         setLoading(false)
         return
       }
-
+      const requiredFields = ['remark']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
       // Prepare the data to save
       const otherCostDTOList = Object.values(modifiedCellsOtherCosts).map(
         (row) => ({
@@ -672,6 +832,7 @@ export default function QualityPackagingNorms() {
           proposedNorm: row.proposedNorm,
           plantId: PLANT_ID,
           aopYear: AOP_YEAR,
+          remark: row.remark || '',
         }),
       )
 
@@ -730,6 +891,31 @@ export default function QualityPackagingNorms() {
           })
           setModifiedCells({})
           fetchQualityParameters()
+        } else if (response?.code === 400 && response?.data) {
+          // Error file handling
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', `Error File - ${type}.xlsx`)
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          fetchQualityParameters()
         }
       } else if (type === 'Price_differential') {
         response = await QualityParameterService.PriceDifferentialExcel(
@@ -745,6 +931,31 @@ export default function QualityPackagingNorms() {
             severity: 'success',
           })
           setModifiedCellsDiff({})
+          fetchPriceDifferential()
+        } else if (response?.code === 400 && response?.data) {
+          // Error file handling
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', `Error File - ${type}.xlsx`)
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
           fetchPriceDifferential()
         }
       } else if (type === 'packaging') {
@@ -762,6 +973,31 @@ export default function QualityPackagingNorms() {
           })
           setModifiedCellsPackaging({})
           fetchPackagingRows()
+        } else if (response?.code === 400 && response?.data) {
+          // Error file handling
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', `Error File - ${type}.xlsx`)
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          fetchPackagingRows()
         }
       } else if (type === 'othercost') {
         response = await QualityParameterService.OtherCostExcel(
@@ -777,7 +1013,32 @@ export default function QualityPackagingNorms() {
             severity: 'success',
           })
           setModifiedCellsOtherCosts({})
-          // fetchOtherCostsRows()
+          fetchOtherCostsRows()
+        } else if (response?.code === 400 && response?.data) {
+          // Error file handling
+          const byteCharacters = atob(response.data)
+          const byteNumbers = Array.from(byteCharacters, (char) =>
+            char.charCodeAt(0),
+          )
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.setAttribute('download', `Error File - ${type}.xlsx`)
+          document.body.appendChild(link)
+          link.click()
+          link.remove()
+          window.URL.revokeObjectURL(url)
+
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Partial data saved. Error file downloaded.',
+            severity: 'warning',
+          })
+          fetchOtherCostsRows()
         }
       } else {
         setSnackbarOpen(true)
@@ -788,7 +1049,10 @@ export default function QualityPackagingNorms() {
         return
       }
 
-      if (response?.code !== 200) {
+      if (
+        response?.code !== 200 &&
+        !(response?.code === 400 && response?.data)
+      ) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Upload Failed!',
@@ -953,11 +1217,14 @@ export default function QualityPackagingNorms() {
       titleName: 'Packagings & Consumables',
       adjustedPermissions: true,
       //downloadExcelBtnFromUI: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Packagings_Consumables`,
       addButton: false,
       deleteButton: false,
+      showCalculate: true,
+      showCalculateVisibility:
+        Object.keys(calculationObject || {}).length > 0 ? true : false,
     },
     isOldYear,
   )
@@ -983,8 +1250,8 @@ export default function QualityPackagingNorms() {
       showTitleNameBusiness: true,
       titleName: 'Other Costs',
       adjustedPermissions: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
       ExcelName: `${lowerVertName}_Other_Costs`,
       addButton: false,
       deleteButton: false,
@@ -1048,6 +1315,7 @@ export default function QualityPackagingNorms() {
             enableSaveAddBtn={enableSaveAddBtn}
             permissions={adjustedPermissionsQuality}
             saveChanges={saveChanges}
+            handleRemarkCellClick={handleRemarkCellClick}
             downloadExcelForConfiguration={() =>
               downloadExcelForConfiguration('Quality_Parameters')
             }
@@ -1070,6 +1338,7 @@ export default function QualityPackagingNorms() {
             setCurrentRowId={setCurrentRowIdDiff}
             enableSaveAddBtn={enableSaveAddBtnDiff}
             saveChanges={savePriceDiffChanges}
+            handleRemarkCellClick={handleRemarkCellClickDiff}
             downloadExcelForConfiguration={() =>
               downloadExcelForConfiguration('Price_differential')
             }
@@ -1087,6 +1356,7 @@ export default function QualityPackagingNorms() {
             title='Packings & Consumables'
             saveChanges={savePackagingChanges}
             permissions={adjustedPermissionsPackaging}
+            handleCalculate={handleCalculate}
             modifiedCells={modifiedCellsPackaging}
             setModifiedCells={setModifiedCellsPackaging}
             remarkDialogOpen={remarkDialogOpenPackaging}
@@ -1095,6 +1365,7 @@ export default function QualityPackagingNorms() {
             setCurrentRemark={setCurrentRemarkPackaging}
             currentRowId={currentRowIdPackaging}
             setCurrentRowId={setCurrentRowIdPackaging}
+            handleRemarkCellClick={handleRemarkCellClickPackaging}
             enableSaveAddBtn={enableSaveAddBtnPackaging}
             downloadExcelForConfiguration={() =>
               downloadExcelForConfiguration('packaging')
@@ -1117,6 +1388,7 @@ export default function QualityPackagingNorms() {
             setCurrentRemark={setCurrentRemarkOtherCosts}
             currentRowId={currentRowIdOtherCosts}
             setCurrentRowId={setCurrentRowIdOtherCosts}
+            handleRemarkCellClick={handleRemarkCellClickOtherCosts}
             enableSaveAddBtn={enableSaveAddBtnOtherCosts}
             downloadExcelForConfiguration={() =>
               downloadExcelForConfiguration('othercost')

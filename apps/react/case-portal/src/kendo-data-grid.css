@@ -39,7 +39,7 @@
 /* Reduce header padding */
 .kendo-data-grid .k-grid-header th,
 .kendo-data-grid .k-grid-header .k-header {
-  padding-left: 6px !important; /* ✅ reduce left padding */
+  padding-left: 6px !important; /* ? reduce left padding */
   padding-right: 6px !important;
   padding-top: 4px !important;
   padding-bottom: 4px !important;
@@ -269,7 +269,7 @@
   background-color: #e3e3e3 !important;
 }
 
-/* ✅ Remove indent/group spacer columns completely */
+/* ? Remove indent/group spacer columns completely */
 .k-grid td.k-group-cell,
 .k-grid th.k-group-cell {
   width: 0px !important;
@@ -278,12 +278,12 @@
   border: none !important;
 }
 
-/* ✅ Remove the indent space that pushes content right */
+/* ? Remove the indent space that pushes content right */
 .k-grid .k-grouping-row td {
   padding-left: 0px !important;
 }
 
-/* ✅ Real first column after group indent */
+/* ? Real first column after group indent */
 .k-grid td[role='gridcell']:not(.k-group-cell):first-of-type {
   padding-left: 6px !important; /* keep small padding */
 }

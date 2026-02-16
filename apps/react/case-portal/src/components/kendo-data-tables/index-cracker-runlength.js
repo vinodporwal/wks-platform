@@ -126,13 +126,17 @@ const KendoDataTablesCrackerRunLength = ({
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
+
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const SCREEN_NAME = screenTitle?.title
+
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
 
   const startYear = parseInt(AOP_YEAR?.split('-')[0], 10)
 
@@ -210,7 +214,10 @@ const KendoDataTablesCrackerRunLength = ({
 
       let updatedRows = []
 
-      if (value?.toUpperCase() === 'SAD' && dataItem[field] !== 'SAD') {
+      // THIS LOGIC NEEDS TO BE UPDATED AS FOR NOW IT IS COMMENTED
+      // if (value?.toUpperCase() === 'SAD' && dataItem[field] !== 'SAD') {
+      // eslint-disable-next-line no-constant-condition
+      if (1 == 0) {
         setTimeout(() => {
           setRows((prevRows) => {
             const editedIndex = prevRows.findIndex((r) => r.id === itemId)
@@ -849,7 +856,7 @@ const KendoDataTablesCrackerRunLength = ({
       <ExcelExport
         data={rowsPopUp}
         ref={_export}
-        fileName={`Cracker-runlength.xlsx`}
+        fileName={`${RUN_LENGTH_EXCEL_NAME}.xlsx`}
       >
         <Grid
           style={{ height: 630 }}
@@ -1077,6 +1084,7 @@ const KendoDataTablesCrackerRunLength = ({
   }
 
   const NEXT_AOP_YEAR = getNextAopYear(AOP_YEAR)
+  const RUN_LENGTH_EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Run_Length_${NEXT_AOP_YEAR}`
 
   const saveCrackerRunLength = async (singleRow) => {
     setLoading1(true)
@@ -1117,8 +1125,6 @@ const KendoDataTablesCrackerRunLength = ({
 
         return payloadItem
       })
-
-      console.log('Dynamic Payload:', payload) // Debug log
 
       const response = await DataService.saveCrackerRunLength(
         PLANT_ID,

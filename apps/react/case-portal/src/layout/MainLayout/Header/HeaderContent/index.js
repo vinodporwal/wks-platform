@@ -34,6 +34,10 @@ import {
 } from '../../../../../node_modules/react-router-dom/dist/index'
 import { openDrawer } from 'store/reducers/menu'
 import StepperNav from 'components/Utilities/StepperNav'
+import CalendarToday from '@mui/icons-material/CalendarToday'
+import Business from '@mui/icons-material/Business'
+import Domain from '@mui/icons-material/Domain'
+import Factory from '@mui/icons-material/Factory'
 
 // Utility to parse the Keycloak allowed JSON
 function parseAllowed(raw) {
@@ -409,61 +413,6 @@ export default function HeaderContent({ keycloak }) {
     navigate('/production-norms-plan/configuration', { replace: true })
   }, [verticalFromDashboard?.trigger])
 
-  // Common dropdown styles
-  const dropdownContainerStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1,
-    animation: 'fadeInScale 0.4s ease-out backwards',
-    '@keyframes fadeInScale': {
-      from: { opacity: 0, transform: 'scale(0.95)' },
-      to: { opacity: 1, transform: 'scale(1)' },
-    },
-  }
-
-  const selectStyle = {
-    '& .MuiOutlinedInput-notchedOutline': {
-      border: '1px solid rgba(255, 255, 255, 0.25)',
-      borderRadius: '2px',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    },
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      border: '1px solid rgba(255, 255, 255, 0.4)',
-      boxShadow: 'none', // ? remove glow
-    },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      border: '1px solid rgba(255, 255, 255, 0.6)',
-      boxShadow: 'none', // ? remove glow
-    },
-
-    '& .MuiSelect-select': {
-      py: 0.75,
-      transition: 'all 0.3s ease',
-      color: '#ffffff',
-      fontWeight: 700,
-      fontFamily:
-        "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-    },
-
-    '& .MuiSvgIcon-root': {
-      color: '#ffffff',
-    },
-
-    '&.Mui-disabled': {
-      opacity: 0.5,
-    },
-
-    background: 'rgba(255, 255, 255, 0.08)',
-    backdropFilter: 'none', // ? REMOVE BLUR
-    WebkitBackdropFilter: 'none', // ? REMOVE BLUR (Safari)
-    borderRadius: '2px',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-
-    '&:hover': {
-      background: 'rgba(255, 255, 255, 0.12)',
-    },
-  }
-
   const menuPropsStyle = {
     PaperProps: {
       style: {
@@ -504,12 +453,50 @@ export default function HeaderContent({ keycloak }) {
     },
   }
 
+  const dropdownContainerStyle = {
+    display: 'flex',
+    alignItems: 'center',
+  }
+
+  const selectStyle = {
+    height: 36,
+    minWidth: 150,
+    borderRadius: '12px',
+    background: '#e9edf2',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    color: '#2c3e50',
+
+    '& .MuiSelect-select': {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 0.75,
+      padding: '6px 8px !important',
+    },
+
+    '& fieldset': {
+      border: 'none',
+    },
+
+    '&:hover': {
+      background: '#dde3ea',
+    },
+
+    '&.Mui-focused': {
+      background: '#dde3ea',
+    },
+
+    '& .MuiSvgIcon-root': {
+      color: '#6b7c93',
+    },
+  }
+
   return (
     <>
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
+          gridTemplateColumns: '1fr 1fr auto',
           alignItems: 'center',
           width: '100%',
           position: 'relative',
@@ -532,31 +519,29 @@ export default function HeaderContent({ keycloak }) {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
+            gap: 2,
             animation: 'fadeInLeft 0.5s ease-out',
             '@keyframes fadeInLeft': {
               from: { opacity: 0, transform: 'translateX(-20px)' },
               to: { opacity: 1, transform: 'translateX(0)' },
             },
-
-            /* allow the left column to shrink and allow ellipsis */
             minWidth: 0,
             overflow: 'hidden',
           }}
         >
+          {/* Logo Container */}
           <Box
             sx={{
-              ml: 0,
               display: 'flex',
               alignItems: 'center',
               px: 1,
               py: 0.5,
-              borderRadius: '10px',
-              backdropFilter: 'blur(6px)',
+              borderRadius: '8px',
               transition: 'all 0.3s ease',
+              background: 'transparent',
               '&:hover': {
-                transform: 'translateY(-1px) scale(1.05)',
-                boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
               },
               flex: '0 0 auto',
             }}
@@ -565,21 +550,19 @@ export default function HeaderContent({ keycloak }) {
               component='img'
               src={Logo}
               alt='RIL Logo'
-              sx={{ height: 32 }}
+              sx={{
+                height: 32,
+                objectFit: 'contain',
+              }}
             />
           </Box>
 
+          {/* Title */}
           {!HIDE_DASHBOARD_DROPDOWN && (
             <Box
               sx={{
-                ml: 0,
-                px: 0,
-                py: 0.5,
-                borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
-
-                /* ensure title can shrink inside the left column */
                 minWidth: 0,
                 overflow: 'hidden',
               }}
@@ -588,18 +571,15 @@ export default function HeaderContent({ keycloak }) {
                 variant='body2'
                 className='custom-title-font'
                 sx={{
-                  fontWeight: 1000,
-                  fontSize: '1rem',
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  color: '#fff',
-                  lineHeight: 1,
-
-                  /* ellipsis */
+                  fontWeight: 700,
+                  fontSize: '1.05rem',
+                  letterSpacing: '0.03em',
+                  textTransform: 'none',
+                  color: '#2c3e50', // dark text for white header
+                  lineHeight: 1.2,
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  display: 'block',
                 }}
               >
                 {screenTitleName}
@@ -611,50 +591,39 @@ export default function HeaderContent({ keycloak }) {
         {/* CENTERED DROPDOWNS (grid column 2) */}
         <Stack
           direction='row'
-          spacing={1.5}
+          spacing={2}
           alignItems='center'
           sx={{
-            justifySelf: 'center',
-            animation: 'fadeInRight 0.5s ease-out',
-            '@keyframes fadeInRight': {
-              from: { opacity: 0, transform: 'translateX(20px)' },
-              to: { opacity: 1, transform: 'translateX(0)' },
-            },
-            /* remove absolute positioning ? grid will center it */
-            position: 'static',
+            justifySelf: 'end',
+            width: '100%', // allow stack to fill the middle column
+            justifyContent: 'flex-end', // push dropdowns to the right edge of that column
+            mr: 1,
           }}
         >
           {/* Year */}
-          <Box sx={{ ...dropdownContainerStyle, '--animation-delay': '0s' }}>
-            <Typography
-              variant='body2'
-              className='custom-title-dropdown'
-              sx={{
-                fontSize: '0.875rem',
-                // textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
-                color: '#fff',
-                fontWeight: 700,
-              }}
-            >
-              Year:
-            </Typography>
+          <Box sx={dropdownContainerStyle}>
             {headerLoading ? (
               <DropdownSkeleton />
             ) : (
-              <FormControl sx={{ width: 80 }}>
+              <FormControl>
                 <Select
                   value={selectedYear}
                   onChange={handleYearChange}
-                  className='custom-title-dropdown-content'
                   sx={selectStyle}
                   MenuProps={menuPropsStyle}
+                  renderValue={(value) => {
+                    const yearObj = aopYears.find((y) => y.AOPYear === value)
+                    return (
+                      <>
+                        <CalendarToday sx={{ fontSize: 16 }} />
+                        <span>Year:</span>
+                        <strong>{yearObj?.AOPDisplayYear}</strong>
+                      </>
+                    )
+                  }}
                 >
                   {aopYears.map((y) => (
-                    <MenuItem
-                      key={y.AOPYear}
-                      value={y.AOPYear}
-                      sx={menuItemStyle}
-                    >
+                    <MenuItem key={y.AOPYear} value={y.AOPYear}>
                       {y.AOPDisplayYear}
                     </MenuItem>
                   ))}
@@ -665,36 +634,29 @@ export default function HeaderContent({ keycloak }) {
 
           {/* Vertical */}
           {!(HIDE_VERTICAL_DROPDOWN || HIDE_DASHBOARD_DROPDOWN) && (
-            <Box
-              sx={{ ...dropdownContainerStyle, '--animation-delay': '0.1s' }}
-            >
-              <Typography
-                variant='body2'
-                className='custom-title-dropdown'
-                sx={{
-                  fontSize: '0.875rem',
-                  fontFamily:
-                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                  color: '#ffffffff',
-                  fontWeight: 700,
-                }}
-              >
-                Vertical:
-              </Typography>
-
+            <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl sx={{ width: 100 }}>
+                <FormControl>
                   <Select
                     value={selectedVertical}
                     onChange={handleVertChange}
-                    className='custom-title-dropdown-content'
                     sx={selectStyle}
                     MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const vert = verticals.find((v) => v.id === value)
+                      return (
+                        <>
+                          <Business sx={{ fontSize: 16 }} />
+                          <span>Vertical:</span>
+                          <strong>{vert?.name}</strong>
+                        </>
+                      )
+                    }}
                   >
                     {verticals.map((v) => (
-                      <MenuItem key={v.id} value={v.id} sx={menuItemStyle}>
+                      <MenuItem key={v.id} value={v.id}>
                         {v.name}
                       </MenuItem>
                     ))}
@@ -706,36 +668,30 @@ export default function HeaderContent({ keycloak }) {
 
           {/* Site */}
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Box
-              sx={{ ...dropdownContainerStyle, '--animation-delay': '0.2s' }}
-            >
-              <Typography
-                variant='body2'
-                className='custom-title-dropdown'
-                sx={{
-                  fontSize: '0.875rem',
-                  fontFamily:
-                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                  color: '#fff',
-                  fontWeight: 700,
-                }}
-              >
-                Site:
-              </Typography>
+            <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl sx={{ width: 80 }}>
+                <FormControl>
                   <Select
                     value={selectedSite}
                     onChange={handleSiteChange}
                     disabled={!sites.length}
-                    className='custom-title-dropdown-content'
                     sx={selectStyle}
                     MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const site = sites.find((s) => s.id === value)
+                      return (
+                        <>
+                          <Domain sx={{ fontSize: 16 }} />
+                          <span>Site:</span>
+                          <strong>{site?.name}</strong>
+                        </>
+                      )
+                    }}
                   >
                     {sites.map((s) => (
-                      <MenuItem key={s.id} value={s.id} sx={menuItemStyle}>
+                      <MenuItem key={s.id} value={s.id}>
                         {s.name}
                       </MenuItem>
                     ))}
@@ -747,36 +703,30 @@ export default function HeaderContent({ keycloak }) {
 
           {/* Plant */}
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Box
-              sx={{ ...dropdownContainerStyle, '--animation-delay': '0.3s' }}
-            >
-              <Typography
-                variant='body2'
-                className='custom-title-dropdown'
-                sx={{
-                  fontSize: '0.875rem',
-                  fontFamily:
-                    "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                  color: '#fff',
-                  fontWeight: 700,
-                }}
-              >
-                Plant:
-              </Typography>
+            <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl sx={{ width: 110 }}>
+                <FormControl>
                   <Select
                     value={selectedPlant}
                     onChange={handlePlantChange}
                     disabled={!plants.length}
-                    className='custom-title-dropdown-content'
                     sx={selectStyle}
                     MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const plant = plants.find((p) => p.id === value)
+                      return (
+                        <>
+                          <Factory sx={{ fontSize: 16 }} />
+                          <span>Plant:</span>
+                          <strong>{plant?.name}</strong>
+                        </>
+                      )
+                    }}
                   >
                     {plants.map((p) => (
-                      <MenuItem key={p.id} value={p.id} sx={menuItemStyle}>
+                      <MenuItem key={p.id} value={p.id}>
                         {p.name}
                       </MenuItem>
                     ))}

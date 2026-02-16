@@ -266,6 +266,8 @@ const AopDesignBasis = () => {
       }
     } catch (error) {
       console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // setLoading1(false)
     }
   }
 
@@ -289,6 +291,8 @@ const AopDesignBasis = () => {
       }
     } catch (error) {
       console.error('Error fetching getConfigurationExecutionDetails:', error)
+    } finally {
+      // setLoading1(false)
     }
   }
 

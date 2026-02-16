@@ -326,6 +326,7 @@ const ConfigurationTable = () => {
   const lowerVertName = vertName?.toLowerCase()
 
   const [tabIndex, setTabIndex] = useState(0)
+  const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loading1, setLoading1] = useState(false)
   const [dateEdited, setDateEdited] = useState(false)
@@ -1109,6 +1110,7 @@ const ConfigurationTable = () => {
         })
       }
       getAopSummary()
+      setLoadBtnClicked(true)
       return response
     } catch (error) {
       console.error('Execution Falied!', error)
@@ -1875,8 +1877,19 @@ const ConfigurationTable = () => {
                   />
                 )
 
-              case getTheId('Quality'):
-                return <QualityParameters />
+              // case getTheId('Quality'):
+              //   return <QualityParameters />
+
+              case getTheId('ExclusionDate'):
+                return (
+                  <ExclusionDate
+                    revision={revision}
+                    loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
 
               default:
                 return null

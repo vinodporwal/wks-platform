@@ -193,7 +193,7 @@ export const SlowDownPeColumns = [
 
   {
     field: 'rate',
-    title: 'Rate Reduced (TPH)',
+    title: 'Reduced Rate (TPH)',
     editable: true,
     type: 'number',
   },
@@ -412,7 +412,6 @@ export const ShutdownConsumptionPeColumns = [
   {
     field: 'remarks',
     headerName: 'Remark',
-
     editable: false,
   },
 
@@ -440,7 +439,7 @@ export const ShutdownConsumptionPeColumnsPeLldpe = [
   },
   {
     field: 'productName',
-    headerName: 'Particulars123',
+    headerName: 'Particulars',
     widthT: 120,
     editable: false,
   },

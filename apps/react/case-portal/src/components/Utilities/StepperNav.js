@@ -1,64 +1,40 @@
-import React from 'react'
-import {
-  Box,
-  Step,
-  StepLabel,
-  Stepper,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Box, Tabs, Tab, Tooltip } from '@mui/material'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { useMenuContext } from 'menu/menuProvider'
 import { verticalEnums } from 'enums/verticalEnums'
 import { drawerWidth } from 'config'
-import { useMenuContext } from 'menu/menuProvider'
-import { useCallback, useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { useLocation, useNavigate } from 'react-router-dom'
 
-// Toggle between fixed and sticky behavior here
-const USE_FIXED = true // set to false to use position: 'sticky'
+const USE_FIXED = true
 
 export default function StepperNav() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { plantID, verticalChange } = useSelector(
-    (state) => state.dataGridStore,
-  )
-  const plantName = plantID?.plantName
-  const vertName = verticalChange?.selectedVertical
-  const lowerVertName = vertName?.toLowerCase() || 'meg'
-
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-
-  const {
-    yearChanged,
-    oldYear,
-    plantObject,
-    siteObject,
-    verticalObject,
-    year,
-    screenTitle,
-  } = dataGridStore
-
-  const PLANT_NAME = plantObject?.name?.toLowerCase()
-  const SITE_NAME = siteObject?.name?.toLowerCase()
-  const [steps, setSteps] = useState([])
 
   const { items: menuItems } = useMenuContext()
   const { drawerOpen } = useSelector((state) => state.menu)
-  const collectItems = useCallback(
-    (nodes) =>
-      nodes.flatMap((node) => {
-        if (node.type === 'item') {
-          return [node]
-        }
-        if (node.children) {
-          return collectItems(node.children)
-        }
-        return []
-      }),
-    [],
-  )
 
+  const { verticalChange } = useSelector((state) => state.dataGridStore)
+
+  const lowerVertName = verticalChange?.selectedVertical?.toLowerCase() || 'meg'
+
+  const [steps, setSteps] = useState([])
+
+  // -------------------------
+  // Collect nested menu items
+  // -------------------------
+  const collectItems = useCallback((nodes) => {
+    return nodes.flatMap((node) => {
+      if (node.type === 'item') return [node]
+      if (node.children) return collectItems(node.children)
+      return []
+    })
+  }, [])
+
+  // -------------------------
+  // Build Steps from Menu
+  // -------------------------
   const buildSteps = useCallback(
     (menuArr) => {
       const planGroup = menuArr
@@ -66,277 +42,178 @@ export default function StepperNav() {
         .find((c) => c.id === 'production-norms-plan')
 
       if (!planGroup?.children) return []
+
       const allItems = collectItems(planGroup.children)
-      return allItems.map((item) => {
-        const slug = item.url.split('/').pop()
-        return { label: item.title, url: item.url, key: slug }
-      })
+
+      return allItems.map((item) => ({
+        label: item.title,
+        url: item.url,
+        key: item.id,
+        icon: item.icon, // 🔥 use icon from config
+      }))
     },
     [collectItems],
   )
 
+  // -------------------------
+  // Initialize + Filter
+  // -------------------------
   useEffect(() => {
     const newSteps = buildSteps(menuItems)
 
     const isPE = lowerVertName === 'pe'
     const shouldFilterSlowdown = lowerVertName === verticalEnums.PP || isPE
 
-    if (shouldFilterSlowdown) {
-      const filteredSteps = newSteps.filter(
-        (step) => step.key !== 'slowdown-norms',
-      )
-      setSteps(filteredSteps)
-    } else {
-      setSteps(newSteps)
-    }
+    const filteredSteps = shouldFilterSlowdown
+      ? newSteps.filter((step) => step.key !== 'slowdown-norms')
+      : newSteps
+
+    setSteps(filteredSteps)
 
     const currentSlug = location.pathname.split('/').pop()
-    const found = newSteps.some((s) => s.key === currentSlug)
+    const found = filteredSteps.some((s) => s.url.includes(currentSlug))
 
-    if (newSteps.length && !found) {
-      navigate(newSteps[0].url, { replace: true })
+    if (filteredSteps.length && !found) {
+      navigate(filteredSteps[0].url, { replace: true })
     }
-  }, [
-    menuItems,
-    lowerVertName,
-    plantName,
-    buildSteps,
-    navigate,
-    location.pathname,
-  ])
+  }, [menuItems, lowerVertName, buildSteps, navigate, location.pathname])
 
-  const currentPath = location.pathname.split('/').pop()
-  const activeStep = steps.findIndex((s) => s.key === currentPath)
+  // -------------------------
+  // Active Step
+  // -------------------------
+  const activeStep = useMemo(() => {
+    return steps.findIndex((s) => location.pathname.includes(s.url))
+  }, [steps, location.pathname])
 
-  // Helper to return first 15 characters then ellipsis
-  const getAbbrev = (label) => {
-    if (!label) return ''
-    const text = label.trim()
-    return text.length <= 12 ? text : `${text.slice(0, 12)}…`
-  }
-
-  useEffect(() => {
-    const el = document.querySelector('.MuiStep-root.Mui-active')
-    el?.scrollIntoView({
-      behavior: 'smooth',
-      inline: 'center',
-      block: 'nearest',
-    })
-  }, [activeStep])
-
-  // shared Stepper element with modern styling
-  const StepperElement = (
-    <Stepper
-      nonLinear
-      alternativeLabel
-      activeStep={activeStep >= 0 ? activeStep : 0}
+  // -------------------------
+  // Render
+  // -------------------------
+  const TabsElement = (
+    <Box
       sx={{
-        minWidth: 'max-content', // 🔥 IMPORTANT
-        fontFamily:
-          "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-
-        '& .MuiStepLabel-label': {
-          fontWeight: '500',
-          fontSize: '0.8125rem',
-          letterSpacing: '0.01em',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        },
-        '& .MuiStepLabel-label.Mui-active': {
-          fontWeight: '700',
-          color: '#0100cb',
-          fontSize: '0.875rem',
-        },
-        '& .MuiStepLabel-alternativeLabel': {
-          marginTop: '4px !important',
-        },
-        '& .MuiStepConnector-alternativeLabel': {
-          top: '18px',
-        },
-        '& .MuiStepConnector-line': {
-          borderColor: '#e0e0e0',
-          borderTopWidth: '2px',
-          transition: 'all 0.3s ease',
-        },
-        '& .MuiStepConnector-root.Mui-active .MuiStepConnector-line': {
-          borderColor: '#bbbbbb',
-          background: 'linear-gradient(90deg, #0100cb 0%, #5b59ff 100%)',
-          borderTopWidth: '2px',
-        },
-        '& .MuiStepConnector-root.Mui-completed .MuiStepConnector-line': {
-          borderColor: '#bbbbbb',
-        },
+        backgroundColor: '#f7f8fa',
+        borderBottom: '1px solid #e2e8f0',
       }}
     >
-      {steps.map((step, index) => {
-        const abbrev = getAbbrev(step.label)
-        const isActive = activeStep === index
+      <Tabs
+        value={activeStep >= 0 ? activeStep : 0}
+        onChange={(e, newValue) => {
+          navigate(steps[newValue].url)
+        }}
+        variant='scrollable'
+        scrollButtons={false} // no arrows
+        allowScrollButtonsMobile={false}
+        sx={{
+          minHeight: 40,
 
-        return (
-          <Step
-            key={step.key}
-            onClick={() => navigate(step.url)}
-            sx={{
-              fontFamily:
-                "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-              cursor: 'pointer',
-              transition: 'transform 0.2s ease',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-              },
-              '& .MuiStepIcon-root': {
-                fontSize: '1.50rem',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                filter: 'drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1))',
-              },
-              '& .MuiStepIcon-root.Mui-active': {
-                color: '#0074bd',
-                transform: 'scale(1.15)',
-                filter: 'drop-shadow(0px 4px 8px rgba(1, 0, 203, 0.3))',
-              },
-              '& .MuiStepIcon-root.Mui-completed': {
-                color: '#0100cb',
-              },
-              '& .MuiStepIcon-root:hover': {
-                transform: 'scale(1.1)',
-                filter: 'drop-shadow(0px 4px 8px rgba(1, 0, 203, 0.25))',
-              },
-            }}
-            aria-label={step.label}
-          >
-            <StepLabel
-              sx={{
-                cursor: 'pointer',
-                '& .MuiStepLabel-iconContainer': {
-                  transition: 'all 0.3s ease',
-                },
-              }}
-            >
-              <Tooltip
-                title={step.label}
-                enterDelay={200}
-                arrow
-                slotProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: 'rgba(65, 63, 63, 0.9)',
-                      backdropFilter: 'blur(8px)',
-                      fontSize: '0.8125rem',
-                      py: 0,
-                      px: 2,
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    },
-                  },
-                  arrow: {
-                    sx: {
-                      color: 'rgba(0, 0, 0, 0.9)',
-                    },
-                  },
-                }}
-              >
-                <Typography
-                  variant='caption'
-                  sx={{
-                    minWidth: 38,
-                    maxWidth: 100,
-                    lineHeight: 1.2,
+          /* 👇 Target the REAL scroll container */
+          '& .MuiTabs-scroller': {
+            overflowX: 'auto !important',
+
+            /* thin scrollbar */
+            '&::-webkit-scrollbar': {
+              height: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#94a3b8',
+              borderRadius: '10px',
+            },
+
+            /* Firefox */
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#94a3b8 transparent',
+          },
+
+          '& .MuiTabs-indicator': {
+            top: 0,
+            height: 2,
+            backgroundColor: '#2563eb',
+          },
+
+          '& .MuiTab-root': {
+            minHeight: 40,
+          },
+        }}
+      >
+        {steps.map((step) => (
+          <Tooltip key={step.key} title={step.label} arrow>
+            <Tab
+              icon={
+                step.icon
+                  ? React.isValidElement(step.icon)
+                    ? step.icon
+                    : React.createElement(step.icon, {
+                        fontSize: 'small',
+                      })
+                  : null
+              }
+              iconPosition='start'
+              label={
+                <span
+                  style={{
                     display: 'inline-block',
-                    textAlign: 'center',
-                    whiteSpace: 'nowrap',
+                    maxWidth: 120,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    fontWeight: isActive ? '700' : '500',
-                    color: isActive ? '#303284' : 'text.secondary',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    fontFamily:
-                      "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-                    '&:hover': {
-                      color: '#303284',
-                      fontWeight: '600',
-                    },
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   {step.label}
-                </Typography>
-              </Tooltip>
-            </StepLabel>
-          </Step>
-        )
-      })}
-    </Stepper>
+                </span>
+              }
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+                fontSize: '0.85rem',
+                color: '#475569',
+                px: 1.5,
+                minHeight: 40,
+                gap: 0.5,
+                transition: 'all 0.2s ease',
+
+                '&:hover': {
+                  backgroundColor: '#eef2ff',
+                },
+
+                '&.Mui-selected': {
+                  color: '#2563eb',
+                  fontWeight: 600,
+                },
+              }}
+            />
+          </Tooltip>
+        ))}
+      </Tabs>
+    </Box>
   )
 
   return (
     <>
       {USE_FIXED ? (
         <>
-          {/* Fixed to viewport but TRANSPARENT to background - no border, no radius, no bg */}
           <Box
             sx={{
               position: 'fixed',
-              // top: '55px',
-              left: drawerOpen ? `${drawerWidth + 8}px` : '5px',
-              right: '5px',
+              left: drawerOpen ? `${drawerWidth + 8}px` : '8px',
+              right: '8px',
               zIndex: (theme) => (theme.zIndex?.appBar ?? 1100) + 1,
-              background: 'transparent',
-              backdropFilter: 'none',
-              boxShadow: 'none',
-              border: 'none',
-              borderRadius: 0,
-              py: 0,
-              px: 0,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              maxHeight: '80px',
-              fontFamily:
-                "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-              '&:hover': {
-                // keep subtle hover transform but do not add borders/bg
-                transform: 'none',
-              },
-              // remove decorative pseudo element that added a colored line
-              '&::before': {
-                content: 'none',
-              },
+              transition: 'all 0.3s ease',
             }}
           >
-            <Box
-              sx={{
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                width: '100%',
-                scrollbarWidth: 'thin',
-                '&::-webkit-scrollbar': {
-                  height: 6,
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: 'rgba(1,0,203,0.4)',
-                  borderRadius: 4,
-                },
-              }}
-            >
-              {StepperElement}
-            </Box>
+            {TabsElement}
           </Box>
 
-          {/* Spacer so fixed element doesn't cover content */}
           <Box
-            sx={{ height: (theme) => theme?.mixins?.toolbar?.minHeight ?? 64 }}
+            sx={{
+              height: (theme) => theme?.mixins?.toolbar?.minHeight ?? 56,
+            }}
           />
         </>
       ) : (
-        <Box
-          sx={{
-            background: 'transparent',
-            backdropFilter: 'none',
-            boxShadow: 'none',
-            border: 'none',
-            borderRadius: 0,
-            py: 0,
-            px: 0,
-            transition: 'all 0.3s ease',
-          }}
-        >
-          {StepperElement}
-        </Box>
+        TabsElement
       )}
     </>
   )

@@ -23,6 +23,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProductionTarget = ({ permissions }) => {
+  const [editResetKey, setEditResetKey] = useState(0)
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const [modifiedCellsDesignCapacity, setModifiedCellsDesignCapacity] =
@@ -397,7 +398,7 @@ const ProductionTarget = ({ permissions }) => {
           const isTPH = selectedUnit == 'TPD'
           return {
             ...item,
-            idFromApi: item?.id,
+            idFromApi: item?.id || null,
             normParametersFKId: item?.materialFKId.toLowerCase(),
             remarks: item?.remarks?.trim() || null,
             originalRemark: item?.remarks?.trim() || null,
@@ -611,7 +612,7 @@ const ProductionTarget = ({ permissions }) => {
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => ({
           ...item,
-          id: item?.id,
+          id: item?.id || null,
           productName: item?.materialDisplayName,
           remarks: item?.remarks?.trim() || null,
           originalRemark: item?.remarks?.trim() || null,
@@ -696,7 +697,7 @@ const ProductionTarget = ({ permissions }) => {
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => ({
           ...item,
-          idFromApi: item?.id,
+          idFromApi: item?.id || null,
           productName: item?.materialDisplayName,
           april:
             isTPD && item.april
@@ -1105,6 +1106,8 @@ const ProductionTarget = ({ permissions }) => {
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
+          setEditResetKey={setEditResetKey}
+          resetEditSignal={editResetKey}
         />
       )}
 
@@ -1122,6 +1125,8 @@ const ProductionTarget = ({ permissions }) => {
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('max')
           }
+          setEditResetKey={setEditResetKey}
+          resetEditSignal={editResetKey}
         />
       )}
 
@@ -1157,6 +1162,8 @@ const ProductionTarget = ({ permissions }) => {
         downloadExcelForConfiguration={() =>
           downloadExcelForConfiguration('main')
         }
+        setEditResetKey={setEditResetKey}
+        resetEditSignal={editResetKey}
       />
 
       {/* PERCENTAGE_SUMMARY */}

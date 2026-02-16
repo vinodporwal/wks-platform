@@ -16,6 +16,8 @@ export const NormalOperationNormsApiService = {
   handleCalculateNormalOperationNorms,
   getNormalOpsNormsExcel,
   getNormalOpsNormsExcelpe,
+  saveShutdownNormsExcel,
+  saveShutdownNormsExcelNonGrade,
   updateFinalNormsData,
   getfinalNorms,
   calculateFinalNorms,
@@ -28,7 +30,8 @@ export const NormalOperationNormsApiService = {
   load3,
   getNormTransactionsForFinalNorms,
   getNormTransactionsForFinalNormsModeWise,
-  shutdownnormsppExport,
+  shutdownNormsExport,
+  shutdownNormsExportNonGrade,
 }
 
 async function BestAchivedColorCodes(keycloak, plantId, year, mode) {
@@ -431,6 +434,72 @@ async function saveNormalOpsNormsExcel(
     return await Promise.reject(e)
   }
 }
+
+async function saveShutdownNormsExcel(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+  ALL_GRADE_FLAG,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/shutdown-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}&allGrade=${ALL_GRADE_FLAG}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveShutdownNormsExcelNonGrade(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/import-shutdown-consumption?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 async function handleCalculateNormalOperationNormsPe(
   plantId,
   siteId,
@@ -651,8 +720,20 @@ async function getNormTransactionsForFinalNorms(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-export async function shutdownnormsppExport(keycloak, plantId, year) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-consumption-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+export async function shutdownNormsExport(
+  keycloak,
+  plantId,
+  year,
+  PLANT_NAME,
+  SITE_NAME,
+  VERTICAL_NAME,
+  ALL_GRADE_FLAG,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-consumption-export` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    `&allGrade=${ALL_GRADE_FLAG}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -670,13 +751,52 @@ export async function shutdownnormsppExport(keycloak, plantId, year) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'shutdown_consumption.xlsx'
+    a.download = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown_Consumption.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
-    console.error('Error exporting Shutdown Excel:', e)
+    console.error('Error exporting Shutdown_Consumption Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function shutdownNormsExportNonGrade(
+  keycloak,
+  plantId,
+  year,
+  gradeId,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/export-shutdown-consumption` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}` +
+    (gradeId ? `&gradeId=${encodeURIComponent(gradeId)}` : '')
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `Shutdown_Consumption_${year}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown_Consumption Excel:', e)
     return Promise.reject(e)
   }
 }

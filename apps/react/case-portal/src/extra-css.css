@@ -57,7 +57,9 @@
 ================================ */
 .btn-save {
   color: #2563eb;
-  border: 1px solid #2563eb;
+  /* border: 1px solid #2563eb; */
+  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
+  background: transparent;
 }
 
 .btn-save:hover {
@@ -75,7 +77,9 @@
 ================================ */
 .btn-export {
   color: #0d9488;
-  border: 1px solid #0d9488;
+  /* border: 1px solid #0d9488; */
+  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
+  background: transparent;
 }
 
 .btn-export:hover {
@@ -88,7 +92,9 @@
 ================================ */
 .btn-add {
   color: #16a34a;
-  border: 1px solid #16a34a;
+  /* border: 1px solid #16a34a; */
+  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
+  background: transparent;
 }
 
 .btn-add:hover {
@@ -101,7 +107,9 @@
 ================================ */
 .btn-import {
   color: #f59e0b;
-  border: 1px solid #f59e0b;
+  /* border: 1px solid #f59e0b; */
+  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
+  background: transparent;
 }
 
 .btn-import:hover {
@@ -114,7 +122,9 @@
 ================================ */
 .btn-calculate {
   color: #7c3aed; /* violet-600 */
-  border: 1px solid #7c3aed;
+  /* border: 1px solid #7c3aed; */
+  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
+  background: transparent;
 }
 
 .btn-calculate:hover {

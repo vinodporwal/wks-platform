@@ -72,8 +72,11 @@ export const DataService = {
   saveConfigurationExcelConstants,
   importSpyroOutputExcel,
   importSpyroOutputExcelYield,
+  importSpyroOutputExcelYieldNONNMD,
   exportSpyroOutputExcel,
+  exportSpyroOutputExcelYieldNONNMD,
   exportSpyroOutputExcelYield,
+
   importSpyroInputExcel,
   exportSpyroInputExcel,
   getConfigurationExcel,
@@ -90,18 +93,28 @@ export const DataService = {
   getIbr,
   //saveAnnualProduction,
   getIbrSdTa,
+  getIbrSdTaNMD,
   getIbrScreen3,
+  getIbrScreen3NMD,
   saveCrackerRunLength,
+  saveCrackerRunLengthNMD,
   getRunLengthExcel,
+  getRunLengthExcelNMD,
   saveRunLengthExcel,
+  saveRunLengthExcelNMD,
   handleCalculateDecokingActivities,
   handleCalculateSdTaActivities,
   getSlowDownPlantDataTab,
   postIbr,
+  postIbrNMD,
   getSpyroOutputDataYield,
+  getSpyroOutputDataYieldNONNMD,
+  saveSpyroOutputYieldNONNMD,
   saveSpyroOutputYield,
   getCrackerNextYearParameters,
+  getCrackerNextYearParametersNMD,
   getCrackerNextYearData,
+  getCrackerNextYearDataNMD,
   calculateNormsHistorianValues,
 
   plantContributionPlanLastFourYears,
@@ -117,9 +130,11 @@ export const DataService = {
   exportShutdownNonProductWise,
   exportShutdownNonProduct,
   slowdownDetailsExport,
+  ExportSlowdownDetailsPTADMD,
   ExportSlowdownDetailsEOE,
   slowdownDetailsElastomerExport,
   ImportSlowdownDetails,
+  ImportSlowdownPTADMDDetails,
   ImportSlowdownDetailsEOE,
   ImportSlowdownElastomerDetails,
   getConfigurationExcelType,
@@ -131,6 +146,8 @@ export const DataService = {
   getConsumptionNorms,
   dropdownValues,
   slowdownconsumptionExport,
+  slowdownconsumptionExportVCM,
+  saveSlowdownNormsExcel,
   getRevision,
   updateRevision,
   getDataTeamPlant,
@@ -143,6 +160,8 @@ export const DataService = {
   ExportPeopleInitiative,
   ImportPlantTeamExcel,
   ImportPeopleInitiativeExcel,
+  dropdownValuesDMD,
+  dropdownValueSlowdown,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -1695,7 +1714,41 @@ async function importSpyroOutputExcelYield(
   }
 }
 
-async function exportSpyroOutputExcel(keycloak, mode, PLANT_ID, AOP_YEAR) {
+async function importSpyroOutputExcelYieldNONNMD(
+  file,
+  keycloak,
+  mode,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/yield-import-dmd?plantId=${PLANT_ID}&year=${AOP_YEAR}&mode=${encodeURIComponent(mode)}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp) // assuming `json()` handles response properly
+  } catch (e) {
+    console.error('Error importing Optimizer Input Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function exportSpyroOutputExcel(
+  keycloak,
+  mode,
+  PLANT_ID,
+  AOP_YEAR,
+  ExcelName,
+) {
   const url = `${Config.CaseEngineUrl}/task/spyro-output-export-excel?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&mode=${encodeURIComponent(mode)}`
 
   const headers = {
@@ -1718,7 +1771,7 @@ async function exportSpyroOutputExcel(keycloak, mode, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `Optimizer_Output_${mode || 'Export'}.xlsx`
+    a.download = `${ExcelName}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -1729,7 +1782,13 @@ async function exportSpyroOutputExcel(keycloak, mode, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function exportSpyroOutputExcelYield(keycloak, mode, PLANT_ID, AOP_YEAR) {
+async function exportSpyroOutputExcelYield(
+  keycloak,
+  mode,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
   const url = `${Config.CaseEngineUrl}/task/yield-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&mode=${encodeURIComponent(mode)}`
 
   const headers = {
@@ -1752,7 +1811,47 @@ async function exportSpyroOutputExcelYield(keycloak, mode, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `SpyroOutput_${mode || 'Export'}.xlsx`
+    a.download = `${EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Optimizer Input Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportSpyroOutputExcelYieldNONNMD(
+  keycloak,
+  mode,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/yield-export-dmd?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&mode=${encodeURIComponent(mode)}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_NAME}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -1784,7 +1883,13 @@ async function importSpyroInputExcel(file, keycloak, mode, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function exportSpyroInputExcel(keycloak, mode, PLANT_ID, AOP_YEAR) {
+async function exportSpyroInputExcel(
+  keycloak,
+  mode,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+) {
   const url = `${Config.CaseEngineUrl}/task/spyro-input-export-excel?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&mode=${encodeURIComponent(mode)}`
 
   const headers = {
@@ -1807,7 +1912,7 @@ async function exportSpyroInputExcel(keycloak, mode, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = `Optimizer_Input_${mode || 'Export'}.xlsx`
+    a.download = `${EXCEL_NAME}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2076,8 +2181,45 @@ async function getIbrSdTa(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+
+async function getIbrSdTaNMD(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/decoking-activities/ibr-nmd?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 async function postIbr(PLANT_ID, data, keycloak, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/decoking-activities/ibr?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function postIbrNMD(PLANT_ID, data, keycloak, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/decoking-activities/ibr-nmd?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2110,6 +2252,22 @@ async function getIbrScreen3(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+
+async function getIbrScreen3NMD(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/decoking-activities-nmd?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=RunLength`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 async function saveCrackerRunLength(PLANT_ID, data, keycloak, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/decoking-activities/run-length?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
@@ -2129,7 +2287,32 @@ async function saveCrackerRunLength(PLANT_ID, data, keycloak, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-async function getRunLengthExcel(keycloak, PLANT_ID, AOP_YEAR) {
+
+async function saveCrackerRunLengthNMD(PLANT_ID, data, keycloak, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/decoking-activities/run-length-nmd?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getRunLengthExcel(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  RUN_LENGTH_EXCEL_NAME,
+) {
   const url = `${Config.CaseEngineUrl}/task/run-length-export-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}&reportType=RunLength`
   const headers = {
     'Content-Type': 'application/json',
@@ -2148,7 +2331,42 @@ async function getRunLengthExcel(keycloak, PLANT_ID, AOP_YEAR) {
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Run-Length.xlsx' // Filename to save
+    a.download = `${RUN_LENGTH_EXCEL_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error Editing Config data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function getRunLengthExcelNMD(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  RUN_LENGTH_EXCEL_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/run-length-export-excel-nmd?year=${AOP_YEAR}&plantId=${PLANT_ID}&reportType=RunLength`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${RUN_LENGTH_EXCEL_NAME}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -2160,6 +2378,30 @@ async function getRunLengthExcel(keycloak, PLANT_ID, AOP_YEAR) {
 }
 async function saveRunLengthExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/run-length-import-excel?year=${AOP_YEAR}&plantId=${PLANT_ID}&reportType=RunLength`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    if (!resp.ok) {
+      throw new Error(`Failed to edit data: ${resp.status} ${resp.statusText}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error Editing RunlLength data:', e)
+    return Promise.reject(e)
+  }
+}
+
+async function saveRunLengthExcelNMD(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/run-length-import-excel-nmd?year=${AOP_YEAR}&plantId=${PLANT_ID}&reportType=RunLength`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -2267,8 +2509,60 @@ async function getSpyroOutputDataYield(
   }
 }
 
+async function getSpyroOutputDataYieldNONNMD(
+  keycloak,
+  mode,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/spyro-output/yield-dmd` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch spyro-output data', e)
+    return Promise.reject(e)
+  }
+}
+
 async function saveSpyroOutputYield(payload, keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/spyro-output/yield?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveSpyroOutputYieldNONNMD(
+  payload,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/spyro-output/yield-dmd?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -2313,6 +2607,33 @@ async function getCrackerNextYearParameters(
     return Promise.reject(e)
   }
 }
+
+async function getCrackerNextYearParametersNMD(
+  keycloak,
+  date,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/next-year/configuration-nmd` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&startDate=${encodeURIComponent(date)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch spyro-output data', e)
+    return Promise.reject(e)
+  }
+}
 async function getCrackerNextYearData(keycloak, qParams, PLANT_ID, AOP_YEAR) {
   const NEXT_AOP_YEAR = AOP_YEAR?.replace(
     /(\d{4})-(\d{2})/,
@@ -2328,6 +2649,44 @@ async function getCrackerNextYearData(keycloak, qParams, PLANT_ID, AOP_YEAR) {
 
   const url =
     `${Config.CaseEngineUrl}/task/next-year/entry` +
+    `?year=${encodeURIComponent(NEXT_AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    extraQueryString
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch next-year data', e)
+    return Promise.reject(e)
+  }
+}
+async function getCrackerNextYearDataNMD(
+  keycloak,
+  qParams,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const NEXT_AOP_YEAR = AOP_YEAR?.replace(
+    /(\d{4})-(\d{2})/,
+    (_, a, b) => `${+a + 1}-${String((+b + 1) % 100).padStart(2, '0')}`,
+  )
+
+  const extraQueryString = Object.entries(qParams)
+    .map(
+      ([key, value]) =>
+        `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+    )
+    .join('')
+
+  const url =
+    `${Config.CaseEngineUrl}/task/next-year/entry-nmd` +
     `?year=${encodeURIComponent(NEXT_AOP_YEAR)}` +
     `&plantId=${encodeURIComponent(PLANT_ID)}` +
     extraQueryString
@@ -2681,6 +3040,32 @@ export async function ImportSlowdownDetails(file, keycloak, plantId, year) {
     return Promise.reject(e)
   }
 }
+export async function ImportSlowdownPTADMDDetails(
+  file,
+  keycloak,
+  plantId,
+  year,
+) {
+  const maintenanceTypeName = 'Slowdown'
+  const url = `${Config.CaseEngineUrl}/task/slowdown-import-non-product-dmd?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return await resp.json()
+  } catch (e) {
+    console.error('Error importing Slowdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
 
 export async function ImportSlowdownDetailsEOE(file, keycloak, plantId, year) {
   const maintenanceTypeName = 'Slowdown'
@@ -2739,6 +3124,42 @@ export async function slowdownDetailsExport(
 ) {
   const maintenanceTypeName = 'Slowdown'
   const url = `${Config.CaseEngineUrl}/task/slowdown-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_EXPORT_TITLE}_Slowdown_Activities.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Slowdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+
+export async function ExportSlowdownDetailsPTADMD(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+) {
+  const maintenanceTypeName = 'Slowdown'
+  const url = `${Config.CaseEngineUrl}/task/slowdown-export-non-product-dmd?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}&maintenanceTypeName=${encodeURIComponent(maintenanceTypeName)}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -2992,6 +3413,40 @@ async function dropdownValues(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+
+async function dropdownValuesDMD(keycloak, PLANT_ID, AOP_YEAR) {
+  // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/shutdown-description?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function dropdownValueSlowdown(keycloak, PLANT_ID, AOP_YEAR) {
+  // const url = `${Config.CaseEngineUrl}/task/description-drpdwn?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/slowdown-description?plantId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 export async function slowdownconsumptionExport(keycloak, plantId, year) {
   const url = `${Config.CaseEngineUrl}/task/slowdown-consumption-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
   const headers = {
@@ -3021,7 +3476,75 @@ export async function slowdownconsumptionExport(keycloak, plantId, year) {
     return Promise.reject(e)
   }
 }
+export async function slowdownconsumptionExportVCM(
+  keycloak,
+  plantId,
+  year,
+  gradeId,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/export-slowdown-consumption?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}` +
+    (gradeId ? `&gradeId=${encodeURIComponent(gradeId)}` : '')
 
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'Slowdown_consumption.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Slowdown Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveSlowdownNormsExcel(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/import-slowdown-consumption?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
 async function getRevision(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/configuration-version?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {

@@ -2,10 +2,11 @@ legend {
   width: auto;
 }
 header {
-  background-color: #1d3665 !important;
-  background-image: none !important; /* Ensures the previous gradient is fully removed */
-  box-shadow: 0 2px 12px rgba(5, 10, 80, 0.45) !important;
-  color: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06) !important;
+  border-bottom: 1px solid #e3e8ef !important;
+  color: #2c3e50 !important;
 }
 
 .css-s857sy-MuiInputBase-input-MuiOutlinedInput-input {

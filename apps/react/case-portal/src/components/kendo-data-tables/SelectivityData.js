@@ -48,6 +48,8 @@ const SelectivityData = (props) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const SiteName = siteObject?.name
+  const lowerSiteName = SiteName?.toLowerCase()
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
@@ -503,6 +505,15 @@ const SelectivityData = (props) => {
   if (props?.configType == 'PIO Impact' && lowerVertName == 'pta') {
     FORMATE_VALUE = '{0:0.000}'
   }
+  if (
+    (props?.configType == 'Constant' ||
+      props?.configType == 'PIO Impact' ||
+      props?.configType == 'Configuration' ||
+      props?.configType == 'Report Manual Entry') &&
+    lowerVertName == 'vcm' 
+  ) {
+    FORMATE_VALUE = '{0:0.000}'
+  }
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,
@@ -544,7 +555,7 @@ const SelectivityData = (props) => {
       showLoad: true,
       allAction: true,
 
-      showTitleNameBusiness: false,
+      showTitleNameBusiness: true,
       titleName:
         props?.currentTabDisplayName === 'Report Manual Entry'
           ? `${props?.currentTabDisplayName} (${prevYearFormatted})`
@@ -559,6 +570,7 @@ const SelectivityData = (props) => {
       // marginTop: props?.configType === 'cracker_configuration' ? true : false,
       marginTop: false,
       isHeight: lowerVertName !== 'meg' && props?.rows?.length > 10,
+      titleNameExtra: props?.configType === 'ContineGradeChange' ? true : false,
     },
     isOldYear,
   )

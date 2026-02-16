@@ -3,6 +3,7 @@ import crackerColumns from '../../../assets/kendo_config_cracker_coldefs.json'
 import cracker_composition from '../../../assets/kendo_config_cracker_composition.json'
 import cracker_constants from '../../../assets/kendo_config_cracker_constants_coldefs.json'
 import cracker_yield from '../../../assets/kendo_config_cracker_yield_coldefs.json'
+import cracker_yield_dmd from '../../../assets/kendo_config_cracker_yield_dmd_coldefs.json'
 import disContineGradeChange from '../../../assets/kendo_config_disContineGradeChange.json'
 import productionColumnsConstants from '../../../assets/kendo_config_meg constants.json'
 import productionColumns from '../../../assets/kendo_config_meg.json'
@@ -11,6 +12,8 @@ import productionColumnsPE2 from '../../../assets/kendo_config_pe2.json'
 import colDefsShutdownRate from '../../../assets/kendo_config_pe3.json'
 import productionColumnsPE5 from '../../../assets/kendo_config_pe5.json'
 import pioImpactColumns from '../../../assets/kendo_config_pio_impact.json'
+
+import reportManualEntry from '../../../assets/kendo_config_report_mannual_entry.json'
 
 const getConfigByType = (configType) => {
   switch (configType) {
@@ -54,13 +57,15 @@ const getConfigByType = (configType) => {
       return cracker_constants
     case 'cracker_yield':
       return cracker_yield
+    case 'cracker_yield_dmd':
+      return cracker_yield_dmd
     case 'ContineGradeChange':
       return contineGradeChange
     case 'DisContineGradeChange':
       return disContineGradeChange
 
     case 'Report Manual Entry':
-      return disContineGradeChange
+      return reportManualEntry
 
     default:
       return productionColumns
@@ -74,8 +79,6 @@ const getEnhancedAOPColDefs = ({
   FORMATE_VALUE,
 }) => {
   var config = []
-
-  // console.log('configType', configType)
 
   if (configType == 'grades') {
     config = [
@@ -138,6 +141,23 @@ const getEnhancedAOPColDefs = ({
           align: 'right',
           type: 'negativeNumber',
           format: FORMATE_VALUE,
+        }
+      }
+
+      return col
+    })
+  } else if (configType == 'cracker_yield_dmd') {
+    enhancedColDefs = config.map((col) => {
+      if (headerMap && headerMap[col.title]) {
+        return {
+          ...col,
+          title: headerMap[col.title],
+          align: 'right',
+          type: 'number',
+          format: FORMATE_VALUE,
+          widthT: 200,
+          fixedWidth: 200,
+          width: 200,
         }
       }
 

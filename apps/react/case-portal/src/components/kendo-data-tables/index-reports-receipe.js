@@ -383,7 +383,8 @@ const KendoDataTablesReciepe = ({
   const CustomRow = useCallback(
     ({ dataItem, className, ...rest }) => {
       const isDisabled =
-        !dataItem.isEditable && dataItem?.isEditable !== undefined
+        READ_ONLY ||
+        (!dataItem.isEditable && dataItem?.isEditable !== undefined)
       const rowClassName = isDisabled ? `custom-disabled-row` : className
       return (
         <tr {...rest?.trProps} className={rowClassName}>
@@ -623,7 +624,7 @@ const KendoDataTablesReciepe = ({
                     variant='contained'
                     component='span'
                     className='btn-import'
-                    disabled={isButtonDisabled}
+                    disabled={isButtonDisabled || READ_ONLY}
                   >
                     Import
                   </Button>

@@ -38,6 +38,11 @@ const ProductionNorms = ({ permissions }) => {
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
+
+  const PLANT_NAME_UPPERCASE = plantObject?.name
+  const SITE_NAME_UPPERCASE = siteObject?.name
+  const VERTICAL_NAME_UPPERCASE = verticalObject?.name
+
   const AOP_YEAR = year?.selectedYear
 
   const isOldYear = false
@@ -46,6 +51,7 @@ const ProductionNorms = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase()
   const plantName = plantObject?.name?.toLowerCase()
   const SITE_NAME_LOWERCASE = siteObject?.name?.toLowerCase()
+  const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
 
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
@@ -761,7 +767,8 @@ const ProductionNorms = ({ permissions }) => {
     }
   }, [PLANT_ID, oldYear, yearChanged, keycloak, selectedUnit])
 
-  const valueFormat = ValueFormatterProduction()
+  const valueFormat_ = ValueFormatterProduction()
+  const valueFormat = IS_VCM ? '{0:0.000}' : valueFormat_
 
   const productionColumns = getEnhancedColDefs({
     headerMap,
@@ -865,7 +872,7 @@ const ProductionNorms = ({ permissions }) => {
           // downloadExcelBtn: lowerVertName === 'pta'
           // ? true
           // : false,
-          ExcelName: `${lowerVertName}_Month wise Production plan`,
+          ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan`,
           unitForExcelToadd:
             lowerVertName === 'cracker'
               ? selectedUnit || 'MT/Month'
@@ -896,7 +903,8 @@ const ProductionNorms = ({ permissions }) => {
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       downloadExcelBtnFromUI:
         lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
-      ExcelName: `${lowerVertName}_Production Target`,
+      ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan (By Products)`,
+
       customHeight: permissions?.customHeight,
     },
     isOldYear,

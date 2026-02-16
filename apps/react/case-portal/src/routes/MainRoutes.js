@@ -34,7 +34,6 @@ import { CaseList } from 'views/caseList/caseList'
 import { CaseDefList } from 'views/management/caseDef/caseDefList/caseDefList'
 import { FormList } from 'views/management/form/formList'
 import { ProcessDefList } from 'views/management/processDef/processDefList'
-
 import { QueueList } from 'views/management/queue/queueList'
 import { RecordTypeList } from 'views/management/recordType/recordTypeList'
 import { TaskList } from 'views/taskList/taskList'
@@ -64,18 +63,44 @@ import FeedStockAvailability from 'components/kendo-data-tables/FeedStockavailab
 import TurnaroundPlanTable from 'components/kendo-data-tables/TurnaroundPlanTable'
 import NormComparisonReport from 'components/kendo-data-tables/NormComparisonReport'
 //CPP
-import Inputs from 'components/phase-two/CPP/Inputs/index'
-import PlantRequirement from 'components/phase-two/CPP/PlantRequirement'
-import FixedConsumption from 'components/phase-two/CPP/FixedConsumption'
-import Norms from 'components/phase-two/CPP/Norms'
+import Inputs from 'components/aop-phase-two/cpp/Inputs/index'
+import PlantRequirement from 'components/aop-phase-two/cpp/PlantRequirement'
+import FixedConsumption from 'components/aop-phase-two/cpp/FixedConsumption'
+import Norms from 'components/aop-phase-two/cpp/Norms'
 
 // TCS
 
-import TcsOutput from 'components/phase-two/TCS/TcsOutput/index'
-import PimsOutput from 'components/phase-two/TCS/PimsOutput/PimsOutput'
-import TcsInput from 'components/phase-two/TCS/TcsInput/index'
+import TcsOutput from 'components/aop-phase-two/tcs/TcsOutput/index'
+import PimsOutput from 'components/aop-phase-two/tcs/PimsOutput/PimsOutput'
+import TcsInput from 'components/aop-phase-two/tcs/TcsInput/index'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
+import Summary from 'components/aop-phase-two/cpp/Summary/index'
+import SenderReceiverMapping from 'components/aop-phase-two/cpp/SenderReceiverMapping'
+import ProductionNormsBasis from 'components/aop-phase-two/vgoht/production-norms-basis/index'
+import ShutdownActivities from 'components/aop-phase-two/vgoht/shutdown-activities/index'
+import SlowdownActivities from 'components/aop-phase-two/vgoht/slowdown-activities/index'
+import ProductionTarget from 'components/aop-phase-two/vgoht/production-target/index'
+import NetProductionHours from 'components/aop-phase-two/vgoht/net-production-hours/index'
+import MonthwiseProductionPlan from 'components/aop-phase-two/vgoht/monthwise-production-plan/index'
+import SteadyStateConsumption from 'components/aop-phase-two/vgoht/steady-state-consumption/index'
+import ShutdownConsumption from 'components/aop-phase-two/vgoht/shutdown-consumption/index'
+import SlowdownConsumption from 'components/aop-phase-two/vgoht/slowdown-consumption/index'
+import OverallAopConsumption from 'components/aop-phase-two/vgoht/overall-aop-consumption/index'
+import SiteBudgetSummary from 'components/kendo-data-tables/SiteBudgetSummary'
+import QualityPackagingBasis from 'components/data-tables/Reports/QualityPackagingBasis'
+
+//MISSING ROUTES PHSE-II
+import ProductionNormsBasisCrude from 'components/aop-phase-two/crude/production-norms-basis/index'
+import ShutdownActivitiesCrude from 'components/aop-phase-two/crude/shutdown-activities/index'
+import SlowdownActivitiesCrude from 'components/aop-phase-two/crude/slowdown-activities/index'
+import ProductionTargetCrude from 'components/aop-phase-two/crude/production-target/index'
+import NetProductionHoursCrude from 'components/aop-phase-two/crude/net-production-hours/index'
+import MonthwiseProductionPlanCrude from 'components/aop-phase-two/crude/monthwise-production-plan/index'
+import SteadyStateConsumptionCrude from 'components/aop-phase-two/crude/steady-state-consumption/index'
+import ShutdownConsumptionCrude from 'components/aop-phase-two/crude/shutdown-consumption/index'
+import SlowdownConsumptionCrude from 'components/aop-phase-two/crude/slowdown-consumption/index'
+import OverallAopConsumptionCrude from 'components/aop-phase-two/crude/overall-aop-consumption/index'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -206,17 +231,9 @@ export const MainRoutes = (
       },
 
       {
-        path: 'production-norms-plan',
+        path: 'tcs',
         children: [
-          {
-            path: 'business-demand',
-            element: (
-              <PrivateRoute routeId='business-demand'>
-                <BusinessDemand />
-              </PrivateRoute>
-            ),
-          },
-
+          //TCS Started
           {
             path: 'tcs-input',
             element: (
@@ -238,6 +255,21 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='pims-output'>
                 <PimsOutput />
+              </PrivateRoute>
+            ),
+          },
+        ],
+        //TCS Ended],
+      },
+
+      {
+        path: 'production-norms-plan',
+        children: [
+          {
+            path: 'business-demand',
+            element: (
+              <PrivateRoute routeId='business-demand'>
+                <BusinessDemand />
               </PrivateRoute>
             ),
           },
@@ -400,6 +432,89 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          //Vertical VGOHT Started
+          {
+            path: 'production-norms-basis',
+            element: (
+              <PrivateRoute routeId='production-norms-basis'>
+                <ProductionNormsBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-activities',
+            element: (
+              <PrivateRoute routeId='shutdown-activities'>
+                <ShutdownActivities />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-activities',
+            element: (
+              <PrivateRoute routeId='slowdown-activities'>
+                <SlowdownActivities />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'production-target',
+            element: (
+              <PrivateRoute routeId='production-target'>
+                <ProductionTarget />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs',
+            element: (
+              <PrivateRoute routeId='net-production-hrs'>
+                <NetProductionHours />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan'>
+                <MonthwiseProductionPlan />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption'>
+                <SteadyStateConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption'>
+                <ShutdownConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-consumption',
+            element: (
+              <PrivateRoute routeId='slowdown-consumption'>
+                <SlowdownConsumption />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption'>
+                <OverallAopConsumption />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical VGOHT Ended
           {
             path: 'quality-packaging-norms',
             element: (
@@ -408,6 +523,89 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+
+          //Vertical CRUDE Started
+          {
+            path: 'production-norms-basis-crude',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-crude'>
+                <ProductionNormsBasisCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-activities-crude',
+            element: (
+              <PrivateRoute routeId='shutdown-activities-crude'>
+                <ShutdownActivitiesCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-activities-crude',
+            element: (
+              <PrivateRoute routeId='slowdown-activities-crude'>
+                <SlowdownActivitiesCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'production-target-crude',
+            element: (
+              <PrivateRoute routeId='production-target-crude'>
+                <ProductionTargetCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-crude',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-crude'>
+                <NetProductionHoursCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-crude',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-crude'>
+                <MonthwiseProductionPlanCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-crude',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-crude'>
+                <SteadyStateConsumptionCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'shutdown-consumption-crude',
+            element: (
+              <PrivateRoute routeId='shutdown-consumption-crude'>
+                <ShutdownConsumptionCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'slowdown-consumption-crude',
+            element: (
+              <PrivateRoute routeId='slowdown-consumption-crude'>
+                <SlowdownConsumptionCrude />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'overall-aop-consumption-crude',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-crude'>
+                <OverallAopConsumptionCrude />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical CRUDE Ended
         ],
       },
 
@@ -542,6 +740,15 @@ export const MainRoutes = (
           },
 
           {
+            path: 'quality-packaging-basis',
+            element: (
+              <PrivateRoute routeId='quality-packaging-basis'>
+                <QualityPackagingBasis />
+              </PrivateRoute>
+            ),
+          },
+
+          {
             path: 'monthwise-raw-material',
             element: <MonthwiseRawMaterial />,
           },
@@ -588,6 +795,22 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='inputs'>
                 <Inputs />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'summary',
+            element: (
+              <PrivateRoute routeId='summary'>
+                <Summary />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'sender-receiverMapping',
+            element: (
+              <PrivateRoute routeId='sender-receiverMapping'>
+                <SenderReceiverMapping />
               </PrivateRoute>
             ),
           },
@@ -644,6 +867,15 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='plant-budget-summary'>
                 <PlantBudgetSummary />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'site-budget-summary',
+            element: (
+              <PrivateRoute routeId='site-budget-summary'>
+                <SiteBudgetSummary />
               </PrivateRoute>
             ),
           },

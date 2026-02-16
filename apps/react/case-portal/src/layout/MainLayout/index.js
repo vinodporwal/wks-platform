@@ -8,6 +8,7 @@ import Header from './Header'
 import { openDrawer } from 'store/reducers/menu'
 import { useMenuContext } from 'menu/menuProvider'
 import StepperNav from 'components/Utilities/StepperNav'
+import UtilityDetails from 'components/Utilities/UtilityDetails'
 
 const MainLayout = ({ keycloak, authenticated }) => {
   const dispatch = useDispatch()
@@ -58,28 +59,21 @@ const MainLayout = ({ keycloak, authenticated }) => {
         {/* <Toolbar variant='dense' /> */}
 
         {location.pathname.startsWith('/production-norms-plan') && (
-          <Box
-            sx={{
-              border: '1px solid rgba(0,0,0,0.12)',
-              m: 0,
-              p: 0,
-              display: 'flex',
-              alignItems: 'center',
-              ml: '8px',
-              mr: '5px',
-              backgroundColor: `${BG_COLOR}`,
-              boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
-              borderRadius: '6px',
-            }}
-          >
+          <Box>
             <StepperNav />
+          </Box>
+        )}
+
+        {location.pathname.startsWith('/production-norms-plan') && (
+          <Box>
+            <UtilityDetails navigation={menu} />
           </Box>
         )}
 
         {/* <Toolbar variant='dense' /> */}
         <Box sx={{ height: 4 }} />
-
-        <Box
+        {/* HIDE Breadcrumbs */}
+        {/* <Box
           sx={{
             m: 0,
             p: 0,
@@ -95,7 +89,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
           }}
         >
           <Breadcrumbs variant='dense' navigation={menu} divider={false} />
-        </Box>
+        </Box> */}
 
         {/* Page content */}
         <Box className='outlet-wrapper'>

@@ -95,19 +95,20 @@ const Profile = ({ keycloak }) => {
         aria-haspopup='true'
         onClick={handleToggle}
       >
-        <Stack direction='row' spacing={2} alignItems='center' sx={{ p: 0.5 }}>
+        <Stack direction='row' spacing={2} alignItems='center'>
           <Avatar
+            src={avatar2}
+            alt='User'
             sx={{
-              width: 32,
-              height: 32,
-              fontSize: 14,
-              fontWeight: 700,
-              bgcolor: '#ff8d00',
+              width: 40,
+              height: 40,
+              border: '1px solid #d6dde6',
+              bgcolor: '#f1f3f6',
             }}
-          >
-            {keycloak?.idTokenParsed?.given_name?.charAt(0)?.toUpperCase()}
-          </Avatar>
-          <Typography
+          />
+
+          {/* HIDE USER NAME */}
+          {/* <Typography
             variant='subtitle2'
             sx={{
               color: 'white',
@@ -116,7 +117,7 @@ const Profile = ({ keycloak }) => {
             }}
           >
             {keycloak.idTokenParsed.given_name}
-          </Typography>
+          </Typography> */}
         </Stack>
       </ButtonBase>
       <Popper
@@ -153,7 +154,7 @@ const Profile = ({ keycloak }) => {
               >
                 <ClickAwayListener onClickAway={handleClose}>
                   <MainCard elevation={0} border={false} content={false}>
-                    <CardContent sx={{ px: 2.5, pt: 3 }}>
+                    <CardContent sx={{ px: 1, pt: 1 }}>
                       <Grid
                         container
                         justifyContent='space-between'
@@ -168,7 +169,7 @@ const Profile = ({ keycloak }) => {
                             <Avatar
                               alt='profile user'
                               src={avatar2}
-                              sx={{ width: 32, height: 32 }}
+                              // sx={{ width: 16, height: 16 }}
                             />
                             <Stack>
                               <Typography variant='h6'>

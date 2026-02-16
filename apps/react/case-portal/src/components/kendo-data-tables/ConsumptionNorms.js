@@ -59,6 +59,8 @@ const ConsumptionNorms = () => {
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const lowerPlantName = plantObject?.name?.toLowerCase()
 
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
@@ -401,6 +403,8 @@ const ConsumptionNorms = () => {
   const productionColumns = getEnhancedColDefs({
     headerMap,
     lowerVertName,
+    lowerSiteName,
+    lowerPlantName,
     valueFormat,
   })
 
