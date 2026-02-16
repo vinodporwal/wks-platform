@@ -15,6 +15,7 @@ public interface MaintenanceCalculatedDataService {
 	
 	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedData(String plantId, String year);
 	public AOPMessageVM getMaintenanceReportURLs(String plantId, String year,String type);
+	public AOPMessageVM getOtherPlants( String plantId,  String year);
 	public AOPMessageVM getMaintenanceDataForCracker( String plantId,  String year);
 	public AOPMessageVM updateMaintenanceDataForCracker( String plantId,  String year, List<Map<String, Object>> payloadList);
 	public AOPMessageVM getBudgetMaintenance( String plantId,  String year,String budgetCategory);
