@@ -1540,8 +1540,12 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			Plants plant = plantsRepository.findById(plantFKId).get();
 			List<ShutdownNormsValueDTO> data=null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			if(vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("DMD")) {
+				data = readDMDShutdownConsumptions(file.getInputStream(), plantFKId, year);
+			}else {
 				data = readShutdownConsumptions(file.getInputStream(), plantFKId, year);
-			
+			}
 			 
 				Map<String,Object> map = saveShutdownNormsData(data);
 				List<ShutdownNormsValueDTO> retrievedList = (List<ShutdownNormsValueDTO>) map.get("data");

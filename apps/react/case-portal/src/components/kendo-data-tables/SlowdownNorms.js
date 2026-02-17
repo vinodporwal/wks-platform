@@ -99,6 +99,7 @@ const SlowdownNorms = () => {
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const IS_PTA = lowerVertName === 'pta'
   const IS_EDC_PLANT = lowerVertName === 'vcm' && plantName === 'edc'
   const saveChanges = React.useCallback(async () => {
     try {
@@ -480,7 +481,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm') {
+      if (lowerVertName === 'vcm' || IS_PTA) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
@@ -512,7 +513,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm') {
+      if (lowerVertName === 'vcm' || IS_PTA) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
@@ -615,9 +616,10 @@ const SlowdownNorms = () => {
       allAction: true,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
-        IS_PE_PP || lowerVertName === 'vcm' ? false : true,
-      uploadExcelBtn: lowerVertName === 'vcm' ? true : false,
-      downloadExcelBtn: IS_PE_PP || lowerVertName === 'vcm' ? true : false,
+        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA ? false : true,
+      uploadExcelBtn: lowerVertName === 'vcm' || IS_PTA ? true : false,
+      downloadExcelBtn:
+        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA ? true : false,
       showG: IS_PE_PP ? true : false,
       marginBottom: IS_PE_PP ? true : false,
 
