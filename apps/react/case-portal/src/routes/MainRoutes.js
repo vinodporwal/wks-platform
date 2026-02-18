@@ -102,6 +102,8 @@ import SteadyStateConsumptionCrude from 'components/aop-phase-two/crude/steady-s
 import ShutdownConsumptionCrude from 'components/aop-phase-two/crude/shutdown-consumption/index'
 import SlowdownConsumptionCrude from 'components/aop-phase-two/crude/slowdown-consumption/index'
 import OverallAopConsumptionCrude from 'components/aop-phase-two/crude/overall-aop-consumption/index'
+import EthyleneBalance from 'components/kendo-data-tables/EthyleneBalance'
+import PropyleneBalance from 'components/kendo-data-tables/PropyleneBalance'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -894,6 +896,24 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='norm-comparison-report'>
                 <NormComparisonReport />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'ethylene-balance',
+            element: (
+              <PrivateRoute routeId='ethylene-balance'>
+                <EthyleneBalance />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'propylene-balance',
+            element: (
+              <PrivateRoute routeId='propylene-balance'>
+                <PropyleneBalance />
               </PrivateRoute>
             ),
           },
