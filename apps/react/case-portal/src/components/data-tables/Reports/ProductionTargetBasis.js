@@ -74,7 +74,7 @@ const ProductionTargetBasis = () => {
             filterable: true,
             filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
             align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-            ...(isNumberCol ? { format: '{0:0.00}' } : {}),
+            ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
           }
@@ -362,7 +362,7 @@ const ProductionTargetBasis = () => {
           variant='contained'
           onClick={exportAllGrids}
           className='btn-save'
-         // disabled={READ_ONLY}
+          // disabled={READ_ONLY}
         >
           Export
         </Button>
