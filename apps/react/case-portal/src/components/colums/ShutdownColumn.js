@@ -83,7 +83,7 @@ export const SlowdownConfigColumns = [
   },
   {
     field: 'durationInMins',
-    title: 'Duration (hrs)',
+    title: 'Duration (Mins)',
     editable: true,
     type: 'number',
   },
