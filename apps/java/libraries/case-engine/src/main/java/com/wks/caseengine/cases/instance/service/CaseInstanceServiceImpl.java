@@ -119,6 +119,7 @@ return changedInstance;
 		commandExecutor.execute(new CreateCaseInstanceCommentCmd(businessKey, comment));
 	}
 
+
 	@Override
 	public void updateComment(final String businessKey, final String commentId, final String body) {
 		commandExecutor.execute(new UpdateCaseInstanceCommentCmd(businessKey, commentId, body));
@@ -130,9 +131,9 @@ return changedInstance;
 	}
 
     @Override
-	@Scheduled(cron = "0 34 14 * * *", zone = "Asia/Kolkata")
-	public void findCasesWithDueDateGreaterThanNow() {  
-
+	@Scheduled(cron = "0 25 16 * * *", zone = "Asia/Kolkata")
+	public void findCasesWithDueDateGreaterThanNow() {
+		
 	commandContext.getSecurityContextTenantHolder().setTenantId(dbTenant);
 	
 	List<CaseInstance> cases = commandExecutor.execute(new findOverdueCaseInstanceCmd());
