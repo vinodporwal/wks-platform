@@ -130,7 +130,7 @@ return changedInstance;
 	}
 
     @Override
-//	@Scheduled(cron = "0 34 14 * * *", zone = "Asia/Kolkata")
+	@Scheduled(cron = "0 34 14 * * *", zone = "Asia/Kolkata")
 	public void findCasesWithDueDateGreaterThanNow() {  
 
 	commandContext.getSecurityContextTenantHolder().setTenantId(dbTenant);
