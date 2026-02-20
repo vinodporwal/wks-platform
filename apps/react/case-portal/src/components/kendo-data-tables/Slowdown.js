@@ -28,6 +28,8 @@ import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+
+import ElastomerSlowdown from './ElastomerSlowdown'
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -1454,7 +1456,7 @@ const SlowDown = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {lowerVertName === 'meg' && (
+      {(lowerVertName === 'meg' || lowerVertName === 'elastomer') && (
         <Box style={{ margin: 0, padding: 0 }}>
           <Tabs
             value={selectedTab}
@@ -1478,7 +1480,7 @@ const SlowDown = ({ permissions }) => {
             />
 
             <Tab
-              label='Configuration'
+              label='Slowdown History Config'
               sx={{
                 border: '1px solid #ADD8E6',
                 borderBottom: '1px solid #ADD8E6',
@@ -1491,6 +1493,7 @@ const SlowDown = ({ permissions }) => {
         </Box>
       )}
 
+      {/* TAB 1 - SAME FOR MEG + ELASTOMER */}
       {selectedTab === 0 && (
         <KendoDataTables
           modifiedCells={modifiedCells}
@@ -1532,7 +1535,8 @@ const SlowDown = ({ permissions }) => {
         />
       )}
 
-      {selectedTab === 1 && (
+      {/* TAB 2 FOR MEG (EXISTING CONFIG GRID) */}
+      {selectedTab === 1 && lowerVertName === 'meg' && (
         <KendoDataTables
           modifiedCells={modifiedCells2}
           setModifiedCells={setModifiedCells2}
@@ -1567,6 +1571,11 @@ const SlowDown = ({ permissions }) => {
           groupBy='Particulars'
           allRedCell={allRedCell}
         />
+      )}
+
+      {/* TAB 2 FOR ELASTOMER */}
+      {selectedTab === 1 && lowerVertName === 'elastomer' && (
+        <ElastomerSlowdown />
       )}
     </div>
   )

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
-
+import { validateFields } from 'utils/validationUtils'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
@@ -235,11 +235,159 @@ const ElastomerSlowdown = ({ permissions }) => {
         return
       }
 
+      const yearStr = AOP_YEAR
+      let startLimit, endLimit
+      if (yearStr) {
+        const [startYearStr, endYearStr] = yearStr
+          .split('-')
+          .map((y) => y.trim())
+        const startYear = parseInt(startYearStr, 10)
+        const endYear =
+          startYearStr.length === 4 && endYearStr.length === 2
+            ? parseInt(startYearStr.slice(0, 2) + endYearStr, 10)
+            : parseInt(endYearStr, 10)
+        if (!isNaN(startYear) && !isNaN(endYear)) {
+          startLimit = new Date(`${startYear}-04-01T00:00:00`)
+          endLimit = new Date(`${endYear}-03-31T23:59:59`)
+        }
+      }
+
+      // Helper to format date as dd/mm/yyyy
+      // eslint-disable-next-line
+      function formatDateDDMMYYYY(date) {
+        if (!(date instanceof Date) || isNaN(date)) return ''
+        const d = date.getDate().toString().padStart(2, '0')
+        const m = (date.getMonth() + 1).toString().padStart(2, '0')
+        const y = date.getFullYear()
+        return `${d}/${m}/${y}`
+      }
+
+      for (const record of data) {
+        const startDate =
+          record.maintStartDateTime instanceof Date
+            ? record.maintStartDateTime
+            : new Date(record.maintStartDateTime)
+        const endDate =
+          record.maintEndDateTime instanceof Date
+            ? record.maintEndDateTime
+            : new Date(record.maintEndDateTime)
+
+        // Validate date format: dd/mm/yyyy (by parsing and checking)
+        if (
+          startLimit &&
+          endLimit &&
+          (!startDate ||
+            !endDate ||
+            isNaN(startDate) ||
+            isNaN(endDate) ||
+            startDate < startLimit ||
+            startDate > endLimit ||
+            endDate < startLimit ||
+            endDate > endLimit)
+        ) {
+          record.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year. `,
+            severity: 'error',
+          })
+          return
+        }
+      }
+
+      // Select required fields based on vertical
+      const requiredFields = [
+        'description',
+        'durationInMins',
+        'remarks',
+        'rate',
+      ]
+
+      // Missing required fields
+      for (const record of data) {
+        for (const field of requiredFields) {
+          const value = record[field]
+          if (
+            value === null ||
+            value === undefined ||
+            (typeof value === 'string' && value.trim() === '')
+          ) {
+            let displayField = field
+            if (field === 'productName1') displayField = 'Particulars'
+            else if (field === 'monthly') displayField = 'Month'
+            record.isError = true
+            setRows((prevRows) =>
+              prevRows.map((row) => {
+                if (row.id === record.id) {
+                  return { ...row, isError: true }
+                }
+                return row
+              }),
+            )
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: `Required field "${displayField}" is missing for "${record.description || 'this record'}".`,
+              severity: 'error',
+            })
+            return
+          }
+        }
+      }
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        data.forEach((r) => (r.isError = true))
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            data.some((d) => d.id === row.id) ? { ...row, isError: true } : row,
+          ),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+
+      // Date required + Start < End check
+
+      for (const record of data) {
+        const startMissing = !record.maintStartDateTime
+        const endMissing = !record.maintEndDateTime
+        if (startMissing || endMissing) {
+          record.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Start Date and End Date are required for all records.',
+            severity: 'error',
+          })
+          return
+        }
+        const startDate =
+          record.maintStartDateTime instanceof Date
+            ? record.maintStartDateTime
+            : new Date(record.maintStartDateTime)
+        const endDate =
+          record.maintEndDateTime instanceof Date
+            ? record.maintEndDateTime
+            : new Date(record.maintEndDateTime)
+        if (startDate && endDate && startDate.getTime() >= endDate.getTime()) {
+          record.isError = true
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: `Start time must be before end time for "${record.description || 'this record'}".`,
+            severity: 'error',
+          })
+          return
+        }
+      }
+
       const payload = data.map((row) => ({
         id: row.idFromApi || null,
         rate: row.rate || 0,
         description: row.description || '',
-        remarks: row.remark || '',
+        remarks: row.remarks || '',
         maintStartDateTime: row.maintStartDateTime
           ? new Date(row.maintStartDateTime).toLocaleDateString('en-CA')
           : null,
@@ -253,12 +401,12 @@ const ElastomerSlowdown = ({ permissions }) => {
     } catch (error) {
       console.log('Error saving changes:', error)
     }
-  }, [modifiedCells])
+  }, [modifiedCells, rows, AOP_YEAR])
 
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return
     if (READ_ONLY) return
-    setCurrentRemark(dataItem.remark || '')
+    setCurrentRemark(dataItem.remarks || '')
     setCurrentRowId(dataItem.id)
     setRemarkDialogOpen(true)
   }
@@ -325,6 +473,7 @@ const ElastomerSlowdown = ({ permissions }) => {
         setRemarkDialogOpen={setRemarkDialogOpen}
         unsavedChangesRef={unsavedChangesRef}
         currentRemark={currentRemark}
+        currentRowId={currentRowId}
         setCurrentRemark={setCurrentRemark}
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={handleDeleteSlowdownConfig}
@@ -333,11 +482,10 @@ const ElastomerSlowdown = ({ permissions }) => {
           deleteButton: true,
           saveBtn: true,
           allAction: true,
-
           downloadExcelBtnFromUI: true,
           ExcelName: `${EXCEL_EXPORT_TITLE}-Slowdown History Config`,
           showTitleNameBusiness: true,
-          titleName: 'Configuration1',
+          titleName: 'Slowdown History Config',
         }}
       />
     </div>
