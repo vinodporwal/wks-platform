@@ -28,7 +28,14 @@ from services.process_demand_service import (
     get_default_process_demands,
     get_combined_demands_for_month
 )
+from services.calculation_log_service import (
+    save_calculation_log, 
+    get_financial_year_month_id,
+    create_parent_execution_log,
+    update_parent_execution_summary
+)
 from database.connection import get_connection
+import time
 
 # ============================================================
 # CONFIGURATION
@@ -191,10 +198,39 @@ class LogCapture:
         self.buffer = StringIO()
 
 
-def save_month_log(output_text, month, year, log_folder):
-    """Save log for a single month."""
-    os.makedirs(log_folder, exist_ok=True)
-    filename = f"month_{year}_{month:02d}_{MONTH_NAMES[month]}.txt"
+def extract_summary_from_log(output_text: str) -> str:
+    """
+    Extract the BUDGET CALCULATION SUMMARY section from the log output.
+    This includes Power Balance, Steam Balance, and Quick Summary sections.
+    """
+    lines = output_text.split('\n')
+    summary_lines = []
+    capturing = False
+    
+    for line in lines:
+        # Start capturing when we see BUDGET CALCULATION SUMMARY
+        if 'BUDGET CALCULATION SUMMARY' in line:
+            capturing = True
+            summary_lines.append(line)
+            continue
+        
+        # Stop capturing when we see the next major section or end markers
+        if capturing:
+            # Stop at certain markers that indicate end of summary
+            if ('UTILITY CONSUMPTION SUMMARY' in line or 
+                'NMD BUDGET FORMAT' in line or
+                'Saving results to database' in line or
+                '=' * 80 in line and len(summary_lines) > 100):  # Long separator after summary
+                break
+            summary_lines.append(line)
+    
+    return '\n'.join(summary_lines) if summary_lines else ""
+
+
+def save_month_log(output_text: str, month: int, year: int, log_folder: str) -> str:
+    """Save the captured output for a single month to a log file."""
+    month_name = MONTH_NAMES[month]
+    filename = f"{year}_{month:02d}_{month_name}.log"
     filepath = os.path.join(log_folder, filename)
     
     with open(filepath, 'w', encoding='utf-8') as f:
@@ -203,18 +239,33 @@ def save_month_log(output_text, month, year, log_folder):
     return filepath
 
 
-def run_single_month(month, year, demands, save_to_db=True):
+def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_calculation_log_enabled=True, parent_execution_id=None):
     """
     Run the model for a single month.
     
     Note: If USD iteration doesn't converge, the model still returns partial results
     which can be saved to the database. The 'converged' flag indicates whether
     the iteration fully converged.
+    
+    Args:
+        month: Month number (1-12)
+        year: Year
+        cpp_plant_id: CPP Plant UUID
+        demands: Demand dictionary
+        save_to_db: Save norms to database
+        save_calculation_log_enabled: Save execution log to ModelCalculationLogs table
+        parent_execution_id: FK to parent execution log (for full year runs)
+    
+    Returns:
+        Dict with calculation result and execution time
     """
+    start_time = time.time()
+    
     try:
         result = calculate_budget_with_iteration(
             month=month,
             year=year,
+            cpp_plant_id=cpp_plant_id,
             lp_process=demands["lp_process"],
             lp_fixed=demands["lp_fixed"],
             mp_process=demands["mp_process"],
@@ -231,10 +282,40 @@ def run_single_month(month, year, demands, save_to_db=True):
             dm_process=demands["dm_process"],
             save_to_db=save_to_db
         )
+        
+        execution_time = time.time() - start_time
+        result["execution_time_seconds"] = execution_time
+        
+        # Save calculation log to database
+        if save_calculation_log_enabled:
+            fy_month_id = get_financial_year_month_id(month, year)
+            if fy_month_id:
+                log_result = save_calculation_log(
+                    month=month,
+                    year=year,
+                    financial_year_month_id=fy_month_id,
+                    calculation_result=result,
+                    execution_time_seconds=execution_time,
+                    parent_execution_id=parent_execution_id
+                )
+                result["calculation_log_saved"] = log_result.get("success", False)
+                result["calculation_log_id"] = log_result.get("log_id")
+                
+                if log_result.get("success"):
+                    print(f"\n[LOG] Calculation log saved: {log_result.get('log_id')}")
+                else:
+                    print(f"\n[LOG WARNING] Failed to save calculation log: {log_result.get('message')}")
+            else:
+                print(f"\n[LOG WARNING] FinancialYearMonth not found for {month}/{year}, skipping log save")
+                result["calculation_log_saved"] = False
+        
         return result
+        
     except Exception as e:
         import traceback
+        execution_time = time.time() - start_time
         error_details = traceback.format_exc()
+        
         print(f"\n{'='*80}")
         print(f"ERROR IN BUDGET CALCULATION")
         print(f"{'='*80}")
@@ -243,19 +324,39 @@ def run_single_month(month, year, demands, save_to_db=True):
         print(f"\nFull Traceback:")
         print(error_details)
         print(f"{'='*80}\n")
-        return {
+        
+        error_result = {
             "overall_success": False,
             "error_type": type(e).__name__,
             "message": str(e),
             "traceback": error_details,
             "converged": False,
             "iterations": 0,
+            "execution_time_seconds": execution_time
         }
+        
+        # Try to save error log
+        if save_calculation_log_enabled:
+            fy_month_id = get_financial_year_month_id(month, year)
+            if fy_month_id:
+                log_result = save_calculation_log(
+                    month=month,
+                    year=year,
+                    financial_year_month_id=fy_month_id,
+                    calculation_result=error_result,
+                    execution_time_seconds=execution_time,
+                    parent_execution_id=parent_execution_id
+                )
+                error_result["calculation_log_saved"] = log_result.get("success", False)
+                error_result["calculation_log_id"] = log_result.get("log_id")
+        
+        return error_result
 
 
 def run_full_financial_year(financial_year: int, cpp_plant_id: str = None, 
                             process_demands=None, save_to_db=True, save_logs=True,
-                            use_db_process: bool = True, use_db_fixed: bool = True):
+                            use_db_process: bool = True, use_db_fixed: bool = True,
+                            save_calculation_logs: bool = True, is_single_month: bool = False):
     """
     Run the budget model for all 12 months of a financial year.
     Both process and fixed demands are fetched dynamically from DB for each month.
@@ -268,6 +369,8 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         save_logs: Whether to save individual month logs
         use_db_process: If True and process_demands is None, fetch from DB
         use_db_fixed: If True, fetch fixed demands from DB
+        save_calculation_logs: If True, save execution logs to ModelCalculationLogs
+        is_single_month: If True, running single month mode (don't save logs)
     
     Returns:
         Dict with summary of all month results
@@ -324,9 +427,21 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         print("FIXED DEMANDS: Using default values")
     print()
     
+    # Create parent execution log if saving logs and not single month
+    parent_execution_id = None
+    if save_calculation_logs and not is_single_month:
+        parent_log_result = create_parent_execution_log(financial_year)
+        if parent_log_result.get("success"):
+            parent_execution_id = parent_log_result.get("parent_id")
+            print(f"[LOG] Parent execution record created: {parent_execution_id}")
+        else:
+            print(f"[LOG WARNING] Failed to create parent execution log: {parent_log_result.get('message')}")
+        print()
+    
     # Results storage
     results = {
         "run_timestamp": run_timestamp,
+        "parent_execution_id": parent_execution_id,
         "use_dynamic_process": use_dynamic_process,
         "use_db_fixed": use_db_fixed,
         "process_demands_override": process_demands if not use_dynamic_process else None,
@@ -335,6 +450,8 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             "total_months": 12,
             "successful": 0,
             "failed": 0,
+            "warning": 0,
+            "total_iterations": 0,
             "total_power_kwh": 0,
             "total_shp_mt": 0,
         }
@@ -379,8 +496,12 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             print(f"  HP Fixed: {month_demands['hp_fixed']:.2f} MT")
             print(f"  SHP Fixed: {month_demands['shp_fixed']:.2f} MT")
             
-            # Run the model
-            result = run_single_month(month, year, month_demands, save_to_db)
+            # Run the model (pass parent_execution_id for logging)
+            result = run_single_month(
+                month, year, cpp_plant_id, month_demands, save_to_db, 
+                save_calculation_log_enabled=(save_calculation_logs and not is_single_month),
+                parent_execution_id=parent_execution_id
+            )
             
             # Restore stdout
             sys.stdout = log_capture.original_stdout
@@ -401,6 +522,18 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 "iterations": iterations_used,
                 "converged": converged,
             }
+            
+            # Track summary statistics
+            results["summary"]["total_iterations"] += iterations_used
+            
+            if success:
+                results["summary"]["successful"] += 1
+            else:
+                errors = result.get("errors", [])
+                if errors:
+                    results["summary"]["failed"] += 1
+                else:
+                    results["summary"]["warning"] += 1
             
             # Extract power generation (even if not converged)
             final_dispatch = usd_result.get("final_dispatch", [])
@@ -432,30 +565,33 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             month_result["records_saved"] = records_saved
             
             if success:
-                results["summary"]["successful"] += 1
-                print(f"\n✓ {month_name} {year}: SUCCESS (Converged)")
+                print(f"\n[OK] {month_name} {year}: SUCCESS (Converged)")
                 print(f"  Iterations: {month_result['iterations']}")
                 print(f"  Total Power: {total_power:,.0f} KWH")
                 print(f"  Total SHP: {total_shp:,.2f} MT")
                 print(f"  Records Saved: {records_saved}")
             else:
-                results["summary"]["failed"] += 1
                 month_result["errors"] = result.get("errors", [])
                 converged = result.get("converged", False)
                 
                 # Still show results even if not converged
-                print(f"\n⚠ {month_name} {year}: {'PARTIAL' if final_dispatch else 'FAILED'}")
+                print(f"\n[WARN] {month_name} {year}: {'PARTIAL' if final_dispatch else 'FAILED'}")
                 print(f"  Converged: {converged}")
                 print(f"  Total Power: {total_power:,.0f} KWH")
                 print(f"  Records Saved: {records_saved}")
                 for error in month_result.get("errors", []):
                     print(f"  Note: {error.get('message', 'Unknown')}")
             
+            # Extract summary section from log output
+            log_output = log_capture.get_output()
+            month_summary = extract_summary_from_log(log_output)
+            month_result["detailed_summary"] = month_summary
+            
             results["months"][f"{year}_{month:02d}"] = month_result
             
             # Save month log
             if save_logs:
-                log_path = save_month_log(log_capture.get_output(), month, year, run_log_folder)
+                log_path = save_month_log(log_output, month, year, run_log_folder)
                 month_result["log_file"] = log_path
         
         except Exception as e:
@@ -468,9 +604,30 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 "success": False,
                 "error": str(e)
             }
-            print(f"\n✗ {month_name} {year}: EXCEPTION - {str(e)}")
+            print(f"\n[ERR] {month_name} {year}: EXCEPTION - {str(e)}")
         
         print()
+    
+    # Update parent execution log with summary
+    if parent_execution_id:
+        total_execution_time = sum(
+            results["months"][key].get("execution_time", 0) 
+            for key in results["months"]
+        )
+        
+        update_result = update_parent_execution_summary(
+            parent_id=parent_execution_id,
+            total_execution_time=total_execution_time,
+            success_count=results["summary"]["successful"],
+            failed_count=results["summary"]["failed"],
+            warning_count=results["summary"]["warning"],
+            total_iterations=results["summary"]["total_iterations"]
+        )
+        
+        if update_result.get("success"):
+            print(f"\n[LOG] Parent execution log updated: {update_result.get('status')}")
+        else:
+            print(f"\n[LOG WARNING] Failed to update parent log: {update_result.get('message')}")
     
     # Print final summary
     print("\n" + "=" * 80)
@@ -478,8 +635,10 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     print("=" * 80)
     print(f"Run completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Total months processed: {results['summary']['total_months']}")
-    print(f"Successful: {results['summary']['successful']}")
-    print(f"Failed: {results['summary']['failed']}")
+    print(f"Months succeeded: {results['summary']['successful']}/12")
+    print(f"Months failed: {results['summary']['failed']}/12")
+    print(f"Months with warnings: {results['summary']['warning']}/12")
+    print(f"Total Iterations: {results['summary']['total_iterations']}")
     print(f"Total Power Generated: {results['summary']['total_power_kwh']:,.0f} KWH")
     print(f"Total SHP Steam: {results['summary']['total_shp_mt']:,.2f} MT")
     print(f"Log folder: {run_log_folder}")
@@ -488,7 +647,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
     summary_path = os.path.join(run_log_folder, "summary.txt")
     with open(summary_path, 'w', encoding='utf-8') as f:
         f.write(f"FULL FINANCIAL YEAR RUN SUMMARY - {fy_label}\n")
-        f.write("=" * 60 + "\n\n")
+        f.write("=" * 120 + "\n\n")
         f.write(f"CPP Plant ID: {cpp_plant_id}\n")
         f.write(f"Run timestamp: {run_timestamp}\n")
         f.write(f"Successful months: {results['summary']['successful']}/12\n")
@@ -496,8 +655,8 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         f.write(f"Total Power: {results['summary']['total_power_kwh']:,.0f} KWH\n")
         f.write(f"Total SHP: {results['summary']['total_shp_mt']:,.2f} MT\n\n")
         
-        f.write("MONTH-BY-MONTH RESULTS:\n")
-        f.write("-" * 60 + "\n")
+        f.write("MONTH-BY-MONTH QUICK RESULTS:\n")
+        f.write("-" * 120 + "\n")
         for key, month_data in results["months"].items():
             status = "✓" if month_data.get("success") else "✗"
             f.write(f"{status} {month_data['month_name']} {month_data['year']}: ")
@@ -506,6 +665,34 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 f.write(f"SHP={month_data.get('total_shp_mt', 0):,.2f} MT\n")
             else:
                 f.write(f"FAILED - {month_data.get('error', 'Unknown')}\n")
+        
+        # Add detailed month-wise summaries
+        f.write("\n\n")
+        f.write("=" * 120 + "\n")
+        f.write("DETAILED MONTH-WISE SUMMARIES\n")
+        f.write("=" * 120 + "\n\n")
+        
+        # Sort months in chronological order (April to March)
+        sorted_months = sorted(results["months"].items(), 
+                              key=lambda x: (x[1]['year'], x[1]['month']) if x[1]['month'] >= 4 else (x[1]['year'], x[1]['month'] + 12))
+        
+        for key, month_data in sorted_months:
+            month_name = month_data['month_name']
+            year = month_data['year']
+            
+            f.write("\n" + "=" * 120 + "\n")
+            f.write(f"{month_name} {year}\n")
+            f.write("=" * 120 + "\n")
+            
+            # Write the detailed summary if available
+            detailed_summary = month_data.get("detailed_summary", "")
+            if detailed_summary:
+                f.write(detailed_summary)
+                f.write("\n")
+            else:
+                f.write(f"No detailed summary available for {month_name} {year}\n")
+                if not month_data.get("success"):
+                    f.write(f"Reason: {month_data.get('error', 'Unknown error')}\n")
     
     print(f"\nSummary saved to: {summary_path}")
     
@@ -537,6 +724,13 @@ Examples:
         type=str, 
         default=None,
         help="CPP Plant ID (GUID). If not provided, uses the first available plant from DB."
+    )
+    
+    parser.add_argument(
+        "--month", 
+        type=int, 
+        default=None,
+        help="Run single month only (1-12). If not specified, runs all 12 months."
     )
     
     parser.add_argument(
@@ -595,6 +789,12 @@ Examples:
     print(f"\nSave to DB: {not args.no_save}")
     print(f"Save logs: {not args.no_logs}")
     
+    # Determine if single month mode (for logging decision)
+    is_single_month = (args.month is not None)
+    if is_single_month:
+        print(f"Running single month: {MONTH_NAMES[args.month]}")
+        print("Note: Calculation logs will NOT be saved for single month runs")
+    
     # Ask for confirmation (skip if --auto or --json mode)
     if args.auto or args.json:
         proceed = True
@@ -617,7 +817,9 @@ Examples:
                 cpp_plant_id=cpp_plant_id,
                 process_demands=None,  # Uses DEFAULT_PROCESS_DEMANDS, fixed demands fetched from DB
                 save_to_db=not args.no_save,
-                save_logs=not args.no_logs
+                save_logs=not args.no_logs,
+                save_calculation_logs=True,  # Always enabled, but skipped for single month
+                is_single_month=is_single_month
             )
             
             if args.json:

@@ -27,7 +27,10 @@ import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinpu
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
+import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
+import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop.js'
+
 const DecokingConfig = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -48,22 +51,32 @@ const DecokingConfig = () => {
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
   const VERTICAL_ID = verticalObject?.id
-  const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
+
+  const RUN_LENGTH_EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Run_Length_${AOP_YEAR}`
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const SCREEN_NAME = screenTitle?.title
   const siteName = siteObject?.name?.toLowerCase()
+  const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
+
+  const [summaryEdited, setSummaryEdited] = useState(false)
+
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+
   const [activeTabIndex, setActiveTabIndex] = useState(0)
   const [remarkDialogOpenSdTa, setRemarkDialogOpenSdTa] = useState(false)
   const [currentRemarkSdTa, setCurrentRemarkSdTa] = useState('')
@@ -82,30 +95,31 @@ const DecokingConfig = () => {
 
   const [ibrPlanColumns, serIbrPlanColumns] = useState([])
   const [runLengthColumns, setRunLengthColumns] = useState([])
-  useEffect(() => {
-    if (!globalTaStartDate || !globalTaEndDate || ibrScreen2Rows.length === 0)
-      return
 
-    const updatedRows = ibrScreen2Rows.map((row) => ({
-      ...row,
-      TA_SD: globalTaStartDate,
-      TA_ED: globalTaEndDate,
-    }))
+  // useEffect(() => {
+  //   if (!globalTaStartDate || !globalTaEndDate || ibrScreen2Rows.length === 0)
+  //     return
 
-    setIbrScreen2Rows(updatedRows)
+  //   const updatedRows = ibrScreen2Rows.map((row) => ({
+  //     ...row,
+  //     TA_SD: globalTaStartDate,
+  //     TA_ED: globalTaEndDate,
+  //   }))
 
-    // Update modified cells for saving
-    const newModifiedCells = { ...modifiedCellsSdTa }
-    updatedRows.forEach((row) => {
-      newModifiedCells[row.id] = {
-        ...newModifiedCells[row.id],
-        ...row,
-        TA_SD: globalTaStartDate,
-        TA_ED: globalTaEndDate,
-      }
-    })
-    setModifiedCellsSdTa(newModifiedCells)
-  }, [globalTaStartDate, globalTaEndDate])
+  //   setIbrScreen2Rows(updatedRows)
+
+  //   // Update modified cells for saving
+  //   const newModifiedCells = { ...modifiedCellsSdTa }
+  //   updatedRows.forEach((row) => {
+  //     newModifiedCells[row.id] = {
+  //       ...newModifiedCells[row.id],
+  //       ...row,
+  //       TA_SD: globalTaStartDate,
+  //       TA_ED: globalTaEndDate,
+  //     }
+  //   })
+  //   setModifiedCellsSdTa(newModifiedCells)
+  // }, [globalTaStartDate, globalTaEndDate])
 
   const handleRemarkCellClick2 = (dataItem) => {
     if (READ_ONLY) return
@@ -122,8 +136,8 @@ const DecokingConfig = () => {
     setCurrentRowId3(dataItem.id)
     setRemarkDialogOpenRunLength(true)
   }
-  const [ibrScreen1Rows, setIbrScreen1Rows] = useState([])
 
+  const [ibrScreen1Rows, setIbrScreen1Rows] = useState([])
   const [ibrScreen3Rows, setIbrScreen3Rows] = useState([])
   const [runningDurationRows, setRunningDurationRows] = useState([])
   const [modifiedCellsRunLength, setModifiedCellsRunLength] = React.useState({})
@@ -182,6 +196,10 @@ const DecokingConfig = () => {
   const fetchData = useCallback(
     async (screen = null) => {
       if (!PLANT_ID || !AOP_YEAR) return
+
+      // setModifiedCellsRunLength({})
+      // setModifiedCellsSdTa({})
+
       const currentTab = tabs[activeTabIndex]
       setLoading(true)
       try {
@@ -212,6 +230,7 @@ const DecokingConfig = () => {
 
           // Screen 2
           if (!screen || screen === 2) {
+            if (siteName === 'nmd') return
             const data2 = await DataService.getIbrSdTa(
               keycloak,
               PLANT_ID,
@@ -287,6 +306,7 @@ const DecokingConfig = () => {
 
           // Screen 3 (sample/static)
           if (!screen || screen === 3) {
+            if (siteName === 'nmd') return
             const data3 = await DataService.getIbrScreen3(
               keycloak,
               PLANT_ID,
@@ -298,9 +318,16 @@ const DecokingConfig = () => {
             if (data3?.code === 200) {
               setCalculationObject(data3?.data?.aopCalculation)
               const hiddenKeys = ['Id', 'Plant_FK_Id', 'AOPYear']
-              const dynamiccolumnDeckoking = (data3?.data?.columns || []).map(
+              const dynamicColumnDeckoking = (data3?.data?.columns || []).map(
                 (col) => ({
                   ...col,
+                  filter: col.field === 'Month' ? true : false,
+                  isDisabled:
+                    ['Id', 'Month', 'AOPYear', 'Plant_FK_Id'].includes(
+                      col.field,
+                    ) ||
+                    col.field === 'Date' ||
+                    col.field.toLowerCase().includes('actual'),
                   editable: !(
                     ['Id', 'Month', 'AOPYear', 'Plant_FK_Id'].includes(
                       col.field,
@@ -311,7 +338,7 @@ const DecokingConfig = () => {
                   hidden: hiddenKeys.includes(col.field) ? true : col.hidden,
                 }),
               )
-              setRunLengthColumns(dynamiccolumnDeckoking)
+              setRunLengthColumns(dynamicColumnDeckoking)
 
               // Use correct date format from API
               const toDateObject = (value) =>
@@ -320,7 +347,7 @@ const DecokingConfig = () => {
               const processedData = (data3.data?.data || []).map(
                 (item, index) => {
                   const row = { id: index }
-                  dynamiccolumnDeckoking.forEach((col) => {
+                  dynamicColumnDeckoking.forEach((col) => {
                     // Convert date fields if needed
                     if (col.type === 'date') {
                       const dateObj = toDateObject(item[col.field])
@@ -362,7 +389,10 @@ const DecokingConfig = () => {
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak, fetchData])
 
   function validateAllDateOverlaps(rows) {
-    const pairs = [['IBR_SD', 'IBR_ED', 'IBR']]
+    const pairs = [
+      ['IBR_SD', 'IBR_ED', 'IBR'],
+      // ['ShutDown_SD', 'ShutDown_ED', 'ShutDown'],
+    ]
     rows.forEach((row) => {
       row.isError = false
     })
@@ -475,51 +505,37 @@ const DecokingConfig = () => {
       var rawData = Object.values(modifiedCellsSdTa)
 
       const dateFields = ['IBR_SD', 'IBR_ED']
-      const allRows = [...ibrScreen2Rows] // get all rows, not just modified
+      const allRows = [...ibrScreen2Rows]
       let hasDateError = false
 
       for (const record of allRows) {
-        record.isError = false // reset previous errors
+        record.isError = false
         for (const field of dateFields) {
           let dateValue = record[field]
           if (typeof dateValue === 'string') {
-            // Only accept DD-MM-YYYY format
             const ddmmyyyyRegex = /^(\d{2})-(\d{2})-(\d{4})$/
             const match = dateValue.match(ddmmyyyyRegex)
             if (match) {
-              // month is 1-based in JS Date
               const day = match[1],
                 month = match[2],
                 year = match[3]
               dateValue = new Date(`${year}-${month}-${day}T00:00:00`)
             } else {
-              // Invalid format, mark as error
               dateValue = null
             }
           }
         }
       }
 
-      //const requiredFields = ['idFromApi']
-
       var rawData1 = getRows('IBR Plan')[2]
-      // Overlap validation
-      const result = validateAllDateOverlaps(rawData1)
-      if (result.overlap) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: result.message,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
 
-      // const validationMessage = validateFields(rawData, requiredFields)
-      // if (validationMessage) {
+      //DATES OVERLLAPING IS REVERTED NOW
+
+      // const result = validateAllDateOverlaps(rawData1)
+      // if (result.overlap) {
       //   setSnackbarOpen(true)
       //   setSnackbarData({
-      //     message: validationMessage,
+      //     message: result.message,
       //     severity: 'error',
       //   })
       //   setLoading(false)
@@ -530,12 +546,97 @@ const DecokingConfig = () => {
     } catch (error) {
       console.log('Error saving changes:', error)
     }
-  }, [modifiedCellsSdTa])
+  }, [modifiedCellsSdTa, globalTaEndDate, globalTaStartDate])
+
+  function validateDatePairs(rows) {
+    const parseDate = (v) => {
+      if (v === null || v === undefined || v === '') {
+        return null
+      }
+
+      // Already a Date
+      if (v instanceof Date) {
+        if (isNaN(v.getTime())) {
+          return null
+        }
+
+        return v
+      }
+
+      // DD-MM-YYYY
+      if (typeof v === 'string') {
+        const m = v.match(/^(\d{2})-(\d{2})-(\d{4})$/)
+
+        if (m) {
+          const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]))
+
+          return isNaN(d.getTime()) ? null : d
+        }
+      }
+
+      // Fallback
+      const d = new Date(v)
+
+      return isNaN(d.getTime()) ? null : d
+    }
+
+    /**
+     * Converts Date ? YYYYMMDD number
+     * This removes ALL time & timezone influence
+     */
+    const toDateKey = (d) =>
+      d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
+
+    const pairs = [
+      // ['ShutDown_SD', 'ShutDown_ED'],
+      ['IBR_SD', 'IBR_ED'],
+    ]
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      const rowLabel = row.DisplayName
+
+      for (const [startField, endField] of pairs) {
+        const startRaw = row[startField]
+        const endRaw = row[endField]
+
+        const start = parseDate(startRaw)
+        const end = parseDate(endRaw)
+
+        //  both blank allowed
+        if (start === null && end === null) {
+          continue
+        }
+
+        //  one blank
+        if (start === null || end === null) {
+          return {
+            valid: false,
+            message: `Error in ${rowLabel}: ${startField} and ${endField} must both be filled or both be blank`,
+          }
+        }
+
+        const startKey = toDateKey(start)
+        const endKey = toDateKey(end)
+
+        //  start > end
+        if (startKey > endKey) {
+          return {
+            valid: false,
+            message: `Error in ${rowLabel}: ${startField} must be before or equal to ${endField}`,
+          }
+        }
+      }
+    }
+
+    return { valid: true }
+  }
 
   const saveChangesSdTa1 = React.useCallback(async () => {
     try {
       const { startLimit, endLimit } = getAopYearLimits()
-      // Validate TA dates only on Save
+      const rowsToSave = Object.values(modifiedCellsSdTa)
+
       if (
         !globalTaStartDate ||
         !globalTaEndDate ||
@@ -557,7 +658,7 @@ const DecokingConfig = () => {
       if (globalTaStartDate > globalTaEndDate) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'Start date must be before or equal to End date.',
+          message: 'TA Start date must be before or equal to TA End date.',
           severity: 'error',
         })
         setDateError(true)
@@ -565,6 +666,7 @@ const DecokingConfig = () => {
         return
       }
       setDateError(false)
+
       const taOverlapMsg = checkTaDateOverlapWithRows(
         globalTaStartDate,
         globalTaEndDate,
@@ -579,23 +681,35 @@ const DecokingConfig = () => {
         setLoading(false)
         return
       }
-      if (Object.keys(modifiedCellsSdTa).length === 0) {
+
+      const errorResult = validateDatePairs(ibrScreen2Rows)
+
+      if (!errorResult.valid) {
         setSnackbarOpen(true)
         setSnackbarData({
-          message: 'No Records to Save!',
-          severity: 'info',
+          message: errorResult.message,
+          severity: 'error',
         })
-        setLoading(false)
         return
       }
+
+      // if (Object.keys(modifiedCellsSdTa).length === 0) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: 'No Records to Save!',
+      //     severity: 'info',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
       var rawData = Object.values(modifiedCellsSdTa)
 
       const dateFields = ['IBR_SD', 'IBR_ED']
-      const allRows = [...ibrScreen2Rows] // get all rows, not just modified
+      const allRows = [...ibrScreen2Rows]
       let hasDateError = false
 
       for (const record of allRows) {
-        record.isError = false // reset previous errors
+        record.isError = false
         for (const field of dateFields) {
           let dateValue = record[field]
           if (typeof dateValue === 'string') {
@@ -617,8 +731,9 @@ const DecokingConfig = () => {
       }
 
       var rawData1 = getRows('IBR Plan')[2]
-      // Overlap validation
+
       const result = validateAllDateOverlaps(rawData1)
+
       if (result.overlap) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -628,11 +743,11 @@ const DecokingConfig = () => {
         setLoading(false)
         return
       }
-      postIbr(rawData)
+      postIbr(rowsToSave)
     } catch (error) {
       console.log('Error saving changes:', error)
     }
-  }, [modifiedCellsSdTa])
+  }, [modifiedCellsSdTa, globalTaEndDate, globalTaStartDate])
 
   const saveChangesRunLength = React.useCallback(async () => {
     try {
@@ -641,6 +756,69 @@ const DecokingConfig = () => {
       console.log('Error saving changes:', error)
     }
   }, [modifiedCellsRunLength])
+
+  function validatePostCrDays(newRows) {
+    console.log('?? validatePostCrDays called')
+    console.log('?? Rows:', newRows)
+
+    for (let i = 0; i < newRows.length; i++) {
+      const row = newRows[i]
+      const rowLabel = row.DisplayName || `Row ${i + 1}`
+
+      console.log(`\n?? Validating ${rowLabel}`, row)
+
+      // Only apply rule when IsCR is true
+      if (row.IsCR === true) {
+        const post = row.Post_CR_Days
+        const pre = row.Pre_CR_Days
+
+        console.log('IsCR = true')
+        console.log('Post_CR_Days:', post)
+        console.log('Pre_CR_Days:', pre)
+
+        // ? blank / empty / whitespace
+        if (
+          post === null ||
+          post === undefined ||
+          (typeof post === 'string' && post.trim() === '')
+        ) {
+          console.error('? Post_CR_Days is blank')
+          return {
+            valid: false,
+            message: `Error in ${rowLabel}: Post_CR_Days must be filled when IsCR is true`,
+          }
+        }
+
+        const postNum = Number(post)
+        const preNum = Number(pre)
+
+        // ? non-numeric
+        if (isNaN(postNum) || isNaN(preNum)) {
+          console.error('? Non-numeric CR days')
+          return {
+            valid: false,
+            message: `Error in ${rowLabel}: Pre_CR_Days and Post_CR_Days must be numeric`,
+          }
+        }
+
+        // ? Post >= Pre
+        if (postNum >= preNum) {
+          console.error('? Post_CR_Days >= Pre_CR_Days')
+          return {
+            valid: false,
+            message: `Error in ${rowLabel}: Post_CR_Days must be less than Pre_CR_Days`,
+          }
+        }
+
+        console.log('? CR validation passed')
+      } else {
+        console.log('?? IsCR is false ? skipping')
+      }
+    }
+
+    console.log('\n?? validatePostCrDays passed for all rows')
+    return { valid: true }
+  }
 
   const postIbr = async (newRow) => {
     setLoading(true)
@@ -689,11 +867,52 @@ const DecokingConfig = () => {
         })
       }
 
-      const payload = buildDynamicPayload(newRow, ibrPlanColumns)
+      const requiredFields = ['Remarks']
+
+      const validationMessage = validateFields(newRow, requiredFields)
+
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      const validation = validatePostCrDays(newRow)
+
+      if (!validation.valid) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validation.message,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      var allRows = getRows('IBR Plan')[2]
+
+      const payload = buildDynamicPayload(allRows, ibrPlanColumns)
 
       if (!payload || payload.length === 0) {
         throw new Error('Payload empty')
       }
+
+      const toDateOnlyString = (d) => {
+        if (!d) return null
+        const yyyy = d.getFullYear()
+        const mm = String(d.getMonth() + 1).padStart(2, '0')
+        const dd = String(d.getDate()).padStart(2, '0')
+        return `${yyyy}-${mm}-${dd}`
+      }
+
+      payload.forEach((row) => {
+        row.TA_SD = toDateOnlyString(globalTaStartDate)
+        row.TA_ED = toDateOnlyString(globalTaEndDate)
+      })
 
       const response = await DataService.postIbr(
         PLANT_ID,
@@ -709,6 +928,9 @@ const DecokingConfig = () => {
           severity: 'success',
         })
         setModifiedCellsSdTa({})
+        setSummaryEdited(false)
+        fetchData(2)
+        fetchData(3)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -720,11 +942,12 @@ const DecokingConfig = () => {
     } catch (error) {
       console.error('Error saving data:', error)
     } finally {
-      fetchData(2)
-      fetchData(3)
+      // fetchData(2)
+      // fetchData(3)
       setLoading(false)
     }
   }
+
   const postIbr2 = async (newRow) => {
     setLoading(true)
     try {
@@ -734,6 +957,20 @@ const DecokingConfig = () => {
 
       if (!newRow || newRow.length === 0) {
         throw new Error('No rows to save')
+      }
+
+      const requiredFields = ['Remarks']
+
+      const validationMessage = validateFields(newRow, requiredFields)
+
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
       }
 
       const formatIfDate = (value) => {
@@ -748,8 +985,16 @@ const DecokingConfig = () => {
           : value
       }
 
-      const buildDynamicPayload = (rows, columns) =>
-        rows.map((row) => {
+      var allRows = getRows('IBR Plan')[2]
+      const validation = validatePostCrDays(newRow)
+
+      if (!validation.valid) {
+        alert(validation.message)
+        return
+      }
+
+      const buildDynamicPayload = (allRows, columns) =>
+        allRows.map((row) => {
           const obj = {
             Id: row.Id,
             Plant_FK_Id: PLANT_ID,
@@ -775,7 +1020,12 @@ const DecokingConfig = () => {
           return obj
         })
 
-      const payload = buildDynamicPayload(newRow, ibrPlanColumns)
+      const payload = buildDynamicPayload(allRows, ibrPlanColumns)
+      // force TA dates to null
+      payload.forEach((row) => {
+        row.TA_SD = null
+        row.TA_ED = null
+      })
 
       const response = await DataService.postIbr(
         PLANT_ID,
@@ -791,6 +1041,9 @@ const DecokingConfig = () => {
           severity: 'success',
         })
         setModifiedCellsSdTa({})
+        setSummaryEdited(true)
+        fetchData(2)
+        fetchData(3)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -802,25 +1055,90 @@ const DecokingConfig = () => {
     } catch (error) {
       console.error('Error saving data:', error)
     } finally {
-      fetchData(2)
-      fetchData(3)
+      // fetchData(2)
+      // fetchData(3)
       setLoading(false)
     }
+  }
+
+  // helper: validate one payload object against reference rows
+  function validateProposedForDate(payloadObj, referenceRows) {
+    const result = { valid: true, errors: [] }
+
+    // ---- FIX 1: normalize date (string OR Date) ----
+    const dateVal = payloadObj.Date ?? payloadObj.date
+    if (!dateVal) return result
+
+    const d = dateVal instanceof Date ? dateVal : new Date(dateVal)
+    if (Number.isNaN(d.getTime())) return result
+
+    // check date is 1st April
+    const isFirstApril = d.getUTCDate() === 1 && d.getUTCMonth() === 3 // April = 3
+    if (!isFirstApril) return result
+
+    // ---- FIX 2: correct key match (H10_Proposed etc.) ----
+    Object.keys(payloadObj)
+      .filter((k) => /^H\d+_Proposed$/i.test(k))
+      .forEach((key) => {
+        const name = key.match(/^(H\d+)_/i)?.[1] // e.g. "H10"
+        const raw = (payloadObj[key] ?? '').toString().trim()
+        const value = raw === '' ? 0 : Number(raw)
+
+        if (!name) {
+          result.valid = false
+          result.errors.push(`${key}: invalid name format`)
+          return
+        }
+
+        const refRow = referenceRows?.find(
+          (r) => r.Name?.toString().toUpperCase() === name.toUpperCase(),
+        )
+
+        if (!refRow) {
+          result.valid = false
+          result.errors.push(`${key}: no reference row found for ${name}`)
+          return
+        }
+
+        const maxDays = refRow.Pre_CR_Days
+        if (maxDays === undefined || maxDays === null) {
+          result.valid = false
+          result.errors.push(
+            `${key}: reference row ${name} missing Pre_CR_Days`,
+          )
+          return
+        }
+
+        if (Number.isNaN(value)) {
+          result.valid = false
+          result.errors.push(`${key}: proposed value '${raw}' is not a number`)
+          return
+        }
+
+        if (value > Number(maxDays)) {
+          result.valid = false
+          result.errors.push(`${name} Proposed value is exceeding ${maxDays}`)
+          return
+        }
+      })
+
+    return result
   }
 
   const saveCrackerRunLength = async (newRow) => {
     setLoading(true)
     try {
+      const referenceRows = getRows('IBR Plan')[2]
+
+      // build payload like you already do
       const apiFields = runLengthColumns.map((col) => col.field)
 
-      // Build payload using only those fields
-      const payload = newRow.map((row) => {
+      const payload = newRow.map((row, idx) => {
         const obj = {}
         apiFields.forEach((field) => {
           let value = row[field]
           const colDef = runLengthColumns.find((col) => col.field === field)
           if (colDef?.type === 'date' && value instanceof Date) {
-            // Pass the Date object directly
             obj[field] = value
           } else {
             obj[field] = value ?? null
@@ -828,12 +1146,36 @@ const DecokingConfig = () => {
         })
         return obj
       })
+
+      // VALIDATION
+      const allErrors = []
+      payload.forEach((p, idx) => {
+        const res = validateProposedForDate(p, referenceRows)
+
+        if (!res.valid) {
+          allErrors.push(...res.errors.map((e) => `${p.Date ?? 'row'}: ${e}`))
+        } else {
+          // console.log('? validation passed')
+        }
+      })
+
+      if (allErrors.length) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Validation failed: ${allErrors[0]}`,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
       const response = await DataService.saveCrackerRunLength(
         PLANT_ID,
         payload,
         keycloak,
         AOP_YEAR,
       )
+
       if (response?.code == 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -841,23 +1183,21 @@ const DecokingConfig = () => {
           severity: 'success',
         })
         setModifiedCellsRunLength({})
-        setLoading(false)
       } else {
         setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Saved Falied!',
-          severity: 'error',
-        })
+        setSnackbarData({ message: 'Data Save Failed!', severity: 'error' })
       }
       return response
     } catch (error) {
       console.error('Error saving data:', error)
-      setLoading(false)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: 'Error saving data', severity: 'error' })
     } finally {
       fetchData(3)
       setLoading(false)
     }
   }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -873,6 +1213,7 @@ const DecokingConfig = () => {
       showAccordian: true,
     }
   }
+
   const adjustedPermissionsSdTa = getAdjustedPermissions(
     {
       showAction: false,
@@ -889,6 +1230,7 @@ const DecokingConfig = () => {
     },
     isOldYear,
   )
+
   const adjustedPermissionsRunLength = getAdjustedPermissions(
     {
       showAction: false,
@@ -905,8 +1247,14 @@ const DecokingConfig = () => {
       // showCalculateVisibility:
       //   Object.keys(calculationObject || {}).length > 0 ? true : false,
 
-      //BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
-      showCalculateVisibility: false,
+      //verion1 = BUTTON SHOULD BE DISABLED FOR NOW , LATER WE NEED TO CHANGE THE LOGIC
+      //verion2 = BUTTON SHOULD BE DISABLED FOR NOW (ONLY FOR NMD)
+      showCalculateVisibility:
+        siteName == 'nmd'
+          ? false
+          : Object.keys(calculationObject || {}).length > 0
+            ? true
+            : false,
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       byDefCollaps: false,
@@ -927,7 +1275,12 @@ const DecokingConfig = () => {
       severity: 'success',
     })
     try {
-      await DataService.getRunLengthExcel(keycloak, PLANT_ID, AOP_YEAR)
+      await DataService.getRunLengthExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        RUN_LENGTH_EXCEL_NAME,
+      )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
@@ -1001,6 +1354,7 @@ const DecokingConfig = () => {
       setLoading(false)
     }
   }
+
   const handleCalculateSdTa = async () => {
     setLoading(true)
     try {
@@ -1035,6 +1389,7 @@ const DecokingConfig = () => {
       setLoading(false)
     }
   }
+
   const handleCalculate = async () => {
     setLoading(true)
     try {
@@ -1059,8 +1414,9 @@ const DecokingConfig = () => {
       setLoading(false)
     }
   }
+
   function getAopYearLimits() {
-    const yearStr = AOP_YEAR // e.g. "2025-26"
+    const yearStr = AOP_YEAR
     let startLimit, endLimit
     if (yearStr) {
       const [startYear, endYear] = yearStr
@@ -1068,7 +1424,6 @@ const DecokingConfig = () => {
         .map((y) => parseInt(y.trim(), 10))
       if (!isNaN(startYear) && !isNaN(endYear)) {
         startLimit = new Date(`${startYear}-04-01T00:00:00`)
-        // If endYear is 2 digits, prefix with 20
         const endYearFull = endYear < 100 ? 2000 + endYear : endYear
         endLimit = new Date(`${endYearFull}-03-31T23:59:59`)
       }
@@ -1094,6 +1449,10 @@ const DecokingConfig = () => {
       ? ibrGridThree.filter((col) => col.field !== 'demo')
       : ibrGridThree
 
+  if (siteName === 'nmd') {
+    return <DecokingConfigNMD pid={PLANT_ID} />
+  }
+
   return (
     <Box>
       <LoaderBackdrop open={!!loading} />
@@ -1108,7 +1467,10 @@ const DecokingConfig = () => {
               id='global-ta-start-date'
               format='dd-MM-yyyy'
               value={globalTaStartDate}
-              onChange={(e) => setGlobalTaStartDate(e.value)}
+              onChange={(e) => {
+                setGlobalTaStartDate(e.value)
+                setSummaryEdited(true)
+              }}
               style={{ height: '80px' }}
               size={'small'}
               disabled={READ_ONLY}
@@ -1123,7 +1485,10 @@ const DecokingConfig = () => {
               id='global-ta-end-date'
               format='dd-MM-yyyy'
               value={globalTaEndDate}
-              onChange={(e) => setGlobalTaEndDate(e.value)}
+              onChange={(e) => {
+                setGlobalTaEndDate(e.value)
+                setSummaryEdited(true)
+              }}
               style={{ height: '80px' }}
               size={'small'}
               disabled={READ_ONLY}
@@ -1156,7 +1521,27 @@ const DecokingConfig = () => {
         setRemarkDialogOpen={setRemarkDialogOpenSdTa}
         rowClass={rowClass}
         handleCalculate={handleCalculateSdTa}
+        summaryEdited={summaryEdited}
+        setSummaryEdited={setSummaryEdited}
       />
+
+      {IS_DMD && (
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Downstream Shutdown
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <DownsteamShutdownDMD />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )}
 
       <FurnaceRunLengthGrid
         columns={runLengthColumns}

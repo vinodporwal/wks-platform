@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
+import { DataService } from 'services/DataService'
 import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
@@ -70,7 +71,14 @@ const ShutdownNorms = () => {
 
   const IS_PE_PP_VERTICAL = ['pe', 'pp'].includes(lowerVertName)
   const IS_PET_VERTICAL = ['pet'].includes(lowerVertName)
-
+  const IS_PE_NMD_LDPE =
+    ['pe'].includes(lowerVertName) &&
+    ['nmd'].includes(SITE_NAME_LOWERCASE) &&
+    ['ldpe'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PE_VMD =
+    lowerVertName === 'pe' && ['vmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_PE_DMD =
+    lowerVertName === 'pe' && ['dmd'].includes(SITE_NAME_LOWERCASE)
   // const IS_PE_PP_VERTICAL_NMD_LLDPE =
   //   ['pe'].includes(lowerVertName) &&
   //   ['nmd'].includes(SITE_NAME_LOWERCASE) &&
@@ -80,6 +88,9 @@ const ShutdownNorms = () => {
     ['pe'].includes(lowerVertName) &&
     ['nmd'].includes(SITE_NAME_LOWERCASE) &&
     ['lldpe1', 'lldpe2'].includes(PLANT_NAME_LOWERCASE)
+
+  const IS_PTA_DMD =
+    ['pta'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
 
   const textNote = IS_PE_PP_VERTICAL
     ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
@@ -126,7 +137,7 @@ const ShutdownNorms = () => {
   // 1) Load grades list if vertical requires it
   useEffect(() => {
     const loadGrades = async () => {
-      if (IS_PE_PP_VERTICAL) {
+      if (IS_PE_PP_VERTICAL || IS_PET_VERTICAL) {
         try {
           const response =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -157,27 +168,84 @@ const ShutdownNorms = () => {
     const loadData = async () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
-        if (IS_PE_PP_VERTICAL) {
+        if (IS_PE_PP_VERTICAL || IS_PET_VERTICAL) {
           if (!gradeId) return
           await fetchData(gradeId)
         } else {
           await fetchData()
         }
-        let data
 
-        {
-          data = await ShutdownNormsApiService.getShutdownMonths(
+        // Fetch shutdown months
+        const shutdownMonthsRes =
+          await ShutdownNormsApiService.getShutdownMonths(
             keycloak,
             null,
             PLANT_ID,
             AOP_YEAR,
           )
-        }
-        setShutdownMonths(data)
 
-        // if (lowerVertName == 'cracker') {
-        //   setShutdownMonths([1])
-        // }
+        // Fetch grades for slowdown months
+        let slowdownMonthsRes = []
+        if (
+          IS_PE_NMD_LDPE ||
+          lowerVertName === 'pp' ||
+          IS_PE_VMD ||
+          IS_PE_DMD
+        ) {
+          const gradesRes =
+            await NormalOperationNormsApiService.getGradesForShutdownNorms(
+              keycloak,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+          if (gradesRes?.code === 200 && Array.isArray(gradesRes.data)) {
+            for (const grade of gradesRes.data) {
+              const res = await DataService.getSlowdownMonths(
+                keycloak,
+                grade.id || grade.gradeId || null,
+                PLANT_ID,
+                AOP_YEAR,
+              )
+              if (Array.isArray(res)) {
+                slowdownMonthsRes = slowdownMonthsRes.concat(res)
+              }
+            }
+          }
+        } else {
+          const res = await DataService.getSlowdownMonths(
+            keycloak,
+            null,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+          if (Array.isArray(res)) {
+            slowdownMonthsRes = res
+          }
+        }
+
+        const finalMonths =
+          IS_PE_PP_VERTICAL ||
+          IS_PE_NMD_LDPE ||
+          lowerVertName === 'pp' ||
+          IS_PE_VMD ||
+          IS_PE_DMD
+            ? [
+                ...new Set([
+                  ...(Array.isArray(shutdownMonthsRes)
+                    ? shutdownMonthsRes
+                    : []),
+                  ...(Array.isArray(slowdownMonthsRes)
+                    ? slowdownMonthsRes
+                    : []),
+                ]),
+              ]
+            : [
+                ...new Set(
+                  Array.isArray(shutdownMonthsRes) ? shutdownMonthsRes : [],
+                ),
+              ]
+
+        setShutdownMonths(finalMonths)
       } catch (error) {
         console.error('Error in loadData:', error)
       }
@@ -417,7 +485,7 @@ const ShutdownNorms = () => {
 
   // --- loadGradesAfterCalculation (always pick the first returned grade) ---
   const loadGradesAfterCalculation = async () => {
-    if (['pe', 'pp'].includes(lowerVertName)) {
+    if (['pe', 'pp'].includes(lowerVertName) || IS_PET_VERTICAL) {
       try {
         const response =
           await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -431,7 +499,7 @@ const ShutdownNorms = () => {
           setGrades(fetchedGrades)
 
           if (fetchedGrades.length === 0) {
-            // no grades — clear selection and fetch blank data
+            // no grades   clear selection and fetch blank data
             setGradeId(null)
             await fetchData(null)
             return
@@ -483,6 +551,11 @@ const ShutdownNorms = () => {
   const onRowModesModelChange = (newRowModesModel) => {
     setRowModesModel(newRowModesModel)
   }
+
+  const handleExcelUpload = (rawFile) => {
+    saveExcelFile(rawFile)
+  }
+
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -492,11 +565,26 @@ const ShutdownNorms = () => {
 
     try {
       let response
-      if (IS_PE_PP_VERTICAL) {
-        response = await NormalOperationNormsApiService.shutdownnormsppExport(
+
+      if (lowerVertName === 'vcm' || lowerVertName === 'pta') {
+        // Use shutdownNormsExportNonGrade for VCM
+        response =
+          await NormalOperationNormsApiService.shutdownNormsExportNonGrade(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+      } else if (IS_PE_PP_VERTICAL || IS_PET_VERTICAL) {
+        // Use shutdownNormsExport for PE/PP/Elastomer
+        response = await NormalOperationNormsApiService.shutdownNormsExport(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          PLANT_NAME,
+          SITE_NAME,
+          VERTICAL_NAME,
+          gradeName == 'All Grade',
         )
       }
     } catch (error) {
@@ -507,6 +595,83 @@ const ShutdownNorms = () => {
       })
     } finally {
       setSnackbarOpen(true)
+    }
+  }
+
+  const saveExcelFile = async (rawFile) => {
+    setLoading(true)
+    try {
+      let response
+
+      if (lowerVertName === 'vcm' || lowerVertName === 'pta') {
+        // Use saveShutdownNormsExcelNonGrade for VCM
+        response =
+          await NormalOperationNormsApiService.saveShutdownNormsExcelNonGrade(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            gradeId,
+          )
+      } else {
+        // Use saveShutdownNormsExcel for other verticals
+        response = await NormalOperationNormsApiService.saveShutdownNormsExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          gradeId,
+          gradeName == 'All Grade',
+        )
+      }
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData(gradeId)
+      } else if (response?.code === 400 && response?.data) {
+        // Partial save, error file download
+        const byteCharacters = atob(response.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File Shutdown_Consumption.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Save Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error saving data:', error)
+      setLoading(false)
+    } finally {
+      fetchData(gradeId)
+      setLoading(false)
     }
   }
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -579,14 +744,33 @@ const ShutdownNorms = () => {
       dropdownLabel: 'Select Grade',
       allAction: true,
       downloadExcelBtnFromUI:
-        IS_PE_PP_VERTICAL || IS_PET_VERTICAL ? false : true,
-      downloadExcelBtn: IS_PE_PP_VERTICAL || IS_PET_VERTICAL ? true : false,
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta'
+          ? false
+          : true,
+      downloadExcelBtn:
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta'
+          ? true
+          : false,
+      uploadExcelBtn:
+        IS_PE_NMD_LDPE ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'vcm' ||
+        lowerVertName === 'pta' ||
+        IS_PE_VMD ||
+        IS_PE_DMD
+          ? true
+          : false,
       showTitleNameBusiness: true,
 
-      titleName:
-        lowerVertName === 'elastomer' ||
-        lowerVertName === 'pta' ||
-        lowerVertName === 'vcm'
+      titleName: IS_PET_VERTICAL
+        ? `Shutdown Consumption (Norms)`
+        : lowerVertName === 'elastomer' || lowerVertName === 'pta'
           ? `Shutdown Consumption (Norms/Quantity)`
           : SCREEN_NAME,
       ExcelName: `${VERTICAL_NAME}-${SCREEN_NAME}`,
@@ -636,6 +820,7 @@ const ShutdownNorms = () => {
         permissions={adjustedPermissions}
         handleGradeChange={handleGradeChange}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
         calculatebtnClicked={calculatebtnClicked}
         plantID={plantID}
         grades={grades}

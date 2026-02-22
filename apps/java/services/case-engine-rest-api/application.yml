@@ -41,6 +41,7 @@ spring.data.mongodb.database.min-pool-size: 0
 spring.data.mongodb.database.max-pool-size: 5
 spring.data.mongodb.database.max-connection-idle-time: 3000
 spring.data.mongodb.database.max-connection-life-time: 3000
+server.max-http-request-header-size: 65536
 
 opa.url: ${OPA_URL:http://localhost:8181/v1/data/wks/authz/allow}
 keycloak.url: ${KEYCLOAK_URL:http://localhost:8082}
@@ -98,3 +99,6 @@ case.engine.swagger.enabled: true
 
 # Python Budget Calculator Service URL
 pp.budget.calculator.url: ${PP_BUDGET_CALCULATOR_URL:http://pp-budget-calculator:5000}
+
+# camuda process Id for TCS Output Workflow
+camunda.process.id.tcs.output.workflow: ${CAMUNDA_PROCESS_ID_TCS_OUTPUT_WORKFLOW:TCS_APPROVAL_PROCESS}

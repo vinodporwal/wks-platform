@@ -529,6 +529,7 @@ HRSG_ASSETS_DEFAULT = {
 
 # Global HRSG_ASSETS - will be populated from DB
 HRSG_ASSETS = HRSG_ASSETS_DEFAULT.copy()
+HRSG_ASSETS_LOADED = False  # Track if assets have been loaded from DB
 
 
 def load_hrsg_assets_from_db():
@@ -539,7 +540,7 @@ def load_hrsg_assets_from_db():
     Returns:
         dict: HRSG assets configuration
     """
-    global HRSG_ASSETS
+    global HRSG_ASSETS, HRSG_ASSETS_LOADED
     
     try:
         from database.connection import get_connection
@@ -594,17 +595,20 @@ def load_hrsg_assets_from_db():
             }
         
         HRSG_ASSETS = hrsg_assets
+        HRSG_ASSETS_LOADED = True
         print(f"  [HRSG] Loaded {len(hrsg_assets)} HRSG assets from DB")
         return HRSG_ASSETS
         
     except Exception as e:
         print(f"  [HRSG] Error loading from DB: {e}, using defaults")
+        HRSG_ASSETS_LOADED = True  # Mark as loaded even on error to prevent retries
         return HRSG_ASSETS
 
 
 def get_hrsg_assets():
     """Get HRSG assets, loading from DB if not already loaded."""
-    if HRSG_ASSETS == HRSG_ASSETS_DEFAULT:
+    global HRSG_ASSETS_LOADED
+    if not HRSG_ASSETS_LOADED:
         load_hrsg_assets_from_db()
     return HRSG_ASSETS
 
@@ -673,7 +677,7 @@ def calculate_free_steam_from_dispatch(power_dispatch: list) -> dict:
     
     Calculation Steps:
     1. GT Load (MW) = GrossMWh / Hours
-    2. FreeSteamFactor = Lookup from HeatRateLookup table based on GT Load
+    2. FreeSteamFactor = Lookup from CPP_GTHeatRate table based on GT Load
        (This is already done in power_service and passed in dispatch)
     3. Free Steam (MT) = GrossMWh × FreeSteamFactor
     
@@ -691,7 +695,7 @@ def calculate_free_steam_from_dispatch(power_dispatch: list) -> dict:
         gross_mwh = asset.get("GrossMWh", 0)
         hours = asset.get("Hours", 0)
         load_mw = asset.get("LoadMW", 0)
-        free_steam_factor = asset.get("FreeSteam")  # FreeSteamFactor from HeatRateLookup
+        free_steam_factor = asset.get("FreeSteam")  # FreeSteamFactor from CPP_GTHeatRate
         
         # Only GTs generate free steam (not STG)
         is_gt = any(gt in asset_name.upper() for gt in ["GT1", "GT2", "GT3", "PLANT 1", "PLANT 2", "PLANT 3"])

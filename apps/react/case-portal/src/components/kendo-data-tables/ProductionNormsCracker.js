@@ -17,6 +17,8 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ProductionNormsCracker = ({ permissions }) => {
+  const [editResetKey, setEditResetKey] = useState(0)
+
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCellsC2C3R, setModifiedCellsC2C3R] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
@@ -374,9 +376,6 @@ const ProductionNormsCracker = ({ permissions }) => {
       }
 
       let dataSet = response?.data?.aopDTOList
-      // if (lowerVertName === 'cracker') {
-      //   dataSet = rowDataForCracker
-      // }
 
       var data = dataSet
         ?.map((product) => ({
@@ -779,6 +778,8 @@ const ProductionNormsCracker = ({ permissions }) => {
         note={''}
         handleRemarkCellClick={handleRemarkCellClick}
         handleCalculate={handleCalculateOtherProduction}
+        resetEditSignal={editResetKey}
+        setEditResetKey={setEditResetKey}
       />
 
       <KendoDataTables
@@ -808,6 +809,8 @@ const ProductionNormsCracker = ({ permissions }) => {
         permissions={adjustedPermissions}
         selectedUOM={'UOM'}
         note={''}
+        resetEditSignal={editResetKey}
+        setEditResetKey={setEditResetKey}
       />
     </div>
   )

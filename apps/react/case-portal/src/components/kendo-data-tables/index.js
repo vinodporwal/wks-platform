@@ -1,4 +1,5 @@
 import HelpIcon from '@mui/icons-material/Help'
+import InfoIcon from '@mui/icons-material/Info'
 import { Tooltip as MuiTooltip } from '@mui/material'
 import '@progress/kendo-font-icons/dist/index.css'
 import { Grid, GridColumn } from '@progress/kendo-react-grid'
@@ -25,6 +26,8 @@ import UploadIcon from '@mui/icons-material/Upload'
 import CalculateIcon from '@mui/icons-material/Calculate'
 import SaveIcon from '@mui/icons-material/Save'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import CategoryDropdownEditor from './Utilities-Kendo/CategoryDropdown'
+import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
 
 import {
   Box,
@@ -79,7 +82,6 @@ import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSele
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { keyframes } from '@mui/material/styles'
-import MonthDropdownPEPP from './Utilities-Kendo/MonthDropdownPEPP'
 
 // Subtle pulse for the info icon on load
 const softPulse = keyframes`
@@ -95,6 +97,7 @@ export const dateFields = [
   'periodFrom',
   'toDateReport',
   'fromDateReport',
+  'shutdownDate',
 ]
 export const dateFields2 = ['fromDate', 'toDate']
 
@@ -211,6 +214,7 @@ const KendoDataTables = ({
   shutdownMonths = [],
   slowdownMonths = [],
   sdDaysValues = [],
+  allLines = [],
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -324,14 +328,15 @@ const KendoDataTables = ({
     : []
 
   const MyFooterCustomCell = (props) => {
-    const { tdProps, dataItem, field } = props
+    const { tdProps } = props
+    const { dataItem } = props
     const groupName = dataItem?.value
-
     // Skip footer for non-Production groups
     if (groupName !== 'Production') {
-      return null
+      return
     }
 
+    const field = props.field
     const labelColumn = 'displayName'
     if (field === labelColumn) {
       return (
@@ -340,23 +345,16 @@ const KendoDataTables = ({
         </td>
       )
     }
-
-    const aggObj = dataItem?.aggregates?.[field]
+    const aggObj = props.dataItem?.aggregates?.[field]
     let cellContent = ''
-
     if (aggObj) {
       const aggKey = Object.keys(aggObj)[0]
       const value = aggObj[aggKey]
-      const n = Number(value)
-
       cellContent =
-        value != null && !isNaN(n)
-          ? Number(n.toFixed(4)) // ✅ FIX: round final aggregate
-          : ''
+        value != null ? Math.trunc(Number(value) * 10000) / 10000 : ''
     }
-
     return (
-      <td {...tdProps} colSpan={1}>
+      <td {...props.tdProps} colSpan={1}>
         {cellContent}
       </td>
     )
@@ -907,6 +905,35 @@ const KendoDataTables = ({
     return (
       <td {...tdProps} title={dataItem[field]}>
         {dataItem[field]}
+      </td>
+    )
+  }
+  const LineDisplayCell = (props) => {
+    const {
+      dataItem,
+      field,
+      tdProps,
+      customModifiedCells,
+      highlightField,
+      highlight,
+    } = props
+    const rowId = dataItem.id
+    const checkField = highlightField || field
+    const isEdited = !!(
+      customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
+    )
+    const lineObj = props.allLines?.find((l) => l.id === dataItem[field])
+    const displayLabel = lineObj ? lineObj.displayName : ''
+    return (
+      <td
+        {...tdProps}
+        style={{
+          color: highlight && isEdited ? 'orange' : undefined,
+          fontWeight: highlight && isEdited ? 'bold' : undefined,
+        }}
+        title={displayLabel}
+      >
+        {displayLabel || ''}
       </td>
     )
   }
@@ -1625,6 +1652,23 @@ const KendoDataTables = ({
                 </Typography>
               )}
 
+              {permissions?.titleNameExtra && (
+                <Typography
+                  component='div'
+                  className='grid-title-extra'
+                  sx={{
+                    fontSize: '0.60rem', // little smaller
+                    fontWeight: 800,
+                    color: '#336063', // very light grey
+                    fontStyle: 'italic',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  *Enter Number of Continious / Discontinious GCOs per grade for
+                  each Month.
+                </Typography>
+              )}
+
               {permissions?.showG && (
                 <TextField
                   select
@@ -1934,6 +1978,7 @@ const KendoDataTables = ({
                       },
                     },
                   }}
+                  // disabled={rows?.length === 0}
                 >
                   <MenuItem value='' disabled sx={{ fontSize: '0.65rem' }}>
                     <em>Select UOM</em>
@@ -1978,6 +2023,7 @@ const KendoDataTables = ({
       )}
 
       <div className='kendo-data-grid'>
+        {/* <div> */}
         {/* <div> */}
         <Tooltip openDelay={50} position='auto' anchorElement='target'>
           <ExcelExport
@@ -2168,6 +2214,7 @@ const KendoDataTables = ({
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
+                      width={col.fixedWidth || undefined}
                       cells={{
                         edit: {
                           date: [
@@ -2557,7 +2604,38 @@ const KendoDataTables = ({
                     />
                   )
                 }
-
+                if (col.type === 'Categorydropdown') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      editable={!!col?.editable}
+                      cells={{
+                        edit: { text: CategoryDropdownEditor },
+                        data: (props) => {
+                          // Show the value as text in display mode
+                          const options = [
+                            { id: 1, value: '1' },
+                            { id: 2, value: '2' },
+                            { id: 3, value: '3' },
+                          ]
+                          const valueObj = options.find(
+                            (opt) => opt.id === props.dataItem[props.field],
+                          )
+                          return (
+                            <td {...props.tdProps}>
+                              {valueObj ? valueObj.value : ''}
+                            </td>
+                          )
+                        },
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
                 const YearDropdownEditorWrapper = (props) => (
                   <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
                 )
@@ -2600,6 +2678,42 @@ const KendoDataTables = ({
                           ),
                         },
                         data: ElastomerSDDaysDisplayCell,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                const LineDropdownEditorWrapper = (props) => (
+                  <LineDropdownEditor
+                    {...props}
+                    allLines={allLines}
+                    customModifiedCells={customModifiedCells}
+                    highlightField={props.field}
+                    highlight={!!permissions?.highlightLine}
+                    rowId={props.dataItem?.id}
+                  />
+                )
+                if (col.type === 'lineDropdown') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title}
+                      width={col.width}
+                      editable={col.editable}
+                      cells={{
+                        edit: { text: LineDropdownEditorWrapper },
+                        data: (props) => (
+                          <LineDisplayCell
+                            {...props}
+                            allLines={allLines}
+                            customModifiedCells={customModifiedCells}
+                            highlightField={col.field}
+                            highlight={!!permissions?.highlightLine}
+                            rowId={props.dataItem?.id}
+                          />
+                        ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}

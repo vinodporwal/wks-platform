@@ -22,16 +22,12 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import org.hibernate.transform.Transformers;
-import org.hibernate.query.NativeQuery;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+
 import org.hibernate.Session;
 import org.hibernate.jdbc.ReturningWork;
 
 //Spring / Custom Exceptions (Adjust based on your package structure)
-import org.springframework.stereotype.Service;
+
 //import your.package.path.AOPMessageVM;
 //import your.package.path.Plants;
 //import your.package.path.Verticals;
@@ -41,26 +37,15 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-
-import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.FillPatternType;
-import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -75,10 +60,8 @@ import com.wks.caseengine.dto.MaintenanceDetailsDTO;
 import com.wks.caseengine.dto.MaintenanceReportURLDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.BudgetMaintenance;
-import com.wks.caseengine.entity.DecokeMaintenance;
 
 import com.wks.caseengine.entity.Plants;
-import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
@@ -257,65 +240,234 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	    }
 	}
 
-	private Map<String, Object> fetchEverythingFromView(final String plantId, final String year, final String viewName) {
-	    return entityManager.unwrap(Session.class).doReturningWork(new ReturningWork<Map<String, Object>>() {
-	        @Override
-	        public Map<String, Object> execute(Connection connection) throws SQLException {
-	            Map<String, Object> resultMap = new HashMap<>();
-	            List<Map<String, Object>> dataList = new ArrayList<>();
-	            List<Map<String, Object>> metadataList = new ArrayList<>();
-	            Set<String> numericFields = new HashSet<>();
+	@Override
+	public AOPMessageVM getOtherPlants(final String plantId, final String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    
+	    try {
+	        UUID plantUUID = UUID.fromString(plantId);
+	        Optional<Plants> plantOpt = plantsRepository.findById(plantUUID);
+	        
+	        if (!plantOpt.isPresent()) {
+	            throw new RuntimeException("Plant not found for ID: " + plantId);
+	        }
 
-	            String sql = "SELECT * FROM " + viewName + " WHERE PlantId = ? AND AOPYear = ? ORDER BY " +
-	                         "CASE MonthName WHEN 'April' THEN 1 WHEN 'May' THEN 2 WHEN 'June' THEN 3 " +
-	                         "WHEN 'July' THEN 4 WHEN 'August' THEN 5 WHEN 'September' THEN 6 " +
-	                         "WHEN 'October' THEN 7 WHEN 'November' THEN 8 WHEN 'December' THEN 9 " +
-	                         "WHEN 'January' THEN 10 WHEN 'February' THEN 11 WHEN 'March' THEN 12 ELSE 13 END";
+	        Plants plant = plantOpt.get();
+	        Optional<Verticals> verticalOpt = verticalRepository.findById(plant.getVerticalFKId());
+	        Optional<Sites> siteOpt = siteRepository.findById(plant.getSiteFkId());
+	        
+	        if (verticalOpt.isPresent() && siteOpt.isPresent()) {
+	            String viewName = "vwScrn" + verticalOpt.get().getName() + "" + siteOpt.get().getName() + "MaintForOtherPlants";
+	            
+	            Map<String, Object> databaseResults = fetchOtherPlantsFromView(plantId, year, viewName);
 
-	            try (PreparedStatement ps = connection.prepareStatement(sql)) {
-	                ps.setString(1, plantId);
-	                ps.setString(2, year);
-	                try (ResultSet rs = ps.executeQuery()) {
-	                    ResultSetMetaData rsmd = rs.getMetaData();
-	                    int columnCount = rsmd.getColumnCount();
+	            List<Map<String, Object>> rows = (List<Map<String, Object>>) databaseResults.get("data");
+	            List<Map<String, Object>> metadata = (List<Map<String, Object>>) databaseResults.get("metadata");
+	            Set<String> numericColumns = (Set<String>) databaseResults.get("numericColumns");
 
-	                    for (int i = 1; i <= columnCount; i++) {
-	                        String name = rsmd.getColumnLabel(i);
-	                        int type = rsmd.getColumnType(i);
-
-	                        Map<String, Object> meta = new HashMap<>();
-	                        meta.put("field", name);
-	                        meta.put("title", name); 
-	                        meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
-	                        metadataList.add(meta);
-
-	                        if (type == Types.INTEGER || type == Types.DOUBLE || type == Types.DECIMAL || 
-	                            type == Types.FLOAT || type == Types.NUMERIC || type == Types.REAL) {
-	                            numericFields.add(name);
-	                        }
-	                    }
-
-	                    while (rs.next()) {
-	                        Map<String, Object> row = new LinkedHashMap<>();
-	                        for (int i = 1; i <= columnCount; i++) {
-	                            String colName = rsmd.getColumnLabel(i);
-	                            Object value = rs.getObject(i);
-	                            if (value == null) {
-	                                row.put(colName, numericFields.contains(colName) ? 0 : "");
-	                            } else {
-	                                row.put(colName, value);
-	                            }
-	                        }
-	                        dataList.add(row);
-	                    }
+	            Map<String, Double> totalsMap = new HashMap<>();
+	            for (Map<String, Object> row : rows) {
+	                for (String colName : numericColumns) {
+	                    Object val = row.get(colName);
+	                    double currentVal = (val instanceof Number) ? ((Number) val).doubleValue() : 0.0;
+	                    double existingTotal = totalsMap.containsKey(colName) ? totalsMap.get(colName) : 0.0;
+	                    totalsMap.put(colName, existingTotal + currentVal);
 	                }
 	            }
-	            resultMap.put("data", dataList);
-	            resultMap.put("metadata", metadataList);
-	            resultMap.put("numericColumns", numericFields);
-	            return resultMap;
+
+	           
+
+	            List<AopCalculation> aopCalculations = aopCalculationRepository
+	                    .findByPlantIdAndAopYearAndCalculationScreen(plantUUID, year, "maintenance-other-plants");
+
+	            Map<String, Object> finalData = new HashMap<>();
+	            finalData.put("data", rows);
+	            finalData.put("columns", metadata);
+	            finalData.put("aopCalculation", aopCalculations != null ? aopCalculations : new ArrayList<>());
+
+	            aopMessageVM.setData(finalData);
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("Data fetched successfully");
 	        }
-	    });
+	        return aopMessageVM;
+
+	    } catch (Exception ex) {
+	    	ex.printStackTrace();
+	        throw new RuntimeException("Error processing dynamic maintenance data", ex);
+	    }
+	}
+
+	private Map<String, String> loadColumnTitles(
+			Connection connection,
+			String viewName,
+			String siteName,
+			String tableName) throws SQLException {
+
+		Map<String, String> titleMap = new HashMap<>();
+
+		String sql = "SELECT [Key], [Value] " +
+				"FROM " + viewName + " " +
+				"WHERE TableName = ? AND SiteName = ?";
+
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+			ps.setString(1, tableName);
+			ps.setString(2, siteName);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					String key = rs.getString("Key");
+					String value = rs.getString("Value");
+
+					if (value != null) {
+						titleMap.put(key, value);
+					}
+				}
+			}
+		}
+
+		return titleMap;
+	}
+
+	private Map<String, String> loadIsVisible(
+			Connection connection,
+			String viewName,
+			String siteName,
+			String tableName) throws SQLException {
+
+		Map<String, String> titleMap = new HashMap<>();
+
+		String sql = "SELECT [Key],[IsVisible] " +
+				"FROM " + viewName + " " +
+				"WHERE TableName = ? AND SiteName = ?";
+
+		try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+			ps.setString(1, tableName);
+			ps.setString(2, siteName);
+
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					String key = rs.getString("Key");
+					String isVisible = rs.getString("IsVisible");
+
+					if (isVisible != null) {
+						titleMap.put(key, isVisible);
+					}
+					
+				}
+			}
+		}
+
+		return titleMap;
+	}
+
+	private Map<String, Object> fetchEverythingFromView(
+			final String plantId,
+			final String year,
+			final String viewName) {
+		
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		
+
+		return entityManager.unwrap(Session.class)
+				.doReturningWork(new ReturningWork<Map<String, Object>>() {
+
+					@Override
+					public Map<String, Object> execute(Connection connection) throws SQLException {
+
+						Map<String, Object> resultMap = new HashMap<>();
+						List<Map<String, Object>> dataList = new ArrayList<>();
+						List<Map<String, Object>> metadataList = new ArrayList<>();
+						Set<String> numericFields = new HashSet<>();
+
+						// ?? Load column title mapping from other view
+						Map<String, String> columnTitleMap = loadColumnTitles(connection,
+								"vwScrnCrackerKeyValueColumns", site.getName(), "DecokeMaintenance");
+						
+						Map<String, String> columnIsVisibleMap = loadIsVisible(connection,
+								"vwScrnCrackerKeyValueColumns", site.getName(), "DecokeMaintenance");
+
+						String sql = "SELECT * FROM " + viewName +
+								" WHERE PlantId = ? AND AOPYear = ? ORDER BY " +
+								"CASE MonthName " +
+								"WHEN 'April' THEN 1 WHEN 'May' THEN 2 WHEN 'June' THEN 3 " +
+								"WHEN 'July' THEN 4 WHEN 'August' THEN 5 WHEN 'September' THEN 6 " +
+								"WHEN 'October' THEN 7 WHEN 'November' THEN 8 WHEN 'December' THEN 9 " +
+								"WHEN 'January' THEN 10 WHEN 'February' THEN 11 WHEN 'March' THEN 12 " +
+								"ELSE 13 END";
+
+						try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+							ps.setString(1, plantId);
+							ps.setString(2, year);
+
+							try (ResultSet rs = ps.executeQuery()) {
+
+								ResultSetMetaData rsmd = rs.getMetaData();
+								int columnCount = rsmd.getColumnCount();
+
+								// -------- Metadata --------
+								for (int i = 1; i <= columnCount; i++) {
+
+									String columnName = rsmd.getColumnLabel(i);
+									int sqlType = rsmd.getColumnType(i);
+
+									Map<String, Object> meta = new HashMap<>();
+									meta.put("field", columnName);
+									meta.put("title",
+											columnTitleMap.getOrDefault(columnName, columnName));
+									meta.put("type",
+											getFrontendType(rsmd.getColumnTypeName(i)));
+									
+									meta.put("isVisible", columnIsVisibleMap.getOrDefault(columnName, "true"));
+									metadataList.add(meta);
+
+									if (sqlType == Types.INTEGER ||
+											sqlType == Types.DOUBLE ||
+											sqlType == Types.DECIMAL ||
+											sqlType == Types.FLOAT ||
+											sqlType == Types.NUMERIC ||
+											sqlType == Types.REAL) {
+										numericFields.add(columnName);
+									}
+								}
+
+								// -------- Data --------
+								while (rs.next()) {
+
+									Map<String, Object> row = new LinkedHashMap<>();
+
+									for (int i = 1; i <= columnCount; i++) {
+										String colName = rsmd.getColumnLabel(i);
+										Object value = rs.getObject(i);
+
+										if (value == null) {
+											row.put(colName,
+													numericFields.contains(colName) ? 0 : "");
+										} else {
+											row.put(colName, value);
+										}
+									}
+									dataList.add(row);
+								}
+							}
+						}
+
+						resultMap.put("data", dataList);
+						resultMap.put("metadata", metadataList);
+						resultMap.put("numericColumns", numericFields);
+
+						return resultMap;
+					}
+				});
+	}
+
+	private boolean isNumericType(int sqlType) {
+	    return sqlType == Types.INTEGER || sqlType == Types.DOUBLE || 
+	           sqlType == Types.DECIMAL || sqlType == Types.FLOAT || 
+	           sqlType == Types.NUMERIC || sqlType == Types.REAL;
 	}
 	
 	private String getFrontendType(String sqlTypeName) {
@@ -734,13 +886,15 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        throw new RuntimeException("Import process failed: " + e.getMessage());
 	    }
 	}
-	
+
 	public List<Map<String, Object>> readMaintenance(InputStream inputStream, UUID plantFKId, String year) {
 	    List<Map<String, Object>> payloadList = new ArrayList<>();
+	    
+	    int baseYearValue = Integer.parseInt(year.split("-")[0]);
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
-	        int totalRows = sheet.getLastRowNum();
+	        int totalRows = sheet.getLastRowNum(); 
 	        
 	        Row headerRow = sheet.getRow(0);
 	        if (headerRow == null) return payloadList;
@@ -751,27 +905,58 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	            columnNames.add(headerValue != null ? headerValue.trim() : "Column_" + i);
 	        }
 
-	        for (int i = 1; i <= totalRows-1; i++) {
+	        for (int i = 1; i < totalRows; i++) { 
 	            Row row = sheet.getRow(i);
-	            
 	            if (row == null) continue;
 
-	            Map<String, Object> rowData = new HashMap<>();
+	            Map<String, Object> rowData = new LinkedHashMap<>();
+	            String currentRowMonth = "";
+	            boolean rowError = false;
+	            StringBuilder rowErrorMsg = new StringBuilder("Error at row " + (i + 1) + ": ");
+
 	            try {
 	                for (int j = 0; j < columnNames.size(); j++) {
-	                    String columnName = columnNames.get(j);
-	                    Cell cell = row.getCell(j);
-	                    
-	                    if (columnName.equalsIgnoreCase("AOPYear") || columnName.equalsIgnoreCase("PlantId") || columnName.equalsIgnoreCase("Id") || columnName.equalsIgnoreCase("MonthName") || columnName.equalsIgnoreCase("Remarks")) {
-	                        rowData.put(columnName, getStringCellValue(cell));
-	                    } else if (columnName.equalsIgnoreCase("NumberOfDays")) {
-	                        rowData.put(columnName, getIntegerCellValue(cell));
-	                    } else {
-	                        rowData.put(columnName, getNumericCellValue(cell));
+	                    if (columnNames.get(j).equalsIgnoreCase("MonthName")) {
+	                        currentRowMonth = getStringCellValue(row.getCell(j));
+	                        break;
 	                    }
 	                }
 
-	                rowData.put("saveStatus", "Success");
+	                for (int j = 0; j < columnNames.size(); j++) {
+	                    String columnName = columnNames.get(j);
+	                    Cell cell = row.getCell(j);
+	                    Object value;
+
+	                    if (columnName.equalsIgnoreCase("AOPYear") || columnName.equalsIgnoreCase("PlantId") || 
+	                        columnName.equalsIgnoreCase("Id") || columnName.equalsIgnoreCase("MonthName") || 
+	                        columnName.equalsIgnoreCase("Remarks")) {
+	                        value = getStringCellValue(cell);
+	                    } else if (columnName.equalsIgnoreCase("NumberOfDays")) {
+	                        value = getIntegerCellValue(cell);
+	                    } else {
+	                        value = getNumericCellValue(cell);
+	                    }
+
+	                    if (value instanceof Number && !columnName.equalsIgnoreCase("Id") && !columnName.equalsIgnoreCase("PlantId")) {
+	                        double numericValue = ((Number) value).doubleValue();
+	                        int maxDays = getMaxDaysInMonth(currentRowMonth, baseYearValue);
+	                        
+	                        if (numericValue < 0 || numericValue > maxDays) {
+	                            rowError = true;
+	                            rowErrorMsg.append("[").append(columnName).append("] value ").append(numericValue)
+	                                       .append(" exceeds max allowed (").append(maxDays).append(") for ").append(currentRowMonth != null ? currentRowMonth : "month").append(". ");
+	                        }
+	                    }
+	                    rowData.put(columnName, value);
+	                }
+
+	                if (rowError) {
+	                    rowData.put("saveStatus", "Failed");
+	                    rowData.put("errDescription", rowErrorMsg.toString());
+	                } else {
+	                    rowData.put("saveStatus", "Success");
+	                }
+
 	            } catch (Exception e) {
 	                rowData.put("saveStatus", "Failed");
 	                rowData.put("errDescription", "Error at row " + (i + 1) + ": " + e.getMessage());
@@ -782,6 +967,22 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 	        e.printStackTrace();
 	    }
 	    return payloadList;
+	}
+	
+	private int getMaxDaysInMonth(String monthName, int baseYear) {
+	    if (monthName == null) return 31;
+	    
+	    String month = monthName.trim().toLowerCase();
+	    
+	    switch (month) {
+	        case "april": case "june": case "september": case "november":
+	            return 30;
+	        case "february":
+	            int febYear = baseYear + 1; 
+	            return java.time.Year.of(febYear).isLeap() ? 29 : 28;
+	        default:
+	            return 31;
+	    }
 	}
 	
 	private static String getStringCellValue(Cell cell) {
@@ -1697,8 +1898,72 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 		}
 	}
 
-	
-	
-	
+	private Map<String, Object> fetchOtherPlantsFromView(
+			final String plantId,
+			final String year,
+			final String viewName) {
+
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+				.orElseThrow(() -> new RuntimeException("Plant not found"));
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new RuntimeException("Site not found"));
+
+		return entityManager.unwrap(Session.class)
+				.doReturningWork(new ReturningWork<Map<String, Object>>() {
+
+					@Override
+					public Map<String, Object> execute(Connection connection) throws SQLException {
+
+						Map<String, Object> resultMap = new HashMap<>();
+						List<Map<String, Object>> dataList = new ArrayList<>();
+						List<Map<String, Object>> metadataList = new ArrayList<>();
+						Set<String> numericFields = new HashSet<>();
+
+						String sql = "SELECT * FROM " + viewName
+								+ " WHERE AuditYear = ? ";
+
+						try (PreparedStatement ps = connection.prepareStatement(sql)) {
+							ps.setString(1, year);
+
+							try (ResultSet rs = ps.executeQuery()) {
+								ResultSetMetaData rsmd = rs.getMetaData();
+								int columnCount = rsmd.getColumnCount();
+
+								for (int i = 1; i <= columnCount; i++) {
+									String columnName = rsmd.getColumnLabel(i);
+									int sqlType = rsmd.getColumnType(i);
+
+									Map<String, Object> meta = new HashMap<>();
+									meta.put("field", columnName);
+									meta.put("title", columnName);
+									meta.put("type", getFrontendType(rsmd.getColumnTypeName(i)));
+									metadataList.add(meta);
+									if (isNumericType(sqlType)) {
+										numericFields.add(columnName);
+									}
+								}
+								while (rs.next()) {
+									Map<String, Object> row = new LinkedHashMap<>();
+									for (int i = 1; i <= columnCount; i++) {
+										String colName = rsmd.getColumnLabel(i);
+										Object value = rs.getObject(i);
+
+										if (value == null) {
+											row.put(colName, numericFields.contains(colName) ? 0 : "");
+										} else {
+											row.put(colName, value);
+										}
+									}
+									dataList.add(row);
+								}
+							}
+						}
+						resultMap.put("data", dataList);
+						resultMap.put("metadata", metadataList);
+						resultMap.put("numericColumns", numericFields);
+						return resultMap;
+					}
+				});
+	}
 
 }

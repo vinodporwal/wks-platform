@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -154,12 +155,16 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 					failedList.add(qualityTransactionDTO);
 					continue;
 				}
+				Boolean changed=false;
+				Boolean update=false;
 				QualityTransaction qualityTransaction =null;
 				UUID material=UUID.fromString(qualityTransactionDTO.getMaterialId());
 				Optional<QualityTransaction> qualityTransactionOpt =qualityTransactionRepository.findByMaterialPlantAndYear(material,plantId,year);
 				if(qualityTransactionOpt.isPresent()) {
 						qualityTransaction=qualityTransactionOpt.get();
+						update=true;
 				}else {
+					update=false;
 					qualityTransaction = new QualityTransaction();
 					qualityTransaction.setMaterialId(UUID.fromString(qualityTransactionDTO.getMaterialId()));
 					qualityTransaction.setAopYear(year);
@@ -167,10 +172,42 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 					qualityTransaction.setPrevBudget(qualityTransactionDTO.getPrevBudget());
 					qualityTransaction.setPlantId(plantId);
 				}
+				if (update) {
+				    if (!Objects.equals(qualityTransaction.getProposedNorm(), qualityTransactionDTO.getProposedNorm())) {
+				        changed = true;
+				    }
+				    
+				    if (!Objects.equals(qualityTransaction.getPrevActual(), qualityTransactionDTO.getPrevActual())) {
+				        changed = true;
+				    }
+
+				    if (changed) {
+				        String existingRemark = qualityTransaction.getRemark();
+				        String newRemark = qualityTransactionDTO.getRemark();
+
+				        if (Objects.equals(existingRemark, newRemark) || 
+				           (existingRemark != null && existingRemark.equalsIgnoreCase(newRemark))) {
+				            
+				            qualityTransactionDTO.setErrDescription("Please update remark");
+				            qualityTransactionDTO.setSaveStatus("Failed");
+				            failedList.add(qualityTransactionDTO);
+				            continue;
+				        }
+				    }
+				}else {
+					if(qualityTransactionDTO.getRemark()==null) {
+						 qualityTransactionDTO.setErrDescription("Please add remark");
+				            qualityTransactionDTO.setSaveStatus("Failed");
+				            failedList.add(qualityTransactionDTO);
+				            continue;
+					}
+				}
+				
 				qualityTransaction.setRemark(qualityTransactionDTO.getRemark());
 				qualityTransaction.setUpdatedBy(Utility.getUserName());
 				qualityTransaction.setModifiedOn(new Date());
 				qualityTransaction.setProposedNorm(qualityTransactionDTO.getProposedNorm());
+				qualityTransaction.setPrevActual(qualityTransactionDTO.getPrevActual());
 				qualityTransactionRepository.save(qualityTransaction);
 			}
 			
@@ -204,10 +241,11 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	        innerHeaders.add("Material Id");
 	        innerHeaders.add("Name");
 	        innerHeaders.add("UOM");
-	        innerHeaders.add("Budget");
-	        innerHeaders.add("Actual");
-	        innerHeaders.add("Proposed Norm");
-	        innerHeaders.add("Id");
+	        innerHeaders.add("Budget "+getNextFiscalYear(year));
+	        innerHeaders.add("Actual "+getNextFiscalYear(year));
+	        innerHeaders.add("Proposed Norm "+year);
+	        innerHeaders.add("Remarks");
+	        
 	        if (isAfterSave) {
 	            innerHeaders.add("Status");
 	            innerHeaders.add("Error Description");
@@ -230,7 +268,8 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	            rowData.add(dto.getPrevBudget());
 	            rowData.add(dto.getPrevActual());
 	            rowData.add(dto.getProposedNorm());
-	            rowData.add(dto.getId());
+	            rowData.add(dto.getRemark());
+	            
 	            if (isAfterSave) {
 	                rowData.add(dto.getSaveStatus());
 	                rowData.add(dto.getErrDescription());
@@ -250,7 +289,7 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	                }  
 	            }
 	        }
-	        sheet.setColumnHidden(6, true);
+	        sheet.setColumnHidden(0, true);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
 	        workbook.close();
@@ -259,6 +298,16 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	        e.printStackTrace();
 	    }
 	    return null;
+	}
+	
+	public String getNextFiscalYear(String currentYear) {
+	    String[] parts = currentYear.split("-");
+	    
+	    int startYear = Integer.parseInt(parts[0]);
+	    int endYearSuffix = Integer.parseInt(parts[1]);
+	    int nextStartYear = startYear -1;
+	    int nextEndYearSuffix = endYearSuffix - 1;
+	    return nextStartYear + "-" + String.format("%02d", nextEndYearSuffix % 100);
 	}
 
 	@Override
@@ -308,9 +357,26 @@ public class QualityTransactionServiceImpl implements QualityTransactionService{
 	                dto.setDisplayName(getStringCellValue(row.getCell(1), dto));
 	                dto.setUom(getStringCellValue(row.getCell(2), dto));
 	                dto.setPrevBudget(getNumericCellValue(row.getCell(3), dto));
-	                dto.setPrevActual(getNumericCellValue(row.getCell(4), dto));
-	                dto.setProposedNorm(getNumericCellValue(row.getCell(5), dto));
-	                dto.setId(getStringCellValue(row.getCell(6), dto));
+	                Double prevActual = getNumericCellValue(row.getCell(4), dto);
+	                if (prevActual != null) {
+	                    if (prevActual >= 0 && prevActual <= 100) {
+	                        dto.setPrevActual(prevActual);
+	                    } else {
+	                    	dto.setErrDescription("Prev. Actual value should be between 0 to 100");
+	    	                dto.setSaveStatus("Failed");
+	                    }
+	                }
+
+	                Double cellValue = getNumericCellValue(row.getCell(5), dto);
+	                if (cellValue != null) {
+	                    if (cellValue >= 0 && cellValue <= 100) {
+	                        dto.setProposedNorm(cellValue);
+	                    } else {
+	                    	dto.setErrDescription("Proposed Norm value should be between 0 to 100");
+	    	                dto.setSaveStatus("Failed");
+	                    }
+	                }
+	                dto.setRemark(getStringCellValue(row.getCell(6), dto));
 	                dto.setPlantId(plantFKId.toString());
 	                dto.setAopYear(year);
 	              } 

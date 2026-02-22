@@ -220,7 +220,7 @@ const MonthwiseProduction = () => {
     {
       field: 'RowNo',
       title: 'SL.No',
-      widthT: 80,
+      widthT: 70,
       editable: false,
       format: '{0:#.#}',
     },
@@ -334,7 +334,7 @@ const MonthwiseProduction = () => {
     {
       field: 'Remark',
       title: 'Remarks',
-      width: 200,
+
       editable: true,
     },
   ]

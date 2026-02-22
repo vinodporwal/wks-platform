@@ -1,0 +1,20 @@
+package com.wks.caseengine.tcs.dto;
+
+import java.util.UUID;
+
+import lombok.Data;
+
+@Data
+public class VGOVRDropDTO {
+
+    private UUID   id;
+    private String kbpsd;
+    private Double value_345;
+    private String remarks;
+    
+    // For Excel import error handling
+    private String saveStatus;
+    private String errDescription;
+}
+
+

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { DtaDataService } from 'services/DtaDataservice'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 
@@ -8,12 +9,21 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
 import { SlowDownElastomerColumns } from 'components/colums/ElastomerColums'
-import { SlowDownVcmColumns } from 'components/colums/VcmColums'
+import {
+  SlowDownDmdVcmColumns,
+  SlowDownVcmColumns,
+} from 'components/colums/VcmColums'
 import { SlowDownAromaticsColumns } from 'components/colums/AromaticsColumns'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
 import { SlowDownPeColumns } from 'components/colums/PeColums'
-import { SlowDownPpColumns } from 'components/colums/PpColums'
-import { SlowDownPtaColumns } from 'components/colums/PtaColums'
+import {
+  SlowDownPpColumns,
+  SlowDownPpDtaColumns,
+} from 'components/colums/PpColums'
+import {
+  SlowDownPtaColumns,
+  SlowDownPtadmdColumns,
+} from 'components/colums/PtaColums'
 import { verticalEnums } from 'enums/verticalEnums'
 import { validateFields } from 'utils/validationUtils'
 import { Box, Tab, Tabs } from '../../../node_modules/@mui/material/index'
@@ -24,6 +34,8 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+import ElastomerSlowdown from './ElastomerSlowdown'
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -53,10 +65,15 @@ const SlowDown = ({ permissions }) => {
   const FORMATE_DECIMAL = ValueFormatterProduction()
   const vertName = verticalChange?.selectedVertical
   const plantName = plantObject?.name
+
+  const PLANT_NAME_LOWER = plantObject?.name?.toLowerCase()
+  const SITE_NAME_LOWER = siteObject?.name?.toLowerCase()
+
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const [errorRows, setErrorRows] = useState(new Set())
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = SITE_NAME_LOWER
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [modifiedCells2, setModifiedCells2] = React.useState({})
@@ -65,9 +82,9 @@ const SlowDown = ({ permissions }) => {
   const apiRef = useGridApiRef()
   const [open1, setOpen1] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
-  const [rows, setRows] = useState()
-  const [rowsShutdown, setRowsShutdown] = useState()
-  const [rows2, setRows2] = useState()
+  const [rows, setRows] = useState([])
+  const [rowsShutdown, setRowsShutdown] = useState([])
+  const [rows2, setRows2] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -75,6 +92,7 @@ const SlowDown = ({ permissions }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
+  const [allLines, setAllLines] = useState([])
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
@@ -92,7 +110,8 @@ const SlowDown = ({ permissions }) => {
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
-
+  const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
+  const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -138,26 +157,47 @@ const SlowDown = ({ permissions }) => {
     if (!PLANT_ID || !AOP_YEAR) return
 
     const getAllDescriptionDrpdwn = async () => {
+      if (!PLANT_ID && !AOP_YEAR) return
       try {
-        // Use your VCM-specific API here
-        const data = await DataService.dropdownValues(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-        const descriptionObjList = data?.data.map((item) => ({
+        let data
+        if (IS_PTA_DMD) {
+          data = await DataService.dropdownValueSlowdown(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        } else {
+          data = await DataService.dropdownValues(keycloak, PLANT_ID, AOP_YEAR)
+        }
+
+        // Normalize: handle both { data: [...] } and [...]
+        const apiData = Array.isArray(data) ? data : data?.data || []
+
+        const descriptionObjList = apiData.map((item) => ({
           id: item.Name,
           name: item.Name,
           displayName: item.DisplayName,
         }))
         setAllDescriptionDrpdwn(descriptionObjList)
       } catch (error) {
-        console.error('Error fetching VCM descriptions', error)
+        console.error('Error fetching descriptions:', error)
+        setAllDescriptionDrpdwn([])
       }
     }
 
-    if (lowerVertName === 'vcm') getAllDescriptionDrpdwn()
-  }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
+    // Call for both VCM and PTA_DMD
+    if (lowerVertName === 'vcm' || IS_PTA_DMD) {
+      getAllDescriptionDrpdwn()
+    }
+  }, [
+    oldYear,
+    AOP_YEAR,
+    keycloak,
+    PLANT_ID,
+    lowerVertName,
+    lowerSiteName,
+    PLANT_NAME_LOWER,
+  ])
 
   function addTimeOffset(dateTime) {
     if (!dateTime) return null
@@ -257,14 +297,49 @@ const SlowDown = ({ permissions }) => {
         id: row.idFromApi || null,
         rateEO: null,
         rateEOE: null,
+        ...(IS_PP_DTA ? { lineId: row.lineId } : {}),
+      }))
+      const slowDownDetailsPTADMD = newRow.map((row) => ({
+        productId: (() => {
+          const matched = allProducts.find(
+            (p) => p.displayName === row.productName1,
+          )
+          return matched?.realId || null
+        })(),
+        productName: row.productName1,
+        discription: row.discription || row.discriptionDrpdwn,
+        durationInHrs: (() => {
+          const v = findDuration('1', row)
+          if (!v) return null
+          const [h = '00', m = '00'] = String(v).split('.')
+          return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+        })(),
+        remark: row.remark,
+        rate: row.rate,
+        audityear: AOP_YEAR,
+        id: row.idFromApi || null,
+        rateEO: row.rateEO,
+        rateEOE: row.rateEOE,
+        noOfRPF: row.noOfRPF,
+        rpfDownTime: (() => {
+          const v = row.rpfDownTime
+          if (!v) return null
+          const [h = '00', m = '00'] = String(v).split('.')
+          return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+        })(),
+        month: row.monthly,
       }))
       const response = await DataService.saveSlowdownData(
         plantId,
         lowerVertName === 'elastomer'
           ? slowDownDetailsElastomer
-          : lowerVertName === 'pe' || lowerVertName === 'pp'
-            ? slowDownDetailsPEPP
-            : slowDownDetailsMEG,
+          : IS_PTA_DMD
+            ? slowDownDetailsPTADMD
+            : lowerVertName === 'pe' ||
+                lowerVertName === 'pp' ||
+                lowerVertName === 'pet'
+              ? slowDownDetailsPEPP
+              : slowDownDetailsMEG,
         keycloak,
       )
 
@@ -377,7 +452,12 @@ const SlowDown = ({ permissions }) => {
         const y = date.getFullYear()
         return `${d}/${m}/${y}`
       }
-      if (lowerVertName != 'pe' && lowerVertName !== 'pp') {
+      if (
+        lowerVertName != 'pe' &&
+        lowerVertName !== 'pp' &&
+        lowerVertName !== 'pet' &&
+        !IS_PTA_DMD
+      ) {
         for (const record of data) {
           const startDate =
             record.maintStartDateTime instanceof Date
@@ -413,7 +493,7 @@ const SlowDown = ({ permissions }) => {
       }
 
       // Select required fields based on vertical
-      const requiredFields = ['discription', 'remark']
+      const requiredFields = ['discription', 'remark', 'rate']
       const requiredFieldsForElastomer = [
         'discription',
         'remark',
@@ -434,6 +514,15 @@ const SlowDown = ({ permissions }) => {
         'rateEOE',
         'rateEO',
       ]
+      const requiredFieldsISPTADMD = [
+        'discriptionDrpdwn',
+        'remark',
+        'monthly',
+        'rpfDownTime',
+        'noOfRPF',
+        'rate',
+        'durationInHrs',
+      ]
 
       const chosenFields =
         lowerVertName === 'elastomer'
@@ -442,7 +531,9 @@ const SlowDown = ({ permissions }) => {
             ? requiredFieldsForMeg
             : IS_PE_PP || IS_PET
               ? requiredFieldsForPe
-              : requiredFields
+              : IS_PTA_DMD
+                ? requiredFieldsISPTADMD
+                : requiredFields
 
       // Missing required fields
       for (const record of data) {
@@ -457,6 +548,14 @@ const SlowDown = ({ permissions }) => {
             if (field === 'productName1') displayField = 'Particulars'
             else if (field === 'monthly') displayField = 'Month'
             record.isError = true
+            setRows((prevRows) =>
+              prevRows.map((row) => {
+                if (row.id === record.id) {
+                  return { ...row, isError: true }
+                }
+                return row
+              }),
+            )
             setSnackbarOpen(true)
             setSnackbarData({
               message: `Required field "${displayField}" is missing for "${record.discription || 'this record'}".`,
@@ -470,6 +569,11 @@ const SlowDown = ({ permissions }) => {
       const validationMessage = validateFields(data, chosenFields)
       if (validationMessage) {
         data.forEach((r) => (r.isError = true))
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            data.some((d) => d.id === row.id) ? { ...row, isError: true } : row,
+          ),
+        )
         setSnackbarOpen(true)
         setSnackbarData({
           message: validationMessage,
@@ -486,7 +590,7 @@ const SlowDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'vcm') {
+      if (duplicate && lowerVertName !== 'vcm' && !IS_PTA_DMD) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -501,7 +605,12 @@ const SlowDown = ({ permissions }) => {
       }
 
       // Date required + Start < End check
-      if (lowerVertName != 'pe' && lowerVertName !== 'pp') {
+      if (
+        lowerVertName != 'pe' &&
+        lowerVertName !== 'pp' &&
+        !IS_PTA_DMD &&
+        lowerVertName !== 'pet'
+      ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
           const endMissing = !record.maintEndDateTime
@@ -538,9 +647,17 @@ const SlowDown = ({ permissions }) => {
         }
       }
       if (lowerVertName === 'vcm') {
+        const furnaceDecokingDescriptions = [
+          'Furnace Decoking',
+          'Furnace Decoking H-210',
+          'Furnace Decoking H-220',
+          'Furnace Decoking H-1220',
+        ]
         for (const row of rows) {
           if (
-            (row.discription || '').trim() === 'Furnace Decoking' &&
+            furnaceDecokingDescriptions.includes(
+              (row.discription || '').trim(),
+            ) &&
             row.maintStartDateTime &&
             row.maintEndDateTime
           ) {
@@ -552,7 +669,7 @@ const SlowDown = ({ permissions }) => {
               row.isError = true
               setSnackbarOpen(true)
               setSnackbarData({
-                message: `For "Furnace Decoking", the duration between Start Date and End Date must be exactly 192 hours (8 days).`,
+                message: `For "${row.discription}", the duration between Start Date and End Date must be exactly 192 hours (8 days).`,
                 severity: 'error',
               })
               return
@@ -561,66 +678,105 @@ const SlowDown = ({ permissions }) => {
         }
       }
 
-      // MEG specific checks
-      if (
-        lowerVertName === 'meg' ||
-        lowerVertName === 'pvc' ||
-        lowerVertName === 'pta' ||
-        lowerVertName === 'pet'
-      ) {
-        // Month span check
-        //check timeframe Multiple month spilt into single
-        for (const row of rows) {
-          const start = new Date(row.maintStartDateTime)
-          const end = new Date(row.maintEndDateTime)
-          if (isNaN(start) || isNaN(end)) continue
-
-          const isSameMonth =
-            start.getMonth() === end.getMonth() &&
-            start.getFullYear() === end.getFullYear()
-
-          if (!isSameMonth) {
-            row.isError = true
-            setSnackbarOpen(true)
-            setSnackbarData({
-              message: `The slowdown timeframe for '${row.discription}' spans multiple months. Please split into separate entries.`,
-              severity: 'error',
-            })
-            return
-          }
+      if (lowerVertName === 'vcm') {
+        const furnaceDecokingRates = {
+          'Furnace Decoking H-210': 27,
+          'Furnace Decoking H-220': 27,
+          'Furnace Decoking H-1220': 26.458,
         }
-
-        // Overlap within Slowdown  of timeframe ovelaping
-        for (let i = 0; i < rows.length; i++) {
-          const a = rows[i]
-          const aStart = new Date(a.maintStartDateTime).getTime()
-          const aEnd = new Date(a.maintEndDateTime).getTime()
-          if (isNaN(aStart) || isNaN(aEnd)) continue
-
-          for (let j = i + 1; j < rows.length; j++) {
-            const b = rows[j]
-            const bStart = new Date(b.maintStartDateTime).getTime()
-            const bEnd = new Date(b.maintEndDateTime).getTime()
-            if (isNaN(bStart) || isNaN(bEnd)) continue
-
-            if (aStart < bEnd && bStart < aEnd) {
-              a.isError = true
-              b.isError = true
+        for (const record of data) {
+          const desc = (record.discription || '').trim()
+          if (Object.keys(furnaceDecokingRates).includes(desc)) {
+            // Validate rate for H-210, H-220, H-1220
+            if (
+              desc !== 'Furnace Decoking' &&
+              Number(record.rate) !== Number(furnaceDecokingRates[desc])
+            ) {
+              record.isError = true
               setSnackbarOpen(true)
               setSnackbarData({
-                message: `The slowdown timeframe for "${a.discription || b.discription || 'this record'}" overlaps with "${b.discription}". Please ensure no overlapping of timeframes.`,
+                message: `For "${desc}", the rate must be ${furnaceDecokingRates[desc]} TPH.`,
                 severity: 'error',
               })
               return
             }
           }
         }
+      }
+      //----------------------------------
+      // MEG specific checks
+      if (
+        lowerVertName === 'meg' ||
+        lowerVertName === 'pvc' ||
+        lowerVertName === 'pta' ||
+        lowerVertName === 'pet' ||
+        lowerVertName === 'vcm'
+      ) {
+        // Month span check
+        //check timeframe Multiple month spilt into single
+
+        if (lowerVertName != 'vcm' && !IS_PTA_DMD && lowerVertName !== 'pet') {
+          for (const row of rows) {
+            const start = new Date(row.maintStartDateTime)
+            const end = new Date(row.maintEndDateTime)
+            if (isNaN(start) || isNaN(end)) continue
+
+            const isSameMonth =
+              start.getMonth() === end.getMonth() &&
+              start.getFullYear() === end.getFullYear()
+
+            if (!isSameMonth) {
+              row.isError = true
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `The slowdown timeframe for '${row.discription}' spans multiple months. Please split into separate entries.`,
+                severity: 'error',
+              })
+              return
+            }
+          }
+        }
+        // Overlap within Slowdown  of timeframe ovelaping
+        if (!IS_PTA_DMD && lowerVertName !== 'pet') {
+          for (let i = 0; i < rows.length; i++) {
+            const a = rows[i]
+            const aStart = new Date(a.maintStartDateTime).getTime()
+            const aEnd = new Date(a.maintEndDateTime).getTime()
+            if (isNaN(aStart) || isNaN(aEnd)) continue
+
+            for (let j = i + 1; j < rows.length; j++) {
+              const b = rows[j]
+              const bStart = new Date(b.maintStartDateTime).getTime()
+              const bEnd = new Date(b.maintEndDateTime).getTime()
+              if (isNaN(bStart) || isNaN(bEnd)) continue
+              if (
+                (a.discription && a.discription === 'Seasonal Impact') ||
+                (b.discription && b.discription === 'Seasonal Impact')
+              ) {
+                continue
+              }
+
+              if (aStart < bEnd && bStart < aEnd) {
+                a.isError = true
+                b.isError = true
+                setSnackbarOpen(true)
+                setSnackbarData({
+                  message: `The slowdown timeframe for "${a.discription || b.discription || 'this record'}" overlaps with "${b.discription}". Please ensure no overlapping of timeframes.`,
+                  severity: 'error',
+                })
+                return
+              }
+            }
+          }
+        }
 
         // Cross overlap the timeframe with Shutdown
         if (
-          lowerVertName != 'elastomer' ||
-          lowerVertName != 'vcm' ||
-          lowerVertName != 'pvc'
+          lowerVertName !== 'elastomer' &&
+          // lowerVertName !== 'vcm' &&
+          lowerVertName !== 'pvc' &&
+          !IS_PTA_DMD &&
+          lowerVertName !== 'pet'
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -633,6 +789,12 @@ const SlowDown = ({ permissions }) => {
               const bStart = new Date(b.maintStartDateTime).getTime()
               const bEnd = new Date(b.maintEndDateTime).getTime()
               if (isNaN(bStart) || isNaN(bEnd)) continue
+              if (
+                (a.discription && a.discription === 'Seasonal Impact') ||
+                (b.discription && b.discription === 'Seasonal Impact')
+              ) {
+                continue
+              }
 
               if (aStart < bEnd && bStart < aEnd) {
                 a.isError = true
@@ -767,6 +929,7 @@ const SlowDown = ({ permissions }) => {
 
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
     setLoading(true)
     try {
       const data = await DataService.getSlowDownPlantData(
@@ -789,6 +952,7 @@ const SlowDown = ({ permissions }) => {
         maintEndDateTime: new Date(item?.maintEndDateTime),
       }))
       setRowsShutdown(formattedDataShutDown)
+
       const monthNames = [
         'January',
         'February',
@@ -804,23 +968,30 @@ const SlowDown = ({ permissions }) => {
         'December',
       ]
 
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        product: item.productId,
-        productName1: item.productName || '',
-        idFromApi: item?.maintenanceId || item?.id,
-        id: index,
-        originalRemark: item.remark,
-        maintStartDateTime: new Date(item?.maintStartDateTime),
-        maintEndDateTime: new Date(item?.maintEndDateTime),
-        monthly:
-          item?.monthly ||
-          item?.month ||
-          (item?.maintStartDateTime
-            ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
-            : ''),
-        //month: item?.month || '',
-      }))
+      const formattedData = data.map((item, index) => {
+        const descriptionObj = allDescriptionDrpdwn.find(
+          (p) => p.name === item.discription,
+        )
+
+        return {
+          ...item,
+          product: item.productId,
+          productName1: item.productName || '',
+          idFromApi: item?.maintenanceId || item?.id,
+          id: index,
+          originalRemark: item.remark,
+          discriptionDrpdwn: descriptionObj ? descriptionObj.displayName : '',
+          maintStartDateTime: new Date(item?.maintStartDateTime),
+          maintEndDateTime: new Date(item?.maintEndDateTime),
+          monthly:
+            item?.monthly ||
+            item?.month ||
+            (item?.maintStartDateTime
+              ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+              : ''),
+          lineId: item?.lineId || null,
+        }
+      })
 
       setRows(formattedData)
       setLoading(false)
@@ -991,6 +1162,45 @@ const SlowDown = ({ permissions }) => {
       fetchData2()
     }
   }, [oldYear, yearChanged, keycloak, PLANT_ID])
+  useEffect(() => {
+    if (
+      (lowerVertName === 'vcm' || IS_PTA_DMD) &&
+      allDescriptionDrpdwn?.length > 0
+    ) {
+      fetchData()
+    } else if (allProducts.length > 0) {
+      if (!PLANT_ID || !AOP_YEAR) return
+      fetchData()
+    }
+  }, [
+    allProducts,
+    allDescriptionDrpdwn,
+    oldYear,
+    yearChanged,
+    keycloak,
+    PLANT_ID,
+    lowerVertName,
+    lowerSiteName,
+    PLANT_NAME_LOWER,
+  ])
+  const fetchLineDetails = async () => {
+    try {
+      const response = await DtaDataService.getLineDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      const lines = Array.isArray(response?.data) ? response.data : []
+      setAllLines(lines)
+    } catch (error) {
+      console.error('Error fetching line details:', error)
+    }
+  }
+  useEffect(() => {
+    if (IS_PP_DTA) {
+      fetchLineDetails()
+    }
+  }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
 
   const focusFirstField = async () => {
     const newRowId = rows.length
@@ -1003,13 +1213,18 @@ const SlowDown = ({ permissions }) => {
   }
 
   const colDefs = useMemo(() => {
+    var IS_VCM_DMD_VCM =
+      lowerVertName === 'vcm' &&
+      PLANT_NAME_LOWER === 'vcm' &&
+      SITE_NAME_LOWER === 'dmd'
+
     switch (lowerVertName) {
       case verticalEnums.PE:
         return SlowDownPeColumns
       case verticalEnums.PP:
-        return SlowDownPpColumns
+        return IS_PP_DTA ? SlowDownPpDtaColumns : SlowDownPpColumns
       case verticalEnums.PTA:
-        return SlowDownPtaColumns
+        return IS_PTA_DMD ? SlowDownPtadmdColumns : SlowDownPtaColumns
       case verticalEnums.ELASTOMER:
         return SlowDownElastomerColumns
       case verticalEnums.MEG:
@@ -1019,13 +1234,13 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PVC:
         return SlowDownElastomerColumns
       case verticalEnums.VCM:
-        return SlowDownVcmColumns
+        return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
       case verticalEnums.PET:
         return SlowDownPeColumns
       default:
         return SlowDownMegColumns
     }
-  }, [lowerVertName])
+  }, [lowerVertName, PLANT_NAME_LOWER, SITE_NAME_LOWER])
 
   const deleteRowData = async (paramsForDelete) => {
     setLoading(true)
@@ -1070,8 +1285,14 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-
-      if (
+      if (IS_PTA_DMD) {
+        response = await DataService.ExportSlowdownDetailsPTADMD(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (
         lowerVertName == 'elastomer' ||
         lowerVertName == 'pvc' ||
         lowerVertName == 'vcm' ||
@@ -1115,7 +1336,14 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (
+      if (IS_PTA_DMD) {
+        response = await DataService.ImportSlowdownPTADMDDetails(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (
         lowerVertName == 'elastomer' ||
         lowerVertName == 'pvc' ||
         lowerVertName == 'vcm' ||
@@ -1232,6 +1460,17 @@ const SlowDown = ({ permissions }) => {
       showTitleNameBusiness: true,
       titleName: SCREEN_NAME,
       uploadExcelBtn: SHOW_EXCEL_UPLOAD_BUTTON,
+      highlightDiscription:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      MonthDropdownPEPPHighlight:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightRate:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightDuration:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightProductName1:
+        lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightLine: IS_PP_DTA ? true : false,
     },
     isOldYear,
   )
@@ -1240,16 +1479,44 @@ const SlowDown = ({ permissions }) => {
     <div>
       <LoaderBackdrop open={!!loading} />
 
-      {lowerVertName === 'meg' && (
-        <Box sx={{ m: 0, p: 0 }}>
-          <AopTabs
-            tabIndex={selectedTab}
-            setTabIndex={(index) => handleTabChange(null, index)}
-            tabs={['Slowdown Details', 'Configuration']}
-          />
+      {(lowerVertName === 'meg' || lowerVertName === 'elastomer') && (
+        <Box style={{ margin: 0, padding: 0 }}>
+          <Tabs
+            value={selectedTab}
+            onChange={handleTabChange}
+            sx={{
+              borderBottom: '0px solid #ccc',
+              '.MuiTabs-indicator': { display: 'none' },
+              margin: '0px 0px 0px 0px',
+              minHeight: '28px',
+            }}
+          >
+            <Tab
+              label='Slowdown Details'
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+
+            <Tab
+              label='Slowdown History Config'
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          </Tabs>
         </Box>
       )}
 
+      {/* TAB 1 - SAME FOR MEG + ELASTOMER */}
       {selectedTab === 0 && (
         <KendoDataTables
           modifiedCells={modifiedCells}
@@ -1288,10 +1555,12 @@ const SlowDown = ({ permissions }) => {
           screenType='slowdown'
           downloadExcelForConfiguration={downloadExcelForConfiguration}
           allDescriptionDrpdwn={allDescriptionDrpdwn}
+          allLines={allLines}
         />
       )}
 
-      {selectedTab === 1 && (
+      {/* TAB 2 FOR MEG (EXISTING CONFIG GRID) */}
+      {selectedTab === 1 && lowerVertName === 'meg' && (
         <KendoDataTables
           modifiedCells={modifiedCells2}
           setModifiedCells={setModifiedCells2}
@@ -1315,6 +1584,9 @@ const SlowDown = ({ permissions }) => {
           unsavedChangesRef={unsavedChangesRef}
           permissions={{
             saveBtn: true,
+            addButton: false,
+            deleteButton: false,
+            editButton: true,
             allAction: true,
             onlyCellUpdate: true,
             downloadExcelBtnFromUI: true,
@@ -1326,6 +1598,11 @@ const SlowDown = ({ permissions }) => {
           groupBy='Particulars'
           allRedCell={allRedCell}
         />
+      )}
+
+      {/* TAB 2 FOR ELASTOMER */}
+      {selectedTab === 1 && lowerVertName === 'elastomer' && (
+        <ElastomerSlowdown />
       )}
     </div>
   )

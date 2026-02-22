@@ -6,6 +6,7 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import getEnhancedColDefsByProducts from 'components/data-tables/CommonHeader/Kendo_ProductionAopHeaderByProducts'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 import { ProductionNormsApiService } from 'services/production-norms-api-service'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
@@ -14,11 +15,18 @@ import getEnhancedColDefs from '../data-tables/CommonHeader/Kendo_ProductionAopH
 import KendoDataTables from './index'
 import ProductionNormsCracker from './ProductionNormsCracker'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AopTabs from 'components/AopTabs'
+import { Box } from '@mui/material'
+import { DataService } from 'services/DataService'
 const ProductionNorms = ({ permissions }) => {
+  // State for tabs
+  const [tabIndex, setTabIndex] = useState(0)
+  const [tabs, setTabs] = useState([])
+  const [lineDetails, setLineDetails] = useState([])
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
+  const [editResetKey, setEditResetKey] = useState(0)
 
   const apiRef = useGridApiRef()
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -49,10 +57,14 @@ const ProductionNorms = ({ permissions }) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const SITE_NAME = siteObject?.name?.toLowerCase()
+  const VERTICAL_NAME = verticalObject?.name?.toLowerCase()
+  const isPPVerticalDTASite = VERTICAL_NAME === 'pp' && SITE_NAME === 'dta'
   const plantName = plantObject?.name?.toLowerCase()
   const SITE_NAME_LOWERCASE = siteObject?.name?.toLowerCase()
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
-
+  const IS_AROMATIC_SEZ =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'sez'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -384,11 +396,15 @@ const ProductionNorms = ({ permissions }) => {
     try {
       setRows([])
       setLoading(true)
+      const selectedLine = lineDetails[tabIndex]
+      const lineId = selectedLine?.id
       const response = await ProductionNormsApiService.getAOPData(
         keycloak,
         'Production',
         PLANT_ID,
         AOP_YEAR,
+        lineId,
+        isPPVerticalDTASite,
       )
       setCalculationObject(response?.data?.aopCalculation)
       if (response?.code != 200) {
@@ -637,7 +653,8 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'cracker' &&
           lowerVertName !== 'elastomer' &&
           lowerVertName !== 'vcm' &&
-          lowerVertName !== 'pta'
+          lowerVertName !== 'pta' &&
+          !IS_AROMATIC_SEZ
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
@@ -760,12 +777,61 @@ const ProductionNorms = ({ permissions }) => {
     return total === '0.00' ? null : total
   }
 
+  const initialRender = React.useRef(true)
+
   useEffect(() => {
-    fetchData()
-    if (lowerVertName === 'meg') {
-      fetchDataByProducts()
+    const fetchDataWrapper = async () => {
+      // Only fetch data if this is not the initial render or if dependencies have changed
+      if (!initialRender.current || PLANT_ID) {
+        await fetchData()
+        if (lowerVertName === 'meg') {
+          await fetchDataByProducts()
+        }
+      } else {
+        initialRender.current = false
+      }
     }
-  }, [PLANT_ID, oldYear, yearChanged, keycloak, selectedUnit])
+    if (isPPVerticalDTASite && lineDetails?.length === 0) {
+      return
+    }
+    fetchDataWrapper()
+  }, [PLANT_ID, yearChanged, keycloak, selectedUnit, tabIndex, lineDetails])
+
+  // Fetch line details when component mounts or plantID/year changes
+  const fetchLineDetails = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getLineDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code != 200) {
+        setTabs([])
+        return
+      }
+      if (response && Array.isArray(response?.data)) {
+        setLineDetails(response.data)
+        // Update tabs based on the response
+        const lineTabs = response?.data.map((line) => line.displayName)
+        setTabs(lineTabs)
+      }
+    } catch (err) {
+      console.error('Error fetching line details:', err)
+      // Fallback to default tabs if API fails
+      setTabs([])
+    }
+  }
+
+  useEffect(() => {
+    if (isPPVerticalDTASite) {
+      fetchLineDetails()
+    } else {
+      setLineDetails([])
+    }
+  }, [PLANT_ID, keycloak, yearChanged])
 
   const valueFormat_ = ValueFormatterProduction()
   const valueFormat = IS_VCM ? '{0:0.000}' : valueFormat_
@@ -844,7 +910,7 @@ const ProductionNorms = ({ permissions }) => {
             lowerVertName === 'pta' ||
             lowerVertName === 'cracker'
               ? true
-              : permissions?.showUnit ?? true,
+              : (permissions?.showUnit ?? true),
           saveWithRemark: permissions?.saveWithRemark ?? true,
           showCalculate: permissions?.showCalculate ?? true,
           allAction: permissions?.allAction ?? true,
@@ -857,7 +923,7 @@ const ProductionNorms = ({ permissions }) => {
 
           showCalculateVisibility:
             calculationObject && Object.keys(calculationObject).length > 0
-              ? permissions?.showCalculate ?? true
+              ? (permissions?.showCalculate ?? true)
               : false,
           saveBtn: permissions?.saveBtn ?? false,
           units:
@@ -897,7 +963,7 @@ const ProductionNorms = ({ permissions }) => {
       allAction: permissions?.allAction ?? true,
       showCalculateVisibility:
         calculationObject && Object.keys(calculationObject).length > 0
-          ? permissions?.showCalculate ?? true
+          ? (permissions?.showCalculate ?? true)
           : false,
       saveBtn: permissions?.saveBtn ?? false,
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
@@ -916,6 +982,12 @@ const ProductionNorms = ({ permissions }) => {
 
   return (
     <div>
+      {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
+      {isPPVerticalDTASite && (
+        <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
+          <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
+        </Box>
+      )}
       <LoaderBackdrop open={!!loading} />
 
       <KendoDataTables
@@ -948,6 +1020,8 @@ const ProductionNorms = ({ permissions }) => {
         unsavedChangesRef={unsavedChangesRef}
         permissions={adjustedPermissions}
         selectedUOM={'UOM'}
+        resetEditSignal={editResetKey}
+        setEditResetKey={setEditResetKey}
         // downloadExcelForConfiguration={downloadExcelForConfiguration}
         note={
           !permissions?.hideNoteText &&
@@ -972,6 +1046,8 @@ const ProductionNorms = ({ permissions }) => {
           title={'By Products'}
           fetchData={fetchDataByProducts}
           permissions={adjustedPermissionsByProducts}
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
         />
       )}
     </div>

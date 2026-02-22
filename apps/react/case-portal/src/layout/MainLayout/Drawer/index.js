@@ -62,7 +62,7 @@ const MainDrawer = ({ open }) => {
             height: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            pt: '25px', // ?? THIS is the fix
+            pt: '0px', // ?? THIS is the fix
 
             /* ? Smooth scroll */
             overflowY: 'auto',

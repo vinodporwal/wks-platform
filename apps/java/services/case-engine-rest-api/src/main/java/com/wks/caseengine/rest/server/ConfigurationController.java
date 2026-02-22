@@ -22,6 +22,7 @@ import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
+import com.wks.caseengine.dto.NormLineRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ConfigurationService;
 
@@ -280,5 +281,44 @@ public class ConfigurationController {
 		return configurationService.updateConfigurationVersion(configurationVersionDTOs);
 	}
 
+	@PostMapping(value = "/other-production-norms")
+	public List<ConfigurationDTO> saveOtherConfigurationData(@RequestParam String year, @RequestParam String plantFKId,
+			@RequestParam(required = false) String version, @RequestBody List<ConfigurationDTO> configurationDTOList,
+			@RequestParam(required = false) Boolean calculation) {
+		configurationService.saveOtherConfigurationData(year, plantFKId, version, configurationDTOList, calculation);
+		return configurationDTOList;
+	}
+
+	@GetMapping(value = "/other-production-norms")
+	public AOPMessageVM getOtherProductionNormsData(
+			@RequestParam String year,
+			@RequestParam String plantId,
+			@RequestParam(required = false) String gradeId) {
+
+		return configurationService.getOtherProductionNormsData(year, plantId, gradeId);
+	}
+
+	@GetMapping(value = "/line-configuration")
+	public AOPMessageVM getNormAttributeTransactionLine(
+			@RequestParam String year,
+			@RequestParam String plantId) {
+
+		return configurationService.getNormAttributeTransactionLine(year, plantId);
+	}
+
+	@GetMapping(value = "/report-mannual-entry")
+	public AOPMessageVM getConfigurationDataReportMannualEntry(@RequestParam String year, @RequestParam UUID plantFKId,
+			@RequestParam(required = false) String version) {
+		return configurationService.getConfigurationDataReportMannualEntry(year, plantFKId, version);
+	}
+
+	@PostMapping("/line-configuration")
+	public AOPMessageVM updateLineConfiguration(
+			@RequestParam String year,
+			@RequestParam String plantId,
+			@RequestBody List<NormLineRequestDTO> normLineRequestDTOList) {
+
+		return configurationService.updateLineConfiguration(year, plantId, normLineRequestDTOList);
+	}
 
 }

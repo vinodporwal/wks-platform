@@ -70,8 +70,8 @@
 }
 
 .k-column-title {
-  font-size: 11px;
-  letter-spacing: -0.3px;
+  font-size: 12px;
+  /* letter-spacing: -0.3px; */
   line-height: 1.3;
 }
 
@@ -321,8 +321,8 @@
 /* NEW */
 
 .k-grid .k-grid-header .k-header {
-  padding: 0px 0px 4px 2px !important;
-  height: 20px;
+  padding: 0px 0px 4px 5px !important;
+  height: 24px;
 }
 .k-grid .k-grid-header .k-cell-inner,
 .k-grid .k-grid-header .k-link {

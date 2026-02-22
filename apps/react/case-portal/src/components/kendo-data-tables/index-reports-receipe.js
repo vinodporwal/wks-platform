@@ -582,7 +582,7 @@ const KendoDataTablesReciepe = ({
             {permissions?.addButton && (
               <Button
                 variant='contained'
-                className='btn-add'
+                className='btn-save'
                 onClick={handleAddRow}
                 disabled={true}
               >
@@ -595,7 +595,7 @@ const KendoDataTablesReciepe = ({
               shouldShowExportImportButtons() && (
                 <Button
                   variant='contained'
-                  className='btn-export'
+                  className='btn-save'
                   onClick={downloadExcelForConfiguration}
                   disabled={isButtonDisabled}
                 >
@@ -623,7 +623,7 @@ const KendoDataTablesReciepe = ({
                   <Button
                     variant='contained'
                     component='span'
-                    className='btn-import'
+                    className='btn-save'
                     disabled={isButtonDisabled || READ_ONLY}
                   >
                     Import
@@ -655,7 +655,7 @@ const KendoDataTablesReciepe = ({
                 variant='contained'
                 onClick={handleCalculateBtn}
                 disabled={isButtonDisabled}
-                className='btn-calculate'
+                className='btn-save'
               >
                 Calculate
               </Button>
@@ -665,7 +665,7 @@ const KendoDataTablesReciepe = ({
                 variant='contained'
                 onClick={handleExport}
                 disabled={isButtonDisabled}
-                className='btn-export'
+                className='btn-save'
               >
                 Export
               </Button>
@@ -775,7 +775,10 @@ const KendoDataTablesReciepe = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             Are you sure you want to delete this row?
           </DialogContentText>
         </DialogContent>
@@ -799,7 +802,10 @@ const KendoDataTablesReciepe = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             Are you sure you want to save these changes?
           </DialogContentText>
         </DialogContent>

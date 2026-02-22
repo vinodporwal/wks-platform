@@ -1,6 +1,7 @@
 import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { verticalEnums } from 'enums/verticalEnums'
+// import { usePermissions } from 'hooks/usePermissions'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -417,19 +418,24 @@ const AopDesignBasis = () => {
 
         setLoading(false)
         setSnackbarOpen(true)
+        // setIsEdited(false)
       } else {
         setSnackbarData({
           message: 'Saved Failed!',
           severity: 'error',
         })
         setLoading(false)
+        // setSnackbarOpen(true)
       }
 
-      setLoading(false)
+      //
+
+      // setLoading(false)
       return response
     } catch (error) {
       console.error('Error saving Summary!', error)
     } finally {
+      //
       setLoading(false)
     }
   }

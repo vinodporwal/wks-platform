@@ -237,8 +237,8 @@ export default function UtilityDetails({ navigation }) {
                 background:
                   'linear-gradient(180deg, rgba(250,245,247,0.8), rgba(255,250,253,0.8))',
                 borderRadius: 2,
-                px: 1, // compact inside padding
-                py: 1,
+                px: 2, // compact inside padding
+                py: 2,
                 minHeight: 72,
                 display: 'flex',
                 flexDirection: 'column',
@@ -303,8 +303,8 @@ export default function UtilityDetails({ navigation }) {
                 background:
                   'linear-gradient(180deg, rgba(255,249,249,0.9), rgba(255,247,250,0.9))',
                 borderRadius: 2,
-                px: 1,
-                py: 1,
+                px: 2,
+                py: 2,
                 minHeight: 72,
                 display: 'flex',
                 flexDirection: 'column',

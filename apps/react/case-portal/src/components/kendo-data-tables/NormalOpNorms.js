@@ -5,6 +5,8 @@ import getNormalOpNormColDef from 'components/data-tables/CommonHeader/getNormal
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { ShutdownNormsApiService } from 'services/shutdown-norms-api-service'
+import { DataService } from 'services/DataService'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import { useSession } from 'SessionStoreContext'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
@@ -41,6 +43,8 @@ const NormalOpNormsScreen = () => {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [gradeId, setGradeId] = useState(null)
+  const [shutdownMonths, setShutdownMonths] = useState([])
+  const [slowdownMonths, setSlowdownMonths] = useState([])
   const {
     verticalChange,
     yearChanged,
@@ -71,6 +75,8 @@ const NormalOpNormsScreen = () => {
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const lowerPlantName = plantObject?.name?.toLowerCase()
   const dispatch = useDispatch()
   const headerMap = generateHeaderNames(AOP_YEAR)
   const unsavedChangesRef = React.useRef({
@@ -80,7 +86,7 @@ const NormalOpNormsScreen = () => {
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
-
+  const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
@@ -124,6 +130,34 @@ const NormalOpNormsScreen = () => {
       setLoading(false)
     }
   }
+
+  const fetchShutdownAndSlowdownMonths = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    try {
+      const shutdownRes = await ShutdownNormsApiService.getShutdownMonths(
+        keycloak,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      setShutdownMonths(Array.isArray(shutdownRes) ? shutdownRes : [])
+
+      const slowdownRes = await DataService.getSlowdownMonths(
+        keycloak,
+        null,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      setSlowdownMonths(Array.isArray(slowdownRes) ? slowdownRes : [])
+    } catch (err) {
+      setShutdownMonths([])
+      setSlowdownMonths([])
+    }
+  }
+
+  useEffect(() => {
+    fetchShutdownAndSlowdownMonths()
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
   const fetchGradeDropdowns = async () => {
     try {
@@ -229,6 +263,8 @@ const NormalOpNormsScreen = () => {
     headerMap,
     valueFormat,
     lowerVertName,
+    lowerSiteName,
+    lowerPlantName,
   })
 
   const colDefsIntermediateValues = [
@@ -594,6 +630,7 @@ const NormalOpNormsScreen = () => {
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
+      highlightShutdownConsumption: IS_VCM_VERTICAL ? true : false,
     },
     isOldYear,
   )
@@ -771,6 +808,8 @@ const NormalOpNormsScreen = () => {
           handleGradeChange={handleGradeChange}
           plantID={plantID}
           gridName='main'
+          shutdownMonths={shutdownMonths}
+          slowdownMonths={slowdownMonths}
         />
       )}
 

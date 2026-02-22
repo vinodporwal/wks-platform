@@ -74,8 +74,11 @@ const useFilteredMenu = () => {
   const filteredMenu = useMemo(() => {
     const filteredMenuItem = filterMenuByRole(menuItems || [])
     const updatedMenu = isPlantManager
-      ? [dashboardRoute, ...filteredMenuItem, userManagementRoute]
-      : [dashboardRoute, ...filteredMenuItem]
+      ? [...filteredMenuItem, userManagementRoute]
+      : [...filteredMenuItem]
+
+    // ? [dashboardRoute, ...filteredMenuItem, userManagementRoute]
+    // : [dashboardRoute, ...filteredMenuItem]
 
     return {
       items: updatedMenu,

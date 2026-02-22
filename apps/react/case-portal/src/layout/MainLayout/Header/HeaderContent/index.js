@@ -123,6 +123,7 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     fetchAllSites()
+    // }, [keycloak, verticalFromDashboard])
   }, [keycloak])
 
   useEffect(() => {
@@ -133,6 +134,34 @@ export default function HeaderContent({ keycloak }) {
       .map((v) => ({ id: v.id, name: v.displayName }))
 
     setVerticals(avail)
+
+    // --- Startt snippet ---
+    /* first available vertical so dropdown won't be empty */
+    if (
+      selectedVertical &&
+      avail.length &&
+      !avail.some((v) => v.id === selectedVertical)
+    ) {
+      const defV = avail[0]
+      setSelectedVertical(defV.id)
+
+      localStorage.setItem('verticalId', defV.id)
+      localStorage.setItem(
+        'selectedVertical',
+        JSON.stringify({ id: defV.id, name: defV.name }),
+      )
+
+      dispatch(
+        setVerticalChange({
+          selectedVertical: defV.name,
+          selectedSite: '',
+          selectedPlant: '',
+        }),
+      )
+
+      dispatch(setVerticalObject({ id: defV.id, name: defV.name }))
+    }
+    // --- end snippet ---
 
     if (!selectedVertical && avail.length) {
       const defV = avail[0]
@@ -229,6 +258,7 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     async function fetchYears() {
+      // setHeaderLoading(true)
       try {
         var resp = await DataService.getAopyears(keycloak)
         if (resp?.length) {
@@ -247,6 +277,8 @@ export default function HeaderContent({ keycloak }) {
         }
       } catch (err) {
         console.error('Error fetching data', err)
+      } finally {
+        // setHeaderLoading(false)
       }
     }
     fetchYears()

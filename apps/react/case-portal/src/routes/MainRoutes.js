@@ -55,6 +55,7 @@ import BestAchievedIndividualNorms from 'components/data-tables/Reports/BestAchi
 import RunLengthDataSet from 'components/data-tables/Reports/RunLengthDataSet'
 import MaintenanceSummary from 'components/kendo-data-tables/MaintenanceSummary'
 import PlantBudgetSummary from 'components/kendo-data-tables/PlantBudgetSummary'
+import SiteAOPReport from 'components/kendo-data-tables/SiteAOPReport'
 import AopDesignBasis from 'components/kendo-data-tables/AopDesignBasis'
 import ProductionTargetBasis from 'components/data-tables/Reports/ProductionTargetBasis'
 
@@ -89,8 +90,10 @@ import SlowdownConsumption from 'components/aop-phase-two/vgoht/slowdown-consump
 import OverallAopConsumption from 'components/aop-phase-two/vgoht/overall-aop-consumption/index'
 import SiteBudgetSummary from 'components/kendo-data-tables/SiteBudgetSummary'
 import QualityPackagingBasis from 'components/data-tables/Reports/QualityPackagingBasis'
+import EthyleneBalance from 'components/kendo-data-tables/EthyleneBalance'
+import PropyleneBalance from 'components/kendo-data-tables/PropyleneBalance'
 
-//MISSING ROUTES PHSE-II
+// crude
 import ProductionNormsBasisCrude from 'components/aop-phase-two/crude/production-norms-basis/index'
 import ShutdownActivitiesCrude from 'components/aop-phase-two/crude/shutdown-activities/index'
 import SlowdownActivitiesCrude from 'components/aop-phase-two/crude/slowdown-activities/index'
@@ -101,6 +104,13 @@ import SteadyStateConsumptionCrude from 'components/aop-phase-two/crude/steady-s
 import ShutdownConsumptionCrude from 'components/aop-phase-two/crude/shutdown-consumption/index'
 import SlowdownConsumptionCrude from 'components/aop-phase-two/crude/slowdown-consumption/index'
 import OverallAopConsumptionCrude from 'components/aop-phase-two/crude/overall-aop-consumption/index'
+
+//fcc
+import ProductionNormsBasisFCC from 'components/aop-phase-two/fcc/production-norms-basis/index'
+import OverallAopConsumptionFCC from 'components/aop-phase-two/fcc/overall-aop-consumption/index'
+import SteadyStateConsumptionFCC from 'components/aop-phase-two/fcc/steady-state-consumption/index'
+import MonthwiseProductionPlanFCC from 'components/aop-phase-two/fcc/monthwise-production-plan/index'
+import NetProductionHoursFCC from 'components/aop-phase-two/fcc/net-production-hours/index'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -606,6 +616,50 @@ export const MainRoutes = (
             ),
           },
           //Vertical CRUDE Ended
+
+          //Vertical FCC Start******************************************************************
+          {
+            path: 'production-norms-basis-fcc',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-fcc'>
+                <ProductionNormsBasisFCC />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-fcc',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-fcc'>
+                <NetProductionHoursFCC />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-fcc',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-fcc'>
+                <MonthwiseProductionPlanFCC />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-fcc',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-fcc'>
+                <SteadyStateConsumptionFCC />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'overall-aop-consumption-fcc',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-fcc'>
+                <OverallAopConsumptionFCC />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical FCC Ended ****************************
         ],
       },
 
@@ -870,6 +924,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'site-aop-report',
+            element: (
+              <PrivateRoute routeId='site-aop-report'>
+                <SiteAOPReport />
+              </PrivateRoute>
+            ),
+          },
 
           {
             path: 'site-budget-summary',
@@ -885,6 +947,24 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='norm-comparison-report'>
                 <NormComparisonReport />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'ethylene-balance',
+            element: (
+              <PrivateRoute routeId='ethylene-balance'>
+                <EthyleneBalance />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'propylene-balance',
+            element: (
+              <PrivateRoute routeId='propylene-balance'>
+                <PropyleneBalance />
               </PrivateRoute>
             ),
           },

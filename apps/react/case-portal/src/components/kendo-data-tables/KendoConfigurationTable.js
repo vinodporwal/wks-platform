@@ -51,6 +51,8 @@ import HistoryIcon from '@mui/icons-material/History'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import { styled } from '@mui/material/styles'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import ExclusionDate from './ExclusionDate'
+import LineConfiguration from './LineConfiguration'
 
 const CompactAccordion = styled(CustomAccordion)({
   mb: 0,
@@ -1885,6 +1887,15 @@ const ConfigurationTable = () => {
                   <ExclusionDate
                     revision={revision}
                     loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('LineConfiguration'):
+                return (
+                  <LineConfiguration
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     setSummaryEdited={setSummaryEdited}

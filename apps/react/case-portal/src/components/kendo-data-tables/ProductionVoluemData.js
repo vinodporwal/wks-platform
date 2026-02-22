@@ -9,7 +9,7 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useDispatch } from 'react-redux'
 import { setIsBlocked } from 'store/reducers/dataGridStore'
-import { Typography } from '../../../node_modules/@mui/material/index'
+import { Typography, Box } from '../../../node_modules/@mui/material/index'
 // import { usePermissions } from 'hooks/usePermissions'
 import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
@@ -18,8 +18,11 @@ import { DataService } from 'services/DataService'
 import {
   getColDefsDesignCapacity,
   getColDefsDesignCapacityPEPP,
+  getColDefsDesignCapacityPTA,
+  getColDefsDesignCapacityPTADMD,
   getColDefsMaxAchievedCapacity,
   getColDefsMaxAchievedCapacityPEPP,
+  getColDefsMaxAchievedCapacityPTA,
   getColDefsNonEditable,
   getColDefsPercentageSummary,
   getColDefsPercentageSummaryPEPP,
@@ -28,10 +31,17 @@ import ProductionTarget from './ProductionTarget'
 import AromaticsProductionGrids from './AromaticsProductionGrids'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+import AopTabs from 'components/AopTabs'
+
 const ProductionvolumeData = ({ permissions }) => {
+  // State for tabs and line details
+  const [tabIndex, setTabIndex] = useState(0)
+  const [tabs, setTabs] = useState([])
+  const [lineDetails, setLineDetails] = useState([])
   // const { isReadOnly, isWriteOnly, isReadWrite, isFullAccess, isApproveOnly } =
   //   usePermissions()
+
+  const [editResetKey, setEditResetKey] = useState(0)
 
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
@@ -81,15 +91,26 @@ const ProductionvolumeData = ({ permissions }) => {
   const IS_PE_PP =
     verticalObject?.name?.toLowerCase() == 'pe' ||
     verticalObject?.name?.toLowerCase() == 'pp'
+
+  const IS_PTA = verticalObject?.name?.toLowerCase() == 'pta'
+  const IS_PTA_DMD = IS_PTA && siteObject?.name?.toLowerCase() == 'dmd'
+
+  const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const IS_PET = verticalObject?.name?.toLowerCase() == 'pet'
-
+  const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
+  const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
+  // Check if it's PP VERTICAL | DTA SITE
+  const isPPVerticalDTASite =
+    VERTICAL_NAME?.toLowerCase() === 'pp' && SITE_NAME === 'dta'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
   const [rowsFormattedAndNonEditable, setRowsFormattedAndNonEditable] =
     useState()
-  const valueFormat = ValueFormatterProduction()
+
+  const valueFormat_ = ValueFormatterProduction()
+
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
@@ -145,7 +166,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
     const values = months.map((month) => row[month] || 0)
     const sum = values.reduce((acc, val) => acc + val, 0)
-    const avg = (sum / values.length).toFixed(2)
+    const avg = sum / values.length
 
     return avg === '0.00' ? null : avg
   }
@@ -200,6 +221,7 @@ const ProductionvolumeData = ({ permissions }) => {
           severity: 'success',
         })
         setModifiedCells({})
+        // setEdit({})
 
         const responseForNorms =
           await DataService.calculateNormsHistorianValues(
@@ -250,7 +272,7 @@ const ProductionvolumeData = ({ permissions }) => {
       ]
 
       const designCapacityData = newRows.map((row) => {
-        const mapped = { id: row.idFromApi || row.id || null }
+        const mapped = { id: row.idFromApi || null }
         months.forEach((month) => {
           mapped[month] =
             isTPH && row[month] ? row[month] / 24 : row[month] || null
@@ -408,6 +430,13 @@ const ProductionvolumeData = ({ permissions }) => {
   const fetchData = async (unit = selectedUnit) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
 
+    setModifiedCellsDesignCapacity({})
+    setEnableSaveAddBtnDesignCapacity({})
+    setModifiedCells({})
+    // setEdit({})
+    // Get the selected line ID based on the current tab
+    const selectedLine = lineDetails[tabIndex]
+    const lineId = selectedLine?.id
     try {
       setLoading(true)
       const response =
@@ -415,6 +444,8 @@ const ProductionvolumeData = ({ permissions }) => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          lineId,
+          isPPVerticalDTASite,
         )
       if (response?.code != 200) {
         setRows([])
@@ -427,7 +458,7 @@ const ProductionvolumeData = ({ permissions }) => {
           const isTPH = selectedUnit == 'TPD'
           return {
             ...item,
-            idFromApi: item?.id,
+            idFromApi: item?.id || null,
             normParametersFKId: item?.materialFKId.toLowerCase(),
             remarks: item?.remarks?.trim() || null,
             originalRemark: item?.remarks?.trim() || null,
@@ -435,36 +466,26 @@ const ProductionvolumeData = ({ permissions }) => {
             id: index,
 
             ...(isTPH && {
-              april: item.april
-                ? (item.april * 24).toFixed(2)
-                : item.april || null,
-              may: item.may ? (item.may * 24).toFixed(2) : item.may || null,
-              june: item.june ? (item.june * 24).toFixed(2) : item.june || null,
-              july: item.july ? (item.july * 24).toFixed(2) : item.july || null,
-              august: item.august
-                ? (item.august * 24).toFixed(2)
-                : item.august || null,
+              april: item.april ? item.april * 24 : item.april || null,
+              may: item.may ? item.may * 24 : item.may || null,
+              june: item.june ? item.june * 24 : item.june || null,
+              july: item.july ? item.july * 24 : item.july || null,
+              august: item.august ? item.august * 24 : item.august || null,
               september: item.september
-                ? (item.september * 24).toFixed(2)
+                ? item.september * 24
                 : item.september || null,
-              october: item.october
-                ? (item.october * 24).toFixed(2)
-                : item.october || null,
+              october: item.october ? item.october * 24 : item.october || null,
               november: item.november
-                ? (item.november * 24).toFixed(2)
+                ? item.november * 24
                 : item.november || null,
               december: item.december
-                ? (item.december * 24).toFixed(2)
+                ? item.december * 24
                 : item.december || null,
-              january: item.january
-                ? (item.january * 24).toFixed(2)
-                : item.january || null,
+              january: item.january ? item.january * 24 : item.january || null,
               february: item.february
-                ? (item.february * 24).toFixed(2)
+                ? item.february * 24
                 : item.february || null,
-              march: item.march
-                ? (item.march * 24).toFixed(2)
-                : item.march || null,
+              march: item.march ? item.march * 24 : item.march || null,
             }),
           }
         },
@@ -566,12 +587,14 @@ const ProductionvolumeData = ({ permissions }) => {
       monthKeys.forEach((key) => {
         const orig = Number(row[key] || 0)
         const pct = maxVal ? (orig / maxVal) * 100 : 0
-        newRow[key] = Number(pct.toFixed(2))
+        newRow[key] = Number(pct)
       })
 
       return newRow
     })
   }
+
+  const valueFormat = IS_VCM ? '{0:0.000}' : valueFormat_
 
   const colDefs_percentage_summary = IS_PE_PP
     ? getColDefsPercentageSummaryPEPP(headerMap, valueFormat)
@@ -580,12 +603,18 @@ const ProductionvolumeData = ({ permissions }) => {
   const colDefs_design_capacity =
     IS_PE_PP || IS_PET
       ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
-      : getColDefsDesignCapacity(headerMap, valueFormat)
+      : IS_PTA_DMD
+        ? getColDefsDesignCapacityPTADMD(headerMap, valueFormat)
+        : IS_PTA
+          ? getColDefsDesignCapacityPTA(headerMap, valueFormat)
+          : getColDefsDesignCapacity(headerMap, valueFormat)
 
   const colDefs_max_achieved_capacity =
     IS_PE_PP || IS_PET
       ? getColDefsMaxAchievedCapacityPEPP(headerMap, valueFormat)
-      : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
+      : IS_PTA
+        ? getColDefsMaxAchievedCapacityPTA(headerMap, valueFormat)
+        : getColDefsMaxAchievedCapacity(headerMap, valueFormat)
 
   const colDefs_non_editable = getColDefsNonEditable(headerMap, valueFormat)
 
@@ -597,7 +626,48 @@ const ProductionvolumeData = ({ permissions }) => {
     fetchData()
 
     fetchConfiguration()
-  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
+  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID, tabIndex])
+
+  // Fetch line details when component mounts or plantID/year changes
+  const fetchLineDetails = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getLineDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code != 200) {
+        setTabs([])
+        return
+      }
+      if (response && Array.isArray(response?.data)) {
+        setLineDetails(response.data)
+        // Update tabs based on the response
+        const lineTabs = response?.data.map((line) => line.displayName)
+        setTabs(lineTabs)
+      }
+    } catch (err) {
+      console.error('Error fetching line details:', err)
+      // Fallback to default tabs if API fails
+      setTabs([])
+    }
+  }
+
+  useEffect(() => {
+    if (isPPVerticalDTASite) {
+      fetchLineDetails()
+    }
+  }, [PLANT_ID, keycloak, yearChanged, isPPVerticalDTASite])
+
+  // Call fetchData when lineDetails is updated and has at least one item
+  useEffect(() => {
+    if (lineDetails && lineDetails.length > 0) {
+      fetchData()
+    }
+  }, [lineDetails])
 
   const colDefs_editable = getEnhancedProductionColDefs({
     headerMap,
@@ -645,59 +715,49 @@ const ProductionvolumeData = ({ permissions }) => {
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => ({
           ...item,
-          id: item?.id,
+          id: index + 1,
+          idFromApi: item?.id || null,
           productName: item?.materialDisplayName,
           remarks: item?.remarks?.trim() || null,
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
-          isEditable: IS_PE_PP || IS_PET ? false : true,
+          isEditable: IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD ? false : true,
 
           april:
-            isTPD && item.april
-              ? (item.april * 24).toFixed(2)
-              : item.april || null,
-          may:
-            isTPD && item.may ? (item.may * 24).toFixed(2) : item.may || null,
-          june:
-            isTPD && item.june
-              ? (item.june * 24).toFixed(2)
-              : item.june || null,
-          july:
-            isTPD && item.july
-              ? (item.july * 24).toFixed(2)
-              : item.july || null,
+            isTPD && item.april ? item.april * 24 : item.april || item.april,
+          may: isTPD && item.may ? item.may * 24 : item.may || item.may,
+          june: isTPD && item.june ? item.june * 24 : item.june || item.june,
+          july: isTPD && item.july ? item.july * 24 : item.july || item.july,
           august:
             isTPD && item.august
-              ? (item.august * 24).toFixed(2)
-              : item.august || null,
+              ? item.august * 24
+              : item.august || item.august,
           september:
             isTPD && item.september
-              ? (item.september * 24).toFixed(2)
-              : item.september || null,
+              ? item.september * 24
+              : item.september || item.september,
           october:
             isTPD && item.october
-              ? (item.october * 24).toFixed(2)
-              : item.october || null,
+              ? item.october * 24
+              : item.october || item.october,
           november:
             isTPD && item.november
-              ? (item.november * 24).toFixed(2)
-              : item.november || null,
+              ? item.november * 24
+              : item.november || item.november,
           december:
             isTPD && item.december
-              ? (item.december * 24).toFixed(2)
-              : item.december || null,
+              ? item.december * 24
+              : item.december || item.december,
           january:
             isTPD && item.january
-              ? (item.january * 24).toFixed(2)
-              : item.january || null,
+              ? item.january * 24
+              : item.january || item.january,
           february:
             isTPD && item.february
-              ? (item.february * 24).toFixed(2)
-              : item.february || null,
+              ? item.february * 24
+              : item.february || item.february,
           march:
-            isTPD && item.march
-              ? (item.march * 24).toFixed(2)
-              : item.march || null,
+            isTPD && item.march ? item.march * 24 : item.march || item.march,
         }))
         setRowsDesignCapacity(formatted)
       } else {
@@ -730,7 +790,7 @@ const ProductionvolumeData = ({ permissions }) => {
         const isTPD = unit === 'TPD'
         const formatted = data.map((item, index) => ({
           ...item,
-          idFromApi: item?.id,
+          idFromApi: item?.id || null,
           productName: item?.materialDisplayName,
           april: isTPD && item.april ? item.april * 24 : item.april,
           may: isTPD && item.may ? item.may * 24 : item.may,
@@ -766,11 +826,6 @@ const ProductionvolumeData = ({ permissions }) => {
   useEffect(() => {
     fetchMaxCapacityData(unitMaxCapacity)
   }, [unitMaxCapacity, PLANT_ID, yearChanged, keycloak])
-
-  useEffect(() => {
-    fetchData()
-    fetchConfiguration()
-  }, [oldYear, yearChanged, keycloak, selectedUnit, PLANT_ID])
 
   const handleCalculateMeg = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -850,11 +905,17 @@ const ProductionvolumeData = ({ permissions }) => {
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
       titleName: percentageTitle,
 
-      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      showTitleAndInformation:
+        VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
       titleAndInformation:
-        'Maximum Ethylene Production achieved in the last 05 years historical data for 05 consecutive days in different furnace mode of operation.',
+        VERTICAL_NAME == 'cracker'
+          ? 'Maximum Ethylene Production achieved in the last 05 years historical data for 05 consecutive days in different furnace mode of operation.'
+          : VERTICAL_NAME == 'vcm'
+            ? `Maximum ${PLANT_NAME_NO_CASE} production achieved in the last five year historical data derived as average of top 10 percent data points.`
+            : '',
 
-      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+      showTitleNameBusiness:
+        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       downloadExcelBtnFromUI: IS_PE_PP ? false : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
@@ -872,7 +933,7 @@ const ProductionvolumeData = ({ permissions }) => {
       showUnit: permissions?.showUnit ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_PE_PP || IS_PET ? false : true,
+      saveBtn: IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD ? false : true,
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
@@ -881,11 +942,17 @@ const ProductionvolumeData = ({ permissions }) => {
       uploadExcelBtn: IS_PE_PP ? true : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Design Capacity`,
 
-      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      showTitleAndInformation:
+        VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
       titleAndInformation:
-        'Design plant capacity for different furnace mode of operation as per licensor provided data.',
+        VERTICAL_NAME == 'cracker'
+          ? 'Design plant capacity for different furnace mode of operation as per licensor provided data.'
+          : VERTICAL_NAME == 'vcm'
+            ? 'Design plant capacity as per licensor provided data.'
+            : '',
 
-      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+      showTitleNameBusiness:
+        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       titleName:
         VERTICAL_NAME === 'cracker'
@@ -918,17 +985,25 @@ const ProductionvolumeData = ({ permissions }) => {
       downloadExcelBtn: IS_PE_PP ? false : true,
       uploadExcelBtn: IS_PE_PP ? false : true,
 
-      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      showTitleAndInformation:
+        VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
 
       //TEXT NOTE CHANGED TO 01 YEARS
       titleAndInformation:
-        'Maximum Ethylene Production achieved in the last 01 years historical data for 05 consecutive days in different furnace mode of operation.',
+        VERTICAL_NAME == 'cracker'
+          ? 'Maximum Ethylene Production achieved in the last 01 years historical data for 05 consecutive days in different furnace mode of operation.'
+          : VERTICAL_NAME == 'vcm'
+            ? 'Steady state production operating capacity which is proposed for the AOP FY.'
+            : '',
 
-      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+      showTitleNameBusiness:
+        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Proposed Operating Capacity (Ethylene)'
-          : 'Proposed Operating Capacity',
+          : IS_VCM
+            ? 'Steady State Operating Capacity'
+            : 'Proposed Operating Capacity',
     },
     isOldYear,
   )
@@ -936,9 +1011,16 @@ const ProductionvolumeData = ({ permissions }) => {
   const adjustedPermissionsLast = getAdjustedPermissions(
     {
       allAction: true,
-      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
-      titleAndInformation: 'Percentage Summary (Ethylene)',
-      showTitleNameBusiness: VERTICAL_NAME !== 'cracker' ? true : false,
+      showTitleAndInformation:
+        VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
+      titleAndInformation:
+        VERTICAL_NAME == 'cracker'
+          ? 'Percentage Summary (Ethylene)'
+          : VERTICAL_NAME == 'vcm'
+            ? `Percentage summary represent a month-wise percentage summary, comparing each months value against the highest ${PLANT_NAME_NO_CASE} production rate over the past 12 months.`
+            : '',
+      showTitleNameBusiness:
+        VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
@@ -1032,6 +1114,7 @@ const ProductionvolumeData = ({ permissions }) => {
           severity: 'success',
         })
         setModifiedCells({})
+        // setEdit({})
 
         const responseForNorms =
           await DataService.calculateNormsHistorianValues(
@@ -1096,13 +1179,25 @@ const ProductionvolumeData = ({ permissions }) => {
   if (VERTICAL_NAME?.toLowerCase() == 'elastomer' && conditionForFirst) {
     return <ProductionTarget />
   }
-  if (VERTICAL_NAME?.toLowerCase() == 'aromatics' && conditionForFirst) {
+  if (IS_AROMATICS_DTA && conditionForFirst) {
     return <AromaticsProductionGrids />
   }
 
   return (
     <div>
-      <LoaderBackdrop open={!!loading} />
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
+      {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
+      {isPPVerticalDTASite && (
+        <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
+          <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
+        </Box>
+      )}
 
       {/* DESIGN_CAPACITY */}
       {conditionForFirst && (
@@ -1138,6 +1233,8 @@ const ProductionvolumeData = ({ permissions }) => {
             downloadExcelForConfiguration('design')
           }
           handleExcelUpload={handleExcelUpload}
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
         />
       )}
 
@@ -1156,6 +1253,8 @@ const ProductionvolumeData = ({ permissions }) => {
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('max')
           }
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
         />
       )}
 
@@ -1192,6 +1291,8 @@ const ProductionvolumeData = ({ permissions }) => {
         downloadExcelForConfiguration={() =>
           downloadExcelForConfiguration('main')
         }
+        resetEditSignal={editResetKey}
+        setEditResetKey={setEditResetKey}
       />
 
       {/* PERCENTAGE_SUMMARY */}
@@ -1205,6 +1306,8 @@ const ProductionvolumeData = ({ permissions }) => {
             fetchData={fetchData}
             permissions={adjustedPermissionsLast}
             supressGridHeight={true}
+            resetEditSignal={editResetKey}
+            setEditResetKey={setEditResetKey}
           />
         </>
       )}

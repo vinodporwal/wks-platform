@@ -45,6 +45,12 @@ public class PlantMaintenanceTransaction {
     
     @Column(name = "EOE_OpsProdRate")
     private Double rateEOE;
+    
+    @Column(name = "RPF_DownTime")
+    private Double rpfDownTime;
+    
+    @Column(name = "No_Of_RPF")
+    private Double noOfRPF;
 
     @Column(name = "Remarks", length = 500)
     private String remarks;
@@ -70,5 +76,8 @@ public class PlantMaintenanceTransaction {
     
     @Column(name = "Plant_FK_Id")
     private UUID plantId;
+    
+    @Column(name = "Line_FK_Id")
+    private UUID lineFKId;
 
 }
