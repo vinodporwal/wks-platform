@@ -83,13 +83,15 @@ export const CaseList = ({ status, caseDefId }) => {
   const [fetching, setFetching] = useState(false)
   const [filter, setFilter] = useState({
     sort: '',
-    limit: 100000,
+    limit: 20,
     after: '',
     before: '',
     cursors: {},
     hasPrevious: false,
     hasNext: false,
   })
+
+  const columns = React.useMemo(() => makeColumns(), []);
 
   // XOM - Route changes -Start
   const [error, setError] = useState(false);
@@ -424,7 +426,8 @@ export const CaseList = ({ status, caseDefId }) => {
 
   }, [])
 
-  const makeColumns = () => {
+//  const makeColumns = () => {
+  function makeColumns() {
     return [
       {
         field: 'caseNumber',
@@ -462,7 +465,29 @@ export const CaseList = ({ status, caseDefId }) => {
       {
         field: 'caseTitle',
         headerName: t('pages.caselist.datagrid.columns.caseTitle'),
-        flex: 1
+        flex: 1,
+        valueGetter: (value, row) => {
+          try {
+            const attributes =
+              typeof row.attributes === 'string'
+                ? JSON.parse(row.attributes)
+                : row.attributes
+
+            const containerValue = attributes?.find(
+              (attr) => attr.name === 'container',
+            )?.value
+
+            const parsedContainer = containerValue
+              ? JSON.parse(containerValue)
+              : {}
+
+            return parsedContainer.caseTitle || ''
+          } catch (error) {
+            console.error('Error parsing caseTitle:', error)
+            return ''
+          }
+
+        }
       },
       {
         field: 'mainAsset',
@@ -499,6 +524,7 @@ export const CaseList = ({ status, caseDefId }) => {
             if (!row) {
               return ''
             }
+            console.log('caseStatusOptions: ', JSON.parse(localStorage.getItem('caseStatusOptions')));
             const caseStatusOptions = JSON.parse(
               localStorage.getItem('caseStatusOptions'),
             ) || [
@@ -554,12 +580,12 @@ export const CaseList = ({ status, caseDefId }) => {
           }
         },
       },
-      {
-        field: 'isDraft',
-        headerName: 'Status',
-        width: 150,
-        valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
-      },
+      // {
+      //   field: 'isDraft',
+      //   headerName: 'Status',
+      //   width: 150,
+      //   valueGetter: (value, row) => (value === 'y' ? 'Draft' : 'Submitted'),
+      // },
       {
         field: 'assignedTo',
         headerName: 'Case Assigned To',
@@ -886,6 +912,7 @@ export const CaseList = ({ status, caseDefId }) => {
   }
 
   const CustomPagination = () => {
+    console.log("custom pagination");
     return (
       <PaginationContext.Provider value={filter}>
         <TablePagination
@@ -1048,17 +1075,19 @@ export const CaseList = ({ status, caseDefId }) => {
                       },
                     }}
                     rows={cases}
-                    columns={makeColumns()}
+                   // columns={makeColumns()}
+                    columns={columns}
                     getRowId={(row) => {
                     //  return generateRandom();
-                   //   return row.businessKey ?? row.caseNo ?? row.id ?? row._id ?? generateRandom();
-                        return row?.businessKey ?? row?.caseNo ?? row?.id ?? row?._id ?? generateRandom();
+
+                      return row.businessKey ?? row.caseNo ?? row.id ?? row._id ?? generateRandom();
 
                       //console.log((isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id)
                       //return (isCaseCreatePath || isCaseViewPath)? generateRandom() : row.businessKey?.caseNo?.id?._id
                     }}
                     loading={fetching}
-                    components={{ Pagination: CustomPagination }}
+                   // components={{ Pagination: CustomPagination }}
+                   slots={{ pagination: CustomPagination }}
                   />
                 </Suspense>
               
