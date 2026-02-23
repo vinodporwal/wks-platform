@@ -1671,7 +1671,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	    List<Object[]> validTimeRanges = new ArrayList<>(); 
 	    Plants plant = plantsRepository.findById(plantFKId).get();
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-	    
+	    Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 	    final long EIGHT_DAYS_IN_MINUTES = 8 * 24 * 60; // 11520 minutes or 192 hours
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {

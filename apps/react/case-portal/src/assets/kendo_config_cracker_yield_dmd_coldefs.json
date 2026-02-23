@@ -227,7 +227,7 @@
 
   {
     "field": "fourF2SC2C3",
-    "title": "4F+2SFD 1BFD-C2C3",
+    "title": "4F+3SFD 1BFD-C2C3",
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
@@ -237,7 +237,7 @@
   },
   {
     "field": "fourF2SPropane",
-    "title": "4F+2SFD 1BFD-Propane",
+    "title": "4F+3SFD 1BFD-Propane",
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
@@ -247,7 +247,7 @@
   },
   {
     "field": "fourF2SEthane",
-    "title": "4F+2SFD 1BFD-Ethane",
+    "title": "4F+3SFD 1BFD-Ethane",
     "type": "number",
     "format": "{0:#.##}",
     "editable": true,
