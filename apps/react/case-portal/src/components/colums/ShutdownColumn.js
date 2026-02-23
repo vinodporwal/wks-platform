@@ -220,7 +220,7 @@ export const ShutDownPpColumns = [
 
 export const ShutDownPTAColumns = [
   {
-    field: 'discriptionDrpdwn',
+    field: 'discription',
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
@@ -256,7 +256,7 @@ export const ShutDownPTAColumns = [
 
 export const ShutDownPTADMDColumns = [
   {
-    field: 'discriptionDrpdwn',
+    field: 'discription',
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
