@@ -365,3 +365,7 @@
   opacity: 1 !important;
   pointer-events: auto !important;
 }
+.kendo-data-grid .k-grid-header th {
+  font-weight: 500 !important; /* Semi-bold/Medium */
+  color: #334155; /* Slate color to match your buttons */
+}

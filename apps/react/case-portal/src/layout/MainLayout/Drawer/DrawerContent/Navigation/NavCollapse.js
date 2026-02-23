@@ -71,32 +71,33 @@ const NavCollapse = ({ menu, level }) => {
         onClick={handleClick}
         selected={selected === menu.id}
         sx={{
-          minHeight: 32,
-          px: 0.75,
-          py: 0.25,
-          borderRadius: 0,
+          minHeight: 36,
+          px: 1,
+          py: 0.4,
+          borderRadius: 1,
           alignItems: 'center',
-          position: 'relative',
           backgroundColor: 'transparent',
-          // 1. Bottom Border
-          borderBottom: '1px solid',
-          borderColor: '#d1d1d1',
+
           '&:hover': {
-            backgroundColor: '#f3f4f6',
+            backgroundColor: 'rgba(255,255,255,0.05)',
           },
-          // 2. Light "Blackish-Grey" Selected State
+
+          // SELECTED STATE (?? IMPORTANT)
           '&.Mui-selected': {
-            backgroundColor: '#e7e7e7', // Light grey selected background
+            background: 'linear-gradient(90deg, #2563eb 0%, #9333ea 100%)',
+            color: '#fff',
+            borderRadius: '6px',
+
             '&:hover': {
-              backgroundColor: '#d1d1d1',
+              background: 'linear-gradient(90deg, #2563eb 0%, #9333ea 100%)',
             },
-            // Keep text dark so it is visible
+
             '& .MuiTypography-root': {
-              color: '#111827', // Darker text for contrast
+              color: '#fff',
             },
-            // Keep icons blue (or change to black if preferred)
+
             '& svg': {
-              color: '#1d4ed8 !important',
+              color: '#fff !important',
             },
           },
         }}
@@ -112,18 +113,11 @@ const NavCollapse = ({ menu, level }) => {
               <Typography
                 noWrap
                 sx={{
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.12em',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
                   textTransform: 'uppercase',
-                  color: '#111827', // Default grey color
-                  fontFamily: '"Public Sans", sans-serif',
-                  lineHeight: 1.2,
-                  display: 'block',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  width: '100%',
+                  color: '#9ca3af',
                 }}
               >
                 {menu.title}

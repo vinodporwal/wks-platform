@@ -1,5 +1,5 @@
 /* =========================================================
-   MODERN OUTLINE BUTTON SYSTEM (NO NAME CHANGES)
+   MODERN OUTLINE BUTTON SYSTEM (MATCHING IMAGE)
    ========================================================= */
 .btn-load,
 .btn-save,
@@ -11,328 +11,109 @@
   background: transparent;
   border-radius: 10px;
   padding: 6px 14px;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Open Sans,
-    Arial,
-    sans-serif;
-  font-size: 0.75rem;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.85rem; /* Slightly larger for better readability */
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.12s ease;
-  transition: all 0.18s ease;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px; /* Balanced gap */
   white-space: nowrap;
+  transition: all 0.2s ease;
+
+  /* Text Color from Image */
+  color: #334155;
+  border: 1px solid rgba(37, 99, 235, 0.15); /* Subtle border */
 }
 
-.btn-save .MuiButton-startIcon,
-.btn-export .MuiButton-startIcon,
-.btn-add .MuiButton-startIcon,
-.btn-import .MuiButton-startIcon,
-.btn-calculate .MuiButton-startIcon {
-  margin: 0;
+/* Base Icon Styling */
+.MuiButton-startIcon svg {
+  font-size: 18px !important;
+  transition: transform 0.2s ease;
 }
 
-.btn-save .MuiButton-startIcon svg,
-.btn-export .MuiButton-startIcon svg,
-.btn-add .MuiButton-startIcon svg,
-.btn-import .MuiButton-startIcon svg,
-.btn-calculate .MuiButton-startIcon svg {
-  font-size: 16px; /* perfect for 0.75rem buttons */
-}
-
-/* ===============================
-   SAVE ? BLUE
-================================ */
-.btn-save {
-  color: #2563eb;
-  /* border: 1px solid #2563eb; */
-  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
-  background: transparent;
-}
-
-.btn-save:hover {
-  background: #2563eb;
-  color: #fff;
-}
-
-.btn-load:disabled {
-  background: #e5e7eb !important;
-  color: #64748b !important;
-}
-
-/* ===============================
-   EXPORT ? TEAL
-================================ */
-.btn-export {
-  color: #0d9488;
-  /* border: 1px solid #0d9488; */
-  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
-  background: transparent;
-}
-
-.btn-export:hover {
-  background: #0d9488;
-  color: #fff;
-}
-
-/* ===============================
-   ADD ? GREEN
-================================ */
-.btn-add {
-  color: #16a34a;
-  /* border: 1px solid #16a34a; */
-  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
-  background: transparent;
-}
-
-.btn-add:hover {
-  background: #16a34a;
-  color: #fff;
-}
-
-/* ===============================
-   IMPORT ? AMBER
-================================ */
-.btn-import {
-  color: #f59e0b;
-  /* border: 1px solid #f59e0b; */
-  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
-  background: transparent;
-}
-
-.btn-import:hover {
-  background: #f59e0b;
-  color: #fff;
-}
-
-/* ===============================
-   CALCULATE ? VIOLET
-================================ */
-.btn-calculate {
-  color: #7c3aed; /* violet-600 */
-  /* border: 1px solid #7c3aed; */
-  border: 1px solid rgba(37, 99, 235, 0.25); /* soft blue */
-  background: transparent;
-}
-
-.btn-calculate:hover {
-  background: #7c3aed;
-  color: #fff;
-}
-
-/* ===============================
-   LOAD ? INDIGO
-================================ */
-.btn-load {
-  color: #4f46e5; /* indigo-600 */
-  border: 1px solid #4f46e5;
-  background: transparent;
-}
-
-.btn-load:hover {
-  background: #4f46e5;
-  color: #fff;
-}
-
-/* ===============================
-   FOCUS & DISABLED
-================================ */
-.btn-save:focus-visible,
-.btn-export:focus-visible,
-.btn-add:focus-visible,
-.btn-import:focus-visible,
-.btn-calculate:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-}
-
-button:disabled {
-  color: #64748b !important; /* slate-500 */
-  border-color: #cbd5e1 !important; /* slate-300 */
-  background: #e5e7eb !important; /* light grey bg */
-  cursor: not-allowed;
-}
-
-.btn-save:disabled svg,
-.btn-export:disabled svg,
-.btn-add:disabled svg,
-.btn-import:disabled svg,
-.btn-calculate:disabled svg {
-  opacity: 0.6;
-}
-
-.btn-save:disabled,
-.btn-export:disabled,
-.btn-add:disabled,
-.btn-import:disabled,
-.btn-calculate:disabled {
-  color: #64748b !important;
-  border-color: #cbd5e1 !important;
-  background: #e5e7eb !important;
-  cursor: not-allowed;
-}
-
+/* Hover State - General */
 .btn-load:hover,
 .btn-save:hover,
 .btn-export:hover,
 .btn-add:hover,
 .btn-import:hover,
 .btn-calculate:hover {
+  background: #f8fafc; /* Very light gray flash */
+  border-color: rgba(37, 99, 235, 0.4);
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-}
-.btn-load:active,
-.btn-save:active,
-.btn-export:active,
-.btn-add:active,
-.btn-import:active,
-.btn-calculate:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-}
-.btn-load .MuiButton-startIcon svg,
-.btn-save .MuiButton-startIcon svg,
-.btn-export .MuiButton-startIcon svg,
-.btn-add .MuiButton-startIcon svg,
-.btn-import .MuiButton-startIcon svg,
-.btn-calculate .MuiButton-startIcon svg {
-  transition:
-    transform 0.18s ease,
-    opacity 0.18s ease;
-}
-
-.btn-load:hover .MuiButton-startIcon svg,
-.btn-save:hover .MuiButton-startIcon svg,
-.btn-export:hover .MuiButton-startIcon svg,
-.btn-add:hover .MuiButton-startIcon svg,
-.btn-import:hover .MuiButton-startIcon svg,
-.btn-calculate:hover .MuiButton-startIcon svg {
-  transform: translateX(1px);
-}
-.btn-load:hover .MuiButton-startIcon svg {
-  transform: rotate(90deg);
-}
-.btn-load:focus-visible,
-.btn-save:focus-visible,
-.btn-export:focus-visible,
-.btn-add:focus-visible,
-.btn-import:focus-visible,
-.btn-calculate:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.35);
-}
-.btn-load:disabled,
-.btn-save:disabled,
-.btn-export:disabled,
-.btn-add:disabled,
-.btn-import:disabled,
-.btn-calculate:disabled {
-  transform: none !important;
-  box-shadow: none !important;
 }
 
 /* ===============================
-   YES / NO BUTTONS
+   SPECIFIC ICON COLORS (FROM IMAGE)
 ================================ */
 
-/* YES = primary, user should click */
+/* SAVE - Purple/Blue Icon */
+.btn-save .MuiButton-startIcon svg {
+  color: #6366f1;
+}
+
+/* EXPORT - Royal Blue Icon */
+.btn-export .MuiButton-startIcon svg {
+  color: #4f46e5;
+}
+
+/* ADD - Green Icon */
+.btn-add .MuiButton-startIcon svg {
+  color: #16a34a;
+}
+
+/* IMPORT - Amber Icon */
+.btn-import .MuiButton-startIcon svg {
+  color: #f59e0b;
+}
+
+/* CALCULATE - Violet Icon */
+.btn-calculate .MuiButton-startIcon svg {
+  color: #7c3aed;
+}
+
+/* LOAD - Indigo Icon */
+.btn-load .MuiButton-startIcon svg {
+  color: #4f46e5;
+}
+
+/* ===============================
+   YES / NO & UTILITY
+================================ */
 .btn-yes {
-  appearance: none;
-  border-radius: 10px;
-  padding: 6px 14px;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Open Sans,
-    Arial,
-    sans-serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  transition: all 0.18s ease;
-
   color: #ffffff;
-  background: #16a34a; /* ? green solid */
+  background: #16a34a;
   border: 1px solid #16a34a;
-}
-
-.btn-yes:hover {
-  background: #15803d;
-  border-color: #15803d;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
-}
-
-.btn-yes:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
-}
-
-/* NO = dull / secondary */
-.btn-no {
-  appearance: none;
   border-radius: 10px;
   padding: 6px 14px;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Open Sans,
-    Arial,
-    sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1;
-  cursor: pointer;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  transition: all 0.18s ease;
+  cursor: pointer;
+}
 
-  color: #64748b; /* slate */
-  background: #f1f5f9; /* dull bg */
+.btn-no {
+  color: #64748b;
+  background: #f1f5f9;
   border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
 }
 
-.btn-no:hover {
-  background: #e2e8f0;
-  border-color: #94a3b8;
-}
-
-.btn-yes:focus-visible,
-.btn-no:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.22);
-}
-
-/* Disabled support */
-.btn-yes:disabled,
-.btn-no:disabled {
-  color: #64748b !important;
-  border-color: #cbd5e1 !important;
-  background: #e5e7eb !important;
+/* Disabled State */
+button:disabled {
+  color: #94a3b8 !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
   cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
+}
+
+button:disabled svg {
+  color: #cbd5e1 !important;
 }

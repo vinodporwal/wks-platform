@@ -54,29 +54,46 @@ const NavItem = ({ item, level }) => {
         sx={{
           minHeight: 30,
           px: 1,
-          py: 1,
+          py: 0.8,
           mx: 0,
           mb: 0,
-          borderRadius: 0,
-          fontSize: '0.82rem',
-          fontWeight: 500,
 
-          /* ?? FIXED BACKGROUND */
-          backgroundColor: isSelected
-            ? '#1e293b'
-            : isDashboard
-              ? '#1d3665'
-              : 'transparent',
+          borderRadius: 0, // ? REMOVE PILL
+          backgroundColor: 'transparent', // default sidebar
 
-          color: isSelected || isDashboard ? '#ffffff' : '#cbd5e1',
+          color: '#cbd5e1',
 
           '&:hover': {
-            backgroundColor: isSelected ? '#1e293b' : 'rgba(255,255,255,0.06)',
+            backgroundColor: 'rgba(255,255,255,0.04)',
           },
 
+          /* ? SELECTED STYLE */
           '&.Mui-selected': {
-            backgroundColor: '#1e293b',
-            color: '#ffffff',
+            backgroundColor: 'transparent', // ? NO CARD
+            color: '#10b981',
+
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.04)',
+            },
+
+            '& .MuiTypography-root': {
+              color: '#10b981 !important',
+            },
+
+            '& .MuiListItemIcon-root': {
+              color: '#10b981 !important',
+            },
+          },
+
+          /* ? GREEN LEFT BORDER LIKE RELIANCE */
+          '&.Mui-selected::before': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: '3px',
+            backgroundColor: '#10b981',
           },
         }}
       >

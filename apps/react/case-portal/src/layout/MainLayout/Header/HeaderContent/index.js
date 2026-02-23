@@ -37,6 +37,7 @@ import CalendarToday from '@mui/icons-material/CalendarToday'
 import Business from '@mui/icons-material/Business'
 import Domain from '@mui/icons-material/Domain'
 import Factory from '@mui/icons-material/Factory'
+import CorporateFare from '@mui/icons-material/CorporateFare'
 
 function parseAllowed(raw) {
   const map = {}
@@ -446,7 +447,8 @@ export default function HeaderContent({ keycloak }) {
         maxHeight: 240,
         borderRadius: 8, // menu panel radius
         marginTop: 6,
-        background: '#ffffff',
+        background: '#f2f2f2',
+
         boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
         border: '1px solid rgba(15,23,42,0.06)',
         color: '#0f172a',
@@ -479,6 +481,7 @@ export default function HeaderContent({ keycloak }) {
   const dropdownContainerStyle = {
     display: 'flex',
     alignItems: 'center',
+    background: '#e7eaee',
   }
 
   const selectStyle = {
@@ -593,8 +596,9 @@ export default function HeaderContent({ keycloak }) {
                         }}
                       >
                         <CalendarToday
-                          sx={{ fontSize: 16, color: '#6b7786' }}
+                          sx={{ fontSize: 16, color: '#97751d !important' }}
                         />
+
                         <Box
                           component='span'
                           sx={{
@@ -653,7 +657,9 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Business sx={{ fontSize: 16, color: '#6b7786' }} />
+                          <Business
+                            sx={{ fontSize: 16, color: '#d539d3 !important' }}
+                          />
                           <Box
                             component='span'
                             sx={{
@@ -710,7 +716,9 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Domain sx={{ fontSize: 16, color: '#6b7786' }} />
+                          <CorporateFare
+                            sx={{ fontSize: 16, color: '#005bdb !important' }}
+                          />
                           <Box
                             component='span'
                             sx={{
@@ -766,7 +774,9 @@ export default function HeaderContent({ keycloak }) {
                             gap: 1,
                           }}
                         >
-                          <Factory sx={{ fontSize: 16, color: '#6b7786' }} />
+                          <Factory
+                            sx={{ fontSize: 16, color: '#638f11 !important' }}
+                          />
                           <Box
                             component='span'
                             sx={{
