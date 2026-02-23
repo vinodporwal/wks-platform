@@ -68,22 +68,25 @@ const Navigation = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#e7e7e7',
-        borderRight: '1px solid #e5e7eb',
+
+        // ? Dark navy gradient background (like your screenshot)
+        background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+
+        borderRight: '1px solid #1e293b',
         fontFamily:
           "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-        color: '#374151',
+        color: '#cbd5e1',
         fontSize: '0.75rem',
       }}
     >
       {/* Thin divider */}
-      <Divider sx={{ borderColor: '#e5e7eb', my: 0.25 }} />
+      <Divider sx={{ borderColor: '#1e293b', my: 0.25 }} />
 
       {/* Scrollable menu */}
       <Box
         sx={{
           flex: 1,
-          px: 0, // ?? zero left padding
+          px: 0,
           pb: 0.5,
           overflowY: 'auto',
           overflowX: 'hidden',
@@ -91,7 +94,7 @@ const Navigation = () => {
             width: '4px',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: '#d1d5db',
+            background: '#334155',
             borderRadius: '999px',
           },
         }}
@@ -100,7 +103,7 @@ const Navigation = () => {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 0, // ?? no gap between items
+            gap: 0,
           }}
         >
           {navGroups}

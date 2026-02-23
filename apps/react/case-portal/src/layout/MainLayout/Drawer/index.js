@@ -7,12 +7,14 @@ import DrawerHeader from './DrawerHeader'
 import DrawerContent from './DrawerContent'
 import { drawerWidth } from 'config'
 
-const MainDrawer = ({ open }) => {
+const MainDrawer = ({ open, handleDrawerToggle }) => {
   const theme = useTheme()
 
   const drawerContent = useMemo(() => <DrawerContent />, [])
-  const drawerHeader = useMemo(() => <DrawerHeader open={open} />, [open])
-
+  const drawerHeader = useMemo(
+    () => <DrawerHeader open={open} handleDrawerToggle={handleDrawerToggle} />,
+    [open, handleDrawerToggle],
+  )
   return (
     <Drawer
       variant='persistent'
@@ -23,7 +25,7 @@ const MainDrawer = ({ open }) => {
         whiteSpace: 'nowrap',
 
         transition: theme.transitions.create(['width'], {
-          easing: 'cubic-bezier(0.4, 0, 0.2, 1)', // ?? natural motion
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
           duration: 380,
         }),
 
@@ -32,16 +34,17 @@ const MainDrawer = ({ open }) => {
           overflowX: 'hidden',
           boxSizing: 'border-box',
 
-          /* ?? Modern background */
-          background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
+          /* ? FORCE DRAWER TO START FROM TOP */
+          top: 0,
+          position: 'fixed',
+          height: '100vh',
 
+          overflowY: 'hidden',
+
+          background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
 
-          /* ?? Soft edge instead of hard border */
-          // borderRight: '1px solid rgba(148,163,184,0.18)',
-
-          /* ?? Premium depth */
           boxShadow:
             '8px 0 24px rgba(15,23,42,0.08), 2px 0 6px rgba(15,23,42,0.04)',
 
@@ -62,31 +65,33 @@ const MainDrawer = ({ open }) => {
             height: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            pt: '0px', // ?? THIS is the fix
-
-            /* ? Smooth scroll */
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            scrollBehavior: 'smooth',
-
-            /* ?? Clean scrollbar */
-            '&::-webkit-scrollbar': {
-              width: '6px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: 'rgba(100,116,139,0.35)',
-              borderRadius: '10px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              background: 'rgba(100,116,139,0.55)',
-            },
           }}
         >
+          {/* HEADER FIXED */}
           {drawerHeader}
-          {drawerContent}
+
+          {/* MENU SCROLL AREA */}
+          <Box
+            sx={{
+              flex: 1, // TAKE REMAINING HEIGHT
+
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'rgba(100,116,139,0.35)',
+                borderRadius: '10px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: 'rgba(100,116,139,0.55)',
+              },
+            }}
+          >
+            {drawerContent}
+          </Box>
         </Box>
       )}
     </Drawer>

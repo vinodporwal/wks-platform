@@ -15,18 +15,9 @@ import DialogActions from '@mui/material/DialogActions'
 import Button from '@mui/material/Button'
 import { useSafeNavigate } from './useSafeNavigate'
 import { useLocation } from 'react-router-dom'
-import { Tooltip } from '../../../../../../node_modules/@mui/material/index'
-
-/* ===== COMPACT SIDEBAR COLORS ===== */
-const ITEM_BASE = 'transparent'
-const ITEM_HOVER = '#e5e7eb'
-const ITEM_ACTIVE = '#17206e'
-
-const TEXT = '#374151'
-const ICON = '#6366f1'
+import { Tooltip } from '@mui/material'
 
 const NavItem = ({ item, level }) => {
-  // console.log('item', item)
   const isDashboard = item.id === 'dashboard'
 
   const dispatch = useDispatch()
@@ -67,33 +58,25 @@ const NavItem = ({ item, level }) => {
           mx: 0,
           mb: 0,
           borderRadius: 0,
-          fontFamily:
-            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
           fontSize: '0.82rem',
           fontWeight: 500,
 
-          /* ? DASHBOARD ALWAYS DARK */
-          background: isDashboard
-            ? 'linear-gradient(135deg, #1d3665 0%, #1d3665 100%)'
-            : 'transparent',
+          /* ?? FIXED BACKGROUND */
+          backgroundColor: isSelected
+            ? '#1e293b'
+            : isDashboard
+              ? '#1d3665'
+              : 'transparent',
 
-          color: isDashboard ? '#ffffff' : '#3f3f46',
+          color: isSelected || isDashboard ? '#ffffff' : '#cbd5e1',
 
           '&:hover': {
-            background: isDashboard
-              ? 'linear-gradient(135deg, #1d3665 0%, #1d3665 100%)'
-              : 'linear-gradient(135deg, rgba(18,88,179,0.12) 0%, rgba(18,88,179,0.22) 100%)',
-            boxShadow: 'none',
-            transform: 'none',
+            backgroundColor: isSelected ? '#1e293b' : 'rgba(255,255,255,0.06)',
           },
 
-          /* ?? IMPORTANT: override selected */
           '&.Mui-selected': {
-            background: isDashboard
-              ? 'linear-gradient(135deg, #1d3665 0%, #1d3665 100%)'
-              : 'linear-gradient(135deg, #0074bd 0%, #0074bd 100%)',
+            backgroundColor: '#1e293b',
             color: '#ffffff',
-            fontWeight: 600,
           },
         }}
       >
@@ -102,7 +85,8 @@ const NavItem = ({ item, level }) => {
           <ListItemIcon
             sx={{
               minWidth: 30,
-              color: isDashboard || isSelected ? '#ffffff' : '#030303',
+              color: isSelected || isDashboard ? '#ffffff' : '#94a3b8',
+
               '& svg': {
                 width: 18,
                 height: 18,
@@ -118,24 +102,21 @@ const NavItem = ({ item, level }) => {
           <ListItemText
             sx={{
               my: 0,
-              overflow: 'hidden', // important for ellipsis
+              overflow: 'hidden',
             }}
             primary={
               <Tooltip
                 title={item.title}
                 placement='right'
                 arrow
-                enterDelay={1000} // ?? avoids annoying instant pop
+                enterDelay={1000}
               >
                 <Typography
                   sx={{
-                    fontFamily:
-                      "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
                     fontSize: '0.82rem',
                     fontWeight: isSelected ? 600 : 500,
-                    color: isDashboard || isSelected ? '#ffffff' : '#3f3f46',
+                    color: isSelected || isDashboard ? '#ffffff' : '#cbd5e1',
                     letterSpacing: '0.01em',
-
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -171,7 +152,7 @@ const NavItem = ({ item, level }) => {
         )}
       </ListItemButton>
 
-      {/* CONFIRMATION DIALOG (UNCHANGED) */}
+      {/* CONFIRMATION DIALOG */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
         <DialogTitle>Unsaved Changes</DialogTitle>
         <DialogContent>

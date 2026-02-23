@@ -15,9 +15,11 @@ const AppBarStyled = styled(AppBar, {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
+
   ...(open && {
     marginLeft: drawerWidth,
-    width: '100%',
+    width: `calc(100% - ${drawerWidth}px)`, // ? FIX HERE
+
     transition: theme.transitions.create(['width', 'margin'], {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,

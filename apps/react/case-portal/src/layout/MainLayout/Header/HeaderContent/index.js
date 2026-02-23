@@ -1,3 +1,4 @@
+// HeaderContent.jsx
 import {
   Box,
   FormControl,
@@ -6,7 +7,9 @@ import {
   Stack,
   Typography,
   useMediaQuery,
+  SvgIcon,
 } from '@mui/material'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -28,18 +31,13 @@ import Profile from './Profile/index'
 
 import Logo from 'assets/images/ril-logo2.png'
 import DropdownSkeleton from 'utils/DropdownSkeleton'
-import {
-  useLocation,
-  useNavigate,
-} from '../../../../../node_modules/react-router-dom/dist/index'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { openDrawer } from 'store/reducers/menu'
-import StepperNav from 'components/Utilities/StepperNav'
 import CalendarToday from '@mui/icons-material/CalendarToday'
 import Business from '@mui/icons-material/Business'
 import Domain from '@mui/icons-material/Domain'
 import Factory from '@mui/icons-material/Factory'
 
-// Utility to parse the Keycloak allowed JSON
 function parseAllowed(raw) {
   const map = {}
   raw.forEach((vObj) => {
@@ -123,7 +121,6 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     fetchAllSites()
-    // }, [keycloak, verticalFromDashboard])
   }, [keycloak])
 
   useEffect(() => {
@@ -135,8 +132,6 @@ export default function HeaderContent({ keycloak }) {
 
     setVerticals(avail)
 
-    // --- Startt snippet ---
-    /* first available vertical so dropdown won't be empty */
     if (
       selectedVertical &&
       avail.length &&
@@ -161,7 +156,6 @@ export default function HeaderContent({ keycloak }) {
 
       dispatch(setVerticalObject({ id: defV.id, name: defV.name }))
     }
-    // --- end snippet ---
 
     if (!selectedVertical && avail.length) {
       const defV = avail[0]
@@ -258,7 +252,6 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     async function fetchYears() {
-      // setHeaderLoading(true)
       try {
         var resp = await DataService.getAopyears(keycloak)
         if (resp?.length) {
@@ -277,8 +270,6 @@ export default function HeaderContent({ keycloak }) {
         }
       } catch (err) {
         console.error('Error fetching data', err)
-      } finally {
-        // setHeaderLoading(false)
       }
     }
     fetchYears()
@@ -445,43 +436,43 @@ export default function HeaderContent({ keycloak }) {
     navigate('/production-norms-plan/configuration', { replace: true })
   }, [verticalFromDashboard?.trigger])
 
+  // -------------------------
+  // Visual styles (pills & menus)
+  // -------------------------
+  // menuPropsStyle (replace your existing)
   const menuPropsStyle = {
     PaperProps: {
       style: {
-        maxHeight: 200,
-        borderRadius: '12px',
-        marginTop: '4px',
-        background: 'rgba(0,0,0,0.75)',
-        backdropFilter: 'blur(6px)',
-        // boxShadow:
-        //   '0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
-        border: '1px solid rgba(255, 255, 255, 0.06)',
-        color: '#fff',
+        maxHeight: 240,
+        borderRadius: 8, // menu panel radius
+        marginTop: 6,
+        background: '#ffffff',
+        boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
+        border: '1px solid rgba(15,23,42,0.06)',
+        color: '#0f172a',
+        padding: '4px',
+      },
+      sx: {
+        // also add sx for runtime override (some MUI versions prefer sx)
+        borderRadius: 8,
       },
     },
     disableScrollLock: true,
   }
-
   const menuItemStyle = {
-    transition: 'all 0.2s ease',
-    borderRadius: '6px',
+    transition: 'all 0.12s ease',
+    borderRadius: 6, //  smaller
     mx: 0.5,
     my: 0.25,
-    color: '#ffffff',
-    fontWeight: 700,
+    color: '#0f172a',
+    fontWeight: 600,
+    fontSize: '0.85rem',
     '&:hover': {
-      background:
-        'linear-gradient(90deg, rgba(1, 0, 203, 0.08) 0%, rgba(91, 89, 255, 0.06) 100%)',
-      transform: 'translateX(4px)',
+      background: 'rgba(59,130,246,0.06)',
     },
     '&.Mui-selected': {
-      background:
-        'linear-gradient(90deg, rgba(1, 0, 203, 0.12) 0%, rgba(91, 89, 255, 0.08) 100%)',
+      background: 'rgba(59,130,246,0.12)',
       fontWeight: 700,
-      '&:hover': {
-        background:
-          'linear-gradient(90deg, rgba(1, 0, 203, 0.15) 0%, rgba(91, 89, 255, 0.1) 100%)',
-      },
     },
   }
 
@@ -491,35 +482,36 @@ export default function HeaderContent({ keycloak }) {
   }
 
   const selectStyle = {
-    height: 36,
+    height: 34,
     minWidth: 150,
-    borderRadius: '12px',
-    background: '#e9edf2',
-    fontSize: '0.9rem',
-    fontWeight: 600,
-    color: '#2c3e50',
+
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '6px !important', // ?? THIS is the real border
+      background: '#eef3f8',
+      height: 34,
+    },
+
+    '& .MuiOutlinedInput-notchedOutline': {
+      border: '1px solid rgba(15,23,42,0.06)',
+      borderRadius: '6px !important', // ?? must repeat here
+    },
+
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'rgba(15,23,42,0.1)',
+    },
 
     '& .MuiSelect-select': {
       display: 'flex',
       alignItems: 'center',
-      gap: 0.75,
-      padding: '6px 8px !important',
-    },
-
-    '& fieldset': {
-      border: 'none',
-    },
-
-    '&:hover': {
-      background: '#dde3ea',
-    },
-
-    '&.Mui-focused': {
-      background: '#dde3ea',
+      gap: 6,
+      padding: '6px 10px !important',
+      fontSize: '0.85rem',
+      fontWeight: 600,
     },
 
     '& .MuiSvgIcon-root': {
-      color: '#6b7c93',
+      fontSize: 18,
+      color: '#6b7786',
     },
   }
 
@@ -532,103 +524,48 @@ export default function HeaderContent({ keycloak }) {
           alignItems: 'center',
           width: '100%',
           position: 'relative',
-          px: 1,
-          py: 0.125,
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            bottom: '-4px',
-            left: 0,
-            right: 0,
-            height: '1px',
-            background:
-              'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%)',
-          },
+          px: 2,
+          py: 0.75,
+          background: '#fff',
+          borderBottom: '1px solid rgba(15,23,42,0.04)',
         }}
       >
-        {/* LEFT SIDE: Logo + Title (grid column 1) */}
+        {/* LEFT SIDE: Title */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             gap: 2,
-            animation: 'fadeInLeft 0.5s ease-out',
-            '@keyframes fadeInLeft': {
-              from: { opacity: 0, transform: 'translateX(-20px)' },
-              to: { opacity: 1, transform: 'translateX(0)' },
-            },
             minWidth: 0,
             overflow: 'hidden',
           }}
         >
-          {/* Logo Container */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              px: 1,
-              py: 0.5,
-              borderRadius: '8px',
-              transition: 'all 0.3s ease',
-              background: 'transparent',
-              '&:hover': {
-                transform: 'translateY(-1px)',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.12)',
-              },
-              flex: '0 0 auto',
-            }}
-          >
-            <Box
-              component='img'
-              src={Logo}
-              alt='RIL Logo'
-              sx={{
-                height: 32,
-                objectFit: 'contain',
-              }}
-            />
-          </Box>
-
-          {/* Title */}
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Box
+            <Typography
+              variant='h6'
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                minWidth: 0,
+                fontWeight: 700,
+                fontSize: '1.05rem',
+                color: '#0f172a',
+                whiteSpace: 'nowrap',
                 overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
-              <Typography
-                variant='body2'
-                className='custom-title-font'
-                sx={{
-                  fontWeight: 700,
-                  fontSize: '1.05rem',
-                  letterSpacing: '0.03em',
-                  textTransform: 'none',
-                  color: '#2c3e50', // dark text for white header
-                  lineHeight: 1.2,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {screenTitleName}
-              </Typography>
-            </Box>
+              {screenTitleName}
+            </Typography>
           )}
         </Box>
 
-        {/* CENTERED DROPDOWNS (grid column 2) */}
+        {/* CENTER: Dropdown Pills */}
         <Stack
           direction='row'
           spacing={2}
           alignItems='center'
           sx={{
             justifySelf: 'end',
-            width: '100%', // allow stack to fill the middle column
-            justifyContent: 'flex-end', // push dropdowns to the right edge of that column
+            width: '100%',
+            justifyContent: 'flex-end',
             mr: 1,
           }}
         >
@@ -637,8 +574,10 @@ export default function HeaderContent({ keycloak }) {
             {headerLoading ? (
               <DropdownSkeleton />
             ) : (
-              <FormControl>
+              <FormControl size='small' variant='outlined'>
+                {' '}
                 <Select
+                  IconComponent={ArrowDropDownIcon}
                   value={selectedYear}
                   onChange={handleYearChange}
                   sx={selectStyle}
@@ -646,16 +585,42 @@ export default function HeaderContent({ keycloak }) {
                   renderValue={(value) => {
                     const yearObj = aopYears.find((y) => y.AOPYear === value)
                     return (
-                      <>
-                        <CalendarToday sx={{ fontSize: 16 }} />
-                        <span>Year:</span>
-                        <strong>{yearObj?.AOPDisplayYear}</strong>
-                      </>
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <CalendarToday
+                          sx={{ fontSize: 16, color: '#6b7786' }}
+                        />
+                        <Box
+                          component='span'
+                          sx={{
+                            color: '#6b7c93',
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          Year:
+                        </Box>
+                        <Box
+                          component='strong'
+                          sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                        >
+                          {yearObj?.AOPDisplayYear}
+                        </Box>
+                      </Box>
                     )
                   }}
                 >
                   {aopYears.map((y) => (
-                    <MenuItem key={y.AOPYear} value={y.AOPYear}>
+                    <MenuItem
+                      key={y.AOPYear}
+                      value={y.AOPYear}
+                      sx={menuItemStyle}
+                    >
                       {y.AOPDisplayYear}
                     </MenuItem>
                   ))}
@@ -670,8 +635,10 @@ export default function HeaderContent({ keycloak }) {
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl>
+                <FormControl size='small' variant='outlined'>
+                  {' '}
                   <Select
+                    IconComponent={ArrowDropDownIcon}
                     value={selectedVertical}
                     onChange={handleVertChange}
                     sx={selectStyle}
@@ -679,16 +646,36 @@ export default function HeaderContent({ keycloak }) {
                     renderValue={(value) => {
                       const vert = verticals.find((v) => v.id === value)
                       return (
-                        <>
-                          <Business sx={{ fontSize: 16 }} />
-                          <span>Vertical:</span>
-                          <strong>{vert?.name}</strong>
-                        </>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Business sx={{ fontSize: 16, color: '#6b7786' }} />
+                          <Box
+                            component='span'
+                            sx={{
+                              color: '#6b7c93',
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            Vertical:
+                          </Box>
+                          <Box
+                            component='strong'
+                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                          >
+                            {vert?.name}
+                          </Box>
+                        </Box>
                       )
                     }}
                   >
                     {verticals.map((v) => (
-                      <MenuItem key={v.id} value={v.id}>
+                      <MenuItem key={v.id} value={v.id} sx={menuItemStyle}>
                         {v.name}
                       </MenuItem>
                     ))}
@@ -704,8 +691,10 @@ export default function HeaderContent({ keycloak }) {
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl>
+                <FormControl size='small' variant='outlined'>
+                  {' '}
                   <Select
+                    IconComponent={ArrowDropDownIcon}
                     value={selectedSite}
                     onChange={handleSiteChange}
                     disabled={!sites.length}
@@ -714,16 +703,36 @@ export default function HeaderContent({ keycloak }) {
                     renderValue={(value) => {
                       const site = sites.find((s) => s.id === value)
                       return (
-                        <>
-                          <Domain sx={{ fontSize: 16 }} />
-                          <span>Site:</span>
-                          <strong>{site?.name}</strong>
-                        </>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Domain sx={{ fontSize: 16, color: '#6b7786' }} />
+                          <Box
+                            component='span'
+                            sx={{
+                              color: '#6b7c93',
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            Site:
+                          </Box>
+                          <Box
+                            component='strong'
+                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                          >
+                            {site?.name}
+                          </Box>
+                        </Box>
                       )
                     }}
                   >
                     {sites.map((s) => (
-                      <MenuItem key={s.id} value={s.id}>
+                      <MenuItem key={s.id} value={s.id} sx={menuItemStyle}>
                         {s.name}
                       </MenuItem>
                     ))}
@@ -739,8 +748,9 @@ export default function HeaderContent({ keycloak }) {
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl>
+                <FormControl size='small'>
                   <Select
+                    IconComponent={ArrowDropDownIcon}
                     value={selectedPlant}
                     onChange={handlePlantChange}
                     disabled={!plants.length}
@@ -749,16 +759,36 @@ export default function HeaderContent({ keycloak }) {
                     renderValue={(value) => {
                       const plant = plants.find((p) => p.id === value)
                       return (
-                        <>
-                          <Factory sx={{ fontSize: 16 }} />
-                          <span>Plant:</span>
-                          <strong>{plant?.name}</strong>
-                        </>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Factory sx={{ fontSize: 16, color: '#6b7786' }} />
+                          <Box
+                            component='span'
+                            sx={{
+                              color: '#6b7c93',
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            Plant:
+                          </Box>
+                          <Box
+                            component='strong'
+                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                          >
+                            {plant?.name}
+                          </Box>
+                        </Box>
                       )
                     }}
                   >
                     {plants.map((p) => (
-                      <MenuItem key={p.id} value={p.id}>
+                      <MenuItem key={p.id} value={p.id} sx={menuItemStyle}>
                         {p.name}
                       </MenuItem>
                     ))}
@@ -769,7 +799,7 @@ export default function HeaderContent({ keycloak }) {
           )}
         </Stack>
 
-        {/* RIGHT SIDE: Profile / Mobile (grid column 3) */}
+        {/* RIGHT: Profile */}
         <Box sx={{ justifySelf: 'end' }}>
           {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
         </Box>

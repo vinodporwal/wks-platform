@@ -28,17 +28,10 @@ const MainLayout = ({ keycloak, authenticated }) => {
 
   return (
     <Box sx={{ display: 'flex', width: '100%', height: '100vh' }}>
-      {/* Fixed Header */}
-      <Header
-        open={open}
-        handleDrawerToggle={handleDrawerToggle}
-        keycloak={keycloak}
-      />
-
-      {/* Sidebar */}
+      {/* Sidebar LEFT */}
       <Drawer open={open} handleDrawerToggle={handleDrawerToggle} />
 
-      {/* Main Content */}
+      {/* RIGHT SIDE CONTENT */}
       <Box
         component='main'
         sx={{
@@ -48,15 +41,21 @@ const MainLayout = ({ keycloak, authenticated }) => {
           flexDirection: 'column',
           overflow: 'hidden',
           backgroundColor: BG_COLOR_FULL,
-          pt: '55px',
 
           border: '1px solid rgba(0,0,0,0.08)',
           boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
           borderRadius: '6px',
         }}
       >
-        {/* Reserve header height */}
-        {/* <Toolbar variant='dense' /> */}
+        {/* Header ONLY for right content */}
+        <Header
+          open={open}
+          handleDrawerToggle={handleDrawerToggle}
+          keycloak={keycloak}
+        />
+
+        {/* Push content below header */}
+        <Box sx={{ pt: '55px' }} />
 
         {location.pathname.startsWith('/production-norms-plan') && (
           <Box>
@@ -70,28 +69,8 @@ const MainLayout = ({ keycloak, authenticated }) => {
           </Box>
         )}
 
-        {/* <Toolbar variant='dense' /> */}
         <Box sx={{ height: 4 }} />
-        {/* HIDE Breadcrumbs */}
-        {/* <Box
-          sx={{
-            m: 0,
-            p: 0,
-            display: 'flex',
-            alignItems: 'center',
-            ml: '8px',
-            mr: '5px',
-            mb: '8px',
-            backgroundColor: `${BG_COLOR}`,
-            border: '1px solid rgba(0,0,0,0.08)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.10)',
-            borderRadius: '6px',
-          }}
-        >
-          <Breadcrumbs variant='dense' navigation={menu} divider={false} />
-        </Box> */}
 
-        {/* Page content */}
         <Box className='outlet-wrapper'>
           <Box className='outlet-border-box'>
             <Outlet />
