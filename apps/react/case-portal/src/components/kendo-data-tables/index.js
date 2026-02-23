@@ -75,7 +75,6 @@ export const dateFields = [
   'periodFrom',
   'toDateReport',
   'fromDateReport',
-  'shutdownDate',
 ]
 export const dateFields2 = ['fromDate', 'toDate']
 export const dateFields1 = [
@@ -88,6 +87,7 @@ export const dateFields1 = [
   'targetDate',
   'exclusionEndDate',
   'exclusionStartDate',
+  'shutdownDate',
 ]
 
 export const monthMap = {
