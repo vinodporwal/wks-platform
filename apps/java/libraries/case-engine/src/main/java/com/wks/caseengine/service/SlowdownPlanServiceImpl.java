@@ -1801,17 +1801,20 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                        boolean isVcmSeasonalImpact = "VCM".equalsIgnoreCase(vertical.getName()) 
 	                                && "Seasonal Impact".equalsIgnoreCase(dto.getDiscription());
 
-	                        for (Object[] prevPeriod : validTimeRanges) {
-	                            LocalDateTime prevLdtStart = (LocalDateTime) prevPeriod[0];
-	                            LocalDateTime prevLdtEnd = (LocalDateTime) prevPeriod[1];
-	                            boolean prevIsSeasonal = (Boolean) prevPeriod[2];
+	                        
+	                        boolean skipOverlapCheck = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("HMD");
 
-	                            // Check for overlap
-	                            if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
-	                                // If neither the current row nor the previous row is Seasonal Impact, trigger failure
-	                                if (!isVcmSeasonalImpact && !prevIsSeasonal) {
-	                                    overlaps = true;
-	                                    break;
+	                        if (!skipOverlapCheck) {
+	                            for (Object[] prevPeriod : validTimeRanges) {
+	                                LocalDateTime prevLdtStart = (LocalDateTime) prevPeriod[0];
+	                                LocalDateTime prevLdtEnd = (LocalDateTime) prevPeriod[1];
+	                                boolean prevIsSeasonal = (Boolean) prevPeriod[2];
+
+	                                if (ldtStart.isBefore(prevLdtEnd) && ldtEnd.isAfter(prevLdtStart)) {
+	                                    if (!isVcmSeasonalImpact && !prevIsSeasonal) {
+	                                        overlaps = true;
+	                                        break;
+	                                    }
 	                                }
 	                            }
 	                        }
@@ -1824,47 +1827,35 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                    }
 	                }
 	                
-	                // Duration Calculation and Furnace Decoking Check
 	                if (ldtStart != null && ldtEnd != null) {
 	                    try {
 	                        Duration duration = Duration.between(ldtStart, ldtEnd);
 	                        long totalMinutes = duration.toMinutes();
-
-	                        if (totalMinutes < 0) {
-	                            throw new IllegalStateException("Calculated negative duration.");
-	                        }
-
 	                        double durationInDecimalHours = (double) totalMinutes / 60.0;
 	                        
 	                        if (dto.getDiscription() != null && dto.getDiscription().equalsIgnoreCase("Furnace Decoking")) {
-	                            if (totalMinutes != EIGHT_DAYS_IN_MINUTES) {
-	                                if (!alreadyFailed) {
-	                                    dto.setSaveStatus("Failed");
-	                                    dto.setErrDescription("Duration for 'Furnace Decoking' must be exactly 8 days (11520 minutes). Actual duration: " + totalMinutes + " minutes.");
-	                                    alreadyFailed = true;
-	                                }
+	                            if (totalMinutes != EIGHT_DAYS_IN_MINUTES && !alreadyFailed) {
+	                                dto.setSaveStatus("Failed");
+	                                dto.setErrDescription("Duration for 'Furnace Decoking' must be exactly 8 days.");
+	                                alreadyFailed = true;
 	                            }
 	                        }
 
-	                        // Seasonal flag for storage
 	                        boolean isVcmSeasonalImpact = "VCM".equalsIgnoreCase(vertical.getName()) 
 	                                && "Seasonal Impact".equalsIgnoreCase(dto.getDiscription());
 
 	                        if (!alreadyFailed) {
 	                            dto.setDurationInHrs(durationInDecimalHours); 
-	                            // Store as Object array to include the seasonal flag
 	                            validTimeRanges.add(new Object[]{ldtStart, ldtEnd, isVcmSeasonalImpact});
 	                        } else if (dto.getSaveStatus() == null) {
 	                            dto.setDurationInHrs(durationInDecimalHours);
 	                        }
-
 	                    } catch (Exception e) {
 	                        if (!alreadyFailed) {
 	                            dto.setSaveStatus("Failed");
-	                            dto.setErrDescription("Error calculating duration between maintenance dates or duration is negative.");
+	                            dto.setErrDescription("Error calculating duration.");
 	                            alreadyFailed = true;
 	                        }
-	                        e.printStackTrace();
 	                    }
 	                }
 	                
@@ -1913,9 +1904,8 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                }
 
 	            } catch (Exception e) {
-	                e.printStackTrace();
 	                if (dto.getSaveStatus() == null) {
-	                    dto.setErrDescription(e.getMessage() != null ? e.getMessage() : "An unexpected error occurred during processing.");
+	                    dto.setErrDescription("An unexpected error occurred.");
 	                    dto.setSaveStatus("Failed");
 	                }
 	            }
