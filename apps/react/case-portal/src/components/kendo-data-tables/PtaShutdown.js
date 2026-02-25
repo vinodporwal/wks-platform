@@ -23,9 +23,12 @@ import {
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import { getRoleName } from 'services/role-service'
 import ElastomerShutDown from './ElastomerShutDown'
-import PtaShutDown from './PtaShutdown'
-const ShutDown = ({ permissions }) => {
+import { Box, Button, Tab, Tabs, Typography } from '@mui/material'
+import { set } from 'lodash'
+import { useCallback } from 'react'
+const PtaShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
+  const [modifiedCells1, setModifiedCells1] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [allProducts, setAllProducts] = useState([])
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
@@ -83,7 +86,6 @@ const ShutDown = ({ permissions }) => {
   const IS_PTA = lowerVertName === 'pta'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
-  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -91,6 +93,7 @@ const ShutDown = ({ permissions }) => {
   const [deleteId, setDeleteId] = useState(null)
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState([])
+  const [rows1, setRows1] = useState([])
   const [rowsSlowdown, setRowsSlowdown] = useState([])
 
   const [loading, setLoading] = useState(false)
@@ -109,6 +112,9 @@ const ShutDown = ({ permissions }) => {
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
   const [allLines, setAllLines] = useState([])
+  const [colDefs1, setColDefs1] = useState([])
+  const [tabIndex, setTabIndex] = useState(0)
+  const defaultTabs = ['Shutdown/TA Activities', 'Shutdown History Config']
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remark || '')
@@ -471,7 +477,7 @@ const ShutDown = ({ permissions }) => {
           id: row.idFromApi || null,
           remark: row.remark || 'null',
         }))
-      } else if (IS_PP_DTA ||IS_PP_SEZ) {
+      } else if (IS_PP_DTA) {
         // For PP DTA, match the GET payload structure
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -602,10 +608,68 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ) {
+    if (IS_PP_DTA) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
+
+  const fetchTabIndex1Data = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setModifiedCells1({})
+    try {
+      setLoading(true)
+      // Fetch data for tabIndex 1
+      const response =
+        await MaintenanceDetailsApiService.getShutdownHistoryConfig(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      const hiddenFields = ['NormType', 'NormParameter_FK_Id', 'IsEditable']
+      // Use columns from response
+      const dynamicColumns =
+        response?.data?.columns?.map((col) => ({
+          field: col.field,
+          title: col.title,
+          widthT: col.field.toLowerCase() === 'uom' ? 90 : 150,
+          editable:
+            col.field === 'Particulars' || col.field.toLowerCase() === 'uom'
+              ? false
+              : true,
+          type: col.type,
+          hidden: hiddenFields.includes(col.field),
+          ...(col.field !== 'Particulars' &&
+            col.field.toLowerCase() !== 'uom' && {
+              format: '{0:n2}',
+              type: 'negativeNumber',
+            }),
+        })) || []
+
+      // Use data from response
+      const formattedRows =
+        response?.data?.data?.map((item, idx) => ({
+          ...item,
+          id: idx,
+          normtype: item.NormType || 'Type',
+        })) || []
+
+      setRows1(formattedRows)
+      setColDefs1(dynamicColumns)
+    } catch (error) {
+      console.error('Error fetching tabIndex 1 data:', error)
+      setRows1([])
+      setColDefs1([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (tabIndex === 1) {
+      fetchTabIndex1Data()
+    }
+  }, [tabIndex, PLANT_ID, AOP_YEAR])
 
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -695,7 +759,9 @@ const ShutDown = ({ permissions }) => {
   }
 
   useEffect(() => {
-    fetchData()
+    if (tabIndex === 0) {
+      fetchData()
+    }
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
   const findDuration = (v, row) => {
@@ -859,7 +925,7 @@ const ShutDown = ({ permissions }) => {
         return ShutDownPeColumns
 
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ ? ShutDownPpDtaColumns : ShutDownPpColumns
+        return IS_PP_DTA ? ShutDownPpDtaColumns : ShutDownPpColumns
 
       case verticalEnums.PTA:
         return IS_PTA ? ShutDownPTADMDColumns : ShutDownPTAColumns
@@ -913,7 +979,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -951,7 +1017,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1033,6 +1099,47 @@ const ShutDown = ({ permissions }) => {
     importShutdown(rawFile)
   }
 
+  const saveSlowdownConfiguration = useCallback(
+    async (payload) => {
+      setLoading(true)
+      try {
+        const response =
+          await MaintenanceDetailsApiService.updateSlowdownNormsForPTA(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            payload,
+          )
+
+        if (response?.code === 200) {
+          setModifiedCells1({})
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Data Saved!',
+            severity: 'success',
+          })
+          await fetchTabIndex1Data()
+        } else {
+          // showNotification('Data Save Failed!', 'error')
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Data Save Failed!',
+            severity: 'error',
+          })
+        }
+
+        return response
+      } catch (error) {
+        console.error('Error saving data:', error)
+
+        throw error
+      } finally {
+        setLoading(false)
+      }
+    },
+    [keycloak, PLANT_ID, AOP_YEAR],
+  )
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -1087,16 +1194,64 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightDuration:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
-      highlightLine: IS_PP_DTA || IS_PP_SEZ ? true : false,
+      highlightLine: IS_PP_DTA ? true : false,
     },
     isOldYear,
   )
+
+  const adjustedPermissionsconfig = getAdjustedPermissions({
+    showAction: permissions?.showAction ?? true,
+    addButton: false,
+    deleteButton: false,
+    editButton: false,
+    showUnit: false,
+    saveWithRemark: permissions?.saveWithRemark ?? true,
+    saveBtn: permissions?.saveBtn ?? true,
+    customHeight: permissions?.customHeight,
+    allAction: true,
+  })
   if (lowerVertName == 'elastomer') {
     return <ElastomerShutDown permissions={permissions} />
   }
-  if(lowerVertName == 'pta' && lowerSiteName == 'dmd'){
-    return <PtaShutDown permissions={permissions} />
-  }
+
+  const handleSaveChanges = useCallback(async () => {
+    try {
+      const modifiedData = Object.values(modifiedCells1)
+
+      if (modifiedData.length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        return
+      }
+
+      const sanitizedData = modifiedData.map((item) => ({
+        ...item,
+        normParameterFKId: item.NormParameter_FK_Id,
+        NormParameter_FK_Id: undefined,
+        inEdit: undefined,
+        particulars: undefined,
+        id: undefined,
+        aopYear: undefined,
+        normParameterDisplayName: undefined,
+        plantId: undefined,
+        DisplayName: undefined,
+        NormTypeName: undefined,
+        srNo: undefined,
+        isEditable: undefined,
+        IsEditable: undefined,
+        Particulars: undefined,
+        uom: undefined,
+        UOM: undefined,
+      }))
+
+      await saveSlowdownConfiguration(sanitizedData)
+    } catch (error) {
+      console.error('Error in handleSaveChanges:', error)
+    }
+  }, [modifiedCells1, saveSlowdownConfiguration])
 
   return (
     <div>
@@ -1106,45 +1261,107 @@ const ShutDown = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
-      <KendoDataTables
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        setRows={setRows}
-        columns={colDefs}
-        rows={rows}
-        paginationOptions={[100, 200, 300]}
-        updateShutdownData={updateShutdownData}
-        saveChanges={saveChanges}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        apiRef={apiRef}
-        deleteId={deleteId}
-        open1={open1}
-        setDeleteId={setDeleteId}
-        setOpen1={setOpen1}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        fetchData={fetchData}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        deleteRowData={deleteRowData}
-        permissions={adjustedPermissions}
-        disableRedHighlight={true}
-        allProducts={allProducts}
-        allDescriptionDrpdwn={allDescriptionDrpdwn}
-        handleExcelUpload={handleExcelUpload}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
-        deleteNoteOnDeleteDialogeBox={DELETE_NOTE}
-        screenType='shutdown'
-        allLines={allLines}
-      />
+      {defaultTabs?.length > 1 && (
+        <Tabs
+          value={tabIndex}
+          onChange={(e, newIndex) => setTabIndex(newIndex)}
+          variant='scrollable'
+          scrollButtons='auto'
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 10px 0px',
+            minHeight: '28px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+        >
+          {defaultTabs.map((label, idx) => (
+            <Tab
+              key={idx}
+              label={label}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          ))}
+        </Tabs>
+      )}
+      {tabIndex === 0 && (
+        <KendoDataTables
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          setRows={setRows}
+          columns={colDefs}
+          rows={rows}
+          paginationOptions={[100, 200, 300]}
+          updateShutdownData={updateShutdownData}
+          saveChanges={saveChanges}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          deleteId={deleteId}
+          open1={open1}
+          setDeleteId={setDeleteId}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          fetchData={fetchData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          deleteRowData={deleteRowData}
+          permissions={adjustedPermissions}
+          disableRedHighlight={true}
+          allProducts={allProducts}
+          allDescriptionDrpdwn={allDescriptionDrpdwn}
+          handleExcelUpload={handleExcelUpload}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          deleteNoteOnDeleteDialogeBox={DELETE_NOTE}
+          screenType='shutdown'
+          allLines={allLines}
+        />
+      )}
+      {tabIndex === 1 && (
+        <KendoDataTables
+          modifiedCells={modifiedCells1}
+          setModifiedCells={setModifiedCells1}
+          setRows={setRows1}
+          columns={colDefs1}
+          rows={rows1}
+          paginationOptions={[100, 200, 300]}
+          updateShutdownData={updateShutdownData}
+          saveChanges={handleSaveChanges}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          deleteId={deleteId}
+          open1={open1}
+          setDeleteId={setDeleteId}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          fetchData={fetchTabIndex1Data}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          deleteRowData={deleteRowData}
+          groupBy='normtype'
+          permissions={adjustedPermissionsconfig}
+        />
+      )}
     </div>
   )
 }
 
-export default ShutDown
+export default PtaShutDown

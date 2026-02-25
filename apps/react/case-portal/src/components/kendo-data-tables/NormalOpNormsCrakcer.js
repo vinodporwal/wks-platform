@@ -1164,7 +1164,7 @@ const NormalOpNormsScreenCracker = () => {
     'Criteria for Best Achieved',
     'Norms Selection',
     'Final monthly norms',
-    'Report Manual Entry',
+    // 'Report Manual Entry',
   ]
 
   // UI render
@@ -1449,7 +1449,7 @@ const NormalOpNormsScreenCracker = () => {
       )}
 
       {/* Report Mannual Entry Tab */}
-      {selectedTab === 5 && <CrackerReportMannualEntry tabIndex={5} />}
+      {/* {selectedTab === 5 && <CrackerReportMannualEntry tabIndex={5} />} */}
     </div>
   )
 }

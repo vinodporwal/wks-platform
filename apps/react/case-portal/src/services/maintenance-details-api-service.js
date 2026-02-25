@@ -23,6 +23,8 @@ export const MaintenanceDetailsApiService = {
   saveSlowdownConfig,
   saveFinishingShutdown,
   deleteFinishingShutdownConfig,
+  getShutdownHistoryConfig,
+  updateSlowdownNormsForPTA,
 }
 
 async function getCrackerMaintenanceData(keycloak, PLANT_ID, AOP_YEAR) {
@@ -445,7 +447,7 @@ async function getFinishingShutdownConfig(keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 async function saveFinishingShutdown(PLANT_ID, AOP_YEAR, dataList, keycloak) {
-  const url = `${Config.CaseEngineUrl}/task/finishing-shutdown?siteId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}`
+  const url = `${Config.CaseEngineUrl}/task/finishing-shutdown?plantId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -459,7 +461,7 @@ async function saveFinishingShutdown(PLANT_ID, AOP_YEAR, dataList, keycloak) {
     })
     return json(keycloak, resp)
   } catch (e) {
-    console.error('Error in saveAnnualProduction:', e)
+    console.error('Error in saveFinishingShutdown:', e)
     return await Promise.reject(e)
   }
 }
@@ -483,5 +485,44 @@ async function deleteFinishingShutdownConfig(id, keycloak, PLANT_ID, AOP_YEAR) {
   } catch (e) {
     console.error('Error deleting finishing shutdown config data:', e)
     return Promise.reject(e)
+  }
+}
+async function getShutdownHistoryConfig(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-history-pta?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function updateSlowdownNormsForPTA(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  dataList,
+) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-history-pta?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dataList),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in update Slowdown Norms:', e)
+    return await Promise.reject(e)
   }
 }

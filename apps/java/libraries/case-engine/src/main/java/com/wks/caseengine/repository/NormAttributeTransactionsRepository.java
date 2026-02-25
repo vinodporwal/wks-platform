@@ -219,6 +219,18 @@ Optional<NormAttributeTransactions> findByNormParameterFKIdAndAOPMonthAndAuditYe
 	List<NormAttributeTransactions> findByNormParameterIdAndAuditYear(
 	     @Param("normParameterFKId") UUID normParameterFKId,
 	     @Param("auditYear") String auditYear	    
-);
+	);
+	
+	@Query(value = "SELECT * FROM [RIL.AOP].[dbo].[NormAttributeTransactions] " +
+            "WHERE [AuditYear] = :auditYear " +
+            "AND [NormParameter_FK_Id] = :normParamId " +
+            "AND [ShutdownType_FK_Id] = :shutdownTypeId", 
+    nativeQuery = true)
+	List<NormAttributeTransactions> findByAuditYearAndIds(
+	 @Param("auditYear") String auditYear, 
+	 @Param("normParamId") UUID normParamId, 
+	 @Param("shutdownTypeId") UUID shutdownTypeId
+	);
+	
 
 }

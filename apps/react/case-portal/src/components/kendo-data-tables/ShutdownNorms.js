@@ -88,6 +88,9 @@ const ShutdownNorms = () => {
     ['nmd'].includes(SITE_NAME_LOWERCASE) &&
     ['lldpe1', 'lldpe2'].includes(PLANT_NAME_LOWERCASE)
 
+  const IS_PTA_DMD =
+    ['pta'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
+
   const textNote = IS_PE_PP_VERTICAL
     ? '*Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
     : '*Quantities are per day basis'
@@ -182,7 +185,12 @@ const ShutdownNorms = () => {
 
         // Fetch grades for slowdown months
         let slowdownMonthsRes = []
-        if (IS_PE_NMD_LDPE || lowerVertName === 'pp' || IS_PE_VMD || IS_PE_DMD) {
+        if (
+          IS_PE_NMD_LDPE ||
+          lowerVertName === 'pp' ||
+          IS_PE_VMD ||
+          IS_PE_DMD
+        ) {
           const gradesRes =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
               keycloak,
@@ -215,7 +223,11 @@ const ShutdownNorms = () => {
         }
 
         const finalMonths =
-          IS_PE_PP_VERTICAL || IS_PE_NMD_LDPE || lowerVertName === 'pp' ||IS_PE_VMD ||IS_PE_DMD
+          IS_PE_PP_VERTICAL ||
+          IS_PE_NMD_LDPE ||
+          lowerVertName === 'pp' ||
+          IS_PE_VMD ||
+          IS_PE_DMD
             ? [
                 ...new Set([
                   ...(Array.isArray(shutdownMonthsRes)
@@ -486,7 +498,7 @@ const ShutdownNorms = () => {
           setGrades(fetchedGrades)
 
           if (fetchedGrades.length === 0) {
-            // no grades � clear selection and fetch blank data
+            // no grades   clear selection and fetch blank data
             setGradeId(null)
             await fetchData(null)
             return
