@@ -62,6 +62,7 @@ import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.BudgetMaintenance;
 
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
@@ -845,7 +846,16 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 
 	            totalUpdatedRows += query.executeUpdate();
 	        }
-
+	        List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("maintenance-details");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
 	        aopMessageVM.setCode(200);
 	        aopMessageVM.setMessage("Updated rows: " + totalUpdatedRows);
 	        return aopMessageVM;
