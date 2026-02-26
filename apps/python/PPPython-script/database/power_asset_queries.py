@@ -1832,7 +1832,7 @@ if __name__ == "__main__":
 
 
 # ============================================================
-# HRSG HEAT RATE LOOKUP TABLE
+# HRSG HEAT RATE TABLE (CPP_HRSGHeatRate)
 # ============================================================
 # Used for reverse calculation of Natural Gas norms for HRSGs
 # 
@@ -1841,15 +1841,49 @@ if __name__ == "__main__":
 #   Natural Gas (MMBTU) = SHP Production (MT) × NG Norm (MMBTU/MT)
 #
 # Conversion factor: 1 kcal/kg = 3.96567 BTU/lb
+# 
+# Table: CPP_HRSGHeatRate (joined with SteamGenerationAssets)
+# Columns: AssetName, UtilityId, HRSGLoad, FinalHeatRate, FinancialYear
 # ============================================================
 
 # Conversion constant: BTU/lb to MMBTU/MT
 BTU_LB_TO_MMBTU_MT = 0.00396567
 
 
-def fetch_hrsg_heat_rate_lookup() -> pd.DataFrame:
+def get_financial_year_from_month(month: int, year: int) -> str:
     """
-    Fetch all HRSG heat rate lookup data from database.
+    Calculate financial year string from month and year.
+    Financial year runs from April to March.
+    
+    Args:
+        month: Month number (1-12)
+        year: Calendar year
+    
+    Returns:
+        Financial year string in format 'YYYY-YY' (e.g., '2025-26')
+    
+    Examples:
+        - April 2025 (month=4, year=2025) -> '2025-26'
+        - March 2026 (month=3, year=2026) -> '2025-26'
+        - January 2026 (month=1, year=2026) -> '2025-26'
+    """
+    if month >= 4:  # April to December
+        fy_start = year
+        fy_end = year + 1
+    else:  # January to March
+        fy_start = year - 1
+        fy_end = year
+    
+    return f"{fy_start}-{str(fy_end)[-2:]}"
+
+
+def fetch_hrsg_heat_rate_lookup(financial_year: str = None) -> pd.DataFrame:
+    """
+    Fetch all HRSG heat rate data from CPP_HRSGHeatRate table.
+    
+    Args:
+        financial_year: Financial year in format 'YYYY-YY' (e.g., '2025-26')
+                       If None, fetches latest available data for each asset
     
     Returns:
         DataFrame with columns: EquipmentName, CPPUtility, HRSGLoad, HeatRate
@@ -1858,15 +1892,34 @@ def fetch_hrsg_heat_rate_lookup() -> pd.DataFrame:
     conn = get_connection()
     cur = conn.cursor()
     
-    cur.execute("""
-        SELECT 
-            EquipmentName,
-            CPPUtility,
-            HRSGLoad,
-            HeatRate
-        FROM HRSGHeatRateLookup
-        ORDER BY EquipmentName ASC, HRSGLoad ASC
-    """)
+    if financial_year:
+        # Fetch data for specific financial year
+        cur.execute("""
+            SELECT 
+                AssetName AS EquipmentName,
+                UtilityId AS CPPUtility,
+                HRSGLoad,
+                FinalHeatRate AS HeatRate
+            FROM CPP_HRSGHeatRate
+            WHERE FinancialYear = ?
+            ORDER BY AssetName ASC, HRSGLoad ASC
+        """, (financial_year,))
+    else:
+        # Fetch latest data (most recent financial year) for each asset
+        cur.execute("""
+            SELECT 
+                AssetName AS EquipmentName,
+                UtilityId AS CPPUtility,
+                HRSGLoad,
+                FinalHeatRate AS HeatRate
+            FROM CPP_HRSGHeatRate
+            WHERE FinancialYear = (
+                SELECT MAX(FinancialYear) 
+                FROM CPP_HRSGHeatRate AS h2
+                WHERE h2.Asset_FK_Id = CPP_HRSGHeatRate.Asset_FK_Id
+            )
+            ORDER BY AssetName ASC, HRSGLoad ASC
+        """)
     
     rows = cur.fetchall()
     cols = ["EquipmentName", "CPPUtility", "HRSGLoad", "HeatRate"]
@@ -2079,7 +2132,7 @@ def print_hrsg_heat_rate_lookup_summary():
     print("="*80)
     
     if df.empty:
-        print("  No data available in HRSGHeatRateLookup table.")
+        print("  No data available in CPP_HRSGHeatRate table.")
         print("="*80)
         return
     

@@ -78,6 +78,7 @@ from database.power_asset_queries import (
     get_stg_operating_hours,
     fetch_hrsg_heat_rate_lookup,
     calculate_hrsg_ng_from_heat_rate,
+    get_financial_year_from_month,
 )
 
 
@@ -507,15 +508,19 @@ def usd_iterate(
     print("STEP 0b: HRSG HEAT RATE LOOKUP (For Natural Gas Reverse Calculation)")
     print("-"*100)
     
-    # Fetch HRSG heat rate lookup table (cached for all iterations)
-    hrsg_heat_rate_lookup_df = fetch_hrsg_heat_rate_lookup()
+    # Calculate financial year from month and year
+    financial_year = get_financial_year_from_month(month, year)
+    print(f"  Financial Year: {financial_year} (Month: {month}, Year: {year})")
+    
+    # Fetch HRSG heat rate lookup table for specific financial year (cached for all iterations)
+    hrsg_heat_rate_lookup_df = fetch_hrsg_heat_rate_lookup(financial_year=financial_year)
     
     if hrsg_heat_rate_lookup_df.empty:
-        print("  [WARNING] HRSG Heat Rate Lookup table is empty - using legacy fixed norms")
+        print(f"  [WARNING] HRSG Heat Rate Lookup table is empty for FY {financial_year} - using legacy fixed norms")
         use_hrsg_heat_rate_lookup = False
     else:
         use_hrsg_heat_rate_lookup = True
-        print(f"  HRSG Heat Rate Lookup: {len(hrsg_heat_rate_lookup_df)} records loaded")
+        print(f"  HRSG Heat Rate Lookup: {len(hrsg_heat_rate_lookup_df)} records loaded for FY {financial_year}")
         for hrsg_name in hrsg_heat_rate_lookup_df['EquipmentName'].unique():
             hrsg_data = hrsg_heat_rate_lookup_df[hrsg_heat_rate_lookup_df['EquipmentName'] == hrsg_name]
             heat_rate = hrsg_data['HeatRate'].iloc[0]
