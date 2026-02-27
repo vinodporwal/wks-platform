@@ -10,6 +10,318 @@ import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+
+const tableData = [
+  {
+    id: 1,
+    type: 'ASTM Distillation Curve',
+    tagName: 'FBP',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 2,
+    type: 'ASTM Distillation Curve',
+    tagName: 'IBP',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 3,
+    type: 'ASTM Distillation Curve',
+    tagName: 'T-10',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 4,
+    type: 'ASTM Distillation Curve',
+    tagName: 'T-30',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 5,
+    type: 'ASTM Distillation Curve',
+    tagName: 'T-50',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 6,
+    type: 'ASTM Distillation Curve',
+    tagName: 'T-70',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 7,
+    type: 'ASTM Distillation Curve',
+    tagName: 'T-90',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 8,
+    type: 'Base',
+    tagName: 'Specific gravity',
+    UOM: '',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 9,
+    type: 'Business Demand',
+    tagName: 'QTY Available',
+    UOM: 'KTPM',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 10,
+    type: 'Carbon Number Distribution',
+    tagName: 'C10 Aromatics',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 11,
+    type: 'Carbon Number Distribution',
+    tagName: 'C10 iso-Paraffins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 12,
+    type: 'Carbon Number Distribution',
+    tagName: 'C10 n-Paraffins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 13,
+    type: 'Carbon Number Distribution',
+    tagName: 'C10 Naphthenes',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 14,
+    type: 'Carbon Number Distribution',
+    tagName: 'C10 Olefins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 15,
+    type: 'Carbon Number Distribution',
+    tagName: 'C11+ Aromatics',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 16,
+    type: 'Carbon Number Distribution',
+    tagName: 'C11+ iso-Paraffins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 17,
+    type: 'Carbon Number Distribution',
+    tagName: 'C11+ n-Paraffins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 18,
+    type: 'Carbon Number Distribution',
+    tagName: 'C11+ Naphthenes',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 19,
+    type: 'Carbon Number Distribution',
+    tagName: 'C11+ Olefins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 20,
+    type: 'Carbon Number Distribution',
+    tagName: 'C2 N-Paraffins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 21,
+    type: 'Carbon Number Distribution',
+    tagName: 'C3 iso-Paraffins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+  {
+    id: 22,
+    type: 'Carbon Number Distribution',
+    tagName: 'C3 N-Paraffins',
+    UOM: 'wt%',
+    jmdNaphtha: 0,
+    pmdNaphtha: 0,
+    ioclNaphtha: 0,
+    gailNaphtha: 0,
+    bpclNaphtha: 0,
+    ongcNaphtha: 0,
+    otherNaphtha: 0,
+    remarks: '',
+  },
+]
+
 const CrackerConfig = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -73,6 +385,7 @@ const CrackerConfig = () => {
     'Recovery',
     'Furnace',
     'Constant',
+    'Naphtha',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -90,6 +403,7 @@ const CrackerConfig = () => {
 
   const [selectMode, setSelectMode] = useState('')
   const [constantsRows, setConstantsRows] = useState([])
+  const [naphthaRows, setNaphthaRows] = useState([])
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -135,7 +449,7 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showModes: lowerVertName === 'cracker',
+      showModes: lowerVertName === 'cracker' && currentTabDisplay !== 'Naphtha',
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
@@ -155,7 +469,9 @@ const CrackerConfig = () => {
           ? 'cracker_constants'
           : currentTabDisplay === 'Yield'
             ? 'cracker_yield'
-            : 'cracker'
+            : currentTabDisplay === 'Naphtha'
+              ? 'Naphtha'
+              : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -274,6 +590,8 @@ const CrackerConfig = () => {
           return furnace
         case 'Constant':
           return constantsRows
+        case 'Naphtha':
+          return naphthaRows
         default:
           return []
       }
@@ -286,6 +604,7 @@ const CrackerConfig = () => {
       furnace,
       optimizing,
       constantsRows,
+      naphthaRows,
     ],
   )
 
@@ -314,6 +633,11 @@ const CrackerConfig = () => {
       case 'Constant':
         setConstantsRows(data)
         break
+
+      case 'Naphtha':
+        setNaphthaRows(data)
+        break
+
       default:
         console.warn('No state for tab:', tabId)
     }
@@ -352,6 +676,17 @@ const CrackerConfig = () => {
             }))
           }
           setRowsForTab(currentTabDisplay, transformedData1)
+          return
+        }
+        if (currentTabDisplay == 'Naphtha') {
+          spyroVM1 = await DataService.getNaphthaData(
+            keycloak,
+            currentTabDisplay,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+
+          setRowsForTab(currentTabDisplay, tableData)
           return
         }
 
@@ -394,7 +729,7 @@ const CrackerConfig = () => {
 
   useEffect(() => {
     if (keycloak && PLANT_ID && AOP_YEAR && currentTabDisplay) {
-      if (!selectMode) {
+      if (currentTabDisplay !== 'Naphtha' && !selectMode) {
         console.log('Skipping fetchCrackerRows until selectMode is set')
         return
       }
@@ -435,7 +770,14 @@ const CrackerConfig = () => {
         setLoading(false)
         return
       }
-      const validationMessage = validateFields(data, ['particulars', 'remarks'])
+      console.log('data', data)
+      const naphthaFields = []
+      const validationMessage = validateFields(
+        data,
+        currentTabDisplay == 'Naphtha'
+          ? naphthaFields
+          : ['particulars', 'remarks'],
+      )
       if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({ message: validationMessage, severity: 'error' })
@@ -451,30 +793,45 @@ const CrackerConfig = () => {
   const saveSpyroData = async (newRows) => {
     setLoading(true)
     try {
-      const SpyroInputData = newRows.map((row) => ({
-        normParameterFKID: row.normParameterFKID ?? null,
-        Remarks: row.remarks ?? row.Remarks ?? null,
-        remarks: row.remarks ?? row.Remarks ?? null,
-        jan: row.jan || null,
-        feb: row.feb || null,
-        mar: row.mar || null,
-        apr: row.apr || null,
-        may: row.may || null,
-        jun: row.jun || null,
-        jul: row.jul || null,
-        aug: row.aug || null,
-        sep: row.sep || null,
-        oct: row.oct || null,
-        nov: row.nov || null,
-        dec: row.dec || null,
-        id: null,
-      }))
-      const response = await DataService.saveSpyroInput(
-        SpyroInputData,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      let SpyroInputData
+      if (currentTabDisplay == 'Naphtha') {
+        SpyroInputData = newRows
+      } else {
+        SpyroInputData = newRows.map((row) => ({
+          normParameterFKID: row.normParameterFKID ?? null,
+          Remarks: row.remarks ?? row.Remarks ?? null,
+          remarks: row.remarks ?? row.Remarks ?? null,
+          jan: row.jan || null,
+          feb: row.feb || null,
+          mar: row.mar || null,
+          apr: row.apr || null,
+          may: row.may || null,
+          jun: row.jun || null,
+          jul: row.jul || null,
+          aug: row.aug || null,
+          sep: row.sep || null,
+          oct: row.oct || null,
+          nov: row.nov || null,
+          dec: row.dec || null,
+          id: null,
+        }))
+      }
+      let response
+      if (currentTabDisplay == 'Naphtha') {
+        response = await DataService.saveNaphthaData(
+          SpyroInputData,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.saveSpyroInput(
+          SpyroInputData,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -506,13 +863,22 @@ const CrackerConfig = () => {
       const mode = selectMode || ''
       let response
 
-      response = await DataService.importSpyroInputExcel(
-        rawFile,
-        keycloak,
-        mode,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      if (currentTabDisplay == 'Naphtha') {
+        response = await DataService.importNaphthaExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.importSpyroInputExcel(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -571,16 +937,29 @@ const CrackerConfig = () => {
     })
 
     const mode = selectMode
-    const EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Input_${AOP_YEAR}`
+    const EXCEL_NAME =
+      currentTabDisplay == 'Naphtha'
+        ? `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Optimizer_Input_${AOP_YEAR}`
+        : `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Input_${AOP_YEAR}`
 
     try {
-      const response = await DataService.exportSpyroInputExcel(
-        keycloak,
-        mode,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_NAME,
-      )
+      let response
+      if (currentTabDisplay == 'Naphtha') {
+        response = await DataService.exportNaphthaExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
+      } else {
+        response = await DataService.exportSpyroInputExcel(
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -670,6 +1049,7 @@ const CrackerConfig = () => {
             case 'Optimizing':
             case 'Furnace':
             case 'Constant':
+            case 'Naphtha':
               return (
                 <Box key={currentTabDisplay}>
                   <KendoDataTables
@@ -700,6 +1080,7 @@ const CrackerConfig = () => {
                     downloadExcelForConfiguration={
                       downloadExcelForConfiguration
                     }
+                    groupBy={currentTabDisplay == 'Naphtha' ? 'type' : ''}
                   />
                 </Box>
               )
