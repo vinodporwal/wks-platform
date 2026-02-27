@@ -15,6 +15,7 @@ import productionColumnsPE5 from '../../../assets/kendo_config_pe5.json'
 import pioImpactColumns from '../../../assets/kendo_config_pio_impact.json'
 
 import reportManualEntry from '../../../assets/kendo_config_report_mannual_entry.json'
+import naphthaColumns from '../../../assets/kendo_config_cracker_naphtha_coldefs.json'
 
 const getConfigByType = (configType) => {
   switch (configType) {
@@ -69,6 +70,8 @@ const getConfigByType = (configType) => {
 
     case 'Report Manual Entry':
       return reportManualEntry
+    case 'Naphtha':
+      return naphthaColumns
 
     default:
       return productionColumns
