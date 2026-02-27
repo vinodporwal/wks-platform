@@ -281,19 +281,21 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 					}
 				}
 				
-				if(lIMSSpyroInputDTO.getBcoiNaphthaId()!=null && !lIMSSpyroInputDTO.getBcoiNaphthaId().isBlank() && lIMSSpyroInputDTO.getNaphthaBlendCompositionForOptimizerInput()!=null) {
+				if(lIMSSpyroInputDTO.getBcoiNaphthaId()!=null && !lIMSSpyroInputDTO.getBcoiNaphthaId().isBlank()) {
 					UUID BcoiNaphthaId =UUID.fromString(lIMSSpyroInputDTO.getBcoiNaphthaId());
+					String bcoiValue = (lIMSSpyroInputDTO.getNaphthaBlendCompositionForOptimizerInput() != null)
+							? lIMSSpyroInputDTO.getNaphthaBlendCompositionForOptimizerInput().toString() : "0";
 					Optional<NormAttributeTransactions> normAttributeTransactions=	normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(BcoiNaphthaId,4,year);
 					if(normAttributeTransactions.isPresent()) {
 						NormAttributeTransactions normAttributeTransaction=normAttributeTransactions.get();
-						normAttributeTransaction.setAttributeValue(lIMSSpyroInputDTO.getNaphthaBlendCompositionForOptimizerInput().toString());
+						normAttributeTransaction.setAttributeValue(bcoiValue);
 						normAttributeTransaction.setModifiedOn(new Date());
 						normAttributeTransaction.setUserName(Utility.getUserName());
 						normAttributeTransactionsRepository.save(normAttributeTransaction);
 					}else {
 						NormAttributeTransactions normAttributeTransaction = new NormAttributeTransactions();
 						normAttributeTransaction.setAopMonth(4);
-						normAttributeTransaction.setAttributeValue(lIMSSpyroInputDTO.getNaphthaBlendCompositionForOptimizerInput().toString());
+						normAttributeTransaction.setAttributeValue(bcoiValue);
 						normAttributeTransaction.setAuditYear(year);
 						normAttributeTransaction.setCreatedOn(new Date());
 						normAttributeTransaction.setNormParameterFKId(BcoiNaphthaId);
