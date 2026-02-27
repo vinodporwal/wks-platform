@@ -109,6 +109,7 @@ const SlowDown = ({ permissions }) => {
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
+  const IS_PTA_HMD = lowerVertName === 'pta' && lowerSiteName === 'hmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -589,7 +590,7 @@ const SlowDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'vcm' && !IS_PTA_DMD) {
+      if (duplicate && lowerVertName !== 'vcm' && !IS_PTA_DMD && !IS_PTA_HMD) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -736,7 +737,7 @@ const SlowDown = ({ permissions }) => {
           }
         }
         // Overlap within Slowdown  of timeframe ovelaping
-        if (!IS_PTA_DMD && lowerVertName !== 'pet') {
+        if (!IS_PTA_DMD && lowerVertName !== 'pet' && !IS_PTA_HMD) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -775,7 +776,8 @@ const SlowDown = ({ permissions }) => {
           // lowerVertName !== 'vcm' &&
           lowerVertName !== 'pvc' &&
           !IS_PTA_DMD &&
-          lowerVertName !== 'pet'
+          lowerVertName !== 'pet' &&
+          !IS_PTA_HMD
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]

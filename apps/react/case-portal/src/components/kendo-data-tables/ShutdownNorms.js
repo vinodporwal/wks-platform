@@ -189,7 +189,8 @@ const ShutdownNorms = () => {
           IS_PE_NMD_LDPE ||
           lowerVertName === 'pp' ||
           IS_PE_VMD ||
-          IS_PE_DMD
+          IS_PE_DMD ||
+          IS_PET_VERTICAL
         ) {
           const gradesRes =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -227,7 +228,8 @@ const ShutdownNorms = () => {
           IS_PE_NMD_LDPE ||
           lowerVertName === 'pp' ||
           IS_PE_VMD ||
-          IS_PE_DMD
+          IS_PE_DMD ||
+          IS_PET_VERTICAL
             ? [
                 ...new Set([
                   ...(Array.isArray(shutdownMonthsRes)
@@ -762,7 +764,8 @@ const ShutdownNorms = () => {
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_PE_VMD ||
-        IS_PE_DMD
+        IS_PE_DMD ||
+        IS_PET_VERTICAL
           ? true
           : false,
       showTitleNameBusiness: true,
