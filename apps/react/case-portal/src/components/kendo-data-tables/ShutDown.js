@@ -84,6 +84,7 @@ const ShutDown = ({ permissions }) => {
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+  const IS_PET = lowerVertName === 'pet'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -399,7 +400,8 @@ const ShutDown = ({ permissions }) => {
           lowerVertName != 'elastomer' &&
           // lowerVertName != 'vcm' &&
           lowerVertName != 'pvc' &&
-          !IS_PTA
+          !IS_PTA &&
+          !IS_PET
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
