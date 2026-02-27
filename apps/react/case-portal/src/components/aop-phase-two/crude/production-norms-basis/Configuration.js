@@ -3,10 +3,19 @@ import { Box, Backdrop, CircularProgress } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
-import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import {
+  ValueFormatterPhaseTwo,
+  customValueFormatterPhaseTwo,
+} from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import RowBasedKendoTable from '../../common/RowBasedKendoTable/index'
 import { configurationAndReportManualEntryResponse } from '../dummyData'
+import {
+  handleDateDifferenceCalculation,
+  handleValueMappingDependency,
+  handleLegacyDependencyRule,
+} from './utils/dependencyUtils'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/crude/productionNormsApiService'
 
 const Configuration = () => {
   const keycloak = useSession()
@@ -24,7 +33,7 @@ const Configuration = () => {
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(3)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -33,14 +42,14 @@ const Configuration = () => {
   const [dependencyRules, setDependencyRules] = useState({})
 
   // Build dependency rules from row data
-  // Expects rows to have dependencyConfig property on controller fields
+  // Expects rows to have config property on controller fields
   const buildDependencyRules = (rowsData) => {
     const rules = {}
     rowsData.forEach((row) => {
-      if (row.dependencyConfig && row.productName) {
-        rules[row.productName] = {
-          dependentProductName: row.dependencyConfig.dependentProductName,
-          values: row.dependencyConfig.valueMapping || {},
+      if (row.config && row.name) {
+        rules[row.name] = {
+          dependentProductName: row.config.dependentProductName,
+          values: row.config.valueMapping || {},
         }
       }
     })
@@ -49,7 +58,7 @@ const Configuration = () => {
 
   const columns = [
     {
-      field: 'productName',
+      field: 'name',
       title: 'Particulars',
       widthT: 250,
       minWidth: 200,
@@ -58,7 +67,7 @@ const Configuration = () => {
       hidden: false,
     },
     {
-      field: 'UOM',
+      field: 'uom',
       title: 'UOM',
       widthT: 80,
       minWidth: 60,
@@ -66,14 +75,14 @@ const Configuration = () => {
       editable: false,
     },
     {
-      field: 'value',
+      field: 'attributeValue',
       title: 'Value',
       editable: true,
       widthT: 100,
       minWidth: 80,
       align: 'left',
       headerAlign: 'left',
-      type: 'conditional',
+      type: 'row-based',
       format: valueFormat,
     },
     {
@@ -86,6 +95,11 @@ const Configuration = () => {
     },
   ]
 
+  const nonEditableProduct = [
+    'Norms Cycle Start',
+    'Days remaining time from norms preparation time to AOP next cycle start',
+  ]
+
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConfigurationData()
@@ -95,17 +109,10 @@ const Configuration = () => {
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      // Simulate API call with 1 second delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // const res = await ProductionNormsApiService.getConfigurationData(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-
-      const res = configurationAndReportManualEntryResponse.data.filter(
-        (item) => item.normType !== 'PIMS Throughput',
+      const res = await ProductionNormsApiService.getConfigurationData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
       )
 
       if (res?.length === 0) {
@@ -115,11 +122,56 @@ const Configuration = () => {
         return
       }
 
-      const formattedData = res?.map((item, index) => ({
-        ...item,
-        remarks: item.remarks || '',
-        id: item?.id || index + 1,
-      }))
+      const formattedData = res?.map((item, index) => {
+        // Parse config from JSON string if it exists
+        let parsedAttributeValue = null
+        if (item.config) {
+          try {
+            parsedAttributeValue =
+              typeof item.config === 'string'
+                ? JSON.parse(item.config)
+                : item.config
+          } catch (e) {
+            console.error('Error parsing config:', e)
+            parsedAttributeValue = null
+          }
+        }
+
+        const mappingKeys = parsedAttributeValue?.valueMapping
+          ? Object.keys(parsedAttributeValue.valueMapping)
+          : []
+
+        // Preserve existing type (date, dropdown, etc.) or infer from dependencies
+        // Default to 'number' if no type is specified
+        const type = item.type || (mappingKeys.length ? 'dropdown' : undefined)
+
+        // Format date values to YYYY-MM-DD string format
+        let formattedAttributeValue = item.attributeValue
+        if ((type === 'date' || type === 'datetime') && item.attributeValue) {
+          try {
+            const dateObj = new Date(item.attributeValue)
+            if (!isNaN(dateObj.getTime())) {
+              const year = dateObj.getFullYear()
+              const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+              const day = String(dateObj.getDate()).padStart(2, '0')
+              formattedAttributeValue = `${year}-${month}-${day}`
+            }
+          } catch (e) {
+            console.error('Error formatting date:', e)
+          }
+        }
+
+        return {
+          ...item,
+          config: parsedAttributeValue,
+          type,
+          options: item.options?.length ? item.options : mappingKeys,
+          remarks: item.remarks || '',
+          id: item?.id || index + 1,
+          attributeValue: formattedAttributeValue,
+          isEditable: !nonEditableProduct.includes(item.name),
+        }
+      })
       setRows(formattedData)
       setOriginalRows(formattedData)
 
@@ -142,7 +194,8 @@ const Configuration = () => {
     editButton: true,
     saveBtn: true,
     allAction: true,
-    showExport: true,
+    // showExport: true,
+    downloadExcelBtnFromUI: true,
     ExcelName: `Production_Norms_Configuration_${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
@@ -175,25 +228,12 @@ const Configuration = () => {
       return
     }
 
-    const fieldsToCheck = [
-      'apr',
-      'may',
-      'jun',
-      'jul',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-      'jan',
-      'feb',
-      'mar',
-    ]
+    const fieldsToCheck = ['attributeValue']
     const validationError = validateRowDataWithRemarks(
       data,
       originalRows,
       fieldsToCheck,
-      'particulars',
+      'name',
     )
 
     if (validationError) {
@@ -206,15 +246,27 @@ const Configuration = () => {
       return
     }
 
-    const payload = modifiedData
+    // Transform payload to stringify config field for backend
+    const payload = modifiedData.map((item) => {
+      const { config, ...rest } = item
+      return {
+        ...rest,
+        // Stringify config if it exists and is an object
+        config:
+          config && typeof config === 'object'
+            ? JSON.stringify(config)
+            : config,
+      }
+    })
+
     try {
       console.log('Saving configuration data:', payload)
 
-      // const response = await ProductionNormsApiService.saveConfigurationData(
-      //   keycloak,
-      //   AOP_YEAR,
-      //   payload,
-      // )
+      const response = await ProductionNormsApiService.saveConfigurationData(
+        keycloak,
+        AOP_YEAR,
+        payload,
+      )
 
       setModifiedCells({})
       setSnackbarOpen(true)
@@ -239,12 +291,12 @@ const Configuration = () => {
 
     setLoading(true)
     try {
-      // const response = await ProductionNormsApiService.importConfigurationExcel(
-      //   file,
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
+      const response = await ProductionNormsApiService.importConfigurationExcel(
+        file,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -316,11 +368,11 @@ const Configuration = () => {
     })
 
     try {
-      // await ProductionNormsApiService.exportConfigurationExcel(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
+      await ProductionNormsApiService.exportConfigurationExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
@@ -343,60 +395,53 @@ const Configuration = () => {
   const handleCustomItemChange = (e, setRowsCallback) => {
     const { dataItem, field, value } = e
 
-    if (field !== 'value') return
+    if (field !== 'attributeValue') return
 
-    const currentProductName = dataItem.productName
+    const currentProductName = dataItem.name
+
+    // Check if this field has a dependency configuration
+    if (dataItem.config) {
+      const { calculationType, valueMapping } = dataItem.config
+
+      // Handle date difference calculation
+      if (calculationType === 'dateDifference') {
+        handleDateDifferenceCalculation({
+          value,
+          dependencyConfig: dataItem.config,
+          rows,
+          setRowsCallback,
+          setModifiedCells,
+          setCustomModifiedCells,
+        })
+        return
+      }
+
+      // Handle value mapping (dropdown dependencies)
+      if (valueMapping) {
+        handleValueMappingDependency({
+          value,
+          dependencyConfig: dataItem.config,
+          rows,
+          setRowsCallback,
+          setModifiedCells,
+          setCustomModifiedCells,
+        })
+        return
+      }
+    }
+
+    // Legacy support: Check old dependencyRules format
     const dependencyRule = dependencyRules[currentProductName]
-
-    if (!dependencyRule) return
-
-    const dependentValue = dependencyRule.values[value]
-    if (dependentValue === undefined) return
-
-    setRowsCallback((prevRows) => {
-      return prevRows.map((row) => {
-        if (row.productName === dependencyRule.dependentProductName) {
-          return {
-            ...row,
-            value: dependentValue,
-            inEdit: true,
-          }
-        }
-        return row
+    if (dependencyRule) {
+      handleLegacyDependencyRule({
+        value,
+        dependencyRule,
+        rows,
+        setRowsCallback,
+        setModifiedCells,
+        setCustomModifiedCells,
       })
-    })
-
-    setModifiedCells((prev) => {
-      const dependentRow = rows.find(
-        (r) => r.productName === dependencyRule.dependentProductName,
-      )
-      if (!dependentRow) return prev
-
-      return {
-        ...prev,
-        [dependentRow.id]: {
-          ...dependentRow,
-          value: dependentValue,
-          inEdit: true,
-        },
-      }
-    })
-
-    // Update customModifiedCells for orange highlighting
-    setCustomModifiedCells((prev) => {
-      const dependentRow = rows.find(
-        (r) => r.productName === dependencyRule.dependentProductName,
-      )
-      if (!dependentRow) return prev
-
-      return {
-        ...prev,
-        [dependentRow.id]: {
-          ...(prev[dependentRow.id] || {}),
-          value: dependentValue,
-        },
-      }
-    })
+    }
   }
 
   return (
@@ -407,7 +452,7 @@ const Configuration = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-      <AdvanceKendoTable
+      <RowBasedKendoTable
         columns={columns}
         rows={rows}
         setRows={setRows}
@@ -432,7 +477,7 @@ const Configuration = () => {
         customItemChange={handleCustomItemChange}
         externalCustomModifiedCells={customModifiedCells}
         externalSetCustomModifiedCells={setCustomModifiedCells}
-        groupBy={['normType']}
+        groupBy={['normParameterType']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
