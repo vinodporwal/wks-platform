@@ -727,9 +727,9 @@ const ShutdownNorms = () => {
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
               lowerVertName == 'aromatics' ||
-              lowerVertName == 'pta' ||
               IS_PE_PP_VERTICAL ||
-              IS_PET_VERTICAL
+              IS_PET_VERTICAL ||
+              !IS_PTA_DMD
             ? false
             : true,
 

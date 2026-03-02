@@ -7,8 +7,15 @@ import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-s
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import KendoDataTables from './index'
+import AopTabs from 'components/AopTabs'
+import { Box } from '@mui/material'
+import { DataService } from 'services/DataService'
 //import ElastomerMaintenanceTable from './ElastomerMaintenanceTable'
 const MaintenanceTable = () => {
+  // State for tabs
+  const [tabIndex, setTabIndex] = useState(0)
+  const [tabs, setTabs] = useState([])
+  const [lineDetails, setLineDetails] = useState([])
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const keycloak = useSession()
 
@@ -34,23 +41,46 @@ const MaintenanceTable = () => {
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
   const IS_PTA = verticalObject?.name?.toLowerCase() === 'pta'
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const vertName = verticalChange?.selectedVertical
   const SCREEN_NAME = screenTitle?.title
   const lowerVertName = vertName?.toLowerCase()
+  const IS_PP_DTA =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'dta'
+  const IS_PP_SEZ =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'sez'
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
   const dataConfig = useMemo(
     () => ({
-      serviceFn: (keycloak, PLANT_ID, AOP_YEAR) =>
-        MaintenanceDetailsApiService.getMaintenanceData(
+      serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
+        if ((IS_PP_DTA || IS_PP_SEZ) && lineId) {
+          return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            lineId,
+          )
+        }
+        return MaintenanceDetailsApiService.getMaintenanceData(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-        ),
+        )
+      },
     }),
-    [PLANT_ID, AOP_YEAR, lowerVertName],
+    [
+      PLANT_ID,
+      AOP_YEAR,
+      lowerVertName,
+      IS_PP_DTA,
+      IS_PP_SEZ,
+      tabIndex,
+      lineDetails,
+    ],
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -69,6 +99,7 @@ const MaintenanceTable = () => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -81,7 +112,14 @@ const MaintenanceTable = () => {
     setRows([])
     setLoading(true)
     try {
-      const resp = await dataConfig.serviceFn(keycloak, PLANT_ID, AOP_YEAR)
+      const selectedLine = lineDetails[tabIndex]
+      const lineId = selectedLine?.id
+      const resp = await dataConfig.serviceFn(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        lineId,
+      )
       const raw = resp
       const monthFields = [
         'April',
@@ -125,7 +163,41 @@ const MaintenanceTable = () => {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData, oldYear, yearChanged, PLANT_ID, AOP_YEAR])
+  }, [fetchData, oldYear, yearChanged, PLANT_ID, AOP_YEAR, lineDetails])
+
+  // Fetch line details when component mounts or plantID/year changes
+  const fetchLineDetails = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getLineDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code != 200) {
+        setTabs([])
+        return
+      }
+      if (response && Array.isArray(response?.data)) {
+        setLineDetails(response.data)
+        // Update tabs based on the response
+        const lineTabs = response?.data.map((line) => line.displayName)
+        setTabs(lineTabs)
+      }
+    } catch (err) {
+      console.error('Error fetching line details:', err)
+      // Fallback to default tabs if API fails
+      setTabs([])
+    }
+  }
+
+  useEffect(() => {
+    if (IS_PP_DTA || IS_PP_SEZ) {
+      fetchLineDetails()
+    }
+  }, [PLANT_ID, keycloak, yearChanged])
 
   // Helper to generate monthly fields
   const getMonthlyColumns = () => {
@@ -307,6 +379,12 @@ const MaintenanceTable = () => {
 
   return (
     <>
+      {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
+      {(IS_PP_DTA || IS_PP_SEZ) && (
+        <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
+          <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
+        </Box>
+      )}
       <div>
         <Backdrop
           open={loading}
