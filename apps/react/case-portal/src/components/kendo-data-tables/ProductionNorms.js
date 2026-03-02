@@ -58,8 +58,12 @@ const ProductionNorms = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase()
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const VERTICAL_NAME = verticalObject?.name?.toLowerCase()
-  const IS_PP_DTA = lowerVertName === 'pp' && SITE_NAME === 'dta'
-  const IS_PP_SEZ = lowerVertName === 'pp' && SITE_NAME === 'sez'
+  const IS_PP_DTA = false
+  const IS_PP_SEZ = false
+
+  // const IS_PP_DTA = lowerVertName === 'pp' && SITE_NAME === 'dta'
+  // const IS_PP_SEZ = lowerVertName === 'pp' && SITE_NAME === 'sez'
+
   const plantName = plantObject?.name?.toLowerCase()
   const SITE_NAME_LOWERCASE = siteObject?.name?.toLowerCase()
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
