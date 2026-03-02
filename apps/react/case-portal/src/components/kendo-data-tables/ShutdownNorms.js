@@ -722,12 +722,11 @@ const ShutdownNorms = () => {
 
       //VCM(VMD) && elastomer we required to show calculate btn
       showCalculate:
-        lowerVertName == 'elastomer'
+        lowerVertName == 'elastomer' || IS_PTA_DMD
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
               lowerVertName == 'aromatics' ||
-              lowerVertName == 'pta' ||
               IS_PE_PP_VERTICAL ||
               IS_PET_VERTICAL
             ? false
