@@ -11,317 +11,6 @@ import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 
-const tableData = [
-  {
-    id: 1,
-    type: 'ASTM Distillation Curve',
-    tagName: 'FBP',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 2,
-    type: 'ASTM Distillation Curve',
-    tagName: 'IBP',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 3,
-    type: 'ASTM Distillation Curve',
-    tagName: 'T-10',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 4,
-    type: 'ASTM Distillation Curve',
-    tagName: 'T-30',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 5,
-    type: 'ASTM Distillation Curve',
-    tagName: 'T-50',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 6,
-    type: 'ASTM Distillation Curve',
-    tagName: 'T-70',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 7,
-    type: 'ASTM Distillation Curve',
-    tagName: 'T-90',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 8,
-    type: 'Base',
-    tagName: 'Specific gravity',
-    UOM: '',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 9,
-    type: 'Business Demand',
-    tagName: 'QTY Available',
-    UOM: 'KTPM',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 10,
-    type: 'Carbon Number Distribution',
-    tagName: 'C10 Aromatics',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 11,
-    type: 'Carbon Number Distribution',
-    tagName: 'C10 iso-Paraffins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 12,
-    type: 'Carbon Number Distribution',
-    tagName: 'C10 n-Paraffins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 13,
-    type: 'Carbon Number Distribution',
-    tagName: 'C10 Naphthenes',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 14,
-    type: 'Carbon Number Distribution',
-    tagName: 'C10 Olefins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 15,
-    type: 'Carbon Number Distribution',
-    tagName: 'C11+ Aromatics',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 16,
-    type: 'Carbon Number Distribution',
-    tagName: 'C11+ iso-Paraffins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 17,
-    type: 'Carbon Number Distribution',
-    tagName: 'C11+ n-Paraffins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 18,
-    type: 'Carbon Number Distribution',
-    tagName: 'C11+ Naphthenes',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 19,
-    type: 'Carbon Number Distribution',
-    tagName: 'C11+ Olefins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 20,
-    type: 'Carbon Number Distribution',
-    tagName: 'C2 N-Paraffins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 21,
-    type: 'Carbon Number Distribution',
-    tagName: 'C3 iso-Paraffins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-  {
-    id: 22,
-    type: 'Carbon Number Distribution',
-    tagName: 'C3 N-Paraffins',
-    UOM: 'wt%',
-    jmdNaphtha: 0,
-    pmdNaphtha: 0,
-    ioclNaphtha: 0,
-    gailNaphtha: 0,
-    bpclNaphtha: 0,
-    ongcNaphtha: 0,
-    otherNaphtha: 0,
-    remarks: '',
-  },
-]
-
 const CrackerConfig = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -685,8 +374,32 @@ const CrackerConfig = () => {
             PLANT_ID,
             AOP_YEAR,
           )
-
-          setRowsForTab(currentTabDisplay, tableData)
+          const naphthaRows = (spyroVM1.data.Data || []).map((item, idx) => ({
+            id: idx + 1,
+            type: item.type,
+            limsTagName: item.limsTagName,
+            uom: item.uom,
+            jmdNaphtha: item.jmdNaphtha,
+            pmdNaphtha: item.pmdNaphtha,
+            ioclNaphtha: item.ioclNaphtha,
+            gailNaphtha: item.gailNaphtha,
+            bpclNaphtha: item.bpclNaphtha,
+            ongcNaphtha: item.ongcNaphtha,
+            otherNaphtha: item.otherNaphtha,
+            naphthaBlendCompositionForOptimizerInput:
+              item.naphthaBlendCompositionForOptimizerInput,
+            normParameterFKID: item.normParameterFKID || '',
+            // Include all NaphthaId fields!
+            jmdNaphthaId: item.jmdNaphthaId,
+            pmdNaphthaId: item.pmdNaphthaId,
+            ioclNaphthaId: item.ioclNaphthaId,
+            gailNaphthaId: item.gailNaphthaId,
+            bpclNaphthaId: item.bpclNaphthaId,
+            ongcNaphthaId: item.ongcNaphthaId,
+            otherNaphthaId: item.otherNaphthaId,
+            bcoiNaphthaId: item.bcoiNaphthaId,
+          }))
+          setRowsForTab(currentTabDisplay, naphthaRows)
           return
         }
 
@@ -795,7 +508,7 @@ const CrackerConfig = () => {
     try {
       let SpyroInputData
       if (currentTabDisplay == 'Naphtha') {
-        SpyroInputData = newRows
+        SpyroInputData = newRows.map(({ id, inEdit, ...rest }) => rest)
       } else {
         SpyroInputData = newRows.map((row) => ({
           normParameterFKID: row.normParameterFKID ?? null,
@@ -997,6 +710,7 @@ const CrackerConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
         <Tabs
           sx={{
@@ -1049,7 +763,6 @@ const CrackerConfig = () => {
             case 'Optimizing':
             case 'Furnace':
             case 'Constant':
-            case 'Naphtha':
               return (
                 <Box key={currentTabDisplay}>
                   <KendoDataTables
@@ -1059,6 +772,41 @@ const CrackerConfig = () => {
                       fetchCrackerRows(currentTabDisplay, selectMode)
                     }
                     configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                    groupBy={currentTabDisplay == 'Naphtha' ? 'type' : ''}
+                  />
+                </Box>
+              )
+            case 'Naphtha':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='Naphtha'
                     handleRemarkCellClick={handleRemarkCellClick}
                     columns={productionColumns}
                     remarkDialogOpen={remarkDialogOpen}
