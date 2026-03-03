@@ -203,8 +203,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-	        
-	        String procedureName=vertical.getName()+"_GetAvgAOPMCValues";;
+	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+	        String procedureName=vertical.getName()+"_"+site.getName()+"_GetAvgAOPMCValues";;
 	       
 	         List<Object[]> obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 
