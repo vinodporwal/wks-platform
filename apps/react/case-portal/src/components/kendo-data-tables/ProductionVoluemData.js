@@ -98,6 +98,7 @@ const ProductionvolumeData = ({ permissions }) => {
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const IS_PET = verticalObject?.name?.toLowerCase() == 'pet'
+  const IS_PVC_VERTICAL = verticalObject?.name?.toLowerCase() == 'pvc'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
   // Check if it's PP VERTICAL | DTA SITE
@@ -609,7 +610,7 @@ const ProductionvolumeData = ({ permissions }) => {
     : getColDefsPercentageSummary(headerMap, valueFormat)
 
   const colDefs_design_capacity =
-    IS_PE_PP || IS_PET
+    IS_PE_PP || IS_PET || IS_PVC_VERTICAL
       ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
       : IS_PTA_DMD
         ? getColDefsDesignCapacityPTADMD(headerMap, valueFormat)
@@ -618,7 +619,7 @@ const ProductionvolumeData = ({ permissions }) => {
           : getColDefsDesignCapacity(headerMap, valueFormat)
 
   const colDefs_max_achieved_capacity =
-    IS_PE_PP || IS_PET
+    IS_PE_PP || IS_PET || IS_PVC_VERTICAL
       ? getColDefsMaxAchievedCapacityPEPP(headerMap, valueFormat)
       : IS_PTA
         ? getColDefsMaxAchievedCapacityPTA(headerMap, valueFormat)
@@ -747,7 +748,10 @@ const ProductionvolumeData = ({ permissions }) => {
           remarks: item?.remarks?.trim() || null,
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
-          isEditable: IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD ? false : true,
+          isEditable:
+            IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VERTICAL
+              ? false
+              : true,
 
           april:
             isTPD && item.april ? item.april * 24 : item.april || item.april,
@@ -923,7 +927,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
   //POINT-1 Current MCU to be rename as Max Achieved capacity.
   const percentageTitle =
-    IS_PE_PP || IS_PET
+    IS_PE_PP || IS_PET || IS_PVC_VERTICAL
       ? // ? 'Current MCU'
         'Max Achieved Capacity'
       : VERTICAL_NAME === 'cracker'
@@ -972,7 +976,10 @@ const ProductionvolumeData = ({ permissions }) => {
       showUnit: permissions?.showUnit ?? true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
-      saveBtn: IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD ? false : true,
+      saveBtn:
+        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VERTICAL
+          ? false
+          : true,
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
@@ -1063,7 +1070,7 @@ const ProductionvolumeData = ({ permissions }) => {
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
-          : !IS_PE_PP && !IS_PET
+          : !IS_PE_PP && !IS_PET && !IS_PVC_VERTICAL
             ? 'Percentage Summary'
             : '% Summary of Proposed Operating Capacity',
     },

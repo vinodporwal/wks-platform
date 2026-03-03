@@ -119,6 +119,8 @@ import SteadyStateConsumptionCoker from 'components/aop-phase-two/coker/steady-s
 import MonthwiseProductionPlanCoker from 'components/aop-phase-two/coker/monthwise-production-plan/index'
 import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-production-hours/index'
 
+import OtherProduction from 'components/kendo-data-tables/other-production/index'
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -352,6 +354,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='maintenance-details'>
                 <MaintenanceTable />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'combined-production-norms',
+            element: (
+              <PrivateRoute routeId='combined-production-norms'>
+                <OtherProduction />
               </PrivateRoute>
             ),
           },

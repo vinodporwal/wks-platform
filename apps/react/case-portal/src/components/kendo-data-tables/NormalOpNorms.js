@@ -85,15 +85,23 @@ const NormalOpNormsScreen = () => {
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
+  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
-
+  const IS_ELASTOMER_HMD_SBR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'HMD' &&
+    PLANT_NAME_NO_CASE === 'SBR'
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if ((isPEPP || isPET) && !gradeId) return
+    if (
+      (isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL) &&
+      !gradeId
+    )
+      return
     setLoading(true)
     let response
 
@@ -240,7 +248,7 @@ const NormalOpNormsScreen = () => {
       if (lowerVertName === 'meg') {
         promises.push(fetchDataIntermediateValues())
       }
-      if (isPEPP || isPET) {
+      if (isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL) {
         promises.push(fetchGradeDropdowns())
       }
 
@@ -540,7 +548,7 @@ const NormalOpNormsScreen = () => {
     try {
       var data = null
 
-      if (isPEPP || isPET) {
+      if (isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL) {
         data =
           await NormalOperationNormsApiService.handleCalculateNormalOperationNormsPe(
             PLANT_ID,
@@ -566,7 +574,8 @@ const NormalOpNormsScreen = () => {
           severity: 'success',
         })
 
-        if (isPEPP || isPET) fetchGradeDropdowns()
+        if (isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL)
+          fetchGradeDropdowns()
         fetchData(gradeId)
         if (lowerVertName == 'meg') fetchDataIntermediateValues()
         getNormTransactions()
@@ -619,14 +628,25 @@ const NormalOpNormsScreen = () => {
       showCalculate: true,
       downloadExcelBtnFromUI: false,
       showCheckbox: false,
-      showG: isPEPP || isPET ? true : false,
-      marginBottom: isPEPP || isPET ? true : false,
-      dropdownLabel: isPEPP || isPET ? 'Select Grade' : 'Select Mode',
+      showG:
+        isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL
+          ? true
+          : false,
+      marginBottom:
+        isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL
+          ? true
+          : false,
+      dropdownLabel:
+        isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL
+          ? 'Select Grade'
+          : 'Select Mode',
       showCalculateVisibility:
         Object.keys(calculationObject || {}).length > 0 ? true : false,
       showTitleNameBusiness: true,
       titleName:
-        !isPEPP || !isPET ? SCREEN_NAME : 'Steady State Consumption (Norm)',
+        !isPEPP || !isPET || !IS_PVC_VERTICAL
+          ? SCREEN_NAME
+          : 'Steady State Consumption (Norm)',
       downloadExcelBtn: true,
       uploadExcelBtn: true,
       isHeight: lowerVertName !== 'meg' && rows?.length > 10,
@@ -665,7 +685,7 @@ const NormalOpNormsScreen = () => {
     })
 
     try {
-      if (isPEPP || isPET) {
+      if (isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL) {
         await NormalOperationNormsApiService.getNormalOpsNormsExcelpe(
           keycloak,
           PLANT_ID,
