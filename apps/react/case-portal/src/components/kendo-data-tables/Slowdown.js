@@ -1250,12 +1250,10 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.AROMATICS:
         return SlowDownAromaticsColumns
       case verticalEnums.PVC:
-        return SlowDownElastomerColumns
+        return SlowDownPeColumns
       case verticalEnums.VCM:
         return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
       case verticalEnums.PET:
-        return SlowDownPeColumns
-      case verticalEnums.PVC:
         return SlowDownPeColumns
       default:
         return SlowDownMegColumns
