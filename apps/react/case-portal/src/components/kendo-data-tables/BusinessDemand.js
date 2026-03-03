@@ -55,6 +55,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
   const IS_PTA_VERTICAL = lowerVertName === 'pta'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
+  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
@@ -170,6 +171,7 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL ||
         IS_ELASTOMER_VERTICAL
       ) {
         const productionRows = (rows || []).filter(
@@ -361,7 +363,7 @@ const BusinessDemand = ({ permissions }) => {
   }
 
   const percentageTitle =
-    IS_PE_PP_VERTICAL || IS_PET_VERTICAL
+    IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VERTICAL
       ? `${SCREEN_NAME} (%)`
       : `${SCREEN_NAME}`
 
@@ -386,12 +388,16 @@ const BusinessDemand = ({ permissions }) => {
         // FOR PTA IT IS NOT REQUIRED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL ||
         IS_ELASTOMER_VERTICAL
           ? true
           : false,
 
       downloadExcelBtn:
-        IS_CRACKER_VERTICAL || IS_PE_PP_VERTICAL || IS_PET_VERTICAL
+        IS_CRACKER_VERTICAL ||
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL
           ? true
           : false,
       uploadExcelBtn:
@@ -400,7 +406,10 @@ const BusinessDemand = ({ permissions }) => {
           : false,
 
       downloadExcelBtnFromUI:
-        IS_CRACKER_VERTICAL || IS_PE_PP_VERTICAL || IS_PET_VERTICAL
+        IS_CRACKER_VERTICAL ||
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL
           ? false
           : true,
     },

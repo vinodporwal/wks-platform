@@ -70,6 +70,7 @@ const ShutdownNorms = () => {
 
   const IS_PE_PP_VERTICAL = ['pe', 'pp'].includes(lowerVertName)
   const IS_PET_VERTICAL = ['pet'].includes(lowerVertName)
+  const IS_PVC_VERTICAL = ['pvc'].includes(lowerVertName)
   const IS_PE_NMD_LDPE =
     ['pe'].includes(lowerVertName) &&
     ['nmd'].includes(SITE_NAME_LOWERCASE) &&
@@ -140,7 +141,12 @@ const ShutdownNorms = () => {
   // 1) Load grades list if vertical requires it
   useEffect(() => {
     const loadGrades = async () => {
-      if (IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_ELASTOMER_HMD_SBR) {
+      if (
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_PVC_VERTICAL
+      ) {
         try {
           const response =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -171,7 +177,12 @@ const ShutdownNorms = () => {
     const loadData = async () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
-        if (IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_ELASTOMER_HMD_SBR) {
+        if (
+          IS_PE_PP_VERTICAL ||
+          IS_PET_VERTICAL ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_PVC_VERTICAL
+        ) {
           if (!gradeId) return
           await fetchData(gradeId)
         } else {
@@ -194,7 +205,8 @@ const ShutdownNorms = () => {
           lowerVertName === 'pp' ||
           IS_PE_VMD ||
           IS_PE_DMD ||
-          IS_PET_VERTICAL
+          IS_PET_VERTICAL ||
+          IS_PVC_VERTICAL
         ) {
           const gradesRes =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -233,7 +245,8 @@ const ShutdownNorms = () => {
           lowerVertName === 'pp' ||
           IS_PE_VMD ||
           IS_PE_DMD ||
-          IS_PET_VERTICAL
+          IS_PET_VERTICAL ||
+          IS_PVC_VERTICAL
             ? [
                 ...new Set([
                   ...(Array.isArray(shutdownMonthsRes)
@@ -490,7 +503,11 @@ const ShutdownNorms = () => {
 
   // --- loadGradesAfterCalculation (always pick the first returned grade) ---
   const loadGradesAfterCalculation = async () => {
-    if (['pe', 'pp'].includes(lowerVertName) || IS_PET_VERTICAL) {
+    if (
+      ['pe', 'pp'].includes(lowerVertName) ||
+      IS_PET_VERTICAL ||
+      IS_PVC_VERTICAL
+    ) {
       try {
         const response =
           await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -580,7 +597,12 @@ const ShutdownNorms = () => {
             AOP_YEAR,
             gradeId,
           )
-      } else if (IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_ELASTOMER_HMD_SBR) {
+      } else if (
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_PVC_VERTICAL
+      ) {
         // Use shutdownNormsExport for PE/PP/Elastomer
         response = await NormalOperationNormsApiService.shutdownNormsExport(
           keycloak,
@@ -733,6 +755,7 @@ const ShutdownNorms = () => {
               lowerVertName == 'aromatics' ||
               IS_PE_PP_VERTICAL ||
               IS_PET_VERTICAL ||
+              IS_PVC_VERTICAL ||
               !IS_PTA_DMD
             ? false
             : true,
@@ -745,11 +768,17 @@ const ShutdownNorms = () => {
           : false,
 
       showG:
-        IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_ELASTOMER_HMD_SBR
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_PVC_VERTICAL
           ? true
           : false,
       marginBottom:
-        IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_ELASTOMER_HMD_SBR
+        IS_PE_PP_VERTICAL ||
+        IS_PET_VERTICAL ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_PVC_VERTICAL
           ? true
           : false,
       dropdownLabel: 'Select Grade',
@@ -758,6 +787,7 @@ const ShutdownNorms = () => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_PVC_VERTICAL ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta'
           ? false
@@ -766,6 +796,7 @@ const ShutdownNorms = () => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_PVC_VERTICAL ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta'
           ? true
@@ -777,16 +808,18 @@ const ShutdownNorms = () => {
         lowerVertName === 'pta' ||
         IS_PE_VMD ||
         IS_PE_DMD ||
-        IS_PET_VERTICAL
+        IS_PET_VERTICAL ||
+        IS_PVC_VERTICAL
           ? true
           : false,
       showTitleNameBusiness: true,
 
-      titleName: IS_PET_VERTICAL
-        ? `Shutdown Consumption (Norms)`
-        : lowerVertName === 'elastomer' || lowerVertName === 'pta'
-          ? `Shutdown Consumption (Norms/Quantity)`
-          : SCREEN_NAME,
+      titleName:
+        IS_PET_VERTICAL || IS_PVC_VERTICAL
+          ? `Shutdown Consumption (Norms)`
+          : lowerVertName === 'elastomer' || lowerVertName === 'pta'
+            ? `Shutdown Consumption (Norms/Quantity)`
+            : SCREEN_NAME,
       ExcelName: `${VERTICAL_NAME}-${SCREEN_NAME}`,
     },
     isOldYear,

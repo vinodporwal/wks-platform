@@ -104,10 +104,12 @@ const SlowDown = ({ permissions }) => {
     lowerVertName == 'vcm' ||
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
-    lowerVertName == 'meg'
+    lowerVertName == 'meg' ||
+    lowerVertName == 'pvc'
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
+  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PTA_HMD = lowerVertName === 'pta' && lowerSiteName === 'hmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
@@ -337,7 +339,8 @@ const SlowDown = ({ permissions }) => {
             ? slowDownDetailsPTADMD
             : lowerVertName === 'pe' ||
                 lowerVertName === 'pp' ||
-                lowerVertName === 'pet'
+                lowerVertName === 'pet' ||
+                IS_PVC_VERTICAL
               ? slowDownDetailsPEPP
               : slowDownDetailsMEG,
         keycloak,
@@ -456,7 +459,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName != 'pe' &&
         lowerVertName !== 'pp' &&
         lowerVertName !== 'pet' &&
-        !IS_PTA_DMD
+        !IS_PTA_DMD &&
+        !IS_PVC_VERTICAL
       ) {
         for (const record of data) {
           const startDate =
@@ -529,7 +533,7 @@ const SlowDown = ({ permissions }) => {
           ? requiredFieldsForElastomer
           : lowerVertName === 'meg'
             ? requiredFieldsForMeg
-            : IS_PE_PP || IS_PET
+            : IS_PE_PP || IS_PET || IS_PVC_VERTICAL
               ? requiredFieldsForPe
               : IS_PTA_DMD
                 ? requiredFieldsISPTADMD
@@ -609,7 +613,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName != 'pe' &&
         lowerVertName !== 'pp' &&
         !IS_PTA_DMD &&
-        lowerVertName !== 'pet'
+        lowerVertName !== 'pet' &&
+        !IS_PVC_VERTICAL
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -710,12 +715,18 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pvc' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pet' ||
-        lowerVertName === 'vcm'
+        lowerVertName === 'vcm' ||
+        IS_PVC_VERTICAL
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
 
-        if (lowerVertName != 'vcm' && !IS_PTA_DMD && lowerVertName !== 'pet') {
+        if (
+          lowerVertName != 'vcm' &&
+          !IS_PTA_DMD &&
+          lowerVertName !== 'pet' &&
+          !IS_PVC_VERTICAL
+        ) {
           for (const row of rows) {
             const start = new Date(row.maintStartDateTime)
             const end = new Date(row.maintEndDateTime)
@@ -737,7 +748,12 @@ const SlowDown = ({ permissions }) => {
           }
         }
         // Overlap within Slowdown  of timeframe ovelaping
-        if (!IS_PTA_DMD && lowerVertName !== 'pet' && !IS_PTA_HMD) {
+        if (
+          !IS_PTA_DMD &&
+          lowerVertName !== 'pet' &&
+          !IS_PTA_HMD &&
+          !IS_PVC_VERTICAL
+        ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -777,7 +793,8 @@ const SlowDown = ({ permissions }) => {
           lowerVertName !== 'pvc' &&
           !IS_PTA_DMD &&
           lowerVertName !== 'pet' &&
-          !IS_PTA_HMD
+          !IS_PTA_HMD &&
+          !IS_PVC_VERTICAL
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -1113,7 +1130,7 @@ const SlowDown = ({ permissions }) => {
         var data = []
         if (lowerVertName == 'meg')
           data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
-        else if (IS_PE_PP || IS_PET) {
+        else if (IS_PE_PP || IS_PET || IS_PVC_VERTICAL) {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
           data = await DataService.getAllProductsAll(
@@ -1131,7 +1148,7 @@ const SlowDown = ({ permissions }) => {
               displayName: product.displayName,
               realId: product.id,
             }))
-        } else if (IS_PE_PP || IS_PET) {
+        } else if (IS_PE_PP || IS_PET || IS_PVC_VERTICAL) {
           productList = data?.data.map((product) => ({
             id: product.displayName,
             displayName: product.displayName,
@@ -1237,6 +1254,8 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.VCM:
         return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
       case verticalEnums.PET:
+        return SlowDownPeColumns
+      case verticalEnums.PVC:
         return SlowDownPeColumns
       default:
         return SlowDownMegColumns
