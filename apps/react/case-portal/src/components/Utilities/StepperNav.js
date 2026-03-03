@@ -87,14 +87,29 @@ export default function StepperNav() {
       (lowerVertName === verticalEnums.PE && plantName === 'LDPE') ||
       // Condition 2: PE vertical AND DMD site
       (lowerVertName === verticalEnums.PE && SITE_NAME === 'dmd')
+
+    // Hide combined-production-norms for PP vertical with sez, hmd, dta sites
+    const shouldFilterCombinedProduction =
+      lowerVertName === verticalEnums.PP &&
+      !['sez', 'hmd', 'dta'].includes(SITE_NAME?.toLowerCase())
+
+    let filteredSteps = newSteps
+
+    // Filter slowdown-norms if needed
     if (shouldFilterSlowdown) {
-      const filteredSteps = newSteps.filter(
+      filteredSteps = filteredSteps.filter(
         (step) => step.key !== 'slowdown-norms',
       )
-      setSteps(filteredSteps)
-    } else {
-      setSteps(newSteps)
     }
+
+    // Filter combined-production-norms for PP vertical when NOT sez/hmd/dta
+    if (shouldFilterCombinedProduction) {
+      filteredSteps = filteredSteps.filter(
+        (step) => step.key !== 'combined-production-norms',
+      )
+    }
+
+    setSteps(filteredSteps)
     const currentSlug = location.pathname.split('/').pop()
     const found = newSteps.some((s) => s.key === currentSlug)
 
