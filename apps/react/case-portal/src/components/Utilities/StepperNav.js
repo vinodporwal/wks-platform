@@ -88,7 +88,7 @@ export default function StepperNav() {
       // Condition 2: PE vertical AND DMD site
       (lowerVertName === verticalEnums.PE && SITE_NAME === 'dmd')
 
-    // Hide combined-production-norms for PP vertical with sez, hmd, dta sites
+    // Filter combined-production-norms for PP vertical when site is NOT sez/hmd/dta
     const shouldFilterCombinedProduction =
       lowerVertName === verticalEnums.PP &&
       !['sez', 'hmd', 'dta'].includes(SITE_NAME?.toLowerCase())
