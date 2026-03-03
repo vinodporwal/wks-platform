@@ -46,14 +46,16 @@ const DatePickerNoLimit = ({ dataItem, field, onChange, min, max }) => {
         min={pickerMin}
         max={pickerMax}
         onChange={(event) => {
-          setLocalValue(event.value)
-        }}
-        onBlur={() => {
-          onChange({
-            dataItem,
-            field,
-            value: localValue,
-          })
+          const newValue = event.value
+          setLocalValue(newValue)
+
+          if (newValue) {
+            onChange({
+              dataItem,
+              field,
+              value: newValue,
+            })
+          }
         }}
       />
     </td>
