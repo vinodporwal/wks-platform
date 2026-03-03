@@ -16,6 +16,7 @@ export const ProductionVolumeDataApiService = {
   getAOPMCCalculatedDataLineWise,
   getDesignCapacityDataLineWise,
   getMaxAchievedCapacityDataLineWise,
+  getProposedOperatingCapacityAvg,
 }
 
 async function editAOPMCCalculatedData(
@@ -366,6 +367,22 @@ async function getMaxAchievedCapacityDataLineWise(
   LINE_ID,
 ) {
   const url = `${Config.CaseEngineUrl}/task/max-achieved-capacity-line?plantId=${PLANT_ID}&year=${AOP_YEAR}&lineId=${LINE_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getProposedOperatingCapacityAvg(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/production-target-avg?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
