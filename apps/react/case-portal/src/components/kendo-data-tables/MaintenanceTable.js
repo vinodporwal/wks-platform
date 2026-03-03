@@ -317,6 +317,9 @@ const MaintenanceTable = () => {
     case 'pet':
       basecols = productionColumnsPP
       break
+    case 'pvc':
+      basecols = productionColumnsPP
+      break
     default:
       basecols = productionColumnsNonMEG
       break
