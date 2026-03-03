@@ -25,6 +25,7 @@ export const MaintenanceDetailsApiService = {
   deleteFinishingShutdownConfig,
   getShutdownHistoryConfig,
   updateSlowdownNormsForPTA,
+  getMaintenanceDataLineWise,
 }
 
 async function getCrackerMaintenanceData(keycloak, PLANT_ID, AOP_YEAR) {
@@ -523,6 +524,21 @@ async function updateSlowdownNormsForPTA(
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error in update Slowdown Norms:', e)
+    return await Promise.reject(e)
+  }
+}
+async function getMaintenanceDataLineWise(keycloak, PLANT_ID, AOP_YEAR, lineId) {
+  const url = `${Config.CaseEngineUrl}/task/maintenance-details-line?year=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

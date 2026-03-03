@@ -117,7 +117,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public AOPMCCalculatedDataServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
-
+	
 	@Override
 	public AOPMessageVM getAOPMCCalculatedData(String plantId, String year) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -146,6 +146,68 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        }
 	       
 	        List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
+
+	        for (Object[] row : obj) {
+	            AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
+	            dto.setId(row[0] != null ? row[0].toString() : "");
+	            dto.setSiteFKId(row[1] != null ? row[1].toString() : "");
+	            dto.setPlantFKId(row[2] != null ? row[2].toString() : "");
+	            dto.setMaterialFKId(row[3] != null ? row[3].toString() : "");
+	            dto.setApril(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+	            dto.setMay(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+	            dto.setJune(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+	            dto.setJuly(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+	            dto.setAugust(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+	            dto.setSeptember(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+	            dto.setOctober(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+	            dto.setNovember(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+	            dto.setDecember(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+	            dto.setJanuary(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+	            dto.setFebruary(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
+	            dto.setMarch(row[15] != null ? Double.parseDouble(row[15].toString()) : 0.0);
+
+	            dto.setFinancialYear(row[16] != null ? row[16].toString() : null);
+	            dto.setRemarks(row[17] != null ? row[17].toString() : " ");
+	            dto.setVerticalFKId(row[22] != null ? row[22].toString() : null);
+	            dto.setProductName(row[24] != null ? row[24].toString() : null);
+	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : null);
+	            
+	            aOPMCCalculatedDataDTOList.add(dto);
+	        }
+
+	        Map<String, Object> map = new HashMap<>();
+	        List<AopCalculation> aopCalculation = aopCalculationRepository.findByPlantIdAndAopYearAndCalculationScreen(
+	                UUID.fromString(plantId), year, "production-volume-data");
+	        
+	        map.put("aopMCCalculatedDataDTOList", aOPMCCalculatedDataDTOList);
+	        map.put("aopCalculation", aopCalculation);
+	        
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setData(map);
+	        aopMessageVM.setMessage("Data fetched successfully");
+	        return aopMessageVM;
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+	@Override
+	public AOPMessageVM getProductionTargetAvg(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        
+	        Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	        
+	        String procedureName=vertical.getName()+"_GetAvgAOPMCValues";;
+	       
+	         List<Object[]> obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+
+	         List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList = new ArrayList<>();
 
 	        for (Object[] row : obj) {
 	            AOPMCCalculatedDataDTO dto = new AOPMCCalculatedDataDTO();
@@ -413,8 +475,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
             if (vertical.getName().equalsIgnoreCase("PTA")) {
                 view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValuesMaxAchivedCapacity";
             }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
-	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";
-				 
+	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
 	        }  else {
                 view = "vwAOPMCValuesMaxAchivedCapacity";
             }

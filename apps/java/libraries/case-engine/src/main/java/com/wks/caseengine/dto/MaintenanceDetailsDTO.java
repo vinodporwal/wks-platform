@@ -27,5 +27,6 @@ public class MaintenanceDetailsDTO {
 	    private Double Jan;
 	    private Double Feb;
 	    private Double Mar;
+	    private String lineId;
 	
 }

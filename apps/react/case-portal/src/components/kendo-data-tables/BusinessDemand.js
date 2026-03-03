@@ -49,6 +49,7 @@ const BusinessDemand = ({ permissions }) => {
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name.toLowerCase()
 
   const IS_ELASTOMER_VERTICAL = lowerVertName === 'elastomer'
   const IS_PE_PP_VERTICAL = lowerVertName === 'pp' || lowerVertName === 'pe'
@@ -56,6 +57,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_PET_VERTICAL = lowerVertName === 'pet'
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
+  const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
     : 'Production Target (MT) (This is a reference for entering the Business Demand value)'
@@ -595,7 +597,7 @@ const BusinessDemand = ({ permissions }) => {
         totalRowConfiguration={totalRowConfiguration}
       />
 
-      {IS_CRACKER_VERTICAL && (
+      {!IS_CARCKER_VMD && IS_CRACKER_VERTICAL && (
         <>
           <Box sx={{ width: '100%', margin: 0 }}>
             <PropaneBusiness permissions={adjustedPermissions} />

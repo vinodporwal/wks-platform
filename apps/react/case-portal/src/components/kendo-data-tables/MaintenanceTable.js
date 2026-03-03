@@ -41,26 +41,46 @@ const MaintenanceTable = () => {
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
   const IS_PTA = verticalObject?.name?.toLowerCase() === 'pta'
-  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
   const vertName = verticalChange?.selectedVertical
   const SCREEN_NAME = screenTitle?.title
   const lowerVertName = vertName?.toLowerCase()
-  const isPPVerticalDTASite =
+  const IS_PP_DTA =
     verticalObject?.name?.toLowerCase() === 'pp' &&
     siteObject?.name?.toLowerCase() === 'dta'
+  const IS_PP_SEZ =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'sez'
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
   const dataConfig = useMemo(
     () => ({
-      serviceFn: (keycloak, PLANT_ID, AOP_YEAR) =>
-        MaintenanceDetailsApiService.getMaintenanceData(
+      serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
+        if ((IS_PP_DTA || IS_PP_SEZ) && lineId) {
+          return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            lineId,
+          )
+        }
+        return MaintenanceDetailsApiService.getMaintenanceData(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
-        ),
+        )
+      },
     }),
-    [PLANT_ID, AOP_YEAR, lowerVertName],
+    [
+      PLANT_ID,
+      AOP_YEAR,
+      lowerVertName,
+      IS_PP_DTA,
+      IS_PP_SEZ,
+      tabIndex,
+      lineDetails,
+    ],
   )
 
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -92,7 +112,14 @@ const MaintenanceTable = () => {
     setRows([])
     setLoading(true)
     try {
-      const resp = await dataConfig.serviceFn(keycloak, PLANT_ID, AOP_YEAR)
+      const selectedLine = lineDetails[tabIndex]
+      const lineId = selectedLine?.id
+      const resp = await dataConfig.serviceFn(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        lineId,
+      )
       const raw = resp
       const monthFields = [
         'April',
@@ -136,7 +163,7 @@ const MaintenanceTable = () => {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData, oldYear, yearChanged, PLANT_ID, AOP_YEAR])
+  }, [fetchData, oldYear, yearChanged, PLANT_ID, AOP_YEAR, lineDetails])
 
   // Fetch line details when component mounts or plantID/year changes
   const fetchLineDetails = async () => {
@@ -167,7 +194,7 @@ const MaintenanceTable = () => {
   }
 
   useEffect(() => {
-    if (isPPVerticalDTASite) {
+    if (IS_PP_DTA || IS_PP_SEZ) {
       fetchLineDetails()
     }
   }, [PLANT_ID, keycloak, yearChanged])
@@ -353,7 +380,7 @@ const MaintenanceTable = () => {
   return (
     <>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {isPPVerticalDTASite && (
+      {(IS_PP_DTA || IS_PP_SEZ) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
