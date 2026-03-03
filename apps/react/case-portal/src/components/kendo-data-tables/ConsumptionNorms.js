@@ -81,6 +81,10 @@ const ConsumptionNorms = () => {
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
+  const IS_ELASTOMER_HMD_SBR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'HMD' &&
+    PLANT_NAME_NO_CASE === 'SBR'
 
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -302,7 +306,7 @@ const ConsumptionNorms = () => {
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if ((isPEPP || isPET) && !gradeId) return
+    if ((isPEPP || isPET || IS_ELASTOMER_HMD_SBR) && !gradeId) return
     setLoading(true)
     try {
       var response
@@ -310,7 +314,8 @@ const ConsumptionNorms = () => {
       if (
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR
       ) {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
@@ -391,7 +396,8 @@ const ConsumptionNorms = () => {
     if (
       lowerVertName === 'pe' ||
       lowerVertName === 'pp' ||
-      lowerVertName === 'pet'
+      lowerVertName === 'pet' ||
+      IS_ELASTOMER_HMD_SBR
     ) {
       fetchGradeDropdowns()
     } else {
@@ -435,7 +441,8 @@ const ConsumptionNorms = () => {
         if (
           lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
-          lowerVertName === 'pet'
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR
         ) {
           fetchGradeDropdownsAfterCalc()
         } else {
@@ -472,7 +479,8 @@ const ConsumptionNorms = () => {
       if (
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR
       ) {
         response =
           await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
@@ -530,26 +538,30 @@ const ConsumptionNorms = () => {
       showG:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR
           ? true
           : false,
       marginBottom:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR
           ? true
           : false,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR
           ? false
           : true,
       downloadExcelBtn:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
