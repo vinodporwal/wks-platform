@@ -885,7 +885,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		
 	
 	public Map<String,Object> savePPShutdownNormsData(List<ShutdownNormsValueDTO> shutdownNormsValueDTOList) {
-		System.out.println("savePPShutdownNormsData input list size: " + (shutdownNormsValueDTOList != null ? shutdownNormsValueDTOList.size() : null));
+		
 		String year=null;
 		UUID plantId=null;
 		List<GradeShutdownNormsValue> gradeShutdownNormsValueList=new ArrayList<>();
@@ -897,12 +897,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			for (ShutdownNormsValueDTO shutdownNormsValueDTO : shutdownNormsValueDTOList) {
 				if (shutdownNormsValueDTO.getSaveStatus() != null
 						&& shutdownNormsValueDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
-					System.out.println("savePPShutdownNormsData skipped failed dto: " + shutdownNormsValueDTO.getProductName() + " | " + shutdownNormsValueDTO.getErrDescription());
 					failedList.add(shutdownNormsValueDTO);
 					continue;
 				}
 				year=shutdownNormsValueDTO.getFinancialYear();
-				System.out.println("savePPShutdownNormsData processing: " + shutdownNormsValueDTO.getProductName() + " | year: " + year + " | gradeFkId: " + shutdownNormsValueDTO.getGradeFkId());
 				
 				if (shutdownNormsValueDTO.getGradeFkId() != null && !shutdownNormsValueDTO.getGradeFkId().trim().isEmpty()) {
 				    try {
@@ -954,9 +952,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				gradeShutdownNormsValue.setJanuary(Optional.ofNullable(shutdownNormsValueDTO.getJanuary()).orElse(0.0));
 				gradeShutdownNormsValue.setFebruary(Optional.ofNullable(shutdownNormsValueDTO.getFebruary()).orElse(0.0));
 				gradeShutdownNormsValue.setMarch(Optional.ofNullable(shutdownNormsValueDTO.getMarch()).orElse(0.0));
-				System.out.println("savePPShutdownNormsData months April: " + shutdownNormsValueDTO.getApril() + " May: " + shutdownNormsValueDTO.getMay() + " June: " + shutdownNormsValueDTO.getJune() + " July: " + shutdownNormsValueDTO.getJuly());
-				System.out.println("savePPShutdownNormsData months August: " + shutdownNormsValueDTO.getAugust() + " September: " + shutdownNormsValueDTO.getSeptember() + " October: " + shutdownNormsValueDTO.getOctober() + " November: " + shutdownNormsValueDTO.getNovember());
-				System.out.println("savePPShutdownNormsData months December: " + shutdownNormsValueDTO.getDecember() + " January: " + shutdownNormsValueDTO.getJanuary() + " February: " + shutdownNormsValueDTO.getFebruary() + " March: " + shutdownNormsValueDTO.getMarch());
 				if (shutdownNormsValueDTO.getSiteFkId() != null) {
 					gradeShutdownNormsValue.setSiteFkId(UUID.fromString(shutdownNormsValueDTO.getSiteFkId()));
 				}
@@ -1005,12 +1000,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			}
 			Map<String,Object> map=new HashMap<>();
 			map.put("data", failedList);
-			System.out.println("savePPShutdownNormsData failedList size: " + failedList.size());
-			System.out.println("savePPShutdownNormsData returning map keys: " + map.keySet());
 			// TODO Auto-generated method stub
 			return map;
 		} catch (Exception ex) {
-			System.out.println("savePPShutdownNormsData exception: " + ex.getMessage());
 			throw new RuntimeException("Failed to save data", ex);
 		}
 	}
