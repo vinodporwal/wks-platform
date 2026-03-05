@@ -31,6 +31,7 @@ import Logo from 'assets/images/ril-logo2.png'
 import DropdownSkeleton from 'utils/DropdownSkeleton'
 import { useNavigate } from '../../../../../node_modules/react-router-dom/dist/index'
 import { openDrawer } from 'store/reducers/menu'
+import { HIDE_VERTICAL_PATHS, HIDE_SITE_PATHS, HIDE_PLANT_PATHS } from './utils'
 
 // import { Skeleton } from '../../../../../node_modules/@progress/kendo-react-indicators/index'
 
@@ -88,6 +89,17 @@ export default function HeaderContent({ keycloak }) {
     '/user-management',
     '/user-form',
   ].includes(location.pathname)
+
+  // Individual dropdown visibility — extends HIDE_DASHBOARD_DROPDOWN with utils.js config
+  const hideVertical =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_VERTICAL_PATHS.some((s) => location.pathname.includes(s))
+  const hideSite =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_SITE_PATHS.some((s) => location.pathname.includes(s))
+  const hidePlant =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_PLANT_PATHS.some((s) => location.pathname.includes(s))
 
   if (['/dashboard'].includes(location.pathname))
     dispatch(openDrawer({ drawerOpen: false }))
@@ -551,7 +563,7 @@ export default function HeaderContent({ keycloak }) {
           </Box>
 
           {/* Vertical */}
-          {!(HIDE_VERTICAL_DROPDOWN || HIDE_DASHBOARD_DROPDOWN) && (
+          {!(HIDE_VERTICAL_DROPDOWN || hideVertical) && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant='body2' className='custom-title-dropdown'>
                 Vertical:
@@ -582,7 +594,7 @@ export default function HeaderContent({ keycloak }) {
           )}
 
           {/* Site */}
-          {!HIDE_DASHBOARD_DROPDOWN && (
+          {!hideSite && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant='body2' className='custom-title-dropdown'>
                 Site:
@@ -615,7 +627,7 @@ export default function HeaderContent({ keycloak }) {
           )}
 
           {/* Plant */}
-          {!HIDE_DASHBOARD_DROPDOWN && (
+          {!hidePlant && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant='body2' className='custom-title-dropdown'>
                 Plant:
