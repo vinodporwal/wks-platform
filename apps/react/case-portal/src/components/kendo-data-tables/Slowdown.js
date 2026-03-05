@@ -1351,7 +1351,6 @@ const SlowDown = ({ permissions }) => {
         )
       } else if (
         (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
-        lowerVertName == 'pvc' ||
         lowerVertName == 'vcm' ||
         lowerVertName === 'aromatics' ||
         lowerVertName === 'pta'
@@ -1409,7 +1408,6 @@ const SlowDown = ({ permissions }) => {
         )
       } else if (
         (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
-        lowerVertName == 'pvc' ||
         lowerVertName == 'vcm' ||
         lowerVertName == 'pta'
       ) {

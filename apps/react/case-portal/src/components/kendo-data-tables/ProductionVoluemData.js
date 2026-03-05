@@ -1161,7 +1161,7 @@ const ProductionvolumeData = ({ permissions }) => {
         })
         setModifiedCells({})
         // setEdit({})
-
+        fetchData()
         const responseForNorms =
           await DataService.calculateNormsHistorianValues(
             PLANT_ID,
@@ -1174,8 +1174,6 @@ const ProductionvolumeData = ({ permissions }) => {
         setLoading(false)
 
         // setLoading(false)
-
-        fetchData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
