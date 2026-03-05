@@ -762,7 +762,6 @@ const ShutdownNorms = () => {
 
       showCalculateVisibility:
         lowerVertName != 'meg' &&
-        lowerVertName != 'pta' &&
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
