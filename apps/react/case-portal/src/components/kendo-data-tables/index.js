@@ -1691,7 +1691,7 @@ const KendoDataTables = ({
                   variant='contained'
                   className='btn-save'
                   onClick={downloadExcelForConfiguration}
-                  disabled={isButtonDisabled || rows?.length === 0}
+                  disabled={isButtonDisabled}
                 >
                   Export
                 </Button>
@@ -1702,9 +1702,7 @@ const KendoDataTables = ({
                   <Button
                     variant='contained'
                     onClick={triggerFileUpload}
-                    disabled={
-                      isButtonDisabled || READ_ONLY || rows?.length === 0
-                    }
+                    disabled={isButtonDisabled || READ_ONLY}
                     className='btn-save'
                   >
                     Import

@@ -562,6 +562,16 @@ public class ShutdownHistoryServiceImpl implements ShutdownHistoryService{
 					aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
 					aopCalculationRepository.save(aopCalculation);
 				}
+				List<ScreenMapping> screenMappingList1 = screenMappingRepository.findByDependentScreen("shutdown-plan");
+				for (ScreenMapping screenMapping : screenMappingList1) {
+					AopCalculation aopCalculation = new AopCalculation();
+					aopCalculation.setAopYear(year);
+					aopCalculation.setIsChanged(true);
+					aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+					aopCalculation.setPlantId(UUID.fromString(plantId));
+					aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+					aopCalculationRepository.save(aopCalculation);
+				}
 
 			}
 		}catch (Exception ex) {
