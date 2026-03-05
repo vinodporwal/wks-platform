@@ -98,7 +98,9 @@ const ProductionvolumeData = ({ permissions }) => {
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const IS_PET = verticalObject?.name?.toLowerCase() == 'pet'
-  const IS_PVC_VERTICAL = verticalObject?.name?.toLowerCase() == 'pvc'
+  const IS_PVC_VMD =
+    verticalObject?.name?.toLowerCase() == 'pvc' &&
+    siteObject?.name?.toLowerCase() == 'vmd'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
   // Check if it's PP VERTICAL | DTA SITE
@@ -610,7 +612,7 @@ const ProductionvolumeData = ({ permissions }) => {
     : getColDefsPercentageSummary(headerMap, valueFormat)
 
   const colDefs_design_capacity =
-    IS_PE_PP || IS_PET || IS_PVC_VERTICAL
+    IS_PE_PP || IS_PET || IS_PVC_VMD
       ? getColDefsDesignCapacityPEPP(headerMap, valueFormat)
       : IS_PTA_DMD
         ? getColDefsDesignCapacityPTADMD(headerMap, valueFormat)
@@ -619,7 +621,7 @@ const ProductionvolumeData = ({ permissions }) => {
           : getColDefsDesignCapacity(headerMap, valueFormat)
 
   const colDefs_max_achieved_capacity =
-    IS_PE_PP || IS_PET || IS_PVC_VERTICAL
+    IS_PE_PP || IS_PET || IS_PVC_VMD
       ? getColDefsMaxAchievedCapacityPEPP(headerMap, valueFormat)
       : IS_PTA
         ? getColDefsMaxAchievedCapacityPTA(headerMap, valueFormat)
@@ -749,7 +751,7 @@ const ProductionvolumeData = ({ permissions }) => {
           originalRemark: item?.remarks?.trim() || null,
           remark: item.remarks?.trim() || '',
           isEditable:
-            IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VERTICAL
+            IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD
               ? false
               : true,
 
@@ -927,7 +929,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
   //POINT-1 Current MCU to be rename as Max Achieved capacity.
   const percentageTitle =
-    IS_PE_PP || IS_PET || IS_PVC_VERTICAL
+    IS_PE_PP || IS_PET || IS_PVC_VMD
       ? // ? 'Current MCU'
         'Max Achieved Capacity'
       : VERTICAL_NAME === 'cracker'
@@ -960,7 +962,7 @@ const ProductionvolumeData = ({ permissions }) => {
       showTitleNameBusiness:
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
-      downloadExcelBtnFromUI: IS_PE_PP || IS_PET ? false : true,
+      downloadExcelBtnFromUI: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
     },
     isOldYear,
@@ -977,15 +979,13 @@ const ProductionvolumeData = ({ permissions }) => {
       saveWithRemark: permissions?.saveWithRemark ?? true,
       showRefreshBtn: permissions?.showRefreshBtn ?? true,
       saveBtn:
-        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VERTICAL
-          ? false
-          : true,
+        IS_PE_PP || IS_PET || IS_VCM || IS_PTA_DMD || IS_PVC_VMD ? false : true,
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      downloadExcelBtnFromUI: IS_PE_PP || IS_PET ? false : true,
-      downloadExcelBtn: IS_PE_PP || IS_PET ? true : false,
-      uploadExcelBtn: IS_PE_PP || IS_PET ? true : false,
+      downloadExcelBtnFromUI: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
+      downloadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? true : false,
+      uploadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? true : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Design Capacity`,
 
       showTitleAndInformation:
@@ -1028,8 +1028,8 @@ const ProductionvolumeData = ({ permissions }) => {
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
-      downloadExcelBtn: IS_PE_PP || IS_PET ? false : true,
-      uploadExcelBtn: IS_PE_PP || IS_PET ? false : true,
+      downloadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
+      uploadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
 
       showTitleAndInformation:
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
@@ -1070,7 +1070,7 @@ const ProductionvolumeData = ({ permissions }) => {
       titleName:
         VERTICAL_NAME === 'cracker'
           ? 'Percentage Summary (Ethylene)'
-          : !IS_PE_PP && !IS_PET && !IS_PVC_VERTICAL
+          : !IS_PE_PP && !IS_PET && !IS_PVC_VMD
             ? 'Percentage Summary'
             : '% Summary of Proposed Operating Capacity',
     },
@@ -1096,7 +1096,7 @@ const ProductionvolumeData = ({ permissions }) => {
     })
 
     try {
-      if (IS_PE_PP || IS_PET) {
+      if (IS_PE_PP || IS_PET || IS_PVC_VMD) {
         await ProductionVolumeDataApiService.getProductionVolExcelCommon(
           keycloak,
           PLANT_ID,
@@ -1161,7 +1161,7 @@ const ProductionvolumeData = ({ permissions }) => {
         })
         setModifiedCells({})
         // setEdit({})
-        fetchData()
+
         const responseForNorms =
           await DataService.calculateNormsHistorianValues(
             PLANT_ID,
@@ -1174,6 +1174,8 @@ const ProductionvolumeData = ({ permissions }) => {
         setLoading(false)
 
         // setLoading(false)
+
+        fetchData()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = new Array(byteCharacters.length)
