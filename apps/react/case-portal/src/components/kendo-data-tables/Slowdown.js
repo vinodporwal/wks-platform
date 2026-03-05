@@ -8,7 +8,10 @@ import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
-import { SlowDownElastomerColumns } from 'components/colums/ElastomerColums'
+import {
+  SlowDownElastomerColumns,
+  SlowDownElastomerColumnsSBR,
+} from 'components/colums/ElastomerColums'
 import {
   SlowDownDmdVcmColumns,
   SlowDownVcmColumns,
@@ -71,6 +74,7 @@ const SlowDown = ({ permissions }) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const [errorRows, setErrorRows] = useState(new Set())
   const lowerVertName = vertName?.toLowerCase()
+  const lowerPlantName = plantName?.toLowerCase()
   const lowerSiteName = SITE_NAME_LOWER
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -114,6 +118,10 @@ const SlowDown = ({ permissions }) => {
   const IS_PTA_HMD = lowerVertName === 'pta' && lowerSiteName === 'hmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'sbr'
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -256,6 +264,13 @@ const SlowDown = ({ permissions }) => {
         rateEOE: row.rateEOE,
       }))
       const slowDownDetailsElastomer = newRow.map((row) => ({
+        productId: (() => {
+          const matched = allProducts.find(
+            (p) => p.displayName === row.productName1,
+          )
+          return matched?.realId || null
+        })(),
+        productName: row.productName1,
         discription: row.discription,
         durationInHrs: (() => {
           const v = findDuration('1', row)
@@ -1130,7 +1145,12 @@ const SlowDown = ({ permissions }) => {
         var data = []
         if (lowerVertName == 'meg')
           data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
-        else if (IS_PE_PP || IS_PET || IS_PVC_VERTICAL) {
+        else if (
+          IS_PE_PP ||
+          IS_PET ||
+          IS_PVC_VERTICAL ||
+          IS_ELASTOMER_HMD_SBR
+        ) {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
           data = await DataService.getAllProductsAll(
@@ -1148,7 +1168,12 @@ const SlowDown = ({ permissions }) => {
               displayName: product.displayName,
               realId: product.id,
             }))
-        } else if (IS_PE_PP || IS_PET || IS_PVC_VERTICAL) {
+        } else if (
+          IS_PE_PP ||
+          IS_PET ||
+          IS_PVC_VERTICAL ||
+          IS_ELASTOMER_HMD_SBR
+        ) {
           productList = data?.data.map((product) => ({
             id: product.displayName,
             displayName: product.displayName,
@@ -1236,6 +1261,11 @@ const SlowDown = ({ permissions }) => {
       PLANT_NAME_LOWER === 'vcm' &&
       SITE_NAME_LOWER === 'dmd'
 
+    var IS_ELASTOMER_HMD_SBR =
+      lowerVertName === 'elastomer' &&
+      PLANT_NAME_LOWER === 'sbr' &&
+      SITE_NAME_LOWER === 'hmd'
+
     switch (lowerVertName) {
       case verticalEnums.PE:
         return SlowDownPeColumns
@@ -1244,7 +1274,9 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PTA:
         return IS_PTA_DMD ? SlowDownPtadmdColumns : SlowDownPtaColumns
       case verticalEnums.ELASTOMER:
-        return SlowDownElastomerColumns
+        return IS_ELASTOMER_HMD_SBR
+          ? SlowDownElastomerColumnsSBR
+          : SlowDownElastomerColumns
       case verticalEnums.MEG:
         return SlowDownMegColumns
       case verticalEnums.AROMATICS:
@@ -1318,7 +1350,7 @@ const SlowDown = ({ permissions }) => {
           EXCEL_EXPORT_TITLE,
         )
       } else if (
-        lowerVertName == 'elastomer' ||
+        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
         lowerVertName == 'pvc' ||
         lowerVertName == 'vcm' ||
         lowerVertName === 'aromatics' ||
@@ -1376,7 +1408,7 @@ const SlowDown = ({ permissions }) => {
           AOP_YEAR,
         )
       } else if (
-        lowerVertName == 'elastomer' ||
+        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
         lowerVertName == 'pvc' ||
         lowerVertName == 'vcm' ||
         lowerVertName == 'pta'
