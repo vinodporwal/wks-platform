@@ -1257,25 +1257,27 @@ const PtaShutDown = ({ permissions }) => {
         return
       }
 
-      const sanitizedData = modifiedData.map((item) => ({
-        ...item,
-        normParameterFKId: item.NormParameter_FK_Id,
-        NormParameter_FK_Id: undefined,
-        inEdit: undefined,
-        particulars: undefined,
-        id: undefined,
-        aopYear: undefined,
-        normParameterDisplayName: undefined,
-        plantId: undefined,
-        DisplayName: undefined,
-        NormTypeName: undefined,
-        srNo: undefined,
-        isEditable: undefined,
-        IsEditable: undefined,
-        Particulars: undefined,
-        uom: undefined,
-        UOM: undefined,
-      }))
+      const sanitizedData = modifiedData.map((item) => {
+        const {
+          Particulars,
+          IsEditable,
+          UOM,
+          NormType,
+          normtype, // Remove lower-case variant as well
+          rate,
+          rpfDownTime,
+          durationInHrs,
+          id,
+          inEdit,
+          ...rest
+        } = item
+        // Rename NormParameter_FK_Id to normParameterFKId if needed
+        return {
+          ...rest,
+          normParameterFKId: item.NormParameter_FK_Id,
+          NormParameter_FK_Id: undefined,
+        }
+      })
 
       await saveSlowdownConfiguration(sanitizedData)
     } catch (error) {

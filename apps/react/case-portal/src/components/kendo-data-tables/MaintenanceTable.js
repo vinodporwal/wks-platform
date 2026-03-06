@@ -53,11 +53,14 @@ const MaintenanceTable = () => {
   const IS_PP_SEZ =
     verticalObject?.name?.toLowerCase() === 'pp' &&
     siteObject?.name?.toLowerCase() === 'sez'
+  const IS_PVC_DMD =
+    verticalObject?.name?.toLowerCase() === 'pvc' &&
+    siteObject?.name?.toLowerCase() === 'dmd'
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
   const dataConfig = useMemo(
     () => ({
       serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
-        if ((IS_PP_DTA || IS_PP_SEZ) && lineId) {
+        if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && lineId) {
           return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
             keycloak,
             PLANT_ID,
@@ -78,6 +81,7 @@ const MaintenanceTable = () => {
       lowerVertName,
       IS_PP_DTA,
       IS_PP_SEZ,
+      IS_PVC_DMD,
       tabIndex,
       lineDetails,
     ],
@@ -194,7 +198,7 @@ const MaintenanceTable = () => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
       fetchLineDetails()
     }
   }, [PLANT_ID, keycloak, yearChanged])
@@ -383,7 +387,7 @@ const MaintenanceTable = () => {
   return (
     <>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

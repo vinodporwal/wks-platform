@@ -98,26 +98,26 @@ const SlowDown = ({ permissions }) => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
 
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
     lowerVertName === 'pet' ||
     lowerVertName == 'elastomer' ||
-    lowerVertName == 'pvc' ||
     lowerVertName == 'vcm' ||
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
     lowerVertName == 'meg' ||
-    lowerVertName == 'pvc'
+    IS_PVC_VMD
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
-  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PTA_HMD = lowerVertName === 'pta' && lowerSiteName === 'hmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_ELASTOMER_HMD_SBR =
     lowerVertName === 'elastomer' &&
     lowerSiteName === 'hmd' &&
@@ -314,7 +314,7 @@ const SlowDown = ({ permissions }) => {
         id: row.idFromApi || null,
         rateEO: null,
         rateEOE: null,
-        ...(IS_PP_DTA || IS_PP_SEZ ? { lineId: row.lineId } : {}),
+        ...(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD ? { lineId: row.lineId } : {}),
       }))
       const slowDownDetailsPTADMD = newRow.map((row) => ({
         productId: (() => {
@@ -355,7 +355,7 @@ const SlowDown = ({ permissions }) => {
             : lowerVertName === 'pe' ||
                 lowerVertName === 'pp' ||
                 lowerVertName === 'pet' ||
-                IS_PVC_VERTICAL
+                IS_PVC_VMD
               ? slowDownDetailsPEPP
               : slowDownDetailsMEG,
         keycloak,
@@ -475,7 +475,7 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'pp' &&
         lowerVertName !== 'pet' &&
         !IS_PTA_DMD &&
-        !IS_PVC_VERTICAL
+        !IS_PVC_VMD
       ) {
         for (const record of data) {
           const startDate =
@@ -548,7 +548,7 @@ const SlowDown = ({ permissions }) => {
           ? requiredFieldsForElastomer
           : lowerVertName === 'meg'
             ? requiredFieldsForMeg
-            : IS_PE_PP || IS_PET || IS_PVC_VERTICAL
+            : IS_PE_PP || IS_PET || IS_PVC_VMD
               ? requiredFieldsForPe
               : IS_PTA_DMD
                 ? requiredFieldsISPTADMD
@@ -629,7 +629,7 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'pp' &&
         !IS_PTA_DMD &&
         lowerVertName !== 'pet' &&
-        !IS_PVC_VERTICAL
+        !IS_PVC_VMD
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -727,11 +727,10 @@ const SlowDown = ({ permissions }) => {
       // MEG specific checks
       if (
         lowerVertName === 'meg' ||
-        lowerVertName === 'pvc' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pet' ||
         lowerVertName === 'vcm' ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
@@ -740,7 +739,7 @@ const SlowDown = ({ permissions }) => {
           lowerVertName != 'vcm' &&
           !IS_PTA_DMD &&
           lowerVertName !== 'pet' &&
-          !IS_PVC_VERTICAL
+          !IS_PVC_VMD
         ) {
           for (const row of rows) {
             const start = new Date(row.maintStartDateTime)
@@ -767,7 +766,7 @@ const SlowDown = ({ permissions }) => {
           !IS_PTA_DMD &&
           lowerVertName !== 'pet' &&
           !IS_PTA_HMD &&
-          !IS_PVC_VERTICAL
+          !IS_PVC_VMD
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -805,11 +804,10 @@ const SlowDown = ({ permissions }) => {
         if (
           lowerVertName !== 'elastomer' &&
           // lowerVertName !== 'vcm' &&
-          lowerVertName !== 'pvc' &&
           !IS_PTA_DMD &&
           lowerVertName !== 'pet' &&
           !IS_PTA_HMD &&
-          !IS_PVC_VERTICAL
+          !IS_PVC_VMD
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -1145,12 +1143,7 @@ const SlowDown = ({ permissions }) => {
         var data = []
         if (lowerVertName == 'meg')
           data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
-        else if (
-          IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VERTICAL ||
-          IS_ELASTOMER_HMD_SBR
-        ) {
+        else if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_ELASTOMER_HMD_SBR) {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
           data = await DataService.getAllProductsAll(
@@ -1168,12 +1161,7 @@ const SlowDown = ({ permissions }) => {
               displayName: product.displayName,
               realId: product.id,
             }))
-        } else if (
-          IS_PE_PP ||
-          IS_PET ||
-          IS_PVC_VERTICAL ||
-          IS_ELASTOMER_HMD_SBR
-        ) {
+        } else if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_ELASTOMER_HMD_SBR) {
           productList = data?.data.map((product) => ({
             id: product.displayName,
             displayName: product.displayName,
@@ -1240,7 +1228,7 @@ const SlowDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -1270,7 +1258,9 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PE:
         return SlowDownPeColumns
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ ? SlowDownPpDtaColumns : SlowDownPpColumns
+        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD
+          ? SlowDownPpDtaColumns
+          : SlowDownPpColumns
       case verticalEnums.PTA:
         return IS_PTA_DMD ? SlowDownPtadmdColumns : SlowDownPtaColumns
       case verticalEnums.ELASTOMER:
@@ -1282,7 +1272,7 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.AROMATICS:
         return SlowDownAromaticsColumns
       case verticalEnums.PVC:
-        return SlowDownPeColumns
+        return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
         return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
       case verticalEnums.PET:
@@ -1335,7 +1325,7 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response = await DtaDataService.exportSlowdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1392,7 +1382,7 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response = await DtaDataService.ImportSlowdownLineWise(
           rawFile,
           keycloak,
@@ -1532,7 +1522,7 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightProductName1:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
-      highlightLine: IS_PP_DTA || IS_PP_SEZ ? true : false,
+      highlightLine: IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD ? true : false,
     },
     isOldYear,
   )

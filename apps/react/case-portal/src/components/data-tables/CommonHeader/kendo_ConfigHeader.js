@@ -16,6 +16,8 @@ import pioImpactColumns from '../../../assets/kendo_config_pio_impact.json'
 
 import reportManualEntry from '../../../assets/kendo_config_report_mannual_entry.json'
 import naphthaColumns from '../../../assets/kendo_config_cracker_naphtha_coldefs.json'
+import rawMaterialColumns from '../../../assets/kendo_config_raw_material_coldefs.json'
+import catchemColumns from '../../../assets/kendo_config_catchem_coldefs.json'
 
 const getConfigByType = (configType) => {
   switch (configType) {
@@ -72,6 +74,10 @@ const getConfigByType = (configType) => {
       return reportManualEntry
     case 'Naphtha':
       return naphthaColumns
+    case 'rawMaterial':
+      return rawMaterialColumns
+    case 'CatChem':
+      return catchemColumns
 
     default:
       return productionColumns

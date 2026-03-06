@@ -69,15 +69,15 @@ const ShutDown = ({ permissions }) => {
   const siteName = siteObject?.name
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
 
   const IS_NON_PRODUCT_VERTICAL =
     lowerVertName === 'elastomer' ||
-    lowerVertName === 'pvc' ||
+    IS_PVC_VMD ||
     lowerVertName === 'vcm' ||
     lowerVertName === 'aromatics' ||
     lowerVertName === 'pta' ||
     lowerVertName === 'pet' ||
-    lowerVertName === 'pvc' ||
     lowerVertName === 'meg' ||
     lowerVertName === 'pe' ||
     lowerVertName === 'pp'
@@ -86,6 +86,7 @@ const ShutDown = ({ permissions }) => {
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_PET = lowerVertName === 'pet'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -110,7 +111,6 @@ const ShutDown = ({ permissions }) => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
-  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const [allLines, setAllLines] = useState([])
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -325,12 +325,11 @@ const ShutDown = ({ permissions }) => {
         lowerVertName == 'meg' ||
         lowerVertName == 'elastomer' ||
         lowerVertName == 'vcm' ||
-        lowerVertName == 'pvc' ||
         lowerVertName == 'pta' ||
         lowerVertName == 'pe' ||
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
@@ -402,10 +401,9 @@ const ShutDown = ({ permissions }) => {
         if (
           lowerVertName != 'elastomer' &&
           // lowerVertName != 'vcm' &&
-          lowerVertName != 'pvc' &&
           !IS_PTA &&
           !IS_PET &&
-          !IS_PVC_VERTICAL
+          !IS_PVC_VMD
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -477,7 +475,7 @@ const ShutDown = ({ permissions }) => {
           id: row.idFromApi || null,
           remark: row.remark || 'null',
         }))
-      } else if (IS_PP_DTA || IS_PP_SEZ) {
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         // For PP DTA, match the GET payload structure
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -608,7 +606,7 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -735,7 +733,7 @@ const ShutDown = ({ permissions }) => {
           lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
           lowerVertName === 'pet' ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
         ) {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
@@ -758,7 +756,7 @@ const ShutDown = ({ permissions }) => {
           lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
           lowerVertName === 'pet' ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
         ) {
           productList = data?.data.map((product) => ({
             id: product.displayName,
@@ -867,7 +865,9 @@ const ShutDown = ({ permissions }) => {
         return ShutDownPeColumns
 
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ ? ShutDownPpDtaColumns : ShutDownPpColumns
+        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD
+          ? ShutDownPpDtaColumns
+          : ShutDownPpColumns
 
       case verticalEnums.PTA:
         return IS_PTA ? ShutDownPTADMDColumns : ShutDownPTAColumns
@@ -921,7 +921,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -959,7 +959,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1072,7 +1072,7 @@ const ShutDown = ({ permissions }) => {
       allAction: true,
       downloadExcelBtn: true,
       showNoteWhileDeleting:
-        IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VERTICAL ? true : false,
+        IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD ? true : false,
 
       showTitleNameBusiness: true,
       titleName: `${SCREEN_NAME}`,
@@ -1081,11 +1081,10 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
         lowerVertName === 'elastomer' ||
-        lowerVertName === 'pvc' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pet' ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       highlightDiscription:
@@ -1096,7 +1095,7 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightDuration:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
-      highlightLine: IS_PP_DTA || IS_PP_SEZ ? true : false,
+      highlightLine: IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD ? true : false,
     },
     isOldYear,
   )

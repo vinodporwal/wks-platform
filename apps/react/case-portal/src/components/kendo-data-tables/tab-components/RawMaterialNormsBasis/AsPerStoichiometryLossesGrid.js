@@ -1,0 +1,378 @@
+// ⚠️ TEMP_TABS_REMOVE_AFTER_BACKEND_READY ⚠️ - This entire file is temporary
+import React, { useState, useEffect, useCallback } from 'react'
+import { Box, Typography, Backdrop, CircularProgress } from '@mui/material'
+import { useSelector } from 'react-redux'
+import { useSession } from 'SessionStoreContext'
+import { useGridApiRef } from '@mui/x-data-grid'
+import KendoDataTables from '../../index'
+import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
+import { DataService } from 'services/DataService'
+import { getRoleName } from 'services/role-service'
+
+const AsPerStoichiometryLossesGrid = ({
+  summary,
+  summaryEdited,
+  setSummaryEdited,
+}) => {
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [modifiedCells, setModifiedCells] = useState({})
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [open1, setOpen1] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const apiRef = useGridApiRef()
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    plantObject,
+    year,
+    oldYear,
+    yearChanged,
+    verticalObject,
+    siteObject,
+  } = dataGridStore
+  const PLANT_ID = plantObject?.id
+  const AOP_YEAR = year?.selectedYear
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_Stoichiometry_Losses`
+
+  const FORMATE_VALUE = '{0:0.000}'
+
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remark || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const productionColumns = getEnhancedAOPColDefs({
+    handleRemarkCellClick,
+    configType: 'rawMaterial',
+    FORMATE_VALUE,
+  })
+
+  // TODO: Replace with actual API call when backend is ready
+  const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setModifiedCells({})
+
+    try {
+      setLoading(true)
+
+      // TODO: Replace this with actual API call
+      // const response = await StoichiometryLossesApiService.getData(keycloak, PLANT_ID, AOP_YEAR)
+
+      // Temporary mock data - replace with actual API call
+      const mockData = [
+        {
+          id: 0,
+          particulars: 'Isoprene',
+          uom: 'kg/MT',
+          IIR: 25,
+          CIIR: 27.9,
+          BIIR: 24.3,
+        },
+        {
+          id: 1,
+          particulars: 'Isobutylene',
+          uom: 'kg/MT',
+          IIR: 967.33,
+          CIIR: 946.59,
+          BIIR: 932.03,
+        },
+      ]
+
+      setRows(mockData)
+    } catch (error) {
+      console.error('Error fetching As Per Stoichiometry Losses data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error fetching data',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    setModifiedCells({})
+    fetchData()
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
+
+  const saveSummary = async (summary) => {
+    try {
+      const response = await DataService.saveSummaryAOPConsumptionNorm(
+        PLANT_ID,
+        AOP_YEAR,
+        summary,
+        keycloak,
+      )
+
+      if (response?.code == 200) {
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+      } else {
+        setSnackbarData({
+          message: 'Saved Failed!',
+          severity: 'error',
+        })
+      }
+      return response
+    } catch (error) {
+      console.error('Error saving Summary!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleUpdate = async (updatedRows) => {
+    setLoading(true)
+    try {
+      // TODO: Replace with actual API call
+      // const payload = updatedRows.map(row => ({
+      //   particulars: row.Particulars,
+      //   uom: row.UOM,
+      //   iir: row.IIR,
+      //   ciir: row.CIIR,
+      //   biir: row.BIIR,
+      // }))
+      // const response = await StoichiometryLossesApiService.postData(keycloak, payload, PLANT_ID, AOP_YEAR)
+
+      console.log('Data to save:', updatedRows)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Saved Successfully!',
+        severity: 'success',
+      })
+
+      await fetchData()
+      return { code: 200 }
+    } catch (error) {
+      console.error('Error updating data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Data Save failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    try {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Excel download started!',
+        severity: 'success',
+      })
+
+      // TODO: Replace with actual API call
+      // const response = await StoichiometryLossesApiService.exportExcel(
+      //   keycloak,
+      //   PLANT_ID,
+      //   AOP_YEAR,
+      //   EXCEL_EXPORT_TITLE,
+      // )
+
+      console.log('Excel export for:', EXCEL_EXPORT_TITLE)
+      return { code: 200 }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const handleExcelUpload = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      // TODO: Replace with actual API call
+      // const response = await StoichiometryLossesApiService.importExcel(
+      //   rawFile,
+      //   keycloak,
+      //   PLANT_ID,
+      //   AOP_YEAR,
+      // )
+
+      console.log('Excel import file:', rawFile.name)
+
+      const response = { code: 200, message: 'Uploaded Successfully!' }
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        await fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Stoichiometry Losses.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveChanges = useCallback(async () => {
+    setLoading(true)
+
+    try {
+      if (Object.keys(modifiedCells).length === 0) {
+        if (summaryEdited) {
+          await saveSummary(summary)
+          setModifiedCells({})
+          setSummaryEdited(false)
+        }
+        return
+      }
+
+      const rawData = Object.values(modifiedCells)
+      const data = rawData.filter((row) => row.inEdit)
+
+      if (data.length === 0) {
+        setLoading(false)
+        return
+      }
+
+      await handleUpdate(data)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells, summaryEdited, summary])
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      allAction: false,
+    }
+  }
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: true,
+      saveWithRemark: true,
+      saveBtn: true,
+      allAction: true,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
+      showTitleNameBusiness: true,
+      titleName: 'AS PER STOICHIOMETRY + LOSSES ',
+    },
+    IS_OLD_YEAR,
+  )
+
+  return (
+    <Box>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        setRows={setRows}
+        columns={productionColumns}
+        rows={rows}
+        paginationOptions={[100, 200, 300]}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        apiRef={apiRef}
+        open1={open1}
+        setOpen1={setOpen1}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        handleRemarkCellClick={handleRemarkCellClick}
+        fetchData={fetchData}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        permissions={adjustedPermissions}
+        summaryEdited={summaryEdited}
+        downloadExcelForConfiguration={downloadExcelForConfiguration}
+        handleExcelUpload={handleExcelUpload}
+      />
+    </Box>
+  )
+}
+
+export default AsPerStoichiometryLossesGrid
