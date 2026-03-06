@@ -70,6 +70,7 @@ const ProductionNorms = ({ permissions }) => {
   const IS_AROMATIC_SEZ =
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'sez'
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -404,7 +405,7 @@ const ProductionNorms = ({ permissions }) => {
       const selectedLine = lineDetails[tabIndex]
       const lineId = selectedLine?.id
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response = await ProductionNormsApiService.getAOPDataLineWise(
           keycloak,
           'Production',
@@ -805,7 +806,7 @@ const ProductionNorms = ({ permissions }) => {
         initialRender.current = false
       }
     }
-    if ((IS_PP_DTA || IS_PP_SEZ) && lineDetails?.length === 0) {
+    if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && lineDetails?.length === 0) {
       return
     }
     fetchDataWrapper()
@@ -840,7 +841,7 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
       fetchLineDetails()
     } else {
       setLineDetails([])
@@ -997,7 +998,7 @@ const ProductionNorms = ({ permissions }) => {
   return (
     <div>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

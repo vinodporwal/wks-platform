@@ -106,6 +106,7 @@ const ProductionvolumeData = ({ permissions }) => {
   // Check if it's PP VERTICAL | DTA SITE
   const IS_PP_DTA = VERTICAL_NAME === 'pp' && SITE_NAME === 'dta'
   const IS_PP_SEZ = VERTICAL_NAME === 'pp' && SITE_NAME === 'sez'
+  const IS_PVC_DMD = VERTICAL_NAME === 'pvc' && SITE_NAME === 'dmd'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -443,7 +444,7 @@ const ProductionvolumeData = ({ permissions }) => {
     try {
       setLoading(true)
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response =
           await ProductionVolumeDataApiService.getAOPMCCalculatedDataLineWise(
             keycloak,
@@ -668,15 +669,15 @@ const ProductionvolumeData = ({ permissions }) => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
       fetchLineDetails()
     }
-  }, [PLANT_ID, keycloak, yearChanged, IS_PP_DTA, IS_PP_SEZ])
+  }, [PLANT_ID, keycloak, yearChanged, IS_PP_DTA, IS_PP_SEZ, IS_PVC_DMD])
 
   // Call fetchData when lineDetails is updated and has at least one item
   useEffect(() => {
     if (
-      (IS_PP_DTA || IS_PP_SEZ) &&
+      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) &&
       lineDetails.length > 0 &&
       lineDetails[tabIndex]
     ) {
@@ -684,7 +685,7 @@ const ProductionvolumeData = ({ permissions }) => {
       fetchDesignCapacityData()
       fetchMaxCapacityData()
     }
-  }, [lineDetails, tabIndex, IS_PP_DTA, IS_PP_SEZ])
+  }, [lineDetails, tabIndex, IS_PP_DTA, IS_PP_SEZ, IS_PVC_DMD])
 
   const colDefs_editable = getEnhancedProductionColDefs({
     headerMap,
@@ -721,7 +722,7 @@ const ProductionvolumeData = ({ permissions }) => {
     const lineId = selectedLine?.id
     try {
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response =
           await ProductionVolumeDataApiService.getDesignCapacityDataLineWise(
             keycloak,
@@ -810,7 +811,7 @@ const ProductionvolumeData = ({ permissions }) => {
     const lineId = selectedLine?.id
     try {
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
         response =
           await ProductionVolumeDataApiService.getMaxAchievedCapacityDataLineWise(
             keycloak,
@@ -1239,7 +1240,7 @@ const ProductionvolumeData = ({ permissions }) => {
       </Backdrop>
 
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
