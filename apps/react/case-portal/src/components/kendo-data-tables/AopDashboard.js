@@ -226,7 +226,6 @@ export default function AopDashboardCompact() {
     fetchDashboardData()
   }, [PLANT_ID, AOP_YEAR, yearChanged, keycloak])
 
-
   const getStatusClass = (status) => {
     if (!status) return ''
     return status.toLowerCase().replace(/\s+/g, '-')
@@ -249,63 +248,75 @@ export default function AopDashboardCompact() {
     return counts
   }
   return (
-    <Box className="dashboard-root-v3">
-      <Typography className='dashboard-title-v2' style={{ marginBottom: '10px' }}>
+    <Box className='dashboard-root-v3'>
+      <Typography
+        className='dashboard-title-v2'
+        style={{ marginBottom: '10px' }}
+      >
         Digital AOP Dashboard
       </Typography>
       <LoaderBackdrop open={!!loading} />
 
-      <Card className="dashboard-main-card">
+      <Card className='dashboard-main-card'>
         {/* Business Units List - Each Site is a Summary Bar Accordion */}
         {siteGroupedRows.map((site) => {
           const siteStatusSummary = getSiteStatusSummary(site.rows)
           const isSiteExpanded = expandedSites[site.site]
 
           return (
-            <Box key={site.site} className="site-accordion-container">
+            <Box key={site.site} className='site-accordion-container'>
               {/* Site Header Row (Styled as Summary Bar) */}
-              <Box className="summary-bar" onClick={() => toggleSite(site.site)}>
-                <Box className="summary-item">
-                  <Box className="summary-icon-box">
+              <Box
+                className='summary-bar'
+                onClick={() => toggleSite(site.site)}
+              >
+                <Box className='summary-item'>
+                  <Box className='summary-icon-box'>
                     <IconMapPin size={20} />
                   </Box>
-                  <Typography className="summary-label">{site.site}</Typography>
+                  <Typography className='summary-label'>{site.site}</Typography>
                 </Box>
 
-                <Box className="summary-divider" />
+                <Box className='summary-divider' />
 
-                <Box className="summary-item business">
-                  <Box className="summary-icon-box">
+                <Box className='summary-item business'>
+                  <Box className='summary-icon-box'>
                     <IconBriefcase size={20} />
                   </Box>
                   <Box>
-                    <Typography component="span" className="summary-label-total-business">
+                    <Typography
+                      component='span'
+                      className='summary-label-total-business'
+                    >
                       Total Business
                     </Typography>
-                    <Typography component="span" className="summary-count">
+                    <Typography component='span' className='summary-count'>
                       3
                     </Typography>
                   </Box>
                 </Box>
 
-                <Box className="summary-divider" />
+                <Box className='summary-divider' />
 
-                <Box className="summary-item plants">
-                  <Box className="summary-icon-box">
+                <Box className='summary-item plants'>
+                  <Box className='summary-icon-box'>
                     <IconBuildingFactory size={20} />
                   </Box>
                   <Box>
-                    <Typography component="span" className="summary-label-total-business">
+                    <Typography
+                      component='span'
+                      className='summary-label-total-business'
+                    >
                       Plants
                     </Typography>
-                    <Typography component="span" className="summary-count">
+                    <Typography component='span' className='summary-count'>
                       {site.rows.length}
                     </Typography>
                   </Box>
                 </Box>
 
                 {/* Site-Specific Status Breakdown Chips */}
-                <Box className="status-chips-summary">
+                <Box className='status-chips-summary'>
                   {ALL_STATUSES.map((status) => (
                     <Box
                       key={status}
@@ -318,16 +329,16 @@ export default function AopDashboardCompact() {
 
                 <Box sx={{ ml: 2 }}>
                   {isSiteExpanded ? (
-                    <IconChevronUp size={24} className="chevron-arrow" />
+                    <IconChevronUp size={24} className='chevron-arrow' />
                   ) : (
-                    <IconChevronDown size={24} className="chevron-arrow" />
+                    <IconChevronDown size={24} className='chevron-arrow' />
                   )}
                 </Box>
               </Box>
 
               {/* Expanded Content: Sub-Accordions */}
               {isSiteExpanded && (
-                <Box className="bu-expanded-content">
+                <Box className='bu-expanded-content'>
                   {[
                     { name: 'Refining', icon: IconBriefcase },
                     { name: 'Gasification', icon: IconBriefcase },
@@ -337,60 +348,86 @@ export default function AopDashboardCompact() {
                     const isSubExpanded = expandedSubSites[subKey]
 
                     return (
-                      <Box key={sub.name} className="sub-accordion-wrapper">
+                      <Box key={sub.name} className='sub-accordion-wrapper'>
                         <Box
-                          className="sub-header-row"
+                          className='sub-header-row'
                           onClick={() => toggleSubSite(site.site, sub.name)}
                         >
-                          <Box className="sub-header-left">
+                          <Box className='sub-header-left'>
                             {isSubExpanded ? (
-                              <IconChevronUp size={16} className="chevron-arrow" />
+                              <IconChevronUp
+                                size={16}
+                                className='chevron-arrow'
+                              />
                             ) : (
-                              <IconChevronDown size={16} className="chevron-arrow" />
+                              <IconChevronDown
+                                size={16}
+                                className='chevron-arrow'
+                              />
                             )}
-                            <Box className="sub-header-plants">
-                              <sub.icon size={18} className="sub-icon" />
-                              <Typography className="sub-category-name">{sub.name}</Typography>
+                            <Box className='sub-header-plants'>
+                              <sub.icon size={18} className='sub-icon' />
+                              <Typography className='sub-category-name'>
+                                {sub.name}
+                              </Typography>
                             </Box>
-                            <Box className="summary-divider" />
-                            <Box className="sub-header-plants">
-                              <Box className="summary-icon-box-small">
+                            <Box className='summary-divider' />
+                            <Box className='sub-header-plants'>
+                              <Box className='summary-icon-box-small'>
                                 <IconBuildingFactory size={16} />
                               </Box>
-                              <Typography className="sub-label-small">Plants</Typography>
-                              <Typography className="sub-count-small">
-                                {site?.rows?.filter(i => i?.business_category === sub.name)?.length}
+                              <Typography className='sub-label-small'>
+                                Plants
+                              </Typography>
+                              <Typography className='sub-count-small'>
+                                {
+                                  site?.rows?.filter(
+                                    (i) => i?.business_category === sub.name,
+                                  )?.length
+                                }
                               </Typography>
                             </Box>
                           </Box>
                         </Box>
 
                         {isSubExpanded && (
-                          <Box className="sub-accordion-content">
-                            <Box className="plant-grid">
-                              {site?.rows?.filter(i => i?.business_category === sub.name)?.map((plant) => (
-                                <Box
-                                  key={`${sub.name}-${plant.idx}`}
-                                  className="plant-item-card"
-                                  onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
-                                >
-                                  <Box className="plant-card-left">
-                                    <IconBuildingFactory size={18} className="plant-card-icon" />
-                                    <Typography className="plant-name">
-                                      {plant.verticalName}
-                                    </Typography>
-                                  </Box>
-
-                                  <Box className="plant-card-right">
-                                    <Box
-                                      className={`plant-status-chip ${getStatusClass(plant.status)}`}
-                                    >
-                                      {plant.status}
+                          <Box className='sub-accordion-content'>
+                            <Box className='plant-grid'>
+                              {site?.rows
+                                ?.filter(
+                                  (i) => i?.business_category === sub.name,
+                                )
+                                ?.map((plant) => (
+                                  <Box
+                                    key={`${sub.name}-${plant.idx}`}
+                                    className='plant-item-card'
+                                    onClick={(e) =>
+                                      handlePlantClick(e, plant.id, plant.sId)
+                                    }
+                                  >
+                                    <Box className='plant-card-left'>
+                                      <IconBuildingFactory
+                                        size={18}
+                                        className='plant-card-icon'
+                                      />
+                                      <Typography className='plant-name'>
+                                        {plant.verticalName}
+                                      </Typography>
                                     </Box>
-                                    <IconChevronRight size={18} className="chevron-arrow" />
+
+                                    <Box className='plant-card-right'>
+                                      <Box
+                                        className={`plant-status-chip ${getStatusClass(plant.status)}`}
+                                      >
+                                        {plant.status}
+                                      </Box>
+                                      <IconChevronRight
+                                        size={18}
+                                        className='chevron-arrow'
+                                      />
+                                    </Box>
                                   </Box>
-                                </Box>
-                              ))}
+                                ))}
                             </Box>
                           </Box>
                         )}
