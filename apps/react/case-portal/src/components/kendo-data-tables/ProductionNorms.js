@@ -71,6 +71,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'sez'
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
+  const IS_AROMATIC_DTA_PLATFORMER =
+    lowerVertName === 'aromatics' &&
+    SITE_NAME_LOWERCASE === 'dta' &&
+    plantName === 'plat'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -669,7 +673,9 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'elastomer' &&
           lowerVertName !== 'vcm' &&
           lowerVertName !== 'pta' &&
-          !IS_AROMATIC_SEZ
+          lowerVertName !== 'chemical' &&
+          !IS_AROMATIC_SEZ &&
+          !IS_AROMATIC_DTA_PLATFORMER
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
