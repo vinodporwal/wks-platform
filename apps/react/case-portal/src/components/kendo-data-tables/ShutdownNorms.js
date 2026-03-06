@@ -70,7 +70,8 @@ const ShutdownNorms = () => {
 
   const IS_PE_PP_VERTICAL = ['pe', 'pp'].includes(lowerVertName)
   const IS_PET_VERTICAL = ['pet'].includes(lowerVertName)
-  const IS_PVC_VERTICAL = ['pvc'].includes(lowerVertName)
+  const IS_PVC_VMD =
+    ['pvc'].includes(lowerVertName) && ['vmd'].includes(SITE_NAME_LOWERCASE)
   const IS_PE_NMD_LDPE =
     ['pe'].includes(lowerVertName) &&
     ['nmd'].includes(SITE_NAME_LOWERCASE) &&
@@ -145,7 +146,7 @@ const ShutdownNorms = () => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         try {
           const response =
@@ -181,7 +182,7 @@ const ShutdownNorms = () => {
           IS_PE_PP_VERTICAL ||
           IS_PET_VERTICAL ||
           IS_ELASTOMER_HMD_SBR ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
         ) {
           if (!gradeId) return
           await fetchData(gradeId)
@@ -206,7 +207,7 @@ const ShutdownNorms = () => {
           IS_PE_VMD ||
           IS_PE_DMD ||
           IS_PET_VERTICAL ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
         ) {
           const gradesRes =
             await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -246,7 +247,7 @@ const ShutdownNorms = () => {
           IS_PE_VMD ||
           IS_PE_DMD ||
           IS_PET_VERTICAL ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
             ? [
                 ...new Set([
                   ...(Array.isArray(shutdownMonthsRes)
@@ -503,11 +504,7 @@ const ShutdownNorms = () => {
 
   // --- loadGradesAfterCalculation (always pick the first returned grade) ---
   const loadGradesAfterCalculation = async () => {
-    if (
-      ['pe', 'pp'].includes(lowerVertName) ||
-      IS_PET_VERTICAL ||
-      IS_PVC_VERTICAL
-    ) {
+    if (['pe', 'pp'].includes(lowerVertName) || IS_PET_VERTICAL || IS_PVC_VMD) {
       try {
         const response =
           await NormalOperationNormsApiService.getGradesForShutdownNorms(
@@ -601,7 +598,7 @@ const ShutdownNorms = () => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         // Use shutdownNormsExport for PE/PP/Elastomer
         response = await NormalOperationNormsApiService.shutdownNormsExport(
@@ -755,7 +752,7 @@ const ShutdownNorms = () => {
               lowerVertName == 'aromatics' ||
               IS_PE_PP_VERTICAL ||
               IS_PET_VERTICAL ||
-              IS_PVC_VERTICAL ||
+              IS_PVC_VMD ||
               !IS_PTA_DMD
             ? false
             : true,
@@ -770,14 +767,14 @@ const ShutdownNorms = () => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       marginBottom:
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       dropdownLabel: 'Select Grade',
@@ -786,7 +783,7 @@ const ShutdownNorms = () => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL ||
+        IS_PVC_VMD ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta'
           ? false
@@ -795,7 +792,7 @@ const ShutdownNorms = () => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL ||
+        IS_PVC_VMD ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta'
           ? true
@@ -808,13 +805,13 @@ const ShutdownNorms = () => {
         IS_PE_VMD ||
         IS_PE_DMD ||
         IS_PET_VERTICAL ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       showTitleNameBusiness: true,
 
       titleName:
-        IS_PET_VERTICAL || IS_PVC_VERTICAL
+        IS_PET_VERTICAL || IS_PVC_VMD
           ? `Shutdown Consumption (Norms)`
           : lowerVertName === 'elastomer' || lowerVertName === 'pta'
             ? `Shutdown Consumption (Norms/Quantity)`

@@ -69,15 +69,15 @@ const ShutDown = ({ permissions }) => {
   const siteName = siteObject?.name
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
 
   const IS_NON_PRODUCT_VERTICAL =
     lowerVertName === 'elastomer' ||
-    lowerVertName === 'pvc' ||
+    IS_PVC_VMD ||
     lowerVertName === 'vcm' ||
     lowerVertName === 'aromatics' ||
     lowerVertName === 'pta' ||
     lowerVertName === 'pet' ||
-    lowerVertName === 'pvc' ||
     lowerVertName === 'meg' ||
     lowerVertName === 'pe' ||
     lowerVertName === 'pp'
@@ -110,7 +110,6 @@ const ShutDown = ({ permissions }) => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
-  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
   const [allLines, setAllLines] = useState([])
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -325,12 +324,11 @@ const ShutDown = ({ permissions }) => {
         lowerVertName == 'meg' ||
         lowerVertName == 'elastomer' ||
         lowerVertName == 'vcm' ||
-        lowerVertName == 'pvc' ||
         lowerVertName == 'pta' ||
         lowerVertName == 'pe' ||
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
@@ -402,10 +400,9 @@ const ShutDown = ({ permissions }) => {
         if (
           lowerVertName != 'elastomer' &&
           // lowerVertName != 'vcm' &&
-          lowerVertName != 'pvc' &&
           !IS_PTA &&
           !IS_PET &&
-          !IS_PVC_VERTICAL
+          !IS_PVC_VMD
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -735,7 +732,7 @@ const ShutDown = ({ permissions }) => {
           lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
           lowerVertName === 'pet' ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
         ) {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
@@ -758,7 +755,7 @@ const ShutDown = ({ permissions }) => {
           lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
           lowerVertName === 'pet' ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
         ) {
           productList = data?.data.map((product) => ({
             id: product.displayName,
@@ -1072,7 +1069,7 @@ const ShutDown = ({ permissions }) => {
       allAction: true,
       downloadExcelBtn: true,
       showNoteWhileDeleting:
-        IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VERTICAL ? true : false,
+        IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD ? true : false,
 
       showTitleNameBusiness: true,
       titleName: `${SCREEN_NAME}`,
@@ -1081,11 +1078,10 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
         lowerVertName === 'elastomer' ||
-        lowerVertName === 'pvc' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pet' ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       highlightDiscription:

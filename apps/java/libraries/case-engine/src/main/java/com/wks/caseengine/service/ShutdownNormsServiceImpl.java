@@ -487,33 +487,21 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	public AOPMessageVM importExcel(String year, UUID plantFKId, String gradeId, MultipartFile file,boolean allGrade) {
 		// TODO Auto-generated method stub
 		try {
-			System.out.println("importExcel year: " + year);
-			System.out.println("importExcel plantFKId: " + plantFKId);
-			System.out.println("importExcel gradeId: " + gradeId);
-			System.out.println("importExcel file name: " + (file != null ? file.getOriginalFilename() : null));
-			System.out.println("importExcel file size: " + (file != null ? file.getSize() : null));
-			System.out.println("importExcel allGrade: " + allGrade);
 			Plants plant = plantsRepository.findById(plantFKId).get();
 			List<ShutdownNormsValueDTO> data=null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
-			System.out.println("importExcel vertical: " + vertical.getName());
-			System.out.println("importExcel site: " + site.getName());
-			System.out.println("importExcel pvc: " + pvc);
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
 				 data= readShutdownConsumption(file.getInputStream(), plantFKId, year);
 			}
 			else {
 				data = readShutdownConsumption(file.getInputStream(), plantFKId, year);
 			}
-			System.out.println("importExcel data size: " + (data != null ? data.size() : null));
 			Map<String,Object> records = savePPShutdownNormsData(data);
 			@SuppressWarnings("unchecked")
 			List<ShutdownNormsValueDTO> failedRecords = (List<ShutdownNormsValueDTO>) records.get("data");
-			System.out.println("importExcel records keys: " + (records != null ? records.keySet() : null));
-			System.out.println("importExcel failedRecords size: " + (failedRecords != null ? failedRecords.size() : null));
-
+			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = null;
@@ -527,7 +515,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 							allGrade);
 
 				}
-				System.out.println("importExcel fileByteArray: " + (fileByteArray != null ? fileByteArray.length : null));
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
@@ -537,13 +524,9 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("All data has been saved");
 			}
-			System.out.println("importExcel response code: " + aopMessageVM.getCode());
-			System.out.println("importExcel response message: " + aopMessageVM.getMessage());
 			return aopMessageVM;
 			// return ResponseEntity.ok(data);
 		} catch (Exception e) {
-			System.out.println("importExcel exception: " + e.getMessage());
-			System.out.println("importExcel exception class: " + e.getClass().getName());
 			e.printStackTrace();
 			// return ResponseEntity.internalServerError().build();
 		}
@@ -551,18 +534,14 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	}
 	
 	public List<ShutdownNormsValueDTO> readShutdownConsumption(InputStream inputStream, UUID plantFKId, String year) {
-	    System.out.println("readShutdownConsumption plantFKId: " + plantFKId);
-	    System.out.println("readShutdownConsumption year: " + year);
 	    List<ShutdownNormsValueDTO> configList = new ArrayList<>();
 	    Plants plant = plantsRepository.findById(plantFKId).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		
 	    Map<String, String> gradeMap = getGradeNameIdMap(year, plantFKId);
-	    System.out.println("readShutdownConsumption gradeMap size: " + gradeMap.size());
 	    Set<Integer> activeMonths = new HashSet<>();
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-	    	System.out.println("readShutdownConsumption workbook sheets: " + workbook.getNumberOfSheets());
 	    	for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
 	            Sheet sheet = workbook.getSheetAt(i);
 	            if (sheet == null) {
@@ -570,15 +549,11 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	            }
 	            String sheetName = sheet.getSheetName();
 	            String gradeId = gradeMap.get(Utility.sanitizeSheetName(sheetName));
-	            System.out.println("readShutdownConsumption sheet: " + sheetName + " gradeId: " + gradeId);
 	            List<Integer> shutdown = plantService.getShutdownMonths(plantFKId, "Shutdown",year,gradeId);
                 List<Integer> slowdown = slowdownNormsService.getSlowdownMonthsImport(plantFKId, "Slowdown",year);
-                System.out.println("readShutdownConsumption shutdown months: " + shutdown);
-                System.out.println("readShutdownConsumption slowdown months: " + slowdown);
                 if (shutdown != null) activeMonths.addAll(shutdown);
                 if (slowdown != null) activeMonths.addAll(slowdown);
 	    	}
-	    	System.out.println("readShutdownConsumption activeMonths: " + activeMonths);
 	        
 	        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
 	            Sheet sheet = workbook.getSheetAt(i);
@@ -587,9 +562,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	            }
 	            String sheetName = sheet.getSheetName();
 	            String gradeId = gradeMap.get(Utility.sanitizeSheetName(sheetName));
-	            System.out.println("readShutdownConsumption processing sheet: " + sheetName + " gradeId: " + gradeId);
-	           
-	            
 	            Iterator<Row> rowIterator = sheet.iterator();
 	            if (rowIterator.hasNext()) {
 	                rowIterator.next(); 
@@ -599,14 +571,11 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                if (row.getPhysicalNumberOfCells() == 0) {
 	                    continue; 
 	                }
-	                
-	                
 	                ShutdownNormsValueDTO dto = new ShutdownNormsValueDTO();
 	                try {
 	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 	                    dto.setProductName(getStringCellValue(row.getCell(1), dto));
 	                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
-
 	                    dto.setFinancialYear(year);
 	                    dto.setPlantFkId(plantFKId.toString());
 	                    if (activeMonths.contains(4)) dto.setApril(getNumericCellValue(row.getCell(3), dto));
@@ -621,9 +590,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                    if (activeMonths.contains(1)) dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
 	                    if (activeMonths.contains(2)) dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
 	                    if (activeMonths.contains(3)) dto.setMarch(getNumericCellValue(row.getCell(14), dto));
-	                    System.out.println("readShutdownConsumption months April: " + dto.getApril() + " May: " + dto.getMay() + " June: " + dto.getJune() + " July: " + dto.getJuly());
-	                    System.out.println("readShutdownConsumption months August: " + dto.getAugust() + " September: " + dto.getSeptember() + " October: " + dto.getOctober() + " November: " + dto.getNovember());
-	                    System.out.println("readShutdownConsumption months December: " + dto.getDecember() + " January: " + dto.getJanuary() + " February: " + dto.getFebruary() + " March: " + dto.getMarch());
 	                    dto.setRemarks(getStringCellValue(row.getCell(15), dto));
 	                    dto.setId(getStringCellValue(row.getCell(16), dto)); 
 	                    dto.setMaterialFkId(getStringCellValue(row.getCell(17), dto));
@@ -632,22 +598,18 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                    dto.setGradeFkId(gradeId);
 
 	                } catch (Exception e) {
-	                    System.out.println("readShutdownConsumption row exception: " + e.getMessage());
 	                    e.printStackTrace();
 	                    dto.setErrDescription(e.getMessage());
 	                    dto.setSaveStatus("Failed");
 	                }
-	                System.out.println("readShutdownConsumption dto: " + dto.getNormParameterTypeDisplayName() + " | " + dto.getProductName() + " | " + dto.getGradeFkId() + " | " + dto.getSaveStatus());
 	                configList.add(dto);
 	            }
 	        } 
 
 	    } catch (Exception e) {
-	        System.out.println("readShutdownConsumption exception: " + e.getMessage());
 	        e.printStackTrace();
 	    }
 
-	    System.out.println("readShutdownConsumption configList size: " + configList.size());
 	    return configList;
 	}
 	
@@ -751,7 +713,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		Map<String,Object> map=null;
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		if(vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
 			 map=	savePPShutdownNormsData(shutdownNormsValueDTOList);
 		}else {

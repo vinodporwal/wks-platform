@@ -69,6 +69,7 @@ const ProductionNorms = ({ permissions }) => {
   const IS_VCM = verticalObject?.name?.toLowerCase() == 'vcm'
   const IS_AROMATIC_SEZ =
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'sez'
+  const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -1051,7 +1052,7 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'pp' &&
           lowerVertName !== 'pta' &&
           lowerVertName !== 'pet' &&
-          lowerVertName !== 'pvc'
+          !IS_PVC_VMD
             ? '* MT per Annum'
             : ''
         }

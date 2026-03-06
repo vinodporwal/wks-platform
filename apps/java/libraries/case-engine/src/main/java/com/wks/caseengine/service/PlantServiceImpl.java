@@ -60,7 +60,7 @@ public class PlantServiceImpl implements PlantService {
 		String verticalName = plantsRepository.findVerticalNameByPlantId((plantId));
 		Plants plant = plantsRepository.findById(plantId).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-		boolean pvc = verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc) {	
 			// return	plantsRepository.getShutdownMonthsWithGrades(plantId,maintenanceName,year,UUID.fromString(gradeId));
 			return	plantsRepository.getShutdownMonths(plantId,maintenanceName,year);
