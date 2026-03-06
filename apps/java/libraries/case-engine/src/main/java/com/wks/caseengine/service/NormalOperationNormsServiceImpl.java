@@ -121,7 +121,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
-	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		Boolean withGrade = false;
 		if (plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
 				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) {
@@ -253,7 +253,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			Plants plant = plantsRepository.findById(plantFKId).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			for (MCUNormsValueDTO dto : mCUNormsValueDTOList) {
 				System.out.println(dto.getProductName());
 				Boolean changed = false;
@@ -877,7 +877,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					&& vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 				withGrade = true;
 			}
-			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			String viewName = "vwScrn" + vertical.getName() + "NormalOperationNorms";
 			if (withGrade) {
 				viewName = "vwScrn" + vertical.getName() + "NormalOperationNormsGrade";
@@ -976,7 +976,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			List<MCUNormsValueDTO> data = null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
 					|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
 				data = readSteadyState(file.getInputStream(), plantFKId, year);

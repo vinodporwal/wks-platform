@@ -133,7 +133,7 @@ public class AOPServiceImpl implements AOPService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			if(vertical.getName().equalsIgnoreCase("AROMATICS")) {
 				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOP";
 				obj = getData(year,plant.getId(),site.getId(),vertical.getId(),procedureName);

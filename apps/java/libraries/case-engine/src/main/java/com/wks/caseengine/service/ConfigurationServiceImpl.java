@@ -151,7 +151,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
 			List<Boolean> isEditable = new ArrayList<>();
 
@@ -563,7 +563,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			List<Object[]> obj = new ArrayList<>();
 			if ((verticalName.equalsIgnoreCase("MEG"))
 					|| (verticalName.equalsIgnoreCase("CRACKER"))) {
@@ -675,7 +675,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			
-		    boolean pvc= verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+		    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			List<Object[]> obj = new ArrayList<>();
 			Boolean vertical=(verticalName.equalsIgnoreCase("MEG")) 
 					|| (verticalName.equalsIgnoreCase("CRACKER"));
@@ -2368,7 +2368,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		
-	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && site.getName().equalsIgnoreCase("VMD");
+	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
