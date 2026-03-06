@@ -5,29 +5,38 @@
 :root {
   --primary-color: #7c3aed;
   /* Purple used in status chips/icons */
-  --bg-main: #f8fafc;
-  --border-light: #f1f5f9;
-  --text-dark: #1e293b;
-  --text-muted: #64748b;
+  --bg-main: #F6F7F8;
+  --border-light: #DDDEE1;
+  --text-dark: #303030;
+  --text-muted: #606060;
   --site-header-bg: #eceff1;
 
-  /* Status Colors */
-  --status-go-live-bg: #dcfce7;
-  --status-go-live-text: #166534;
-  --status-dev-bg: #fef3c7;
-  --status-dev-text: #92400e;
-  --status-uat-bg: #dbeafe;
-  --status-uat-text: #1e40af;
-  --status-preuat-bg: #fef9c3;
-  --status-preuat-text: #854d0e;
-  --status-notstarted-bg: #f1f5f9;
-  --status-notstarted-text: #475569;
+  /* Status Colors from design specs */
+  --status-go-live-bg: rgb(220 252 231);
+  --status-go-live-border: #BBF7D0;
+  --status-go-live-text: rgb(93 156 129);
+
+  --status-dev-bg: rgb(254 245 219);
+  --status-dev-border: #FBD779;
+  --status-dev-text: rgb(199 148 91);
+
+  --status-uat-bg: rgb(215 229 248);
+  --status-uat-border: #ADCBFB;
+  --status-uat-text: rgb(108 148 212);
+
+  --status-preuat-bg: rgb(254 247 201);
+  --status-preuat-border: #EFDD4E;
+  --status-preuat-text: rgb(166 143 75);
+
+  --status-notstarted-bg: rgb(240 241 242);
+  --status-notstarted-border: #DDDEE1;
+  --status-notstarted-text: rgb(113 113 113);
 }
 
 .dashboard-root-v3 {
   background: var(--bg-main);
   padding: 16px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
   color: var(--text-dark);
 }
 
@@ -56,6 +65,7 @@
 
 .site-accordion-container {
   margin-bottom: 2px;
+  background: hsl(210deg 7.14% 94.51%);
 }
 
 .summary-item {
@@ -76,32 +86,63 @@
 }
 
 .summary-item.business .summary-icon-box {
-  background: #f5f3ff;
-  color: #7c3aed;
+  background: #FDF4F9;
+  color: #AE4787;
 }
 
 .summary-item.plants .summary-icon-box {
-  background: #fff1f2;
-  color: #e11d48;
+  background: #FFF0F0;
+  color: #C9372C;
 }
 
 .summary-label {
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 16px;
   color: var(--text-dark);
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+.summary-label-total-business {
+  font-weight: 600;
+  font-size: 16px;
+  color: #717171;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
 }
 
 .summary-count {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 16px;
-  margin-left: 4px;
+  margin-left: 8px;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #7e7e7e;
+}
+
+.sub-category-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #717171;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+.sub-label-small {
+  font-weight: 600;
+  font-size: 16px;
+  color: #717171;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
+
+.sub-count-small {
+  font-weight: 600;
+  font-size: 16px;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  color: #7e7e7e;
 }
 
 .summary-divider {
-  height: 24px;
+  height: 32px;
   width: 1px;
-  background: #e2e8f0;
-  margin: 0 8px;
+  background: #DDDEE1;
+  margin: 0 12px;
 }
 
 .status-chips-summary {
@@ -118,6 +159,7 @@
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
 }
 
 .status-summary-chip.go-live {
@@ -161,8 +203,11 @@
 }
 
 .bu-expanded-content {
-  background: #f1f5f9;
-  padding: 8px 16px 16px 40px;
+  background: hsl(210deg 7.14% 94.51%);
+  padding: 8px 16px 16px 16px;
+  margin-left: 28px;
+  border-left: 3px solid #e6e6e7;
+  margin-top: 8px;
 }
 
 .bu-title-area {
@@ -172,8 +217,8 @@
   flex: 1;
 }
 
-.bu-icon {
-  color: var(--primary-color);
+.sub-icon {
+  color: #AE4787;
 }
 
 .summary-icon-box-small {
@@ -183,8 +228,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  background: #fff1f2;
-  color: #e11d48;
+  background: #FFF0F0;
+  color: #C9372C;
 }
 
 .sub-header-row {
@@ -205,18 +250,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.sub-label-small {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.sub-count-small {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-dark);
 }
 
 .bu-name {
@@ -274,7 +307,7 @@
 .plant-name {
   font-weight: 600;
   font-size: 13px;
-  color: #475569;
+  color: #717171;
 }
 
 .plant-card-right {
@@ -293,26 +326,31 @@
 
 .plant-status-chip.go-live {
   background: var(--status-go-live-bg);
+  border: 1px solid var(--status-go-live-border);
   color: var(--status-go-live-text);
 }
 
 .plant-status-chip.development {
   background: var(--status-dev-bg);
+  border: 1px solid var(--status-dev-border);
   color: var(--status-dev-text);
 }
 
 .plant-status-chip.uat {
   background: var(--status-uat-bg);
+  border: 1px solid var(--status-uat-border);
   color: var(--status-uat-text);
 }
 
 .plant-status-chip.pre-uat {
   background: var(--status-preuat-bg);
+  border: 1px solid var(--status-preuat-border);
   color: var(--status-preuat-text);
 }
 
 .plant-status-chip.not-started {
   background: var(--status-notstarted-bg);
+  border: 1px solid var(--status-notstarted-border);
   color: var(--status-notstarted-text);
 }
 
@@ -321,18 +359,86 @@
 }
 
 .sub-accordion-wrapper {
-  margin-top: 8px;
-  border-radius: 8px;
   overflow: hidden;
 }
 
 .sub-accordion-header {
   display: none;
-  /* Replaced by sub-header-row */
 }
 
 .sub-accordion-content {
+  margin-left: 40px;
+}
+
+/* ---------- NEW LAYOUT MODES ---------- */
+
+/* Gasification / Row Layout */
+.status-row-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  gap: 16px;
+}
+
+.status-row-label-box {
+  min-width: 100px;
+}
+
+.status-row-plants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+
+.compact-plant-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.compact-plant-item:hover {
+  opacity: 0.8;
+}
+
+/* Aromatics / Column Layout */
+.status-column-layout {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.status-column-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  min-width: 250px;
+  flex: 1;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-column-header {
+  margin-bottom: 8px;
+}
+
+.status-column-plants {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* ---------- ANIMATIONS ---------- */
