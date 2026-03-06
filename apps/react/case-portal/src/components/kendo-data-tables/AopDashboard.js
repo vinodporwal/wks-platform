@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Chip } from '@progress/kendo-react-buttons'
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-} from '@progress/kendo-react-layout'
-import { Box, Grid, Stack, Typography } from '@mui/material'
+  IconMapPin,
+  IconBriefcase,
+  IconBuildingFactory,
+  IconChevronDown,
+  IconChevronUp,
+  IconChevronRight,
+} from '@tabler/icons-react'
+import { Card, Box, Typography } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import Notification from 'components/Utilities/Notification'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
@@ -14,11 +15,13 @@ import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
 import { setVerticalChangeFromDashboard } from 'store/reducers/dataGridStore'
 import '../../dashboard-v2.css'
-import {
-  Backdrop,
-  CircularProgress,
-} from '../../../node_modules/@mui/material/index'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+const ALL_STATUSES = ['Go-Live', 'Development', 'UAT', 'Pre-UAT', 'Not Started']
+const STATUS_MAP = {
+  'Go Live': 'Go-Live',
+  'Pre UAT': 'Pre-UAT',
+}
 
 export default function AopDashboardCompact() {
   const dispatch = useDispatch()
@@ -48,12 +51,13 @@ export default function AopDashboardCompact() {
   const [loading, setLoading] = useState(false)
   const [fullDetails, setFullDetails] = useState([])
   const [allowedMap, setAllowedMap] = useState({})
-  const [allowedMapForSites, setAllowedMapForSites] = useState({})
   const [verticals, setVerticals] = useState([])
-  const [sites, setSites] = useState([])
   const [statusData, setStatusData] = useState([])
   const [siteGroupedRows, setSiteGroupedRows] = useState([])
   const [idMap, setIdMap] = useState({})
+
+  const [expandedSites, setExpandedSites] = useState({})
+  const [expandedSubSites, setExpandedSubSites] = useState({})
 
   // ------------------ helpers ------------------
   const showSnackbar = useCallback((message, severity = 'info') => {
@@ -82,40 +86,38 @@ export default function AopDashboardCompact() {
     }, {})
   }, [])
 
-  // pulse animation utility
-  const pulseElement = (el) => {
-    if (!el) return
-    el.classList.add('pulse')
-    window.setTimeout(() => el.classList.remove('pulse'), 400)
+  const toggleSite = (siteName) => {
+    setExpandedSites((prev) => ({
+      ...prev,
+      [siteName]: !prev[siteName],
+    }))
+  }
+
+  const toggleSubSite = (siteName, subCategory) => {
+    const key = `${siteName}-${subCategory}`
+    setExpandedSubSites((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }))
   }
 
   // ------------------ event handlers ------------------
 
-  const handleChipClick = useCallback(
+  const handlePlantClick = useCallback(
     (event, vid, sid) => {
       setLoading(true)
-      // find vertical
       const vertical = verticals.find((v) => v.vid === vid)
-
-      // check vertical access
       if (!vertical) {
         showSnackbar('Access Denied!', 'error')
         setLoading(false)
         return
       }
 
-      // check site access (if site is involved)
       if (sid && !vertical.sids.includes(sid)) {
         showSnackbar('Access Denied!', 'error')
         setLoading(false)
         return
       }
-
-      // visual feedback
-      pulseElement(event.currentTarget)
-
-      console.log('sid', sid)
-      console.log('vid', vid)
 
       dispatch(
         setVerticalChangeFromDashboard({ vid, trigger: Date.now(), sid }),
@@ -165,7 +167,6 @@ export default function AopDashboardCompact() {
       setStatusData(apiRows)
 
       let idx = 0
-
       const grouped = Object.values(
         apiRows.reduce((acc, item) => {
           const site = item.site_name || 'Unknown Site'
@@ -186,6 +187,17 @@ export default function AopDashboardCompact() {
       )
 
       setSiteGroupedRows(grouped)
+      // Expand the first site by default
+      if (grouped.length > 0) {
+        const firstSite = grouped[0].site
+        setExpandedSites((prev) => ({ ...prev, [firstSite]: true }))
+        setExpandedSubSites((prev) => ({
+          ...prev,
+          [`${firstSite}-Refining`]: true,
+          [`${firstSite}-Gasification`]: true,
+          [`${firstSite}-Aromatics`]: true,
+        }))
+      }
     } catch (error) {
       console.error('Error fetching dashboard data', error)
     } finally {
@@ -193,7 +205,6 @@ export default function AopDashboardCompact() {
     }
   }, [PLANT_ID, SITE_ID, VERTICAL_ID, AOP_YEAR, idMap, keycloak])
 
-  // keep verticals list in sync with allowedMap + fullDetails
   useEffect(() => {
     if (!fullDetails.length || !Object.keys(allowedMap).length) return
 
@@ -208,142 +219,270 @@ export default function AopDashboardCompact() {
     setVerticals(result)
   }, [fullDetails, allowedMap])
 
-  // initial + reactive fetches
   useEffect(() => {
     fetchAllSites()
     fetchDashboardData()
-  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+  }, [PLANT_ID, AOP_YEAR, yearChanged, keycloak])
 
-  // memoized status summary
-  const statusSummary = useMemo(() => {
-    const map = {}
-    statusData.forEach((r) => {
-      const key = r.status || 'Other'
-      if (!map[key]) {
-        map[key] = {
-          count: 0,
-          backgroundColor: r.status_color || '#e2e8f0',
-          color: r.status_text_color
-            ? `#${r.status_text_color.replace('#', '')}`
-            : '#1e293b',
-        }
-      }
-      map[key].count += 1
+
+  const getStatusClass = (status) => {
+    if (!status) return ''
+    return status.toLowerCase().replace(/\s+/g, '-')
+  }
+
+  const getSiteStatusSummary = (rows) => {
+    const counts = {}
+    ALL_STATUSES.forEach((s) => {
+      counts[s] = 0
     })
-    return map
-  }, [statusData])
-
-  const statusKeys = Object.keys(statusSummary)
-
+    rows.forEach((r) => {
+      let s = r.status || 'Other'
+      if (STATUS_MAP[s]) {
+        s = STATUS_MAP[s]
+      }
+      if (counts[s] !== undefined) {
+        counts[s] += 1
+      }
+    })
+    return counts
+  }
   return (
-    <div>
+    <Box className="dashboard-root-v3">
+      <Typography className='dashboard-title-v2' style={{ marginBottom: '10px' }}>
+        Digital AOP Dashboard
+      </Typography>
       <LoaderBackdrop open={!!loading} />
 
-      <Box className='dashboard-root-v2'>
-        <Typography className='dashboard-title-v2'>
-          Digital AOP Dashboard
-        </Typography>
+      <Card className="dashboard-main-card">
+        {/* Business Units List - Each Site is a Summary Bar Accordion */}
+        {siteGroupedRows.map((site) => {
+          const siteStatusSummary = getSiteStatusSummary(site.rows)
+          const isSiteExpanded = expandedSites[site.site]
 
-        <Grid container spacing={0.8}>
-          {siteGroupedRows.map((section) => {
-            const total = section.rows.length
+          return (
+            <Box key={site.site} className="site-accordion-container">
+              {/* Site Header Row (Styled as Summary Bar) */}
+              <Box className="summary-bar" onClick={() => toggleSite(site.site)}>
+                <Box className="summary-item">
+                  <Box className="summary-icon-box">
+                    <IconMapPin size={20} />
+                  </Box>
+                  <Typography className="summary-label">{site.site}</Typography>
+                </Box>
 
-            // build per-section status summary
-            const localStatusSummary = section.rows.reduce((acc, r) => {
-              const key = r.status || 'Other'
-              if (!acc[key]) {
-                acc[key] = {
-                  count: 0,
-                  backgroundColor: r.status_color || '#e2e8f0',
-                  color: r.status_text_color
-                    ? `#${r.status_text_color.replace('#', '')}`
-                    : '#1e293b',
-                }
-              }
-              acc[key].count += 1
-              return acc
-            }, {})
+                <Box className="summary-divider" />
 
-            const localStatusKeys = Object.keys(localStatusSummary)
+                <Box className="summary-item business">
+                  <Box className="summary-icon-box">
+                    <IconBriefcase size={20} />
+                  </Box>
+                  <Box>
+                    <Typography component="span" className="summary-label-total-business">
+                      Total Business
+                    </Typography>
+                    <Typography component="span" className="summary-count">
+                      3
+                    </Typography>
+                  </Box>
+                </Box>
 
-            return (
-              <Grid item xs={12} sm={6} md={4} lg={2} key={section.site}>
-                <Card className='plant-card-v2'>
-                  <CardHeader className='plant-card-header-v2'>
-                    <CardTitle className='plant-card-title-v2'>
-                      {section.site}
-                    </CardTitle>
+                <Box className="summary-divider" />
 
-                    <div className='section-details-v2'>
-                      <div className='detail-pill-v2'>
-                        <strong>{total}</strong>
-                      </div>
+                <Box className="summary-item plants">
+                  <Box className="summary-icon-box">
+                    <IconBuildingFactory size={20} />
+                  </Box>
+                  <Box>
+                    <Typography component="span" className="summary-label-total-business">
+                      Plants
+                    </Typography>
+                    <Typography component="span" className="summary-count">
+                      {site.rows.length}
+                    </Typography>
+                  </Box>
+                </Box>
 
-                      <div className='status-breakdown-v2'>
-                        {localStatusKeys.map((key) => {
-                          const { count, backgroundColor, color } =
-                            localStatusSummary[key]
+                {/* Site-Specific Status Breakdown Chips */}
+                <Box className="status-chips-summary">
+                  {ALL_STATUSES.map((status) => (
+                    <Box
+                      key={status}
+                      className={`status-summary-chip ${getStatusClass(status)}`}
+                    >
+                      {siteStatusSummary[status]} {status}
+                    </Box>
+                  ))}
+                </Box>
 
-                          return (
-                            <div
-                              key={key}
-                              className='status-pill-v2'
-                              style={{ background: backgroundColor, color }}
-                              title={`${key}: ${count}`}
-                            >
-                              <span className='status-count-v2'>{count}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </CardHeader>
+                <Box sx={{ ml: 2 }}>
+                  {isSiteExpanded ? (
+                    <IconChevronUp size={24} className="chevron-arrow" />
+                  ) : (
+                    <IconChevronDown size={24} className="chevron-arrow" />
+                  )}
+                </Box>
+              </Box>
 
-                  <CardBody className='plant-card-body-v2'>
-                    <Stack spacing={0.2}>
-                      {section.rows.map((row) => {
-                        const statusStyle = localStatusSummary[row.status] || {}
+              {/* Expanded Content: Sub-Accordions */}
+              {isSiteExpanded && (
+                <Box className="bu-expanded-content">
+                  {[
+                    { name: 'Refining', icon: IconBriefcase },
+                    { name: 'Gasification', icon: IconBriefcase },
+                    { name: 'Aromatics', icon: IconBriefcase },
+                  ].map((sub) => {
+                    const subKey = `${site.site}-${sub.name}`
+                    const isSubExpanded = expandedSubSites[subKey]
 
-                        return (
-                          <Stack
-                            key={`${row.sId}-${row.id}-${row.idx}`}
-                            direction='row'
-                            alignItems='center'
-                            justifyContent='space-between'
-                            className='plant-row-v2'
-                            onClick={(e) => handleChipClick(e, row.id, row.sId)}
-                          >
-                            <Typography className='vertical-name-v2'>
-                              {row.verticalName}
-                            </Typography>
+                    return (
+                      <Box key={sub.name} className="sub-accordion-wrapper">
+                        <Box
+                          className="sub-header-row"
+                          onClick={() => toggleSubSite(site.site, sub.name)}
+                        >
+                          <Box className="sub-header-left">
+                            {isSubExpanded ? (
+                              <IconChevronUp size={16} className="chevron-arrow" />
+                            ) : (
+                              <IconChevronDown size={16} className="chevron-arrow" />
+                            )}
+                            <Box className="sub-header-plants">
+                              <sub.icon size={18} className="sub-icon" />
+                              <Typography className="sub-category-name">{sub.name}</Typography>
+                            </Box>
+                            <Box className="summary-divider" />
+                            <Box className="sub-header-plants">
+                              <Box className="summary-icon-box-small">
+                                <IconBuildingFactory size={16} />
+                              </Box>
+                              <Typography className="sub-label-small">Plants</Typography>
+                              <Typography className="sub-count-small">
+                                {site.rows.length}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
 
-                            <Chip
-                              text={row.status}
-                              size='small'
-                              className='status-chip-v2'
-                              style={{
-                                background: statusStyle.backgroundColor,
-                                color: statusStyle.color,
-                              }}
-                            />
-                          </Stack>
-                        )
-                      })}
-                    </Stack>
-                  </CardBody>
-                </Card>
-              </Grid>
-            )
-          })}
-        </Grid>
+                        {isSubExpanded && (
+                          <Box className="sub-accordion-content">
+                            {sub.name === 'Gasification' ? (
+                              <Box className="status-row-layout">
+                                {ALL_STATUSES.map((status) => {
+                                  const plants = site.rows.filter(
+                                    (p) => (STATUS_MAP[p.status] || p.status) === status
+                                  )
+                                  if (plants.length === 0) {
+                                    return (
+                                      <Box key={status} className="status-row">
+                                        <Box className="status-row-label-box">
+                                          <Box className={`plant-status-chip ${getStatusClass(status)}`}>
+                                            {status}
+                                          </Box>
+                                        </Box>
+                                      </Box>
+                                    )
+                                  }
+                                  return (
+                                    <Box key={status} className="status-row">
+                                      <Box className="status-row-label-box">
+                                        <Box className={`plant-status-chip ${getStatusClass(status)}`}>
+                                          {status}
+                                        </Box>
+                                      </Box>
+                                      <Box className="status-row-plants">
+                                        {plants.map((plant) => (
+                                          <Box
+                                            key={plant.idx}
+                                            className="compact-plant-item"
+                                            onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
+                                          >
+                                            <IconBuildingFactory size={16} className="plant-card-icon" />
+                                            <Typography className="plant-name">
+                                              {plant.verticalName}
+                                            </Typography>
+                                          </Box>
+                                        ))}
+                                      </Box>
+                                    </Box>
+                                  )
+                                })}
+                              </Box>
+                            ) : sub.name === 'Aromatics' ? (
+                              <Box className="status-column-layout">
+                                {ALL_STATUSES.map((status) => {
+                                  const plants = site.rows.filter(
+                                    (p) => (STATUS_MAP[p.status] || p.status) === status
+                                  )
+                                  return (
+                                    <Box key={status} className="status-column-card">
+                                      <Box className="status-column-header">
+                                        <Box className={`plant-status-chip ${getStatusClass(status)}`}>
+                                          {status}
+                                        </Box>
+                                      </Box>
+                                      <Box className="status-column-plants">
+                                        {plants.map((plant) => (
+                                          <Box
+                                            key={plant.idx}
+                                            className="compact-plant-item"
+                                            onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
+                                          >
+                                            <IconBuildingFactory size={16} className="plant-card-icon" />
+                                            <Typography className="plant-name">
+                                              {plant.verticalName}
+                                            </Typography>
+                                          </Box>
+                                        ))}
+                                      </Box>
+                                    </Box>
+                                  )
+                                })}
+                              </Box>
+                            ) : (
+                              <Box className="plant-grid">
+                                {site.rows.map((plant) => (
+                                  <Box
+                                    key={`${sub.name}-${plant.idx}`}
+                                    className="plant-item-card"
+                                    onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
+                                  >
+                                    <Box className="plant-card-left">
+                                      <IconBuildingFactory size={18} className="plant-card-icon" />
+                                      <Typography className="plant-name">
+                                        {plant.verticalName}
+                                      </Typography>
+                                    </Box>
 
-        <Notification
-          open={snackbar.open}
-          message={snackbar.message || ''}
-          severity={snackbar.severity || 'info'}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        />
-      </Box>
-    </div>
+                                    <Box className="plant-card-right">
+                                      <Box
+                                        className={`plant-status-chip ${getStatusClass(plant.status)}`}
+                                      >
+                                        {plant.status}
+                                      </Box>
+                                      <IconChevronRight size={18} className="chevron-arrow" />
+                                    </Box>
+                                  </Box>
+                                ))}
+                              </Box>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    )
+                  })}
+                </Box>
+              )}
+            </Box>
+          )
+        })}
+      </Card>
+
+      <Notification
+        open={snackbar.open}
+        message={snackbar.message || ''}
+        severity={snackbar.severity || 'info'}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+      />
+    </Box>
   )
 }
