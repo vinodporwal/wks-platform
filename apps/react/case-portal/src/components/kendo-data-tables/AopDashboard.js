@@ -365,106 +365,31 @@ export default function AopDashboardCompact() {
 
                         {isSubExpanded && (
                           <Box className="sub-accordion-content">
-                            {sub.name === 'Gasification' ? (
-                              <Box className="status-row-layout">
-                                {ALL_STATUSES.map((status) => {
-                                  const plants = site.rows.filter(
-                                    (p) => (STATUS_MAP[p.status] || p.status) === status
-                                  )
-                                  if (plants.length === 0) {
-                                    return (
-                                      <Box key={status} className="status-row">
-                                        <Box className="status-row-label-box">
-                                          <Box className={`plant-status-chip ${getStatusClass(status)}`}>
-                                            {status}
-                                          </Box>
-                                        </Box>
-                                      </Box>
-                                    )
-                                  }
-                                  return (
-                                    <Box key={status} className="status-row">
-                                      <Box className="status-row-label-box">
-                                        <Box className={`plant-status-chip ${getStatusClass(status)}`}>
-                                          {status}
-                                        </Box>
-                                      </Box>
-                                      <Box className="status-row-plants">
-                                        {plants.map((plant) => (
-                                          <Box
-                                            key={plant.idx}
-                                            className="compact-plant-item"
-                                            onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
-                                          >
-                                            <IconBuildingFactory size={16} className="plant-card-icon" />
-                                            <Typography className="plant-name">
-                                              {plant.verticalName}
-                                            </Typography>
-                                          </Box>
-                                        ))}
-                                      </Box>
-                                    </Box>
-                                  )
-                                })}
-                              </Box>
-                            ) : sub.name === 'Aromatics' ? (
-                              <Box className="status-column-layout">
-                                {ALL_STATUSES.map((status) => {
-                                  const plants = site.rows.filter(
-                                    (p) => (STATUS_MAP[p.status] || p.status) === status
-                                  )
-                                  return (
-                                    <Box key={status} className="status-column-card">
-                                      <Box className="status-column-header">
-                                        <Box className={`plant-status-chip ${getStatusClass(status)}`}>
-                                          {status}
-                                        </Box>
-                                      </Box>
-                                      <Box className="status-column-plants">
-                                        {plants.map((plant) => (
-                                          <Box
-                                            key={plant.idx}
-                                            className="compact-plant-item"
-                                            onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
-                                          >
-                                            <IconBuildingFactory size={16} className="plant-card-icon" />
-                                            <Typography className="plant-name">
-                                              {plant.verticalName}
-                                            </Typography>
-                                          </Box>
-                                        ))}
-                                      </Box>
-                                    </Box>
-                                  )
-                                })}
-                              </Box>
-                            ) : (
-                              <Box className="plant-grid">
-                                {site.rows.map((plant) => (
-                                  <Box
-                                    key={`${sub.name}-${plant.idx}`}
-                                    className="plant-item-card"
-                                    onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
-                                  >
-                                    <Box className="plant-card-left">
-                                      <IconBuildingFactory size={18} className="plant-card-icon" />
-                                      <Typography className="plant-name">
-                                        {plant.verticalName}
-                                      </Typography>
-                                    </Box>
-
-                                    <Box className="plant-card-right">
-                                      <Box
-                                        className={`plant-status-chip ${getStatusClass(plant.status)}`}
-                                      >
-                                        {plant.status}
-                                      </Box>
-                                      <IconChevronRight size={18} className="chevron-arrow" />
-                                    </Box>
+                            <Box className="plant-grid">
+                              {site.rows.map((plant) => (
+                                <Box
+                                  key={`${sub.name}-${plant.idx}`}
+                                  className="plant-item-card"
+                                  onClick={(e) => handlePlantClick(e, plant.id, plant.sId)}
+                                >
+                                  <Box className="plant-card-left">
+                                    <IconBuildingFactory size={18} className="plant-card-icon" />
+                                    <Typography className="plant-name">
+                                      {plant.verticalName}
+                                    </Typography>
                                   </Box>
-                                ))}
-                              </Box>
-                            )}
+
+                                  <Box className="plant-card-right">
+                                    <Box
+                                      className={`plant-status-chip ${getStatusClass(plant.status)}`}
+                                    >
+                                      {plant.status}
+                                    </Box>
+                                    <IconChevronRight size={18} className="chevron-arrow" />
+                                  </Box>
+                                </Box>
+                              ))}
+                            </Box>
                           </Box>
                         )}
                       </Box>
