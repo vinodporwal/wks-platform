@@ -180,6 +180,8 @@ export default function AopDashboardCompact() {
             status: item.status,
             status_color: item.status_color,
             status_text_color: item.status_text_color,
+            business_category: item.business_category,
+            display_order: item.display_order,
           })
 
           return acc
@@ -357,7 +359,7 @@ export default function AopDashboardCompact() {
                               </Box>
                               <Typography className="sub-label-small">Plants</Typography>
                               <Typography className="sub-count-small">
-                                {site.rows.length}
+                                {site?.rows?.filter(i => i?.business_category === sub.name)?.length}
                               </Typography>
                             </Box>
                           </Box>
@@ -366,7 +368,7 @@ export default function AopDashboardCompact() {
                         {isSubExpanded && (
                           <Box className="sub-accordion-content">
                             <Box className="plant-grid">
-                              {site.rows.map((plant) => (
+                              {site?.rows?.filter(i => i?.business_category === sub.name)?.map((plant) => (
                                 <Box
                                   key={`${sub.name}-${plant.idx}`}
                                   className="plant-item-card"
