@@ -81,7 +81,7 @@ const ConsumptionNorms = () => {
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
-  const IS_PVC_VERTICAL = lowerVertName === 'pvc'
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_HMD_SBR =
     VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
     SITE_NAME_NO_CASE === 'HMD' &&
@@ -202,7 +202,7 @@ const ConsumptionNorms = () => {
         lowerVertName == 'pe' ||
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         try {
           setLoading(true)
@@ -308,10 +308,7 @@ const ConsumptionNorms = () => {
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if (
-      (isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VERTICAL) &&
-      !gradeId
-    )
+    if ((isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VMD) && !gradeId)
       return
     setLoading(true)
     try {
@@ -322,7 +319,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
@@ -405,7 +402,7 @@ const ConsumptionNorms = () => {
       lowerVertName === 'pp' ||
       lowerVertName === 'pet' ||
       IS_ELASTOMER_HMD_SBR ||
-      IS_PVC_VERTICAL
+      IS_PVC_VMD
     ) {
       fetchGradeDropdowns()
     } else {
@@ -451,7 +448,7 @@ const ConsumptionNorms = () => {
           lowerVertName === 'pp' ||
           lowerVertName === 'pet' ||
           IS_ELASTOMER_HMD_SBR ||
-          IS_PVC_VERTICAL
+          IS_PVC_VMD
         ) {
           fetchGradeDropdownsAfterCalc()
         } else {
@@ -490,7 +487,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
       ) {
         response =
           await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
@@ -550,7 +547,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       marginBottom:
@@ -558,7 +555,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       dropdownLabel: 'Select Grade',
@@ -567,7 +564,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? false
           : true,
       downloadExcelBtn:
@@ -575,7 +572,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
-        IS_PVC_VERTICAL
+        IS_PVC_VMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
