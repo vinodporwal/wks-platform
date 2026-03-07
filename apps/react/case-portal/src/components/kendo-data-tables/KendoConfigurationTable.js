@@ -71,8 +71,8 @@ const ConfigurationTable = () => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = siteObject?.name?.toLowerCase()
-  const IS_PVC_VMD= lowerVertName === 'pvc' && lowerSiteName === 'vmd';
-  const IS_PVC_DMD= lowerVertName === 'pvc' && lowerSiteName === 'dmd';
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -1152,10 +1152,7 @@ const ConfigurationTable = () => {
     )
   }, [openConfirmDialogRev])
 
-  if (
-    (lowerVertName == 'meg') &&
-    lowerVertName !== 'cracker'
-  ) {
+  if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
     const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
     const auditYear = AOP_YEAR
