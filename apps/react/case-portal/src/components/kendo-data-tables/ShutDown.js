@@ -169,7 +169,7 @@ const ShutDown = ({ permissions }) => {
             : new Date(record.maintEndDateTime)
 
         // Validate date format: dd/mm/yyyy (by parsing and checking)
-        if (!IS_PTA || !IS_CHEMICAL) {
+        if (!IS_PTA && !IS_CHEMICAL) {
           if (
             startLimit &&
             endLimit &&
