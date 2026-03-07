@@ -41,6 +41,7 @@ const MaintenanceTable = () => {
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
   const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
   const IS_PTA = verticalObject?.name?.toLowerCase() === 'pta'
+  const IS_CHEMICAL = verticalObject?.name?.toLowerCase() === 'chemical'
 
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
@@ -53,6 +54,9 @@ const MaintenanceTable = () => {
   const IS_PP_SEZ =
     verticalObject?.name?.toLowerCase() === 'pp' &&
     siteObject?.name?.toLowerCase() === 'sez'
+  const IS_PP_HMD =
+    verticalObject?.name?.toLowerCase() === 'pp' &&
+    siteObject?.name?.toLowerCase() === 'hmd'
   const IS_PVC_DMD =
     verticalObject?.name?.toLowerCase() === 'pvc' &&
     siteObject?.name?.toLowerCase() === 'dmd'
@@ -60,7 +64,7 @@ const MaintenanceTable = () => {
   const dataConfig = useMemo(
     () => ({
       serviceFn: (keycloak, PLANT_ID, AOP_YEAR, lineId) => {
-        if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && lineId) {
+        if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && lineId) {
           return MaintenanceDetailsApiService.getMaintenanceDataLineWise(
             keycloak,
             PLANT_ID,
@@ -82,6 +86,7 @@ const MaintenanceTable = () => {
       IS_PP_DTA,
       IS_PP_SEZ,
       IS_PVC_DMD,
+      IS_PP_HMD,
       tabIndex,
       lineDetails,
     ],
@@ -198,7 +203,7 @@ const MaintenanceTable = () => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
       fetchLineDetails()
     }
   }, [PLANT_ID, keycloak, yearChanged])
@@ -329,7 +334,7 @@ const MaintenanceTable = () => {
       break
   }
 
-  if (IS_PTA) {
+  if (IS_PTA || IS_CHEMICAL) {
     basecols = [
       ...basecols,
       {
@@ -387,7 +392,7 @@ const MaintenanceTable = () => {
   return (
     <>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>

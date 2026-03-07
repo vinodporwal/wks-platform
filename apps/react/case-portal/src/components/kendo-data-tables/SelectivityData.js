@@ -501,7 +501,10 @@ const SelectivityData = (props) => {
   } else {
     FORMATE_VALUE = ValueFormatterProduction()
   }
-  if (props?.configType == 'PIO Impact' && lowerVertName == 'pta') {
+  if (
+    props?.configType == 'PIO Impact' &&
+    (lowerVertName == 'pta' || lowerVertName == 'chemical')
+  ) {
     FORMATE_VALUE = '{0:0.000}'
   }
   if (
@@ -621,7 +624,8 @@ const SelectivityData = (props) => {
           lowerVertName == 'pta' ||
           lowerVertName == 'aromatics' ||
           lowerVertName == 'vcm' ||
-          lowerVertName == 'elastomer'
+          lowerVertName == 'elastomer' ||
+          lowerVertName == 'chemical'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,

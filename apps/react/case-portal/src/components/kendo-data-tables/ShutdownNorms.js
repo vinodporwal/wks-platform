@@ -98,6 +98,7 @@ const ShutdownNorms = () => {
 
   const IS_PTA_DMD =
     ['pta'].includes(lowerVertName) && ['dmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_CHEMICAL = ['chemical'].includes(lowerVertName)
 
   const textNote =
     IS_PE_PP_VERTICAL || IS_PVC_DMD
@@ -600,7 +601,7 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta') {
+      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL) {
         // Use shutdownNormsExportNonGrade for VCM
         response =
           await NormalOperationNormsApiService.shutdownNormsExportNonGrade(
@@ -643,7 +644,7 @@ const ShutdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || lowerVertName === 'pta') {
+      if (lowerVertName === 'vcm' || lowerVertName === 'pta' || IS_CHEMICAL) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response =
           await NormalOperationNormsApiService.saveShutdownNormsExcelNonGrade(
@@ -806,7 +807,8 @@ const ShutdownNorms = () => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         lowerVertName === 'vcm' ||
-        lowerVertName === 'pta'
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL
           ? false
           : true,
       downloadExcelBtn:
@@ -816,7 +818,8 @@ const ShutdownNorms = () => {
         IS_PVC_VMD ||
         IS_PVC_DMD ||
         lowerVertName === 'vcm' ||
-        lowerVertName === 'pta'
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL
           ? true
           : false,
       uploadExcelBtn:
@@ -824,6 +827,7 @@ const ShutdownNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
+        IS_CHEMICAL ||
         IS_PE_VMD ||
         IS_PE_DMD ||
         IS_PET_VERTICAL ||
@@ -836,7 +840,9 @@ const ShutdownNorms = () => {
       titleName:
         IS_PET_VERTICAL || IS_PVC_VMD
           ? `Shutdown Consumption (Norms)`
-          : lowerVertName === 'elastomer' || lowerVertName === 'pta'
+          : lowerVertName === 'elastomer' ||
+              lowerVertName === 'pta' ||
+              IS_CHEMICAL
             ? `Shutdown Consumption (Norms/Quantity)`
             : SCREEN_NAME,
       ExcelName: `${VERTICAL_NAME}-${SCREEN_NAME}`,

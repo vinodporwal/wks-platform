@@ -60,6 +60,7 @@ const ProductionNorms = ({ permissions }) => {
   const VERTICAL_NAME = verticalObject?.name?.toLowerCase()
   const IS_PP_DTA = false
   const IS_PP_SEZ = false
+  const IS_PP_HMD = false
 
   // const IS_PP_DTA = lowerVertName === 'pp' && SITE_NAME === 'dta'
   // const IS_PP_SEZ = lowerVertName === 'pp' && SITE_NAME === 'sez'
@@ -71,6 +72,11 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'sez'
   const IS_PVC_VMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && SITE_NAME_LOWERCASE === 'dmd'
+  const IS_AROMATIC_DTA_PLATFORMER =
+    lowerVertName === 'aromatics' &&
+    SITE_NAME_LOWERCASE === 'dta' &&
+    plantName === 'plat'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -405,7 +411,7 @@ const ProductionNorms = ({ permissions }) => {
       const selectedLine = lineDetails[tabIndex]
       const lineId = selectedLine?.id
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await ProductionNormsApiService.getAOPDataLineWise(
           keycloak,
           'Production',
@@ -669,7 +675,9 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'elastomer' &&
           lowerVertName !== 'vcm' &&
           lowerVertName !== 'pta' &&
-          !IS_AROMATIC_SEZ
+          lowerVertName !== 'chemical' &&
+          !IS_AROMATIC_SEZ &&
+          !IS_AROMATIC_DTA_PLATFORMER
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
@@ -806,7 +814,10 @@ const ProductionNorms = ({ permissions }) => {
         initialRender.current = false
       }
     }
-    if ((IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && lineDetails?.length === 0) {
+    if (
+      (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) &&
+      lineDetails?.length === 0
+    ) {
       return
     }
     fetchDataWrapper()
@@ -841,7 +852,7 @@ const ProductionNorms = ({ permissions }) => {
   }
 
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
       fetchLineDetails()
     } else {
       setLineDetails([])
@@ -923,7 +934,8 @@ const ProductionNorms = ({ permissions }) => {
           showUnit:
             lowerVertName === 'vcm' ||
             lowerVertName === 'pta' ||
-            lowerVertName === 'cracker'
+            lowerVertName === 'cracker' ||
+            lowerVertName === 'chemical'
               ? true
               : permissions?.showUnit ?? true,
           saveWithRemark: permissions?.saveWithRemark ?? true,
@@ -947,7 +959,8 @@ const ProductionNorms = ({ permissions }) => {
           downloadExcelBtnFromUI:
             lowerVertName === 'vcm' ||
             lowerVertName === 'pta' ||
-            lowerVertName === 'cracker'
+            lowerVertName === 'cracker' ||
+            lowerVertName === 'chemical'
               ? true
               : !permissions?.hideExportBtn,
           // downloadExcelBtn: lowerVertName === 'pta'
@@ -957,7 +970,9 @@ const ProductionNorms = ({ permissions }) => {
           unitForExcelToadd:
             lowerVertName === 'cracker'
               ? selectedUnit || 'MT/Month'
-              : lowerVertName === 'vcm' || lowerVertName === 'pta'
+              : lowerVertName === 'vcm' ||
+                  lowerVertName === 'pta' ||
+                  lowerVertName === 'chemical'
                 ? selectedUnit || 'MT'
                 : null,
         },
@@ -998,7 +1013,7 @@ const ProductionNorms = ({ permissions }) => {
   return (
     <div>
       {/* LINE1-LINE6 Tabs - Only for PP VERTICAL | DTA SITE */}
-      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) && (
+      {(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) && (
         <Box display='flex' alignItems='center' sx={{ mb: 1, mt: 1 }}>
           <AopTabs tabIndex={tabIndex} setTabIndex={setTabIndex} tabs={tabs} />
         </Box>
@@ -1052,6 +1067,7 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'pe' &&
           lowerVertName !== 'pp' &&
           lowerVertName !== 'pta' &&
+          lowerVertName !== 'chemical' &&
           lowerVertName !== 'pet' &&
           !IS_PVC_VMD
             ? '* MT per Annum'
