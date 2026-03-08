@@ -60,6 +60,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
     : 'Production Target (MT) (This is a reference for entering the Business Demand value)'

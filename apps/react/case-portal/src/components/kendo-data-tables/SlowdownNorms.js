@@ -60,6 +60,7 @@ const SlowdownNorms = () => {
   const VERTICAL_NAME_LOWERCASE = verticalObject?.name?.toLowerCase()
 
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
   const IS_PE_PP_VERTICAL_NMD_LLDPE =
     ['pe'].includes(VERTICAL_NAME_LOWERCASE) &&
     ['nmd'].includes(SITE_NAME_LOWERCASE) &&
@@ -100,6 +101,7 @@ const SlowdownNorms = () => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PTA = lowerVertName === 'pta'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_EDC_PLANT = lowerVertName === 'vcm' && plantName === 'edc'
   const saveChanges = React.useCallback(async () => {
     try {
@@ -481,7 +483,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA) {
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
@@ -513,7 +515,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA) {
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
@@ -608,6 +610,7 @@ const SlowdownNorms = () => {
         lowerVertName == 'elastomer' ||
         lowerVertName == 'aromatics' ||
         lowerVertName == 'pta' ||
+        IS_CHEMICAL ||
         IS_PE_PP ||
         IS_EDC_PLANT
           ? false
@@ -616,10 +619,15 @@ const SlowdownNorms = () => {
       allAction: true,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
-        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA ? false : true,
-      uploadExcelBtn: lowerVertName === 'vcm' || IS_PTA ? true : false,
+        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL
+          ? false
+          : true,
+      uploadExcelBtn:
+        lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL ? true : false,
       downloadExcelBtn:
-        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA ? true : false,
+        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL
+          ? true
+          : false,
       showG: IS_PE_PP ? true : false,
       marginBottom: IS_PE_PP ? true : false,
 

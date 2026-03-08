@@ -80,13 +80,16 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'pet' ||
     lowerVertName === 'meg' ||
     lowerVertName === 'pe' ||
-    lowerVertName === 'pp'
+    lowerVertName === 'pp' ||
+    lowerVertName === 'chemical'
   const IS_PTA = lowerVertName === 'pta'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
   const IS_PET = lowerVertName === 'pet'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -166,7 +169,7 @@ const ShutDown = ({ permissions }) => {
             : new Date(record.maintEndDateTime)
 
         // Validate date format: dd/mm/yyyy (by parsing and checking)
-        if (!IS_PTA) {
+        if (!IS_PTA && !IS_CHEMICAL) {
           if (
             startLimit &&
             endLimit &&
@@ -198,7 +201,7 @@ const ShutDown = ({ permissions }) => {
         } else {
           requiredFields = ['discription', 'remark']
         }
-      } else if (IS_PTA) {
+      } else if (IS_PTA || IS_CHEMICAL) {
         requiredFields = ['discription', 'monthly', 'remark']
       } else if (lowerVertName === 'pta') {
         requiredFields = ['discription', 'remark']
@@ -261,7 +264,7 @@ const ShutDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'pta') {
+      if (duplicate && lowerVertName !== 'pta' && !IS_CHEMICAL) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -280,7 +283,7 @@ const ShutDown = ({ permissions }) => {
       //5 START DATE END DATE MANDATORY
       const allRecords = [...rows]
       const timeErrorRows = new Set() // Add this line
-      if (!IS_PTA) {
+      if (!IS_PTA && !IS_CHEMICAL) {
         for (const record of data) {
           // Date required validation (before checking time order)
           const dateRequiredRows = new Set()
@@ -329,12 +332,13 @@ const ShutDown = ({ permissions }) => {
         lowerVertName == 'pe' ||
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
-        IS_PVC_VMD
+        IS_PVC_VMD ||
+        IS_CHEMICAL
       ) {
         // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
 
-        if (lowerVertName != 'vcm' && !IS_PTA) {
+        if (lowerVertName != 'vcm' && !IS_PTA && !IS_CHEMICAL) {
           for (const row of allRecords) {
             const start = new Date(row.maintStartDateTime)
             const end = new Date(row.maintEndDateTime)
@@ -365,7 +369,7 @@ const ShutDown = ({ permissions }) => {
         }
 
         //Shutdown timeframe overlapping of same time.
-        if (!IS_PTA) {
+        if (!IS_PTA && !IS_CHEMICAL) {
           for (let i = 0; i < allRecords.length; i++) {
             const a = allRecords[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -403,7 +407,8 @@ const ShutDown = ({ permissions }) => {
           // lowerVertName != 'vcm' &&
           !IS_PTA &&
           !IS_PET &&
-          !IS_PVC_VMD
+          !IS_PVC_VMD &&
+          !IS_CHEMICAL
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -459,7 +464,7 @@ const ShutDown = ({ permissions }) => {
     try {
       let shutdownDetails
 
-      if (IS_PTA) {
+      if (IS_PTA || IS_CHEMICAL) {
         // PTA DMD: Use month instead of dates
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -475,7 +480,7 @@ const ShutDown = ({ permissions }) => {
           id: row.idFromApi || null,
           remark: row.remark || 'null',
         }))
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         // For PP DTA, match the GET payload structure
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -606,7 +611,7 @@ const ShutDown = ({ permissions }) => {
     }
   }
   useEffect(() => {
-    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
       fetchLineDetails()
     }
   }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
@@ -660,7 +665,7 @@ const ShutDown = ({ permissions }) => {
           (p) => p.name === item.discription,
         )
 
-        if (lowerVertName == 'pta') {
+        if (lowerVertName == 'pta' || lowerVertName == 'chemical') {
           return {
             ...item,
             idFromApi: item?.id,
@@ -785,7 +790,7 @@ const ShutDown = ({ permissions }) => {
       try {
         let data = []
 
-        if (IS_PTA) {
+        if (IS_PTA || IS_CHEMICAL) {
           data = await DataService.dropdownValuesDMD(
             keycloak,
             PLANT_ID,
@@ -832,11 +837,15 @@ const ShutDown = ({ permissions }) => {
       }
     }
 
-    if (lowerVertName == 'pta') getAllDescriptionDrpdwn()
+    if (lowerVertName == 'pta' || lowerVertName == 'chemical')
+      getAllDescriptionDrpdwn()
   }, [oldYear, AOP_YEAR, keycloak, PLANT_ID, lowerVertName])
 
   useEffect(() => {
-    if (lowerVertName == 'pta' && allDescriptionDrpdwn?.length > 0) {
+    if (
+      (lowerVertName == 'pta' || lowerVertName == 'chemical') &&
+      allDescriptionDrpdwn?.length > 0
+    ) {
       fetchData()
     } else if (allProducts.length > 0) {
       if (!PLANT_ID || !AOP_YEAR) return
@@ -865,13 +874,16 @@ const ShutDown = ({ permissions }) => {
         return ShutDownPeColumns
 
       case verticalEnums.PP:
-        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD
+        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
           ? ShutDownPpDtaColumns
           : ShutDownPpColumns
 
       case verticalEnums.PTA:
         return IS_PTA ? ShutDownPTADMDColumns : ShutDownPTAColumns
-
+      case verticalEnums.CHEMICAL:
+        return IS_CHEMICAL ? ShutDownPTADMDColumns : ShutDownAllColumns
+      case verticalEnums.PVC:
+        return IS_PVC_DMD ? ShutDownPpDtaColumns : ShutDownPpColumns
       default:
         return ShutDownAllColumns
     }
@@ -921,7 +933,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -959,7 +971,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1083,6 +1095,7 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'elastomer' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
+        lowerVertName === 'chemical' ||
         lowerVertName === 'pet' ||
         IS_PVC_VMD
           ? true
@@ -1095,7 +1108,8 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightDuration:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
-      highlightLine: IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD ? true : false,
+      highlightLine:
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
     },
     isOldYear,
   )

@@ -24,6 +24,7 @@ const VERTICAL_COLDEFS_MAP = {
   [verticalEnums.PET]: ShutdownConsumptionPeColumns,
   [verticalEnums.MEG]: ShutdownConsumptionMegColumns,
   [verticalEnums.CRACKER]: ShutdownConsumptionCrackerColumns,
+  [verticalEnums.CHEMICAL]: ShutdownConsumptionPtaColumns,
 }
 
 const getShutdownConsumptionColDef = ({
