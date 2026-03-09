@@ -48,7 +48,7 @@ async function exportExclusionDate(
   AOP_YEAR,
   EXCEL_EXPORT_TITLE,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/exclusion-date-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/line-configuration-export?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -77,7 +77,7 @@ async function exportExclusionDate(
   }
 }
 async function importExclusionDate(file, keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/exclusion-date-import?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/line-configuration-import?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {

@@ -24,5 +24,6 @@ public interface CrackerReportService {
 	public AOPMessageVM getRunLengthDataSet( String plantId, String year, String reportType);
 	public AOPMessageVM calculateMonthWiseRawData( String plantId, String year);
 	public AOPMessageVM getMonthWiseRawDataByMethod(String plantId,String year,String mode,String method);
+	public AOPMessageVM getCatChemNorms(String plantId, String year, String type);
 	
 }

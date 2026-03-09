@@ -334,9 +334,9 @@ const LineConfiguration = ({
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
+      uploadExcelBtn: true,
       showTitleNameBusiness: true,
       titleName: 'Line Configuration',
-      uploadExcelBtn: false,
     },
     IS_OLD_YEAR,
   )
