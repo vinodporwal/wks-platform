@@ -1098,7 +1098,17 @@ const ProductionvolumeData = ({ permissions }) => {
     })
 
     try {
-      if (IS_PE_PP || IS_PET || IS_PVC_VMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+        const selectedLine = lineDetails[tabIndex]
+        const lineId = selectedLine?.id
+        await ProductionVolumeDataApiService.getProductionVolExcelLineWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PE_PP || IS_PET || IS_PVC_VMD) {
         await ProductionVolumeDataApiService.getProductionVolExcelCommon(
           keycloak,
           PLANT_ID,
