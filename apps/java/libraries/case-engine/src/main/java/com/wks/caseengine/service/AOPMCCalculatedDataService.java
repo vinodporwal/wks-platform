@@ -20,7 +20,10 @@ public interface AOPMCCalculatedDataService {
 	public  AOPMessageVM getLineWiseDesignCapacity(String plantId, String year,String lineId);
 	byte[] exportProductionTarget(String year, String plantId, boolean isAfterSave,
 			Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel);
+	byte[] exportLineWiseProductionTarget(String year, String plantId, boolean isAfterSave,
+			Map<String, List<AOPMCCalculatedDataDTO>> mapForExcel,String lineId);
 	public AOPMessageVM getSummaryOfProposedOperating(String plantId, String year);
+	public AOPMessageVM getLineWiseSummaryOfProposedOperating(String plantId, String year, String lineId);
 	public  AOPMessageVM updateDesignCapacity(String plantId, String year,List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTO);
 	public List<AOPMCCalculatedDataDTO> editAOPMCCalculatedData(List<AOPMCCalculatedDataDTO> aOPMCCalculatedDataDTOList, boolean isFromExcel, String year, String plantFKId);
 	public  AOPMessageVM getAOPMCCalculatedDataSP(String plantId, String year);

@@ -105,6 +105,27 @@ public class AOPMCCalculatedDataController {
 	    }
 	}
 	
+	@GetMapping(value = "/production-target-line-export")
+	public ResponseEntity<byte[]> exportLineWiseProductionTarget(
+			@RequestParam String plantId, @RequestParam String year,@RequestParam(required=false) String lineId) {
+	    try {
+			
+	        byte[] excelBytes = aOPMCCalculatedDataService.exportLineWiseProductionTarget(year, plantId, false, null,lineId);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Production_Target.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
 	@PostMapping(value = "/design-capacity")
 	public AOPMessageVM updateDesignCapacity(@RequestParam String plantId,@RequestParam String year, @RequestBody List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOList) {
 		return aOPMCCalculatedDataService.updateDesignCapacity(plantId,year, aopMCCalculatedDataDTOList);
