@@ -1,4 +1,3 @@
-// ⚠️ TEMP_TABS_REMOVE_AFTER_BACKEND_READY ⚠️ - This entire file is temporary
 import React, { useState, useEffect, useCallback } from 'react'
 import { Box, Typography, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
@@ -8,6 +7,7 @@ import KendoDataTables from '../../index'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
+import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 
 const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
@@ -68,102 +68,23 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     try {
       setLoading(true)
 
-      // TODO: Replace this with actual API call
-      // const response = await CatChemApiService.getData(keycloak, PLANT_ID, AOP_YEAR)
+      const response = await RawMaterialNormsBasisApiService.getData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        'catchem',
+      )
 
-      // Temporary mock data - replace with actual API call
-      const mockData = [
-        {
-          id: 0,
-          particulars: 'Avg catalyst consumption during value',
-          uom: 'kg/hr',
-          value: 35,
-          TypeDisplayName: 'EASCH (Ethylaluminum Sesquichloride)',
-        },
-        {
-          id: 1,
-          particulars: 'Avg catalyst consumption during CT1139',
-          uom: 'kg/hr',
-          value: null,
-          CIIR: 40,
-          BIIR: null,
-          TypeDisplayName: 'EASCH (Ethylaluminum Sesquichloride)',
-        },
-        {
-          id: 2,
-          particulars: 'Avg catalyst consumption during B2232/B2247',
-          uom: 'kg/hr',
-          value: null,
-          CIIR: null,
-          BIIR: 65,
-          TypeDisplayName: 'EASCH (Ethylaluminum Sesquichloride)',
-        },
-        {
-          id: 3,
-          particulars: 'Catalyst sludge flushing from V001012 & V001014A/B',
-          uom: 'kg/hr',
-          value: 2.0,
-          TypeDisplayName: 'EASCH (Ethylaluminum Sesquichloride)',
-        },
-        {
-          id: 4,
-          particulars: 'Avg catalyst consumption',
-          uom: 'kg/hr',
-          value: 39.5,
-          TypeDisplayName: 'Isopentane',
-        },
-        {
-          id: 5,
-          particulars: 'Number of operating reactor',
-          uom: '',
-          value: 9.0,
-          TypeDisplayName: 'Isopentane',
-        },
-        {
-          id: 6,
-          particulars: 'EASCH concentration maintained',
-          uom: 'wt%',
-          value: 1.8,
-          TypeDisplayName: 'Isopentane',
-        },
-        {
-          id: 7,
-          particulars: 'Isopentane concentration',
-          uom: 'wt%',
-          value: 98.2,
-          TypeDisplayName: 'Isopentane',
-        },
-        {
-          id: 8,
-          particulars: 'Isopentane flow',
-          uom: 'kg/hr',
-          value: 349.1,
-          TypeDisplayName: 'Isopentane',
-        },
-        {
-          id: 9,
-          particulars: 'Total production',
-          uom: 'MT',
-          value: 126602.06,
-          TypeDisplayName: 'Methanol',
-        },
-        {
-          id: 10,
-          particulars: 'Total hrs available',
-          uom: 'hrs',
-          value: 8760.0,
-          TypeDisplayName: 'Methanol',
-        },
-        {
-          id: 11,
-          particulars: 'Production rate of plant',
-          uom: 'TPH',
-          value: 14.45,
-          TypeDisplayName: 'Methanol',
-        },
-      ]
+      const formattedData = response?.data?.map((row, index) => ({
+        ...row,
+        id: row.id || index,
+        particulars: row.DisplayName,
+        uom: row.UOM,
+        value: row.Apr,
+        remarks: row.Remarks,
+      }))
 
-      setRows(mockData)
+      setRows(formattedData || [])
     } catch (error) {
       console.error('Error fetching Cat Chem data:', error)
       setSnackbarOpen(true)
@@ -213,15 +134,37 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const handleUpdate = async (updatedRows) => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // const payload = updatedRows.map(row => ({
-      //   particulars: row.Particulars,
-      //   uom: row.UOM,
-      //   value: row.Value,
-      // }))
-      // const response = await CatChemApiService.postData(keycloak, payload, PLANT_ID, AOP_YEAR)
+      let payload = updatedRows?.map((row) => {
+        const { id, inEdit, particulars, uom, value, ...rest } = row
+        return {
+          ...rest,
+          DisplayName: particulars,
+          apr: value,
+          may: value,
+          jun: value,
+          jul: value,
+          aug: value,
+          sep: value,
+          oct: value,
+          nov: value,
+          dec: value,
+          jan: value,
+          feb: value,
+          mar: value,
+          UOM: uom,
+          Remarks: row.remarks,
+          normParameterFKId: row.NormParameter_FK_Id,
+          auditYear: row.AuditYear,
+        }
+      })
 
-      console.log('Data to save:', updatedRows)
+      console.log('payload', payload)
+      const response = await RawMaterialNormsBasisApiService.postData(
+        keycloak,
+        payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -251,15 +194,12 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         severity: 'success',
       })
 
-      // TODO: Replace with actual API call
-      // const response = await CatChemApiService.exportExcel(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      //   EXCEL_EXPORT_TITLE,
-      // )
-
-      console.log('Excel export for:', EXCEL_EXPORT_TITLE)
+      const response = await RawMaterialNormsBasisApiService.exportExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
       return { code: 200 }
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -276,17 +216,12 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     setLoading(true)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await CatChemApiService.importExcel(
-      //   rawFile,
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-
-      console.log('Excel import file:', rawFile.name)
-
-      const response = { code: 200, message: 'Uploaded Successfully!' }
+      const response = await RawMaterialNormsBasisApiService.importExcel(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -434,7 +369,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
         summaryEdited={summaryEdited}
-        groupBy={'TypeDisplayName'}
+        groupBy={'NormTypeName'}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
       />

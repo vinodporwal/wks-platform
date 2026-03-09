@@ -1,4 +1,3 @@
-// ⚠️ TEMP_TABS_REMOVE_AFTER_BACKEND_READY ⚠️ - This entire file is temporary
 import React, { useState, useEffect, useCallback } from 'react'
 import { Box, Typography, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
@@ -8,6 +7,7 @@ import KendoDataTables from '../../index'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
+import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 
 const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
@@ -68,26 +68,23 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     try {
       setLoading(true)
 
-      // TODO: Replace this with actual API call
-      // const response = await IBINLossesApiService.getData(keycloak, PLANT_ID, AOP_YEAR)
+      const response = await RawMaterialNormsBasisApiService.getData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        'losses',
+      )
 
-      // Temporary mock data - replace with actual API call
-      const mockData = [
-        {
-          id: 0,
-          particulars: 'IN losses',
-          uom: 'kg/MT',
-          value: 5.8,
-        },
-        {
-          id: 1,
-          particulars: 'IB losses',
-          uom: 'kg/MT',
-          value: 0,
-        },
-      ]
+      const formattedData = response?.data?.map((row, index) => ({
+        ...row,
+        id: row.id || index,
+        particulars: row.DisplayName,
+        uom: row.UOM,
+        value: row.Apr,
+        remarks: row.Remarks,
+      }))
 
-      setRows(mockData)
+      setRows(formattedData || [])
     } catch (error) {
       console.error('Error fetching IBIN Losses data:', error)
       setSnackbarOpen(true)
@@ -137,17 +134,37 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const handleUpdate = async (updatedRows) => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // const payload = updatedRows.map(row => ({
-      //   particulars: row.Particulars,
-      //   uom: row.UOM,
-      //   iir: row.IIR,
-      //   ciir: row.CIIR,
-      //   biir: row.BIIR,
-      // }))
-      // const response = await IBINLossesApiService.postData(keycloak, payload, PLANT_ID, AOP_YEAR)
+      let payload = updatedRows?.map((row) => {
+        const { id, inEdit, particulars, uom, value, ...rest } = row
+        return {
+          ...rest,
+          DisplayName: particulars,
+          apr: value,
+          may: value,
+          jun: value,
+          jul: value,
+          aug: value,
+          sep: value,
+          oct: value,
+          nov: value,
+          dec: value,
+          jan: value,
+          feb: value,
+          mar: value,
+          UOM: uom,
+          Remarks: row.remarks,
+          normParameterFKId: row.NormParameter_FK_Id,
+          auditYear: row.AuditYear,
+        }
+      })
 
-      console.log('Data to save:', updatedRows)
+      const response = await RawMaterialNormsBasisApiService.postData(
+        keycloak,
+        payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      console.log('payload', payload)
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -178,12 +195,12 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       })
 
       // TODO: Replace with actual API call
-      // const response = await IBINLossesApiService.exportExcel(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      //   EXCEL_EXPORT_TITLE,
-      // )
+      const response = await RawMaterialNormsBasisApiService.exportExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
 
       console.log('Excel export for:', EXCEL_EXPORT_TITLE)
       return { code: 200 }
@@ -203,16 +220,12 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
 
     try {
       // TODO: Replace with actual API call
-      // const response = await IBINLossesApiService.importExcel(
-      //   rawFile,
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-
-      console.log('Excel import file:', rawFile.name)
-
-      const response = { code: 200, message: 'Uploaded Successfully!' }
+      const response = await RawMaterialNormsBasisApiService.importExcel(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)

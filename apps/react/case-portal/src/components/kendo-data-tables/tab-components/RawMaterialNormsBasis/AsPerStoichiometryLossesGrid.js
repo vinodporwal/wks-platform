@@ -1,4 +1,3 @@
-// ⚠️ TEMP_TABS_REMOVE_AFTER_BACKEND_READY ⚠️ - This entire file is temporary
 import React, { useState, useEffect, useCallback } from 'react'
 import { Box, Typography, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
@@ -8,6 +7,7 @@ import KendoDataTables from '../../index'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
+import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 
 const AsPerStoichiometryLossesGrid = ({
   summary,
@@ -72,30 +72,26 @@ const AsPerStoichiometryLossesGrid = ({
     try {
       setLoading(true)
 
-      // TODO: Replace this with actual API call
-      // const response = await StoichiometryLossesApiService.getData(keycloak, PLANT_ID, AOP_YEAR)
+      const response = await RawMaterialNormsBasisApiService.getRawMaterialData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        'stoichiometry',
+      )
 
-      // Temporary mock data - replace with actual API call
-      const mockData = [
-        {
-          id: 0,
-          particulars: 'Isoprene',
-          uom: 'kg/MT',
-          IIR: 25,
-          CIIR: 27.9,
-          BIIR: 24.3,
-        },
-        {
-          id: 1,
-          particulars: 'Isobutylene',
-          uom: 'kg/MT',
-          IIR: 967.33,
-          CIIR: 946.59,
-          BIIR: 932.03,
-        },
-      ]
+      const formattedData = response?.data?.map((row, index) => ({
+        id: row.id || index,
+        particulars: row.particulars,
+        uom: row.UOM || row.uom,
+        IIR: row.IIR,
+        CIIR: row.CIIR,
+        BIIR: row.BIIR,
+        auditYear: row.auditYear,
+        normParameterFKId: row.normParameterFKId,
+        remarks: row.remarks,
+      }))
 
-      setRows(mockData)
+      setRows(formattedData || [])
     } catch (error) {
       console.error('Error fetching As Per Stoichiometry Losses data:', error)
       setSnackbarOpen(true)
@@ -145,17 +141,27 @@ const AsPerStoichiometryLossesGrid = ({
   const handleUpdate = async (updatedRows) => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // const payload = updatedRows.map(row => ({
-      //   particulars: row.Particulars,
-      //   uom: row.UOM,
-      //   iir: row.IIR,
-      //   ciir: row.CIIR,
-      //   biir: row.BIIR,
-      // }))
-      // const response = await StoichiometryLossesApiService.postData(keycloak, payload, PLANT_ID, AOP_YEAR)
+      let payload = updatedRows?.map((row) => {
+        const { id, inEdit, particulars, uom, ...rest } = row
+        return {
+          ...rest,
+          DisplayName: particulars,
+          IIR: row.IIR,
+          CIIR: row.CIIR,
+          BIIR: row.BIIR,
+          UOM: uom,
+          remarks: row.remarks,
+        }
+      })
 
-      console.log('Data to save:', updatedRows)
+      // const response =
+      //   await RawMaterialNormsBasisApiService.postRawMaterialData(
+      //     keycloak,
+      //     payload,
+      //     PLANT_ID,
+      //     AOP_YEAR,
+      //   )
+      console.log('payload', payload)
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -185,15 +191,14 @@ const AsPerStoichiometryLossesGrid = ({
         severity: 'success',
       })
 
-      // TODO: Replace with actual API call
-      // const response = await StoichiometryLossesApiService.exportExcel(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      //   EXCEL_EXPORT_TITLE,
-      // )
-
-      console.log('Excel export for:', EXCEL_EXPORT_TITLE)
+      const response =
+        await RawMaterialNormsBasisApiService.exportRawMaterialExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+          'stoichiometry',
+        )
       return { code: 200 }
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -210,17 +215,14 @@ const AsPerStoichiometryLossesGrid = ({
     setLoading(true)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await StoichiometryLossesApiService.importExcel(
-      //   rawFile,
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-
-      console.log('Excel import file:', rawFile.name)
-
-      const response = { code: 200, message: 'Uploaded Successfully!' }
+      const response =
+        await RawMaterialNormsBasisApiService.importRawMaterialExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'stoichiometry',
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)

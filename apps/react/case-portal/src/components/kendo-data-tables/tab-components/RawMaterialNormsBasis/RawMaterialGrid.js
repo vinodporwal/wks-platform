@@ -1,4 +1,3 @@
-// ⚠️ TEMP_TABS_REMOVE_AFTER_BACKEND_READY ⚠️ - This entire file is temporary
 import React, { useState, useEffect, useCallback } from 'react'
 import { Box, Typography, Backdrop, CircularProgress } from '@mui/material'
 import { useSelector } from 'react-redux'
@@ -8,6 +7,7 @@ import KendoDataTables from '../../index'
 import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
+import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 
 const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
@@ -68,59 +68,27 @@ const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     try {
       setLoading(true)
 
-      // TODO: Replace this with actual API call
-      // const response = await RawMaterialApiService.getData(keycloak, PLANT_ID, AOP_YEAR)
+      const response = await RawMaterialNormsBasisApiService.getRawMaterialData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        'rawmaterial',
+      )
 
-      // Temporary mock data - replace with actual API call
-      const mockData = [
-        {
-          id: 0,
-          particulars: 'Finished Product',
-          uom: 'MT/hr',
-          IIR: 1.0,
-          CIIR: 1.0,
-          BIIR: 1.0,
-          TypeDisplayName: 'Raw Material',
-        },
-        {
-          id: 1,
-          particulars: 'Volatile Matter',
-          uom: 'wt%',
-          IIR: 0.3,
-          CIIR: 0.3,
-          BIIR: 0.3,
-          TypeDisplayName: 'Raw Material',
-        },
-        {
-          id: 2,
-          particulars: 'CaSt',
-          uom: 'wt%',
-          IIR: 1.0,
-          CIIR: 1.2,
-          BIIR: 2,
-          TypeDisplayName: 'Raw Material',
-        },
-        {
-          id: 3,
-          particulars: 'Calcium Content',
-          uom: 'wt%',
-          IIR: null,
-          CIIR: 0,
-          BIIR: 0,
-          TypeDisplayName: 'Raw Material',
-        },
-        {
-          id: 4,
-          particulars: 'Ash Content',
-          uom: 'wt%',
-          IIR: 0,
-          CIIR: 0,
-          BIIR: 0,
-          TypeDisplayName: 'Raw Material',
-        },
-      ]
+      const formattedData = response?.data?.map((row, index) => ({
+        id: row.id || index,
+        particulars: row.particulars,
+        uom: row.UOM || row.uom,
+        IIR: row.IIR,
+        CIIR: row.CIIR,
+        BIIR: row.BIIR,
+        auditYear: row.auditYear,
+        normParameterFKId: row.normParameterFKId,
+        remarks: row.remarks,
+        TypeDisplayName: row.TypeDisplayName,
+      }))
 
-      setRows(mockData)
+      setRows(formattedData || [])
     } catch (error) {
       console.error('Error fetching Raw Material data:', error)
       setSnackbarOpen(true)
@@ -170,18 +138,28 @@ const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const handleUpdate = async (updatedRows) => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      // const payload = updatedRows.map(row => ({
-      //   particulars: row.Particulars,
-      //   uom: row.UOM,
-      //   iir: row.IIR,
-      //   ciir: row.CIIR,
-      //   biir: row.BIIR,
-      // }))
-      // const response = await RawMaterialApiService.postData(keycloak, payload, PLANT_ID, AOP_YEAR)
+      let payload = updatedRows?.map((row) => {
+        const { id, inEdit, particulars, uom, ...rest } = row
+        return {
+          ...rest,
+          DisplayName: particulars,
+          IIR: row.IIR,
+          CIIR: row.CIIR,
+          BIIR: row.BIIR,
+          UOM: uom,
+          remarks: row.remarks,
+        }
+      })
 
-      console.log('Data to save:', updatedRows)
+      // const response =
+      //   await RawMaterialNormsBasisApiService.postRawMaterialData(
+      //     keycloak,
+      //     payload,
+      //     PLANT_ID,
+      //     AOP_YEAR,
+      //   )
 
+      console.log('payload', payload)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Saved Successfully!',
@@ -210,15 +188,14 @@ const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         severity: 'success',
       })
 
-      // TODO: Replace with actual API call
-      // const response = await RawMaterialApiService.exportExcel(
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      //   EXCEL_EXPORT_TITLE,
-      // )
-
-      console.log('Excel export for:', EXCEL_EXPORT_TITLE)
+      const response =
+        await RawMaterialNormsBasisApiService.exportRawMaterialExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+          'rawmaterial',
+        )
       return { code: 200 }
     } catch (error) {
       console.error('Error downloading Excel:', error)
@@ -235,17 +212,14 @@ const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     setLoading(true)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await RawMaterialApiService.importExcel(
-      //   rawFile,
-      //   keycloak,
-      //   PLANT_ID,
-      //   AOP_YEAR,
-      // )
-
-      console.log('Excel import file:', rawFile.name)
-
-      const response = { code: 200, message: 'Uploaded Successfully!' }
+      const response =
+        await RawMaterialNormsBasisApiService.importRawMaterialExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'rawmaterial',
+        )
 
       if (response?.code === 200) {
         setSnackbarOpen(true)

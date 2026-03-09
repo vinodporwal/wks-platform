@@ -484,17 +484,9 @@ const ConfigurationTable = () => {
       )
       if (response?.code == 200) {
         const parsedData = JSON.parse(response?.data)
-        if (lowerVertName === 'elastomer') {
-          // Add temporary tab IDs to access matrix
-          const tempTabIds = [
-            'temp-raw-material-norms-basis-id',
-            'temp-cat-chem-norms-basis-id',
-          ]
-          const modifiedData = [...parsedData, ...tempTabIds]
-          setTabs(modifiedData)
-        } else {
-          setTabs(parsedData)
-        }
+
+        setTabs(parsedData)
+
         setLoading(false)
       } else {
         setTabs([])
@@ -543,26 +535,8 @@ const ConfigurationTable = () => {
       if (response?.code == 200) {
         const originalTabs = response?.data?.configurationTypeList || []
 
-        if (lowerVertName === 'elastomer') {
-          // Add temporary tab definitions
-          const tempTabs = [
-            {
-              id: 'temp-raw-material-norms-basis-id',
-              name: 'raw material norms basis',
-              displayName: 'Raw Material Norms Basis',
-              displaySequence: 15,
-            },
-            {
-              id: 'temp-cat-chem-norms-basis-id',
-              name: 'cat chem norms basis',
-              displayName: 'Cat Chem Norms Basis',
-              displaySequence: 16,
-            },
-          ]
-          setAvailableTabs([...originalTabs, ...tempTabs])
-        } else {
-          setAvailableTabs(originalTabs)
-        }
+        setAvailableTabs(originalTabs)
+
         setLoading(false)
       } else {
         setAvailableTabs([])
@@ -1574,7 +1548,7 @@ const ConfigurationTable = () => {
                     setSummaryEdited={setSummaryEdited}
                   />
                 )
-              case getTheId('raw material norms basis'):
+              case getTheId('raw-material-norms-basis'):
                 return (
                   <RawMaterialNormsBasis
                     summary={debouncedSummary}
@@ -1583,7 +1557,7 @@ const ConfigurationTable = () => {
                   />
                 )
 
-              case getTheId('cat chem norms basis'):
+              case getTheId('cat-chem-norms-basis'):
                 return (
                   <CatChemNormsBasis
                     summary={debouncedSummary}
