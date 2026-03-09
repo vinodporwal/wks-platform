@@ -964,7 +964,8 @@ const ProductionvolumeData = ({ permissions }) => {
       showTitleNameBusiness:
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
-      downloadExcelBtnFromUI: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
+      downloadExcelBtnFromUI:
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD ? false : true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Max Achieved Capacity`,
     },
     isOldYear,
@@ -1030,8 +1031,10 @@ const ProductionvolumeData = ({ permissions }) => {
         Object.keys(calculationObject || {}).length > 0
           ? true
           : false,
-      downloadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
-      uploadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
+      downloadExcelBtn:
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD ? false : true,
+      uploadExcelBtn:
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PVC_DMD ? false : true,
 
       showTitleAndInformation:
         VERTICAL_NAME == 'cracker' || VERTICAL_NAME == 'vcm' ? true : false,
@@ -1098,7 +1101,17 @@ const ProductionvolumeData = ({ permissions }) => {
     })
 
     try {
-      if (IS_PE_PP || IS_PET || IS_PVC_VMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+        const selectedLine = lineDetails[tabIndex]
+        const lineId = selectedLine?.id
+        await ProductionVolumeDataApiService.getProductionVolExcelLineWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          lineId,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PE_PP || IS_PET || IS_PVC_VMD) {
         await ProductionVolumeDataApiService.getProductionVolExcelCommon(
           keycloak,
           PLANT_ID,

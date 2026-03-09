@@ -91,6 +91,13 @@ public class CrackerReportController {
 		return crackerReportService.getFindingSteamValuesReport(mode,plantId,year);
 	}
 	
+	@GetMapping(value="/production-norms-manual-entry")
+	public AOPMessageVM getCatChemNorms(@RequestParam String year,
+	                                    @RequestParam String plantFKId,
+	                                    @RequestParam String type) {
+		return crackerReportService.getCatChemNorms(plantFKId, year, type);
+	}
+	
 	@GetMapping(value="/run-length-data-set")
 	public AOPMessageVM getRunLengthDataSet(@RequestParam String plantId,@RequestParam String year, @RequestParam String reportType) {
 		return crackerReportService.getRunLengthDataSet(plantId,year,reportType);

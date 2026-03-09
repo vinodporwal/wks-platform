@@ -220,7 +220,7 @@ const LineConfiguration = ({
         severity: 'success',
       })
 
-      response = await ExclusionDateApiDataService.exportExclusionDate(
+      response = await ExclusionDateApiDataService.exportConfigurationLineWise(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -245,7 +245,7 @@ const LineConfiguration = ({
     try {
       let response
 
-      response = await ExclusionDateApiDataService.importExclusionDate(
+      response = await ExclusionDateApiDataService.importConfigurationLineWise(
         rawFile,
         keycloak,
         PLANT_ID,
@@ -334,9 +334,9 @@ const LineConfiguration = ({
       customHeight: permissions?.customHeight,
       allAction: true,
       downloadExcelBtn: true,
+      uploadExcelBtn: true,
       showTitleNameBusiness: true,
       titleName: 'Line Configuration',
-      uploadExcelBtn: false,
     },
     IS_OLD_YEAR,
   )

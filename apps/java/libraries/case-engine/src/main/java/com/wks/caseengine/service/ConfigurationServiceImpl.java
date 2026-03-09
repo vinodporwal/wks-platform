@@ -3110,6 +3110,179 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	}
 	
 	@Override
+	public byte[] exportLineConfigData(String year,
+	                               UUID plantFKId,
+	                               boolean isAfterSave,
+	                               List<NormAttributeTransactionReceipeRequestDTO> dtoList) {
+		Plants plant = plantsRepository.findById(plantFKId)
+				.orElseThrow(() -> new RestInvalidArgumentException("Plant not found", null));
+
+		Sites site = siteRepository.findById(plant.getSiteFkId())
+				.orElseThrow(() -> new RestInvalidArgumentException("Site not found", null));
+
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+				.orElseThrow(() -> new RestInvalidArgumentException("Vertical not found", null));
+	    try {
+	        
+	        if (isAfterSave) {
+	            
+	            List<NormAttributeTransactionReceipeRequestDTO> failedDtos = dtoList.stream()
+	                .filter(d -> d.getSaveStatus() != null && d.getSaveStatus().equalsIgnoreCase("Failed"))
+	                .collect(Collectors.toList());
+
+	            
+	            if (failedDtos.isEmpty()) {
+	                
+	                dtoList = Collections.emptyList();
+	            } else {
+	                dtoList = failedDtos;
+	            }
+	        }
+	        String storedProcedure = vertical.getName() + "_" + site.getName() + "_GradeWiseLineDetail";
+	        List<Map<String, Object>> data = callStoredProcedureWithHeadersLine(
+					storedProcedure,
+					year,
+					plant.getId().toString(),
+					site.getId().toString(),
+					vertical.getId().toString());
+
+        List<String> innerHeaders = new ArrayList<>();
+        List<String> dynamicIds = new ArrayList<>();
+        Map<String, String> uuidToDisplayName = new HashMap<>();
+
+        if (!data.isEmpty() && data.get(0).containsKey("GradeName")) {
+            Map<String, Object> firstRow = data.get(0);
+            for (String key : firstRow.keySet()) {
+                if ("GradeId".equals(key) || "GradeName".equals(key) || "UOM".equals(key) || "AOPYear".equals(key)) {
+                    continue;
+                }
+                dynamicIds.add(key);
+            }
+
+            // Build UUID -> displayName map using line-details view
+            try {
+                String verticalName = vertical.getName();
+                String viewName = "vwScrn" + verticalName + "GetLineDetails";
+                String sql = "SELECT * from " + viewName + " where PlantId = :plantId";
+                Query q = entityManager.createNativeQuery(sql);
+                q.setParameter("plantId", plant.getId().toString());
+                @SuppressWarnings("unchecked")
+                List<Object[]> lineRows = q.getResultList();
+                for (Object[] row : lineRows) {
+                    String id = row[0] != null ? row[0].toString() : null;
+                    String displayName = row[2] != null ? row[2].toString() : null;
+                    if (id != null && displayName != null) {
+                        uuidToDisplayName.put(id, displayName);
+                    }
+                }
+            } catch (Exception e) {
+                // If anything goes wrong, fall back to using raw IDs as headers
+                e.printStackTrace();
+            }
+
+            innerHeaders.add("Grade");
+            innerHeaders.add("UOM");
+            for (String idStr : dynamicIds) {
+                innerHeaders.add(uuidToDisplayName.getOrDefault(idStr, idStr));
+            }
+            innerHeaders.add("GradeId");
+            if (isAfterSave) {
+                innerHeaders.add("Status");
+                innerHeaders.add("Error Description");
+            }
+        } else {
+            innerHeaders.add("Grade");
+            innerHeaders.add("UOM");
+            innerHeaders.add("GradeId");
+            if (isAfterSave) {
+                innerHeaders.add("Status");
+                innerHeaders.add("Error Description");
+            }
+        }
+
+        List<List<Object>> rows = new ArrayList<>();
+        for (Map<String, Object> rec : data) {
+            if (isAfterSave && dtoList != null) {
+                Object gradeIdObj = rec.get("GradeId");
+                if (gradeIdObj == null) continue;
+                String gradeIdStr = gradeIdObj.toString();
+                boolean inFailed = dtoList.stream()
+                        .anyMatch(d -> d.getRecId() != null && d.getRecId().equals(gradeIdStr));
+                if (!inFailed) continue;
+            }
+            List<Object> list = new ArrayList<>();
+            list.add(rec.get("GradeName") != null ? rec.get("GradeName") : "");
+            list.add(rec.get("UOM") != null ? rec.get("UOM") : "");
+            for (String idStr : dynamicIds) {
+                list.add(rec.get(idStr));
+            }
+            list.add(rec.get("GradeId") != null ? rec.get("GradeId") : "");
+            if (isAfterSave && dtoList != null) {
+                String thisGradeId = rec.get("GradeId") != null ? rec.get("GradeId").toString() : null;
+                NormAttributeTransactionReceipeRequestDTO matched = null;
+                for (NormAttributeTransactionReceipeRequestDTO d : dtoList) {
+                    if (d.getRecId() != null && d.getRecId().equals(thisGradeId)) {
+                        matched = d;
+                        break;
+                    }
+                }
+                if (matched != null) {
+                    list.add(matched.getSaveStatus() != null ? matched.getSaveStatus() : "");
+                    list.add(matched.getErrDescription() != null ? matched.getErrDescription() : "");
+                } else {
+                    list.add("");
+                    list.add("");
+                }
+            }
+            rows.add(list);
+        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        
+	        for (List<Object> rowData : rows) {
+	            Row row = sheet.createRow(currentRow++);
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                if (value instanceof Number) {
+	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }
+	            }
+	        }
+
+	        int gradeIdColIndex = innerHeaders.indexOf("GradeId");
+	        if (gradeIdColIndex >= 0) {
+	            sheet.setColumnHidden(gradeIdColIndex, true);
+	        }
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+
+	@Override
 	public AOPMessageVM importRecipe(String year, UUID plantFKId, MultipartFile file) {
 		
 		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
@@ -3144,6 +3317,28 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to update data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM importLineConfiguration(String year, UUID plantFKId, MultipartFile file) {
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		try {
+			System.out.println("started Read line configuration in importLineConfiguration");
+			List<NormLineRequestDTO> data = readLineConfigurationData(file.getInputStream(), plantFKId, year);
+			System.out.println("Ended Read line configuration in importLineConfiguration");
+			System.out.println("Started Save line configuration in importLineConfiguration");
+			AOPMessageVM result = updateLineConfiguration(year, plantFKId.toString(), data);
+			System.out.println("Ended Save line configuration in importLineConfiguration");
+			return result;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to update line configuration", ex);
 		}
 	}
 	
@@ -3198,6 +3393,104 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 
 		return recipeList;
+	}
+
+	private List<NormLineRequestDTO> readLineConfigurationData(InputStream inputStream, UUID plantFKId, String year) {
+		List<NormLineRequestDTO> lineList = new ArrayList<>();
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (!rowIterator.hasNext()) {
+				return lineList;
+			}
+
+			// Header row
+			Row headerRow = rowIterator.next();
+			List<String> headers = new ArrayList<>();
+			for (Cell cell : headerRow) {
+				headers.add(cell.toString().trim());
+			}
+
+			int gradeIdColIndex = headers.indexOf("GradeId");
+			if (gradeIdColIndex < 0) {
+				return lineList;
+			}
+
+			// Build DisplayName -> lineId map from line-details view
+			Map<String, String> displayNameToLineId = new HashMap<>();
+			try {
+				Plants plant = plantsRepository.findById(plantFKId).orElseThrow();
+				Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow();
+				String verticalName = vertical.getName();
+				String viewName = "vwScrn" + verticalName + "GetLineDetails";
+				String sql = "SELECT * from " + viewName + " where PlantId = :plantId";
+				Query q = entityManager.createNativeQuery(sql);
+				q.setParameter("plantId", plantFKId.toString());
+				@SuppressWarnings("unchecked")
+				List<Object[]> lineRows = q.getResultList();
+				for (Object[] row : lineRows) {
+					String id = row[0] != null ? row[0].toString() : null;
+					String displayName = row[2] != null ? row[2].toString() : null;
+					if (id != null && displayName != null) {
+						displayNameToLineId.put(displayName, id);
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			// Determine line columns (between UOM and GradeId)
+			Map<Integer, String> colIndexToLineId = new LinkedHashMap<>();
+			for (int col = 0; col < headers.size(); col++) {
+				String header = headers.get(col);
+				if ("Grade".equalsIgnoreCase(header) || "UOM".equalsIgnoreCase(header)
+						|| "GradeId".equalsIgnoreCase(header) || "Status".equalsIgnoreCase(header)
+						|| "Error Description".equalsIgnoreCase(header)) {
+					continue;
+				}
+				String lineId = displayNameToLineId.get(header);
+				if (lineId != null) {
+					colIndexToLineId.put(col, lineId);
+				}
+			}
+
+			// Build DTOs grouped by lineId
+			Map<String, NormLineRequestDTO> lineMap = new LinkedHashMap<>();
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				Cell gradeIdCell = row.getCell(gradeIdColIndex);
+				String gradeId = gradeIdCell != null ? gradeIdCell.toString().trim() : null;
+				if (gradeId == null || gradeId.isEmpty()) {
+					continue;
+				}
+
+				for (Map.Entry<Integer, String> entry : colIndexToLineId.entrySet()) {
+					int colIndex = entry.getKey();
+					String lineId = entry.getValue();
+
+					Cell valueCell = row.getCell(colIndex);
+					Double numeric = getNumericCellValue(valueCell, (NormAttributeTransactionReceipeRequestDTO) null);
+					String valStr = (numeric != null ? numeric.toString() : "");
+
+					NormLineRequestDTO dto = lineMap.get(lineId);
+					if (dto == null) {
+						dto = NormLineRequestDTO.builder()
+								.lineId(lineId)
+								.grades(new LinkedHashMap<>())
+								.build();
+						lineMap.put(lineId, dto);
+					}
+					dto.getGrades().put(gradeId, valStr);
+				}
+			}
+
+			lineList.addAll(lineMap.values());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return lineList;
 	}
 
 	@Override

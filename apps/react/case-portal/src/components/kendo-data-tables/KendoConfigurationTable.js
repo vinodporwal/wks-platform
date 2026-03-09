@@ -35,6 +35,8 @@ import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons
 import QualityParameters from './QualityParameters'
 import ExclusionDate from './ExclusionDate'
 import LineConfiguration from './LineConfiguration'
+import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
+import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -482,7 +484,9 @@ const ConfigurationTable = () => {
       )
       if (response?.code == 200) {
         const parsedData = JSON.parse(response?.data)
+
         setTabs(parsedData)
+
         setLoading(false)
       } else {
         setTabs([])
@@ -529,7 +533,10 @@ const ConfigurationTable = () => {
     try {
       var response = await DataService.getConfigurationAvailableTabs(keycloak)
       if (response?.code == 200) {
-        setAvailableTabs(response?.data?.configurationTypeList)
+        const originalTabs = response?.data?.configurationTypeList || []
+
+        setAvailableTabs(originalTabs)
+
         setLoading(false)
       } else {
         setAvailableTabs([])
@@ -1536,6 +1543,23 @@ const ConfigurationTable = () => {
               case getTheId('LineConfiguration'):
                 return (
                   <LineConfiguration
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('raw-material-norms-basis'):
+                return (
+                  <RawMaterialNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('cat-chem-norms-basis'):
+                return (
+                  <CatChemNormsBasis
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     setSummaryEdited={setSummaryEdited}

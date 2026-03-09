@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1144,6 +1145,55 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			aopMessageVM.setData(data);
 			return aopMessageVM;
 
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getCatChemNorms(String plantId, String aopYear, String type) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetCatChemNorms";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear, @type = :type";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", UUID.fromString(plantId));
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("type", type);
+
+			@SuppressWarnings("unchecked")
+			List<Object[]> results = query.getResultList();
+
+			List<String> columnNames = Arrays.asList(
+					"NormParameter_FK_Id",
+					"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+					"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+					"Remarks", "AuditYear",
+					"UOM", "NormTypeName", "isEditable", "DisplayName", "Type");
+
+			List<Map<String, Object>> resultList = new ArrayList<>();
+			for (Object[] row : results) {
+				Map<String, Object> rowMap = new LinkedHashMap<>();
+				for (int i = 0; i < columnNames.size() && i < row.length; i++) {
+					rowMap.put(columnNames.get(i), row[i]);
+				}
+				resultList.add(rowMap);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(resultList);
+			return aopMessageVM;
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
