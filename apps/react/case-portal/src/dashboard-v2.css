@@ -5,37 +5,37 @@
 :root {
   --primary-color: #7c3aed;
   /* Purple used in status chips/icons */
-  --bg-main: #f6f7f8;
-  --border-light: #dddee1;
+  --bg-main: #F6F7F8;
+  --border-light: #DDDEE1;
   --text-dark: #303030;
   --text-muted: #606060;
   --site-header-bg: #eceff1;
 
   /* Status Colors from design specs */
   --status-go-live-bg: rgb(220 252 231);
-  --status-go-live-border: #bbf7d0;
+  --status-go-live-border: #BBF7D0;
   --status-go-live-text: rgb(93 156 129);
 
   --status-dev-bg: rgb(254 245 219);
-  --status-dev-border: #fbd779;
+  --status-dev-border: #FBD779;
   --status-dev-text: rgb(199 148 91);
 
   --status-uat-bg: rgb(215 229 248);
-  --status-uat-border: #adcbfb;
+  --status-uat-border: #ADCBFB;
   --status-uat-text: rgb(108 148 212);
 
   --status-preuat-bg: rgb(254 247 201);
-  --status-preuat-border: #efdd4e;
+  --status-preuat-border: #EFDD4E;
   --status-preuat-text: rgb(166 143 75);
 
   --status-notstarted-bg: rgb(240 241 242);
-  --status-notstarted-border: #dddee1;
+  --status-notstarted-border: #DDDEE1;
   --status-notstarted-text: rgb(113 113 113);
 }
 
 .dashboard-root-v3 {
   background: var(--bg-main);
-  padding: 16px;
+  padding: 0px;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
   color: var(--text-dark);
 }
@@ -86,13 +86,13 @@
 }
 
 .summary-item.business .summary-icon-box {
-  background: #fdf4f9;
-  color: #ae4787;
+  background: #FDF4F9;
+  color: #AE4787;
 }
 
 .summary-item.plants .summary-icon-box {
-  background: #fff0f0;
-  color: #c9372c;
+  background: #FFF0F0;
+  color: #C9372C;
 }
 
 .summary-label {
@@ -141,7 +141,7 @@
 .summary-divider {
   height: 32px;
   width: 1px;
-  background: #dddee1;
+  background: #DDDEE1;
   margin: 0 12px;
 }
 
@@ -218,7 +218,7 @@
 }
 
 .sub-icon {
-  color: #ae4787;
+  color: #AE4787;
 }
 
 .summary-icon-box-small {
@@ -228,8 +228,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  background: #fff0f0;
-  color: #c9372c;
+  background: #FFF0F0;
+  color: #C9372C;
 }
 
 .sub-header-row {

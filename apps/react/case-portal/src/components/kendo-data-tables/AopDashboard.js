@@ -249,12 +249,6 @@ export default function AopDashboardCompact() {
   }
   return (
     <Box className='dashboard-root-v3'>
-      <Typography
-        className='dashboard-title-v2'
-        style={{ marginBottom: '10px' }}
-      >
-        Digital AOP Dashboard
-      </Typography>
       <LoaderBackdrop open={!!loading} />
 
       <Card className='dashboard-main-card'>
