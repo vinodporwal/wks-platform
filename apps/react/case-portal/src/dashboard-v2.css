@@ -90,6 +90,10 @@
   color: #AE4787;
 }
 
+.summary-item-site {
+  min-width: 195px;
+}
+
 .summary-item.plants .summary-icon-box {
   background: #FFF0F0;
   color: #C9372C;
@@ -114,13 +118,13 @@
   font-size: 16px;
   margin-left: 8px;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
-  color: #7e7e7e;
+  color: var(--text-dark);
 }
 
 .sub-category-name {
   font-weight: 600;
   font-size: 16px;
-  color: #717171;
+  color: #363636;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
 }
 
@@ -135,7 +139,7 @@
   font-weight: 600;
   font-size: 16px;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
-  color: #7e7e7e;
+  color: var(--text-dark);
 }
 
 .summary-divider {
@@ -246,6 +250,13 @@
   gap: 8px;
 }
 
+.sub-header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+}
+
 .sub-header-plants {
   display: flex;
   align-items: center;
@@ -307,7 +318,7 @@
 .plant-name {
   font-weight: 600;
   font-size: 13px;
-  color: #717171;
+  color: #626262;
 }
 
 .plant-card-right {
@@ -355,7 +366,7 @@
 }
 
 .chevron-arrow {
-  color: #94a3b8;
+  color: var(--text-dark);
 }
 
 .sub-accordion-wrapper {

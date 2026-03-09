@@ -264,7 +264,7 @@ export default function AopDashboardCompact() {
                 className='summary-bar'
                 onClick={() => toggleSite(site.site)}
               >
-                <Box className='summary-item'>
+                <Box className='summary-item summary-item-site'>
                   <Box className='summary-icon-box'>
                     <IconMapPin size={20} />
                   </Box>
@@ -348,22 +348,24 @@ export default function AopDashboardCompact() {
                           onClick={() => toggleSubSite(site.site, sub.name)}
                         >
                           <Box className='sub-header-left'>
-                            {isSubExpanded ? (
-                              <IconChevronUp
-                                size={16}
-                                className='chevron-arrow'
-                              />
-                            ) : (
-                              <IconChevronDown
-                                size={16}
-                                className='chevron-arrow'
-                              />
-                            )}
-                            <Box className='sub-header-plants'>
-                              <sub.icon size={18} className='sub-icon' />
-                              <Typography className='sub-category-name'>
-                                {sub.name}
-                              </Typography>
+                            <Box className='sub-header-title-box'>
+                              {isSubExpanded ? (
+                                <IconChevronUp
+                                  size={16}
+                                  className='chevron-arrow'
+                                />
+                              ) : (
+                                <IconChevronDown
+                                  size={16}
+                                  className='chevron-arrow'
+                                />
+                              )}
+                              <Box className='sub-header-plants'>
+                                <sub.icon size={18} className='sub-icon' />
+                                <Typography className='sub-category-name'>
+                                  {sub.name}
+                                </Typography>
+                              </Box>
                             </Box>
                             <Box className='summary-divider' />
                             <Box className='sub-header-plants'>
