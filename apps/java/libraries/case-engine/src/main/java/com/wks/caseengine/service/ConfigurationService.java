@@ -34,6 +34,7 @@ public interface ConfigurationService {
     public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId);
     public byte[] exportConfigurationConstantsNorms(String year, String plantId);
     public byte[] exportConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList);
+    public byte[] exportLineConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList);
     public AOPMessageVM importExcel(String year, UUID fromString,List<String> reportTypes,String version, MultipartFile file,Boolean calculation);
     public AOPMessageVM importShutdownRateExcel(String year, UUID fromString,String type,String version, MultipartFile file,Boolean calculation);
     public AOPMessageVM importRecipe(String year, UUID fromString, MultipartFile file);
@@ -58,5 +59,7 @@ public interface ConfigurationService {
                         String year,
                         String plantId,
                         List<NormLineRequestDTO> normLineRequestDTOList);
+
+        public AOPMessageVM importLineConfiguration(String year, UUID plantFKId, MultipartFile file);
 
 }
