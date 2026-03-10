@@ -1,5 +1,6 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,28 +9,43 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.wks.caseengine.dto.CatChemNormDTO;
+import com.wks.caseengine.dto.ConfigurationDTO;
+import com.wks.caseengine.dto.LIMSSpyroInputDTO;
 import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
+import com.wks.caseengine.service.ConfigurationService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -52,6 +68,12 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 
 	@Autowired
 	private VerticalsRepository verticalRepository;
+	
+	@Autowired
+	private NormParametersRepository normParametersRepository;
+
+	@Autowired
+	private ConfigurationService configurationService;
 
 	@Override
 	public AOPMessageVM getSpyroInputReport(String plantId, String AopYear, String Mode) {
@@ -1174,31 +1196,252 @@ public class CrackerReportServiceImpl implements CrackerReportService {
 			@SuppressWarnings("unchecked")
 			List<Object[]> results = query.getResultList();
 
-			List<String> columnNames = Arrays.asList(
-					"NormParameter_FK_Id",
-					"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-					"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-					"Remarks", "AuditYear",
-					"UOM", "NormTypeName", "isEditable", "DisplayName", "Type");
-
-			List<Map<String, Object>> resultList = new ArrayList<>();
+			List<CatChemNormDTO> resultList = new ArrayList<>();
 			for (Object[] row : results) {
-				Map<String, Object> rowMap = new LinkedHashMap<>();
-				for (int i = 0; i < columnNames.size() && i < row.length; i++) {
-					rowMap.put(columnNames.get(i), row[i]);
+				CatChemNormDTO dto = new CatChemNormDTO();
+				dto.setNormParameterFKId(row.length > 0 && row[0] != null ? row[0].toString() : null);
+				dto.setJan(row.length > 1 && row[1] != null ? Double.parseDouble(row[1].toString()) : null);
+				dto.setFeb(row.length > 2 && row[2] != null ? Double.parseDouble(row[2].toString()) : null);
+				dto.setMar(row.length > 3 && row[3] != null ? Double.parseDouble(row[3].toString()) : null);
+				dto.setApr(row.length > 4 && row[4] != null ? Double.parseDouble(row[4].toString()) : null);
+				dto.setMay(row.length > 5 && row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+				dto.setJun(row.length > 6 && row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+				dto.setJul(row.length > 7 && row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+				dto.setAug(row.length > 8 && row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+				dto.setSep(row.length > 9 && row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+				dto.setOct(row.length > 10 && row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+				dto.setNov(row.length > 11 && row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+				dto.setDec(row.length > 12 && row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+				dto.setRemarks(row.length > 13 && row[13] != null ? row[13].toString() : null);
+				dto.setAuditYear(row.length > 14 && row[14] != null ? row[14].toString() : null);
+				dto.setUom(row.length > 15 && row[15] != null ? row[15].toString() : null);
+				dto.setNormTypeName(row.length > 16 && row[16] != null ? row[16].toString() : null);
+				if (row.length > 17 && row[17] != null) {
+					dto.setIsEditable(row[17] instanceof Boolean ? (Boolean) row[17] : ((Number) row[17]).intValue() != 0);
+				} else {
+					dto.setIsEditable(null);
 				}
-				resultList.add(rowMap);
+				dto.setDisplayName(row.length > 18 && row[18] != null ? row[18].toString() : null);
+				dto.setType(row.length > 19 && row[19] != null ? row[19].toString() : null);
+				resultList.add(dto);
 			}
 
+			Map<String, Object> dataMap = new HashMap<>();
+			dataMap.put("catChemNormList", resultList);
 			aopMessageVM.setCode(200);
 			aopMessageVM.setMessage("SP Executed successfully");
-			aopMessageVM.setData(resultList);
+			aopMessageVM.setData(dataMap);
 			return aopMessageVM;
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format ", e);
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+	
+	public byte[] exportCatChemNorms(String year, String plantId,String type, boolean isAfterSave, List<CatChemNormDTO> catChemNormDTOs) {
+	    try {
+	        if (!isAfterSave) {
+	            AOPMessageVM aopMessageVM = getCatChemNorms(plantId, year, type);
+	            Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
+	            if (innerMap != null) {
+	            	// Data map from getCatChemNorms uses key \"catChemNormList\"
+	            	catChemNormDTOs = (List<CatChemNormDTO>) innerMap.get("catChemNormList");
+	            }
+	        }
+	        if (catChemNormDTOs == null) {
+	        	catChemNormDTOs = new ArrayList<>();
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Particulars");
+	        innerHeaders.add("UOM");
+	        innerHeaders.add("Value");
+	        innerHeaders.add("Remark");
+	        innerHeaders.add("NormParameterId");
+	        
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        for (CatChemNormDTO dto : catChemNormDTOs) {
+	            Row row = sheet.createRow(currentRow++);
+	            
+	            setCellValue(row, 0, normParametersRepository.findById(UUID.fromString(dto.getNormParameterFKId())).get().getDisplayName());
+	            setCellValue(row, 1, dto.getUom());
+	            setCellValue(row, 2, dto.getApr());
+	            setCellValue(row, 3, dto.getRemarks());
+	            setCellValue(row, 4, dto.getNormParameterFKId());
+	        }
+	            sheet.setColumnHidden(4, true);
+	        
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	@Override
+	public AOPMessageVM importCatChemNormsExcel(String year, String plantId, String type, MultipartFile file) {
+	    try {
+	        List<ConfigurationDTO> configurationDTOs = new ArrayList<>();
+
+	        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+	            Sheet sheet = workbook.getSheetAt(0);
+	            if (sheet == null) {
+	                throw new IllegalArgumentException("Sheet1 not found in uploaded file");
+	            }
+
+	            // Start after header row
+	            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+	                Row row = sheet.getRow(i);
+	                if (row == null) {
+	                    continue;
+	                }
+
+	                String normParameterId = getStringCellValue(row.getCell(4));
+	                if (normParameterId == null || normParameterId.trim().isEmpty()) {
+	                    continue;
+	                }
+
+	                Double value = getNumericCellValue(row.getCell(2));
+	                String remarks = getStringCellValue(row.getCell(3));
+	                String uom = getStringCellValue(row.getCell(1));
+
+	                ConfigurationDTO dto = new ConfigurationDTO();
+	                dto.setNormParameterFKId(normParameterId);
+	                dto.setApr(value);
+	                dto.setRemarks(remarks);
+	                dto.setAuditYear(year);
+	                dto.setUOM(uom);
+	                dto.setType(type);
+	                configurationDTOs.add(dto);
+	            }
+	        }
+
+	        List<ConfigurationDTO> failedRecords = configurationService.saveConfigurationData(year, plantId, null,
+	                configurationDTOs, null);
+
+	        AOPMessageVM aopMessageVM = new AOPMessageVM();
+	        if (failedRecords != null && !failedRecords.isEmpty()) {
+	            byte[] fileByteArray = createCatChemNormsExcelResponse(year, plantId, configurationDTOs);
+	            String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+	            aopMessageVM.setData(base64File);
+	            aopMessageVM.setCode(400);
+	            aopMessageVM.setMessage("Partial data has been saved");
+	        } else {
+	            aopMessageVM.setCode(200);
+	            aopMessageVM.setMessage("All data has been saved");
+	        }
+	        return aopMessageVM;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid input", e);
+	    } catch (Exception e) {
+	        throw new RuntimeException("Failed to import Cat/Chem norms from Excel", e);
+	    }
+	}
+
+	private byte[] createCatChemNormsExcelResponse(String year, String plantId, List<ConfigurationDTO> list) {
+	    try {
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Particulars");
+	        innerHeaders.add("UOM");
+	        innerHeaders.add("Value");
+	        innerHeaders.add("Remark");
+	        innerHeaders.add("NormParameterId");
+
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        for (ConfigurationDTO dto : list) {
+	            if (dto.getSaveStatus() != null && dto.getSaveStatus().equalsIgnoreCase("Failed")) {
+	                Row row = sheet.createRow(currentRow++);
+	                setCellValue(row, 0, normParametersRepository.findById(UUID.fromString(dto.getNormParameterFKId())).get().getDisplayName());
+	                setCellValue(row, 1, dto.getUOM());
+	                setCellValue(row, 2, dto.getApr());
+	                setCellValue(row, 3, dto.getRemarks());
+	                setCellValue(row, 4, dto.getNormParameterFKId());
+	            }
+	        }
+
+	        sheet.setColumnHidden(4, true);
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	private String getStringCellValue(Cell cell) {
+	    if (cell == null) {
+	        return null;
+	    }
+	    switch (cell.getCellType()) {
+	        case STRING:
+	            return cell.getStringCellValue();
+	        case NUMERIC:
+	            return Double.toString(cell.getNumericCellValue());
+	        case BOOLEAN:
+	            return Boolean.toString(cell.getBooleanCellValue());
+	        default:
+	            return null;
+	    }
+	}
+
+	private Double getNumericCellValue(Cell cell) {
+	    if (cell == null) {
+	        return null;
+	    }
+	    switch (cell.getCellType()) {
+	        case NUMERIC:
+	            return cell.getNumericCellValue();
+	        case STRING:
+	            try {
+	                String s = cell.getStringCellValue();
+	                return (s == null || s.trim().isEmpty()) ? null : Double.parseDouble(s.trim());
+	            } catch (NumberFormatException e) {
+	                return null;
+	            }
+	        default:
+	            return null;
+	    }
+	}
+	
+	private void setCellValue(Row row, int col, Object value) {
+	    Cell cell = row.createCell(col);
+	    if (value == null) {
+	        cell.setCellValue("");
+	    } else if (value instanceof Number) {
+	        cell.setCellValue(((Number) value).doubleValue());
+	    } else if (value instanceof Boolean) {
+	        cell.setCellValue((Boolean) value);
+	    } else {
+	        cell.setCellValue(value.toString());
+	    }
 	}
 
 	// -------------------- Fetch Data --------------------
