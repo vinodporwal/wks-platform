@@ -50,8 +50,8 @@ async function postData(keycloak, payload, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function importExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/production-norms-manual-entry/import?plantFKId=${PLANT_ID}&year=${AOP_YEAR}&type=losses`
+async function importExcel(file, keycloak, PLANT_ID, AOP_YEAR, type) {
+  const url = `${Config.CaseEngineUrl}/task/production-norms-manual-entry-import?plantId=${PLANT_ID}&year=${AOP_YEAR}&type=${type}`
   const formData = new FormData()
   formData.append('file', file)
 
@@ -71,8 +71,8 @@ async function importExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
-async function exportExcel(keycloak, PLANT_ID, AOP_YEAR, title) {
-  const url = `${Config.CaseEngineUrl}/task/production-norms-manual-entry/export?year=${encodeURIComponent(AOP_YEAR)}&plantFKId=${encodeURIComponent(PLANT_ID)}&type=losses`
+async function exportExcel(keycloak, PLANT_ID, AOP_YEAR, title, type) {
+  const url = `${Config.CaseEngineUrl}/task/production-norms-manual-entry-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&type=${type}`
 
   const headers = {
     'Content-Type': 'application/json',

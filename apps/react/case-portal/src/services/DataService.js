@@ -3955,11 +3955,20 @@ async function importSpyroOutputExcelYieldVMD(
   }
 }
 
-async function getNaphthaData(keycloak, type, PLANT_ID, AOP_YEAR) {
+async function getNaphthaData(
+  keycloak,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+  startDate,
+  endDate,
+) {
   const url =
     `${Config.CaseEngineUrl}/task/naphtha` +
     `?year=${encodeURIComponent(AOP_YEAR)}` +
-    `&plantId=${encodeURIComponent(PLANT_ID)}`
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&startDate=${encodeURIComponent(startDate)}` +
+    `&endDate=${encodeURIComponent(endDate)}`
 
   const headers = {
     Accept: 'application/json',

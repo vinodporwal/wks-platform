@@ -153,10 +153,19 @@ const getEnhancedAOPColDefs = ({
     configType == 'ShutdownNorms' ||
     configType == 'cracker_constants' ||
     configType == 'megConstants' ||
-    configType == 'Constant'
+    configType == 'Constant' ||
+    configType == 'rawMaterial' ||
+    configType == 'CatChem'
   ) {
     enhancedColDefs = config.map((col) => {
       if (col?.title == 'Value') {
+        return {
+          ...col,
+          type: 'number',
+          format: FORMATE_VALUE,
+        }
+      }
+      if (col?.title == 'IIR' || col?.title == 'CIIR' || col?.title == 'BIIR') {
         return {
           ...col,
           type: 'number',

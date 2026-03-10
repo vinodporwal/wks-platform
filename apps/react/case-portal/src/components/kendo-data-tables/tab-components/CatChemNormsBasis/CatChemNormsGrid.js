@@ -8,6 +8,7 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
+import { validateFields } from 'utils/validationUtils'
 
 const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
@@ -48,7 +49,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -75,14 +76,17 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         'catchem',
       )
 
-      const formattedData = response?.data?.map((row, index) => ({
-        ...row,
-        id: row.id || index,
-        particulars: row.DisplayName,
-        uom: row.UOM,
-        value: row.Apr,
-        remarks: row.Remarks,
-      }))
+      const formattedData = response?.data?.catChemNormList?.map(
+        (row, index) => ({
+          ...row,
+          id: row.id || index,
+          particulars: row.displayName,
+          uom: row.uom,
+          value: parseFloat(row.apr) || 0,
+          remarks: row.remarks,
+          originalRemark: row.remarks || '',
+        }),
+      )
 
       setRows(formattedData || [])
     } catch (error) {
@@ -199,6 +203,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         PLANT_ID,
         AOP_YEAR,
         EXCEL_EXPORT_TITLE,
+        'catchem',
       )
       return { code: 200 }
     } catch (error) {
@@ -221,6 +226,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        'catchem',
       )
 
       if (response?.code === 200) {
@@ -295,7 +301,16 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         setLoading(false)
         return
       }
-
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
       await handleUpdate(data)
     } catch (error) {
       console.log('Error saving changes:', error)
@@ -369,7 +384,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         currentRowId={currentRowId}
         permissions={adjustedPermissions}
         summaryEdited={summaryEdited}
-        groupBy={'NormTypeName'}
+        groupBy={'normTypeName'}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
       />
