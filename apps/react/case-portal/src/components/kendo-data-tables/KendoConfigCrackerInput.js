@@ -10,6 +10,7 @@ import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -54,6 +55,7 @@ const CrackerConfig = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
+  const [carbonFilterDataNaphtha, setCarbonFilterDataNaphtha] = useState([])
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -149,6 +151,19 @@ const CrackerConfig = () => {
     },
     isOldYear,
   )
+  const adjustedPermissionsType = getAdjustedPermissions(
+    {
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      saveBtn: false,
+      allAction: lowerVertName === 'cracker',
+      showCalculate: true,
+      showCalculateVisibility: true,
+    },
+    isOldYear,
+  )
 
   const productionColumns = useMemo(() => {
     const configType =
@@ -198,7 +213,7 @@ const CrackerConfig = () => {
       console.error('Error fetching cracker tabs matrix:', err)
       setTabs(rawTabsStatic)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID])
 
   const fetchAvailableTabs = useCallback(async () => {
     try {
@@ -333,7 +348,7 @@ const CrackerConfig = () => {
   }, [])
 
   const fetchCrackerRows = useCallback(
-    async (currentTabDisplay, mode) => {
+    async (currentTabDisplay, mode, startDate = null, endDate = null) => {
       if (!currentTabDisplay) return
       try {
         setLoading(true)
@@ -368,11 +383,31 @@ const CrackerConfig = () => {
           return
         }
         if (currentTabDisplay == 'Naphtha') {
+          const formatDate = (date) => {
+            if (!date) return ''
+            const year = date.getFullYear()
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const day = String(date.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
+          }
+
+          const getDefaultStartDate = () => {
+            const date = new Date()
+            date.setFullYear(date.getFullYear() - 2)
+            return formatDate(date)
+          }
+
+          const getDefaultEndDate = () => {
+            return formatDate(new Date())
+          }
+
           spyroVM1 = await DataService.getNaphthaData(
             keycloak,
             currentTabDisplay,
             PLANT_ID,
             AOP_YEAR,
+            startDate || getDefaultStartDate(),
+            endDate || getDefaultEndDate(),
           )
           const naphthaRows = (spyroVM1.data.Data || []).map((item, idx) => ({
             id: idx + 1,
@@ -399,7 +434,15 @@ const CrackerConfig = () => {
             otherNaphthaId: item.otherNaphthaId,
             bcoiNaphthaId: item.bcoiNaphthaId,
           }))
-          setRowsForTab(currentTabDisplay, naphthaRows)
+          let carbonFilterData = naphthaRows
+            ?.filter((item) => item.type === 'Carbon Number Distribution')
+            .map((item) => ({ ...item, isEditable: false }))
+
+          let nonCarbonFilterData = naphthaRows?.filter(
+            (item) => item.type !== 'Carbon Number Distribution',
+          )
+          setCarbonFilterDataNaphtha(carbonFilterData)
+          setRowsForTab(currentTabDisplay, nonCarbonFilterData)
           return
         }
 
@@ -800,36 +843,74 @@ const CrackerConfig = () => {
             case 'Naphtha':
               return (
                 <Box key={currentTabDisplay}>
-                  <KendoDataTables
-                    rows={rows}
-                    setRows={setRowsForCurrent}
-                    fetchData={() =>
-                      fetchCrackerRows(currentTabDisplay, selectMode)
-                    }
-                    configType='Naphtha'
-                    handleRemarkCellClick={handleRemarkCellClick}
-                    columns={productionColumns}
-                    remarkDialogOpen={remarkDialogOpen}
-                    setRemarkDialogOpen={setRemarkDialogOpen}
-                    currentRemark={currentRemark}
-                    setCurrentRemark={setCurrentRemark}
-                    currentRowId={currentRowId}
-                    permissions={adjustedPermissions}
-                    selectMode={selectMode}
-                    setSelectMode={setSelectMode}
-                    saveChanges={saveChanges}
-                    snackbarData={snackbarData}
-                    snackbarOpen={snackbarOpen}
-                    setSnackbarOpen={setSnackbarOpen}
-                    setSnackbarData={setSnackbarData}
-                    modifiedCells={modifiedCells}
-                    setModifiedCells={setModifiedCells}
-                    handleExcelUpload={handleExcelUpload}
-                    downloadExcelForConfiguration={
-                      downloadExcelForConfiguration
-                    }
-                    groupBy={currentTabDisplay == 'Naphtha' ? 'type' : ''}
-                  />
+                  {/* Carbon Number Distribution Grid with Date Filter */}
+                  <Box sx={{ mb: 2 }}>
+                    <StartAndEndPicker
+                      dateFormat='YYYY-MM-DD'
+                      onLoad={({ startDate, endDate }) => {
+                        setNaphthaDateRange({ startDate, endDate })
+                        fetchCrackerRows(
+                          currentTabDisplay,
+                          selectMode,
+                          startDate,
+                          endDate,
+                        )
+                      }}
+                    />
+
+                    <KendoDataTables
+                      rows={rows}
+                      setRows={setRowsForCurrent}
+                      fetchData={() =>
+                        fetchCrackerRows(currentTabDisplay, selectMode)
+                      }
+                      configType='Naphtha'
+                      handleRemarkCellClick={handleRemarkCellClick}
+                      columns={productionColumns}
+                      remarkDialogOpen={remarkDialogOpen}
+                      setRemarkDialogOpen={setRemarkDialogOpen}
+                      currentRemark={currentRemark}
+                      setCurrentRemark={setCurrentRemark}
+                      currentRowId={currentRowId}
+                      permissions={adjustedPermissions}
+                      selectMode={selectMode}
+                      setSelectMode={setSelectMode}
+                      saveChanges={saveChanges}
+                      snackbarData={snackbarData}
+                      snackbarOpen={snackbarOpen}
+                      setSnackbarOpen={setSnackbarOpen}
+                      setSnackbarData={setSnackbarData}
+                      modifiedCells={modifiedCells}
+                      setModifiedCells={setModifiedCells}
+                      handleExcelUpload={handleExcelUpload}
+                      downloadExcelForConfiguration={
+                        downloadExcelForConfiguration
+                      }
+                      groupBy='type'
+                    />
+                  </Box>
+
+                  <Box>
+                    <KendoDataTables
+                      rows={carbonFilterDataNaphtha}
+                      setRows={setCarbonFilterDataNaphtha}
+                      configType='Naphtha'
+                      handleRemarkCellClick={handleRemarkCellClick}
+                      columns={productionColumns}
+                      remarkDialogOpen={remarkDialogOpen}
+                      setRemarkDialogOpen={setRemarkDialogOpen}
+                      permissions={adjustedPermissionsType}
+                      snackbarData={snackbarData}
+                      snackbarOpen={snackbarOpen}
+                      setSnackbarOpen={setSnackbarOpen}
+                      setSnackbarData={setSnackbarData}
+                      handleExcelUpload={handleExcelUpload}
+                      downloadExcelForConfiguration={
+                        downloadExcelForConfiguration
+                      }
+                      groupBy='type'
+                    />
+                  </Box>
                 </Box>
               )
 
