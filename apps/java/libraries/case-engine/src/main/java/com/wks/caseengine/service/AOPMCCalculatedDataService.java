@@ -14,6 +14,7 @@ public interface AOPMCCalculatedDataService {
 	public  AOPMessageVM getProductionTargetAvg(String plantId, String year);
 	public  AOPMessageVM getProductionTarget(String plantId, String year,String lineId);
 	public  AOPMessageVM getMaxAchievedCapacity(String plantId, String year);
+	public  AOPMessageVM getAOPMaxCapMCValues(String plantId, String year);
 	public  AOPMessageVM getLineWiseMaxAchievedCapacity(String plantId, String year,String lineId);
 	public  AOPMessageVM updateMaxAchievedCapacity(String plantId, String year,List<AOPMCCalculatedDataDTO> aopMCCalculatedDataDTOs);
 	public  AOPMessageVM getDesignCapacity(String plantId, String year);
