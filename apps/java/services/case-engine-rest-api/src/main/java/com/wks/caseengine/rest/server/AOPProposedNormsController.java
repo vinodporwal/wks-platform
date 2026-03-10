@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.CalculatedConsumptionNormsDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -39,6 +41,35 @@ public class AOPProposedNormsController {
 	@PostMapping(value="/proposed-consumption")
 	public AOPMessageVM updateProposedNorms(@RequestParam String year,@RequestParam String plantId,@RequestBody List<AOPProposedNormsDTO> aopProposedNormsDTO){
 		return aopProposedNormsService.updateProposedNorms(year,plantId,aopProposedNormsDTO);
+	}
+
+	@GetMapping(value="/proposed-consumption-export")
+	public ResponseEntity<byte[]> exportProposedNorms(
+			@RequestParam String year,
+			@RequestParam String plantId) {
+		try {
+			byte[] excelBytes = aopProposedNormsService.exportProposedNorms(year, plantId, false, null);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("Proposed_Consumption.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/proposed-consumption-import", consumes = "multipart/form-data")
+	public AOPMessageVM importProposedNorms(
+			@RequestParam String year,
+			@RequestParam String plantId,
+			@RequestPart("file") MultipartFile file) {
+		return aopProposedNormsService.importProposedNormsExcel(year, plantId, file);
 	}
 	
 }
