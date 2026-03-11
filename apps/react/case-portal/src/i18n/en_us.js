@@ -115,6 +115,8 @@ const defs = {
     proposedNorms: 'Proposed AOP Consumption (Norm/Quantity)',
     qualitypackaging: 'Quality & Packaging Norms',
     qualityPackagingBasis: 'Quality & Packaging Basis',
+    // New Data Sets
+    sapBasedRefNorms: 'SAP Based Reference Norms',
   },
   pages: {
     dashboard: {
@@ -318,6 +320,7 @@ const defs = {
         qualitypackaging: 'Quality & Packaging Norms',
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',
+        sapBasedRefNorms: 'SAP Based Reference Norms',
       },
     },
   },
