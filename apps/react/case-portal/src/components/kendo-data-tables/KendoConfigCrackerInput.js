@@ -95,6 +95,10 @@ const CrackerConfig = () => {
   const [selectMode, setSelectMode] = useState('')
   const [constantsRows, setConstantsRows] = useState([])
   const [naphthaRows, setNaphthaRows] = useState([])
+  const [naphthaDateRange, setNaphthaDateRange] = useState({
+    startDate: null,
+    endDate: null,
+  })
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -698,6 +702,24 @@ const CrackerConfig = () => {
         ? `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Optimizer_Input_${AOP_YEAR}`
         : `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Input_${AOP_YEAR}`
 
+    const formatDate = (date) => {
+      if (!date) return ''
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    const getDefaultStartDate = () => {
+      const date = new Date()
+      date.setFullYear(date.getFullYear() - 2)
+      return formatDate(date)
+    }
+
+    const getDefaultEndDate = () => {
+      return formatDate(new Date())
+    }
+
     try {
       let response
       if (currentTabDisplay == 'Naphtha') {
@@ -706,6 +728,8 @@ const CrackerConfig = () => {
           PLANT_ID,
           AOP_YEAR,
           EXCEL_NAME,
+          naphthaDateRange.startDate || getDefaultStartDate(),
+          naphthaDateRange.endDate || getDefaultEndDate(),
         )
       } else {
         response = await DataService.exportSpyroInputExcel(

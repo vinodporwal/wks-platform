@@ -107,7 +107,7 @@ async function exportExcel(keycloak, PLANT_ID, AOP_YEAR, title, type) {
 
 // Handlers for stoichiometry and rawmaterial types (IIR/CIIR/BIIR columns)
 async function getRawMaterialData(keycloak, PLANT_ID, AOP_YEAR, type) {
-  const url = `${Config.CaseEngineUrl}/task/production-norms-columns?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&type=${type}`
+  const url = `${Config.CaseEngineUrl}/task/grade-wise-norm-configuration?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -122,8 +122,14 @@ async function getRawMaterialData(keycloak, PLANT_ID, AOP_YEAR, type) {
   }
 }
 
-async function postRawMaterialData(keycloak, payload, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/production-norms-columns?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
+async function postRawMaterialData(
+  keycloak,
+  payload,
+  PLANT_ID,
+  AOP_YEAR,
+  type,
+) {
+  const url = `${Config.CaseEngineUrl}/task/grade-wise-norm-configuration?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
