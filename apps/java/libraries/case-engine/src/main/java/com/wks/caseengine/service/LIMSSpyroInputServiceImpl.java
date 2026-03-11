@@ -57,7 +57,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
     private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
 
     @Override
-    public AOPMessageVM getLIMSSpyroInput(String plantId, String aopYear) {
+    public AOPMessageVM getLIMSSpyroInput(String plantId, String aopYear, String startDate, String endDate) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         try {
             Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -71,7 +71,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 
             String procedureName = vertical.getName() + "_" + site.getName() + "_GetLIMSSpyroInput";
 
-            List<Object[]> results = executeLIMSSpyroInput(procedureName, plantId, aopYear);
+            List<Object[]> results = executeLIMSSpyroInput(procedureName, plantId, aopYear, startDate, endDate);
 
             List<LIMSSpyroInputDTO> dtoList = new ArrayList<>();
 
@@ -120,12 +120,14 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Object[]> executeLIMSSpyroInput(String procedureName, String plantId, String aopYear) {
-        String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+    private List<Object[]> executeLIMSSpyroInput(String procedureName, String plantId, String aopYear, String startDate, String endDate) {
+        String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear, @startDate = :startDate, @endDate = :endDate";
 
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("plantId", plantId);
         query.setParameter("aopYear", aopYear);
+        query.setParameter("startDate", startDate);
+        query.setParameter("endDate", endDate);
 
         return (List<Object[]>) query.getResultList();
     }
@@ -333,10 +335,10 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 		return aopMessageVM;
 	}
 	
-	public byte[] exportLIMSSpyroInput(String year, String plantId, boolean isAfterSave, List<LIMSSpyroInputDTO> dtoList) {
+	public byte[] exportLIMSSpyroInput(String year, String plantId, String startDate, String endDate, boolean isAfterSave, List<LIMSSpyroInputDTO> dtoList) {
 	    try {
 	        if (!isAfterSave) {
-	            AOPMessageVM aopMessageVM = getLIMSSpyroInput(plantId, year);
+	            AOPMessageVM aopMessageVM = getLIMSSpyroInput(plantId, year, startDate, endDate);
 	            Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
 	            if (innerMap != null) {
 	                dtoList = (List<LIMSSpyroInputDTO>) innerMap.get("Data");
@@ -442,7 +444,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	            @SuppressWarnings("unchecked")
 	            List<LIMSSpyroInputDTO> failedList = (List<LIMSSpyroInputDTO>) aopMessageVM.getData();
 	            if (!failedList.isEmpty()) {
-	                byte[] fileByteArray = exportLIMSSpyroInput(year, plantId.toString(), true, failedList);
+	                byte[] fileByteArray = exportLIMSSpyroInput(year, plantId.toString(), null, null, true, failedList);
 	                if (fileByteArray != null) {
 	                    String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	                    aopMessageVM.setData(base64File);
