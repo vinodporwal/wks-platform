@@ -393,7 +393,7 @@ const ProposedConsumptionNorms = () => {
           severity: 'success',
         })
         setModifiedCells({})
-        fetchData()
+        fetchData(gradeId)
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -422,7 +422,7 @@ const ProposedConsumptionNorms = () => {
           message: 'Partial data saved. Error file downloaded.',
           severity: 'warning',
         })
-        fetchData()
+        fetchData(gradeId)
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

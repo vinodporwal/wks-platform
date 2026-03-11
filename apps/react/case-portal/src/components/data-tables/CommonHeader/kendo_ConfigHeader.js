@@ -18,6 +18,7 @@ import reportManualEntry from '../../../assets/kendo_config_report_mannual_entry
 import naphthaColumns from '../../../assets/kendo_config_cracker_naphtha_coldefs.json'
 import rawMaterialColumns from '../../../assets/kendo_config_raw_material_coldefs.json'
 import catchemColumns from '../../../assets/kendo_config_catchem_coldefs.json'
+import exsternalSteamColumns from '../../../assets/kendo_config_exsternal_steam_coldefs.json'
 
 const getConfigByType = (configType) => {
   switch (configType) {
@@ -37,6 +38,8 @@ const getConfigByType = (configType) => {
       return productionColumnsPE1
     case 'Otherlosses':
       return productionColumnsPE2
+    case 'External_Streams':
+      return exsternalSteamColumns
 
     //NEW BUILD 17 NOV
 

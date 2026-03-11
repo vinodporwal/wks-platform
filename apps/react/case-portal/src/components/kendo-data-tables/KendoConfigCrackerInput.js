@@ -77,6 +77,7 @@ const CrackerConfig = () => {
     'Furnace',
     'Constant',
     'Naphtha',
+    'External Streams',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -99,6 +100,7 @@ const CrackerConfig = () => {
     startDate: null,
     endDate: null,
   })
+  const [exsternalSteamRows, setExsternalSteamRows] = useState([])
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -179,7 +181,9 @@ const CrackerConfig = () => {
             ? 'cracker_yield'
             : currentTabDisplay === 'Naphtha'
               ? 'Naphtha'
-              : 'cracker'
+              : currentTabDisplay === 'External Streams'
+                ? 'External_Streams'
+                : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -300,6 +304,8 @@ const CrackerConfig = () => {
           return constantsRows
         case 'Naphtha':
           return naphthaRows
+        case 'External Streams':
+          return exsternalSteamRows
         default:
           return []
       }
@@ -313,6 +319,7 @@ const CrackerConfig = () => {
       optimizing,
       constantsRows,
       naphthaRows,
+      exsternalSteamRows,
     ],
   )
 
@@ -345,6 +352,9 @@ const CrackerConfig = () => {
       case 'Naphtha':
         setNaphthaRows(data)
         break
+      case 'External Streams':
+        setExsternalSteamRows(data)
+        break
 
       default:
         console.warn('No state for tab:', tabId)
@@ -358,6 +368,7 @@ const CrackerConfig = () => {
         setLoading(true)
         let transformedData = []
         let transformedData1 = []
+        let transformedData12 = []
         var spyroVM1 = []
         if (currentTabDisplay == 'Constant') {
           spyroVM1 = await DataService.getSpyroInputData(
@@ -447,6 +458,43 @@ const CrackerConfig = () => {
           )
           setCarbonFilterDataNaphtha(carbonFilterData)
           setRowsForTab(currentTabDisplay, nonCarbonFilterData)
+          return
+        }
+        if (currentTabDisplay == 'External Streams') {
+          spyroVM1 = await DataService.getExsternalSteamData(
+            keycloak,
+            currentTabDisplay,
+            VERTICAL_ID,
+            SITE_ID,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+
+          const dataList =
+            spyroVM1?.data?.externalStreamDataList || spyroVM1?.data || []
+
+          if (Array.isArray(dataList)) {
+            transformedData12 = dataList.map((item, index) => ({
+              id: item.normParameterId || `row_${index}`,
+              particulars: item.particulars,
+              uom: item.uom,
+              remarks: item.remarks ?? '',
+              originalRemark: item.remarks ?? '',
+              ParticularsType: item.normParameterTypeDisplayName,
+              april: item.apr ?? null,
+              may: item.may ?? null,
+              june: item.jun ?? null,
+              july: item.jul ?? null,
+              august: item.aug ?? null,
+              september: item.sep ?? null,
+              october: item.oct ?? null,
+              november: item.nov ?? null,
+              december: item.dec ?? null,
+              NormParameterFKID: item.normParameterId,
+              ...item,
+            }))
+          }
+          setRowsForTab(currentTabDisplay, transformedData12)
           return
         }
 
@@ -556,6 +604,28 @@ const CrackerConfig = () => {
       let SpyroInputData
       if (currentTabDisplay == 'Naphtha') {
         SpyroInputData = newRows.map(({ id, inEdit, ...rest }) => rest)
+      } else if (currentTabDisplay == 'External Streams') {
+        SpyroInputData = newRows.map((row) => ({
+          normParameterId: row.normParameterId ?? row.NormParameterFKID ?? null,
+          particulars: row.particulars ?? null,
+          uom: row.uom ?? null,
+          remarks: row.remarks ?? null,
+          jan: row.jan ?? null,
+          feb: row.feb ?? null,
+          mar: row.mar ?? null,
+          apr: row.apr ?? null,
+          may: row.may ?? null,
+          jun: row.jun ?? null,
+          jul: row.jul ?? null,
+          aug: row.aug ?? null,
+          sep: row.sep ?? null,
+          oct: row.oct ?? null,
+          nov: row.nov ?? null,
+          dec: row.dec ?? null,
+          verticalId: row.verticalId ?? VERTICAL_ID,
+          plantId: row.plantId ?? PLANT_ID,
+          normParameterTypeFkId: row.normParameterTypeFkId ?? null,
+        }))
       } else {
         SpyroInputData = newRows.map((row) => ({
           normParameterFKID: row.normParameterFKID ?? null,
@@ -583,6 +653,15 @@ const CrackerConfig = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+        )
+      } else if (currentTabDisplay == 'External Streams') {
+        response = await DataService.saveExternalStreamData(
+          SpyroInputData,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          SITE_ID,
+          VERTICAL_ID,
         )
       } else {
         response = await DataService.saveSpyroInput(
@@ -935,6 +1014,41 @@ const CrackerConfig = () => {
                       groupBy='type'
                     />
                   </Box>
+                </Box>
+              )
+            case 'External Streams':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='External_Streams'
+                    groupBy='ParticularsType'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                  />
                 </Box>
               )
 
