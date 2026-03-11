@@ -46,17 +46,17 @@ public class MajorReliabilityImprovementServiceImpl implements MajorReliabilityI
             List<MajorReliabilityImprovementDTO> list = new ArrayList<>();
             for (Object[] row : results) {
                 MajorReliabilityImprovementDTO dto = new MajorReliabilityImprovementDTO();
-                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : null);
-                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : null);
-                dto.setInitiativeDescription(row.length > 2 && row[2] != null ? row[2].toString() : null);
-                dto.setCategory(row.length > 3 && row[3] != null ? row[3].toString() : null);
-                dto.setOutcome(row.length > 4 && row[4] != null ? row[4].toString() : null);
-                dto.setRecommendation(row.length > 5 && row[5] != null ? row[5].toString() : null);
+                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : "");
+                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : "");
+                dto.setInitiativeDescription(row.length > 2 && row[2] != null ? row[2].toString() : "");
+                dto.setCategory(row.length > 3 && row[3] != null ? row[3].toString() : "");
+                dto.setOutcome(row.length > 4 && row[4] != null ? row[4].toString() : "");
+                dto.setRecommendation(row.length > 5 && row[5] != null ? row[5].toString() : "");
                 dto.setTargetDate(row.length > 6 && row[6] != null ? (java.util.Date) row[6] : null);
-                dto.setRemark(row.length > 7 && row[7] != null ? row[7].toString() : null);
-                dto.setAopYear(row.length > 8 && row[8] != null ? row[8].toString() : null);
-                dto.setSiteFkId(row.length > 9 && row[9] != null ? row[9].toString() : null);
-                dto.setUpdatedBy(row.length > 10 && row[10] != null ? row[10].toString() : null);
+                dto.setRemark(row.length > 7 && row[7] != null ? row[7].toString() : "");
+                dto.setAopYear(row.length > 8 && row[8] != null ? row[8].toString() : "");
+                dto.setSiteFkId(row.length > 9 && row[9] != null ? row[9].toString() : "");
+                dto.setUpdatedBy(row.length > 10 && row[10] != null ? row[10].toString() : "");
                 dto.setUpdatedDateTime(row.length > 11 && row[11] != null ? (java.util.Date) row[11] : null);
                 list.add(dto);
             }

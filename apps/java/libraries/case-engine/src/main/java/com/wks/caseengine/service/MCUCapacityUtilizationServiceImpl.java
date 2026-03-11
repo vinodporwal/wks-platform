@@ -46,15 +46,15 @@ public class MCUCapacityUtilizationServiceImpl implements MCUCapacityUtilization
             List<MCUCapacityUtilizationDTO> list = new ArrayList<>();
             for (Object[] row : results) {
                 MCUCapacityUtilizationDTO dto = new MCUCapacityUtilizationDTO();
-                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : null);
-                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : null);
-                dto.setPrevAop(row.length > 2 && row[2] != null && row[2] instanceof Number ? ((Number) row[2]).doubleValue() : null);
-                dto.setPrevActual(row.length > 3 && row[3] != null && row[3] instanceof Number ? ((Number) row[3]).doubleValue() : null);
-                dto.setAop(row.length > 4 && row[4] != null && row[4] instanceof Number ? ((Number) row[4]).doubleValue() : null);
-                dto.setRemarks(row.length > 5 && row[5] != null ? row[5].toString() : null);
-                dto.setAopYear(row.length > 6 && row[6] != null ? row[6].toString() : null);
-                dto.setSiteFkId(row.length > 7 && row[7] != null ? row[7].toString() : null);
-                dto.setUpdatedBy(row.length > 8 && row[8] != null ? row[8].toString() : null);
+                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : "");
+                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : "");
+                dto.setPrevAop(row.length > 2 && row[2] instanceof Number ? ((Number) row[2]).doubleValue() : 0.0);
+                dto.setPrevActual(row.length > 3 && row[3] instanceof Number ? ((Number) row[3]).doubleValue() : 0.0);
+                dto.setAop(row.length > 4 && row[4] instanceof Number ? ((Number) row[4]).doubleValue() : 0.0);
+                dto.setRemarks(row.length > 5 && row[5] != null ? row[5].toString() : "");
+                dto.setAopYear(row.length > 6 && row[6] != null ? row[6].toString() : "");
+                dto.setSiteFkId(row.length > 7 && row[7] != null ? row[7].toString() : "");
+                dto.setUpdatedBy(row.length > 8 && row[8] != null ? row[8].toString() : "");
                 dto.setUpdatedDateTime(row.length > 9 && row[9] != null ? (java.util.Date) row[9] : null);
                 list.add(dto);
             }

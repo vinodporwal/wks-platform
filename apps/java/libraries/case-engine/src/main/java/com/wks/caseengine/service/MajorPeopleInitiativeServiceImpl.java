@@ -46,16 +46,16 @@ public class MajorPeopleInitiativeServiceImpl implements MajorPeopleInitiativeSe
             List<MajorPeopleInitiativeDTO> list = new ArrayList<>();
             for (Object[] row : results) {
                 MajorPeopleInitiativeDTO dto = new MajorPeopleInitiativeDTO();
-                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : null);
-                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : null);
-                dto.setInitiativeDescription(row.length > 2 && row[2] != null ? row[2].toString() : null);
-                dto.setOutcome(row.length > 3 && row[3] != null ? row[3].toString() : null);
-                dto.setRecommendation(row.length > 4 && row[4] != null ? row[4].toString() : null);
+                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : "");
+                dto.setPlant(row.length > 1 && row[1] != null ? row[1].toString() : "");
+                dto.setInitiativeDescription(row.length > 2 && row[2] != null ? row[2].toString() : "");
+                dto.setOutcome(row.length > 3 && row[3] != null ? row[3].toString() : "");
+                dto.setRecommendation(row.length > 4 && row[4] != null ? row[4].toString() : "");
                 dto.setTargetDate(row.length > 5 && row[5] != null ? (java.util.Date) row[5] : null);
-                dto.setRemark(row.length > 6 && row[6] != null ? row[6].toString() : null);
-                dto.setAopYear(row.length > 7 && row[7] != null ? row[7].toString() : null);
-                dto.setSiteFkId(row.length > 8 && row[8] != null ? row[8].toString() : null);
-                dto.setUpdatedBy(row.length > 9 && row[9] != null ? row[9].toString() : null);
+                dto.setRemark(row.length > 6 && row[6] != null ? row[6].toString() : "");
+                dto.setAopYear(row.length > 7 && row[7] != null ? row[7].toString() : "");
+                dto.setSiteFkId(row.length > 8 && row[8] != null ? row[8].toString() : "");
+                dto.setUpdatedBy(row.length > 9 && row[9] != null ? row[9].toString() : "");
                 dto.setUpdatedDateTime(row.length > 10 && row[10] != null ? (java.util.Date) row[10] : null);
                 list.add(dto);
             }
