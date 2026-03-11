@@ -120,6 +120,7 @@ import MonthwiseProductionPlanCoker from 'components/aop-phase-two/coker/monthwi
 import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-production-hours/index'
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
+import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -756,6 +757,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='production-volume-basis'>
                 <ProductionVolumeDataBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'sap-based-ref-norms',
+            element: (
+              <PrivateRoute routeId='sap-based-ref-norms'>
+                <SapBasedRefNorms />
               </PrivateRoute>
             ),
           },

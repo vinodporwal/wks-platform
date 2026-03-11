@@ -173,6 +173,8 @@ export const DataService = {
   saveNaphthaData,
   exportNaphthaExcel,
   importNaphthaExcel,
+  getExsternalSteamData,
+  saveExternalStreamData,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -3955,11 +3957,20 @@ async function importSpyroOutputExcelYieldVMD(
   }
 }
 
-async function getNaphthaData(keycloak, type, PLANT_ID, AOP_YEAR) {
+async function getNaphthaData(
+  keycloak,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+  startDate,
+  endDate,
+) {
   const url =
     `${Config.CaseEngineUrl}/task/naphtha` +
     `?year=${encodeURIComponent(AOP_YEAR)}` +
-    `&plantId=${encodeURIComponent(PLANT_ID)}`
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&startDate=${encodeURIComponent(startDate)}` +
+    `&endDate=${encodeURIComponent(endDate)}`
 
   const headers = {
     Accept: 'application/json',
@@ -3996,8 +4007,15 @@ async function saveNaphthaData(payload, keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function exportNaphthaExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
-  const url = `${Config.CaseEngineUrl}/task/naphtha-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
+async function exportNaphthaExcel(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+  startDate,
+  endDate,
+) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -4048,6 +4066,54 @@ async function importNaphthaExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error importing Naphtha Excel:', e)
+    return await Promise.reject(e)
+  }
+}
+async function getExsternalSteamData(
+  keycloak,
+  currentTabDisplay,
+  VERTICAL_ID,
+  SITE_ID,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/external-stream-data?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&siteId=${encodeURIComponent(SITE_ID)}&verticalId=${encodeURIComponent(VERTICAL_ID)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to fetch external stream data', e)
+    return Promise.reject(e)
+  }
+}
+async function saveExternalStreamData(
+  SpyroInputData,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  SITE_ID,
+  VERTICAL_ID,
+) {
+  const url = `${Config.CaseEngineUrl}/task/external-stream-data?year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(SpyroInputData),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

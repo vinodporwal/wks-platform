@@ -8,6 +8,8 @@ export const ConsumptionNormsApiService = {
   OverallConsumptionPEPPExport,
   getProposedNormsData,
   saveProposedNormsData,
+  ProposedConsumptionNormsExport,
+  proposedNormsImport,
 }
 async function saveAOPConsumptionNorm(PLANT_ID, shutdownDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/overall-consumption`
@@ -28,6 +30,7 @@ async function saveAOPConsumptionNorm(PLANT_ID, shutdownDetails, keycloak) {
     return await Promise.reject(e)
   }
 }
+
 async function getConsumptionAOPNormsGrades(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/consumption-aop/grades?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
@@ -43,6 +46,7 @@ async function getConsumptionAOPNormsGrades(keycloak, PLANT_ID, AOP_YEAR) {
     return await Promise.reject(e)
   }
 }
+
 async function getConsumptionNormsData(keycloak, gradeId, PLANT_ID, AOP_YEAR) {
   const year = AOP_YEAR
   const plantId = PLANT_ID
@@ -91,6 +95,7 @@ async function handleCalculateConsumptionNorms(PLANT_ID, AOP_YEAR, keycloak) {
     return Promise.reject(e)
   }
 }
+
 export async function OverallConsumptionPEPPExport(
   keycloak,
   plantId,
@@ -170,6 +175,62 @@ async function saveProposedNormsData(PLANT_ID, AOP_YEAR, payload, keycloak) {
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
+    return await Promise.reject(e)
+  }
+}
+export async function ProposedConsumptionNormsExport(
+  keycloak,
+  plantId,
+  year,
+  EXCEL_EXPORT_TITLE,
+  SCREEN_NAME,
+) {
+  const url = `${Config.CaseEngineUrl}/task/proposed-consumption-export?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Proposed Consumption Norms Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function proposedNormsImport(file, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/proposed-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp) // assuming `json()` handles response properly
+  } catch (e) {
+    console.error('Error importing Optimizer Input Excel:', e)
     return await Promise.reject(e)
   }
 }

@@ -713,8 +713,8 @@ const SlowDown = ({ permissions }) => {
 
       if (lowerVertName === 'vcm') {
         const furnaceDecokingRates = {
-          'Furnace Decoking H-210': 27,
-          'Furnace Decoking H-220': 27,
+          'Furnace Decoking H-210': 27.0833,
+          'Furnace Decoking H-220': 27.0833,
           'Furnace Decoking H-1220': 26.458,
         }
         for (const record of data) {

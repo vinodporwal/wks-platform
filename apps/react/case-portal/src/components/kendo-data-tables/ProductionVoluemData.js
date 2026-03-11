@@ -108,6 +108,7 @@ const ProductionvolumeData = ({ permissions }) => {
   const IS_PP_SEZ = VERTICAL_NAME === 'pp' && SITE_NAME === 'sez'
   const IS_PVC_DMD = VERTICAL_NAME === 'pvc' && SITE_NAME === 'dmd'
   const IS_PP_HMD = VERTICAL_NAME === 'pp' && SITE_NAME === 'hmd'
+  const IS_PTA_HMD = VERTICAL_NAME === 'pta' && SITE_NAME === 'hmd'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -140,6 +141,7 @@ const ProductionvolumeData = ({ permissions }) => {
   const dispatch = useDispatch()
   const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
+  const [mcuMaxCapValues, setMcuMaxCapValues] = useState(null)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -431,6 +433,30 @@ const ProductionvolumeData = ({ permissions }) => {
       console.log('Facing issue at saving data', error)
     }
   }, [modifiedCells, selectedUnit])
+
+  useEffect(() => {
+    const fetchMcuMaxCapValues = async () => {
+      if (!PLANT_ID || !AOP_YEAR) return
+      try {
+        const response =
+          await ProductionVolumeDataApiService.getMcuMaxCapvalues(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        if (response?.code === 200) {
+          setMcuMaxCapValues(response.data)
+        } else {
+          setMcuMaxCapValues(null)
+        }
+      } catch (error) {
+        console.error('Error fetching MCU Max Cap values:', error)
+        setMcuMaxCapValues(null)
+      }
+    }
+
+    fetchMcuMaxCapValues()
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
   const fetchData = async (unit = selectedUnit) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -1104,12 +1130,14 @@ const ProductionvolumeData = ({ permissions }) => {
       if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         const selectedLine = lineDetails[tabIndex]
         const lineId = selectedLine?.id
+        const LineName = lineDetails[tabIndex]?.displayName
         await ProductionVolumeDataApiService.getProductionVolExcelLineWise(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           lineId,
           EXCEL_EXPORT_TITLE,
+          LineName,
         )
       } else if (IS_PE_PP || IS_PET || IS_PVC_VMD) {
         await ProductionVolumeDataApiService.getProductionVolExcelCommon(
@@ -1354,6 +1382,7 @@ const ProductionvolumeData = ({ permissions }) => {
         }
         resetEditSignal={editResetKey}
         setEditResetKey={setEditResetKey}
+        mcuMaxCapValues={mcuMaxCapValues}
       />
 
       {/* PERCENTAGE_SUMMARY */}

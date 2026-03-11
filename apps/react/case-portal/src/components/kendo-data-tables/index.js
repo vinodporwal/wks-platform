@@ -178,6 +178,7 @@ const KendoDataTables = ({
   allLines = [],
   startDate,
   endDate,
+  mcuMaxCapValues = [],
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -265,6 +266,43 @@ const KendoDataTables = ({
       </td>
     )
   }
+  const isMcuMaxCapRedCell = useCallback(
+    (productName, field) => {
+      if (!mcuMaxCapValues?.aopMaxCapMCValueList?.length) return false
+      console.log('mcuMaxCapValues received:', mcuMaxCapValues)
+      const monthNameMap = {
+        april: 'April',
+        may: 'May',
+        june: 'June',
+        july: 'July',
+        august: 'August',
+        september: 'September',
+        october: 'October',
+        november: 'November',
+        december: 'December',
+        january: 'January',
+        february: 'February',
+        march: 'March',
+      }
+
+      const monthName = monthNameMap[field?.toLowerCase()]
+      if (!monthName) return false
+      console.log(
+        'Checking:',
+        productName,
+        monthName,
+        mcuMaxCapValues.aopMaxCapMCValueList,
+      )
+
+      return mcuMaxCapValues.aopMaxCapMCValueList.some(
+        (item) =>
+          item.isValid === 1 &&
+          item.monthName?.toLowerCase() === monthName.toLowerCase() &&
+          item.productName?.toLowerCase() === productName?.toLowerCase(),
+      )
+    },
+    [mcuMaxCapValues],
+  )
   const monthFields = [
     'april',
     'may',
@@ -490,7 +528,7 @@ const KendoDataTables = ({
               desc === 'Furnace Decoking H-210' ||
               desc === 'Furnace Decoking H-220'
             ) {
-              updated.rate = 27
+              updated.rate = 27.0833
             } else if (desc === 'Furnace Decoking H-1220') {
               updated.rate = 26.458
             } else if (desc === 'Furnace Decoking') {
@@ -2959,7 +2997,10 @@ const KendoDataTables = ({
                   )
                 }
 
-                if (col.type === 'number') {
+                if (
+                  col.type === 'number' ||
+                  permissions?.showRedCellsForOroductionTarget
+                ) {
                   return (
                     <GridColumn
                       key={col.field}
@@ -2968,15 +3009,38 @@ const KendoDataTables = ({
                       width={col.widthT}
                       hidden={col.hidden}
                       className={`
-                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-                  ${col?.isBold ? 'bold-text' : ''}
-                `}
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: NoSpinnerNumericEditor },
-                        data: (props) =>
-                          showThreeColors ? (
+                        data: (props) => {
+                          const productName =
+                            props.dataItem?.productName ||
+                            props.dataItem?.displayName ||
+                            props.dataItem?.materialDisplayName ||
+                            ''
+                          const isMcuRed = isMcuMaxCapRedCell(
+                            productName,
+                            props.field,
+                          )
+                          if (isMcuRed) {
+                            return (
+                              <td
+                                {...props.tdProps}
+                                title={String(
+                                  props.dataItem[props.field] ?? '',
+                                )}
+                                style={{ color: 'red', fontWeight: 'bold' }}
+                              >
+                                {props.children}
+                              </td>
+                            )
+                          }
+
+                          return showThreeColors ? (
                             <RedHighlightCell2
                               {...props}
                               customModifiedCells={customModifiedCells}
@@ -2991,7 +3055,8 @@ const KendoDataTables = ({
                               allRedCell={allRedCell}
                               disableRedHighlight={disableRedHighlight}
                             />
-                          ),
+                          )
+                        },
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
@@ -3010,9 +3075,9 @@ const KendoDataTables = ({
                       width={col.widthT}
                       hidden={col.hidden}
                       className={`
-                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-                  ${col?.isBold ? 'bold-text' : ''}
-                `}
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{

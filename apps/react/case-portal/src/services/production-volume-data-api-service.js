@@ -18,6 +18,7 @@ export const ProductionVolumeDataApiService = {
   getMaxAchievedCapacityDataLineWise,
   getProposedOperatingCapacityAvg,
   getProductionVolExcelLineWise,
+  getMcuMaxCapvalues,
 }
 
 async function editAOPMCCalculatedData(
@@ -403,6 +404,7 @@ async function getProductionVolExcelLineWise(
   AOP_YEAR,
   lineId,
   EXCEL_EXPORT_TITLE,
+  LineName,
 ) {
   const url = `${Config.CaseEngineUrl}/task/production-target-line-export?year=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
   const headers = {
@@ -423,7 +425,7 @@ async function getProductionVolExcelLineWise(
     const a = document.createElement('a')
     a.href = urlBlob
     //NAME CORRECTED FOR EXCEL FILE
-    a.download = `${EXCEL_EXPORT_TITLE}_Production_Target_${lineId}.xlsx`
+    a.download = `${EXCEL_EXPORT_TITLE}_Production_Target_${LineName}.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -431,5 +433,20 @@ async function getProductionVolExcelLineWise(
   } catch (e) {
     console.error('Error Editing data:', e)
     return Promise.reject(e)
+  }
+}
+async function getMcuMaxCapvalues(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/max-cap-mc-values?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

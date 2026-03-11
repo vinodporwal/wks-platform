@@ -8,6 +8,7 @@ import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_Con
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
+import { validateFields } from 'utils/validationUtils'
 
 const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
@@ -48,7 +49,7 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -75,14 +76,17 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         'losses',
       )
 
-      const formattedData = response?.data?.map((row, index) => ({
-        ...row,
-        id: row.id || index,
-        particulars: row.DisplayName,
-        uom: row.UOM,
-        value: row.Apr,
-        remarks: row.Remarks,
-      }))
+      const formattedData = response?.data?.catChemNormList?.map(
+        (row, index) => ({
+          ...row,
+          id: row.id || index,
+          particulars: row.displayName,
+          uom: row.uom,
+          value: parseFloat(row.apr) || 0,
+          remarks: row.remarks,
+          originalRemark: row.remarks || '',
+        }),
+      )
 
       setRows(formattedData || [])
     } catch (error) {
@@ -200,6 +204,7 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         PLANT_ID,
         AOP_YEAR,
         EXCEL_EXPORT_TITLE,
+        'losses',
       )
 
       console.log('Excel export for:', EXCEL_EXPORT_TITLE)
@@ -225,6 +230,7 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        'losses',
       )
 
       if (response?.code === 200) {
@@ -297,6 +303,16 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
 
       if (data.length === 0) {
         setLoading(false)
+        return
+      }
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
         return
       }
 

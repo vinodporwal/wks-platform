@@ -31,9 +31,11 @@ public class LIMSSpyroInputController {
     @GetMapping(value = "/naphtha")
     public AOPMessageVM getLIMSSpyroInput(
             @RequestParam String plantId,
-            @RequestParam String year) {
+            @RequestParam String year,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
 
-        return limsSpyroInputService.getLIMSSpyroInput(plantId, year);
+        return limsSpyroInputService.getLIMSSpyroInput(plantId, year, startDate, endDate);
     }
     
     @PostMapping(value="/naphtha")
@@ -44,11 +46,13 @@ public class LIMSSpyroInputController {
     @GetMapping(value = "/naphtha-export")
 	public ResponseEntity<byte[]> exportLIMSSpyroInput(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year
+            @RequestParam("year") String year,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = limsSpyroInputService.exportLIMSSpyroInput(year,plantId,false,null); 
+	        byte[] excelBytes = limsSpyroInputService.exportLIMSSpyroInput(year, plantId, startDate, endDate, false, null); 
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(

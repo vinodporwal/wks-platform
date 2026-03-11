@@ -39,6 +39,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wks.caseengine.dto.AOPMCCalculatedDataDTO;
+import com.wks.caseengine.dto.AOPMaxCapMCValueDTO;
 
 import com.wks.caseengine.entity.AOPMCCalculatedData;
 import com.wks.caseengine.entity.AopCalculation;
@@ -658,6 +659,68 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
         } catch (Exception ex) {
             throw new RuntimeException("Failed to fetch data", ex);
         }
+    }
+
+    @Override
+    public AOPMessageVM getAOPMaxCapMCValues(String plantId, String year) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+        	 Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+ 	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+ 	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+ 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+ 	        Sites site = siteRepository.findById(plant.getSiteFkId())
+ 	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+            String view="vw"+vertical.getName()+"_"+site.getName()+"_AOPMAXCAPMCValues";
+            List<Object[]> rows = getAOPMaxCapMCValuesData(plantId, year,view);
+            List<AOPMaxCapMCValueDTO> list = new ArrayList<>();
+            for (Object[] row : rows) {
+                AOPMaxCapMCValueDTO dto = new AOPMaxCapMCValueDTO();
+                dto.setId(row[0] != null ? row[0].toString() : null);
+                dto.setVerticalName(row[1] != null ? row[1].toString() : null);
+                dto.setSiteName(row[2] != null ? row[2].toString() : null);
+                dto.setPlantName(row[3] != null ? row[3].toString() : null);
+                dto.setProductName(row[4] != null ? row[4].toString() : null);
+                dto.setSiteFKId(row[5] != null ? row[5].toString() : null);
+                dto.setPlantFKId(row[6] != null ? row[6].toString() : null);
+                dto.setVerticalFKId(row[7] != null ? row[7].toString() : null);
+                dto.setMaterialFKId(row[8] != null ? row[8].toString() : null);
+                dto.setMonthName(row[9] != null ? row[9].toString() : null);
+                dto.setMonthValue(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+                dto.setFinancialYear(row[11] != null ? row[11].toString() : null);
+                dto.setRemarks(row[12] != null ? row[12].toString() : null);
+                dto.setCreatedOn(row[13] != null ? (Date) row[13] : null);
+                dto.setModifiedOn(row[14] != null ? (Date) row[14] : null);
+                dto.setMcuVersion(row[15] != null ? row[15].toString() : null);
+                dto.setUpdatedBy(row[16] != null ? row[16].toString() : null);
+                dto.setNormParameterDisplayOrder(row[17] != null ? ((Number) row[17]).intValue() : null);
+                dto.setIsValid(row[18] != null ? (row[18] instanceof Boolean ? (((Boolean) row[18]) ? 1 : 0) : ((Number) row[18]).intValue()) : null);
+                list.add(dto);
+            }
+            Map<String, Object> map = new HashMap<>();
+            map.put("aopMaxCapMCValueList", list);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setData(map);
+            aopMessageVM.setMessage("Data fetched successfully");
+            return aopMessageVM;
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+            throw new RuntimeException("Failed to fetch data", ex);
+        }
+    }
+
+    private List<Object[]> getAOPMaxCapMCValuesData(String plantId, String year, String viewName) {
+        String sql = "SELECT Id, VerticalName, SiteName, PlantName, ProductName, Site_FK_Id, Plant_FK_Id, "
+                + "Vertical_FK_Id, Material_FK_Id, MonthName, MonthValue, FinancialYear, Remarks, "
+                + "CreatedOn, ModifiedOn, MCUVersion, UpdatedBy, NormParameterDisplayOrder, IsValid "
+                + "FROM " + viewName + " "
+                + "WHERE Plant_FK_Id = :plantId AND FinancialYear = :year";
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", plantId);
+        query.setParameter("year", year);
+        return query.getResultList();
     }
 
     public List<Object[]> getMaxAchievedCapacityData(String year, String plantId, String viewName) {

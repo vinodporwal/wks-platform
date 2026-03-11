@@ -32,12 +32,5 @@
     "editable": true,
     "type": "number",
     "widthT": 120
-  },
-
-  {
-    "field": "remarks",
-    "title": "Remark",
-    "editable": false,
-    "type": "string"
   }
 ]

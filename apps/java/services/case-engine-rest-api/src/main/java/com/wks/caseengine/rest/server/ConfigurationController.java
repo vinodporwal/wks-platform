@@ -174,7 +174,7 @@ public class ConfigurationController {
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
 	        headers.setContentDisposition(ContentDisposition.builder("attachment")
-	                .filename("recipe.xlsx")
+	                .filename("line_configuration.xlsx")
 	                .build());
 	        headers.setContentLength(excelBytes.length);
 

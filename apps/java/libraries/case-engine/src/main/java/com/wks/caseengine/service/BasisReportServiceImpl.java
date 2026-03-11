@@ -123,6 +123,8 @@ public class BasisReportServiceImpl implements BasisReportService {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionBasisReport";
 	    }else if(type.equalsIgnoreCase("ProductionTargetBasis")) {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionTargetBasis";
+	    }else if(type.equalsIgnoreCase("SapBasedRefNorms")) {
+	        storedProcedure = vertical.getName() + "_" + site.getName() + "_SAP_Based_Ref_Norms";
 	    }
 	    
 	    try {

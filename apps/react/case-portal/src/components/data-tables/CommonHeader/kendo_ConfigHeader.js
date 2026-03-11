@@ -18,6 +18,7 @@ import reportManualEntry from '../../../assets/kendo_config_report_mannual_entry
 import naphthaColumns from '../../../assets/kendo_config_cracker_naphtha_coldefs.json'
 import rawMaterialColumns from '../../../assets/kendo_config_raw_material_coldefs.json'
 import catchemColumns from '../../../assets/kendo_config_catchem_coldefs.json'
+import exsternalSteamColumns from '../../../assets/kendo_config_exsternal_steam_coldefs.json'
 
 const getConfigByType = (configType) => {
   switch (configType) {
@@ -37,6 +38,8 @@ const getConfigByType = (configType) => {
       return productionColumnsPE1
     case 'Otherlosses':
       return productionColumnsPE2
+    case 'External_Streams':
+      return exsternalSteamColumns
 
     //NEW BUILD 17 NOV
 
@@ -153,10 +156,19 @@ const getEnhancedAOPColDefs = ({
     configType == 'ShutdownNorms' ||
     configType == 'cracker_constants' ||
     configType == 'megConstants' ||
-    configType == 'Constant'
+    configType == 'Constant' ||
+    configType == 'rawMaterial' ||
+    configType == 'CatChem'
   ) {
     enhancedColDefs = config.map((col) => {
       if (col?.title == 'Value') {
+        return {
+          ...col,
+          type: 'number',
+          format: FORMATE_VALUE,
+        }
+      }
+      if (col?.title == 'IIR' || col?.title == 'CIIR' || col?.title == 'BIIR') {
         return {
           ...col,
           type: 'number',

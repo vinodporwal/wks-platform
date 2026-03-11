@@ -63,6 +63,11 @@ public class AOPMCCalculatedDataController {
 	public AOPMessageVM getMaxAchievedCapacity(@RequestParam String plantId, @RequestParam String year) {
 		return aOPMCCalculatedDataService.getMaxAchievedCapacity(plantId, year);
 	}
+
+	@GetMapping(value = "/max-cap-mc-values")
+	public AOPMessageVM getAOPMaxCapMCValues(@RequestParam String plantId, @RequestParam String year) {
+		return aOPMCCalculatedDataService.getAOPMaxCapMCValues(plantId, year);
+	}
 	
 	@GetMapping(value = "/max-achieved-capacity-line")
 	public AOPMessageVM getLineWiseMaxAchievedCapacity(@RequestParam String plantId, @RequestParam String year, @RequestParam String lineId) {
