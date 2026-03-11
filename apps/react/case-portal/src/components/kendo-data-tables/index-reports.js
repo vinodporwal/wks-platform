@@ -9,7 +9,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { ColumnMenu } from 'components/@extended/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import {
   Backdrop,
   Box,
@@ -124,6 +124,7 @@ const KendoDataTablesReports = ({
   handleUnitChange = () => {},
   handleRemarkCellClick = () => {},
   handleExport = () => {},
+  handleExcelUpload = () => {},
   groupBy = null,
   grades = [],
   handleGradeChange = () => {},
@@ -271,7 +272,20 @@ const KendoDataTablesReports = ({
 
     setRemarkDialogOpen(false)
   }
+  const fileInputRef = useRef(null)
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
 
+  const onFileChange = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    handleExcelUpload(file)
+    event.target.value = ''
+  }
   const handleAddRow = () => {
     if (isButtonDisabled) return
     setIsButtonDisabled(true)
@@ -813,6 +827,26 @@ const KendoDataTablesReports = ({
               >
                 Import
               </Button>
+            )}
+            {permissions?.uploadExcelBtn && (
+              <>
+                <Button
+                  variant='contained'
+                  onClick={triggerFileUpload}
+                  disabled={isButtonDisabled || READ_ONLY}
+                  className='btn-save'
+                >
+                  Import
+                </Button>
+
+                <input
+                  type='file'
+                  accept='.xlsx,.xls'
+                  onChange={onFileChange}
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+              </>
             )}
 
             {permissions?.showFinalSubmit && (
