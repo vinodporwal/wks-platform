@@ -1052,6 +1052,7 @@ const ProductionvolumeData = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       units: ['TPH', 'TPD'],
       showCalculate: permissions?.hideSummary ? false : VERTICAL_NAME === 'meg',
+      showRedCellsForOroductionTarget: VERTICAL_NAME == 'pta' ? true : false,
       showCalculateVisibility:
         VERTICAL_NAME === 'meg' &&
         Object.keys(calculationObject || {}).length > 0

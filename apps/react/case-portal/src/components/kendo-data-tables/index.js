@@ -2998,7 +2998,7 @@ const KendoDataTables = ({
                 }
 
                 if (
-                  col.type === 'number' ||
+                  col.type === 'number' &&
                   permissions?.showRedCellsForOroductionTarget
                 ) {
                   return (
