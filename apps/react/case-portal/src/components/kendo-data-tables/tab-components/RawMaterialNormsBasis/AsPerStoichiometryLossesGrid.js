@@ -52,7 +52,7 @@ const AsPerStoichiometryLossesGrid = ({
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -76,20 +76,26 @@ const AsPerStoichiometryLossesGrid = ({
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        'stoichiometry',
+        'Losses',
       )
 
-      const formattedData = response?.data?.map((row, index) => ({
-        id: row.id || index,
-        particulars: row.particulars,
-        uom: row.UOM || row.uom,
-        IIR: row.IIR,
-        CIIR: row.CIIR,
-        BIIR: row.BIIR,
-        auditYear: row.auditYear,
-        normParameterFKId: row.normParameterFKId,
-        remarks: row.remarks,
-      }))
+      const formattedData = response?.data?.gradeWiseNormConfigurationList?.map(
+        (row, index) => ({
+          id: row.id || index,
+          particulars: row.grade,
+          uom: row.uom,
+          IIR: row.iirR1675,
+          CIIR: row.ciirC1139,
+          BIIR: row.biirB2232,
+          materialFKId: row.materialFKId,
+          r1675Id: row.r1675Id,
+          c1139Id: row.c1139Id,
+          b2232Id: row.b2232Id,
+          name: row.name,
+          remarks: row.remarks,
+          originalRemark: row.remarks || '',
+        }),
+      )
 
       setRows(formattedData || [])
     } catch (error) {
@@ -142,25 +148,29 @@ const AsPerStoichiometryLossesGrid = ({
     setLoading(true)
     try {
       let payload = updatedRows?.map((row) => {
-        const { id, inEdit, particulars, uom, ...rest } = row
         return {
-          ...rest,
-          DisplayName: particulars,
-          IIR: row.IIR,
-          CIIR: row.CIIR,
-          BIIR: row.BIIR,
-          UOM: uom,
+          name: row.name,
+          grade: row.particulars,
+          uom: row.uom,
+          iirR1675: row.IIR,
+          ciirC1139: row.CIIR,
+          biirB2232: row.BIIR,
+          materialFKId: row.materialFKId,
+          r1675Id: row.r1675Id,
+          c1139Id: row.c1139Id,
+          b2232Id: row.b2232Id,
           remarks: row.remarks,
         }
       })
 
-      // const response =
-      //   await RawMaterialNormsBasisApiService.postRawMaterialData(
-      //     keycloak,
-      //     payload,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
+      const response =
+        await RawMaterialNormsBasisApiService.postRawMaterialData(
+          keycloak,
+          payload,
+          PLANT_ID,
+          AOP_YEAR,
+          'Losses',
+        )
       console.log('payload', payload)
 
       setSnackbarOpen(true)

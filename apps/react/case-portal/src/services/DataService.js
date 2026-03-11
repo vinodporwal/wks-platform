@@ -4005,8 +4005,15 @@ async function saveNaphthaData(payload, keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function exportNaphthaExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
-  const url = `${Config.CaseEngineUrl}/task/naphtha-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
+async function exportNaphthaExcel(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  EXCEL_NAME,
+  startDate,
+  endDate,
+) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
 
   const headers = {
     'Content-Type': 'application/json',
