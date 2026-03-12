@@ -23,5 +23,12 @@ public class NormConfigurationController {
             @RequestParam(required = false) String type) {
         return normConfigurationService.getNormConfiguration(plantId, year, type);
     }
+
+    @GetMapping(value = "/calculate-norm-configuration")
+    public AOPMessageVM calculateNormConfiguration(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+        return normConfigurationService.calculateNormConfiguration(plantId, year);
+    }
 }
 

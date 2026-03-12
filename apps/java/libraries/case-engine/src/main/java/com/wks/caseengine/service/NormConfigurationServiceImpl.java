@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.sql.DataSource;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -113,6 +118,57 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
         }
     }
 
+    @Autowired
+    private DataSource dataSource;
+
+    @Override
+    public AOPMessageVM calculateNormConfiguration(String plantId, String aopYear) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+            Sites site = siteRepository.findById(plant.getSiteFkId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+            Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+            String procedureName = vertical.getName() + "_" + site.getName() + "_CalculateNormConfiguration";
+
+            int result = executeDynamicUpdateProcedure(
+                    procedureName,
+                    plantId,
+                    site.getId().toString(),
+                    vertical.getId().toString(),
+                    aopYear);
+
+            // Maintain calculation flags for dependent screen "manual-norms" and calculation screen "calculated-norms"
+            aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(
+                    UUID.fromString(plantId), aopYear, "calculated-norms");
+
+            List<AopCalculation> existing = aopCalculationRepository
+                    .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "calculated-norms");
+
+            if (existing == null || existing.isEmpty()) {
+                AopCalculation aopCalculation = new AopCalculation();
+                aopCalculation.setAopYear(aopYear);
+                aopCalculation.setIsChanged(true);
+                aopCalculation.setCalculationScreen("calculated-norms");
+                aopCalculation.setPlantId(UUID.fromString(plantId));
+                aopCalculation.setUpdatedScreen("manual-norms");
+                aopCalculationRepository.save(aopCalculation);
+            }
+
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("SP Executed successfully");
+            aopMessageVM.setData(result);
+            return aopMessageVM;
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to execute norm configuration calculation", ex);
+        }
+    }
+
     private static Double toDouble(Object[] row, int index) {
         if (row.length <= index || row[index] == null) {
             return 0.0;
@@ -144,6 +200,32 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
         }
         Object value = row[index];
         return value.toString();
+    }
+
+    public int executeDynamicUpdateProcedure(String procedureName, String plantId, String siteId, String verticalId,
+            String finYear) {
+        try {
+            String callSql = "{call " + procedureName + "(?, ?, ?, ?)}";
+
+            try (Connection connection = dataSource.getConnection();
+                 CallableStatement stmt = connection.prepareCall(callSql)) {
+
+                stmt.setString(1, plantId);
+                stmt.setString(2, siteId);
+                stmt.setString(3, verticalId);
+                stmt.setString(4, finYear);
+
+                int rowsAffected = stmt.executeUpdate();
+
+                if (!connection.getAutoCommit()) {
+                    connection.commit();
+                }
+
+                return rowsAffected;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error executing stored procedure: " + procedureName, e);
+        }
     }
 }
 
