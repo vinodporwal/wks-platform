@@ -175,6 +175,10 @@ export const DataService = {
   importNaphthaExcel,
   getExsternalSteamData,
   saveExternalStreamData,
+
+  //AOP APPROVAL FLOW RELEASE BUTTON
+  getReleaseAOPStatus,
+  releaseAOPReport,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4114,6 +4118,50 @@ async function saveExternalStreamData(
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// AOP APPROVAL FLOW RELEASE BUTTON FUNCTIONS
+
+async function getReleaseAOPStatus(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/release-aop?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error fetching release AOP status:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function releaseAOPReport(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/release-aop?plantId=${encodeURIComponent(plantId)}&year=${encodeURIComponent(year)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error releasing AOP report:', e)
     return await Promise.reject(e)
   }
 }
