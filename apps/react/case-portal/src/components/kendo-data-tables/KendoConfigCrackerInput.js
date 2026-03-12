@@ -147,9 +147,9 @@ const CrackerConfig = () => {
       editButton: false,
       showUnit: false,
       showModes:
-        (lowerVertName === 'cracker' && currentTabDisplay !== 'Naphtha') ||
-        (lowerVertName === 'cracker' &&
-          currentTabDisplay !== 'External Streams'),
+        lowerVertName === 'cracker' &&
+        currentTabDisplay !== 'Naphtha' &&
+        currentTabDisplay !== 'External Streams',
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
@@ -168,7 +168,7 @@ const CrackerConfig = () => {
       editButton: false,
       saveBtn: false,
       allAction: lowerVertName === 'cracker',
-      showCalculate: true,
+      showCalculate: false,
       showCalculateVisibility: true,
     },
     isOldYear,
