@@ -85,6 +85,12 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
           value: parseFloat(row.apr) || 0,
           remarks: row.remarks,
           originalRemark: row.remarks || '',
+          normParameterFKId: row.normParameterFKId,
+          auditYear: row.auditYear,
+          normTypeName: row.normTypeName,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          type: row.type,
         }),
       )
 
@@ -139,26 +145,29 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     setLoading(true)
     try {
       let payload = updatedRows?.map((row) => {
-        const { id, inEdit, particulars, uom, value, ...rest } = row
+        const { id, inEdit, particulars, originalRemark, ...rest } = row
+        const monthValue = row.value ?? 0
         return {
-          ...rest,
-          DisplayName: particulars,
-          apr: value,
-          may: value,
-          jun: value,
-          jul: value,
-          aug: value,
-          sep: value,
-          oct: value,
-          nov: value,
-          dec: value,
-          jan: value,
-          feb: value,
-          mar: value,
-          UOM: uom,
-          Remarks: row.remarks,
-          normParameterFKId: row.NormParameter_FK_Id,
-          auditYear: row.AuditYear,
+          normParameterFKId: row.normParameterFKId,
+          jan: monthValue,
+          feb: monthValue,
+          mar: monthValue,
+          apr: monthValue,
+          may: monthValue,
+          jun: monthValue,
+          jul: monthValue,
+          aug: monthValue,
+          sep: monthValue,
+          oct: monthValue,
+          nov: monthValue,
+          dec: monthValue,
+          remarks: row.remarks,
+          auditYear: row.auditYear,
+          uom: row.uom,
+          normTypeName: row.normTypeName,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          type: row.type ?? '',
         }
       })
 

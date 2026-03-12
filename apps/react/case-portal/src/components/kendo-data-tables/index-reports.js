@@ -128,6 +128,8 @@ const KendoDataTablesReports = ({
   groupBy = null,
   grades = [],
   handleGradeChange = () => {},
+  handleRelease = () => {},
+  isReleaseDisabled = true,
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -852,12 +854,12 @@ const KendoDataTablesReports = ({
             {permissions?.showFinalSubmit && (
               <Button
                 variant='contained'
-                // onClick={handleExport}
-                // disabled={isButtonDisabled|| READ_ONLY}
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
                 className='btn-save'
-                disabled={READ_ONLY}
               >
-                Submit
+                {/* Submit */}
+                Release
               </Button>
             )}
 
