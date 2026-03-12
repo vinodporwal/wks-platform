@@ -10,11 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.NormConfigurationDTO;
+import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.AopCalculationRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -37,6 +39,9 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
 
     @Autowired
     private VerticalsRepository verticalsRepository;
+
+    @Autowired
+    private AopCalculationRepository aopCalculationRepository;
 
     @Override
     public AOPMessageVM getNormConfiguration(String plantId, String aopYear, String type) {
@@ -88,9 +93,16 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
 
             Map<String, Object> data = new HashMap<>();
             data.put("normConfigurationList", list);
+
+            
+            List<AopCalculation> aopCalculation = aopCalculationRepository
+                    .findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), aopYear, "calculated-norms");
+            data.put("aopCalculation", aopCalculation);
+
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
             aopMessageVM.setData(data);
+
             return aopMessageVM;
         } catch (IllegalArgumentException e) {
             throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
