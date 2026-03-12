@@ -110,7 +110,9 @@ export default function MajorProfitInitiative() {
           id,
           initiativeDescription,
           remark,
-          targetDate: formatDate(targetDate ? new Date(targetDate) : new Date()),
+          targetDate: formatDate(
+            targetDate ? new Date(targetDate) : new Date(),
+          ),
           category,
           outcome,
           recommendation,

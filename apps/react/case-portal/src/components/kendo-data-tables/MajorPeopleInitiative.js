@@ -111,7 +111,9 @@ export default function MajorPeopleInitiative() {
           outcome,
           recommendation,
           remark,
-          targetDate: formatDate(targetDate ? new Date(targetDate) : new Date()),
+          targetDate: formatDate(
+            targetDate ? new Date(targetDate) : new Date(),
+          ),
         }
       })
 
