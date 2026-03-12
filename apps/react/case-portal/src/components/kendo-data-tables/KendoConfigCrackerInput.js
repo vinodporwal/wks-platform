@@ -176,7 +176,7 @@ const CrackerConfig = () => {
       editButton: false,
       saveBtn: false,
       allAction: lowerVertName === 'cracker',
-      showCalculate: true,
+      showCalculate: false,
       showCalculateVisibility: true,
     },
     isOldYear,

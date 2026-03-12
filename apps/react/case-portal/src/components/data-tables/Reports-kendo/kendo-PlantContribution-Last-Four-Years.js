@@ -463,7 +463,7 @@ export default function PlantContributionLastFourYears() {
             id='alert-dialog-description'
             sx={{ color: 'text.primary' }}
           >
-            Warning: You will not be able to edit Production or Norms values
+            Warning: User will not be able to edit Production or Norms values
             after this action is completed.
           </DialogContentText>
         </DialogContent>
