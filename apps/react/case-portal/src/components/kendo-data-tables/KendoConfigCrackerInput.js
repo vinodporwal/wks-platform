@@ -154,8 +154,16 @@ const CrackerConfig = () => {
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
       modes: modes,
-      uploadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
-      downloadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
+      uploadExcelBtn:
+        currentTabDisplay == 'Constant' ||
+        currentTabDisplay == 'External Streams'
+          ? false
+          : true,
+      downloadExcelBtn:
+        currentTabDisplay == 'Constant' ||
+        currentTabDisplay == 'External Streams'
+          ? false
+          : true,
       hideRemarkForNonEditableRows: true,
     },
     isOldYear,

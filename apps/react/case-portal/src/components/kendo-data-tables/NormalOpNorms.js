@@ -502,6 +502,7 @@ const NormalOpNormsScreen = () => {
             gradeId,
             lowerVertName,
             AOP_YEAR,
+            lowerSiteName,
           )
 
         // if (response.status === 200) {

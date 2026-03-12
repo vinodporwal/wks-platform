@@ -5,6 +5,7 @@ import { useSession } from 'SessionStoreContext'
 import { SiteReportDataService } from 'services/SiteReportDataService'
 import KendoDataTables from './index'
 import { useSelector } from 'react-redux'
+import { validateFields } from 'utils/validationUtils'
 
 export default function MCUCapacityUtilization() {
   const keycloak = useSession()
@@ -136,6 +137,16 @@ export default function MCUCapacityUtilization() {
         return
       }
 
+      const requiredFields = ['remarks']
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({ message: validationMessage, severity: 'error' })
+        setLoading(false)
+        return
+      }
+
       const payload = data.map(({ id, prevAop, prevActual, aop, remarks }) => ({
         id,
         prevAop,
@@ -206,7 +217,7 @@ export default function MCUCapacityUtilization() {
   }
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])

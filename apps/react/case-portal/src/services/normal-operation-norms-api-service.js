@@ -378,10 +378,15 @@ async function saveNormalOperationNormsData(
   gradeId,
   lowerVertName,
   AOP_YEAR,
+  lowerSiteName,
 ) {
   const year = AOP_YEAR
   const queryParams = new URLSearchParams({ year, plantId })
-  if (lowerVertName === 'pe' || lowerVertName === 'pp') {
+  if (
+    lowerVertName === 'pe' ||
+    lowerVertName === 'pp' ||
+    (lowerVertName === 'pvc' && lowerSiteName === 'vmd')
+  ) {
     queryParams.append('gradeId', gradeId)
   }
   const url = `${Config.CaseEngineUrl}/task/steady-state-norms?${queryParams.toString()}`
