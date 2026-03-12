@@ -109,6 +109,7 @@ const ProductionvolumeData = ({ permissions }) => {
   const IS_PVC_DMD = VERTICAL_NAME === 'pvc' && SITE_NAME === 'dmd'
   const IS_PP_HMD = VERTICAL_NAME === 'pp' && SITE_NAME === 'hmd'
   const IS_PTA_HMD = VERTICAL_NAME === 'pta' && SITE_NAME === 'hmd'
+  const IS_CRACKER_VMD = VERTICAL_NAME === 'cracker' && SITE_NAME === 'vmd'
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [rows, setRows] = useState()
   const [rowsPercentageSummary, setRowsPercentageSummary] = useState()
@@ -1349,59 +1350,64 @@ const ProductionvolumeData = ({ permissions }) => {
       )}
 
       {/* CURRENT_OPERATING_CAPACITY */}
-      <KendoDataTables
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        enableSaveAddBtn={enableSaveAddBtn}
-        setRows={setRows}
-        columns={colDefs_current_operating_capacity}
-        rows={rows1}
-        paginationOptions={[100, 200, 300]}
-        saveChanges={saveChanges}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        apiRef={apiRef}
-        fetchData={fetchData}
-        handleUnitChange={handleUnitChangeMaxCapacity}
-        handleRemarkCellClick={handleRemarkCellClick}
-        experimentalFeatures={{ newEditingApi: true }}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        handleCalculate={handleCalculate}
-        permissions={adjustedPermissions}
-        selectedUnit={unitDesignCapacity}
-        setSelectedUnit={setUnitDesignCapacity}
-        handleExcelUpload={handleExcelUpload}
-        supressGridHeight={true}
-        downloadExcelForConfiguration={() =>
-          downloadExcelForConfiguration('main')
-        }
-        resetEditSignal={editResetKey}
-        setEditResetKey={setEditResetKey}
-        mcuMaxCapValues={mcuMaxCapValues}
-      />
+      {!IS_CRACKER_VMD && (
+        <KendoDataTables
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          enableSaveAddBtn={enableSaveAddBtn}
+          setRows={setRows}
+          columns={colDefs_current_operating_capacity}
+          rows={rows1}
+          paginationOptions={[100, 200, 300]}
+          saveChanges={saveChanges}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          apiRef={apiRef}
+          fetchData={fetchData}
+          handleUnitChange={handleUnitChangeMaxCapacity}
+          handleRemarkCellClick={handleRemarkCellClick}
+          experimentalFeatures={{ newEditingApi: true }}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          handleCalculate={handleCalculate}
+          permissions={adjustedPermissions}
+          selectedUnit={unitDesignCapacity}
+          setSelectedUnit={setUnitDesignCapacity}
+          handleExcelUpload={handleExcelUpload}
+          supressGridHeight={true}
+          downloadExcelForConfiguration={() =>
+            downloadExcelForConfiguration('main')
+          }
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
+          mcuMaxCapValues={mcuMaxCapValues}
+        />
+      )}
 
       {/* PERCENTAGE_SUMMARY */}
-      {!permissions?.hideSummary && VERTICAL_NAME !== 'pta' && !IS_CHEMICAL && (
-        <>
-          <KendoDataTables
-            setRows={setRowsPercentageSummary}
-            columns={colDefs_percentage_summary}
-            rows={rowsPercentageSummary}
-            title='Production target Reference'
-            fetchData={fetchData}
-            permissions={adjustedPermissionsLast}
-            supressGridHeight={true}
-            resetEditSignal={editResetKey}
-            setEditResetKey={setEditResetKey}
-          />
-        </>
-      )}
+      {!permissions?.hideSummary &&
+        VERTICAL_NAME !== 'pta' &&
+        !IS_CHEMICAL &&
+        !IS_CRACKER_VMD && (
+          <>
+            <KendoDataTables
+              setRows={setRowsPercentageSummary}
+              columns={colDefs_percentage_summary}
+              rows={rowsPercentageSummary}
+              title='Production target Reference'
+              fetchData={fetchData}
+              permissions={adjustedPermissionsLast}
+              supressGridHeight={true}
+              resetEditSignal={editResetKey}
+              setEditResetKey={setEditResetKey}
+            />
+          </>
+        )}
     </div>
   )
 }
