@@ -2069,7 +2069,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                        if (ldtStart != null) {
 	                            ldtEnd = ldtStart.plusHours(192);
 	                            dto.setMaintEndDateTime(Date.from(ldtEnd.atZone(ZoneId.systemDefault()).toInstant()));
-	                            dto.setRate(27.0);
+	                            dto.setRate(27.0833);
 	                            isVcmFurnaceDecoking = true;
 	                        }
 	                    } else if (d.equalsIgnoreCase("Furnace Decoking H-1220")) {

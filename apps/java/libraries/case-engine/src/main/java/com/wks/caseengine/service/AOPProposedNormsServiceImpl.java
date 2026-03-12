@@ -3,6 +3,7 @@ package com.wks.caseengine.service;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -341,13 +342,20 @@ public class AOPProposedNormsServiceImpl implements AOPProposedNormsService {
 				if (dtoList == null) {
 					dtoList = new ArrayList<>();
 				}
+				boolean withErrorColumns = dtoList.stream().anyMatch(d -> d.getErrDescription() != null || d.getSaveStatus() != null);
+				List<String> afterSaveHeaders = new ArrayList<>(headers);
+				if (withErrorColumns) {
+					afterSaveHeaders.add("Status");
+					afterSaveHeaders.add("Error Description");
+				}
+
 				Sheet sheet = workbook.createSheet("Sheet1");
 				int currentRow = 0;
 
 				Row headerRow = sheet.createRow(currentRow++);
-				for (int i = 0; i < headers.size(); i++) {
+				for (int i = 0; i < afterSaveHeaders.size(); i++) {
 					Cell cell = headerRow.createCell(i);
-					cell.setCellValue(headers.get(i));
+					cell.setCellValue(afterSaveHeaders.get(i));
 					cell.setCellStyle(headerStyle);
 				}
 
@@ -407,8 +415,13 @@ public class AOPProposedNormsServiceImpl implements AOPProposedNormsService {
 
 					setCellValue(row, col++, dto.getRemarks());
 					setCellValue(row, col++, dto.getId());
+					if (withErrorColumns) {
+						setCellValue(row, col++, dto.getSaveStatus());
+						setCellValue(row, col++, dto.getErrDescription());
+					}
 
-					for (int c = 0; c < headers.size(); c++) {
+					int colCount = afterSaveHeaders.size();
+					for (int c = 0; c < colCount; c++) {
 						Cell cell = row.getCell(c);
 						if (cell == null) {
 							cell = row.createCell(c);
@@ -491,6 +504,7 @@ public class AOPProposedNormsServiceImpl implements AOPProposedNormsService {
 	public AOPMessageVM importProposedNormsExcel(String year, String plantId, MultipartFile file) {
 		try {
 			List<AOPProposedNormsDTO> toSave = new ArrayList<>();
+			List<AOPProposedNormsDTO> failedList = new ArrayList<>();
 			try (InputStream is = file.getInputStream(); Workbook workbook = new XSSFWorkbook(is)) {
 				Map<String, String> gradeSheetToId = getGradeSheetNameToIdMap(year, plantId);
 				if (workbook.getNumberOfSheets() == 0) {
@@ -507,7 +521,6 @@ public class AOPProposedNormsServiceImpl implements AOPProposedNormsService {
 					String sheetName = sheet.getSheetName();
 					String gId = gradeSheetToId.get(sheetName);
 					if (gId == null) {
-						// Sheet name does not correspond to a known grade; skip
 						continue;
 					}
 					for (int r = 1; r <= sheet.getLastRowNum(); r++) {
@@ -519,8 +532,13 @@ public class AOPProposedNormsServiceImpl implements AOPProposedNormsService {
 						if (id == null || id.trim().isEmpty()) {
 							continue;
 						}
+						String remarks = getStringCellValue(row.getCell(38));
+						boolean hasRemark = remarks != null && !remarks.trim().isEmpty();
+
 						AOPProposedNormsDTO dto = new AOPProposedNormsDTO();
 						dto.setId(id);
+						dto.setNormParameterDisplayName(getStringCellValue(row.getCell(0)));
+						dto.setUOM(getStringCellValue(row.getCell(1)));
 						dto.setCurrYearProposedApril(getNumericCellValue(row.getCell(4)));
 						dto.setCurrYearProposedMay(getNumericCellValue(row.getCell(7)));
 						dto.setCurrYearProposedJune(getNumericCellValue(row.getCell(10)));
@@ -533,18 +551,40 @@ public class AOPProposedNormsServiceImpl implements AOPProposedNormsService {
 						dto.setCurrYearProposedJanuary(getNumericCellValue(row.getCell(31)));
 						dto.setCurrYearProposedFebruary(getNumericCellValue(row.getCell(34)));
 						dto.setCurrYearProposedMarch(getNumericCellValue(row.getCell(37)));
-						dto.setRemarks(getStringCellValue(row.getCell(38)));
-						toSave.add(dto);
+						dto.setRemarks(remarks);
+
+						if (!hasRemark) {
+							dto.setSaveStatus("Failed");
+							dto.setErrDescription("Remark is required");
+							failedList.add(dto);
+						} else {
+							toSave.add(dto);
+						}
 					}
 				}
 			}
-			if (toSave.isEmpty()) {
+			if (toSave.isEmpty() && failedList.isEmpty()) {
 				AOPMessageVM vm = new AOPMessageVM();
 				vm.setCode(400);
 				vm.setMessage("No valid rows to import (Id column required)");
 				return vm;
 			}
-			return updateProposedNorms(year, plantId, toSave);
+			if (!toSave.isEmpty()) {
+				updateProposedNorms(year, plantId, toSave);
+			}
+			if (!failedList.isEmpty()) {
+				byte[] errorFileBytes = exportProposedNorms(year, plantId, true, failedList);
+				AOPMessageVM vm = new AOPMessageVM();
+				vm.setCode(400);
+				vm.setMessage(toSave.isEmpty() ? "Import failed: Remark is required for all rows." : "Partial data has been saved. Some rows failed validation (Remark is required).");
+				vm.setData(errorFileBytes != null ? Base64.getEncoder().encodeToString(errorFileBytes) : null);
+				return vm;
+			}
+			AOPMessageVM vm = new AOPMessageVM();
+			vm.setCode(200);
+			vm.setData(null);
+			vm.setMessage("Data saved successfully");
+			return vm;
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid input", e);
 		} catch (Exception e) {
