@@ -35,11 +35,7 @@ export default function MajorSafetyInitiative() {
 
   const columns = useMemo(() => {
     const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorSafetyInitiative
-    // Map 'resp' field to 'remarks' so KendoDataTables uses RemarkCell
     return cols.map((col) => {
-      if (col.field === 'resp') {
-        return { ...col, field: 'remarks' }
-      }
       return col
     })
   }, [AOP_YEAR])
@@ -61,7 +57,6 @@ export default function MajorSafetyInitiative() {
             id: item.id || index + 1,
             sno: index + 1,
             idFromApi: item.id || null,
-            remarks: item?.resp || '', // Map resp to remarks for UI
           }),
         )
         setRows(mapped)
@@ -106,17 +101,25 @@ export default function MajorSafetyInitiative() {
         return
       }
 
-      const payload = data.map((item) => {
-        const { remarks, ...rest } = item
-        return {
-          ...rest,
-          resp: remarks, // Map remarks back to resp for API
-          siteId: SITE_ID,
-          aopYear: AOP_YEAR,
-          updatedBy: keycloak?.userName || 'system',
-          updatedDate: new Date().toISOString(),
-        }
-      })
+      const payload = data.map(
+        ({
+          id,
+          initiativeDescription,
+          category,
+          outcome,
+          recommendation,
+          remark,
+          targetDate,
+        }) => ({
+          id,
+          initiativeDescription,
+          category,
+          outcome,
+          recommendation,
+          remark,
+          targetDate,
+        }),
+      )
 
       const response = await SiteReportDataService.saveMajorSafetyInitiative(
         keycloak,
@@ -152,7 +155,7 @@ export default function MajorSafetyInitiative() {
   }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
@@ -177,7 +180,7 @@ export default function MajorSafetyInitiative() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'B2.2. Major Safety Improvement Initiative FY27 (Max 5)',
+      titleName: 'Major Safety Improvement Initiative',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Major_Safety_Initiative_${AOP_YEAR}`,
       // addButton: true,

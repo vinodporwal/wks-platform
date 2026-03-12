@@ -61,19 +61,19 @@ export default function MCUCapacityUtilization() {
     },
     { field: 'plant', title: 'Plant', widthT: 120, editable: false },
     {
-      field: 'fyPrevAOP',
+      field: 'prevAop',
       title: `FY${prev} AOP`,
       editable: true,
       type: 'number',
     },
     {
-      field: 'fyPrevActual',
+      field: 'prevActual',
       title: `FY${prev} Actual`,
       editable: true,
       type: 'number',
     },
     {
-      field: 'fyCurrAOP',
+      field: 'aop',
       title: `FY${next} AOP`,
       editable: true,
       type: 'number',
@@ -108,17 +108,6 @@ export default function MCUCapacityUtilization() {
             id: item?.id || null,
             sno: index + 1,
             idFromApi: item?.id || null,
-            remarks: item?.rationalReasons || '', // Map rationalReasons to remarks
-            plant: item?.plant,
-            fyPrevAOP: item?.fyPrevAOP,
-            fyPrevActual: item?.fyPrevActual,
-            fyCurrAOP: item?.fyCurrAOP,
-            siteId: item?.siteId,
-            aopYear: item?.aopYear,
-            updatedBy: item?.updatedBy,
-            updatedDate: item?.updatedDate,
-            isEditable: item?.isEditable,
-            originalRemark: item?.remarks,
           }),
         )
         setRows(mapped)
@@ -147,17 +136,13 @@ export default function MCUCapacityUtilization() {
         return
       }
 
-      const payload = data.map((item) => {
-        const { remarks, ...rest } = item
-        return {
-          ...rest,
-          rationalReasons: remarks, // Map remarks back to rationalReasons
-          siteId: SITE_ID,
-          aopYear: AOP_YEAR,
-          updatedBy: keycloak?.userName || 'system',
-          updatedDate: new Date().toISOString(),
-        }
-      })
+      const payload = data.map(({ id, prevAop, prevActual, aop, remarks }) => ({
+        id,
+        prevAop,
+        prevActual,
+        aop,
+        remarks,
+      }))
 
       const response = await SiteReportDataService.saveMCUCapacityUtilization(
         keycloak,
@@ -221,7 +206,7 @@ export default function MCUCapacityUtilization() {
   }
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])

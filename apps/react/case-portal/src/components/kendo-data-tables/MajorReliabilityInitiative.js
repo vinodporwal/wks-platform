@@ -36,9 +36,6 @@ export default function MajorReliabilityInitiative() {
   const columns = useMemo(() => {
     const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorSafetyInitiative
     return cols.map((col) => {
-      if (col.field === 'resp') {
-        return { ...col, field: 'remarks' }
-      }
       return col
     })
   }, [AOP_YEAR])
@@ -60,7 +57,6 @@ export default function MajorReliabilityInitiative() {
             id: item.id || index + 1,
             sno: index + 1,
             idFromApi: item.id || null,
-            remarks: item?.resp || '',
           }),
         )
         setRows(mapped)
@@ -98,17 +94,25 @@ export default function MajorReliabilityInitiative() {
         return
       }
 
-      const payload = data.map((item) => {
-        const { remarks, ...rest } = item
-        return {
-          ...rest,
-          resp: remarks,
-          siteId: SITE_ID,
-          aopYear: AOP_YEAR,
-          updatedBy: keycloak?.userName || 'system',
-          updatedDate: new Date().toISOString(),
-        }
-      })
+      const payload = data.map(
+        ({
+          id,
+          initiativeDescription,
+          category,
+          outcome,
+          recommendation,
+          remark,
+          targetDate,
+        }) => ({
+          id,
+          initiativeDescription,
+          category,
+          outcome,
+          recommendation,
+          remark,
+          targetDate,
+        }),
+      )
 
       const response =
         await SiteReportDataService.saveMajorReliabilityImprovement(
@@ -142,7 +146,7 @@ export default function MajorReliabilityInitiative() {
   }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
@@ -167,7 +171,7 @@ export default function MajorReliabilityInitiative() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'B4.2. Major Reliability Improvement Initiative FY27 (Max 5)',
+      titleName: 'Major Reliability Improvement Initiative',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Major_Reliability_Initiative_${AOP_YEAR}`,
       // addButton: true,

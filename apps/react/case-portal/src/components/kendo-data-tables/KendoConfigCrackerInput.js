@@ -146,7 +146,10 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showModes: lowerVertName === 'cracker' && currentTabDisplay !== 'Naphtha',
+      showModes:
+        lowerVertName === 'cracker' &&
+        currentTabDisplay !== 'Naphtha' &&
+        currentTabDisplay !== 'External Streams',
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',

@@ -36,9 +36,6 @@ export default function MajorProfitInitiative() {
   const columns = useMemo(() => {
     const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorSafetyInitiative
     return cols.map((col) => {
-      if (col.field === 'resp') {
-        return { ...col, field: 'remarks' }
-      }
       return col
     })
   }, [AOP_YEAR])
@@ -60,7 +57,6 @@ export default function MajorProfitInitiative() {
             id: item.id || index + 1,
             sno: index + 1,
             idFromApi: item.id || null,
-            remarks: item?.resp || '',
           }),
         )
         setRows(mapped)
@@ -90,6 +86,7 @@ export default function MajorProfitInitiative() {
       }
 
       const requiredFields = ['initiativeDescription']
+
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
         setSnackbarOpen(true)
@@ -97,16 +94,25 @@ export default function MajorProfitInitiative() {
         setLoading(false)
         return
       }
-
       const payload = data.map((item) => {
-        const { remarks, ...rest } = item
+        const {
+          id,
+          initiativeDescription,
+          remark,
+          targetDate,
+          category,
+          outcome,
+          recommendation,
+        } = item
+
         return {
-          ...rest,
-          resp: remarks,
-          siteId: SITE_ID,
-          aopYear: AOP_YEAR,
-          updatedBy: keycloak?.userName || 'system',
-          updatedDate: new Date().toISOString(),
+          id,
+          initiativeDescription,
+          remark,
+          targetDate,
+          category,
+          outcome,
+          recommendation,
         }
       })
 
@@ -141,7 +147,7 @@ export default function MajorProfitInitiative() {
   }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
@@ -167,7 +173,7 @@ export default function MajorProfitInitiative() {
       saveBtn: true,
       showTitleNameBusiness: true,
       titleName:
-        'B3.7. Major Profit Improvement and Operability Improvement Initiative FY27 (Max 5)',
+        'Major Profit Improvement and Operability Improvement Initiative',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Major_Profit_Initiative_${AOP_YEAR}`,
       // addButton: true,

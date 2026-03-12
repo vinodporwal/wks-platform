@@ -54,7 +54,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
         },
       ],
     },
-    { field: 'remarks', title: 'Remarks', widthT: 200, editable: true },
+    { field: 'remark', title: 'Remarks', widthT: 200, editable: true },
   ],
   majorIncidents: [
     { field: 'id', title: 'ID', editable: false, hidden: true },
@@ -88,7 +88,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       type: 'date',
     },
     { field: 'resp', title: 'Resp.', widthT: 100, editable: true },
-    { field: 'remarks', title: 'Remarks', widthT: 200, editable: true },
+    { field: 'remark', title: 'Remarks', widthT: 200, editable: true },
   ],
   majorSafetyInitiative: [
     { field: 'id', title: 'ID', editable: false, hidden: true },
@@ -122,7 +122,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       editable: true,
       type: 'date',
     },
-    { field: 'resp', title: 'Resp.', widthT: 200, editable: true },
+    { field: 'remark', title: 'Resp.', widthT: 200, editable: true },
     // { field: 'remarks', title: 'Remarks', widthT: 200, editable: true },
   ],
   majorPeopleInitiative: [
@@ -156,7 +156,7 @@ const getSiteAOPReportColumns = ({ AOP_YEAR, valueFormat, prev, next }) => ({
       editable: true,
       type: 'date',
     },
-    { field: 'resp', title: 'Resp.', widthT: 200, editable: true },
+    { field: 'remark', title: 'Resp.', widthT: 200, editable: true },
     // { field: 'remarks', title: 'Remarks', widthT: 200, editable: true },
   ],
   production: [

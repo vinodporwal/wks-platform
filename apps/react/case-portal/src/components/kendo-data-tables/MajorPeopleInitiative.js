@@ -36,9 +36,6 @@ export default function MajorPeopleInitiative() {
   const columns = useMemo(() => {
     const cols = getSiteAOPReportColumns({ AOP_YEAR }).majorPeopleInitiative
     return cols.map((col) => {
-      if (col.field === 'resp') {
-        return { ...col, field: 'remarks' }
-      }
       return col
     })
   }, [AOP_YEAR])
@@ -60,7 +57,6 @@ export default function MajorPeopleInitiative() {
             id: item.id || index + 1,
             sno: index + 1,
             idFromApi: item.id || null,
-            remarks: item?.resp || '',
           }),
         )
         setRows(mapped)
@@ -99,14 +95,22 @@ export default function MajorPeopleInitiative() {
       }
 
       const payload = data.map((item) => {
-        const { remarks, ...rest } = item
+        const {
+          id,
+          initiativeDescription,
+          outcome,
+          recommendation,
+          remark,
+          targetDate,
+        } = item
+
         return {
-          ...rest,
-          resp: remarks,
-          siteId: SITE_ID,
-          aopYear: AOP_YEAR,
-          updatedBy: keycloak?.userName || 'system',
-          updatedDate: new Date().toISOString(),
+          id,
+          initiativeDescription,
+          outcome,
+          recommendation,
+          remark,
+          targetDate,
         }
       })
 
@@ -141,7 +145,7 @@ export default function MajorPeopleInitiative() {
   }, [modifiedCells, keycloak, SITE_ID, AOP_YEAR, fetchData])
 
   const handleRemarkCellClick = useCallback((row) => {
-    setCurrentRemark(row.remarks || '')
+    setCurrentRemark(row.remark || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }, [])
@@ -166,7 +170,7 @@ export default function MajorPeopleInitiative() {
       allAction: true,
       saveBtn: true,
       showTitleNameBusiness: true,
-      titleName: 'B5. Major People Initiative FY27 (Max 5)',
+      titleName: 'Major People Initiative',
       adjustedPermissions: true,
       ExcelName: `${lowerVertName}_Major_People_Initiative_${AOP_YEAR}`,
       // addButton: true,

@@ -303,7 +303,7 @@ export async function saveMajorSafetyInitiative(
   AOP_YEAR,
   data,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/major-safety-improvement-initiative`
+  const url = `${Config.CaseEngineUrl}/task/major-safety-improvement-initiative?aopYear=${AOP_YEAR}&siteId=${SITE_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -344,7 +344,7 @@ export async function saveMajorProfitImprovement(
   AOP_YEAR,
   data,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/major-profit-improvement`
+  const url = `${Config.CaseEngineUrl}/task/major-profit-improvement?aopYear=${AOP_YEAR}&siteId=${SITE_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -389,7 +389,7 @@ export async function saveMajorReliabilityImprovement(
   AOP_YEAR,
   data,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/major-reliability-improvement`
+  const url = `${Config.CaseEngineUrl}/task/major-reliability-improvement?aopYear=${AOP_YEAR}&siteId=${SITE_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -430,7 +430,7 @@ export async function saveMajorPeopleInitiative(
   AOP_YEAR,
   data,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/major-people-initiative`
+  const url = `${Config.CaseEngineUrl}/task/major-people-initiative?aopYear=${AOP_YEAR}&siteId=${SITE_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -471,7 +471,7 @@ export async function saveMCUCapacityUtilization(
   AOP_YEAR,
   data,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/mcu-capacity-utilization`
+  const url = `${Config.CaseEngineUrl}/task/mcu-capacity-utilization?aopYear=${AOP_YEAR}&siteId=${SITE_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
