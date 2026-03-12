@@ -96,11 +96,6 @@ const Configuration = ({ startDate, endDate }) => {
     },
   ]
 
-  const nonEditableProduct = [
-    'Norms Cycle Start',
-    'Days remaining time from norms preparation time to AOP next cycle start',
-  ]
-
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchConfigurationData()
@@ -170,7 +165,7 @@ const Configuration = ({ startDate, endDate }) => {
           remarks: item.remarks || '',
           id: item?.id || index + 1,
           attributeValue: formattedAttributeValue,
-          isEditable: !nonEditableProduct.includes(item.name),
+          isEditable: item.isEditable,
         }
       })
       setRows(formattedData)
@@ -294,14 +289,6 @@ const Configuration = ({ startDate, endDate }) => {
       const periodFrom = formatDateForAPI(startDate)
       const periodTo = formatDateForAPI(endDate)
 
-      console.log('Saving configuration data:', {
-        payload,
-        plantId: PLANT_ID,
-        siteId: SITE_ID,
-        periodFrom,
-        periodTo,
-      })
-
       const response = await ProductionNormsApiService.saveConfigurationData(
         keycloak,
         AOP_YEAR,
@@ -318,6 +305,7 @@ const Configuration = ({ startDate, endDate }) => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await fetchConfigurationData()
     } catch (error) {
       console.error('Error saving configuration data:', error)
       setSnackbarOpen(true)
