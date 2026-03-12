@@ -134,11 +134,9 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
 
             String procedureName = vertical.getName() + "_" + site.getName() + "_CalculateNormConfiguration";
 
-            int result = executeDynamicUpdateProcedure(
+            int result = executeProcedure(
                     procedureName,
                     plantId,
-                    site.getId().toString(),
-                    vertical.getId().toString(),
                     aopYear);
 
             // Maintain calculation flags for dependent screen "manual-norms" and calculation screen "calculated-norms"
@@ -227,5 +225,29 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
             throw new RuntimeException("Error executing stored procedure: " + procedureName, e);
         }
     }
+    public int executeProcedure(String procedureName, String plantId,
+            String finYear) {
+        try {
+            String callSql = "{call " + procedureName + "(?, ?)}";
+
+            try (Connection connection = dataSource.getConnection();
+                 CallableStatement stmt = connection.prepareCall(callSql)) {
+
+                stmt.setString(1, plantId);
+                stmt.setString(2, finYear);
+
+                int rowsAffected = stmt.executeUpdate();
+
+                if (!connection.getAutoCommit()) {
+                    connection.commit();
+                }
+
+                return rowsAffected;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error executing stored procedure: " + procedureName, e);
+        }
+    }
+
 }
 
