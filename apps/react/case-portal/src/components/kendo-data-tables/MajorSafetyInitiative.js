@@ -7,6 +7,7 @@ import KendoDataTables from './index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
+import { formatDate } from 'utils/dateUtils'
 
 export default function MajorSafetyInitiative() {
   const keycloak = useSession()
@@ -88,7 +89,7 @@ export default function MajorSafetyInitiative() {
         return
       }
 
-      const requiredFields = ['initiativeDescription']
+      const requiredFields = ['initiativeDescription', 'remark']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -117,7 +118,7 @@ export default function MajorSafetyInitiative() {
           outcome,
           recommendation,
           remark,
-          targetDate,
+          targetDate: formatDate(targetDate ? new Date(targetDate) : new Date()),
         }),
       )
 
