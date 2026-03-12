@@ -7,6 +7,7 @@ import KendoDataTables from './index'
 import { useSelector } from 'react-redux'
 import { validateFields } from 'utils/validationUtils'
 import getSiteAOPReportColumns from 'components/colums/SiteReportColums'
+import { formatDate } from 'utils/dateUtils'
 
 export default function MajorReliabilityInitiative() {
   const keycloak = useSession()
@@ -85,7 +86,7 @@ export default function MajorReliabilityInitiative() {
         return
       }
 
-      const requiredFields = ['initiativeDescription']
+      const requiredFields = ['initiativeDescription', 'remark']
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
         setSnackbarOpen(true)
@@ -110,7 +111,9 @@ export default function MajorReliabilityInitiative() {
           outcome,
           recommendation,
           remark,
-          targetDate,
+          targetDate: formatDate(
+            targetDate ? new Date(targetDate) : new Date(),
+          ),
         }),
       )
 
