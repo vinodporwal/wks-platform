@@ -28,6 +28,7 @@ const NormsConfigurationGrid = ({
     message: '',
     severity: 'info',
   })
+  const [calculationObject, setCalculationObject] = useState([])
   const apiRef = useGridApiRef()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -65,7 +66,7 @@ const NormsConfigurationGrid = ({
       field: 'displayName', // matches API
       title: 'Particulars',
       editable: false,
-      widthT: 80,
+      widthT: 200,
     },
     {
       field: 'uom',
@@ -173,7 +174,7 @@ const NormsConfigurationGrid = ({
     },
   ]
 
-  const fetchNormsConfigurationData = async () => {
+  const fetchNormsConfigurationManualData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
 
     setModifiedCells({})
@@ -202,6 +203,7 @@ const NormsConfigurationGrid = ({
           isdisable: true,
         }),
       )
+      setCalculationObject(response?.data?.aopCalculation)
 
       setNormsRows(formattedData || [])
     } catch (error) {
@@ -215,10 +217,51 @@ const NormsConfigurationGrid = ({
       setLoading(false)
     }
   }
+  const fetchNormsConfigurationCalculatedData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
 
+    setModifiedCells({})
+
+    try {
+      setLoading(true)
+
+      const response =
+        await RawMaterialNormsBasisApiService.getNormsConfigurationData(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          'Calculated',
+        )
+
+      const formattedData = response?.data?.normConfigurationList?.map(
+        // ✅ Fixed key
+        (row, index) => ({
+          ...row,
+          id: row.normParameterFkId || index,
+          particulars: row.displayName,
+          uom: row.uom,
+          value: parseFloat(row.apr) || 0,
+          remarks: row.remarks,
+          originalRemark: row.remarks || '',
+          isdisable: true,
+        }),
+      )
+      setNormsRows(formattedData || [])
+    } catch (error) {
+      console.error('Error fetching Norms Configuration data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error fetching data',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
   useEffect(() => {
     setModifiedCells({})
-    fetchNormsConfigurationData()
+    fetchNormsConfigurationManualData()
+    fetchNormsConfigurationCalculatedData()
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
   const saveSummary = async (summary) => {
@@ -249,6 +292,45 @@ const NormsConfigurationGrid = ({
       setLoading(false)
     }
   }
+  const handleCalculate = async () => {
+    setRows([])
+    setLoading(true)
+    try {
+      var data =
+        await RawMaterialNormsBasisApiService.handleCalculateNormsConfiguration(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (data == 0 || data) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchNormsConfigurationManualData()
+        fetchNormsConfigurationCalculatedData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+
+      console.error('Error!', error)
+    }
+  }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -268,7 +350,7 @@ const NormsConfigurationGrid = ({
     }
   }
 
-  const adjustedPermissionsNorms = getAdjustedPermissions(
+  const adjustedPermissionsManual = getAdjustedPermissions(
     {
       showAction: true,
       saveWithRemark: true,
@@ -277,7 +359,25 @@ const NormsConfigurationGrid = ({
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       showTitleNameBusiness: true,
-      titleName: 'Norms Configuration',
+      showCalculate: true,
+      //Object.keys(calculationObject || {}).length > 0 ? true : false,
+      titleName: 'Norms Configuration - Manual',
+      showCalculateVisibility: true,
+    },
+    IS_OLD_YEAR,
+  )
+  const adjustedPermissionsCalculated = getAdjustedPermissions(
+    {
+      showAction: true,
+      saveWithRemark: true,
+      saveBtn: false,
+      allAction: true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      showTitleNameBusiness: true,
+      titleName: 'Norms Configuration - Calculated',
+      showCalculate: false,
+      showCalculateVisibility: false,
     },
     IS_OLD_YEAR,
   )
@@ -290,31 +390,59 @@ const NormsConfigurationGrid = ({
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-      <KendoDataTables
-        modifiedCells={modifiedNormsCells}
-        setModifiedCells={setModifiedNormsCells}
-        setRows={setNormsRows}
-        columns={NormConfigurationColumns}
-        rows={NormsRows}
-        paginationOptions={[100, 200, 300]}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        apiRef={apiRef}
-        open1={open1}
-        setOpen1={setOpen1}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        fetchData={fetchNormsConfigurationData}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        permissions={adjustedPermissionsNorms}
-        summaryEdited={summaryEdited}
-        groupBy={'normTypeName'}
-      />
+      <Box>
+        <KendoDataTables
+          modifiedCells={modifiedNormsCells}
+          setModifiedCells={setModifiedNormsCells}
+          setRows={setNormsRows}
+          columns={NormConfigurationColumns}
+          rows={NormsRows}
+          paginationOptions={[100, 200, 300]}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          open1={open1}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          handleCalculate={handleCalculate}
+          fetchData={fetchNormsConfigurationManualData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          permissions={adjustedPermissionsManual}
+          summaryEdited={summaryEdited}
+          groupBy={'normTypeName'}
+        />
+        <KendoDataTables
+          modifiedCells={modifiedNormsCells}
+          setModifiedCells={setModifiedNormsCells}
+          setRows={setNormsRows}
+          columns={NormConfigurationColumns}
+          rows={NormsRows}
+          paginationOptions={[100, 200, 300]}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          open1={open1}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          fetchData={fetchNormsConfigurationCalculatedData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          permissions={adjustedPermissionsCalculated}
+          summaryEdited={summaryEdited}
+          groupBy={'normTypeName'}
+        />
+      </Box>
     </Box>
   )
 }
