@@ -10,6 +10,7 @@ export const RawMaterialNormsBasisApiService = {
   postRawMaterialData,
   importRawMaterialExcel,
   exportRawMaterialExcel,
+  getNormsConfigurationData,
 }
 
 async function getData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -216,5 +217,20 @@ async function exportRawMaterialExcel(
   } catch (e) {
     console.error('Error exporting Columns Excel:', e)
     return Promise.reject(e)
+  }
+}
+async function getNormsConfigurationData(keycloak, PLANT_ID, AOP_YEAR, type) {
+  const url = `${Config.CaseEngineUrl}/task/norm-configuration?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

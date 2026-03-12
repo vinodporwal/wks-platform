@@ -9,6 +9,7 @@ import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 import { validateFields } from 'utils/validationUtils'
+import NormsConfigurationGrid from './NormConfigurationGrid'
 
 const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
@@ -368,35 +369,41 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
-      <KendoDataTables
-        modifiedCells={modifiedCells}
-        setModifiedCells={setModifiedCells}
-        setRows={setRows}
-        columns={productionColumns}
-        rows={rows}
-        paginationOptions={[100, 200, 300]}
-        saveChanges={saveChanges}
-        snackbarData={snackbarData}
-        snackbarOpen={snackbarOpen}
-        apiRef={apiRef}
-        open1={open1}
-        setOpen1={setOpen1}
-        setSnackbarOpen={setSnackbarOpen}
-        setSnackbarData={setSnackbarData}
-        handleRemarkCellClick={handleRemarkCellClick}
-        fetchData={fetchData}
-        remarkDialogOpen={remarkDialogOpen}
-        setRemarkDialogOpen={setRemarkDialogOpen}
-        currentRemark={currentRemark}
-        setCurrentRemark={setCurrentRemark}
-        currentRowId={currentRowId}
-        permissions={adjustedPermissions}
-        summaryEdited={summaryEdited}
-        groupBy={'normTypeName'}
-        downloadExcelForConfiguration={downloadExcelForConfiguration}
-        handleExcelUpload={handleExcelUpload}
-      />
+      <Box>
+        <KendoDataTables
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          setRows={setRows}
+          columns={productionColumns}
+          rows={rows}
+          paginationOptions={[100, 200, 300]}
+          saveChanges={saveChanges}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          open1={open1}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          fetchData={fetchData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          permissions={adjustedPermissions}
+          summaryEdited={summaryEdited}
+          groupBy={'normTypeName'}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          handleExcelUpload={handleExcelUpload}
+        />
+        <NormsConfigurationGrid
+          summary={summary}
+          summaryEdited={summaryEdited}
+          setSummaryEdited={setSummaryEdited}
+        />
+      </Box>
     </Box>
   )
 }
