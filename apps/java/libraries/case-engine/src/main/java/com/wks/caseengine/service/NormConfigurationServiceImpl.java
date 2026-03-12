@@ -68,7 +68,9 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
             List<NormConfigurationDTO> list = new ArrayList<>();
             for (Object[] row : results) {
                 NormConfigurationDTO dto = new NormConfigurationDTO();
-                dto.setNormParameterFkId(row.length > 0 && row[0] != null ? row[0].toString() : null);
+                // String fields: default to "" when null
+                dto.setNormParameterFkId(toStringOrEmpty(row, 0));
+                // Double fields: default to 0.0 when null
                 dto.setJan(toDouble(row, 1));
                 dto.setFeb(toDouble(row, 2));
                 dto.setMar(toDouble(row, 3));
@@ -81,13 +83,13 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
                 dto.setOct(toDouble(row, 10));
                 dto.setNov(toDouble(row, 11));
                 dto.setDec(toDouble(row, 12));
-                dto.setRemarks(row.length > 13 && row[13] != null ? row[13].toString() : null);
-                dto.setAuditYear(row.length > 14 && row[14] != null ? row[14].toString() : null);
-                dto.setUom(row.length > 15 && row[15] != null ? row[15].toString() : null);
-                dto.setNormTypeName(row.length > 16 && row[16] != null ? row[16].toString() : null);
+                dto.setRemarks(toStringOrEmpty(row, 13));
+                dto.setAuditYear(toStringOrEmpty(row, 14));
+                dto.setUom(toStringOrEmpty(row, 15));
+                dto.setNormTypeName(toStringOrEmpty(row, 16));
                 dto.setIsEditable(row.length > 17 && row[17] != null ? toBoolean(row[17]) : null);
-                dto.setDisplayName(row.length > 18 && row[18] != null ? row[18].toString() : null);
-                dto.setType(row.length > 19 && row[19] != null ? row[19].toString() : null);
+                dto.setDisplayName(toStringOrEmpty(row, 18));
+                dto.setType(toStringOrEmpty(row, 19));
                 list.add(dto);
             }
 
@@ -113,7 +115,7 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
 
     private static Double toDouble(Object[] row, int index) {
         if (row.length <= index || row[index] == null) {
-            return null;
+            return 0.0;
         }
         Object value = row[index];
         if (value instanceof Number) {
@@ -122,7 +124,7 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
         try {
             return Double.parseDouble(value.toString());
         } catch (NumberFormatException e) {
-            return null;
+            return 0.0;
         }
     }
 
@@ -134,6 +136,14 @@ public class NormConfigurationServiceImpl implements NormConfigurationService {
             return (Boolean) value;
         }
         return Boolean.parseBoolean(value.toString());
+    }
+
+    private static String toStringOrEmpty(Object[] row, int index) {
+        if (row.length <= index || row[index] == null) {
+            return "";
+        }
+        Object value = row[index];
+        return value.toString();
     }
 }
 
