@@ -11,7 +11,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { ColumnMenu } from 'components/@extended/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { truncateRemarks } from 'utils/remarksUtils'
 import {
   Backdrop,
@@ -202,6 +202,11 @@ const KendoDataTablesReciepe = ({
     setEdit(e.edit)
     // }
   }, [])
+
+  const rowHeightVH = 5 // each row ~4vh
+  const headerVH = 10 // grid’s own header/filter area
+  const pageHeaderVH = 20 // top app bar + stepper + controls
+  const maxVH = 60 // cap grid height
 
   const calculatedVH = React.useMemo(() => {
     if (!rows || rows?.length === 0) return 20
@@ -722,12 +727,7 @@ const KendoDataTablesReciepe = ({
               // height: '60vh',
               // height: `${gridHeight}px`,
 
-              height:
-                lowerVertName === 'meg' || supressGridHeight == true
-                  ? undefined
-                  : rows?.length > 10
-                    ? `${calculatedVH}vh`
-                    : undefined,
+              height: rows?.length > 10 ? `${calculatedVH}vh` : undefined,
 
               // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
               // height: `${calculatedVH}vh`,

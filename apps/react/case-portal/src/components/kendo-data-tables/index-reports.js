@@ -676,13 +676,6 @@ const KendoDataTablesReports = ({
     )
   }
 
-  const calculatedVH = React.useMemo(() => {
-    if (!rows || rows?.length === 0) return 20
-    const needed = rows?.length * rowHeightVH + headerVH
-    const available = 100 - pageHeaderVH
-    return Math.round(Math.min(needed, maxVH, available))
-  }, [rows?.length])
-
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
