@@ -1293,7 +1293,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		return null;
 	}
 
-		public AOPMessageVM getConfigurationConstants(String year, String plantFKId, String type) {
+		public AOPMessageVM getConfigurationConstants(String year, String plantFKId) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
@@ -1303,7 +1303,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
 					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM")
 					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS")) {
-				obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId, procedureName,type);
+				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
 			}
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
