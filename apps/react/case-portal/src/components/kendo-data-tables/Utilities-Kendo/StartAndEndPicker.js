@@ -6,26 +6,33 @@ const StartAndEndPicker = ({
   onLoad,
   disabled = false,
   dateFormat = 'YYYY-MM-DD',
+  startDate: startDateProp = null, 
+  endDate: endDateProp = null, 
 }) => {
-  const getDefaultStartDate = () => {
-    const date = new Date()
-    date.setFullYear(date.getFullYear() - 2)
-    return date
+  const parseDate = (val) => {
+    if (!val) return null
+    if (val instanceof Date) return val
+    const d = new Date(val)
+    return isNaN(d.getTime()) ? null : d
   }
 
-  const getDefaultEndDate = () => {
-    return new Date()
-  }
+  const [startDate, setStartDate] = useState(() => parseDate(startDateProp))
+  const [endDate, setEndDate] = useState(() => parseDate(endDateProp))
 
-  const [startDate, setStartDate] = useState(getDefaultStartDate())
-  const [endDate, setEndDate] = useState(getDefaultEndDate())
+  // Sync internal state when parent prop changes
+  useEffect(() => {
+    setStartDate(parseDate(startDateProp))
+  }, [startDateProp])
+
+  useEffect(() => {
+    setEndDate(parseDate(endDateProp))
+  }, [endDateProp])
 
   const formatDate = (date, format) => {
     if (!date) return ''
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-
     switch (format) {
       case 'YYYY-MM-DD':
         return `${year}-${month}-${day}`
@@ -41,7 +48,7 @@ const StartAndEndPicker = ({
   }
 
   const handleLoad = () => {
-    if (onLoad) {
+    if (onLoad && startDate && endDate) {
       onLoad({
         startDate: formatDate(startDate, dateFormat),
         endDate: formatDate(endDate, dateFormat),
@@ -53,15 +60,9 @@ const StartAndEndPicker = ({
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1,
-        marginTop: '5px',
-      }}
+      sx={{ display: 'flex', alignItems: 'center', gap: 1, marginTop: '5px' }}
     >
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-        {/* Start Date */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           <Typography className='button-title' sx={{ whiteSpace: 'nowrap' }}>
             Start Date
@@ -69,15 +70,13 @@ const StartAndEndPicker = ({
           <DatePicker
             id='start-date'
             format='dd-MM-yyyy'
-            value={startDate}
+            value={startDate} // null = shows placeholder, not old date
             onChange={(e) => setStartDate(e.value)}
-            style={{ height: '80px' }}
-            size={'medium'}
+            size='medium'
             disabled={disabled}
           />
         </Box>
 
-        {/* End Date */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           <Typography className='button-title' sx={{ whiteSpace: 'nowrap' }}>
             End Date
@@ -85,20 +84,18 @@ const StartAndEndPicker = ({
           <DatePicker
             id='end-date'
             format='dd-MM-yyyy'
-            value={endDate}
+            value={endDate} // null = shows placeholder, not old date
             onChange={(e) => setEndDate(e.value)}
-            style={{ height: '80px' }}
-            size={'medium'}
+            size='medium'
             disabled={disabled}
           />
         </Box>
 
-        {/* Load Button */}
         <Button
           variant='contained'
           onClick={handleLoad}
           className='btn-save'
-          disabled={disabled}
+          disabled={disabled || !startDate || !endDate} // Disable if no dates
           sx={{ alignSelf: 'flex-end' }}
         >
           Load

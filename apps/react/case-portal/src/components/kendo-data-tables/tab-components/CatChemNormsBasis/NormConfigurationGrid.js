@@ -201,6 +201,7 @@ const NormsConfigurationGrid = ({
           value: parseFloat(row.apr) || 0,
           remarks: row.remarks,
           originalRemark: row.remarks || '',
+          isEditable: false, 
           isdisable: true,
         }),
       )
@@ -244,6 +245,7 @@ const NormsConfigurationGrid = ({
           value: parseFloat(row.apr) || 0,
           remarks: row.remarks,
           originalRemark: row.remarks || '',
+          isEditable: false, 
           isdisable: true,
         }),
       )

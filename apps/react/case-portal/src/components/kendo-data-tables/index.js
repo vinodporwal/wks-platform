@@ -1764,7 +1764,9 @@ const KendoDataTables = ({
                   disabled={
                     isButtonDisabled ||
                     READ_ONLY ||
-                    (!summaryEdited && Object.keys(modifiedCells).length === 0)
+                    (!summaryEdited &&
+                      Object.keys(modifiedCells).length === 0 &&
+                      !permissions?.naphthaLoadedFlag)
                   }
                   {...(loading ? {} : {})}
                 >

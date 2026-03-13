@@ -179,6 +179,8 @@ export const DataService = {
   //AOP APPROVAL FLOW RELEASE BUTTON
   getReleaseAOPStatus,
   releaseAOPReport,
+  loadNaphthaData,
+  getNaphthatabDate,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -3973,9 +3975,7 @@ async function getNaphthaData(
   const url =
     `${Config.CaseEngineUrl}/task/naphtha` +
     `?year=${encodeURIComponent(AOP_YEAR)}` +
-    `&plantId=${encodeURIComponent(PLANT_ID)}` +
-    `&startDate=${encodeURIComponent(startDate)}` +
-    `&endDate=${encodeURIComponent(endDate)}`
+    `&plantId=${encodeURIComponent(PLANT_ID)}`
 
   const headers = {
     Accept: 'application/json',
@@ -4012,15 +4012,8 @@ async function saveNaphthaData(payload, keycloak, PLANT_ID, AOP_YEAR) {
   }
 }
 
-async function exportNaphthaExcel(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-  EXCEL_NAME,
-  startDate,
-  endDate,
-) {
-  const url = `${Config.CaseEngineUrl}/task/naphtha-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
+async function exportNaphthaExcel(keycloak, PLANT_ID, AOP_YEAR, EXCEL_NAME) {
+  const url = `${Config.CaseEngineUrl}/task/naphtha-export?year=${encodeURIComponent(AOP_YEAR)}&plantId=${encodeURIComponent(PLANT_ID)}`
 
   const headers = {
     'Content-Type': 'application/json',
@@ -4164,5 +4157,53 @@ async function releaseAOPReport(keycloak, plantId, year) {
   } catch (e) {
     console.error('Error releasing AOP report:', e)
     return await Promise.reject(e)
+  }
+}
+async function loadNaphthaData(
+  keycloak,
+  type,
+  PLANT_ID,
+  AOP_YEAR,
+  startDate,
+  endDate,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/load-naphtha` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&startDate=${encodeURIComponent(startDate)}` +
+    `&endDate=${encodeURIComponent(endDate)}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to Load naphtha data', e)
+    return Promise.reject(e)
+  }
+}
+async function getNaphthatabDate(keycloak, type, PLANT_ID, AOP_YEAR) {
+  const url =
+    `${Config.CaseEngineUrl}/task/naphtha-date` +
+    `?year=${encodeURIComponent(AOP_YEAR)}` +
+    `&plantId=${encodeURIComponent(PLANT_ID)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Failed to get naphtha date', e)
+    return Promise.reject(e)
   }
 }
