@@ -48,6 +48,7 @@ public interface SpyroOutputService {
 	public AOPMessageVM importYieldVMD(String year,UUID plantId,MultipartFile file);
 	          
 	AOPMessageVM importExcel(String year, String plantFKId, String mode, MultipartFile file);
-	
+
+	AOPMessageVM getDynamicYield(String plantId, String year, String mode);
 
 }

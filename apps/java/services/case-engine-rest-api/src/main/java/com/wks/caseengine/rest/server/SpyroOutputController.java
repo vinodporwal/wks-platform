@@ -48,6 +48,15 @@ public class SpyroOutputController {
 	public AOPMessageVM getSpyroOutputYieldData(@RequestParam String year,@RequestParam String plantId){
 		return	spyroOutputService.getSpyroOutputYieldData(year, plantId);
 	}
+
+
+	@GetMapping(value="/spyro-output/yield-dynamic")
+	public AOPMessageVM getDynamicYield(
+			@RequestParam String plantId,
+			@RequestParam String year,
+			@RequestParam String mode) {
+		return spyroOutputService.getDynamicYield(plantId, year, mode);
+	}
 	
 	@GetMapping(value="/spyro-output/yield-dmd")
 	public AOPMessageVM getSpyroOutputYieldDMD(@RequestParam String year,@RequestParam String plantId){

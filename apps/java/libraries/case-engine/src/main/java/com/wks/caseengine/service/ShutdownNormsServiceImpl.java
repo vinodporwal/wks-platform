@@ -211,6 +211,16 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
 			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
 
+			// Gray out non-active month columns based on activeMonths
+			CellStyle lockedGrayStyle = workbook.createCellStyle();
+			lockedGrayStyle.setLocked(true);
+			lockedGrayStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			lockedGrayStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			lockedGrayStyle.setBorderBottom(BorderStyle.THIN);
+			lockedGrayStyle.setBorderTop(BorderStyle.THIN);
+			lockedGrayStyle.setBorderLeft(BorderStyle.THIN);
+			lockedGrayStyle.setBorderRight(BorderStyle.THIN);
+
 			if (allGrade) {
 				Map<String, String> allGradeInfo = gradeInfoList.stream()
 						.filter(g -> {
@@ -245,6 +255,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 					// If nothing to write, skip creation
 					if (!currentDtoList.isEmpty()) {
+						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+
 						String sheetName = Utility.sanitizeSheetName("All Grade");
 						Sheet sheet = workbook.createSheet(sheetName);
 						int currentRow = 0;
@@ -326,11 +338,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 									cell.setCellValue("");
 								}
 
-								if (isRowEditable) {
-									cell.setCellStyle(unlockedStyle);
-								} else {
-									cell.setCellStyle(lockedStyle);
-								}
+								cell.setCellStyle(resolveCellStyleForExport(col, isRowEditable, activeMonths,
+										lockedStyle, unlockedStyle, lockedGrayStyle));
 							}
 						}
 
@@ -373,6 +382,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 					} else {
 						continue;
 					}
+
+					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
 
 					Sheet sheet = workbook.createSheet(sheetName);
 					int currentRow = 0;
@@ -455,11 +466,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 								cell.setCellValue("");
 							}
 
-							if (isRowEditable) {
-								cell.setCellStyle(unlockedStyle);
-							} else {
-								cell.setCellStyle(lockedStyle);
-							}
+							cell.setCellStyle(resolveCellStyleForExport(col, isRowEditable, activeMonths,
+									lockedStyle, unlockedStyle, lockedGrayStyle));
 						}
 					}
 					sheet.setColumnHidden(16, true);
@@ -1666,6 +1674,30 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	        case 12: return 1; case 13: return 2; case 14: return 3;
 	        default: return -1;
 	    }
+	}
+
+	/** Active months for export = Shutdown + Slowdown. */
+	private Set<Integer> getActiveMonthsForExport(UUID plantFKId, String year, String gradeId) {
+	    Set<Integer> activeMonths = new HashSet<>();
+	    List<Integer> shutdown = plantService.getShutdownMonths(plantFKId, "Shutdown", year, gradeId);
+	    if (shutdown != null) activeMonths.addAll(shutdown);
+	    List slowdown = slowdownNormsService.getSlowdownMonthsImport(plantFKId, "Slowdown", year);
+	    if (slowdown != null) activeMonths.addAll(slowdown);
+	    return activeMonths;
+	}
+
+	/** Resolve cell style for export: gray out non-active month columns based on activeMonths. */
+	private CellStyle resolveCellStyleForExport(int col, boolean isRowEditable,
+			Set<Integer> activeMonths,
+			CellStyle lockedStyle, CellStyle unlockedStyle, CellStyle lockedGrayStyle) {
+	    if (!isRowEditable) {
+	        return lockedGrayStyle;
+	    }
+	    if (activeMonths != null && col >= 3 && col <= 14) {
+	        int monthNumber = getMonthNumberFromColumnIndex(col);
+	        return activeMonths.contains(monthNumber) ? unlockedStyle : lockedGrayStyle;
+	    }
+	    return unlockedStyle;
 	}
 
 	public static List<String> getAcademicYearMonths(String year) {

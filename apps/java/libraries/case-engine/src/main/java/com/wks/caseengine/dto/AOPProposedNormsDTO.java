@@ -63,4 +63,8 @@ public class AOPProposedNormsDTO {
     private String modifiedBy;
     private Date modifiedOn;
     private Boolean isEditable;
+    /** Set for import failure response / error file. */
+    private String saveStatus;
+    /** Set for import failure response / error file. */
+    private String errDescription;
 }

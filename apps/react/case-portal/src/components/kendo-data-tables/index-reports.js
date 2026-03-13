@@ -128,6 +128,8 @@ const KendoDataTablesReports = ({
   groupBy = null,
   grades = [],
   handleGradeChange = () => {},
+  handleRelease = () => {},
+  isReleaseDisabled = true,
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -674,6 +676,13 @@ const KendoDataTablesReports = ({
     )
   }
 
+  const calculatedVH = React.useMemo(() => {
+    if (!rows || rows?.length === 0) return 20
+    const needed = rows?.length * rowHeightVH + headerVH
+    const available = 100 - pageHeaderVH
+    return Math.round(Math.min(needed, maxVH, available))
+  }, [rows?.length])
+
   return (
     <div style={{ position: 'relative' }}>
       {loading && (
@@ -852,12 +861,12 @@ const KendoDataTablesReports = ({
             {permissions?.showFinalSubmit && (
               <Button
                 variant='contained'
-                // onClick={handleExport}
-                // disabled={isButtonDisabled|| READ_ONLY}
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
                 className='btn-save'
-                disabled={READ_ONLY}
               >
-                Submit
+                {/* Submit */}
+                Release
               </Button>
             )}
 

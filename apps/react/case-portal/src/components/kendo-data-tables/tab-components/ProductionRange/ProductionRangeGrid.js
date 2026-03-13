@@ -4,17 +4,18 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '@mui/x-data-grid'
 import KendoDataTables from '../../index'
-import getEnhancedAOPColDefs from 'components/data-tables/CommonHeader/kendo_ConfigHeader'
 import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 import { validateFields } from 'utils/validationUtils'
-import NormsConfigurationGrid from './NormConfigurationGrid'
-
-const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import { ProductionRangeApiService } from 'services/production-range-api-service copy'
+const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
+  const [NormsRows, setNormsRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
+  const [modifiedNormsCells, setModifiedNormsCells] = useState({})
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
@@ -24,6 +25,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     message: '',
     severity: 'info',
   })
+  const [calculationObject, setCalculationObject] = useState([])
   const apiRef = useGridApiRef()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -47,6 +49,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_Cat_Chem`
 
   const FORMATE_VALUE = '{0:0.000}'
+  const headerMap = generateHeaderNames(AOP_YEAR)
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -55,58 +58,48 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     setRemarkDialogOpen(true)
   }
 
-  const productionColumns = getEnhancedAOPColDefs({
-    handleRemarkCellClick,
-    configType: 'CatChem',
-    FORMATE_VALUE,
-  })
+  const NormConfigurationColumns = [
+    {
+      field: 'displayName', // matches API
+      title: 'Particulars',
+      editable: false,
+      widthT: 200,
+    },
+    {
+      field: 'uom',
+      title: 'UOM',
+      editable: false,
+      widthT: 55,
+    },
+    {
+      field: 'apr',
+      title: 'Min',
+      editable: true,
+      widthT: 120,
+      type: 'number',
+    },
+    {
+      field: 'may',
+      title: 'Max',
+      editable: true,
+      widthT: 120,
+      type: 'number',
+    },
 
-  // TODO: Replace with actual API call when backend is ready
-  const fetchData = async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-
-    setModifiedCells({})
-
-    try {
-      setLoading(true)
-
-      const response = await RawMaterialNormsBasisApiService.getData(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        'catchem',
-      )
-
-      const formattedData = response?.data?.catChemNormList?.map(
-        (row, index) => ({
-          ...row,
-          id: row.id || index,
-          particulars: row.displayName,
-          uom: row.uom,
-          value: parseFloat(row.apr) || 0,
-          remarks: row.remarks,
-          originalRemark: row.remarks || '',
-          normParameterFKId: row.normParameterFKId,
-          auditYear: row.auditYear,
-          normTypeName: row.normTypeName,
-          isEditable: row.isEditable,
-          displayName: row.displayName,
-          type: row.type,
-        }),
-      )
-
-      setRows(formattedData || [])
-    } catch (error) {
-      console.error('Error fetching Cat Chem data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching data',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+    {
+      field: 'remarks',
+      title: 'Remark',
+      editable: false,
+      widthT: 135,
+      type: 'string',
+    },
+    {
+      field: 'normParameterFKId',
+      title: 'idFromApi',
+      filterable: 'false',
+      hidden: true,
+    },
+  ]
 
   useEffect(() => {
     setModifiedCells({})
@@ -141,27 +134,106 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       setLoading(false)
     }
   }
+  const handleCalculate = async () => {
+    setRows([])
+    setLoading(true)
+    try {
+      var data =
+        await RawMaterialNormsBasisApiService.handleCalculateNormsConfiguration(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (data == 0 || data) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchNormsConfigurationManualData()
+        fetchNormsConfigurationCalculatedData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+
+      console.error('Error!', error)
+    }
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      allAction: false,
+    }
+  }
+
+  const adjustedPermissionsManual = getAdjustedPermissions(
+    {
+      showAction: true,
+      saveWithRemark: true,
+      saveBtn: true,
+      allAction: true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      showTitleNameBusiness: true,
+      showCalculate: false,
+      //Object.keys(calculationObject || {}).length > 0 ? true : false,
+      titleName: 'Norms Configuration - Manual',
+      showCalculateVisibility: true,
+    },
+    IS_OLD_YEAR,
+  )
+  const adjustedPermissionsCalculated = getAdjustedPermissions(
+    {
+      showAction: true,
+      saveWithRemark: true,
+      saveBtn: false,
+      allAction: true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      showTitleNameBusiness: true,
+      titleName: 'Norms Configuration - Calculated',
+      showCalculate: false,
+      showCalculateVisibility: false,
+    },
+    IS_OLD_YEAR,
+  )
 
   const handleUpdate = async (updatedRows) => {
     setLoading(true)
     try {
       let payload = updatedRows?.map((row) => {
         const { id, inEdit, particulars, originalRemark, ...rest } = row
-        const monthValue = row.value ?? 0
+
         return {
-          normParameterFKId: row.normParameterFKId,
-          jan: monthValue,
-          feb: monthValue,
-          mar: monthValue,
-          apr: monthValue,
-          may: monthValue,
-          jun: monthValue,
-          jul: monthValue,
-          aug: monthValue,
-          sep: monthValue,
-          oct: monthValue,
-          nov: monthValue,
-          dec: monthValue,
+          normParameterFKId: row.normParameterFkId,
+          apr: row.apr,
+          may: row.may,
           remarks: row.remarks,
           auditYear: row.auditYear,
           uom: row.uom,
@@ -173,7 +245,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       })
 
       // console.log('payload', payload)
-      const response = await RawMaterialNormsBasisApiService.postData(
+      const response = await ProductionRangeApiService.postData(
         keycloak,
         payload,
         PLANT_ID,
@@ -193,97 +265,6 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Data Save failed!',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const downloadExcelForConfiguration = async () => {
-    try {
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Excel download started!',
-        severity: 'success',
-      })
-
-      const response = await RawMaterialNormsBasisApiService.exportExcel(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_EXPORT_TITLE,
-        'catchem',
-      )
-      return { code: 200 }
-    } catch (error) {
-      console.error('Error downloading Excel:', error)
-      setSnackbarData({
-        message: 'Failed to download Excel.',
-        severity: 'error',
-      })
-    } finally {
-      setSnackbarOpen(true)
-    }
-  }
-
-  const handleExcelUpload = async (rawFile) => {
-    setLoading(true)
-
-    try {
-      const response = await RawMaterialNormsBasisApiService.importExcel(
-        rawFile,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        'catchem',
-      )
-
-      if (response?.code === 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: response?.message || 'Uploaded Successfully!',
-          severity: 'success',
-        })
-        setModifiedCells({})
-        await fetchData()
-      } else if (response?.code === 400 && response?.data) {
-        const byteCharacters = atob(response.data)
-        const byteNumbers = Array.from(byteCharacters, (char) =>
-          char.charCodeAt(0),
-        )
-        const byteArray = new Uint8Array(byteNumbers)
-
-        const blob = new Blob([byteArray], {
-          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        })
-
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.setAttribute('download', 'Error File - Cat Chem.xlsx')
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        window.URL.revokeObjectURL(url)
-
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Partial data saved. Error file downloaded.',
-          severity: 'warning',
-        })
-        await fetchData()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'Upload Failed!', severity: 'error' })
-      }
-
-      return response
-    } catch (error) {
-      console.error('Error uploading excel:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Unexpected error occurred!',
         severity: 'error',
       })
     } finally {
@@ -329,37 +310,48 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
     }
   }, [modifiedCells, summaryEdited, summary])
 
-  const getAdjustedPermissions = (permissions, isOldYear) => {
-    if (isOldYear != 1) return permissions
-    return {
-      ...permissions,
-      showAction: false,
-      addButton: false,
-      deleteButton: false,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
-      editButton: false,
-      showUnit: false,
-      saveWithRemark: false,
-      saveBtn: false,
-      isOldYear: isOldYear,
-      allAction: false,
+  const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setModifiedCells({})
+
+    try {
+      setLoading(true)
+
+      const response = await ProductionRangeApiService.getData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      const formattedData = response?.data?.productionRangeList?.map(
+        (row, index) => ({
+          ...row,
+          id: row.id || index,
+          particulars: row.displayName,
+
+          originalRemark: row.remarks || '',
+          normParameterFKId: row.normParameterFKId,
+          auditYear: row.auditYear,
+          normTypeName: row.normTypeName,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          type: row.type,
+        }),
+      )
+
+      setRows(formattedData || [])
+    } catch (error) {
+      console.error('Error fetching Cat Chem data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error fetching data',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
   }
-
-  const adjustedPermissions = getAdjustedPermissions(
-    {
-      showAction: true,
-      saveWithRemark: true,
-      saveBtn: true,
-      allAction: true,
-      downloadExcelBtn: true,
-      uploadExcelBtn: true,
-      showTitleNameBusiness: true,
-      titleName: 'Catalyst-chemical norms',
-    },
-    IS_OLD_YEAR,
-  )
 
   return (
     <Box>
@@ -374,10 +366,9 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
           setRows={setRows}
-          columns={productionColumns}
+          columns={NormConfigurationColumns}
           rows={rows}
           paginationOptions={[100, 200, 300]}
-          saveChanges={saveChanges}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           apiRef={apiRef}
@@ -386,26 +377,21 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
           setSnackbarOpen={setSnackbarOpen}
           setSnackbarData={setSnackbarData}
           handleRemarkCellClick={handleRemarkCellClick}
+          handleCalculate={handleCalculate}
           fetchData={fetchData}
           remarkDialogOpen={remarkDialogOpen}
           setRemarkDialogOpen={setRemarkDialogOpen}
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
-          permissions={adjustedPermissions}
+          permissions={adjustedPermissionsManual}
           summaryEdited={summaryEdited}
           groupBy={'normTypeName'}
-          downloadExcelForConfiguration={downloadExcelForConfiguration}
-          handleExcelUpload={handleExcelUpload}
-        />
-        <NormsConfigurationGrid
-          summary={summary}
-          summaryEdited={summaryEdited}
-          setSummaryEdited={setSummaryEdited}
+          saveChanges={saveChanges}
         />
       </Box>
     </Box>
   )
 }
 
-export default CatChemNormsGrid
+export default ProductionRange

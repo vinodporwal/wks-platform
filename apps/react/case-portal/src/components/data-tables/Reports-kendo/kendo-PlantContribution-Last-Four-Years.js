@@ -1,4 +1,13 @@
-import { Backdrop, Box } from '@mui/material'
+import {
+  Backdrop,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
 import { useSession } from 'SessionStoreContext'
 import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
@@ -63,6 +72,8 @@ export default function PlantContributionLastFourYears() {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [otherVariableRows, setOtherVariableRows] = useState([])
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
 
   const IS_CRACKER = lowerVertName === 'cracker'
 
@@ -211,8 +222,31 @@ export default function PlantContributionLastFourYears() {
     setLoading(false)
   }
 
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
   useEffect(() => {
     loadAll()
+    getIsReleased()
   }, [keycloak, AOP_YEAR, PLANT_ID])
 
   const handleCalculate = () => {
@@ -274,6 +308,43 @@ export default function PlantContributionLastFourYears() {
       setLoading(false)
     }
   }
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Box sx={{ width: '100%' }}>
       <Backdrop
@@ -303,6 +374,8 @@ export default function PlantContributionLastFourYears() {
                   showFinalSubmit: idx === 0,
                   showTitle: true,
                 }}
+                handleRelease={handleRelease}
+                isReleaseDisabled={isReleaseDisabled}
               />
             </Box>
           )
@@ -371,6 +444,36 @@ export default function PlantContributionLastFourYears() {
         severity={snackbarData.severity}
         onClose={() => setSnackbarOpen(false)}
       />
+
+      <Dialog
+        open={openReleaseDialogBox}
+        onClose={closeReleaseDialogBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle id='alert-dialog-title'>
+          {'Confirm AOP Release? '}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            Warning: User will not be able to edit Production or Norms values
+            after this action is completed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReleaseDialogBox}>Cancel</Button>
+          <Button onClick={submitConfirmation} autoFocus>
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

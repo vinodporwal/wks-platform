@@ -10,6 +10,8 @@ export const RawMaterialNormsBasisApiService = {
   postRawMaterialData,
   importRawMaterialExcel,
   exportRawMaterialExcel,
+  getNormsConfigurationData,
+  handleCalculateNormsConfiguration,
 }
 
 async function getData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -215,6 +217,42 @@ async function exportRawMaterialExcel(
     window.URL.revokeObjectURL(urlBlob)
   } catch (e) {
     console.error('Error exporting Columns Excel:', e)
+    return Promise.reject(e)
+  }
+}
+async function getNormsConfigurationData(keycloak, PLANT_ID, AOP_YEAR, type) {
+  const url = `${Config.CaseEngineUrl}/task/norm-configuration?year=${AOP_YEAR}&plantId=${PLANT_ID}&type=${type}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function handleCalculateNormsConfiguration(plantId, year, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-norm-configuration?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const data = await resp.json() // Parse JSON response
+    return data
+  } catch (e) {
+    console.error('Error fetching calculation data:', e)
     return Promise.reject(e)
   }
 }

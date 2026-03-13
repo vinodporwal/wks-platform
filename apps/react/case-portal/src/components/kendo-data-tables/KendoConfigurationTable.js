@@ -37,6 +37,7 @@ import ExclusionDate from './ExclusionDate'
 import LineConfiguration from './LineConfiguration'
 import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
 import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
+import ProductionRange from './tab-components/ProductionRange'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -1560,6 +1561,15 @@ const ConfigurationTable = () => {
               case getTheId('cat-chem-norms-basis'):
                 return (
                   <CatChemNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('ProductionRange'):
+                return (
+                  <ProductionRange
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     setSummaryEdited={setSummaryEdited}

@@ -203,6 +203,13 @@ const KendoDataTablesReciepe = ({
     // }
   }, [])
 
+  const calculatedVH = React.useMemo(() => {
+    if (!rows || rows?.length === 0) return 20
+    const needed = rows?.length * rowHeightVH + headerVH
+    const available = 100 - pageHeaderVH
+    return Math.round(Math.min(needed, maxVH, available))
+  }, [rows?.length])
+
   const handleRowClick = (e) => {
     // console.log(e.dataItem)
     if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
@@ -707,6 +714,24 @@ const KendoDataTablesReciepe = ({
       <div className='kendo-data-grid'>
         <Tooltip openDelay={50} position='auto' anchorElement='target'>
           <Grid
+            style={{
+              flex: 1,
+              overflow: 'auto',
+              // height: 'auto',
+              // height: permissions?.isHeight ? '60vh' : '60vh',
+              // height: '60vh',
+              // height: `${gridHeight}px`,
+
+              height:
+                lowerVertName === 'meg' || supressGridHeight == true
+                  ? undefined
+                  : rows?.length > 10
+                    ? `${calculatedVH}vh`
+                    : undefined,
+
+              // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
+              // height: `${calculatedVH}vh`,
+            }}
             modifiedCells={modifiedCells}
             data={rows}
             rows={{ data: CustomRow }}
