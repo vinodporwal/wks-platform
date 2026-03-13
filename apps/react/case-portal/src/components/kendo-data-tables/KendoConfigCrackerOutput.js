@@ -144,13 +144,17 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showModes: lowerVertName === 'cracker' && currentTabDisplay != 'Yield',
+      showModes:
+        lowerVertName === 'cracker' &&
+        (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
       modes: modes,
-      uploadExcelBtn: true,
-      downloadExcelBtn: true,
+      uploadExcelBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+      downloadExcelBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
     },
     isOldYear,
   )
@@ -349,13 +353,14 @@ const CrackerConfig = () => {
               AOP_YEAR,
             )
           } else if (SITE_NAME == 'VMD') {
-            spyroVMYield1 = await DataService.getSpyroOutputDataYieldVMD(
+            var data = await DataService.getSpyroOutputDataYieldVMD(
               keycloak,
               mode,
               currentTabDisplay,
               PLANT_ID,
               AOP_YEAR,
             )
+            spyroVMYield1 = data?.data
           } else {
             spyroVMYield1 = await DataService.getSpyroOutputDataYieldNONNMD(
               keycloak,
@@ -593,12 +598,23 @@ const CrackerConfig = () => {
         }))
       } else if (SITE_NAME === 'VMD') {
         SpyroOutputYield = dataToSave.map((row) => ({
-          particulars: row.particulars,
-          fiveNE: row.fiveNE || 0,
-          fiveNS: row.fiveNS || 0,
-          fourNE: row.fourNE || 0,
-          fourNS: row.fourNS || 0,
-          threeNE: row.threeNE || 0,
+          apr: row.Apr || '0',
+          may: row.May || 0,
+          jun: row.Jun || 0,
+          jul: row.Jul || 0,
+          aug: row.Aug || 0,
+          sep: row.Sep || 0,
+          oct: row.Oct || 0,
+          nov: row.Nov || 0,
+          dec: row.Dec || 0,
+          jan: row.Jan || 0,
+          feb: row.Feb || 0,
+          mar: row.Mar || 0,
+          UOM: row.UOM || '',
+          auditYear: row.AuditYear,
+          normParameterFKId: row.NormParameter_FK_Id,
+          remarks: row.Remarks || '',
+          id: row.id || null,
         }))
       } else {
         SpyroOutputYield = dataToSave.map((row) => ({

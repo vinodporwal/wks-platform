@@ -172,7 +172,7 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         }
       })
 
-      console.log('payload', payload)
+      // console.log('payload', payload)
       const response = await RawMaterialNormsBasisApiService.postData(
         keycloak,
         payload,

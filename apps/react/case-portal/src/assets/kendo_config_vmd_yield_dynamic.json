@@ -1,0 +1,48 @@
+[
+  {
+    "field": "Type",
+    "title": "Type",
+    "widthT": 200,
+    "editable": false,
+    "hidden": true
+  },
+  {
+    "field": "NormParameter_FK_Id",
+    "hidden": true
+  },
+  {
+    "field": "DisplayName",
+    "title": "Particulars",
+    "widthT": 140,
+    "editable": false
+  },
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 60
+  },
+  { "field": "Apr", "title": 4, "editable": true },
+  { "field": "May", "title": 5, "editable": true },
+  { "field": "Jun", "title": 6, "editable": true },
+  { "field": "Jul", "title": 7, "editable": true },
+  { "field": "Aug", "title": 8, "editable": true },
+  { "field": "Sep", "title": 9, "editable": true },
+  { "field": "Oct", "title": 10, "editable": true },
+  { "field": "Nov", "title": 11, "editable": true },
+  { "field": "Dec", "title": 12, "editable": true },
+  { "field": "Jan", "title": 1, "editable": true },
+  { "field": "Feb", "title": 2, "editable": true },
+  { "field": "Mar", "title": 3, "editable": true },
+  {
+    "field": "Remarks",
+    "title": "Remark",
+    "widthT": 130,
+    "editable": true
+  },
+  {
+    "field": "isEditable",
+    "title": "isEditable",
+    "hidden": true
+  }
+]

@@ -20,6 +20,8 @@ import rawMaterialColumns from '../../../assets/kendo_config_raw_material_coldef
 import catchemColumns from '../../../assets/kendo_config_catchem_coldefs.json'
 import exsternalSteamColumns from '../../../assets/kendo_config_exsternal_steam_coldefs.json'
 
+import productionColumnsVmdYield from '../../../assets/kendo_config_vmd_yield_dynamic.json'
+
 const getConfigByType = (configType) => {
   switch (configType) {
     case 'meg':
@@ -67,7 +69,7 @@ const getConfigByType = (configType) => {
     case 'cracker_yield_dmd':
       return cracker_yield_dmd
     case 'cracker_yield_vmd':
-      return cracker_yield_vmd
+      return productionColumnsVmdYield
     case 'ContineGradeChange':
       return contineGradeChange
     case 'DisContineGradeChange':
@@ -196,10 +198,7 @@ const getEnhancedAOPColDefs = ({
 
       return col
     })
-  } else if (
-    configType == 'cracker_yield_dmd' ||
-    configType == 'cracker_yield_vmd'
-  ) {
+  } else if (configType == 'cracker_yield_dmd') {
     enhancedColDefs = config.map((col) => {
       if (headerMap && headerMap[col.title]) {
         return {

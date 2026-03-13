@@ -147,19 +147,13 @@ export default function MCUCapacityUtilization() {
         return
       }
 
-      const payload = data.map(
-        ({ id, prevAop, prevActual, aop, remarks, siteFkId, aopYear }) => ({
-          id,
-          prevAop,
-          prevActual,
-          aop,
-          remarks,
-          siteFkId,
-          aopYear,
-          updatedBy: keycloak?.userName || 'system',
-          updatedDate: new Date().toISOString(),
-        }),
-      )
+      const payload = data.map(({ id, prevAop, prevActual, aop, remarks }) => ({
+        id,
+        prevAop,
+        prevActual,
+        aop,
+        remarks,
+      }))
 
       const response = await SiteReportDataService.saveMCUCapacityUtilization(
         keycloak,

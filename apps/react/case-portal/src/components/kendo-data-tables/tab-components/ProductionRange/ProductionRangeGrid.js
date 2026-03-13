@@ -9,14 +9,10 @@ import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 import { validateFields } from 'utils/validationUtils'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-const NormsConfigurationGrid = ({
-  summary,
-  summaryEdited,
-  setSummaryEdited,
-}) => {
+import { ProductionRangeApiService } from 'services/production-range-api-service copy'
+const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [rows, setRows] = useState([])
   const [NormsRows, setNormsRows] = useState([])
-  const [NormsRows2, setNormsRows2] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
   const [modifiedNormsCells, setModifiedNormsCells] = useState({})
@@ -77,95 +73,25 @@ const NormsConfigurationGrid = ({
     },
     {
       field: 'apr',
-      title: headerMap[4],
-      editable: false,
-      width: 120,
+      title: 'Min',
+      editable: true,
+      widthT: 120,
       type: 'number',
     },
     {
       field: 'may',
-      title: headerMap[5],
-      editable: false,
-      width: 120,
+      title: 'Max',
+      editable: true,
+      widthT: 120,
       type: 'number',
     },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
+
     {
       field: 'remarks',
       title: 'Remark',
       editable: false,
       widthT: 135,
       type: 'string',
-      hidden: true,
     },
     {
       field: 'normParameterFKId',
@@ -175,94 +101,9 @@ const NormsConfigurationGrid = ({
     },
   ]
 
-  const fetchNormsConfigurationManualData = async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-
-    setModifiedCells({})
-
-    try {
-      setLoading(true)
-
-      const response =
-        await RawMaterialNormsBasisApiService.getNormsConfigurationData(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          'Manual',
-        )
-
-      const formattedData = response?.data?.normConfigurationList?.map(
-        // ✅ Fixed key
-        (row, index) => ({
-          ...row,
-          id: row.normParameterFkId || index,
-          particulars: row.displayName,
-          uom: row.uom,
-          value: parseFloat(row.apr) || 0,
-          remarks: row.remarks,
-          originalRemark: row.remarks || '',
-          isdisable: true,
-        }),
-      )
-      setCalculationObject(response?.data?.aopCalculation)
-
-      setNormsRows(formattedData || [])
-    } catch (error) {
-      console.error('Error fetching Norms Configuration data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching data',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-  const fetchNormsConfigurationCalculatedData = async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-
-    setModifiedCells({})
-
-    try {
-      setLoading(true)
-
-      const response =
-        await RawMaterialNormsBasisApiService.getNormsConfigurationData(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          'Calculated',
-        )
-
-      const formattedData = response?.data?.normConfigurationList?.map(
-        // ✅ Fixed key
-        (row, index) => ({
-          ...row,
-          id: row.normParameterFkId || index,
-          particulars: row.displayName,
-          uom: row.uom,
-          value: parseFloat(row.apr) || 0,
-          remarks: row.remarks,
-          originalRemark: row.remarks || '',
-          isdisable: true,
-        }),
-      )
-      setNormsRows2(formattedData || [])
-    } catch (error) {
-      console.error('Error fetching Norms Configuration data:', error)
-      setSnackbarOpen(true)
-      setSnackbarData({
-        message: 'Error fetching data',
-        severity: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
   useEffect(() => {
     setModifiedCells({})
-    fetchNormsConfigurationManualData()
-    fetchNormsConfigurationCalculatedData()
+    fetchData()
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
   const saveSummary = async (summary) => {
@@ -355,12 +196,12 @@ const NormsConfigurationGrid = ({
     {
       showAction: true,
       saveWithRemark: true,
-      saveBtn: false,
+      saveBtn: true,
       allAction: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       showTitleNameBusiness: true,
-      showCalculate: true,
+      showCalculate: false,
       //Object.keys(calculationObject || {}).length > 0 ? true : false,
       titleName: 'Norms Configuration - Manual',
       showCalculateVisibility: true,
@@ -383,6 +224,135 @@ const NormsConfigurationGrid = ({
     IS_OLD_YEAR,
   )
 
+  const handleUpdate = async (updatedRows) => {
+    setLoading(true)
+    try {
+      let payload = updatedRows?.map((row) => {
+        const { id, inEdit, particulars, originalRemark, ...rest } = row
+
+        return {
+          normParameterFKId: row.normParameterFkId,
+          apr: row.apr,
+          may: row.may,
+          remarks: row.remarks,
+          auditYear: row.auditYear,
+          uom: row.uom,
+          normTypeName: row.normTypeName,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          type: row.type ?? '',
+        }
+      })
+
+      // console.log('payload', payload)
+      const response = await ProductionRangeApiService.postData(
+        keycloak,
+        payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Saved Successfully!',
+        severity: 'success',
+      })
+
+      await fetchData()
+      return { code: 200 }
+    } catch (error) {
+      console.error('Error updating data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Data Save failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveChanges = useCallback(async () => {
+    setLoading(true)
+
+    try {
+      if (Object.keys(modifiedCells).length === 0) {
+        if (summaryEdited) {
+          await saveSummary(summary)
+          setModifiedCells({})
+          setSummaryEdited(false)
+        }
+        return
+      }
+
+      const rawData = Object.values(modifiedCells)
+      const data = rawData.filter((row) => row.inEdit)
+
+      if (data.length === 0) {
+        setLoading(false)
+        return
+      }
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+      await handleUpdate(data)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells, summaryEdited, summary])
+
+  const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setModifiedCells({})
+
+    try {
+      setLoading(true)
+
+      const response = await ProductionRangeApiService.getData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      const formattedData = response?.data?.productionRangeList?.map(
+        (row, index) => ({
+          ...row,
+          id: row.id || index,
+          particulars: row.displayName,
+
+          originalRemark: row.remarks || '',
+          normParameterFKId: row.normParameterFKId,
+          auditYear: row.auditYear,
+          normTypeName: row.normTypeName,
+          isEditable: row.isEditable,
+          displayName: row.displayName,
+          type: row.type,
+        }),
+      )
+
+      setRows(formattedData || [])
+    } catch (error) {
+      console.error('Error fetching Cat Chem data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error fetching data',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Box>
       <Backdrop
@@ -393,11 +363,11 @@ const NormsConfigurationGrid = ({
       </Backdrop>
       <Box>
         <KendoDataTables
-          modifiedCells={modifiedNormsCells}
-          setModifiedCells={setModifiedNormsCells}
-          setRows={setNormsRows}
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          setRows={setRows}
           columns={NormConfigurationColumns}
-          rows={NormsRows}
+          rows={rows}
           paginationOptions={[100, 200, 300]}
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -408,7 +378,7 @@ const NormsConfigurationGrid = ({
           setSnackbarData={setSnackbarData}
           handleRemarkCellClick={handleRemarkCellClick}
           handleCalculate={handleCalculate}
-          fetchData={fetchNormsConfigurationManualData}
+          fetchData={fetchData}
           remarkDialogOpen={remarkDialogOpen}
           setRemarkDialogOpen={setRemarkDialogOpen}
           currentRemark={currentRemark}
@@ -417,35 +387,11 @@ const NormsConfigurationGrid = ({
           permissions={adjustedPermissionsManual}
           summaryEdited={summaryEdited}
           groupBy={'normTypeName'}
-        />
-        <KendoDataTables
-          modifiedCells={modifiedNormsCells}
-          setModifiedCells={setModifiedNormsCells}
-          setRows={setNormsRows2}
-          columns={NormConfigurationColumns}
-          rows={NormsRows2}
-          paginationOptions={[100, 200, 300]}
-          snackbarData={snackbarData}
-          snackbarOpen={snackbarOpen}
-          apiRef={apiRef}
-          open1={open1}
-          setOpen1={setOpen1}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          handleRemarkCellClick={handleRemarkCellClick}
-          fetchData={fetchNormsConfigurationCalculatedData}
-          remarkDialogOpen={remarkDialogOpen}
-          setRemarkDialogOpen={setRemarkDialogOpen}
-          currentRemark={currentRemark}
-          setCurrentRemark={setCurrentRemark}
-          currentRowId={currentRowId}
-          permissions={adjustedPermissionsCalculated}
-          summaryEdited={summaryEdited}
-          groupBy={'normTypeName'}
+          saveChanges={saveChanges}
         />
       </Box>
     </Box>
   )
 }
 
-export default NormsConfigurationGrid
+export default ProductionRange

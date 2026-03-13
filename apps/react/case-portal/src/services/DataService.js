@@ -3856,9 +3856,10 @@ async function getSpyroOutputDataYieldVMD(
   AOP_YEAR,
 ) {
   const url =
-    `${Config.CaseEngineUrl}/task/spyro-output/yield-vmd` +
+    `${Config.CaseEngineUrl}/task/spyro-output/yield-dynamic` +
     `?year=${encodeURIComponent(AOP_YEAR)}` +
-    `&plantId=${encodeURIComponent(PLANT_ID)}`
+    `&plantId=${encodeURIComponent(PLANT_ID)}` +
+    `&mode=${encodeURIComponent(mode)}`
 
   const headers = {
     Accept: 'application/json',
