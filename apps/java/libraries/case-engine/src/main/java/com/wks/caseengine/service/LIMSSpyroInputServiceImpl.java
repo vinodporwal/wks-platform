@@ -125,6 +125,38 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
     }
 
     @Override
+    public AOPMessageVM getLIMSDate(String plantId, String aopYear) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        try {
+        	Optional<NormParameters> limsStartDate = normParametersRepository.findByNameAndPlantFkId("LimsStartDate", UUID.fromString(plantId));
+        	Optional<NormParameters> limsEndDate = normParametersRepository.findByNameAndPlantFkId("LimsEndDate", UUID.fromString(plantId));
+        	Optional<NormAttributeTransactions> normAttributeTransactionsStart=normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(limsStartDate.get().getId(),4,aopYear);
+        	Optional<NormAttributeTransactions> normAttributeTransactionsEnd=normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(limsEndDate.get().getId(),4,aopYear);
+        	if(normAttributeTransactionsStart.isPresent()) {
+        		map.put("startDate", normAttributeTransactionsStart.get().getAttributeValue());
+        	}else {
+        		map.put("startDate", "");
+        	}
+        	if(normAttributeTransactionsEnd.isPresent()) {
+        		map.put("endDate", normAttributeTransactionsEnd.get().getAttributeValue());
+        	}else {
+        		map.put("endDate", "");
+        	}
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data fetched successfully");
+            aopMessageVM.setData(map);
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+            throw new RuntimeException("Failed to fetch data", ex);
+        }
+    }
+
+    @Override
     public AOPMessageVM loadLIMSSpyroInput(String plantId, String aopYear, String startDate, String endDate) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         try {

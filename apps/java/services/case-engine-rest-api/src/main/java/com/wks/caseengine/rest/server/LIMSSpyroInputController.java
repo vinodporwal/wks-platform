@@ -46,6 +46,14 @@ public class LIMSSpyroInputController {
         return limsSpyroInputService.getLIMSSpyroInput(plantId, year);
     }
     
+    @GetMapping(value = "/naphtha-date")
+    public AOPMessageVM getLIMSDate(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+
+        return limsSpyroInputService.getLIMSDate(plantId, year);
+    }
+    
     @PostMapping(value="/naphtha")
 	public AOPMessageVM saveLIMSSpyroInput(@RequestParam String year,@RequestParam String plantId, @RequestBody List<LIMSSpyroInputDTO> lIMSSpyroInputDTOs) {
 		return 	limsSpyroInputService.saveLIMSSpyroInput(year,plantId,lIMSSpyroInputDTOs);

@@ -81,8 +81,10 @@ public class ConfigurationController {
 	}
 	
 	@GetMapping(value="/configuration-constants")
-	public AOPMessageVM getConfigurationConstants(@RequestParam String year,@RequestParam String plantFKId) {
-		return configurationService.getConfigurationConstants(year,plantFKId);
+	public AOPMessageVM getConfigurationConstants(@RequestParam String year,
+												  @RequestParam String plantFKId,
+												  @RequestParam(required = false) String type) {
+		return configurationService.getConfigurationConstants(year,plantFKId, type);
 	}
 
 

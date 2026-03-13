@@ -1293,7 +1293,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		return null;
 	}
 
-		public AOPMessageVM getConfigurationConstants(String year, String plantFKId) {
+		public AOPMessageVM getConfigurationConstants(String year, String plantFKId, String type) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> configurationConstantsList = new ArrayList<>();
@@ -1303,7 +1303,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
 					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM")
 					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS")) {
-				obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+				obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId, procedureName,type);
 			}
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>(); // Create a new map for each row
@@ -2217,7 +2217,23 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
+			
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<Object[]> findConstantsByYearAndPlantFkIdAndType(String aopYear, String plantId, String procedureName,String type) {
+		try {
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear, @type = :type";
 
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("type", type);
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
