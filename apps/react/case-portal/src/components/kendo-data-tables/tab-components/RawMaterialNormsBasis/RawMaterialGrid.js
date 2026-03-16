@@ -377,6 +377,7 @@ const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
         groupBy={'type'}
+        supressGridHeight={true}
       />
     </Box>
   )

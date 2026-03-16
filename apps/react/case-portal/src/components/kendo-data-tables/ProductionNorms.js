@@ -76,6 +76,8 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'aromatics' &&
     SITE_NAME_LOWERCASE === 'dta' &&
     plantName === 'plat'
+  const IS_AROMATIC_HMD =
+    lowerVertName === 'aromatics' && SITE_NAME_LOWERCASE === 'hmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
@@ -677,6 +679,7 @@ const ProductionNorms = ({ permissions }) => {
           lowerVertName !== 'pta' &&
           lowerVertName !== 'chemical' &&
           !IS_AROMATIC_SEZ &&
+          !IS_AROMATIC_HMD &&
           !IS_AROMATIC_DTA_PLATFORMER
         ) {
           finalData = [...formattedData, totalsRow]

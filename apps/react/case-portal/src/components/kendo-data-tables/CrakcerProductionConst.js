@@ -14,6 +14,7 @@ import {
 import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
 import { ProductionConstarintsApiService } from 'services/production-constraints-api-service'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 const CrakcerProductionConst = () => {
   const keycloak = useSession()
 
@@ -116,6 +117,8 @@ const CrakcerProductionConst = () => {
     fetchConstantsData()
   }, [PLANT_ID, AOP_YEAR])
 
+  const FORMATE_VALUE = ValueFormatterProduction()
+
   const colDefsConstants = [
     {
       field: 'DisplayName',
@@ -136,6 +139,7 @@ const CrakcerProductionConst = () => {
       editable: true,
       type: 'number',
       widthT: 120,
+      format: FORMATE_VALUE,
     },
 
     {

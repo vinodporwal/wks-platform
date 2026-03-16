@@ -77,4 +77,19 @@ public class AOPReportController {
 		return aopReportService.getGradewiseConsumptionNorms(plantId,year,reportType);
 	}
 
+	@GetMapping(value="/c3-calculation")
+	public AOPMessageVM getC3Calculation(@RequestParam String plantId, @RequestParam String year) {
+		return aopReportService.getC3Calculation(plantId, year);
+	}
+
+	@GetMapping(value="/c3-detail")
+	public AOPMessageVM getC3Detail(@RequestParam String plantId, @RequestParam String year) {
+		return aopReportService.getC3Detail(plantId, year);
+	}
+
+	@GetMapping(value="/lims-dataset")
+	public AOPMessageVM getLIMSDataset(@RequestParam String plantId, @RequestParam String year) {
+		return aopReportService.getLIMSDataset(plantId, year);
+	}
+
 }

@@ -103,6 +103,7 @@ const ProductionvolumeData = ({ permissions }) => {
     siteObject?.name?.toLowerCase() == 'vmd'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
+  const IS_ELASTOMER_JMD = VERTICAL_NAME === 'elastomer' && SITE_NAME === 'jmd'
   // Check if it's PP VERTICAL | DTA SITE
   const IS_PP_DTA = VERTICAL_NAME === 'pp' && SITE_NAME === 'dta'
   const IS_PP_SEZ = VERTICAL_NAME === 'pp' && SITE_NAME === 'sez'
@@ -959,10 +960,11 @@ const ProductionvolumeData = ({ permissions }) => {
   //POINT-1 Current MCU to be rename as Max Achieved capacity.
   const percentageTitle =
     IS_PE_PP || IS_PET || IS_PVC_VMD
-      ? // ? 'Current MCU'
-        'Max Achieved Capacity'
+      ? 'Max Achieved Capacity'
       : VERTICAL_NAME === 'cracker'
-        ? 'Max Achieved Capacity (Ethylene)'
+        ? SITE_NAME === 'vmd'
+          ? 'Max Achieved Capacity'
+          : 'Max Achieved Capacity (Ethylene)'
         : 'Max Achieved Capacity'
   const adjustedPermissionsGrid1 = getAdjustedPermissions(
     {
@@ -1293,6 +1295,7 @@ const ProductionvolumeData = ({ permissions }) => {
       {/* DESIGN_CAPACITY */}
       {conditionForFirst && (
         <KendoDataTables
+          key={`${VERTICAL_NAME}-${PLANT_ID}-${tabIndex}`}
           modifiedCells={modifiedCellsDesignCapacity}
           setModifiedCells={setModifiedCellsDesignCapacity}
           enableSaveAddBtn={enableSaveAddBtnDesignCapacity}
@@ -1326,6 +1329,9 @@ const ProductionvolumeData = ({ permissions }) => {
           handleExcelUpload={handleExcelUpload}
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
+          groupBy={
+            VERTICAL_NAME?.toLowerCase() === 'cracker' ? 'normType' : undefined
+          }
         />
       )}
 
@@ -1346,6 +1352,9 @@ const ProductionvolumeData = ({ permissions }) => {
           }
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
+          groupBy={
+            VERTICAL_NAME?.toLowerCase() === 'cracker' ? 'normType' : undefined
+          }
         />
       )}
 

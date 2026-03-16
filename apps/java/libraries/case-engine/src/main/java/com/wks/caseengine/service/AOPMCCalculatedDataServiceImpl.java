@@ -118,7 +118,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	public AOPMCCalculatedDataServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
-
+	
 	@Override
 	public AOPMessageVM getAOPMCCalculatedData(String plantId, String year) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -136,11 +136,14 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 	        	 procedureName=vertical.getName()+"_GetAOPMCValues";
 				 
-	        } else {
+	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValues";
+				 
+	        }else {
 	            view = "vwAOPMCValues";
 	        }
 	        List<Object[]> obj=null;
-	        if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+	        if(vertical.getName().equalsIgnoreCase("CRACKER") || vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	  obj = getDataMCUValuesAllData(year, plantId, view);
@@ -194,7 +197,6 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        throw new RuntimeException("Failed to fetch data", ex);
 	    }
 	}
-
 	@Override
 	public AOPMessageVM getProductionTargetAvg(String plantId, String year) {
 	    AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -551,12 +553,13 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
             if (vertical.getName().equalsIgnoreCase("PTA")) {
                 view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValuesMaxAchivedCapacity";
             }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
-	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";
-				 
+	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
+	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
 	        }  else {
                 view = "vwAOPMCValuesMaxAchivedCapacity";
             }
-            if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+            if(vertical.getName().equalsIgnoreCase("CRACKER") || vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	 obj = getMaxAchievedCapacityData(year, plantId, view);
@@ -583,6 +586,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+                if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+                	dto.setNormType(row[21] != null ? row[21].toString() : " ");
+                }
+                
                 aOPMCCalculatedDataDTOList.add(dto);
             }
 
@@ -768,10 +775,15 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
  	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
  	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
  	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+ 	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
- 	        }else {
+ 	        }else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+ 	        	String procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesDesignCapacity";
+	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+	        }else {
  	        	 obj = aOPMCCalculatedDataRepository.getDesignCapacityData(year, plantId);
  	        }
             
@@ -796,6 +808,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
                 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+                if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+                	dto.setNormType(row[21] != null ? row[21].toString() : " ");
+                }
                 aOPMCCalculatedDataDTOList.add(dto);
             }
 

@@ -19,6 +19,7 @@ import KendoDataTables from './index'
 import ProductionvolumeData from './ProductionVoluemData'
 import PropaneBusiness from 'components/kendo-data-tables/PropaneBusiness'
 import { getRoleName } from 'services/role-service'
+import ProductionTarget from './ProductionTarget'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -60,6 +61,8 @@ const BusinessDemand = ({ permissions }) => {
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
+  const IS_ELASTOMER_JMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const PRODUCTION_TARGET_LABEL = IS_VCM_VERTICAL
     ? 'Production Target (This is a reference for entering the Business Demand value)'
@@ -419,7 +422,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
-        IS_PVC_DMD
+        IS_PVC_DMD ||
+        IS_ELASTOMER_JMD
           ? false
           : true,
     },
@@ -548,7 +552,7 @@ const BusinessDemand = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {lowerVertName !== 'cracker' && (
+      {lowerVertName !== 'cracker' && !IS_ELASTOMER_JMD && (
         <>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
@@ -562,6 +566,40 @@ const BusinessDemand = ({ permissions }) => {
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
                 <ProductionvolumeData
+                  permissions={{
+                    allAction: true,
+                    showAction: false,
+                    addButton: false,
+                    deleteButton: false,
+                    editButton: false,
+                    showUnit: true,
+                    saveWithRemark: false,
+                    showCalculate: false,
+                    saveBtn: false,
+                    hideSummary: true,
+                    hideUploadExcel: true,
+                    hideDownloadExcel: true,
+                  }}
+                />
+              </Box>
+            </CustomAccordionDetails>
+          </CustomAccordion>
+        </>
+      )}
+      {IS_ELASTOMER_JMD && (
+        <>
+          <CustomAccordion defaultExpanded disableGutters>
+            <CustomAccordionSummary
+              aria-controls='meg-grid-content'
+              id='meg-grid-header'
+            >
+              <Typography component='span' className='accordian-title'>
+                {PRODUCTION_TARGET_LABEL}
+              </Typography>
+            </CustomAccordionSummary>
+            <CustomAccordionDetails>
+              <Box sx={{ width: '100%', margin: 0 }}>
+                <ProductionTarget
                   permissions={{
                     allAction: true,
                     showAction: false,

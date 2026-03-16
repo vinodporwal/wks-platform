@@ -67,19 +67,19 @@ const NormsConfigurationGrid = ({
       field: 'displayName', // matches API
       title: 'Particulars',
       editable: false,
-      widthT: 200,
+      widthT: 220,
     },
     {
       field: 'uom',
       title: 'UOM',
       editable: false,
-      widthT: 55,
+      widthT: 80,
     },
     {
       field: 'apr',
       title: 'Value',
       editable: false,
-      width: 120,
+      widthT: 120,
       type: 'number',
     },
 
@@ -280,7 +280,7 @@ const NormsConfigurationGrid = ({
       showTitleNameBusiness: true,
       showCalculate: true,
       //Object.keys(calculationObject || {}).length > 0 ? true : false,
-      titleName: 'Norms Configuration - Manual',
+      titleName: 'Norms Configuration - Calculated',
       showCalculateVisibility: true,
     },
     IS_OLD_YEAR,
