@@ -129,63 +129,33 @@ const ProductionTarget = ({ permissions }) => {
     setLoading(true)
     try {
       const isTPH = selectedUnit == 'TPD'
-      let aopmccCalculatedData = []
-
-      if (IS_ELASTOMER_JMD) {
-        aopmccCalculatedData = newRows.map((row) => ({
-          april: isTPH && row.april ? row.april / 24 : row.april || null,
-          may: isTPH && row.april ? row.april / 24 : row.april || null,
-          june: isTPH && row.april ? row.april / 24 : row.april || null,
-          july: isTPH && row.april ? row.april / 24 : row.april || null,
-          august: isTPH && row.april ? row.april / 24 : row.april || null,
-          september: isTPH && row.april ? row.april / 24 : row.april || null,
-          october: isTPH && row.april ? row.april / 24 : row.april || null,
-          november: isTPH && row.april ? row.april / 24 : row.april || null,
-          december: isTPH && row.april ? row.april / 24 : row.april || null,
-          january: isTPH && row.april ? row.april / 24 : row.april || null,
-          february: isTPH && row.april ? row.april / 24 : row.april || null,
-          march: isTPH && row.april ? row.april / 24 : row.april || null,
-          financialYear: AOP_YEAR,
-          plantFKId: PLANT_ID,
-          siteFKId: SITE_ID,
-          materialFKId: row.normParametersFKId,
-          verticalFKId: VERTICAL_ID,
-          id: row.idFromApi || null,
-          avgTPH: findAvg('1', row) || null,
-          remark: row.remarks,
-          remarks: row.remarks,
-        }))
-      } else {
-        aopmccCalculatedData = newRows.map((row) => ({
-          april: isTPH && row.april ? row.april / 24 : row.april || null,
-          may: isTPH && row.may ? row.may / 24 : row.may || null,
-          june: isTPH && row.june ? row.june / 24 : row.june || null,
-          july: isTPH && row.july ? row.july / 24 : row.july || null,
-          august: isTPH && row.august ? row.august / 24 : row.august || null,
-          september:
-            isTPH && row.september ? row.september / 24 : row.september || null,
-          october:
-            isTPH && row.october ? row.october / 24 : row.october || null,
-          november:
-            isTPH && row.november ? row.november / 24 : row.november || null,
-          december:
-            isTPH && row.december ? row.december / 24 : row.december || null,
-          january:
-            isTPH && row.january ? row.january / 24 : row.january || null,
-          february:
-            isTPH && row.february ? row.february / 24 : row.february || null,
-          march: isTPH && row.march ? row.march / 24 : row.march || null,
-          financialYear: AOP_YEAR,
-          plantFKId: PLANT_ID,
-          siteFKId: SITE_ID,
-          materialFKId: row.normParametersFKId,
-          verticalFKId: VERTICAL_ID,
-          id: row.idFromApi || null,
-          avgTPH: findAvg('1', row) || null,
-          remark: row.remarks,
-          remarks: row.remarks,
-        }))
-      }
+      const aopmccCalculatedData = newRows.map((row) => ({
+        april: isTPH && row.april ? row.april / 24 : row.april || null,
+        may: isTPH && row.may ? row.may / 24 : row.may || null,
+        june: isTPH && row.june ? row.june / 24 : row.june || null,
+        july: isTPH && row.july ? row.july / 24 : row.july || null,
+        august: isTPH && row.august ? row.august / 24 : row.august || null,
+        september:
+          isTPH && row.september ? row.september / 24 : row.september || null,
+        october: isTPH && row.october ? row.october / 24 : row.october || null,
+        november:
+          isTPH && row.november ? row.november / 24 : row.november || null,
+        december:
+          isTPH && row.december ? row.december / 24 : row.december || null,
+        january: isTPH && row.january ? row.january / 24 : row.january || null,
+        february:
+          isTPH && row.february ? row.february / 24 : row.february || null,
+        march: isTPH && row.march ? row.march / 24 : row.march || null,
+        financialYear: AOP_YEAR,
+        plantFKId: PLANT_ID,
+        siteFKId: SITE_ID,
+        materialFKId: row.normParametersFKId,
+        verticalFKId: VERTICAL_ID,
+        id: row.idFromApi || null,
+        avgTPH: findAvg('1', row) || null,
+        remark: row.remarks,
+        remarks: row.remarks,
+      }))
 
       const response =
         await ProductionVolumeDataApiService.editAOPMCCalculatedData(
@@ -365,14 +335,27 @@ const ProductionTarget = ({ permissions }) => {
           return true
         }
 
-        for (const month of months) {
-          const value = row[month]
+        // For ELASTOMER JMD, only validate april
+        if (IS_ELASTOMER_JMD) {
+          const value = row['april']
           if (
             value === 0 ||
             value === null ||
             (typeof value === 'string' && !value.trim())
           ) {
             return true
+          }
+        } else {
+          // For all other verticals, validate all 12 months
+          for (const month of months) {
+            const value = row[month]
+            if (
+              value === 0 ||
+              value === null ||
+              (typeof value === 'string' && !value.trim())
+            ) {
+              return true
+            }
           }
         }
 
@@ -391,10 +374,11 @@ const ProductionTarget = ({ permissions }) => {
         return false
       })
 
-      if (invalidRows.length > 0 && !IS_ELASTOMER_JMD) {
+      if (invalidRows.length > 0) {
         setSnackbarData({
-          message:
-            'Please fill all fields in edited row and update the Remark!',
+          message: IS_ELASTOMER_JMD
+            ? 'Please fill value and update the Remark!'
+            : 'Please fill all fields in edited row and update the Remark!',
           severity: 'error',
         })
         setSnackbarOpen(true)
@@ -406,7 +390,7 @@ const ProductionTarget = ({ permissions }) => {
     } catch (error) {
       console.log('Facing issue at saving data', error)
     }
-  }, [modifiedCells, selectedUnit])
+  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD]) // ? add IS_ELASTOMER_JMD to deps
 
   const fetchData = async (unit = selectedUnit) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
