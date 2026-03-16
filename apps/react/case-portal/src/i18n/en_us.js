@@ -100,6 +100,7 @@ const defs = {
     siteBudgetSummary: 'Site Budget Summary',
     ethyleneBalance: 'Ethylene Balance',
     propyleneBalance: 'Propylene Balance',
+    specificConsumptionC3: 'Specific Consumption Calculation',
 
     functionalReports: 'Reports',
     aopDesignBasis: 'AOP Basis',
@@ -322,6 +323,7 @@ const defs = {
         ethyleneBalance: 'Ethylene Balance',
         propyleneBalance: 'Propylene Balance',
         sapBasedRefNorms: 'SAP Based Reference Norms',
+        specificConsumptionC3: 'Specific Consumption Calculation',
       },
     },
   },

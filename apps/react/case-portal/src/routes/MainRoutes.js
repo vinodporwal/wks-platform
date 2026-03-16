@@ -122,6 +122,7 @@ import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-producti
 
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
+import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
@@ -372,6 +373,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='combined-production-norms'>
                 <OtherProduction />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'specific-consumption-c3',
+            element: (
+              <PrivateRoute routeId='specific-consumption-c3'>
+                <SpecificConsumptionCalculation />
               </PrivateRoute>
             ),
           },
