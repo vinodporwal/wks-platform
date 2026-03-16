@@ -1337,6 +1337,61 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getProductionConstraints(String year, String plantFKId, String type) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<Map<String, Object>> productionConstraintsList = new ArrayList<>();
+
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantFKId));
+			List<Object[]> obj = new ArrayList<>();
+
+			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
+					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM")
+					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS")) {
+
+				String procedureName = verticalName + "_GetProduction_Constraints";
+				if (type != null && !type.trim().isEmpty()) {
+					obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId, procedureName, type);
+				} else {
+					obj = findConstantsByYearAndPlantFkId(year, plantFKId, procedureName);
+				}
+			}
+
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("NormTypeName", row[0]);
+				map.put("NormParameter_FK_Id", row[1]);
+				map.put("Name", row[2]);
+				map.put("DisplayName", row[3]);
+				map.put("UOM", row[4]);
+				map.put("ConstantValue", (row[5] != null) ? Double.parseDouble(row[5].toString()) : 0.0);
+				map.put("AuditYear", row[6]);
+				map.put("Remarks", row[7]);
+				boolean isEditable;
+				Object flagObj = row[8];
+				if (flagObj instanceof Boolean) {
+					isEditable = (Boolean) flagObj;
+				} else if (flagObj instanceof Number) {
+					isEditable = ((Number) flagObj).intValue() == 1;
+				} else {
+					isEditable = false;
+				}
+				map.put("isEditable", isEditable);
+				productionConstraintsList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(productionConstraintsList);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -2225,6 +2280,22 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+	
+	public List<Object[]> findConstantsByYearAndPlantFkIdAndType(String aopYear, String plantId, String procedureName,String type) {
+		try {
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear, @type = :type";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("type", type);
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 
 	@Override
 	public AOPMessageVM getConfigurationIntermediateValuesData(String year, String plantId) {
@@ -2806,6 +2877,100 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				e.printStackTrace();
 			}
 
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public byte[] createProductionConstraintsExcel(String year, UUID plantFKId, String type) {
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+			String procedureName = verticalName + "_GetProduction_Constraints";
+			List<Object[]> obj = new ArrayList<>();
+
+			if (verticalName.equalsIgnoreCase("MEG") || verticalName.equalsIgnoreCase("ELASTOMER")
+					|| verticalName.equalsIgnoreCase("CRACKER") || verticalName.equalsIgnoreCase("VCM")
+					|| verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS")) {
+				if (type != null && !type.trim().isEmpty()) {
+					obj = findConstantsByYearAndPlantFkIdAndType(year, plantFKId.toString(), procedureName, type);
+				} else {
+					obj = findConstantsByYearAndPlantFkId(year, plantFKId.toString(), procedureName);
+				}
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+
+			List<List<Object>> rows = new ArrayList<>();
+			for (Object[] row : obj) {
+				List<Object> list = new ArrayList<>();
+				boolean isEditable;
+				Object flagObj = row[8];
+				if (flagObj instanceof Boolean) {
+					isEditable = (Boolean) flagObj;
+				} else if (flagObj instanceof Number) {
+					isEditable = ((Number) flagObj).intValue() == 1;
+				} else {
+					isEditable = false;
+				}
+				if (isEditable) {
+					list.add(row[0]);
+					list.add(row[3]);
+					list.add(row[4]);
+					list.add(row[5]);
+					list.add(row[7]);
+					list.add(row[1]);
+					rows.add(list);
+				}
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			innerHeaders.add("Type");
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			innerHeaders.add("Value");
+			innerHeaders.add("Remark");
+			innerHeaders.add("NormParameter_FK_Id");
+
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+
+			for (List<Object> rowData : rows) {
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						cell.setCellValue(((Number) value).doubleValue());
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+				}
+			}
+
+			sheet.setColumnHidden(5, true);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			workbook.write(outputStream);
+			workbook.close();
+			return outputStream.toByteArray();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

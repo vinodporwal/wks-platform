@@ -15,7 +15,10 @@ import {
   ShutDownPpColumns,
   ShutDownPpDtaColumns,
 } from 'components/colums/ShutdownColumn'
-import { ShutDownAllColumns } from 'components/colums/ShutdownColumn'
+import {
+  ShutDownAllColumns,
+  ShutDown_Elastomer_JMD_Columns,
+} from 'components/colums/ShutdownColumn'
 import {
   ShutDownPTAColumns,
   ShutDownPTADMDColumns,
@@ -90,6 +93,8 @@ const ShutDown = ({ permissions }) => {
   const IS_PET = lowerVertName === 'pet'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
+  const IS_ELASTOMER_JMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const DELETE_NOTE =
     'Warning: Please verify the shutdown consumption quantity before deleting the shutdown activity.'
 
@@ -169,7 +174,7 @@ const ShutDown = ({ permissions }) => {
             : new Date(record.maintEndDateTime)
 
         // Validate date format: dd/mm/yyyy (by parsing and checking)
-        if (!IS_PTA && !IS_CHEMICAL) {
+        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD) {
           if (
             startLimit &&
             endLimit &&
@@ -283,7 +288,7 @@ const ShutDown = ({ permissions }) => {
       //5 START DATE END DATE MANDATORY
       const allRecords = [...rows]
       const timeErrorRows = new Set() // Add this line
-      if (!IS_PTA && !IS_CHEMICAL) {
+      if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD) {
         for (const record of data) {
           // Date required validation (before checking time order)
           const dateRequiredRows = new Set()
@@ -497,6 +502,30 @@ const ShutDown = ({ permissions }) => {
           remark: row.remark || 'null',
           lineId: row.lineId,
         }))
+      } else if (IS_ELASTOMER_JMD) {
+        // For Elastomer JMD, set start date to previous day and end date to today
+        shutdownDetails = newRow.map((row) => {
+          const today = new Date()
+          const prevDay = new Date()
+          prevDay.setDate(today.getDate() - 1)
+
+          return {
+            discription: row.discription || row.discriptionDrpdwn,
+            durationInHrs: (() => {
+              const v = findDuration('1', row)
+              if (!v) return null
+              const [h = '00', m = '00'] = String(v).split('.')
+              return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+            })(),
+            maintStartDateTime: prevDay,
+            maintEndDateTime: today,
+            audityear: AOP_YEAR,
+            id: row.idFromApi || null,
+            remark: row.remark || 'null',
+            lineId: row.lineId,
+            productId: row.productId,
+          }
+        })
       } else {
         // Default: Use start/end date
         shutdownDetails = newRow.map((row) => ({
@@ -884,6 +913,8 @@ const ShutDown = ({ permissions }) => {
         return IS_CHEMICAL ? ShutDownPTADMDColumns : ShutDownAllColumns
       case verticalEnums.PVC:
         return IS_PVC_DMD ? ShutDownPpDtaColumns : ShutDownPpColumns
+      case verticalEnums.ELASTOMER:
+        return IS_ELASTOMER_JMD ? ShutDown_Elastomer_JMD_Columns : []
       default:
         return ShutDownAllColumns
     }
@@ -1082,7 +1113,7 @@ const ShutDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: true,
+      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
       showNoteWhileDeleting:
         IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD ? true : false,
 
@@ -1092,7 +1123,7 @@ const ShutDown = ({ permissions }) => {
       uploadExcelBtn:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'elastomer' ||
+        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'chemical' ||
@@ -1113,7 +1144,7 @@ const ShutDown = ({ permissions }) => {
     },
     isOldYear,
   )
-  if (lowerVertName == 'elastomer') {
+  if (lowerVertName == 'elastomer' && !IS_ELASTOMER_JMD) {
     return <ElastomerShutDown permissions={permissions} />
   }
   if (lowerVertName == 'pta' && lowerSiteName == 'dmd') {

@@ -28,14 +28,30 @@ public class LIMSSpyroInputController {
     @Autowired
     private LIMSSpyroInputService limsSpyroInputService;
 
-    @GetMapping(value = "/naphtha")
-    public AOPMessageVM getLIMSSpyroInput(
+    @GetMapping(value = "/load-naphtha")
+    public AOPMessageVM loadLIMSSpyroInput(
             @RequestParam String plantId,
             @RequestParam String year,
             @RequestParam String startDate,
             @RequestParam String endDate) {
 
-        return limsSpyroInputService.getLIMSSpyroInput(plantId, year, startDate, endDate);
+        return limsSpyroInputService.loadLIMSSpyroInput(plantId, year, startDate, endDate);
+    }
+    
+    @GetMapping(value = "/naphtha")
+    public AOPMessageVM getLIMSSpyroInput(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+
+        return limsSpyroInputService.getLIMSSpyroInput(plantId, year);
+    }
+    
+    @GetMapping(value = "/naphtha-date")
+    public AOPMessageVM getLIMSDate(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+
+        return limsSpyroInputService.getLIMSDate(plantId, year);
     }
     
     @PostMapping(value="/naphtha")
@@ -46,13 +62,12 @@ public class LIMSSpyroInputController {
     @GetMapping(value = "/naphtha-export")
 	public ResponseEntity<byte[]> exportLIMSSpyroInput(
 	         @RequestParam("plantId") String plantId,
-            @RequestParam("year") String year,
-            @RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate
+            @RequestParam("year") String year
+           
 	        ) {
 	    try {
 			
-	        byte[] excelBytes = limsSpyroInputService.exportLIMSSpyroInput(year, plantId, startDate, endDate, false, null); 
+	        byte[] excelBytes = limsSpyroInputService.exportLIMSSpyroInput(year, plantId, false, null); 
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(

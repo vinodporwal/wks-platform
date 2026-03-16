@@ -84,8 +84,14 @@ const NormalOpNormsScreenCracker = () => {
   const [allRedCellFinalNorms, setAllRedCellFinalNorms] = useState([])
 
   const dataGridStore = useSelector((s) => s.dataGridStore) || {}
-  const { verticalChange, yearChanged, oldYear, plantObject, year } =
-    dataGridStore || {}
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantObject,
+    siteObject,
+    year,
+  } = dataGridStore || {}
 
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -93,7 +99,7 @@ const NormalOpNormsScreenCracker = () => {
   const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical || ''
   const lowerVertName = (vertName || '').toLowerCase()
-  const lowerSiteName = (plantObject?.siteName || '').toLowerCase()
+  const lowerSiteName = (siteObject?.name || '').toLowerCase()
   const lowerPlantName = (plantObject?.name || '').toLowerCase()
 
   const dispatch = useDispatch()
@@ -1229,16 +1235,21 @@ const NormalOpNormsScreenCracker = () => {
                 Orange
               </span>{' '}
               - Overridden&nbsp;&nbsp;
-              <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
-              Propane (1Z)&nbsp;&nbsp;
-              <span style={{ color: 'green', fontWeight: 'bold' }}>
-                Green
-              </span>{' '}
-              - Propane (2Z)&nbsp;&nbsp;
-              <span style={{ color: 'purple', fontWeight: 'bold' }}>
-                Purple
-              </span>{' '}
-              - Copied From Other Season
+              {/* Only show the following if SITE_NAME is NOT 'vmd' */}
+              {lowerSiteName !== 'vmd' && (
+                <>
+                  <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span>{' '}
+                  - Propane (1Z)&nbsp;&nbsp;
+                  <span style={{ color: 'green', fontWeight: 'bold' }}>
+                    Green
+                  </span>{' '}
+                  - Propane (2Z)&nbsp;&nbsp;
+                  <span style={{ color: 'purple', fontWeight: 'bold' }}>
+                    Purple
+                  </span>{' '}
+                  - Copied From Other Season
+                </>
+              )}
             </Typography>
           </Box>
 
@@ -1282,42 +1293,46 @@ const NormalOpNormsScreenCracker = () => {
               />
 
               {/* expression below */}
-              <KendoDataTables
-                modifiedCells={modifiedCells}
-                setModifiedCells={setModifiedCells}
-                title='Normal Operations Norms'
-                columns={
-                  gradeDisplayName === 'Monthly' ? colDefsFinalNorms1 : colDefs
-                }
-                setRows={setRowsExpression}
-                rows={rowsExpression}
-                grades={grades}
-                paginationOptions={[100, 200, 300]}
-                saveChanges={saveChangesUnified}
-                isCellEditable={isCellEditable}
-                snackbarData={snackbarData}
-                handleCalculate={handleCalculateUnified}
-                snackbarOpen={snackbarOpen}
-                apiRef={apiRef}
-                setSnackbarOpen={setSnackbarOpen}
-                setSnackbarData={setSnackbarData}
-                remarkDialogOpen={remarkDialogOpen2}
-                setRemarkDialogOpen={setRemarkDialogOpen2}
-                currentRemark={currentRemark2}
-                setCurrentRemark={setCurrentRemark2}
-                currentRowId={currentRowId2}
-                handleRemarkCellClick={handleRemarkCellClick2}
-                permissions={expressionPermissions}
-                groupBy='Particulars'
-                downloadExcelForConfiguration={downloadExcelForConfiguration}
-                handleGradeChange={handleGradeChange}
-                plantID={PLANT_ID}
-                onGlobalCheckboxChange={handleGlobalCheckboxChange}
-                gridName='expression'
-                allRedCell2={allRedCell2}
-                showThreeColors={true}
-                showCatChemUtilityCheckbox2={true}
-              />
+              {lowerSiteName !== 'vmd' && (
+                <KendoDataTables
+                  modifiedCells={modifiedCells}
+                  setModifiedCells={setModifiedCells}
+                  title='Normal Operations Norms'
+                  columns={
+                    gradeDisplayName === 'Monthly'
+                      ? colDefsFinalNorms1
+                      : colDefs
+                  }
+                  setRows={setRowsExpression}
+                  rows={rowsExpression}
+                  grades={grades}
+                  paginationOptions={[100, 200, 300]}
+                  saveChanges={saveChangesUnified}
+                  isCellEditable={isCellEditable}
+                  snackbarData={snackbarData}
+                  handleCalculate={handleCalculateUnified}
+                  snackbarOpen={snackbarOpen}
+                  apiRef={apiRef}
+                  setSnackbarOpen={setSnackbarOpen}
+                  setSnackbarData={setSnackbarData}
+                  remarkDialogOpen={remarkDialogOpen2}
+                  setRemarkDialogOpen={setRemarkDialogOpen2}
+                  currentRemark={currentRemark2}
+                  setCurrentRemark={setCurrentRemark2}
+                  currentRowId={currentRowId2}
+                  handleRemarkCellClick={handleRemarkCellClick2}
+                  permissions={expressionPermissions}
+                  groupBy='Particulars'
+                  downloadExcelForConfiguration={downloadExcelForConfiguration}
+                  handleGradeChange={handleGradeChange}
+                  plantID={PLANT_ID}
+                  onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                  gridName='expression'
+                  allRedCell2={allRedCell2}
+                  showThreeColors={true}
+                  showCatChemUtilityCheckbox2={true}
+                />
+              )}
             </>
           ) : (
             <>
@@ -1357,40 +1372,42 @@ const NormalOpNormsScreenCracker = () => {
               />
 
               {/* expression below */}
-              <KendoDataTables
-                modifiedCells={modifiedCells}
-                setModifiedCells={setModifiedCells}
-                title='Normal Operations Norms'
-                columns={colDefsExpressionCatChem}
-                setRows={setRowsExpression}
-                rows={rowsExpression}
-                grades={grades}
-                paginationOptions={[100, 200, 300]}
-                saveChanges={saveChangesUnified}
-                isCellEditable={isCellEditable}
-                snackbarData={snackbarData}
-                handleCalculate={handleCalculateUnified}
-                snackbarOpen={snackbarOpen}
-                apiRef={apiRef}
-                setSnackbarOpen={setSnackbarOpen}
-                setSnackbarData={setSnackbarData}
-                remarkDialogOpen={remarkDialogOpen4}
-                setRemarkDialogOpen={setRemarkDialogOpen4}
-                currentRemark={currentRemark4}
-                setCurrentRemark={setCurrentRemark4}
-                currentRowId={currentRowId4}
-                handleRemarkCellClick={handleRemarkCellClick4}
-                permissions={expressionPermissions}
-                groupBy='Particulars'
-                downloadExcelForConfiguration={downloadExcelForConfiguration}
-                handleGradeChange={handleGradeChange}
-                plantID={PLANT_ID}
-                onGlobalCheckboxChange={handleGlobalCheckboxChange}
-                gridName='expression'
-                showCatChemUtilityCheckbox={true}
-                allRedCell2={allRedCell2}
-                showThreeColors={true}
-              />
+              {lowerSiteName !== 'vmd' && (
+                <KendoDataTables
+                  modifiedCells={modifiedCells}
+                  setModifiedCells={setModifiedCells}
+                  title='Normal Operations Norms'
+                  columns={colDefsExpressionCatChem}
+                  setRows={setRowsExpression}
+                  rows={rowsExpression}
+                  grades={grades}
+                  paginationOptions={[100, 200, 300]}
+                  saveChanges={saveChangesUnified}
+                  isCellEditable={isCellEditable}
+                  snackbarData={snackbarData}
+                  handleCalculate={handleCalculateUnified}
+                  snackbarOpen={snackbarOpen}
+                  apiRef={apiRef}
+                  setSnackbarOpen={setSnackbarOpen}
+                  setSnackbarData={setSnackbarData}
+                  remarkDialogOpen={remarkDialogOpen4}
+                  setRemarkDialogOpen={setRemarkDialogOpen4}
+                  currentRemark={currentRemark4}
+                  setCurrentRemark={setCurrentRemark4}
+                  currentRowId={currentRowId4}
+                  handleRemarkCellClick={handleRemarkCellClick4}
+                  permissions={expressionPermissions}
+                  groupBy='Particulars'
+                  downloadExcelForConfiguration={downloadExcelForConfiguration}
+                  handleGradeChange={handleGradeChange}
+                  plantID={PLANT_ID}
+                  onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                  gridName='expression'
+                  showCatChemUtilityCheckbox={true}
+                  allRedCell2={allRedCell2}
+                  showThreeColors={true}
+                />
+              )}
             </>
           )}
         </>

@@ -23,12 +23,14 @@ import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.LIMSSpyroInputDTO;
 import com.wks.caseengine.entity.NormAttributeTransactions;
+import com.wks.caseengine.entity.NormParameters;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
+import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
@@ -55,9 +57,12 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
     
     @Autowired
     private NormAttributeTransactionsRepository normAttributeTransactionsRepository;
-
+    
+    @Autowired
+    private NormParametersRepository normParametersRepository;
+    
     @Override
-    public AOPMessageVM getLIMSSpyroInput(String plantId, String aopYear, String startDate, String endDate) {
+    public AOPMessageVM getLIMSSpyroInput(String plantId, String aopYear) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         try {
             Plants plant = plantsRepository.findById(UUID.fromString(plantId))
@@ -71,7 +76,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 
             String procedureName = vertical.getName() + "_" + site.getName() + "_GetLIMSSpyroInput";
 
-            List<Object[]> results = executeLIMSSpyroInput(procedureName, plantId, aopYear, startDate, endDate);
+            List<Object[]> results = executeLIMSSpyroInput(procedureName, plantId, aopYear);
 
             List<LIMSSpyroInputDTO> dtoList = new ArrayList<>();
 
@@ -119,9 +124,156 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
         }
     }
 
+    @Override
+    public AOPMessageVM getLIMSDate(String plantId, String aopYear) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+        try {
+        	Optional<NormParameters> limsStartDate = normParametersRepository.findByNameAndPlantFkId("LimsStartDate", UUID.fromString(plantId));
+        	Optional<NormParameters> limsEndDate = normParametersRepository.findByNameAndPlantFkId("LimsEndDate", UUID.fromString(plantId));
+        	Optional<NormAttributeTransactions> normAttributeTransactionsStart=normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(limsStartDate.get().getId(),4,aopYear);
+        	Optional<NormAttributeTransactions> normAttributeTransactionsEnd=normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(limsEndDate.get().getId(),4,aopYear);
+        	if(normAttributeTransactionsStart.isPresent()) {
+        		map.put("startDate", normAttributeTransactionsStart.get().getAttributeValue());
+        	}else {
+        		map.put("startDate", "");
+        	}
+        	if(normAttributeTransactionsEnd.isPresent()) {
+        		map.put("endDate", normAttributeTransactionsEnd.get().getAttributeValue());
+        	}else {
+        		map.put("endDate", "");
+        	}
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data fetched successfully");
+            aopMessageVM.setData(map);
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+            throw new RuntimeException("Failed to fetch data", ex);
+        }
+    }
+
+    @Override
+    public AOPMessageVM loadLIMSSpyroInput(String plantId, String aopYear, String startDate, String endDate) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+            Sites site = siteRepository.findById(plant.getSiteFkId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+            Verticals vertical = verticalsRepository.findById(plant.getVerticalFKId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+            String procedureName = vertical.getName() + "_" + site.getName() + "_LoadLIMSSpyroInput";
+
+            List<Object[]> results = executeLoadLIMSSpyroInput(procedureName, plantId, aopYear,startDate,endDate);
+
+            List<LIMSSpyroInputDTO> dtoList = new ArrayList<>();
+
+            for (Object[] row : results) {
+                LIMSSpyroInputDTO dto = new LIMSSpyroInputDTO();
+
+                dto.setType(row[0] != null ? row[0].toString() : "");
+                dto.setLimsTagName(row[1] != null ? row[1].toString() : "");
+                dto.setUom(row[2] != null ? row[2].toString() : "");
+
+                dto.setJmdNaphtha(row[3] != null ? toDouble(row[3]) : null);
+                dto.setPmdNaphtha(row[4] != null ? toDouble(row[4]) : null);
+                dto.setIoclNaphtha(row[5] != null ? toDouble(row[5]) : null);
+                dto.setGailNaphtha(row[6] != null ? toDouble(row[6]) : null);
+                dto.setBpclNaphtha(row[7] != null ? toDouble(row[7]) : null);
+                dto.setOngcNaphtha(row[8] != null ? toDouble(row[8]) : null);
+                dto.setOtherNaphtha(row[9] != null ? toDouble(row[9]) : null);
+                dto.setNaphthaBlendCompositionForOptimizerInput(row[10] != null ? toDouble(row[10]) : null);
+
+                dto.setJmdNaphthaId(row[11] != null ? row[11].toString() : "");
+                dto.setPmdNaphthaId(row[12] != null ? row[12].toString() : "");
+                dto.setIoclNaphthaId(row[13] != null ? row[13].toString() : "");
+                dto.setGailNaphthaId(row[14] != null ? row[14].toString() : "");
+                dto.setBpclNaphthaId(row[15] != null ? row[15].toString() : "");
+                dto.setOngcNaphthaId(row[16] != null ? row[16].toString() : "");
+                dto.setOtherNaphthaId(row[17] != null ? row[17].toString() : "");
+                dto.setBcoiNaphthaId(row[18] != null ? row[18].toString() : "");
+
+                dtoList.add(dto);
+            }
+            insertIntoNormAttributeTransaction( startDate,  endDate, plantId,  aopYear);
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("Data", dtoList);
+
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data fetched successfully");
+            aopMessageVM.setData(map);
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+            throw new RuntimeException("Failed to fetch data", ex);
+        }
+    }
+    
+    public void insertIntoNormAttributeTransaction(String startDate, String endDate,String plantId, String year) {
+    	Optional<NormParameters> limsStartDate = normParametersRepository.findByNameAndPlantFkId("LimsStartDate", UUID.fromString(plantId));
+    	Optional<NormParameters> limsEndDate = normParametersRepository.findByNameAndPlantFkId("LimsEndDate", UUID.fromString(plantId));
+    	Optional<NormAttributeTransactions> normAttributeTransactionsStart=normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(limsStartDate.get().getId(),4,year);
+    	if(normAttributeTransactionsStart.isPresent()) {
+    		NormAttributeTransactions normAttributeTransactions=normAttributeTransactionsStart.get();
+    		normAttributeTransactions.setAttributeValue(startDate);
+    		normAttributeTransactions.setModifiedOn(new Date());
+    		normAttributeTransactions.setUserName(Utility.getUserName());
+    		normAttributeTransactionsRepository.save(normAttributeTransactions);
+    	}else {
+    		NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
+    		normAttributeTransactions.setAttributeValue(startDate);
+    		normAttributeTransactions.setModifiedOn(new Date());
+    		normAttributeTransactions.setUserName(Utility.getUserName());
+    		normAttributeTransactions.setAopMonth(4);
+    		normAttributeTransactions.setAuditYear(year);
+    		normAttributeTransactions.setCreatedOn(new Date());
+    		normAttributeTransactions.setNormParameterFKId(limsStartDate.get().getId());
+    		normAttributeTransactionsRepository.save(normAttributeTransactions);
+    	}
+    	Optional<NormAttributeTransactions> normAttributeTransactionsend=normAttributeTransactionsRepository.findByNormParameterFKIdAndAOPMonthAndAuditYear(limsEndDate.get().getId(),4,year);
+    	if(normAttributeTransactionsend.isPresent()) {
+    		NormAttributeTransactions normAttributeTransactions=normAttributeTransactionsend.get();
+    		normAttributeTransactions.setAttributeValue(endDate);
+    		normAttributeTransactions.setModifiedOn(new Date());
+    		normAttributeTransactions.setUserName(Utility.getUserName());
+    		normAttributeTransactionsRepository.save(normAttributeTransactions);
+    	}else {
+    		NormAttributeTransactions normAttributeTransactions = new NormAttributeTransactions();
+    		normAttributeTransactions.setAttributeValue(endDate);
+    		normAttributeTransactions.setModifiedOn(new Date());
+    		normAttributeTransactions.setUserName(Utility.getUserName());
+    		normAttributeTransactions.setAopMonth(4);
+    		normAttributeTransactions.setAuditYear(year);
+    		normAttributeTransactions.setCreatedOn(new Date());
+    		normAttributeTransactions.setNormParameterFKId(limsEndDate.get().getId());
+    		normAttributeTransactionsRepository.save(normAttributeTransactions);
+    	}
+    }
+
     @SuppressWarnings("unchecked")
-    private List<Object[]> executeLIMSSpyroInput(String procedureName, String plantId, String aopYear, String startDate, String endDate) {
-        String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear, @startDate = :startDate, @endDate = :endDate";
+    private List<Object[]> executeLIMSSpyroInput(String procedureName, String plantId, String aopYear) {
+        String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", plantId);
+        query.setParameter("aopYear", aopYear);
+
+        return (List<Object[]>) query.getResultList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Object[]> executeLoadLIMSSpyroInput(String procedureName, String plantId, String aopYear,String startDate,String endDate) {
+        String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear,@startDate = :startDate, @endDate = :endDate";
 
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("plantId", plantId);
@@ -131,7 +283,6 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 
         return (List<Object[]>) query.getResultList();
     }
-
     private Double toDouble(Object value) {
         if (value instanceof Number) {
             return ((Number) value).doubleValue();
@@ -335,10 +486,10 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 		return aopMessageVM;
 	}
 	
-	public byte[] exportLIMSSpyroInput(String year, String plantId, String startDate, String endDate, boolean isAfterSave, List<LIMSSpyroInputDTO> dtoList) {
+	public byte[] exportLIMSSpyroInput(String year, String plantId, boolean isAfterSave, List<LIMSSpyroInputDTO> dtoList) {
 	    try {
 	        if (!isAfterSave) {
-	            AOPMessageVM aopMessageVM = getLIMSSpyroInput(plantId, year, startDate, endDate);
+	            AOPMessageVM aopMessageVM = getLIMSSpyroInput(plantId, year);
 	            Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
 	            if (innerMap != null) {
 	                dtoList = (List<LIMSSpyroInputDTO>) innerMap.get("Data");
@@ -444,7 +595,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	            @SuppressWarnings("unchecked")
 	            List<LIMSSpyroInputDTO> failedList = (List<LIMSSpyroInputDTO>) aopMessageVM.getData();
 	            if (!failedList.isEmpty()) {
-	                byte[] fileByteArray = exportLIMSSpyroInput(year, plantId.toString(), null, null, true, failedList);
+	                byte[] fileByteArray = exportLIMSSpyroInput(year, plantId.toString(), true, failedList);
 	                if (fileByteArray != null) {
 	                    String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 	                    aopMessageVM.setData(base64File);

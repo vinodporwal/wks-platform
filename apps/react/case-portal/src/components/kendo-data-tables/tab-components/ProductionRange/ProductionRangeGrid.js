@@ -203,7 +203,7 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       showTitleNameBusiness: true,
       showCalculate: false,
       //Object.keys(calculationObject || {}).length > 0 ? true : false,
-      titleName: 'Norms Configuration - Manual',
+      titleName: 'Production Range',
       showCalculateVisibility: true,
     },
     IS_OLD_YEAR,

@@ -81,8 +81,16 @@ public class ConfigurationController {
 	}
 	
 	@GetMapping(value="/configuration-constants")
-	public AOPMessageVM getConfigurationConstants(@RequestParam String year,@RequestParam String plantFKId) {
+	public AOPMessageVM getConfigurationConstants(@RequestParam String year,
+												  @RequestParam String plantFKId) {
 		return configurationService.getConfigurationConstants(year,plantFKId);
+	}
+
+	@GetMapping(value="/production-constraints")
+	public AOPMessageVM getProductionConstraints(@RequestParam String year,
+												 @RequestParam String plantFKId,
+												 @RequestParam(required = false) String type) {
+		return configurationService.getProductionConstraints(year, plantFKId, type);
 	}
 
 
@@ -113,6 +121,29 @@ public class ConfigurationController {
 	    } catch (Exception e) {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
+	}
+
+	@GetMapping(value = "/production-constraints-export-excel")
+	public ResponseEntity<byte[]> exportProductionConstraintsReport(
+			@RequestParam("plantFKId") String plantFKId,
+			@RequestParam("year") String year,
+			@RequestParam(required = false) String type) {
+		try {
+			byte[] excelBytes = configurationService.createProductionConstraintsExcel(year,
+					UUID.fromString(plantFKId), type);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("production_constraints.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 	
 	@GetMapping(value = "/configuration-constants-norms-export-excel")

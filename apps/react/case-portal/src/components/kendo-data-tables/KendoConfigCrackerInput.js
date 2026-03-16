@@ -56,6 +56,7 @@ const CrackerConfig = () => {
   const [currentRowId, setCurrentRowId] = useState(null)
 
   const [carbonFilterDataNaphtha, setCarbonFilterDataNaphtha] = useState([])
+  const [naphthaLoadedFlag, setNaphthaLoadedFlag] = useState(false)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -432,8 +433,6 @@ const CrackerConfig = () => {
             currentTabDisplay,
             PLANT_ID,
             AOP_YEAR,
-            startDate || getDefaultStartDate(),
-            endDate || getDefaultEndDate(),
           )
           const naphthaRows = (spyroVM1.data.Data || []).map((item, idx) => ({
             id: idx + 1,
@@ -460,15 +459,8 @@ const CrackerConfig = () => {
             otherNaphthaId: item.otherNaphthaId,
             bcoiNaphthaId: item.bcoiNaphthaId,
           }))
-          let carbonFilterData = naphthaRows
-            ?.filter((item) => item.type === 'Carbon Number Distribution')
-            .map((item) => ({ ...item, isEditable: false }))
 
-          let nonCarbonFilterData = naphthaRows?.filter(
-            (item) => item.type !== 'Carbon Number Distribution',
-          )
-          setCarbonFilterDataNaphtha(carbonFilterData)
-          setRowsForTab(currentTabDisplay, nonCarbonFilterData)
+          setRowsForTab(currentTabDisplay, naphthaRows)
           return
         }
         if (currentTabDisplay == 'External Streams') {
@@ -575,19 +567,40 @@ const CrackerConfig = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const saveChanges = useCallback(async () => {
     try {
-      if (Object.keys(modifiedCells).length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const rawData = Object.values(modifiedCells)
-      const data = rawData.filter((row) => row.inEdit)
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
-        setLoading(false)
-        return
+      let data = []
+      if (currentTabDisplay === 'Naphtha') {
+        const editedRows = Object.values(modifiedCells).filter(
+          (row) => row.inEdit,
+        )
+        // Get first two records
+        const firstTwoRows = naphthaRows.slice(0, 2)
+        // Merge and deduplicate by id
+        const merged = [...firstTwoRows, ...editedRows].reduce((acc, row) => {
+          acc[row.id] = row
+          return acc
+        }, {})
+        data = Object.values(merged)
+      } else {
+        if (Object.keys(modifiedCells).length === 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          setLoading(false)
+          return
+        }
+        const rawData = Object.values(modifiedCells)
+        data = rawData.filter((row) => row.inEdit)
+        if (data.length === 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          setLoading(false)
+          return
+        }
       }
       console.log('data', data)
       const naphthaFields = []
@@ -689,7 +702,7 @@ const CrackerConfig = () => {
           severity: 'success',
         })
         setModifiedCells({})
-
+        setNaphthaLoadedFlag(false)
         const tabId = tabs[tabIndex]
         if (tabId) fetchCrackerRows(currentTabDisplay, selectMode)
       } else {
@@ -818,8 +831,6 @@ const CrackerConfig = () => {
           PLANT_ID,
           AOP_YEAR,
           EXCEL_NAME,
-          naphthaDateRange.startDate || getDefaultStartDate(),
-          naphthaDateRange.endDate || getDefaultEndDate(),
         )
       } else {
         response = await DataService.exportSpyroInputExcel(
@@ -858,7 +869,85 @@ const CrackerConfig = () => {
       setSnackbarOpen(false)
     }
   }
+  const handleLoadNaphthaData = async (startDate, endDate) => {
+    try {
+      setLoading(true)
+      const resp = await DataService.loadNaphthaData(
+        keycloak,
+        currentTabDisplay,
+        PLANT_ID,
+        AOP_YEAR,
+        startDate,
+        endDate,
+      )
+      // Parse and set rows for Naphtha
+      const naphthaRows = (resp.data.Data || []).map((item, idx) => ({
+        id: idx + 1,
+        type: item.type,
+        limsTagName: item.limsTagName,
+        uom: item.uom,
+        jmdNaphtha: item.jmdNaphtha,
+        pmdNaphtha: item.pmdNaphtha,
+        ioclNaphtha: item.ioclNaphtha,
+        gailNaphtha: item.gailNaphtha,
+        bpclNaphtha: item.bpclNaphtha,
+        ongcNaphtha: item.ongcNaphtha,
+        otherNaphtha: item.otherNaphtha,
+        naphthaBlendCompositionForOptimizerInput:
+          item.naphthaBlendCompositionForOptimizerInput,
+        normParameterFKID: item.normParameterFKID || '',
+        jmdNaphthaId: item.jmdNaphthaId,
+        pmdNaphthaId: item.pmdNaphthaId,
+        ioclNaphthaId: item.ioclNaphthaId,
+        gailNaphthaId: item.gailNaphthaId,
+        bpclNaphthaId: item.bpclNaphthaId,
+        ongcNaphthaId: item.ongcNaphthaId,
+        otherNaphthaId: item.otherNaphthaId,
+        bcoiNaphthaId: item.bcoiNaphthaId,
+      }))
 
+      setNaphthaRows(naphthaRows)
+      setModifiedCells({})
+      setNaphthaLoadedFlag(true)
+      setSnackbarData({ message: 'Naphtha data loaded!', severity: 'success' })
+      setSnackbarOpen(true)
+    } catch (error) {
+      setSnackbarData({
+        message: 'Failed to load Naphtha data.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    if (currentTabDisplay === 'Naphtha') {
+      // Reset FIRST — this clears the picker immediately
+      setNaphthaDateRange({ startDate: null, endDate: null })
+      setNaphthaLoadedFlag(false)
+
+      if (PLANT_ID && AOP_YEAR) {
+        DataService.getNaphthatabDate(
+          keycloak,
+          currentTabDisplay,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+          .then((resp) => {
+            const startDate = resp?.data?.startDate
+            const endDate = resp?.data?.endDate
+            if (startDate && endDate) {
+              setNaphthaDateRange({ startDate, endDate }) // Only set if API returns dates
+            }
+            // If null/undefined ? stays null ? picker shows empty
+          })
+          .catch(() => {
+            setNaphthaDateRange({ startDate: null, endDate: null })
+          })
+      }
+    }
+  }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
   return (
     <Box>
       <Backdrop
@@ -961,14 +1050,11 @@ const CrackerConfig = () => {
                   <Box sx={{ mb: 2 }}>
                     <StartAndEndPicker
                       dateFormat='YYYY-MM-DD'
+                      startDate={naphthaDateRange.startDate}
+                      endDate={naphthaDateRange.endDate}
                       onLoad={({ startDate, endDate }) => {
                         setNaphthaDateRange({ startDate, endDate })
-                        fetchCrackerRows(
-                          currentTabDisplay,
-                          selectMode,
-                          startDate,
-                          endDate,
-                        )
+                        handleLoadNaphthaData(startDate, endDate)
                       }}
                     />
 
@@ -986,7 +1072,10 @@ const CrackerConfig = () => {
                       currentRemark={currentRemark}
                       setCurrentRemark={setCurrentRemark}
                       currentRowId={currentRowId}
-                      permissions={adjustedPermissions}
+                      permissions={{
+                        ...adjustedPermissions,
+                        naphthaLoadedFlag: naphthaLoadedFlag,
+                      }}
                       selectMode={selectMode}
                       setSelectMode={setSelectMode}
                       saveChanges={saveChanges}
@@ -996,28 +1085,6 @@ const CrackerConfig = () => {
                       setSnackbarData={setSnackbarData}
                       modifiedCells={modifiedCells}
                       setModifiedCells={setModifiedCells}
-                      handleExcelUpload={handleExcelUpload}
-                      downloadExcelForConfiguration={
-                        downloadExcelForConfiguration
-                      }
-                      groupBy='type'
-                    />
-                  </Box>
-
-                  <Box>
-                    <KendoDataTables
-                      rows={carbonFilterDataNaphtha}
-                      setRows={setCarbonFilterDataNaphtha}
-                      configType='Naphtha'
-                      handleRemarkCellClick={handleRemarkCellClick}
-                      columns={productionColumns}
-                      remarkDialogOpen={remarkDialogOpen}
-                      setRemarkDialogOpen={setRemarkDialogOpen}
-                      permissions={adjustedPermissionsType}
-                      snackbarData={snackbarData}
-                      snackbarOpen={snackbarOpen}
-                      setSnackbarOpen={setSnackbarOpen}
-                      setSnackbarData={setSnackbarData}
                       handleExcelUpload={handleExcelUpload}
                       downloadExcelForConfiguration={
                         downloadExcelForConfiguration

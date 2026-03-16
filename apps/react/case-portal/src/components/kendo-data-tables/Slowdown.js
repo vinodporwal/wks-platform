@@ -11,6 +11,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import {
   SlowDownElastomerColumns,
   SlowDownElastomerColumnsSBR,
+  SlowDown_Elastomer_JMD_Columns,
 } from 'components/colums/ElastomerColums'
 import {
   SlowDownDmdVcmColumns,
@@ -99,12 +100,13 @@ const SlowDown = ({ permissions }) => {
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
-
+  const IS_ELASTOMER_JMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
     lowerVertName === 'pet' ||
-    lowerVertName == 'elastomer' ||
+    (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
     lowerVertName == 'vcm' ||
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
@@ -481,7 +483,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName !== 'pet' &&
         !IS_PTA_DMD &&
         !IS_PVC_VMD &&
-        !IS_PVC_DMD
+        !IS_PVC_DMD &&
+        !IS_ELASTOMER_JMD
       ) {
         for (const record of data) {
           const startDate =
@@ -642,7 +645,8 @@ const SlowDown = ({ permissions }) => {
         !IS_PTA_DMD &&
         lowerVertName !== 'pet' &&
         !IS_PVC_VMD &&
-        !IS_PVC_DMD
+        !IS_PVC_DMD &&
+        !IS_ELASTOMER_JMD
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -1270,6 +1274,9 @@ const SlowDown = ({ permissions }) => {
       PLANT_NAME_LOWER === 'sbr' &&
       SITE_NAME_LOWER === 'hmd'
 
+    var IS_ELASTOMER_JMD =
+      lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+
     switch (lowerVertName) {
       case verticalEnums.PE:
         return SlowDownPeColumns
@@ -1280,9 +1287,11 @@ const SlowDown = ({ permissions }) => {
       case verticalEnums.PTA:
         return IS_PTA_DMD ? SlowDownPtadmdColumns : SlowDownPtaColumns
       case verticalEnums.ELASTOMER:
-        return IS_ELASTOMER_HMD_SBR
-          ? SlowDownElastomerColumnsSBR
-          : SlowDownElastomerColumns
+        return IS_ELASTOMER_JMD
+          ? SlowDown_Elastomer_JMD_Columns
+          : IS_ELASTOMER_HMD_SBR
+            ? SlowDownElastomerColumnsSBR
+            : SlowDownElastomerColumns
       case verticalEnums.MEG:
         return SlowDownMegColumns
       case verticalEnums.AROMATICS:
@@ -1528,7 +1537,7 @@ const SlowDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: true,
+      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
       showTitleNameBusiness: true,
       titleName: SCREEN_NAME,
       uploadExcelBtn: SHOW_EXCEL_UPLOAD_BUTTON,
@@ -1557,7 +1566,8 @@ const SlowDown = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {(lowerVertName === 'meg' || lowerVertName === 'elastomer') && (
+      {(lowerVertName === 'meg' ||
+        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD)) && (
         <Box style={{ margin: 0, padding: 0 }}>
           <Tabs
             value={selectedTab}
@@ -1679,9 +1689,9 @@ const SlowDown = ({ permissions }) => {
       )}
 
       {/* TAB 2 FOR ELASTOMER */}
-      {selectedTab === 1 && lowerVertName === 'elastomer' && (
-        <ElastomerSlowdown />
-      )}
+      {selectedTab === 1 &&
+        lowerVertName === 'elastomer' &&
+        !IS_ELASTOMER_JMD && <ElastomerSlowdown />}
     </div>
   )
 }

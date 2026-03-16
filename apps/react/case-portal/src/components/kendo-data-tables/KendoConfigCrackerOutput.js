@@ -375,7 +375,10 @@ const CrackerConfig = () => {
           (item, index) => ({
             ...item,
             id: index,
-            isEditable: index !== spyroVMYield1?.data?.length - 1,
+            isEditable:
+              SITE_NAME == 'VMD'
+                ? false
+                : index !== spyroVMYield1?.data?.length - 1,
           }),
         )
 
