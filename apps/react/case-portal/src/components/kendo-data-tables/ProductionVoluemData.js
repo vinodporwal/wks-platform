@@ -103,6 +103,7 @@ const ProductionvolumeData = ({ permissions }) => {
     siteObject?.name?.toLowerCase() == 'vmd'
   const IS_VCM_DMD_VCM = IS_VCM && SITE_NAME == 'dmd' && PLANT_NAME == 'vcm'
   const IS_AROMATICS_DTA = VERTICAL_NAME === 'aromatics' && SITE_NAME === 'dta'
+  const IS_ELASTOMER_JMD = VERTICAL_NAME === 'elastomer' && SITE_NAME === 'jmd'
   // Check if it's PP VERTICAL | DTA SITE
   const IS_PP_DTA = VERTICAL_NAME === 'pp' && SITE_NAME === 'dta'
   const IS_PP_SEZ = VERTICAL_NAME === 'pp' && SITE_NAME === 'sez'

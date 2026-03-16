@@ -141,6 +141,51 @@ export const BusinessDemandElastomerColumns = [
     hidden: true,
   },
 ]
+export const BusinessDemandElastomerJmdColumns = [
+  {
+    field: 'Particulars',
+    title: 'Type',
+    width: 100,
+    groupable: true,
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'normParameterId',
+    title: 'Particulars',
+    editable: false,
+    width: 125,
+    hidden: true,
+  },
+
+  {
+    field: 'displayName',
+    title: 'Particulars',
+    editable: false,
+    widthT: 200,
+  },
+  {
+    field: 'april',
+    title: 'Value',
+    editable: true,
+    widthT: 200,
+    rightAlign: true,
+    headerAlign: 'left',
+    type: 'number',
+  },
+
+  {
+    field: 'remark',
+    title: 'Remark',
+    width: 90,
+    editable: false,
+  },
+  {
+    field: 'idFromApi',
+    title: 'ID from API',
+    hidden: true,
+  },
+]
 
 export const SlowDownElastomerColumns = [
   {
