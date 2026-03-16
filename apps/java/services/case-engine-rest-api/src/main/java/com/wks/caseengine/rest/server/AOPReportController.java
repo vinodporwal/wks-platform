@@ -87,4 +87,9 @@ public class AOPReportController {
 		return aopReportService.getC3Detail(plantId, year);
 	}
 
+	@GetMapping(value="/lims-dataset")
+	public AOPMessageVM getLIMSDataset(@RequestParam String plantId, @RequestParam String year) {
+		return aopReportService.getLIMSDataset(plantId, year);
+	}
+
 }

@@ -19,5 +19,6 @@ public interface AOPReportService {
 	public AOPMessageVM getGradewiseConsumptionNorms(String plantId, String year,String reportType);
 	public AOPMessageVM getC3Calculation(String plantId, String year);
 	public AOPMessageVM getC3Detail(String plantId, String year);
+	public AOPMessageVM getLIMSDataset(String plantId, String year);
 	public AOPMessageVM updatePlantContributionFiveYearSummaryReport( List<PlantContributionSummaryDTO> plantContributionSummaryDTO);
 }
