@@ -808,6 +808,9 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
                 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+                if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+                	dto.setNormType(row[21] != null ? row[21].toString() : " ");
+                }
                 aOPMCCalculatedDataDTOList.add(dto);
             }
 
