@@ -45,129 +45,132 @@ const NavItem = ({ item, level }) => {
     }
   }, [location.pathname, item.id, dispatch])
 
-  return (
-    <>
-      <ListItemButton
-        disabled={item.disabled}
-        onClick={handleClick}
-        selected={isSelected}
-        sx={{
-          minHeight: 30,
-          px: 1,
-          py: 0.8,
-          mx: 0,
-          mb: 0,
+  const itemContent = (
+    <ListItemButton
+      disabled={item.disabled}
+      onClick={handleClick}
+      selected={isSelected}
+      sx={{
+        minHeight: 30,
+        px: 1,
+        py: 0.8,
+        mx: 0,
+        mb: 0,
+        justifyContent: drawerOpen ? 'initial' : 'center',
 
-          borderRadius: 0, // ? REMOVE PILL
-          backgroundColor: 'transparent', // default sidebar
+        borderRadius: 0, // ? REMOVE PILL
+        backgroundColor: 'transparent', // default sidebar
 
-          color: '#cbd5e1',
+        color: '#6a7b92',
+
+        '&:hover': {
+          backgroundColor: 'rgba(255,255,255,0.04)',
+        },
+
+        /* ? SELECTED STYLE */
+        '&.Mui-selected': {
+          backgroundColor: 'transparent', // ? NO CARD
+          color: '#575bee',
 
           '&:hover': {
             backgroundColor: 'rgba(255,255,255,0.04)',
           },
 
-          /* ? SELECTED STYLE */
-          '&.Mui-selected': {
-            backgroundColor: 'transparent', // ? NO CARD
-            color: '#10b981',
-
-            '&:hover': {
-              backgroundColor: 'rgba(255,255,255,0.04)',
-            },
-
-            '& .MuiTypography-root': {
-              color: '#10b981 !important',
-            },
-
-            '& .MuiListItemIcon-root': {
-              color: '#10b981 !important',
-            },
+          '& .MuiTypography-root': {
+            color: '#575bee !important',
           },
 
-          /* ? GREEN LEFT BORDER LIKE RELIANCE */
-          '&.Mui-selected::before': {
-            content: '""',
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: '3px',
-            backgroundColor: '#10b981',
+          '& .MuiListItemIcon-root': {
+            color: '#575bee !important',
           },
-        }}
-      >
-        {/* ICON */}
-        {Icon && (
-          <ListItemIcon
-            sx={{
-              minWidth: 30,
-              color: isSelected || isDashboard ? '#ffffff' : '#94a3b8',
+        },
 
-              '& svg': {
-                width: 18,
-                height: 18,
-              },
-            }}
-          >
-            <Icon size={18} strokeWidth={1.7} />
-          </ListItemIcon>
-        )}
+        /* ? SELECTED LEFT BORDER INDICATOR */
+        '&.Mui-selected::before': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '3px',
+          backgroundColor: '#575bee',
+        },
+      }}
+    >
+      {/* ICON */}
+      {Icon && (
+        <ListItemIcon
+          sx={{
+            minWidth: drawerOpen ? 30 : 0,
+            color: isSelected || isDashboard ? '#575bee' : '#6a7b92',
+            justifyContent: 'center',
 
-        {/* TEXT */}
-        {(drawerOpen || level !== 1) && (
-          <ListItemText
-            sx={{
-              my: 0,
-              overflow: 'hidden',
-            }}
-            primary={
-              <Tooltip
-                title={item.title}
-                placement='right'
-                arrow
-                enterDelay={1000}
-              >
-                <Typography
-                  sx={{
-                    fontSize: '0.82rem',
-                    fontWeight: isSelected ? 600 : 500,
-                    color: isSelected || isDashboard ? '#ffffff' : '#cbd5e1',
-                    letterSpacing: '0.01em',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: '160px',
-                    cursor: 'default',
-                  }}
-                >
-                  {item.title}
-                </Typography>
-              </Tooltip>
-            }
-          />
-        )}
+            '& svg': {
+              width: 18,
+              height: 18,
+            },
+          }}
+        >
+          <Icon size={18} strokeWidth={1.7} />
+        </ListItemIcon>
+      )}
 
-        {/* CHIP */}
-        {(drawerOpen || level !== 1) && item.chip && (
-          <Chip
-            size='small'
-            label={item.chip.label}
-            avatar={
-              item.chip.avatar ? <Avatar>{item.chip.avatar}</Avatar> : null
-            }
-            sx={{
-              ml: 0.5,
-              height: 16,
-              fontSize: '0.55rem',
-              fontWeight: 700,
-              bgcolor: '#16a34a',
-              color: '#ffffff',
-              borderRadius: '1px',
-            }}
-          />
-        )}
-      </ListItemButton>
+      {/* TEXT - HIDDEN IN MINI MODE FOR ALL LEVELS */}
+      {drawerOpen && (
+        <ListItemText
+          sx={{
+            my: 0,
+            overflow: 'hidden',
+          }}
+          primary={
+            <Typography
+              sx={{
+                fontSize: '0.82rem',
+                fontWeight: isSelected ? 600 : 500,
+                color: isSelected || isDashboard ? '#575bee' : '#6a7b92',
+                letterSpacing: '0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '160px',
+                cursor: 'default',
+              }}
+            >
+              {item.title}
+            </Typography>
+          }
+        />
+      )}
+
+      {/* CHIP */}
+      {drawerOpen && item.chip && (
+        <Chip
+          size='small'
+          label={item.chip.label}
+          avatar={item.chip.avatar ? <Avatar>{item.chip.avatar}</Avatar> : null}
+          sx={{
+            ml: 0.5,
+            height: 16,
+            fontSize: '0.55rem',
+            fontWeight: 700,
+            bgcolor: '#575bee',
+            color: '#ffffff',
+            borderRadius: '1px',
+          }}
+        />
+      )}
+    </ListItemButton>
+  )
+
+  return (
+    <>
+      {drawerOpen ? (
+        itemContent
+      ) : (
+        <Tooltip title={item.title} placement='right' arrow>
+          {itemContent}
+        </Tooltip>
+      )}
 
       {/* CONFIRMATION DIALOG */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>

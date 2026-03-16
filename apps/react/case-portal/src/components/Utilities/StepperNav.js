@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useMenuContext } from 'menu/menuProvider'
 import { verticalEnums } from 'enums/verticalEnums'
-import { drawerWidth } from 'config'
+import { drawerWidth, miniDrawerWidth } from 'config'
 
 const USE_FIXED = true
 
@@ -197,7 +197,9 @@ export default function StepperNav() {
           <Box
             sx={{
               position: 'fixed',
-              left: drawerOpen ? `${drawerWidth + 8}px` : '8px',
+              left: drawerOpen
+                ? `${drawerWidth + 8}px`
+                : `${miniDrawerWidth + 10}px`,
               right: '8px',
               zIndex: (theme) => (theme.zIndex?.appBar ?? 1100) + 1,
               transition: 'all 0.3s ease',

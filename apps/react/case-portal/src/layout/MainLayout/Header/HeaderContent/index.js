@@ -527,7 +527,7 @@ export default function HeaderContent({ keycloak }) {
           alignItems: 'center',
           width: '100%',
           position: 'relative',
-          px: 2,
+          pr: 2,
           py: 0.75,
           background: '#fff',
           borderBottom: '1px solid rgba(15,23,42,0.04)',

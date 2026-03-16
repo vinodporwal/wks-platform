@@ -14,6 +14,7 @@ import { useTheme } from '@mui/material/styles'
 // Icons
 import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
+import AppsIcon from '@mui/icons-material/Apps'
 
 // Internal Imports
 import { verticalEnums } from 'enums/verticalEnums'
@@ -24,6 +25,7 @@ const NavCollapse = ({ menu, level }) => {
   const [open, setOpen] = useState(true)
   const [selected, setSelected] = useState(menu.id)
 
+  const { drawerOpen } = useSelector((state) => state.menu)
   const { plantID, verticalChange } = useSelector(
     (state) => state.dataGridStore,
   )
@@ -65,43 +67,44 @@ const NavCollapse = ({ menu, level }) => {
     return menuItems.map(renderMenuItem)
   }, [menu?.children, lowerVertName, plantName, level])
 
-  return (
-    <>
-      <ListItemButton
-        onClick={handleClick}
-        selected={selected === menu.id}
-        sx={{
-          minHeight: 36,
-          px: 1,
-          py: 0.4,
-          borderRadius: 1,
-          alignItems: 'center',
-          backgroundColor: 'transparent',
+  const collapseButton = (
+    <ListItemButton
+      onClick={handleClick}
+      selected={selected === menu.id}
+      sx={{
+        minHeight: 36,
+        px: 1,
+        py: 0.4,
+        borderRadius: 1,
+        alignItems: 'center',
+        justifyContent: drawerOpen ? 'initial' : 'center',
+        backgroundColor: 'transparent',
+
+        '&:hover': {
+          backgroundColor: 'rgba(255,255,255,0.05)',
+        },
+
+        // SELECTED STATE (?? IMPORTANT)
+        '&.Mui-selected': {
+          background: '#575bee',
+          color: '#fff',
+          borderRadius: '6px',
 
           '&:hover': {
-            backgroundColor: 'rgba(255,255,255,0.05)',
+            background: '#575bee',
           },
 
-          // SELECTED STATE (?? IMPORTANT)
-          '&.Mui-selected': {
-            background: 'linear-gradient(90deg, #2563eb 0%, #9333ea 100%)',
+          '& .MuiTypography-root': {
             color: '#fff',
-            borderRadius: '6px',
-
-            '&:hover': {
-              background: 'linear-gradient(90deg, #2563eb 0%, #9333ea 100%)',
-            },
-
-            '& .MuiTypography-root': {
-              color: '#fff',
-            },
-
-            '& svg': {
-              color: '#fff !important',
-            },
           },
-        }}
-      >
+
+          '& svg': {
+            color: '#fff !important',
+          },
+        },
+      }}
+    >
+      {drawerOpen && (
         <ListItemText
           primary={
             <Tooltip
@@ -126,8 +129,10 @@ const NavCollapse = ({ menu, level }) => {
           }
           sx={{ my: 0, overflow: 'hidden' }}
         />
+      )}
 
-        {open ? (
+      {drawerOpen &&
+        (open ? (
           <RemoveIcon
             sx={{
               fontSize: 13,
@@ -146,8 +151,28 @@ const NavCollapse = ({ menu, level }) => {
               transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
             }}
           />
-        )}
-      </ListItemButton>
+        ))}
+
+      {!drawerOpen && (
+        <AppsIcon
+          sx={{
+            fontSize: 18,
+            color: selected === menu.id ? '#fff' : '#6a7b92',
+          }}
+        />
+      )}
+    </ListItemButton>
+  )
+
+  return (
+    <>
+      {drawerOpen ? (
+        collapseButton
+      ) : (
+        <Tooltip title={menu.title} placement='right' arrow>
+          {collapseButton}
+        </Tooltip>
+      )}
 
       <Collapse in={open} timeout='auto' unmountOnExit>
         <List component='div' disablePadding sx={{ pl: 0 }}>

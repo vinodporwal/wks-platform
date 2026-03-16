@@ -70,9 +70,9 @@ const Navigation = () => {
         flexDirection: 'column',
 
         // ? Dark navy gradient background (like your screenshot)
-        background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+        background: '#ffffff',
 
-        borderRight: '1px solid #1e293b',
+        borderRight: '1px solid #ffffff',
         fontFamily:
           "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
         color: '#cbd5e1',

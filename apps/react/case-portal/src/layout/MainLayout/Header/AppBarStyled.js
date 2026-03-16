@@ -3,7 +3,7 @@ import { styled } from '@mui/material/styles'
 import AppBar from '@mui/material/AppBar'
 
 // project import
-import { drawerWidth } from 'config'
+import { drawerWidth, miniDrawerWidth } from 'config'
 
 // ==============================|| HEADER - APP BAR STYLED ||============================== //
 
@@ -14,6 +14,11 @@ const AppBarStyled = styled(AppBar, {
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
+  }),
+
+  ...(!open && {
+    marginLeft: miniDrawerWidth,
+    width: `calc(100% - ${miniDrawerWidth}px)`,
   }),
 
   ...(open && {

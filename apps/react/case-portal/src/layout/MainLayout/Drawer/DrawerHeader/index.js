@@ -14,6 +14,8 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
           alignItems: 'center',
           width: '100%',
           justifyContent: open ? 'space-between' : 'center',
+          flexDirection: open ? 'row' : 'column',
+          gap: open ? 0 : 1.5,
         }}
       >
         {/* LEFT LOGO + TEXT */}
@@ -27,10 +29,12 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
 
           {open && (
             <Box>
-              <Typography sx={{ fontWeight: 700, fontSize: 17, color: '#fff' }}>
+              <Typography
+                sx={{ fontWeight: 700, fontSize: 17, color: '#04140f' }}
+              >
                 Reliance
               </Typography>
-              <Typography sx={{ fontSize: 12, color: '#94a3b8' }}>
+              <Typography sx={{ fontSize: 12, color: '#6a7b92' }}>
                 Monitoring Dashboard
               </Typography>
             </Box>
@@ -38,17 +42,19 @@ const DrawerHeader = ({ open, handleDrawerToggle }) => {
         </Box>
 
         {/* RIGHT COLLAPSE BUTTON */}
-        <IconButton
-          onClick={handleDrawerToggle}
-          size='small'
-          sx={{
-            color: '#cbd5f5',
-            ml: open ? 0 : 0,
-            '&:hover': { color: '#fff' },
-          }}
-        >
-          {open ? <MenuOpenIcon /> : <MenuIcon />}
-        </IconButton>
+        {open && (
+          <IconButton
+            onClick={handleDrawerToggle}
+            size='small'
+            sx={{
+              color: '#6a7b92',
+              ml: open ? 0 : 0,
+              '&:hover': { color: '#6a7b92' },
+            }}
+          >
+            {open ? <MenuOpenIcon /> : <MenuIcon />}
+          </IconButton>
+        )}
       </Box>
     </DrawerHeaderStyled>
   )

@@ -1,17 +1,18 @@
 // material-ui
 import { styled } from '@mui/material/styles'
 import Drawer from '@mui/material/Drawer'
-import { drawerWidth } from 'config'
+import { drawerWidth, miniDrawerWidth } from 'config'
 
 const openedMixin = (theme) => ({
   width: drawerWidth,
-  borderRight: `1px solid ${theme.palette.divider}`,
+  // borderRight: `1px solid ${theme.palette.divider}`,
   transition: theme.transitions.create('width', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.enteringScreen,
   }),
   overflowX: 'hidden',
   boxShadow: 'none',
+  background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
 })
 
 const closedMixin = (theme) => ({
@@ -20,9 +21,10 @@ const closedMixin = (theme) => ({
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: 'hidden',
-  width: 0,
+  width: miniDrawerWidth,
   borderRight: 'none',
-  boxShadow: theme.customShadows.z1,
+  // boxShadow: theme.customShadows.z1,
+  background: 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
 })
 
 const MiniDrawerStyled = styled(Drawer, {

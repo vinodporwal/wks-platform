@@ -1,10 +1,13 @@
 import PropTypes from 'prop-types'
 import { useSelector } from 'react-redux'
 import List from '@mui/material/List'
+import ListItemIcon from '@mui/material/ListItemIcon'
 import ListSubheader from '@mui/material/ListSubheader'
 import Typography from '@mui/material/Typography'
+import Tooltip from '@mui/material/Tooltip'
 import NavItem from './NavItem'
 import NavCollapse from './NavCollapse'
+import AppsIcon from '@mui/icons-material/Apps' // Example static group icon
 
 /* ===== COMPACT SIDEBAR GROUP STYLES ===== */
 const GROUP_BG = 'transparent' // Changed to transparent for a cleaner look
@@ -42,10 +45,11 @@ const NavGroup = ({ item }) => {
         mb: drawerOpen ? 1.5 : 0,
         py: 0,
         backgroundColor: GROUP_BG,
+        mx: '3px',
       }}
       subheader={
         item.title &&
-        drawerOpen && (
+        (drawerOpen ? (
           <ListSubheader
             disableSticky
             sx={{
@@ -70,7 +74,21 @@ const NavGroup = ({ item }) => {
               {item.title}
             </Typography>
           </ListSubheader>
-        )
+        ) : (
+          <Tooltip title={item.title} placement='right' arrow>
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                py: 1,
+                color: '#6a7b92',
+              }}
+            >
+              <AppsIcon sx={{ fontSize: 18 }} />
+            </ListItemIcon>
+          </Tooltip>
+        ))
       }
     >
       {navCollapse}

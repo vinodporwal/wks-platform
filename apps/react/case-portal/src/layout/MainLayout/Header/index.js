@@ -30,20 +30,31 @@ const Header = ({ open, handleDrawerToggle, keycloak }) => {
             mr: 1,
             width: 40,
             height: 40,
-            borderRight: '1px solid #000',
-            borderRadius: 0,
+            color: '#6a7b92',
             pr: 1,
+            '&:hover': { color: '#6a7b92' },
           }}
         >
           <MenuIcon
             sx={{
-              fontSize: '1.8rem',
-              color: 'rgba(0, 0, 0, 0.7)',
+              // fontSize: '1.8rem',
+              color: '#6a7b92',
               transition: 'all 0.25s ease',
             }}
           />
         </IconButton>
       )}
+      {/* {open && (<IconButton
+          onClick={handleDrawerToggle}
+          size="small"
+          sx={{
+            color: '#6a7b92',
+            ml: open ? 0 : 0,
+            '&:hover': { color: '#6a7b92' },
+          }}
+        >
+          {open ? <MenuOpenIcon /> : <MenuIcon />}
+        </IconButton>)} */}
 
       <HeaderContent keycloak={keycloak} />
     </Toolbar>
