@@ -893,6 +893,242 @@ public class AOPReportServiceImpl implements AOPReportService {
 	        throw new RuntimeException("Failed to fetch data", ex);
 	    }
 	}
+
+	@Override
+	public AOPMessageVM getC3Calculation(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<Object[]> results = getC3CalculationData(plantId, year);
+	        List<String> columnNames = getC3CalculationColumns(plantId, year);
+
+	        List<Map<String, Object>> resultList = new ArrayList<>();
+	        for (Object[] row : results) {
+	            Map<String, Object> rowMap = new LinkedHashMap<>();
+	            for (int i = 0; i < columnNames.size(); i++) {
+	                rowMap.put(columnNames.get(i), row[i]);
+	            }
+	            resultList.add(rowMap);
+	        }
+
+	        Map<String, Object> data = new HashMap<>();
+	        data.put("data", resultList);
+	        data.put("columns", getC3CalculationColumnMetadata(plantId, year));
+
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(data);
+	        return aopMessageVM;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	@Override
+	public AOPMessageVM getC3Detail(String plantId, String year) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    try {
+	        List<Object[]> results = getC3DetailData(plantId, year);
+	        List<String> columnNames = getC3DetailColumns(plantId, year);
+
+	        List<Map<String, Object>> resultList = new ArrayList<>();
+	        for (Object[] row : results) {
+	            Map<String, Object> rowMap = new LinkedHashMap<>();
+	            for (int i = 0; i < columnNames.size(); i++) {
+	                rowMap.put(columnNames.get(i), row[i]);
+	            }
+	            resultList.add(rowMap);
+	        }
+
+	        Map<String, Object> data = new HashMap<>();
+	        data.put("data", resultList);
+	        data.put("columns", getC3DetailColumnMetadata(plantId, year));
+
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("SP Executed successfully");
+	        aopMessageVM.setData(data);
+	        return aopMessageVM;
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format ", e);
+	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	private List<Object[]> getC3DetailData(String plantId, String year) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Detail";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private List<String> getC3DetailColumns(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Detail";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getC3DetailColumnMetadata(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Detail";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", formatTitle(columnName));
+						columnInfo.put("editable", false);
+						columnInfo.put("type", getFrontendType(columnType));
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
+
+	private List<Object[]> getC3CalculationData(String plantId, String year) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Calculation";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private List<String> getC3CalculationColumns(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Calculation";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getC3CalculationColumnMetadata(String plantId, String year) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_C3Calculation";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", formatTitle(columnName));
+						columnInfo.put("editable", false);
+						columnInfo.put("type", getFrontendType(columnType));
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
 	
 	public List<Object[]> getGradewiseConsumptionNormsData(String plantId,String year) {
 		try {
