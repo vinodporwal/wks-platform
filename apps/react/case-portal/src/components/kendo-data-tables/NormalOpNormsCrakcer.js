@@ -1293,46 +1293,44 @@ const NormalOpNormsScreenCracker = () => {
               />
 
               {/* expression below */}
-              {lowerSiteName !== 'vmd' && (
-                <KendoDataTables
-                  modifiedCells={modifiedCells}
-                  setModifiedCells={setModifiedCells}
-                  title='Normal Operations Norms'
-                  columns={
-                    gradeDisplayName === 'Monthly'
-                      ? colDefsFinalNorms1
-                      : colDefs
-                  }
-                  setRows={setRowsExpression}
-                  rows={rowsExpression}
-                  grades={grades}
-                  paginationOptions={[100, 200, 300]}
-                  saveChanges={saveChangesUnified}
-                  isCellEditable={isCellEditable}
-                  snackbarData={snackbarData}
-                  handleCalculate={handleCalculateUnified}
-                  snackbarOpen={snackbarOpen}
-                  apiRef={apiRef}
-                  setSnackbarOpen={setSnackbarOpen}
-                  setSnackbarData={setSnackbarData}
-                  remarkDialogOpen={remarkDialogOpen2}
-                  setRemarkDialogOpen={setRemarkDialogOpen2}
-                  currentRemark={currentRemark2}
-                  setCurrentRemark={setCurrentRemark2}
-                  currentRowId={currentRowId2}
-                  handleRemarkCellClick={handleRemarkCellClick2}
-                  permissions={expressionPermissions}
-                  groupBy='Particulars'
-                  downloadExcelForConfiguration={downloadExcelForConfiguration}
-                  handleGradeChange={handleGradeChange}
-                  plantID={PLANT_ID}
-                  onGlobalCheckboxChange={handleGlobalCheckboxChange}
-                  gridName='expression'
-                  allRedCell2={allRedCell2}
-                  showThreeColors={true}
-                  showCatChemUtilityCheckbox2={true}
-                />
-              )}
+              {/* {lowerSiteName !== 'vmd' && ( */}
+              <KendoDataTables
+                modifiedCells={modifiedCells}
+                setModifiedCells={setModifiedCells}
+                title='Normal Operations Norms'
+                columns={
+                  gradeDisplayName === 'Monthly' ? colDefsFinalNorms1 : colDefs
+                }
+                setRows={setRowsExpression}
+                rows={rowsExpression}
+                grades={grades}
+                paginationOptions={[100, 200, 300]}
+                saveChanges={saveChangesUnified}
+                isCellEditable={isCellEditable}
+                snackbarData={snackbarData}
+                handleCalculate={handleCalculateUnified}
+                snackbarOpen={snackbarOpen}
+                apiRef={apiRef}
+                setSnackbarOpen={setSnackbarOpen}
+                setSnackbarData={setSnackbarData}
+                remarkDialogOpen={remarkDialogOpen2}
+                setRemarkDialogOpen={setRemarkDialogOpen2}
+                currentRemark={currentRemark2}
+                setCurrentRemark={setCurrentRemark2}
+                currentRowId={currentRowId2}
+                handleRemarkCellClick={handleRemarkCellClick2}
+                permissions={expressionPermissions}
+                groupBy='Particulars'
+                downloadExcelForConfiguration={downloadExcelForConfiguration}
+                handleGradeChange={handleGradeChange}
+                plantID={PLANT_ID}
+                onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                gridName='expression'
+                allRedCell2={allRedCell2}
+                showThreeColors={true}
+                showCatChemUtilityCheckbox2={true}
+              />
+              {/* )} */}
             </>
           ) : (
             <>
