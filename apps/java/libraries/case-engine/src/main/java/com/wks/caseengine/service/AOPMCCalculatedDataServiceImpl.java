@@ -136,7 +136,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 	        	 procedureName=vertical.getName()+"_GetAOPMCValues";
 				 
-	        } else {
+	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValues";
+				 
+	        }else {
 	            view = "vwAOPMCValues";
 	        }
 	        List<Object[]> obj=null;
@@ -551,6 +554,8 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 view = "vw" + vertical.getName() + "_" + site.getName() + "_AOPMCValuesMaxAchivedCapacity";
             }else if(vertical.getName().equalsIgnoreCase("CRACKER")) {
 	        	 procedureName=vertical.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
+	        } else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+	        	 procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesMaxAchivedCapacity";	 
 	        }  else {
                 view = "vwAOPMCValuesMaxAchivedCapacity";
             }
@@ -766,10 +771,15 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
  	                .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
  	        Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
  	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+ 	        Sites site = siteRepository.findById(plant.getSiteFkId())
+	                .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
         	 if(vertical.getName().equalsIgnoreCase("CRACKER")) {
         		 String procedureName=vertical.getName()+"_GetAOPMCValuesDesignCapacity";
  	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
- 	        }else {
+ 	        }else if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+ 	        	String procedureName=vertical.getName()+"_"+site.getName()+"_GetAOPMCValuesDesignCapacity";
+	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
+	        }else {
  	        	 obj = aOPMCCalculatedDataRepository.getDesignCapacityData(year, plantId);
  	        }
             
