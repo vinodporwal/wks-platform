@@ -115,6 +115,11 @@ public class BasisReportServiceImpl implements BasisReportService {
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	    String storedProcedure=null;
+
+       if(type.equalsIgnoreCase("PlantWiseNormsHistorian")){
+		storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() + "_NormsBasisReport";
+	   }  else 
+	
 	    if(type.equalsIgnoreCase("NormsHistorian")) {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_NormsBasisReport";
 	    }else if(type.equalsIgnoreCase("ProductionTarget")) {
