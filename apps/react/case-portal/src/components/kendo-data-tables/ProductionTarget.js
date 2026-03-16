@@ -335,14 +335,27 @@ const ProductionTarget = ({ permissions }) => {
           return true
         }
 
-        for (const month of months) {
-          const value = row[month]
+        // For ELASTOMER JMD, only validate april
+        if (IS_ELASTOMER_JMD) {
+          const value = row['april']
           if (
             value === 0 ||
             value === null ||
             (typeof value === 'string' && !value.trim())
           ) {
             return true
+          }
+        } else {
+          // For all other verticals, validate all 12 months
+          for (const month of months) {
+            const value = row[month]
+            if (
+              value === 0 ||
+              value === null ||
+              (typeof value === 'string' && !value.trim())
+            ) {
+              return true
+            }
           }
         }
 
@@ -363,8 +376,9 @@ const ProductionTarget = ({ permissions }) => {
 
       if (invalidRows.length > 0) {
         setSnackbarData({
-          message:
-            'Please fill all fields in edited row and update the Remark!',
+          message: IS_ELASTOMER_JMD
+            ? 'Please fill value and update the Remark!'
+            : 'Please fill all fields in edited row and update the Remark!',
           severity: 'error',
         })
         setSnackbarOpen(true)
@@ -376,7 +390,7 @@ const ProductionTarget = ({ permissions }) => {
     } catch (error) {
       console.log('Facing issue at saving data', error)
     }
-  }, [modifiedCells, selectedUnit])
+  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD]) // ? add IS_ELASTOMER_JMD to deps
 
   const fetchData = async (unit = selectedUnit) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
