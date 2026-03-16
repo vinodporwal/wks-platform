@@ -143,7 +143,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	            view = "vwAOPMCValues";
 	        }
 	        List<Object[]> obj=null;
-	        if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+	        if(vertical.getName().equalsIgnoreCase("CRACKER") || vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	  obj = getDataMCUValuesAllData(year, plantId, view);
@@ -559,7 +559,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 	        }  else {
                 view = "vwAOPMCValuesMaxAchivedCapacity";
             }
-            if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+            if(vertical.getName().equalsIgnoreCase("CRACKER") || vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 	        	obj= findByYearAndPlantId(year, UUID.fromString(plantId) ,  procedureName);
 	        }else {
 	        	 obj = getMaxAchievedCapacityData(year, plantId, view);
@@ -586,6 +586,10 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
                 dto.setMarch(row[14] != null ? Double.parseDouble(row[14].toString()) : 0.0);
 
                 dto.setRemarks(row[16] != null ? row[16].toString() : " ");
+                if(vertical.getName().equalsIgnoreCase("CRACKER")) {
+                	dto.setNormType(row[21] != null ? row[21].toString() : " ");
+                }
+                
                 aOPMCCalculatedDataDTOList.add(dto);
             }
 
