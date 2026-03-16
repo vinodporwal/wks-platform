@@ -8,13 +8,13 @@ export const ProductionNormsApiService = {
   MonthwiseProductionExport,
   getQualityParameters,
   saveQualityParameters,
-
   getPriceDifferential,
   savePriceDifferential,
   saveOtherProductionNorms,
   monthlyOtherProduction,
   handleCalculateOtherProduction,
   getAOPDataLineWise,
+  getNaphthaLimsDataSet,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -259,6 +259,27 @@ async function saveOtherProductionNorms(
 }
 async function getAOPDataLineWise(keycloak, type, PLANT_ID, AOP_YEAR, LINE_ID) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production-line?plantId=${PLANT_ID}&year=${AOP_YEAR}&type=${type}&lineId=${LINE_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getNaphthaLimsDataSet(
+  keycloak,
+
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/lims-dataset?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

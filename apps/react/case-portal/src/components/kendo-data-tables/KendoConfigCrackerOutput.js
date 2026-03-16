@@ -363,7 +363,33 @@ const CrackerConfig = () => {
               PLANT_ID,
               AOP_YEAR,
             )
-            spyroVMYield1 = data?.data
+
+            // Convert month strings to numbers so formatting can be applied
+            const months = [
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec',
+            ]
+
+            spyroVMYield1 = data?.data?.data?.map((item) => {
+              const newItem = { ...item }
+              months.forEach((month) => {
+                // Check if the property exists and convert it
+                if (newItem[month] !== undefined) {
+                  newItem[month] = parseFloat(newItem[month]) || 0
+                }
+              })
+              return newItem
+            })
           } else {
             spyroVMYield1 = await DataService.getSpyroOutputDataYieldNONNMD(
               keycloak,
@@ -374,16 +400,13 @@ const CrackerConfig = () => {
             )
           }
         }
-        let transformedData1 = (spyroVMYield1.data || []).map(
-          (item, index) => ({
-            ...item,
-            id: index,
-            isEditable:
-              SITE_NAME == 'VMD'
-                ? false
-                : index !== spyroVMYield1?.data?.length - 1,
-          }),
-        )
+
+        let data1 = SITE_NAME == 'VMD' ? spyroVMYield1 : spyroVMYield1.data
+        let transformedData1 = (data1 || []).map((item, index) => ({
+          ...item,
+          id: index,
+          isEditable: SITE_NAME == 'VMD' ? false : index !== data1?.length - 1,
+        }))
 
         if (transformedData1.length > 0 && currentTabDisplay === 'Yield') {
           var numericColumns = []

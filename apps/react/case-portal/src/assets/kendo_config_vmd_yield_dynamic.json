@@ -22,18 +22,90 @@
     "editable": false,
     "widthT": 60
   },
-  { "field": "Apr", "title": 4, "editable": true, "format": "{0:#.##}" },
-  { "field": "May", "title": 5, "editable": true, "format": "{0:#.##}" },
-  { "field": "Jun", "title": 6, "editable": true, "format": "{0:#.##}" },
-  { "field": "Jul", "title": 7, "editable": true, "format": "{0:#.##}" },
-  { "field": "Aug", "title": 8, "editable": true, "format": "{0:#.##}" },
-  { "field": "Sep", "title": 9, "editable": true, "format": "{0:#.##}" },
-  { "field": "Oct", "title": 10, "editable": true, "format": "{0:#.##}" },
-  { "field": "Nov", "title": 11, "editable": true, "format": "{0:#.##}" },
-  { "field": "Dec", "title": 12, "editable": true, "format": "{0:#.##}" },
-  { "field": "Jan", "title": 1, "editable": true, "format": "{0:#.##}" },
-  { "field": "Feb", "title": 2, "editable": true, "format": "{0:#.##}" },
-  { "field": "Mar", "title": 3, "editable": true, "format": "{0:#.##}" },
+  {
+    "field": "Apr",
+    "title": 4,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "May",
+    "title": 5,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Jun",
+    "title": 6,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Jul",
+    "title": 7,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Aug",
+    "title": 8,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Sep",
+    "title": 9,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Oct",
+    "title": 10,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Nov",
+    "title": 11,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Dec",
+    "title": 12,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Jan",
+    "title": 1,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Feb",
+    "title": 2,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
+  {
+    "field": "Mar",
+    "title": 3,
+    "editable": true,
+    "format": "{0:#.##}",
+    "type": "number"
+  },
   {
     "field": "Remarks",
     "title": "Remark",
