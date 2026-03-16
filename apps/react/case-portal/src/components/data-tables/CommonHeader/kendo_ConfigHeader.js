@@ -215,6 +215,20 @@ const getEnhancedAOPColDefs = ({
 
       return col
     })
+  } else if (configType == 'cracker_yield_vmd') {
+    enhancedColDefs = config.map((col) => {
+      if (headerMap && headerMap[col.title]) {
+        return {
+          ...col,
+          title: headerMap[col.title],
+          align: 'right',
+          type: 'number',
+          format: FORMATE_VALUE,
+        }
+      }
+
+      return col
+    })
   } else {
     enhancedColDefs = config.map((col) => {
       if (headerMap && headerMap[col.title]) {

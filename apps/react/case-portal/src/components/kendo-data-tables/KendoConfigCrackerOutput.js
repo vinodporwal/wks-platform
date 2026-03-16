@@ -155,6 +155,9 @@ const CrackerConfig = () => {
         SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
       downloadExcelBtn:
         SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+      downloadExcelBtnFromUI:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? true : false,
+      ExcelName: `Production_Constarints_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`,
     },
     isOldYear,
   )
@@ -375,7 +378,10 @@ const CrackerConfig = () => {
           (item, index) => ({
             ...item,
             id: index,
-            isEditable: index !== spyroVMYield1?.data?.length - 1,
+            isEditable:
+              SITE_NAME == 'VMD'
+                ? false
+                : index !== spyroVMYield1?.data?.length - 1,
           }),
         )
 

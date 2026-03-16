@@ -77,96 +77,12 @@ const NormsConfigurationGrid = ({
     },
     {
       field: 'apr',
-      title: headerMap[4],
+      title: 'Value',
       editable: false,
       width: 120,
       type: 'number',
     },
-    {
-      field: 'may',
-      title: headerMap[5],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'jun',
-      title: headerMap[6],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'jul',
-      title: headerMap[7],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'aug',
-      title: headerMap[8],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'sep',
-      title: headerMap[9],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'oct',
-      title: headerMap[10],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'nov',
-      title: headerMap[11],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'dec',
-      title: headerMap[12],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'jan',
-      title: headerMap[1],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'feb',
-      title: headerMap[2],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'mar',
-      title: headerMap[3],
-      editable: false,
-      width: 120,
-      type: 'number',
-    },
-    {
-      field: 'remarks',
-      title: 'Remark',
-      editable: false,
-      widthT: 135,
-      type: 'string',
-      hidden: true,
-    },
+
     {
       field: 'normParameterFKId',
       title: 'idFromApi',
@@ -201,7 +117,7 @@ const NormsConfigurationGrid = ({
           value: parseFloat(row.apr) || 0,
           remarks: row.remarks,
           originalRemark: row.remarks || '',
-          isEditable: false, 
+          isEditable: false,
           isdisable: true,
         }),
       )
@@ -245,7 +161,7 @@ const NormsConfigurationGrid = ({
           value: parseFloat(row.apr) || 0,
           remarks: row.remarks,
           originalRemark: row.remarks || '',
-          isEditable: false, 
+          isEditable: false,
           isdisable: true,
         }),
       )
@@ -364,7 +280,7 @@ const NormsConfigurationGrid = ({
       showTitleNameBusiness: true,
       showCalculate: true,
       //Object.keys(calculationObject || {}).length > 0 ? true : false,
-      titleName: 'Norms Configuration - Manual',
+      titleName: 'Norms Configuration - Calculated',
       showCalculateVisibility: true,
     },
     IS_OLD_YEAR,
@@ -420,7 +336,7 @@ const NormsConfigurationGrid = ({
           summaryEdited={summaryEdited}
           groupBy={'normTypeName'}
         />
-        <KendoDataTables
+        {/* <KendoDataTables
           modifiedCells={modifiedNormsCells}
           setModifiedCells={setModifiedNormsCells}
           setRows={setNormsRows2}
@@ -444,7 +360,7 @@ const NormsConfigurationGrid = ({
           permissions={adjustedPermissionsCalculated}
           summaryEdited={summaryEdited}
           groupBy={'normTypeName'}
-        />
+        /> */}
       </Box>
     </Box>
   )
