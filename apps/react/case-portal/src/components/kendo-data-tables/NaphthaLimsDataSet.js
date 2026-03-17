@@ -93,7 +93,7 @@ const NaphthaLimsDataSet = ({ permissions }) => {
           header: col.title, // Kendo often uses 'header'
           headerName: col.title, // DataGrid uses 'headerName'
           field: col.field, // Unique ID for the data
-          widthT: col.field === 'LIMS Tag Name' ? 250 : 150,
+          widthT: col.field === 'LIMS Tag Name' ? 200 : 100,
           // Ensure numbers are handled correctly
           type: col.type === 'number' ? 'number' : 'text',
           format: FORMATE_VALUE,
@@ -212,6 +212,7 @@ const NaphthaLimsDataSet = ({ permissions }) => {
         note={''}
         resetEditSignal={editResetKey}
         setEditResetKey={setEditResetKey}
+        // groupBy={'Type'}
       />
     </div>
   )

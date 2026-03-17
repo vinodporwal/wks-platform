@@ -180,7 +180,7 @@ const NormsConfigurationGrid = ({
   useEffect(() => {
     setModifiedCells({})
     fetchNormsConfigurationManualData()
-    fetchNormsConfigurationCalculatedData()
+    // fetchNormsConfigurationCalculatedData()
   }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
 
   const saveSummary = async (summary) => {
@@ -230,7 +230,7 @@ const NormsConfigurationGrid = ({
           severity: 'success',
         })
         fetchNormsConfigurationManualData()
-        fetchNormsConfigurationCalculatedData()
+        // fetchNormsConfigurationCalculatedData()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({

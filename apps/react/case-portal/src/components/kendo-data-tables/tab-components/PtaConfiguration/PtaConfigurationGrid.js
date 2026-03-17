@@ -1,0 +1,319 @@
+import React, { useState, useEffect, useCallback } from 'react'
+import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { useSelector } from 'react-redux'
+import { useSession } from 'SessionStoreContext'
+import { useGridApiRef } from '@mui/x-data-grid'
+import KendoDataTables from '../../index'
+import { DataService } from 'services/DataService'
+import { getRoleName } from 'services/role-service'
+import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
+import { validateFields } from 'utils/validationUtils'
+import { ProductionRangeApiService } from 'services/production-range-api-service copy'
+import { PtaConfigurationApiService } from 'services/pta-configuration-api-service'
+import getEnhancedColDefsC2C3R from 'components/data-tables/CommonHeader/Kendo_ProductionAopHeaderC2C3R'
+import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+
+const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [modifiedCells, setModifiedCells] = useState({})
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [open1, setOpen1] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const apiRef = useGridApiRef()
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const { plantObject, year, oldYear, yearChanged } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const AOP_YEAR = year?.selectedYear
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const keycloak = useSession()
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const isOldYear = false
+
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.remarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const valueFormat = ValueFormatterProduction()
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
+  const NormConfigurationColumns = getEnhancedColDefsC2C3R({
+    headerMap,
+    valueFormat,
+  })
+
+  useEffect(() => {
+    setModifiedCells({})
+    fetchData()
+  }, [oldYear, yearChanged, keycloak, PLANT_ID, AOP_YEAR])
+
+  const saveSummary = async (summary) => {
+    try {
+      const response = await DataService.saveSummaryAOPConsumptionNorm(
+        PLANT_ID,
+        AOP_YEAR,
+        summary,
+        keycloak,
+      )
+
+      if (response?.code == 200) {
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+      } else {
+        setSnackbarData({
+          message: 'Saved Failed!',
+          severity: 'error',
+        })
+      }
+      return response
+    } catch (error) {
+      console.error('Error saving Summary!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCalculate = async () => {
+    setRows([])
+    setLoading(true)
+    try {
+      const data =
+        await RawMaterialNormsBasisApiService.handleCalculateNormsConfiguration(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (data || data === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        fetchData() // Refresh general data after calculation
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+      }
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: true,
+      isOldYear: isOldYear,
+      allAction: false,
+    }
+  }
+
+  const adjustedPermissionsManual = getAdjustedPermissions(
+    {
+      showAction: true,
+      saveWithRemark: true,
+      saveBtn: true,
+      allAction: true,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      showCalculate: false,
+      showCalculateVisibility: true,
+    },
+    IS_OLD_YEAR,
+  )
+
+  const handleUpdate = async (updatedRows) => {
+    setLoading(true)
+    try {
+      let payload = updatedRows?.map((row) => ({
+        jan: row.jan ?? 0,
+        feb: row.feb ?? 0,
+        mar: row.mar ?? 0,
+        apr: row.apr ?? 0,
+        may: row.may ?? 0,
+        jun: row.jun ?? 0,
+        jul: row.jul ?? 0,
+        aug: row.aug ?? 0,
+        sep: row.sep ?? 0,
+        oct: row.oct ?? 0,
+        nov: row.nov ?? 0,
+        dec: row.dec ?? 0,
+        UOM: row.UOM || row.uom,
+        auditYear: row.auditYear,
+        normParameterFKId: row.normParameterFKId,
+        remarks: row.remarks ?? '',
+        id: null,
+      }))
+
+      await ProductionRangeApiService.postData(
+        keycloak,
+        payload,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Saved Successfully!',
+        severity: 'success',
+      })
+
+      await fetchData()
+      return { code: 200 }
+    } catch (error) {
+      console.error('Error updating data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Data Save failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveChanges = useCallback(async () => {
+    setLoading(true)
+    try {
+      if (Object.keys(modifiedCells).length === 0) {
+        if (summaryEdited) {
+          await saveSummary(summary)
+          setModifiedCells({})
+          setSummaryEdited(false)
+        }
+        return
+      }
+
+      const rawData = Object.values(modifiedCells)
+      const data = rawData.filter((row) => row.inEdit)
+
+      if (data.length === 0) {
+        setLoading(false)
+        return
+      }
+      const requiredFields = ['remarks']
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        return
+      }
+      await handleUpdate(data)
+    } catch (error) {
+      console.log('Error saving changes:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells, summaryEdited, summary])
+
+  const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setModifiedCells({})
+    try {
+      setLoading(true)
+      const response = await PtaConfigurationApiService.getData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      const formattedData = response?.map((row, index) => ({
+        ...row,
+        id: row.id || index,
+        originalRemark: row.remarks || '',
+      }))
+
+      setRows(formattedData || [])
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Error fetching data',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Box>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+      <Box>
+        <KendoDataTables
+          modifiedCells={modifiedCells}
+          setModifiedCells={setModifiedCells}
+          setRows={setRows}
+          columns={NormConfigurationColumns}
+          rows={rows}
+          paginationOptions={[100, 200, 300]}
+          snackbarData={snackbarData}
+          snackbarOpen={snackbarOpen}
+          apiRef={apiRef}
+          open1={open1}
+          setOpen1={setOpen1}
+          setSnackbarOpen={setSnackbarOpen}
+          setSnackbarData={setSnackbarData}
+          handleRemarkCellClick={handleRemarkCellClick}
+          handleCalculate={handleCalculate}
+          fetchData={fetchData}
+          remarkDialogOpen={remarkDialogOpen}
+          setRemarkDialogOpen={setRemarkDialogOpen}
+          currentRemark={currentRemark}
+          setCurrentRemark={setCurrentRemark}
+          currentRowId={currentRowId}
+          permissions={adjustedPermissionsManual}
+          summaryEdited={summaryEdited}
+          groupBy={'normType'}
+          saveChanges={saveChanges}
+        />
+      </Box>
+    </Box>
+  )
+}
+
+export default PtaConfigurationGrid
