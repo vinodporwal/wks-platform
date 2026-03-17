@@ -57,7 +57,10 @@ const SpecificConsumptionCalculation = () => {
       )
       if (response?.data) {
         const dataSet = response.data?.data || []
-        const cols = response.data?.columns || []
+        const cols = (response.data?.columns || []).map((col) => ({
+          ...col,
+          format: col.type === 'number' ? '{0:0.000}' : col.format,
+        }))
 
         const data = dataSet.map((item, index) => {
           const isKiloTon = selectedUnit === 'KT'
@@ -73,8 +76,7 @@ const SpecificConsumptionCalculation = () => {
           cols.forEach((col) => {
             if (col.type === 'number' && col.field !== 'Name') {
               const val = item[col.field]
-              const convertedVal = isKiloTon && val ? val / 1000 : val
-              transformedItem[col.field] = val ? Number(Number(convertedVal).toFixed(4)) : val
+              transformedItem[col.field] = isKiloTon && val ? val / 1000 : val
             }
           })
 
@@ -88,21 +90,14 @@ const SpecificConsumptionCalculation = () => {
 
           return {
             ...transformedItem,
-            averageTPH: Math.round(total * 10000) / 10000,
+            averageTPH: total,
             _displayNameLower: String(transformedItem.Name || '').toLowerCase(),
           }
         })
 
-        const newCols = cols.map((item, index) => {
-          return {
-            ...item,
-            isEditable: false
-          }
-        })
-
-        const totalsRow = computeTotalsRow(data, newCols, 'Name')
+        const totalsRow = computeTotalsRow(data, cols, 'Name')
         setRows1(totalsRow ? [...data, totalsRow] : data)
-        setCalculationColumns(newCols)
+        setCalculationColumns(cols)
       } else {
         setRows1([])
         setCalculationColumns([])
@@ -127,7 +122,11 @@ const SpecificConsumptionCalculation = () => {
       )
       if (response?.data) {
         const data = response.data?.data || []
-        const cols = response.data?.columns || []
+        const cols = (response.data?.columns || []).map((col) => ({
+          ...col,
+          format: col.type === 'number' ? '{0:0.000}' : col.format,
+        }))
+
         const totalsRow = computeTotalsRow(data, cols, 'Name')
         setRows2(data)
         setDetailColumns(cols)
