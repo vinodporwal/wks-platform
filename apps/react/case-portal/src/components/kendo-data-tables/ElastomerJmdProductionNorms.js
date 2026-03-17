@@ -303,7 +303,7 @@ const ProductionNormsElastomerJmd = ({ permissions }) => {
           id: item.id || null,
           product: item.product,
           value: item.value,
-          Particular: item.type,
+          isEditable: false,
         }))
         setRowsIIR(mapped)
       } else {
@@ -1002,6 +1002,7 @@ const ProductionNormsElastomerJmd = ({ permissions }) => {
         //saveChanges={saveChanges}
         // deleteRowData={deleteRowData}
         permissions={adjustedPermissionsIIR}
+        groupBy='type'
       />
       <KendoDataTables
         modifiedCells={modifiedCells}

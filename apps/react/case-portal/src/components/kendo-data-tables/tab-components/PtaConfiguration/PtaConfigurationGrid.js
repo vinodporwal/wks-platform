@@ -30,7 +30,14 @@ const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const apiRef = useGridApiRef()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year, oldYear, yearChanged } = dataGridStore
+  const {
+    plantObject,
+    year,
+    oldYear,
+    yearChanged,
+    verticalObject,
+    siteObject,
+  } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
@@ -38,6 +45,12 @@ const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const keycloak = useSession()
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
   const isOldYear = false
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}_${AOP_YEAR}_Configuration`
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
@@ -150,8 +163,8 @@ const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
       showCalculate: false,
       showCalculateVisibility: true,
     },
@@ -256,7 +269,7 @@ const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         AOP_YEAR,
       )
 
-      const formattedData = response?.map((row, index) => ({
+      const formattedData = response?.data?.map((row, index) => ({
         ...row,
         id: row.id || index,
         originalRemark: row.remarks || '',
@@ -272,6 +285,112 @@ const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleExcelUpload = (rawFile) => {
+    uploadCrackerConstant(rawFile)
+  }
+
+  const uploadCrackerConstant = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let response
+
+      response = await PtaConfigurationApiService.importExcel(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+
+        setLoading(false)
+
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Constants.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+
+        setLoading(false)
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+
+        setLoading(false)
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading xcel:', error)
+      setSnackbarOpen(true)
+
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      response = await PtaConfigurationApiService.exportExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        `${EXCEL_EXPORT_TITLE}`,
+      )
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
     }
   }
 
@@ -310,6 +429,9 @@ const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
           summaryEdited={summaryEdited}
           groupBy={'normType'}
           saveChanges={saveChanges}
+          plantID={PLANT_ID}
+          handleExcelUpload={handleExcelUpload}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
         />
       </Box>
     </Box>
