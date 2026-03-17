@@ -11,6 +11,7 @@ import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
+import NaphthaLimsDataSet from './NaphthaLimsDataSet'
 
 const CrackerConfig = () => {
   const keycloak = useSession()
@@ -923,7 +924,7 @@ const CrackerConfig = () => {
   }
   useEffect(() => {
     if (currentTabDisplay === 'Naphtha') {
-      // Reset FIRST — this clears the picker immediately
+      // Reset FIRST ? this clears the picker immediately
       setNaphthaDateRange({ startDate: null, endDate: null })
       setNaphthaLoadedFlag(false)
 
@@ -1092,6 +1093,8 @@ const CrackerConfig = () => {
                       groupBy='type'
                     />
                   </Box>
+
+                  <NaphthaLimsDataSet />
                 </Box>
               )
             case 'External Streams':

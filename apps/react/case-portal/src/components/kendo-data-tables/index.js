@@ -179,6 +179,7 @@ const KendoDataTables = ({
   startDate,
   endDate,
   mcuMaxCapValues = [],
+  key = [],
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -269,7 +270,7 @@ const KendoDataTables = ({
   const isMcuMaxCapRedCell = useCallback(
     (productName, field) => {
       if (!mcuMaxCapValues?.aopMaxCapMCValueList?.length) return false
-      console.log('mcuMaxCapValues received:', mcuMaxCapValues)
+      // console.log('mcuMaxCapValues received:', mcuMaxCapValues)
       const monthNameMap = {
         april: 'April',
         may: 'May',
@@ -783,6 +784,8 @@ const KendoDataTables = ({
 
     setRemarkDialogOpen(false)
   }
+
+  // console.log('columns', columns)
 
   const handleAddRow = () => {
     setEdit({})
@@ -1929,6 +1932,7 @@ const KendoDataTables = ({
                 // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
                 // height: `${calculatedVH}vh`,
               }}
+              key={groupBy}
               modifiedCells={modifiedCells}
               autoProcessData={true}
               defaultGroup={initialGroup}
