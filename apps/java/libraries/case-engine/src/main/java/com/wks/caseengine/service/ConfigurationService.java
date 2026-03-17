@@ -21,6 +21,7 @@ public interface ConfigurationService {
 	
 	public AOPMessageVM getConfigurationData(String year, UUID plantFKId,String version);
 	public List<ConfigurationDTO> getMonthlyProductionData(String year, UUID plantFKId);
+	public List<ConfigurationDTO> getProductionConfiguration(String year, UUID plantId);
 	AOPMessageVM calculateSteadyNorms(String year, String plantId,String periodTo,String periodFrom);
 	AOPMessageVM carryForward(String year, String plantId);
 	public AOPMessageVM getConfigurationConstants(String year,String plantFKId);
