@@ -545,48 +545,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
-	@Override
-	public List<ConfigurationDTO> getProductionConfiguration(String year, UUID plantId) {
-		try {
-			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
-			Plants plant = plantsRepository.findById(plantId).orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
-			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow(() -> new IllegalArgumentException("Invalid site"));
-			String procedureName = verticalName + "_" + site.getName() + "_GetProductionConfiguration";
-			List<Object[]> obj = findByYearAndPlantFkIdMEG(year, plantId, procedureName);
-			List<ConfigurationDTO> configurationDTOList = new ArrayList<>();
-			for (Object[] row : obj) {
-				ConfigurationDTO dto = new ConfigurationDTO();
-				dto.setNormParameterFKId(row[0] != null ? row[0].toString() : "");
-				dto.setJan((row[1] != null && !row[1].toString().trim().isEmpty()) ? Double.parseDouble(row[1].toString().trim()) : 0.0);
-				dto.setFeb((row[2] != null && !row[2].toString().trim().isEmpty()) ? Double.parseDouble(row[2].toString()) : 0.0);
-				dto.setMar((row[3] != null && !row[3].toString().trim().isEmpty()) ? Double.parseDouble(row[3].toString()) : 0.0);
-				dto.setApr((row[4] != null && !row[4].toString().trim().isEmpty()) ? Double.parseDouble(row[4].toString()) : 0.0);
-				dto.setMay((row[5] != null && !row[5].toString().trim().isEmpty()) ? Double.parseDouble(row[5].toString()) : 0.0);
-				dto.setJun((row[6] != null && !row[6].toString().trim().isEmpty()) ? Double.parseDouble(row[6].toString()) : 0.0);
-				dto.setJul((row[7] != null && !row[7].toString().trim().isEmpty()) ? Double.parseDouble(row[7].toString()) : 0.0);
-				dto.setAug((row[8] != null && !row[8].toString().trim().isEmpty()) ? Double.parseDouble(row[8].toString()) : 0.0);
-				dto.setSep((row[9] != null && !row[9].toString().trim().isEmpty()) ? Double.parseDouble(row[9].toString()) : 0.0);
-				dto.setOct((row[10] != null && !row[10].toString().trim().isEmpty()) ? Double.parseDouble(row[10].toString()) : 0.0);
-				dto.setNov((row[11] != null && !row[11].toString().trim().isEmpty()) ? Double.parseDouble(row[11].toString()) : 0.0);
-				dto.setDec((row[12] != null && !row[12].toString().trim().isEmpty()) ? Double.parseDouble(row[12].toString()) : 0.0);
-				dto.setRemarks(row[13] != null ? row[13].toString() : "");
-				dto.setAuditYear(row[14] != null ? row[14].toString() : "");
-				dto.setUOM(row[15] != null ? row[15].toString() : "");
-				dto.setNormType(row[16] != null ? row[16].toString() : "");
-				dto.setIsEditable(row[17] != null ? (Boolean) row[17] : null);
-				dto.setProductName(row[18] != null ? row[18].toString() : "");
-				dto.setType(row.length > 19 && row[19] != null ? row[19].toString() : "");
-				configurationDTOList.add(dto);
-			}
-			return configurationDTOList;
-		} catch (IllegalArgumentException e) {
-			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new RuntimeException("Failed to fetch production configuration", ex);
-		}
-	}
 	
 	public String getVersion(String year,UUID plantId) {
 		UUID id=normParametersRepository.findNormParameterIdByNameAndPlant("REVISION_AROMATICS",plantId);
