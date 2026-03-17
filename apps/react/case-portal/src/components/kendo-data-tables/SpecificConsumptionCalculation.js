@@ -66,13 +66,15 @@ const SpecificConsumptionCalculation = () => {
             idFromApi: item.id,
             uom: selectedUnit || 'MT',
             id: index,
+            isEditable: false,
           }
 
           // Apply conversion to dynamic month columns (e.g., 'Apr-26')
           cols.forEach((col) => {
             if (col.type === 'number' && col.field !== 'Name') {
               const val = item[col.field]
-              transformedItem[col.field] = isKiloTon && val ? val / 1000 : val
+              const convertedVal = isKiloTon && val ? val / 1000 : val
+              transformedItem[col.field] = val ? Number(Number(convertedVal).toFixed(4)) : val
             }
           })
 
@@ -86,14 +88,21 @@ const SpecificConsumptionCalculation = () => {
 
           return {
             ...transformedItem,
-            averageTPH: total,
+            averageTPH: Math.round(total * 10000) / 10000,
             _displayNameLower: String(transformedItem.Name || '').toLowerCase(),
           }
         })
 
-        const totalsRow = computeTotalsRow(data, cols, 'Name')
+        const newCols = cols.map((item, index) => {
+          return {
+            ...item,
+            isEditable: false
+          }
+        })
+
+        const totalsRow = computeTotalsRow(data, newCols, 'Name')
         setRows1(totalsRow ? [...data, totalsRow] : data)
-        setCalculationColumns(cols)
+        setCalculationColumns(newCols)
       } else {
         setRows1([])
         setCalculationColumns([])
@@ -196,7 +205,7 @@ const SpecificConsumptionCalculation = () => {
   )
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
@@ -204,7 +213,7 @@ const SpecificConsumptionCalculation = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <Box sx={{ mb: 1 }}>
+      <Box sx={{ mb: 1, mt: 1 }}>
         <KendoDataTables
           rows={rows1}
           columns={calculationColumns}
