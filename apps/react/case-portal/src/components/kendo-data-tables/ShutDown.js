@@ -343,7 +343,7 @@ const ShutDown = ({ permissions }) => {
         // Check for shutdown timeframe spanning multiple months
         const monthSpanRows = new Set() // Add this line
 
-        if (lowerVertName != 'vcm' && !IS_PTA && !IS_CHEMICAL) {
+        if (lowerVertName != 'vcm' && !IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD) {
           for (const row of allRecords) {
             const start = new Date(row.maintStartDateTime)
             const end = new Date(row.maintEndDateTime)
