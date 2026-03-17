@@ -142,6 +142,9 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 				dto.setOct(row[12] != null ? Double.valueOf(row[12].toString()) : null);
 				dto.setNov(row[13] != null ? Double.valueOf(row[13].toString()) : null);
 				dto.setDec(row[14] != null ? Double.valueOf(row[14].toString()) : null);
+				if(vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD")) {
+					dto.setTotal(row[15] != null ? Double.valueOf(row[15].toString()) : null);
+				}
 				maintenanceDetailsDTOList.add(dto);
 			}
 
@@ -560,6 +563,8 @@ public class MaintenanceCalculatedDataServiceImpl implements MaintenanceCalculat
 				});
 	}
 
+	
+	
 	private boolean isNumericType(int sqlType) {
 	    return sqlType == Types.INTEGER || sqlType == Types.DOUBLE || 
 	           sqlType == Types.DECIMAL || sqlType == Types.FLOAT || 

@@ -15,6 +15,7 @@ export const ProductionNormsApiService = {
   handleCalculateOtherProduction,
   getAOPDataLineWise,
   getNaphthaLimsDataSet,
+  getIIRAnnualData,
 }
 async function updateProductNormData(turnAroundDetails, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/monthly-production` // Corrected endpoint
@@ -280,6 +281,21 @@ async function getNaphthaLimsDataSet(
   AOP_YEAR,
 ) {
   const url = `${Config.CaseEngineUrl}/task/lims-dataset?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getIIRAnnualData(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/production-configuration-elastomer?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

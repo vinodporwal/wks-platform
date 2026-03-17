@@ -106,12 +106,7 @@
     "format": "{0:#.##}",
     "type": "number"
   },
-  {
-    "field": "Remarks",
-    "title": "Remark",
-    "widthT": 130,
-    "editable": true
-  },
+
   {
     "field": "isEditable",
     "title": "isEditable",
