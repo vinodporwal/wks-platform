@@ -57,7 +57,10 @@ const SpecificConsumptionCalculation = () => {
       )
       if (response?.data) {
         const dataSet = response.data?.data || []
-        const cols = response.data?.columns || []
+        const cols = (response.data?.columns || []).map((col) => ({
+          ...col,
+          format: col.type === 'number' ? '{0:0.000}' : col.format,
+        }))
 
         const data = dataSet.map((item, index) => {
           const isKiloTon = selectedUnit === 'KT'
@@ -66,6 +69,7 @@ const SpecificConsumptionCalculation = () => {
             idFromApi: item.id,
             uom: selectedUnit || 'MT',
             id: index,
+            isEditable: false,
           }
 
           // Apply conversion to dynamic month columns (e.g., 'Apr-26')
@@ -118,7 +122,11 @@ const SpecificConsumptionCalculation = () => {
       )
       if (response?.data) {
         const data = response.data?.data || []
-        const cols = response.data?.columns || []
+        const cols = (response.data?.columns || []).map((col) => ({
+          ...col,
+          format: col.type === 'number' ? '{0:0.000}' : col.format,
+        }))
+
         const totalsRow = computeTotalsRow(data, cols, 'Name')
         setRows2(data)
         setDetailColumns(cols)
@@ -134,7 +142,6 @@ const SpecificConsumptionCalculation = () => {
       setLoading(false)
     }
   }
-
   useEffect(() => {
     fetchGrid1Data()
   }, [PLANT_ID, AOP_YEAR, selectedUnit])
@@ -196,7 +203,7 @@ const SpecificConsumptionCalculation = () => {
   )
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
@@ -204,7 +211,7 @@ const SpecificConsumptionCalculation = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <Box sx={{ mb: 1 }}>
+      <Box sx={{ mb: 1, mt: 1 }}>
         <KendoDataTables
           rows={rows1}
           columns={calculationColumns}
