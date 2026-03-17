@@ -1,9 +1,13 @@
 package com.wks.caseengine.service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -11,6 +15,7 @@ import java.util.UUID;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
@@ -19,6 +24,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.YieldDTO;
@@ -49,6 +55,9 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 	
 	@Autowired
 	private NormParametersRepository normParametersRepository;
+	
+	@Autowired
+	private ConfigurationService configurationService;
 
 	@Override
 	public AOPMessageVM getProductionConfiguration(String year, UUID plantId) {
@@ -189,7 +198,9 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 	            List<Object> rowData = new ArrayList<>();
 	            Optional<NormParameters> normParameters= normParametersRepository.findById(UUID.fromString(dto.getNormParameterFKId()));
 	            if(normParameters.isPresent()) {
-	            	rowData.add(normParameters.get().getDisplayName());
+	            	rowData.add(normParameters.get().getDisplayName()); // Particulars
+	            } else {
+	            	rowData.add(""); // keep column alignment even if missing
 	            }
 	            rowData.add(dto.getUOM());
 	            rowData.add(dto.getApr());
@@ -204,6 +215,7 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 	            rowData.add(dto.getJan());
 	            rowData.add(dto.getFeb());
 	            rowData.add(dto.getMar());
+	            rowData.add(dto.getRemarks());
 	            rowData.add(dto.getNormParameterFKId());
 	            if (isAfterSave) {
 	                rowData.add(dto.getSaveStatus());
@@ -258,5 +270,118 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", Locale.ENGLISH);
 		return date.format(formatter);
 	}
+	
+	@Override
+	public AOPMessageVM importProductionConfiguration(String year, UUID plantId, MultipartFile file) {
+		// TODO Auto-generated method stub
+		if (file.isEmpty() || !file.getOriginalFilename().endsWith(".xlsx")) {
+			throw new IllegalArgumentException("Invalid or empty Excel file.");
+		}
+
+		try {
+			List<ConfigurationDTO> data = readProductionConfiguration(file.getInputStream(), plantId, year);
+			List<ConfigurationDTO> failedRecords = configurationService.saveConfigurationData(year, plantId.toString(),null, data,null);
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				byte[] fileByteArray = exportProductionConfiguration(year, plantId.toString(), true, failedRecords);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<ConfigurationDTO> readProductionConfiguration(InputStream inputStream, UUID plantId, String year) {
+		List<ConfigurationDTO> configList = new ArrayList<>();
+		
+	   try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			if (rowIterator.hasNext())
+				rowIterator.next(); 
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+
+				ConfigurationDTO dto = new ConfigurationDTO();
+
+				try {
+						dto.setProductName(getStringCellValue(row.getCell(0), dto));
+						dto.setUOM(getStringCellValue(row.getCell(1), dto));
+						dto.setAuditYear(year);
+						dto.setApr(getNumericCellValue(row.getCell(2), dto));
+						dto.setMay(getNumericCellValue(row.getCell(3), dto));
+						dto.setJun(getNumericCellValue(row.getCell(4), dto));
+						dto.setJul(getNumericCellValue(row.getCell(5), dto));
+						dto.setAug(getNumericCellValue(row.getCell(6), dto));
+						dto.setSep(getNumericCellValue(row.getCell(7), dto));
+						dto.setOct(getNumericCellValue(row.getCell(8), dto));
+						dto.setNov(getNumericCellValue(row.getCell(9), dto));
+						dto.setDec(getNumericCellValue(row.getCell(10), dto));
+						dto.setJan(getNumericCellValue(row.getCell(11), dto));
+						dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+						dto.setMar(getNumericCellValue(row.getCell(13), dto));
+						dto.setRemarks(getStringCellValue(row.getCell(14), dto));
+						dto.setNormParameterFKId(getStringCellValue(row.getCell(15), dto));
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					dto.setErrDescription(e.getMessage());
+					dto.setSaveStatus("Failed");
+				}
+
+				configList.add(dto);
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read Data", e);
+		}
+
+		return configList;
+	}
+
+	private static String getStringCellValue(Cell cell, ConfigurationDTO dto) {
+		try {
+			if (cell == null)
+				return null;
+			cell.setCellType(CellType.STRING);
+			return cell.getStringCellValue().trim();
+		} catch (Exception e) {
+			dto.setSaveStatus("Failed");
+			dto.setErrDescription("Please enter correct values");
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+
+	private static Double getNumericCellValue(Cell cell, ConfigurationDTO dto) {
+		if (cell == null || cell.toString().equalsIgnoreCase(""))
+			return null;
+		if (cell.getCellType() == CellType.NUMERIC) {
+			return cell.getNumericCellValue();
+		} else if (cell.getCellType() == CellType.STRING) {
+			try {
+				return Double.parseDouble(cell.getStringCellValue().trim());
+			} catch (NumberFormatException e) {
+				dto.setSaveStatus("Failed");
+				dto.setErrDescription("Please enter numeric values");
+			}
+		}
+		return null;
+	}
+
 }
 
