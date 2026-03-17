@@ -304,6 +304,7 @@ const ProductionNormsElastomerJmd = ({ permissions }) => {
           product: item.product,
           value: item.value,
           isEditable: false,
+          Particulars: item.type,
         }))
         setRowsIIR(mapped)
       } else {
@@ -805,12 +806,6 @@ const ProductionNormsElastomerJmd = ({ permissions }) => {
       type: 'number',
       widthT: 200,
     },
-    {
-      field: 'type',
-      title: 'type',
-      editable: false,
-      hidden: true,
-    },
   ]
 
   const productionColumnsByProducts = getEnhancedColDefsByProducts({
@@ -1002,7 +997,7 @@ const ProductionNormsElastomerJmd = ({ permissions }) => {
         //saveChanges={saveChanges}
         // deleteRowData={deleteRowData}
         permissions={adjustedPermissionsIIR}
-        groupBy='type'
+        groupBy='Particulars'
       />
       <KendoDataTables
         modifiedCells={modifiedCells}

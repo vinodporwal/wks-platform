@@ -108,16 +108,11 @@ const ElastomerShutDown = ({ permissions }) => {
   const [remarkDialogOpen1, setRemarkDialogOpen1] = useState(false)
   const keycloak = useSession()
   const [tabIndex, setTabIndex] = useState(0)
-
-  const defaultTabs =
-    lowerSiteName === 'jmd'
-      ? ['Shutdown/TA Activities']
-      : [
-          'Shutdown/TA Activities',
-          'Shutdown History Config',
-          ...(IS_ELASTOMER_HMD_PBR3 ? ['Finishing Shutdown Config'] : []),
-        ]
-
+  const defaultTabs = [
+    'Shutdown/TA Activities',
+    'Shutdown History Config',
+    ...(IS_ELASTOMER_HMD_PBR3 ? ['Finishing Shutdown Config'] : []),
+  ]
   // const READ_ONLY = getRoleName(keycloak)
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
   const headerMap = generateHeaderNames(AOP_YEAR)
