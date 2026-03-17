@@ -1033,11 +1033,13 @@ const ProductionvolumeData = ({ permissions }) => {
         VERTICAL_NAME !== 'cracker' && VERTICAL_NAME !== 'vcm' ? true : false,
 
       titleName:
-        VERTICAL_NAME === 'cracker'
-          ? 'Design Capacity (Ethylene)'
-          : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
-            ? 'Design Capacity (MCU from MCU Portal)'
-            : 'Design Capacity',
+        VERTICAL_NAME === 'cracker' && SITE_NAME === 'vmd'
+          ? 'Design Capacity'
+          : VERTICAL_NAME === 'cracker'
+            ? 'Design Capacity (Ethylene)'
+            : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'
+              ? 'Design Capacity (MCU from MCU Portal)'
+              : 'Design Capacity',
     },
     isOldYear,
   )

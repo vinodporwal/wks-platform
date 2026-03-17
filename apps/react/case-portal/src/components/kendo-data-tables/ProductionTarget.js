@@ -346,7 +346,6 @@ const ProductionTarget = ({ permissions }) => {
             return true
           }
         } else {
-          // For all other verticals, validate all 12 months
           for (const month of months) {
             const value = row[month]
             if (
@@ -390,7 +389,7 @@ const ProductionTarget = ({ permissions }) => {
     } catch (error) {
       console.log('Facing issue at saving data', error)
     }
-  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD]) // ? add IS_ELASTOMER_JMD to deps
+  }, [modifiedCells, selectedUnit, IS_ELASTOMER_JMD])
 
   const fetchData = async (unit = selectedUnit) => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return

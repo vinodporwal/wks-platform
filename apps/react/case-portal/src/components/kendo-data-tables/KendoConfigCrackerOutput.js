@@ -148,7 +148,8 @@ const CrackerConfig = () => {
         lowerVertName === 'cracker' &&
         (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
       saveWithRemark: true,
-      saveBtn: true,
+      saveBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
       allAction: lowerVertName === 'cracker',
       modes: modes,
       uploadExcelBtn:

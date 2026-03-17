@@ -93,7 +93,7 @@ export const ShutDown_Elastomer_JMD_Columns = [
   },
   {
     field: 'remark',
-    title: 'Shutdown Basis',
+    title: 'Remarks',
     editable: true,
   },
 ]

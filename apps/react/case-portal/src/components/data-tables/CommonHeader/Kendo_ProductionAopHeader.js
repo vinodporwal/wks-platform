@@ -3,6 +3,7 @@ import productionColDefs from '../../../assets/kendo_production_aop_meg.json'
 import productionColDefsPE from '../../../assets/kendo_production_aop_pe.json'
 import productionColDefsCracker from '../../../assets/kendo_production_aop_cracker.json'
 import productionColDefsvcmpta from '../../../assets/kendo_production_aop_vcmpta.json'
+import productionColDefsElastomerJmd from '../../../assets/kendo_production_aop_Elastomer.json'
 const monthFields = [
   'april',
   'may',
@@ -20,9 +21,10 @@ const monthFields = [
 
 const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange } = dataGridStore
+  const { verticalChange, siteObject } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+  const lowerSiteName = siteObject?.name.toLowerCase()
 
   let cols
 
@@ -32,6 +34,8 @@ const getEnhancedColDefs = ({ headerMap, valueFormat }) => {
     cols = productionColDefsCracker
   } else if (lowerVertName === 'pta' || lowerVertName === 'vcm') {
     cols = productionColDefsvcmpta
+  } else if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
+    cols = productionColDefsElastomerJmd
   } else {
     cols = productionColDefs
   }
