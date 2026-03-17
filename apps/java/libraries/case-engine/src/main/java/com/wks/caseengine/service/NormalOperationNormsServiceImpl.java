@@ -129,7 +129,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		}
 		try {
 			List<Object[]> obj = null;
-			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
+			if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 				String procedureName = vertical.getName() + "_" + site.getName() + "_" + "GetNormalOperationNorms";
 				obj = findByYearAndPlantId(year, UUID.fromString(plantId), procedureName);
 			} else {
@@ -202,7 +202,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 					mCUNormsValueDTO.setUOM(row[26] != null ? row[26].toString() : null);
 					mCUNormsValueDTO.setIsEditable(row[27] != null ? Boolean.valueOf(row[27].toString()) : null);
 					mCUNormsValueDTO.setProductName(row[28] != null ? row[28].toString() : null);
-					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA")) {
+					if (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("Chemical")) {
 						mCUNormsValueDTO.setWtAverage(row[29] != null ? Double.parseDouble(row[29].toString()) : null);
 					}
 				}
