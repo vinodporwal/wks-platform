@@ -60,6 +60,9 @@ const MaintenanceTable = () => {
   const IS_PVC_DMD =
     verticalObject?.name?.toLowerCase() === 'pvc' &&
     siteObject?.name?.toLowerCase() === 'dmd'
+  const IS_ELASTOMER_JMD =
+    verticalObject?.name?.toLowerCase() === 'elastomer' &&
+    siteObject?.name?.toLowerCase() === 'jmd'
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
   const dataConfig = useMemo(
     () => ({
@@ -299,6 +302,25 @@ const MaintenanceTable = () => {
       editable: false,
     },
   ]
+  const generateColumnsELASTOMERJMD = (nameWidthT) => [
+    {
+      field: 'Name',
+      title: 'Description',
+      align: 'left',
+      headerAlign: 'left',
+      widthT: nameWidthT,
+      editable: false,
+    },
+    ...getMonthlyColumns(),
+    isEditableField,
+    {
+      field: 'total',
+      title: 'Total',
+      type: 'number',
+      format: '{0:n2}',
+      editable: false,
+    },
+  ]
 
   // Column sets
   const productionColumnsMEG = generateColumns(390)
@@ -306,6 +328,7 @@ const MaintenanceTable = () => {
   const productionColumnsPP = generateColumnsPEPP(220)
   const productionColumnsNonMEG = generateColumns(200)
   const productionColumnsELASTOMER = generateColumnsELASTOMER(200)
+  const productionColumnsELASTOMERJMD = generateColumnsELASTOMERJMD(200)
 
   // Column selection
   let basecols
@@ -321,7 +344,9 @@ const MaintenanceTable = () => {
       basecols = productionColumnsPP
       break
     case 'elastomer':
-      basecols = productionColumnsELASTOMER
+      basecols = IS_ELASTOMER_JMD
+        ? productionColumnsELASTOMERJMD
+        : productionColumnsELASTOMER
       break
     case 'pet':
       basecols = productionColumnsPP
