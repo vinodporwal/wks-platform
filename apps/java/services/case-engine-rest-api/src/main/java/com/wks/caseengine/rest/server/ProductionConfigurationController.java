@@ -34,8 +34,8 @@ public class ProductionConfigurationController {
 	}
 	
 	@GetMapping(value = "/production-configuration-elastomer")
-	public AOPMessageVM getProductionConfigurationElastomer(@RequestParam String year,@RequestParam UUID plantId,@RequestParam(required=false) String type) {
-		return productionConfigurationService.getProductionConfigurationElastomer(year, plantId,type);
+	public AOPMessageVM getProductionConfigurationElastomer(@RequestParam String year,@RequestParam UUID plantId) {
+		return productionConfigurationService.getProductionConfigurationElastomer(year, plantId);
 	}
 	
 	@GetMapping(value = "/production-configuration-export")

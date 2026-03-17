@@ -136,7 +136,7 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 	}
 
 	@Override
-	public AOPMessageVM getProductionConfigurationElastomer(String year, UUID plantId,String type) {
+	public AOPMessageVM getProductionConfigurationElastomer(String year, UUID plantId) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
 			Plants plant = plantsRepository.findById(plantId)
@@ -145,7 +145,7 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 					.orElseThrow(() -> new IllegalArgumentException("Invalid site"));
 
 			String procedureName = verticalName + "_" + site.getName() + "_GetProductionConfiguration";
-			List<Object[]> obj = findByYearAndPlantIdAndType(year, plantId, type,procedureName);
+			List<Object[]> obj = findByYearAndPlantId(year, plantId,procedureName);
 
 			List<Map<String, Object>> dataList = new ArrayList<>();
 			for (Object[] row : obj) {
@@ -155,6 +155,7 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 						? Double.parseDouble(row[1].toString().trim())
 						: 0.0;
 				map.put("value", value);
+				map.put("type", row[2] != null ? row[2].toString() : "");
 				dataList.add(map);
 			}
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -178,22 +179,6 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
 
-			return query.getResultList();
-		} catch (IllegalArgumentException e) {
-			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
-		} catch (Exception ex) {
-			throw new RuntimeException("Failed to fetch data", ex);
-		}
-	}
-	
-	private List<Object[]> findByYearAndPlantIdAndType(String aopYear, UUID plantId, String type,String procedureName) {
-		try {
-			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear, @type = :type";
-
-			Query query = entityManager.createNativeQuery(sql);
-			query.setParameter("plantId", plantId);
-			query.setParameter("aopYear", aopYear);
-			query.setParameter("type", type);
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
