@@ -7,9 +7,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -133,6 +135,41 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 		}
 	}
 
+	@Override
+	public AOPMessageVM getProductionConfigurationElastomer(String year, UUID plantId,String type) {
+		try {
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantId);
+			Plants plant = plantsRepository.findById(plantId)
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site"));
+
+			String procedureName = verticalName + "_" + site.getName() + "_GetProductionConfiguration";
+			List<Object[]> obj = findByYearAndPlantIdAndType(year, plantId, type,procedureName);
+
+			List<Map<String, Object>> dataList = new ArrayList<>();
+			for (Object[] row : obj) {
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("product", row[0] != null ? row[0].toString() : "");
+				Double value = (row[1] != null && !row[1].toString().trim().isEmpty())
+						? Double.parseDouble(row[1].toString().trim())
+						: 0.0;
+				map.put("value", value);
+				dataList.add(map);
+			}
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(dataList);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new RuntimeException("Failed to fetch production configuration", ex);
+		}
+	}
+
 	private List<Object[]> findByYearAndPlantId(String aopYear, UUID plantId, String procedureName) {
 		try {
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
@@ -141,6 +178,22 @@ public class ProductionConfigurationServiceImpl implements ProductionConfigurati
 			query.setParameter("plantId", plantId);
 			query.setParameter("aopYear", aopYear);
 
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	private List<Object[]> findByYearAndPlantIdAndType(String aopYear, UUID plantId, String type,String procedureName) {
+		try {
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear, @type = :type";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("type", type);
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
 			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);

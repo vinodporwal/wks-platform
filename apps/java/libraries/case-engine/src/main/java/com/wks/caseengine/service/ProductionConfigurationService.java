@@ -11,6 +11,7 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 public interface ProductionConfigurationService {
 
 	AOPMessageVM getProductionConfiguration(String year, UUID plantId);
+	AOPMessageVM getProductionConfigurationElastomer(String year, UUID plantId,String type);
 	public byte[] exportProductionConfiguration(String year, String plantFKId,boolean isAfterSave,List<ConfigurationDTO> dtoList);
 	public AOPMessageVM importProductionConfiguration(String year, UUID plantId, MultipartFile file);
 }
