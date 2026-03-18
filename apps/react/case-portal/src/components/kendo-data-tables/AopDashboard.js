@@ -7,7 +7,7 @@ import {
   IconChevronUp,
   IconChevronRight,
 } from '@tabler/icons-react'
-import { Card, Box, Typography } from '@mui/material'
+import { Card, Box, Typography, Switch, FormControlLabel } from '@mui/material'
 import { useDispatch, useSelector } from 'react-redux'
 import Notification from 'components/Utilities/Notification'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
@@ -58,6 +58,7 @@ export default function AopDashboardCompact() {
 
   const [expandedSites, setExpandedSites] = useState({})
   const [expandedSubSites, setExpandedSubSites] = useState({})
+  const [allExpanded, setAllExpanded] = useState(false)
 
   // ------------------ helpers ------------------
   const showSnackbar = useCallback((message, severity = 'info') => {
@@ -87,18 +88,50 @@ export default function AopDashboardCompact() {
   }, [])
 
   const toggleSite = (siteName) => {
+    const isExpanding = !expandedSites[siteName]
     setExpandedSites((prev) => ({
       ...prev,
-      [siteName]: !prev[siteName],
+      [siteName]: isExpanding,
     }))
-  }
 
+    // Also toggle all sub-sites for this site
+    setExpandedSubSites((prev) => {
+      const next = { ...prev }
+      ;['Refining', 'Gasification', 'Aromatics'].forEach((sub) => {
+        next[`${siteName}-${sub}`] = isExpanding
+      })
+      return next
+    })
+  }
   const toggleSubSite = (siteName, subCategory) => {
     const key = `${siteName}-${subCategory}`
     setExpandedSubSites((prev) => ({
       ...prev,
       [key]: !prev[key],
     }))
+  }
+
+  const handleToggleAll = (event) => {
+    const isChecked = event.target.checked
+    setAllExpanded(isChecked)
+
+    if (isChecked) {
+      const newExpandedSites = {}
+      const newExpandedSubSites = {}
+
+      siteGroupedRows.forEach((site) => {
+        newExpandedSites[site.site] = true
+        ;['Refining', 'Gasification', 'Aromatics'].forEach((sub) => {
+          newExpandedSubSites[`${site.site}-${sub}`] = true
+        })
+      })
+
+      setExpandedSites(newExpandedSites)
+      setExpandedSubSites(newExpandedSubSites)
+    } else {
+      setExpandedSites({})
+      setExpandedSubSites({})
+    }
   }
 
   // ------------------ event handlers ------------------
@@ -440,6 +473,24 @@ export default function AopDashboardCompact() {
           )
         })}
       </Card>
+
+      <Box className='floating-switch-container'>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={allExpanded}
+              onChange={handleToggleAll}
+              color='primary'
+            />
+          }
+          label={
+            <Typography className='floating-switch-label'>
+              {allExpanded ? 'Collapse All' : 'Expand All'}
+            </Typography>
+          }
+          labelPlacement='start'
+        />
+      </Box>
 
       <Notification
         open={snackbar.open}

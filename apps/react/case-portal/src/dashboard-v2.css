@@ -503,3 +503,26 @@
     display: none;
   }
 }
+
+/* ---------- FLOATING SWITCH ---------- */
+.floating-switch-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  padding: 8px 16px;
+  border-radius: 50px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+}
+
+.floating-switch-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-dark);
+  font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+}
