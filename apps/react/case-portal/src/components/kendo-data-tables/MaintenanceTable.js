@@ -149,13 +149,20 @@ const MaintenanceTable = () => {
       ]
 
       const formatted = (raw || []).map((item, idx) => {
+        const updatedItem = { ...item }
+
         const allMonthsTotal = monthFields.reduce((sum, month) => {
-          const value = parseFloat(item[month]) || 0
+          let value = parseFloat(item[month]) || 0
+
+          if (IS_ELASTOMER_JMD) {
+            updatedItem[month] = value === 0 ? '-' : value
+          }
+
           return sum + value
         }, 0)
 
         return {
-          ...item,
+          ...updatedItem,
           idFromApi: item.id,
           id: idx,
           isEditable: false,

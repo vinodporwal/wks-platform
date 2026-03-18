@@ -401,9 +401,9 @@ export default function AopDashboardCompact() {
                                   <Box
                                     key={`${sub.name}-${plant.idx}`}
                                     className='plant-item-card'
-                                    onClick={(e) =>
-                                      handlePlantClick(e, plant.id, plant.sId)
-                                    }
+                                    // onClick={(e) =>
+                                    //   handlePlantClick(e, plant.id, plant.sId)
+                                    // }
                                   >
                                     <Box className='plant-card-left'>
                                       <IconBuildingFactory
