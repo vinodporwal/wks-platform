@@ -24,10 +24,16 @@ const SpecificConsumptionCalculation = () => {
   const keycloak = useSession()
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { plantObject, year } = dataGridStore
+  const { plantObject, year, siteObject, verticalObject } = dataGridStore
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
   const isOldYear = false
 
@@ -95,9 +101,42 @@ const SpecificConsumptionCalculation = () => {
           }
         })
 
-        const totalsRow = computeTotalsRow(data, cols, 'Name')
-        setRows1(totalsRow ? [...data, totalsRow] : data)
-        setCalculationColumns(cols)
+        const [startYear, endYear] = AOP_YEAR.split('-').map((y) =>
+          y.trim().slice(-2),
+        )
+        const monthsShort = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ]
+
+        const updatedCols = cols.map((col) => {
+          if (monthsShort.includes(col.field)) {
+            const isNextYear = ['Jan', 'Feb', 'Mar'].includes(col.field)
+            const displayYear = isNextYear ? endYear : startYear
+            return {
+              ...col,
+              title: `${col.field}-${displayYear}`,
+              headerAttributes: { style: { textAlign: 'center' } },
+              attributes: { style: { textAlign: 'right' } },
+            }
+          }
+          return col
+        })
+
+        // const totalsRow = computeTotalsRow(data, cols, 'Name')
+        // setRows1(totalsRow ? [...data, totalsRow] : data)
+        setRows1(data)
+        setCalculationColumns(updatedCols)
       } else {
         setRows1([])
         setCalculationColumns([])
@@ -121,13 +160,26 @@ const SpecificConsumptionCalculation = () => {
         AOP_YEAR,
       )
       if (response?.data) {
-        const data = response.data?.data || []
+        const dataSet = response.data?.data || []
         const cols = (response.data?.columns || []).map((col) => ({
           ...col,
           format: col.type === 'number' ? '{0:0.000}' : col.format,
+          editable: false,
+          widthT: col.field === 'Value' ? 300 : 200,
         }))
 
-        const totalsRow = computeTotalsRow(data, cols, 'Name')
+        const data = dataSet.map((item, index) => {
+          const transformedItem = {
+            ...item,
+            id: index,
+            isEditable: false,
+          }
+
+          return {
+            ...transformedItem,
+          }
+        })
+        // const totalsRow = computeTotalsRow(data, cols, 'Name')
         setRows2(data)
         setDetailColumns(cols)
       } else {
@@ -181,11 +233,11 @@ const SpecificConsumptionCalculation = () => {
       units: ['MT', 'KT'],
       dropdownLabel: 'Select UOM',
       showUnit: true,
-      isTotalFooterActive: true,
+      isTotalFooterActive: false,
       downloadExcelBtnFromUI: true,
       showTitleNameBusiness: true,
       titleName: 'Combined MCU',
-      ExcelName: `Combined_MCU_${AOP_YEAR}`,
+      ExcelName: `${EXCEL_EXPORT_TITLE}_Combined_MCU_${AOP_YEAR}`,
     },
     isOldYear,
   )
@@ -198,7 +250,7 @@ const SpecificConsumptionCalculation = () => {
       adjustedPermissions: true,
       showTitleNameBusiness: true,
       titleName: 'MCU Details',
-      ExcelName: `MCU_Details_${AOP_YEAR}`,
+      ExcelName: `${EXCEL_EXPORT_TITLE}_MCU_Details_${AOP_YEAR}`,
     },
     isOldYear,
   )
@@ -214,10 +266,20 @@ const SpecificConsumptionCalculation = () => {
 
       <Box sx={{ mb: 1, mt: 1 }}>
         <KendoDataTables
+          rows={rows2}
+          columns={detailColumns}
+          setRows={setRows2}
+          title='Combined MCU Details'
+          fetchData={fetchGrid2Data}
+          permissions={adjustedPermissionsDetails}
+        />
+      </Box>
+
+      <Box sx={{ mb: 1 }}>
+        <KendoDataTables
           rows={rows1}
           columns={calculationColumns}
           setRows={setRows1}
-          loading={loading}
           title='Combined MCU'
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
@@ -229,19 +291,7 @@ const SpecificConsumptionCalculation = () => {
           handleUnitChange={setSelectedUnit}
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
-          totalRowConfiguration={totalRowConfiguration}
-        />
-      </Box>
-
-      <Box sx={{ mb: 1 }}>
-        <KendoDataTables
-          rows={rows2}
-          columns={detailColumns}
-          setRows={setRows2}
-          loading={loading}
-          title='Combined MCU Details'
-          fetchData={fetchGrid2Data}
-          permissions={adjustedPermissionsDetails}
+          // totalRowConfiguration={totalRowConfiguration}
         />
       </Box>
     </Box>

@@ -45,6 +45,7 @@
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
   overflow: hidden;
+  display: contents;
 }
 
 /* ---------- SUMMARY BAR ---------- */
@@ -85,6 +86,10 @@
   color: #0891b2;
 }
 
+.summary-item.business {
+  min-width: 170px;
+}
+
 .summary-item.business .summary-icon-box {
   background: #fdf4f9;
   color: #ae4787;
@@ -92,6 +97,10 @@
 
 .summary-item-site {
   min-width: 195px;
+}
+
+.summary-item-plants {
+  min-width: 130px;
 }
 
 .summary-item.plants .summary-icon-box {
@@ -151,19 +160,41 @@
 
 .status-chips-summary {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex: 1;
   overflow-x: auto;
   padding: 4px 0;
 }
 
+.status-summary-chip-width.go-live {
+  min-width: 75px;
+}
+
+.status-summary-chip-width.development {
+  min-width: 110px;
+}
+
+.status-summary-chip-width.uat {
+  min-width: 50px;
+}
+
+.status-summary-chip-width.pre-uat {
+  min-width: 75px;
+}
+
+.status-summary-chip-width.not-started {
+  min-width: 90px;
+}
+
 .status-summary-chip {
-  padding: 4px 10px;
+  padding: 4px 0;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
   font-family: 'Honeywell Sans Web', 'Inter', sans-serif;
+  width: 100%;
+  text-align: center;
 }
 
 .status-summary-chip.go-live {

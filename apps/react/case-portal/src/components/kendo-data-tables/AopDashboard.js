@@ -292,7 +292,7 @@ export default function AopDashboardCompact() {
 
                 <Box className='summary-divider' />
 
-                <Box className='summary-item plants'>
+                <Box className='summary-item plants summary-item-plants'>
                   <Box className='summary-icon-box'>
                     <IconBuildingFactory size={20} />
                   </Box>
@@ -314,9 +314,13 @@ export default function AopDashboardCompact() {
                   {ALL_STATUSES.map((status) => (
                     <Box
                       key={status}
-                      className={`status-summary-chip ${getStatusClass(status)}`}
+                      className={`status-summary-chip-width ${getStatusClass(status)}`}
                     >
-                      {siteStatusSummary[status]} {status}
+                      <Box
+                        className={`status-summary-chip ${getStatusClass(status)}`}
+                      >
+                        {siteStatusSummary[status]} {status}
+                      </Box>
                     </Box>
                   ))}
                 </Box>
