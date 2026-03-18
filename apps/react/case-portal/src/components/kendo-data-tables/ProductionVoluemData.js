@@ -963,7 +963,7 @@ const ProductionvolumeData = ({ permissions }) => {
       ? 'Max Achieved Capacity'
       : VERTICAL_NAME === 'cracker'
         ? SITE_NAME === 'vmd'
-          ? 'Max Achieved Capacity'
+          ? 'Max Achieved Capacity (Naphtha Quality - 75 %)'
           : 'Max Achieved Capacity (Ethylene)'
         : 'Max Achieved Capacity'
   const adjustedPermissionsGrid1 = getAdjustedPermissions(
@@ -1034,7 +1034,7 @@ const ProductionvolumeData = ({ permissions }) => {
 
       titleName:
         VERTICAL_NAME === 'cracker' && SITE_NAME === 'vmd'
-          ? 'Design Capacity'
+          ? 'Design Capacity (Naphtha Quality - 75 %)'
           : VERTICAL_NAME === 'cracker'
             ? 'Design Capacity (Ethylene)'
             : VERTICAL_NAME === 'pp' && SITE_NAME === 'nmd'

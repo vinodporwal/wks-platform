@@ -17,7 +17,6 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import AopTabs from 'components/AopTabs'
 import { Box } from '@mui/material'
 import { DataService } from 'services/DataService'
-import ProductionNormsElastomerJmd from './ElastomerJmdProductionNorms'
 const ProductionNorms = ({ permissions }) => {
   // State for tabs
   const [tabIndex, setTabIndex] = useState(0)
@@ -82,6 +81,11 @@ const ProductionNorms = ({ permissions }) => {
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && SITE_NAME_LOWERCASE === 'jmd'
+
+  const IS_ELASTOMER_JMD_IIR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'jmd' &&
+    plantName == 'iir'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -93,84 +97,68 @@ const ProductionNorms = ({ permissions }) => {
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [selectedUnit, setSelectedUnit] = useState('')
+  const [selectedUnitIIR, setSelectedUnitIIR] = useState('')
   const [rows, setRows] = useState([])
   const [rowsByProducts, setRowsByProducts] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [rowsGradeWise, setRowsGradeWise] = useState([])
+  const [rowsIIR, setRowsIIR] = useState([])
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
   })
   const dispatch = useDispatch()
+  const totalRowConfiguration = [
+    { field: 'april', aggregate: 'sum' },
+    { field: 'may', aggregate: 'sum' },
+    { field: 'june', aggregate: 'sum' },
+    { field: 'july', aggregate: 'sum' },
+    { field: 'aug', aggregate: 'sum' },
+    { field: 'sep', aggregate: 'sum' },
+    { field: 'oct', aggregate: 'sum' },
+    { field: 'nov', aggregate: 'sum' },
+    { field: 'dec', aggregate: 'sum' },
+    { field: 'jan', aggregate: 'sum' },
+    { field: 'feb', aggregate: 'sum' },
+    { field: 'march', aggregate: 'sum' },
+    { field: 'averageTPH', aggregate: 'sum' },
+  ]
 
   const saveChanges = React.useCallback(async () => {
-    setTimeout(() => {
-      try {
-        var editedData = Object.values(modifiedCells)
-        const allRows = Array.from(apiRef.current.getRowModels().values())
-        const updatedRows = allRows.map(
-          (row) => unsavedChangesRef.current.unsavedRows[row.id] || row,
-        )
-        const rowsToSave = updatedRows.filter((row) => row.id !== 'total')
+    try {
+      var editedData = Object.values(modifiedCells)
+      const requiredFields = ['remark']
 
-        if (updatedRows.length === 0) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'No Records to Save!',
-            severity: 'info',
-          })
-          return
-        }
+      const validationMessage = validateFields(editedData, requiredFields)
 
-        const requiredFields = ['aopRemarks']
-
-        const validationMessage = validateFields(editedData, requiredFields)
-        if (validationMessage) {
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: validationMessage,
-            severity: 'error',
-          })
-          return
-        }
-
-        if (calculatebtnClicked == false) {
-          //Consition changed if permissions?.saveBtn --> SET TO FALSE
-          //UNCOMMENT THE CODE IF permissions?.saveBtn --> SET TO TRUE
-          // if (editedData.length === 0) {
-          //   setSnackbarOpen(true)
-          //   setSnackbarData({
-          //     message: 'No Records to Save!',
-          //     severity: 'info',
-          //   })
-          //   setCalculatebtnClicked(false)
-          //   return
-          // }
-          // updateProductNormData(editedData)
-          updateProductNormData(rowsToSave)
-        } else {
-          updateProductNormData(rowsToSave)
-        }
-      } catch (error) {
-        console.log('Error saving changes:', error)
-
-        setCalculatebtnClicked(false)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
       }
-    }, 400)
-  }, [apiRef, selectedUnit, calculatebtnClicked])
+      updateProductNormData(editedData)
+    } catch (error) {
+      console.error('Error in saveChanges:', error)
+    }
+  }, [selectedUnit, calculatebtnClicked, modifiedCells])
 
   const updateProductNormData = async (newRow) => {
     setLoading(true)
 
     try {
       let plantId = PLANT_ID
-      const isKiloTon = selectedUnit != ('MT' || 'MT/Month')
+      const isKiloTon = selectedUnit === 'KT'
 
       const productNormData = newRow.map((row) => ({
         aopType: row.aopType || 'production',
-        aopCaseId: row.aopCaseId || null,
-        aopStatus: row.aopStatus || null,
+        aopCaseId: row.aopCaseId || 'production',
+        aopStatus: row.aopStatus || 'production',
         aopYear: AOP_YEAR,
         plantFKId: plantId,
         materialFKId: row.normParametersFKId,
@@ -251,7 +239,7 @@ const ProductionNorms = ({ permissions }) => {
 
         // avgTPH: findAvg('1', row) || null,
         avgTPH: findSum('1', row) || null,
-        aopRemarks: row.aopRemarks,
+        remark: row.remark,
         id: row.idFromApi || null,
       }))
 
@@ -333,81 +321,42 @@ const ProductionNorms = ({ permissions }) => {
       setLoading(false)
     }
   }
+  const fetchDataAnnualproduction = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setLoading(true)
+    try {
+      var res = await ProductionNormsApiService.getIIRAnnualData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
-  const rowDataForCracker = [
-    {
-      displayName: 'Train',
-      april: 1,
-      may: 1,
-      june: 2,
-      july: 1,
-      aug: 2,
-      sep: 1,
-      oct: 2,
-      nov: 1,
-      dec: 2,
-      jan: 1,
-      feb: 2,
-      march: 1,
-      averageTPH: '',
-      isEditable: false,
-      aopStatus: '',
-    },
-    {
-      displayName: 'Ethyelene',
-      april: 13420,
-      may: 12875,
-      june: 14210,
-      july: 13750,
-      aug: 12995,
-      sep: 14130,
-      oct: 13580,
-      nov: 13045,
-      dec: 13670,
-      jan: 13920,
-      feb: 13105,
-      march: 13840,
-      averageTPH: '',
-      isEditable: false,
-    },
-    {
-      displayName: 'Propylene',
-      april: 9450,
-      may: 10235,
-      june: 11090,
-      july: 10720.2322332332,
-      aug: 11560,
-      sep: 10985,
-      oct: 11340,
-      nov: 10575,
-      dec: 11120,
-      jan: 11280,
-      feb: 10850,
-      march: 11430,
-      averageTPH: '',
-      isEditable: false,
-      aopStatus: '',
-    },
-    {
-      displayName: 'E + P',
-      april: 950,
-      may: 1035,
-      june: 1090.3422343241232,
-      july: 1720,
-      aug: 1560,
-      sep: 985,
-      oct: 140,
-      nov: 575,
-      dec: 1120,
-      jan: 280,
-      feb: 850,
-      march: 1430,
-      averageTPH: '',
-      isEditable: false,
-      aopStatus: '',
-    },
-  ]
+      if (res?.code === 200) {
+        const isKiloTon = selectedUnitIIR === 'KT'
+        const mapped = res?.data.map((item, index) => ({
+          id: item.id || null,
+          product: item.product,
+          value: isKiloTon && item.value ? item.value / 1000 : item.value, // ? convert here
+          Particulars: item.type,
+          isEditable: false,
+        }))
+        setRowsIIR(mapped)
+      } else {
+        setRowsIIR([])
+      }
+    } catch (err) {
+      console.error('fetchData error', err)
+      setRowsIIR([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  const handleRemarkCellClick = (dataItem) => {
+    setCurrentRemark(dataItem.aopRemarks || dataItem.remark || '')
+    setCurrentRowId(dataItem.id)
+    setRemarkDialogOpen(true)
+  }
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
     try {
@@ -453,8 +402,9 @@ const ProductionNorms = ({ permissions }) => {
         ?.map((product) => ({
           ...product,
           normParametersFKId: product.materialFKId,
-          originalRemark: product.aopRemarks,
-          isEditable: false,
+          originalRemark: product.remark,
+          remark: product.remark,
+          isEditable: IS_ELASTOMER_JMD_IIR ? true : false,
           april: product?.april,
           may: product?.may,
           june: product?.june,
@@ -675,15 +625,16 @@ const ProductionNorms = ({ permissions }) => {
 
       if (formattedData.length > 0) {
         if (
-          lowerVertName !== 'meg' &&
-          lowerVertName !== 'cracker' &&
-          lowerVertName !== 'elastomer' &&
-          lowerVertName !== 'vcm' &&
-          lowerVertName !== 'pta' &&
-          lowerVertName !== 'chemical' &&
-          !IS_AROMATIC_SEZ &&
-          !IS_AROMATIC_HMD &&
-          !IS_AROMATIC_DTA_PLATFORMER
+          (lowerVertName !== 'meg' &&
+            lowerVertName !== 'cracker' &&
+            lowerVertName !== 'elastomer' &&
+            lowerVertName !== 'vcm' &&
+            lowerVertName !== 'pta' &&
+            lowerVertName !== 'chemical' &&
+            !IS_AROMATIC_SEZ &&
+            !IS_AROMATIC_HMD &&
+            !IS_AROMATIC_DTA_PLATFORMER) ||
+          IS_ELASTOMER_JMD
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
@@ -730,9 +681,10 @@ const ProductionNorms = ({ permissions }) => {
         ?.map((product) => ({
           ...product,
           normParametersFKId: product.materialFKId,
-          originalRemark: product.aopRemarks,
+          originalRemark: product.remark,
           isEditable: false,
           Particulars: product.normParameterDisplayName,
+          remark: product.remark,
 
           ...(product.materialFKId !== undefined
             ? { materialFKId: undefined }
@@ -872,6 +824,35 @@ const ProductionNorms = ({ permissions }) => {
     headerMap,
     valueFormat,
   })
+  const columnIIR = [
+    {
+      field: 'id',
+      title: 'ID',
+      editable: false,
+      hidden: true,
+    },
+
+    {
+      field: 'product',
+      title: 'Product',
+      widthT: 200,
+      editable: false,
+    },
+    {
+      field: 'value',
+      title: 'Values',
+      editable: false,
+      type: 'number',
+      widthT: 200,
+      format: valueFormat,
+    },
+    {
+      field: 'type',
+      title: 'type',
+      editable: false,
+      hidden: true,
+    },
+  ]
 
   const productionColumnsByProducts = getEnhancedColDefsByProducts({
     headerMap,
@@ -881,7 +862,15 @@ const ProductionNorms = ({ permissions }) => {
   const handleUnitChange = (unit) => {
     setSelectedUnit(unit)
   }
+  const handleUnitChangeIIR = (unit) => {
+    setSelectedUnitIIR(unit)
+  }
   const isCellEditable = (params) => params.row.id !== 'total'
+  useEffect(() => {
+    if (PLANT_ID && AOP_YEAR) {
+      fetchDataAnnualproduction()
+    }
+  }, [PLANT_ID, AOP_YEAR, selectedUnitIIR])
 
   // const downloadExcelForConfiguration = async () => {
   //     setSnackbarOpen(true)
@@ -945,7 +934,11 @@ const ProductionNorms = ({ permissions }) => {
               ? true
               : permissions?.showUnit ?? true,
           saveWithRemark: permissions?.saveWithRemark ?? true,
-          showCalculate: permissions?.showCalculate ?? true,
+
+          showCalculate: IS_ELASTOMER_JMD
+            ? false
+            : permissions?.showCalculate ?? true,
+
           allAction: permissions?.allAction ?? true,
           showNote: true,
 
@@ -958,7 +951,7 @@ const ProductionNorms = ({ permissions }) => {
             calculationObject && Object.keys(calculationObject).length > 0
               ? permissions?.showCalculate ?? true
               : false,
-          saveBtn: permissions?.saveBtn ?? false,
+          saveBtn: IS_ELASTOMER_JMD_IIR ? true : permissions?.saveBtn ?? false,
           units:
             lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
@@ -972,6 +965,7 @@ const ProductionNorms = ({ permissions }) => {
           // downloadExcelBtn: lowerVertName === 'pta'
           // ? true
           // : false,
+
           ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan`,
           unitForExcelToadd:
             lowerVertName === 'cracker'
@@ -984,7 +978,14 @@ const ProductionNorms = ({ permissions }) => {
         },
         isOldYear,
       ),
-    [permissions, calculationObject, lowerVertName, selectedUnit, isOldYear],
+    [
+      permissions,
+      calculationObject,
+      lowerVertName,
+      selectedUnit,
+      isOldYear,
+      IS_ELASTOMER_JMD,
+    ],
   )
 
   const adjustedPermissionsByProducts = getAdjustedPermissions(
@@ -1005,19 +1006,34 @@ const ProductionNorms = ({ permissions }) => {
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       downloadExcelBtnFromUI:
         lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
-      ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan (By Products)`,
+      ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production plan (By Products)`,
 
       customHeight: permissions?.customHeight,
     },
     isOldYear,
   )
 
+  const EXCEL_NAME_JMD_GRID = `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_IIR Anual Production `
+
+  const adjustedPermissionsIIR = useMemo(
+    () =>
+      getAdjustedPermissions(
+        {
+          allAction: true,
+          saveBtn: false,
+          showTitleNameBusiness: true,
+          titleName: 'IIR Annual production',
+          ExcelName: EXCEL_NAME_JMD_GRID,
+          downloadExcelBtnFromUI: true,
+          showUnit: true,
+          units: ['MT', 'KT'],
+        },
+        isOldYear,
+      ),
+    [lowerVertName, AOP_YEAR, isOldYear],
+  )
   if (lowerVertName === 'cracker' && !permissions?.hideByProducts) {
     return <ProductionNormsCracker />
-  }
-  //IS_ELASTOMER_JMD
-  if (IS_ELASTOMER_JMD) {
-    return <ProductionNormsElastomerJmd />
   }
 
   return (
@@ -1034,57 +1050,82 @@ const ProductionNorms = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-      {!IS_ELASTOMER_JMD && (
+      {IS_ELASTOMER_JMD && (
         <KendoDataTables
+          columns={columnIIR}
+          rows={rowsIIR}
+          setRows={setRowsIIR}
+          fetchData={fetchDataAnnualproduction}
+          title='IIR Annual production'
+          handleUnitChange={handleUnitChangeIIR}
           modifiedCells={modifiedCells}
           setModifiedCells={setModifiedCells}
-          columns={productionColumns}
-          rows={rows}
-          setRows={setRows}
-          title={'Production AOP'}
-          isCellEditable={isCellEditable}
-          onAddRow={(newRow) => console.log('New Row Added:', newRow)}
-          onDeleteRow={(id) => console.log('Row Deleted:', id)}
-          onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
-          paginationOptions={[100, 200, 300]}
-          updateProductNormData={updateProductNormData}
-          saveChanges={saveChanges}
-          snackbarData={snackbarData}
-          snackbarOpen={snackbarOpen}
-          setSnackbarOpen={setSnackbarOpen}
-          setSnackbarData={setSnackbarData}
-          handleCalculate={handleCalculate}
-          apiRef={apiRef}
-          fetchData={fetchData}
-          handleUnitChange={handleUnitChange}
           remarkDialogOpen={remarkDialogOpen}
           setRemarkDialogOpen={setRemarkDialogOpen}
           currentRemark={currentRemark}
           setCurrentRemark={setCurrentRemark}
           currentRowId={currentRowId}
-          unsavedChangesRef={unsavedChangesRef}
-          permissions={adjustedPermissions}
-          selectedUOM={'UOM'}
+          setCurrentRowId={setCurrentRowId}
+          //saveChanges={saveChanges}
+          // deleteRowData={deleteRowData}
+          permissions={adjustedPermissionsIIR}
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
-          // downloadExcelForConfiguration={downloadExcelForConfiguration}
-          note={
-            !permissions?.hideNoteText &&
-            lowerVertName !== 'cracker' &&
-            lowerVertName !== 'elastomer' &&
-            lowerVertName !== 'aromatics' &&
-            lowerVertName !== 'vcm' &&
-            lowerVertName !== 'pe' &&
-            lowerVertName !== 'pp' &&
-            lowerVertName !== 'pta' &&
-            lowerVertName !== 'chemical' &&
-            lowerVertName !== 'pet' &&
-            !IS_PVC_VMD
-              ? '* MT per Annum'
-              : ''
-          }
+          groupBy='Particulars'
         />
       )}
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        columns={productionColumns}
+        rows={rows}
+        setRows={setRows}
+        title={'Production AOP'}
+        isCellEditable={isCellEditable}
+        onAddRow={(newRow) => console.log('New Row Added:', newRow)}
+        onDeleteRow={(id) => console.log('Row Deleted:', id)}
+        onRowUpdate={(updatedRow) => console.log('Row Updated:', updatedRow)}
+        paginationOptions={[100, 200, 300]}
+        updateProductNormData={updateProductNormData}
+        saveChanges={saveChanges}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        handleCalculate={handleCalculate}
+        apiRef={apiRef}
+        fetchData={fetchData}
+        handleUnitChange={handleUnitChange}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        handleRemarkCellClick={handleRemarkCellClick}
+        unsavedChangesRef={unsavedChangesRef}
+        permissions={adjustedPermissions}
+        selectedUOM={'UOM'}
+        resetEditSignal={editResetKey}
+        setEditResetKey={setEditResetKey}
+        totalRowConfiguration={totalRowConfiguration}
+        // groupBy={IS_ELASTOMER_JMD ? 'Particulars' : null}
+        // downloadExcelForConfiguration={downloadExcelForConfiguration}
+        note={
+          !permissions?.hideNoteText &&
+          lowerVertName !== 'cracker' &&
+          lowerVertName !== 'elastomer' &&
+          lowerVertName !== 'aromatics' &&
+          lowerVertName !== 'vcm' &&
+          lowerVertName !== 'pe' &&
+          lowerVertName !== 'pp' &&
+          lowerVertName !== 'pta' &&
+          lowerVertName !== 'chemical' &&
+          lowerVertName !== 'pet' &&
+          !IS_PVC_VMD
+            ? '* MT per Annum'
+            : ''
+        }
+      />
 
       {lowerVertName === 'meg' && !permissions?.hideNoteText && (
         <KendoDataTables

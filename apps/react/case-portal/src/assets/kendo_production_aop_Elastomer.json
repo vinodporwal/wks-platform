@@ -157,7 +157,11 @@
     "editable": false,
     "format": "{0:#.##}"
   },
-
+  {
+    "field": "remark",
+    "title": "Remark",
+    "editable": true
+  },
   {
     "field": "isEditable",
     "title": "isEditable",

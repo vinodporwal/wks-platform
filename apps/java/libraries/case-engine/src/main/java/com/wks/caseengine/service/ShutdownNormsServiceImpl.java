@@ -1744,7 +1744,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (retrievedList != null && retrievedList.size() > 0) {
 				byte[] fileByteArray =null;
-				if(vertical.getName().equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("DMD")) {
+				if((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && site.getName().equalsIgnoreCase("DMD")) {
 					 fileByteArray = exportDMDShutdownConsumption(year, plantFKId, true, retrievedList,gradeId);
 				}else {
 					 fileByteArray = exportShutdownConsumption(year, plantFKId, true, retrievedList,gradeId);

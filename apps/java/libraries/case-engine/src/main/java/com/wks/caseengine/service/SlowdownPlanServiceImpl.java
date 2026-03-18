@@ -2018,7 +2018,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 
 	               
 	                boolean isDuplicate = dto.getDiscription() != null && des.contains(dto.getDiscription());
-	                boolean isExcludedVertical = vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("PTA");
+	                boolean isExcludedVertical = vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("PTA");
 	                boolean isExcludedSite = site.getName().equalsIgnoreCase("HMD");
 	                
 	                if (!alreadyFailed && isDuplicate && !isExcludedVertical && !isExcludedSite) {
@@ -2112,7 +2112,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                        dto.setErrDescription("End date/time cannot be before start date/time.");
 	                        alreadyFailed = true;
 	                    } else if (ldtStart != null && ldtStart.getMonth() != ldtEnd.getMonth()) {
-	                        if (!(vertical.getName().equalsIgnoreCase("VCM"))) {
+	                        if (!(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical"))) {
 	                            dto.setSaveStatus("Failed");
 	                            dto.setErrDescription("Start and end date/time must belong to the same month.");
 	                            alreadyFailed = true;
@@ -2212,7 +2212,7 @@ public class SlowdownPlanServiceImpl implements SlowdownPlanService {
 	                
 	               
 	                boolean skipDbCheck = vertical.getName().equalsIgnoreCase("PTA") && site.getName().equalsIgnoreCase("HMD");
-	                if (dto.getId() == null && dto.getDiscription() != null && !vertical.getName().equalsIgnoreCase("VCM") && !alreadyFailed && !skipDbCheck) {
+	                if (dto.getId() == null && dto.getDiscription() != null && !(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && !alreadyFailed && !skipDbCheck) {
 	                    List<Object[]> obj = shutDownPlanRepository.findDiscriptionByPlantIdAndType("Slowdown", plantFKId.toString(), year, dto.getDiscription());
 	                    if (obj.size() > 0) {
 	                        dto.setSaveStatus("Failed");

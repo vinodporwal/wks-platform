@@ -29,6 +29,7 @@ import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.service.AOPReportService;
 import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantsRepository;
@@ -60,6 +61,9 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
     
     @Autowired
     private NormParametersRepository normParametersRepository;
+
+    @Autowired
+    private AOPReportService aopReportService;
     
     @Override
     public AOPMessageVM getLIMSSpyroInput(String plantId, String aopYear) {
@@ -500,12 +504,13 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	        }
 
 	        Workbook workbook = new XSSFWorkbook();
-	        Sheet sheet = workbook.createSheet("Sheet1");
+	        Sheet sheet = workbook.createSheet("Naphtha");
 	        int currentRow = 0;
 
 	        // Visible columns (from image): LIMS Tag Name, UOM, JMD Naphtha, ... Other Naphtha, naphtha Blend Composition, Remark
 	        // Hidden columns (for import): JMD_Naphtha_Id, PMD_Naphtha_Id, IOCL_Naphtha_Id, GAIL_Naphtha_Id, BPCL_Naphtha_Id, ONGC_Naphtha_Id, Other_Naphtha_Id, BCOI_Naphtha_Id
 	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Type");
 	        innerHeaders.add("LIMS Tag Name");
 	        innerHeaders.add("UOM");
 	        innerHeaders.add("JMD Naphtha");
@@ -535,29 +540,73 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 
 	        for (LIMSSpyroInputDTO dto : dtoList) {
 	            Row row = sheet.createRow(currentRow++);
-	            setCellValue(row, 0, dto.getLimsTagName());
-	            setCellValue(row, 1, dto.getUom());
-	            setCellValue(row, 2, dto.getJmdNaphtha());
-	            setCellValue(row, 3, dto.getPmdNaphtha());
-	            setCellValue(row, 4, dto.getIoclNaphtha());
-	            setCellValue(row, 5, dto.getGailNaphtha());
-	            setCellValue(row, 6, dto.getBpclNaphtha());
-	            setCellValue(row, 7, dto.getOngcNaphtha());
-	            setCellValue(row, 8, dto.getOtherNaphtha());
-	            setCellValue(row, 9, dto.getNaphthaBlendCompositionForOptimizerInput());
-	            setCellValue(row, 10, (String) null);
-	            setCellValue(row, 11, dto.getJmdNaphthaId());
-	            setCellValue(row, 12, dto.getPmdNaphthaId());
-	            setCellValue(row, 13, dto.getIoclNaphthaId());
-	            setCellValue(row, 14, dto.getGailNaphthaId());
-	            setCellValue(row, 15, dto.getBpclNaphthaId());
-	            setCellValue(row, 16, dto.getOngcNaphthaId());
-	            setCellValue(row, 17, dto.getOtherNaphthaId());
-	            setCellValue(row, 18, dto.getBcoiNaphthaId());
+	            setCellValue(row, 0, dto.getType());
+	            setCellValue(row, 1, dto.getLimsTagName());
+	            setCellValue(row, 2, dto.getUom());
+	            setCellValue(row, 3, dto.getJmdNaphtha());
+	            setCellValue(row, 4, dto.getPmdNaphtha());
+	            setCellValue(row, 5, dto.getIoclNaphtha());
+	            setCellValue(row, 6, dto.getGailNaphtha());
+	            setCellValue(row, 7, dto.getBpclNaphtha());
+	            setCellValue(row, 8, dto.getOngcNaphtha());
+	            setCellValue(row, 9, dto.getOtherNaphtha());
+	            setCellValue(row, 10, dto.getNaphthaBlendCompositionForOptimizerInput());
+	            setCellValue(row, 11, (String) null);
+	            setCellValue(row, 12, dto.getJmdNaphthaId());
+	            setCellValue(row, 13, dto.getPmdNaphthaId());
+	            setCellValue(row, 14, dto.getIoclNaphthaId());
+	            setCellValue(row, 15, dto.getGailNaphthaId());
+	            setCellValue(row, 16, dto.getBpclNaphthaId());
+	            setCellValue(row, 17, dto.getOngcNaphthaId());
+	            setCellValue(row, 18, dto.getOtherNaphthaId());
+	            setCellValue(row, 19, dto.getBcoiNaphthaId());
 	        }
 
-	        for (int col = 11; col <= 18; col++) {
+	        for (int col = 12; col <= 19; col++) {
 	            sheet.setColumnHidden(col, true);
+	        }
+
+	        // Add LIMS Dataset as a second grid in the same sheet (export-only)
+	        if (!isAfterSave) {
+		        try {
+		        	AOPMessageVM limsVm = aopReportService.getLIMSDataset(plantId, year);
+		        	if (limsVm != null && limsVm.getData() instanceof Map) {
+		        		Map<String, Object> limsDataMap = (Map<String, Object>) limsVm.getData();
+		        		Object limsDataObj = limsDataMap.get("data");
+		        		Object limsColsObj = limsDataMap.get("columns");
+		        		if (limsDataObj instanceof List && limsColsObj instanceof List) {
+		        			List<Map<String, Object>> limsRows = (List<Map<String, Object>>) limsDataObj;
+		        			List<Map<String, Object>> limsCols = (List<Map<String, Object>>) limsColsObj;
+
+		        			// Leave a small gap, then write a marker/title row so import can ignore below
+		        			currentRow += 2;
+		        			Row titleRow = sheet.createRow(currentRow++);
+		        			Cell titleCell = titleRow.createCell(0);
+		        			titleCell.setCellValue("LIMS Dataset");
+		        			titleCell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+
+		        			Row limsHeader = sheet.createRow(currentRow++);
+		        			for (int c = 0; c < limsCols.size(); c++) {
+		        				String field = limsCols.get(c).get("field") != null ? limsCols.get(c).get("field").toString() : "";
+		        				Cell cell = limsHeader.createCell(c);
+		        				cell.setCellValue(field);
+		        				cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+		        			}
+
+		        			for (Map<String, Object> rowMap : limsRows) {
+		        				Row r = sheet.createRow(currentRow++);
+		        				for (int c = 0; c < limsCols.size(); c++) {
+		        					String field = limsCols.get(c).get("field") != null ? limsCols.get(c).get("field").toString() : "";
+		        					Object value = rowMap.get(field);
+		        					setCellValue(r, c, value);
+		        				}
+		        			}
+		        		}
+		        	}
+		        } catch (Exception e) {
+		        	// Keep naphtha export working even if LIMS dataset fails
+		        	e.printStackTrace();
+		        }
 	        }
 
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -620,30 +669,43 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
+	        int colOffset = 0;
 	        if (rowIterator.hasNext()) {
-	            rowIterator.next();
+	            Row header = rowIterator.next();
+	            String h0 = getStringCellValue(header.getCell(0));
+	            if (h0 != null && h0.trim().equalsIgnoreCase("Type")) {
+	                colOffset = 1;
+	            }
 	        }
 	        while (rowIterator.hasNext()) {
 	            Row row = rowIterator.next();
+	            // Stop reading when we reach the second grid marker/title
+	            String firstCell = getStringCellValue(row.getCell(0));
+	            if (firstCell != null && firstCell.trim().equalsIgnoreCase("LIMS Dataset")) {
+	                break;
+	            }
 	            LIMSSpyroInputDTO dto = new LIMSSpyroInputDTO();
-	            dto.setLimsTagName(getStringCellValue(row.getCell(0)));
-	            dto.setUom(getStringCellValue(row.getCell(1)));
-	            dto.setJmdNaphtha(getNumericCellValue(row.getCell(2)));
-	            dto.setPmdNaphtha(getNumericCellValue(row.getCell(3)));
-	            dto.setIoclNaphtha(getNumericCellValue(row.getCell(4)));
-	            dto.setGailNaphtha(getNumericCellValue(row.getCell(5)));
-	            dto.setBpclNaphtha(getNumericCellValue(row.getCell(6)));
-	            dto.setOngcNaphtha(getNumericCellValue(row.getCell(7)));
-	            dto.setOtherNaphtha(getNumericCellValue(row.getCell(8)));
-	            dto.setNaphthaBlendCompositionForOptimizerInput(getNumericCellValue(row.getCell(9)));
-	            dto.setJmdNaphthaId(getStringCellValue(row.getCell(11)));
-	            dto.setPmdNaphthaId(getStringCellValue(row.getCell(12)));
-	            dto.setIoclNaphthaId(getStringCellValue(row.getCell(13)));
-	            dto.setGailNaphthaId(getStringCellValue(row.getCell(14)));
-	            dto.setBpclNaphthaId(getStringCellValue(row.getCell(15)));
-	            dto.setOngcNaphthaId(getStringCellValue(row.getCell(16)));
-	            dto.setOtherNaphthaId(getStringCellValue(row.getCell(17)));
-	            dto.setBcoiNaphthaId(getStringCellValue(row.getCell(18)));
+	            if (colOffset == 1) {
+	                dto.setType(getStringCellValue(row.getCell(0)));
+	            }
+	            dto.setLimsTagName(getStringCellValue(row.getCell(0 + colOffset)));
+	            dto.setUom(getStringCellValue(row.getCell(1 + colOffset)));
+	            dto.setJmdNaphtha(getNumericCellValue(row.getCell(2 + colOffset)));
+	            dto.setPmdNaphtha(getNumericCellValue(row.getCell(3 + colOffset)));
+	            dto.setIoclNaphtha(getNumericCellValue(row.getCell(4 + colOffset)));
+	            dto.setGailNaphtha(getNumericCellValue(row.getCell(5 + colOffset)));
+	            dto.setBpclNaphtha(getNumericCellValue(row.getCell(6 + colOffset)));
+	            dto.setOngcNaphtha(getNumericCellValue(row.getCell(7 + colOffset)));
+	            dto.setOtherNaphtha(getNumericCellValue(row.getCell(8 + colOffset)));
+	            dto.setNaphthaBlendCompositionForOptimizerInput(getNumericCellValue(row.getCell(9 + colOffset)));
+	            dto.setJmdNaphthaId(getStringCellValue(row.getCell(11 + colOffset)));
+	            dto.setPmdNaphthaId(getStringCellValue(row.getCell(12 + colOffset)));
+	            dto.setIoclNaphthaId(getStringCellValue(row.getCell(13 + colOffset)));
+	            dto.setGailNaphthaId(getStringCellValue(row.getCell(14 + colOffset)));
+	            dto.setBpclNaphthaId(getStringCellValue(row.getCell(15 + colOffset)));
+	            dto.setOngcNaphthaId(getStringCellValue(row.getCell(16 + colOffset)));
+	            dto.setOtherNaphthaId(getStringCellValue(row.getCell(17 + colOffset)));
+	            dto.setBcoiNaphthaId(getStringCellValue(row.getCell(18 + colOffset)));
 	            list.add(dto);
 	        }
 	    } catch (Exception e) {
