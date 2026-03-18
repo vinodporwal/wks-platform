@@ -165,7 +165,7 @@ const SpecificConsumptionCalculation = () => {
           ...col,
           format: col.type === 'number' ? '{0:0.000}' : col.format,
           editable: false,
-          widthT: col.field === 'Value' ? 300 : 200,
+          widthT: col.field === 'Value' ? 350 : 250,
         }))
 
         const data = dataSet.map((item, index) => {
@@ -187,7 +187,7 @@ const SpecificConsumptionCalculation = () => {
         setDetailColumns([])
       }
     } catch (error) {
-      console.error('Error fetching Combined MCU Details:', error)
+      console.error('Error fetching Details:', error)
       setRows2([])
       setDetailColumns([])
     } finally {
@@ -249,8 +249,8 @@ const SpecificConsumptionCalculation = () => {
       allAction: true,
       adjustedPermissions: true,
       showTitleNameBusiness: true,
-      titleName: 'MCU Details',
-      ExcelName: `${EXCEL_EXPORT_TITLE}_MCU_Details_${AOP_YEAR}`,
+      titleName: 'Supporting parameters',
+      ExcelName: `${EXCEL_EXPORT_TITLE}_Supporting parameters_${AOP_YEAR}`,
     },
     isOldYear,
   )
