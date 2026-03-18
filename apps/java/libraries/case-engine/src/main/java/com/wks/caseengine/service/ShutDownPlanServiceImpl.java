@@ -1243,7 +1243,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                            dto.setSaveStatus("Failed");
 	                            dto.setErrDescription("End date/time cannot be before start date/time.");
 	                            alreadyFailed = true;
-	                        } else if (ldtStart != null && ldtStart.getMonth() != ldtEnd.getMonth() && !vertical.getName().equalsIgnoreCase("VCM")) {
+	                        } else if (ldtStart != null && ldtStart.getMonth() != ldtEnd.getMonth()
+	                        		&& !(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical"))) {
 	                            dto.setSaveStatus("Failed");
 	                            dto.setErrDescription("Start and end date/time must belong to the same month.");
 	                            alreadyFailed = true;
@@ -1270,7 +1271,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                            if (!alreadyFailed && !(vertical.getName().equalsIgnoreCase("Elastomer") || vertical.getName().equalsIgnoreCase("PVC"))) {
 	                                boolean overlapsSlowdown = false;
 	                                
-	                                boolean isVcmSeasonal = vertical.getName().equalsIgnoreCase("VCM") && 
+	                                boolean isVcmSeasonal = (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && 
 	                                                       dto.getDiscription() != null && 
 	                                                       dto.getDiscription().equalsIgnoreCase("Seasonal Impact");
 
@@ -1517,7 +1518,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                            dto.setSaveStatus("Failed");
 	                            dto.setErrDescription("End date/time cannot be before start date/time.");
 	                            alreadyFailed = true;
-	                        } else if (ldtStart != null && ldtStart.getMonth() != ldtEnd.getMonth() && !vertical.getName().equalsIgnoreCase("VCM")) {
+	                        } else if (ldtStart != null && ldtStart.getMonth() != ldtEnd.getMonth()
+	                        		&& !(vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical"))) {
 	                            dto.setSaveStatus("Failed");
 	                            dto.setErrDescription("Start and end date/time must belong to the same month.");
 	                            alreadyFailed = true;
@@ -1544,7 +1546,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                            if (!alreadyFailed && !(vertical.getName().equalsIgnoreCase("Elastomer") || vertical.getName().equalsIgnoreCase("PVC"))) {
 	                                boolean overlapsSlowdown = false;
 	                                
-	                                boolean isVcmSeasonal = vertical.getName().equalsIgnoreCase("VCM") && 
+	                                boolean isVcmSeasonal = (vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && 
 	                                                       dto.getDiscription() != null && 
 	                                                       dto.getDiscription().equalsIgnoreCase("Seasonal Impact");
 

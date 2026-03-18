@@ -58,7 +58,7 @@ public class ShutdownNormsController {
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			byte[] excelBytes=null;
-			if(vertical.getName().equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("DMD")) {
+			if((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && site.getName().equalsIgnoreCase("DMD")) {
 				  excelBytes = shutdownNormsService.exportDMDShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 
 			}else {
 				  excelBytes = shutdownNormsService.exportShutdownConsumption(year,UUID.fromString(plantId),false,null,gradeId); 
