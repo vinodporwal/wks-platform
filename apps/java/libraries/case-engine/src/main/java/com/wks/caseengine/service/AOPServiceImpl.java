@@ -140,6 +140,9 @@ public class AOPServiceImpl implements AOPService {
 			}else if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
 				String view="vwScrn"+vertical.getName()+"AOP";
 				obj= findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type,view);
+			}else if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")){
+				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetMonthWiseProductionPlan";
+				obj = getDataElastomer(year,plant.getId(),procedureName);
 			}else {
 				 obj = aopRepository.findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type);
 			}
@@ -305,6 +308,24 @@ public class AOPServiceImpl implements AOPService {
 			query.setParameter("finYear", finYear);
 			query.setParameter("siteId", siteId);
 			query.setParameter("verticalId", verticalId);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<Object[]> getDataElastomer(String finYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :finYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
