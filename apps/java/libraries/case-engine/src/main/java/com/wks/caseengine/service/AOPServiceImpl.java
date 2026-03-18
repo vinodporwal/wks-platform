@@ -395,7 +395,7 @@ public class AOPServiceImpl implements AOPService {
 					aOP.setAopStatus(aOPDTO.getAopStatus());
 					aOP.setAopType(aOPDTO.getAopType());
 				}
-				aOP.setAopRemarks(aOPDTO.getAopRemarks());
+				aOP.setAopRemarks(aOPDTO.getRemark());
 				aOP.setAopType(aOPDTO.getAopType());
 				aOP.setAopYear(aOPDTO.getAopYear());
 				aOP.setApril(aOPDTO.getApril());
