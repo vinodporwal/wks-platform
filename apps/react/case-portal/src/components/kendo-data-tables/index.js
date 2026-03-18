@@ -320,25 +320,43 @@ const KendoDataTables = ({
   ]
 
   const initialGroup = groupBy
-    ? [
-        {
-          field: groupBy,
-          aggregates: totalRowConfiguration,
-          dir: undefined,
-        },
-      ]
-    : []
+    ? [{ field: groupBy, aggregates: totalRowConfiguration, dir: undefined }]
+    : permissions?.isUngroupedTotalFooter && totalRowConfiguration
+      ? [{ field: 'Particulars', aggregates: totalRowConfiguration }] // ← dummy field
+      : []
 
   const MyFooterCustomCell = (props) => {
-    const { tdProps } = props
-    const { dataItem } = props
+    const { tdProps, dataItem, field } = props
     const groupName = dataItem?.value
-    // Skip footer for non-Production groups
-    if (groupName !== 'Production') {
-      return
+
+    // For elastomer JMD - show footer for all groups
+    if (permissions?.isUngroupedTotalFooter) {
+      const labelColumn = 'displayName'
+      if (field === labelColumn) {
+        return (
+          <td {...tdProps}>
+            <b>Total</b>
+          </td>
+        )
+      }
+      const aggObj = dataItem?.aggregates?.[field]
+      let cellContent = ''
+      if (aggObj) {
+        const aggKey = Object.keys(aggObj)[0]
+        const value = aggObj[aggKey]
+        cellContent =
+          value != null ? Math.trunc(Number(value) * 10000) / 10000 : ''
+      }
+      return (
+        <td {...tdProps} colSpan={1}>
+          {cellContent}
+        </td>
+      )
     }
 
-    const field = props.field
+    // EXISTING: BusinessDemand - only Production group
+    if (groupName !== 'Production') return
+
     const labelColumn = 'displayName'
     if (field === labelColumn) {
       return (
@@ -347,7 +365,7 @@ const KendoDataTables = ({
         </td>
       )
     }
-    const aggObj = props.dataItem?.aggregates?.[field]
+    const aggObj = dataItem?.aggregates?.[field]
     let cellContent = ''
     if (aggObj) {
       const aggKey = Object.keys(aggObj)[0]
@@ -356,12 +374,11 @@ const KendoDataTables = ({
         value != null ? Math.trunc(Number(value) * 10000) / 10000 : ''
     }
     return (
-      <td {...props.tdProps} colSpan={1}>
+      <td {...tdProps} colSpan={1}>
         {cellContent}
       </td>
     )
   }
-
   const fileInputRef = useRef(null)
 
   const handleEditChange = useCallback((e) => {
