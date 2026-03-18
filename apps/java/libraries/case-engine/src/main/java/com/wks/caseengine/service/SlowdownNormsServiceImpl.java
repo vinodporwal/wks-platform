@@ -665,7 +665,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 					 grade=UUID.fromString(gradeId);
 				}
 				return	slowdownNormsRepository.getSlowdownMonthsWithGrades(plantId,maintenanceName,year,grade);
-			}else if(verticalName.equalsIgnoreCase("VCM")){
+			}else if(verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")){
 				return	slowdownNormsRepository.getVCMSlowdownMonths(plantId,maintenanceName,year);
 			}else if(verticalName.equalsIgnoreCase("PTA")){
 				return	slowdownNormsRepository.getPTASlowdownMonths(plantId,maintenanceName,year);

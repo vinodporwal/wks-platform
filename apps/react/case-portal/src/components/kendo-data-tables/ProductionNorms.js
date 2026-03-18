@@ -81,6 +81,11 @@ const ProductionNorms = ({ permissions }) => {
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && SITE_NAME_LOWERCASE === 'jmd'
+
+  const IS_ELASTOMER_JMD_IIR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'jmd' &&
+    plantName == 'iir'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -148,7 +153,7 @@ const ProductionNorms = ({ permissions }) => {
 
     try {
       let plantId = PLANT_ID
-      const isKiloTon = selectedUnit != ('MT' || 'MT/Month')
+      const isKiloTon = selectedUnit === 'KT'
 
       const productNormData = newRow.map((row) => ({
         aopType: row.aopType || 'production',
@@ -346,79 +351,7 @@ const ProductionNorms = ({ permissions }) => {
       setLoading(false)
     }
   }
-  const rowDataForCracker = [
-    {
-      displayName: 'Train',
-      april: 1,
-      may: 1,
-      june: 2,
-      july: 1,
-      aug: 2,
-      sep: 1,
-      oct: 2,
-      nov: 1,
-      dec: 2,
-      jan: 1,
-      feb: 2,
-      march: 1,
-      averageTPH: '',
-      isEditable: false,
-      aopStatus: '',
-    },
-    {
-      displayName: 'Ethyelene',
-      april: 13420,
-      may: 12875,
-      june: 14210,
-      july: 13750,
-      aug: 12995,
-      sep: 14130,
-      oct: 13580,
-      nov: 13045,
-      dec: 13670,
-      jan: 13920,
-      feb: 13105,
-      march: 13840,
-      averageTPH: '',
-      isEditable: false,
-    },
-    {
-      displayName: 'Propylene',
-      april: 9450,
-      may: 10235,
-      june: 11090,
-      july: 10720.2322332332,
-      aug: 11560,
-      sep: 10985,
-      oct: 11340,
-      nov: 10575,
-      dec: 11120,
-      jan: 11280,
-      feb: 10850,
-      march: 11430,
-      averageTPH: '',
-      isEditable: false,
-      aopStatus: '',
-    },
-    {
-      displayName: 'E + P',
-      april: 950,
-      may: 1035,
-      june: 1090.3422343241232,
-      july: 1720,
-      aug: 1560,
-      sep: 985,
-      oct: 140,
-      nov: 575,
-      dec: 1120,
-      jan: 280,
-      feb: 850,
-      march: 1430,
-      averageTPH: '',
-      isEditable: false,
-      aopStatus: '',
-    },
-  ]
+
   const handleRemarkCellClick = (dataItem) => {
     setCurrentRemark(dataItem.aopRemarks || dataItem.remark || '')
     setCurrentRowId(dataItem.id)
@@ -471,10 +404,7 @@ const ProductionNorms = ({ permissions }) => {
           normParametersFKId: product.materialFKId,
           originalRemark: product.remark,
           remark: product.remark,
-          isEditable:
-            lowerVertName === 'elastomer' && SITE_NAME_LOWERCASE === 'jmd'
-              ? true
-              : false,
+          isEditable: IS_ELASTOMER_JMD_IIR ? true : false,
           april: product?.april,
           may: product?.may,
           june: product?.june,
@@ -695,15 +625,16 @@ const ProductionNorms = ({ permissions }) => {
 
       if (formattedData.length > 0) {
         if (
-          lowerVertName !== 'meg' &&
-          lowerVertName !== 'cracker' &&
-          lowerVertName !== 'elastomer' &&
-          lowerVertName !== 'vcm' &&
-          lowerVertName !== 'pta' &&
-          lowerVertName !== 'chemical' &&
-          !IS_AROMATIC_SEZ &&
-          !IS_AROMATIC_HMD &&
-          !IS_AROMATIC_DTA_PLATFORMER
+          (lowerVertName !== 'meg' &&
+            lowerVertName !== 'cracker' &&
+            lowerVertName !== 'elastomer' &&
+            lowerVertName !== 'vcm' &&
+            lowerVertName !== 'pta' &&
+            lowerVertName !== 'chemical' &&
+            !IS_AROMATIC_SEZ &&
+            !IS_AROMATIC_HMD &&
+            !IS_AROMATIC_DTA_PLATFORMER) ||
+          IS_ELASTOMER_JMD
         ) {
           finalData = [...formattedData, totalsRow]
         } else {
@@ -913,6 +844,7 @@ const ProductionNorms = ({ permissions }) => {
       editable: false,
       type: 'number',
       widthT: 200,
+      format: valueFormat,
     },
     {
       field: 'type',
@@ -967,9 +899,7 @@ const ProductionNorms = ({ permissions }) => {
   //       setSnackbarOpen(true)
   //     }
   //   }
-  useEffect(() => {
-    console.log('modifiedCells:', modifiedCells)
-  }, [modifiedCells])
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -1004,7 +934,11 @@ const ProductionNorms = ({ permissions }) => {
               ? true
               : permissions?.showUnit ?? true,
           saveWithRemark: permissions?.saveWithRemark ?? true,
-          showCalculate: permissions?.showCalculate ?? true,
+
+          showCalculate: IS_ELASTOMER_JMD
+            ? false
+            : permissions?.showCalculate ?? true,
+
           allAction: permissions?.allAction ?? true,
           showNote: true,
 
@@ -1017,7 +951,7 @@ const ProductionNorms = ({ permissions }) => {
             calculationObject && Object.keys(calculationObject).length > 0
               ? permissions?.showCalculate ?? true
               : false,
-          saveBtn: IS_ELASTOMER_JMD ? true : permissions?.saveBtn ?? false,
+          saveBtn: IS_ELASTOMER_JMD_IIR ? true : permissions?.saveBtn ?? false,
           units:
             lowerVertName === 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
           customHeight: permissions?.customHeight,
@@ -1041,8 +975,6 @@ const ProductionNorms = ({ permissions }) => {
                   lowerVertName === 'chemical'
                 ? selectedUnit || 'MT'
                 : null,
-          isTotalFooterActive: IS_ELASTOMER_JMD ? true : false,
-          isUngroupedTotalFooter: IS_ELASTOMER_JMD ? true : false,
         },
         isOldYear,
       ),
@@ -1074,12 +1006,15 @@ const ProductionNorms = ({ permissions }) => {
       units: lowerVertName == 'cracker' ? ['MT/Month', 'TPH'] : ['MT', 'KT'],
       downloadExcelBtnFromUI:
         lowerVertName === 'vcm' ? false : !permissions?.hideExportBtn,
-      ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_Month wise Production plan (By Products)`,
+      ExcelName: `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_Month wise Production plan (By Products)`,
 
       customHeight: permissions?.customHeight,
     },
     isOldYear,
   )
+
+  const EXCEL_NAME_JMD_GRID = `${VERTICAL_NAME_UPPERCASE}_${SITE_NAME_UPPERCASE}_${PLANT_NAME_UPPERCASE}_${AOP_YEAR}_IIR Anual Production `
+
   const adjustedPermissionsIIR = useMemo(
     () =>
       getAdjustedPermissions(
@@ -1088,14 +1023,14 @@ const ProductionNorms = ({ permissions }) => {
           saveBtn: false,
           showTitleNameBusiness: true,
           titleName: 'IIR Annual production',
-          ExcelName: `${lowerVertName}_IIR_Annual_Production_${AOP_YEAR}`,
+          ExcelName: EXCEL_NAME_JMD_GRID,
           downloadExcelBtnFromUI: true,
           showUnit: true,
           units: ['MT', 'KT'],
         },
         isOldYear,
       ),
-    [lowerVertName, AOP_YEAR, isOldYear], // ? stable dependencies
+    [lowerVertName, AOP_YEAR, isOldYear],
   )
   if (lowerVertName === 'cracker' && !permissions?.hideByProducts) {
     return <ProductionNormsCracker />
@@ -1173,7 +1108,7 @@ const ProductionNorms = ({ permissions }) => {
         resetEditSignal={editResetKey}
         setEditResetKey={setEditResetKey}
         totalRowConfiguration={totalRowConfiguration}
-        groupBy={IS_ELASTOMER_JMD ? 'Particulars' : null}
+        // groupBy={IS_ELASTOMER_JMD ? 'Particulars' : null}
         // downloadExcelForConfiguration={downloadExcelForConfiguration}
         note={
           !permissions?.hideNoteText &&

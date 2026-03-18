@@ -70,6 +70,11 @@ const ShutdownNorms = () => {
 
   const IS_PE_PP_VERTICAL = ['pe', 'pp'].includes(lowerVertName)
   const IS_PET_VERTICAL = ['pet'].includes(lowerVertName)
+
+  const IS_ELASTOMER_JMD =
+    ['elastomer'].includes(lowerVertName) &&
+    ['jmd'].includes(SITE_NAME_LOWERCASE)
+
   const IS_PVC_VMD =
     ['pvc'].includes(lowerVertName) && ['vmd'].includes(SITE_NAME_LOWERCASE)
   const IS_PE_NMD_LDPE =
@@ -763,7 +768,7 @@ const ShutdownNorms = () => {
 
       //VCM(VMD) && elastomer we required to show calculate btn
       showCalculate:
-        lowerVertName == 'elastomer'
+        lowerVertName == 'elastomer' && SITE_NAME_LOWERCASE != 'jmd'
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
@@ -772,7 +777,8 @@ const ShutdownNorms = () => {
               IS_PET_VERTICAL ||
               IS_PVC_VMD ||
               !IS_PTA_DMD ||
-              IS_PVC_DMD
+              IS_PVC_DMD ||
+              IS_ELASTOMER_JMD
             ? false
             : true,
 

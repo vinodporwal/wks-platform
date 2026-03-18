@@ -236,8 +236,8 @@ const SpecificConsumptionCalculation = () => {
       isTotalFooterActive: false,
       downloadExcelBtnFromUI: true,
       showTitleNameBusiness: true,
-      titleName: 'Combined MCU',
-      ExcelName: `${EXCEL_EXPORT_TITLE}_Combined_MCU_${AOP_YEAR}`,
+      titleName: 'Total Production With Propylene Availability',
+      ExcelName: `${EXCEL_EXPORT_TITLE}_Total Production With Propylene Availability_${AOP_YEAR}`,
     },
     isOldYear,
   )
@@ -269,7 +269,7 @@ const SpecificConsumptionCalculation = () => {
           rows={rows2}
           columns={detailColumns}
           setRows={setRows2}
-          title='Combined MCU Details'
+          title='Supporting parameters'
           fetchData={fetchGrid2Data}
           permissions={adjustedPermissionsDetails}
         />
@@ -280,7 +280,7 @@ const SpecificConsumptionCalculation = () => {
           rows={rows1}
           columns={calculationColumns}
           setRows={setRows1}
-          title='Combined MCU'
+          title='Total Production with Propylene Availability'
           snackbarData={snackbarData}
           snackbarOpen={snackbarOpen}
           setSnackbarOpen={setSnackbarOpen}
@@ -291,7 +291,6 @@ const SpecificConsumptionCalculation = () => {
           handleUnitChange={setSelectedUnit}
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
-          // totalRowConfiguration={totalRowConfiguration}
         />
       </Box>
     </Box>

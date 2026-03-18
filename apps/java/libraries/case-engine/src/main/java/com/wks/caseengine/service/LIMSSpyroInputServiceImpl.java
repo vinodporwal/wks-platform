@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -114,10 +113,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
             }
 
             java.util.Map<String, Object> map = new java.util.HashMap<>();
-            // Response keyed by "type" (grouped by dto.type)
-            Map<String, List<LIMSSpyroInputDTO>> groupedByType = dtoList.stream()
-                    .collect(Collectors.groupingBy(d -> d.getType() != null ? d.getType() : ""));
-            map.put("type", groupedByType);
+            map.put("Data", dtoList);
 
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
@@ -212,9 +208,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
             }
             insertIntoNormAttributeTransaction( startDate,  endDate, plantId,  aopYear);
             java.util.Map<String, Object> map = new java.util.HashMap<>();
-            Map<String, List<LIMSSpyroInputDTO>> groupedByType = dtoList.stream()
-                    .collect(Collectors.groupingBy(d -> d.getType() != null ? d.getType() : ""));
-            map.put("type", groupedByType);
+            map.put("Data", dtoList);
 
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data fetched successfully");
@@ -502,13 +496,7 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	            AOPMessageVM aopMessageVM = getLIMSSpyroInput(plantId, year);
 	            Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
 	            if (innerMap != null) {
-	                Object groupedObj = innerMap.get("type");
-	                if (groupedObj instanceof Map) {
-	                    Map<String, List<LIMSSpyroInputDTO>> grouped = (Map<String, List<LIMSSpyroInputDTO>>) groupedObj;
-	                    dtoList = grouped.values().stream().flatMap(List::stream).collect(Collectors.toList());
-	                } else {
-	                    dtoList = new ArrayList<>();
-	                }
+	                dtoList = (List<LIMSSpyroInputDTO>) innerMap.get("Data");
 	            }
 	        }
 	        if (dtoList == null) {
@@ -681,8 +669,13 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
+	        int colOffset = 0;
 	        if (rowIterator.hasNext()) {
-	            rowIterator.next();
+	            Row header = rowIterator.next();
+	            String h0 = getStringCellValue(header.getCell(0));
+	            if (h0 != null && h0.trim().equalsIgnoreCase("Type")) {
+	                colOffset = 1;
+	            }
 	        }
 	        while (rowIterator.hasNext()) {
 	            Row row = rowIterator.next();
@@ -692,25 +685,27 @@ public class LIMSSpyroInputServiceImpl implements LIMSSpyroInputService {
 	                break;
 	            }
 	            LIMSSpyroInputDTO dto = new LIMSSpyroInputDTO();
-	            dto.setType(firstCell);
-	            dto.setLimsTagName(getStringCellValue(row.getCell(1)));
-	            dto.setUom(getStringCellValue(row.getCell(2)));
-	            dto.setJmdNaphtha(getNumericCellValue(row.getCell(3)));
-	            dto.setPmdNaphtha(getNumericCellValue(row.getCell(4)));
-	            dto.setIoclNaphtha(getNumericCellValue(row.getCell(5)));
-	            dto.setGailNaphtha(getNumericCellValue(row.getCell(6)));
-	            dto.setBpclNaphtha(getNumericCellValue(row.getCell(7)));
-	            dto.setOngcNaphtha(getNumericCellValue(row.getCell(8)));
-	            dto.setOtherNaphtha(getNumericCellValue(row.getCell(9)));
-	            dto.setNaphthaBlendCompositionForOptimizerInput(getNumericCellValue(row.getCell(10)));
-	            dto.setJmdNaphthaId(getStringCellValue(row.getCell(12)));
-	            dto.setPmdNaphthaId(getStringCellValue(row.getCell(13)));
-	            dto.setIoclNaphthaId(getStringCellValue(row.getCell(14)));
-	            dto.setGailNaphthaId(getStringCellValue(row.getCell(15)));
-	            dto.setBpclNaphthaId(getStringCellValue(row.getCell(16)));
-	            dto.setOngcNaphthaId(getStringCellValue(row.getCell(17)));
-	            dto.setOtherNaphthaId(getStringCellValue(row.getCell(18)));
-	            dto.setBcoiNaphthaId(getStringCellValue(row.getCell(19)));
+	            if (colOffset == 1) {
+	                dto.setType(getStringCellValue(row.getCell(0)));
+	            }
+	            dto.setLimsTagName(getStringCellValue(row.getCell(0 + colOffset)));
+	            dto.setUom(getStringCellValue(row.getCell(1 + colOffset)));
+	            dto.setJmdNaphtha(getNumericCellValue(row.getCell(2 + colOffset)));
+	            dto.setPmdNaphtha(getNumericCellValue(row.getCell(3 + colOffset)));
+	            dto.setIoclNaphtha(getNumericCellValue(row.getCell(4 + colOffset)));
+	            dto.setGailNaphtha(getNumericCellValue(row.getCell(5 + colOffset)));
+	            dto.setBpclNaphtha(getNumericCellValue(row.getCell(6 + colOffset)));
+	            dto.setOngcNaphtha(getNumericCellValue(row.getCell(7 + colOffset)));
+	            dto.setOtherNaphtha(getNumericCellValue(row.getCell(8 + colOffset)));
+	            dto.setNaphthaBlendCompositionForOptimizerInput(getNumericCellValue(row.getCell(9 + colOffset)));
+	            dto.setJmdNaphthaId(getStringCellValue(row.getCell(11 + colOffset)));
+	            dto.setPmdNaphthaId(getStringCellValue(row.getCell(12 + colOffset)));
+	            dto.setIoclNaphthaId(getStringCellValue(row.getCell(13 + colOffset)));
+	            dto.setGailNaphthaId(getStringCellValue(row.getCell(14 + colOffset)));
+	            dto.setBpclNaphthaId(getStringCellValue(row.getCell(15 + colOffset)));
+	            dto.setOngcNaphthaId(getStringCellValue(row.getCell(16 + colOffset)));
+	            dto.setOtherNaphthaId(getStringCellValue(row.getCell(17 + colOffset)));
+	            dto.setBcoiNaphthaId(getStringCellValue(row.getCell(18 + colOffset)));
 	            list.add(dto);
 	        }
 	    } catch (Exception e) {
