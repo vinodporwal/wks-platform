@@ -37,6 +37,10 @@ public class TCSSlowdownController {
             throw new RestInvalidArgumentException("Plant ID and Site ID or Vertical ID cannot be provided together", null);
         }
 
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         return tcsSlowdownService.getAll(plantId, year, siteId, verticalId);
     }
 
@@ -48,7 +52,7 @@ public class TCSSlowdownController {
             if(plantId == null || plantId.isEmpty()) {
                 throw new RestInvalidArgumentException("Plant ID cannot be null", null);
             }
-            if(year == null || year.isEmpty()) {
+            if(year == null || year.isEmpty() || year.length() != 4) {
                 throw new RestInvalidArgumentException("Year cannot be null", null);
             }
             return tcsSlowdownService.carryForwardTCSSlowdown(plantId, year);
@@ -59,6 +63,10 @@ public class TCSSlowdownController {
         @RequestParam String plantId,
         @RequestParam String year,
         @RequestBody List<TCSSlowdownDTO> payload) {
+
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
         
         return tcsSlowdownService.saveOrUpdate(plantId, year, payload);
     }
@@ -84,6 +92,10 @@ public class TCSSlowdownController {
             throw new RestInvalidArgumentException("Plant ID and Site ID or Vertical ID cannot be provided together", null);
         }
 
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         byte[] excelData = tcsSlowdownService.exportTCSSlowdown(
             plantId,
             year,
@@ -104,6 +116,10 @@ public class TCSSlowdownController {
         @RequestParam String plantId,
         @RequestParam String year,
         @RequestParam("file") MultipartFile file) {
+
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
 
         return tcsSlowdownService.importExcel(
             plantId,

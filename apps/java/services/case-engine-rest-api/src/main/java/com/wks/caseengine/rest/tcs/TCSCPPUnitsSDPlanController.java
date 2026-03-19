@@ -32,6 +32,11 @@ public class TCSCPPUnitsSDPlanController {
 
     @GetMapping("/cpp-unit-sd-plan/{financialYear}/{siteId}")
     public ResponseEntity<List<TCSCPPUnitsSDPlanDTO>> getTCSCPPUnitsSDPlan(@PathVariable String financialYear, @PathVariable String siteId) {
+
+        if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs = tcsCppUnitsSDPlanService.getTCSCPPUnitsSDPlan(financialYear, UUID.fromString(siteId));
 
         System.out.println("tcsCppUnitsSDPlanDTOs: " + tcsCppUnitsSDPlanDTOs);
@@ -41,21 +46,32 @@ public class TCSCPPUnitsSDPlanController {
     @PostMapping("/cpp-unit-sd-plan/carry-forward/{financialYear}/{siteId}")
     public ResponseEntity<AOPMessageVM> carryForwardTCSCPPUnitsSDPlan(@PathVariable String financialYear, @PathVariable String siteId) {
 
-        if(financialYear == null || siteId == null) {
-            throw new RestInvalidArgumentException("Invalid request parameters", null);
+        if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
         }
+
         AOPMessageVM response = tcsCppUnitsSDPlanService.carryForwardTCSCPPUnitsSDPlan(financialYear, UUID.fromString(siteId)); 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/cpp-unit-sd-plan/{financialYear}/{siteId}")
     public ResponseEntity<Void> saveTCSCPPUnitsSDPlan(@RequestBody List<TCSCPPUnitsSDPlanDTO> tcsCppUnitsSDPlanDTOs, @PathVariable String financialYear, @PathVariable String siteId) {
+
+        if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         tcsCppUnitsSDPlanService.saveTCSCPPUnitsSDPlan(tcsCppUnitsSDPlanDTOs, UUID.fromString(siteId), financialYear);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/cpp-unit-sd-plan/{id}")
     public ResponseEntity<Void> deleteTCSCPPUnitsSDPlan(@PathVariable String id) {
+
+        if(id == null || id.isEmpty()) {
+            throw new RestInvalidArgumentException("ID cannot be null", null);
+        }
+
         tcsCppUnitsSDPlanService.deleteTCSCPPUnitsSDPlan(UUID.fromString(id));
         return ResponseEntity.ok().build();
     }
@@ -65,6 +81,10 @@ public class TCSCPPUnitsSDPlanController {
         @PathVariable String financialYear, 
         @PathVariable String siteId) {
         
+        if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         byte[] excelBytes = tcsCppUnitsSDPlanService.exportTCSCPPUnitsSDPlan(financialYear, UUID.fromString(siteId));
         
         HttpHeaders headers = new HttpHeaders();
@@ -82,6 +102,10 @@ public class TCSCPPUnitsSDPlanController {
         @PathVariable String siteId,
         @RequestParam("file") MultipartFile file) {
         
+        if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         AOPMessageVM response = tcsCppUnitsSDPlanService.importExcel(UUID.fromString(siteId), financialYear, file);
         return ResponseEntity.ok(response);
     }
