@@ -6,8 +6,8 @@ const StartAndEndPicker = ({
   onLoad,
   disabled = false,
   dateFormat = 'YYYY-MM-DD',
-  startDate: startDateProp = null, 
-  endDate: endDateProp = null, 
+  startDate: startDateProp = null,
+  endDate: endDateProp = null,
 }) => {
   const parseDate = (val) => {
     if (!val) return null

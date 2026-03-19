@@ -34,7 +34,7 @@
     "headerAlign": "left",
     "type": "number",
     "format": "{0:n2}"
-  }, 
+  },
 
   {
     "field": "remarks",

@@ -1,4 +1,7 @@
-import { BusinessDemandElastomerColumns, BusinessDemandElastomerJmdColumns } from 'components/colums/ElastomerColums'
+import {
+  BusinessDemandElastomerColumns,
+  BusinessDemandElastomerJmdColumns,
+} from 'components/colums/ElastomerColums'
 import { BusinessDemandMegColumns } from 'components/colums/MegColums'
 import { BusinessDemandPetColumns } from 'components/colums/PetColums'
 import { BusinessDemandPeColumns } from 'components/colums/PeColums'
@@ -23,7 +26,7 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const vertName = dataGridStore.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
-  const siteName = dataGridStore.siteObject?.name?.toLowerCase()  // get site
+  const siteName = dataGridStore.siteObject?.name?.toLowerCase() // get site
   const IS_ELASTOMER_JMD = lowerVertName === 'elastomer' && siteName === 'jmd'
   const FORMATE_DECIMAL = ValueFormatterProduction()
 
