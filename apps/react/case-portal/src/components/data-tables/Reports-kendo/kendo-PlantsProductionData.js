@@ -111,7 +111,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'Particulates',
           title: 'Production Volume',
-          width: 150,
+          widthT: 180,
           editable: false,
         },
       ],
@@ -199,7 +199,7 @@ const PlantsProductionSummary = () => {
       ],
     },
 
-    { field: 'Remark', title: 'Remarks', width: 200, editable: true },
+    { field: 'Remark', title: 'Remarks', widthT: 200, editable: true },
   ]
 
   const fetchData = async () => {
