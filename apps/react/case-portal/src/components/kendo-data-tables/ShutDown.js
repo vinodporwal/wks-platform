@@ -1133,7 +1133,8 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pta' ||
         lowerVertName === 'chemical' ||
         lowerVertName === 'pet' ||
-        IS_PVC_VMD
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       highlightDiscription:

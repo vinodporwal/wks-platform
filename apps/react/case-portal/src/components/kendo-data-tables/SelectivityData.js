@@ -516,6 +516,15 @@ const SelectivityData = (props) => {
   ) {
     FORMATE_VALUE = '{0:0.000}'
   }
+  if (
+    (props?.configType == 'Constant' ||
+      props?.configType == 'PIO Impact' ||
+      props?.configType == 'Configuration') &&
+    lowerVertName == 'aromatics' &&
+    lowerSiteName == 'sez'
+  ) {
+    FORMATE_VALUE = '{0:0.00000}'
+  }
 
   const productionColumns = getEnhancedAOPColDefs({
     allGradesReciepes,

@@ -138,7 +138,7 @@ const ConfigurationTable = () => {
   const handleOpenDialog = () => {
     const isPEorPP = lowerVertName === 'pe' || lowerVertName === 'pp'
 
-    if (isPEorPP) {
+    if (isPEorPP || IS_PVC_DMD) {
       if (!summaryEdited && !summary) {
         setSnackbarOpen(true)
         setSnackbarData({
