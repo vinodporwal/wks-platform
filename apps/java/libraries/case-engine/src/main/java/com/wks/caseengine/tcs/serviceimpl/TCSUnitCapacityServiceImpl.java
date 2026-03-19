@@ -148,18 +148,18 @@ Verticals vertical = null;
                 TCSUnitCapacityDTO dto = new TCSUnitCapacityDTO();
                 dto.setId(row[0] != null ? row[0].toString() : null);
                 dto.setParticulates(row[1] != null ? row[1].toString() : null);
-                dto.setApr(row[2] != null ? Double.parseDouble(row[2].toString()) : null);
-                dto.setMay(row[3] != null ? Double.parseDouble(row[3].toString()) : null);
-                dto.setJun(row[4] != null ? Double.parseDouble(row[4].toString()) : null);
-                dto.setJul(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
-                dto.setAug(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
-                dto.setSep(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
-                dto.setOct(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
-                dto.setNov(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
-                dto.setDec(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
-                dto.setJan(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
-                dto.setFeb(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
-                dto.setMar(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
+                dto.setJan(row[2] != null ? Double.parseDouble(row[2].toString()) : null);
+                dto.setFeb(row[3] != null ? Double.parseDouble(row[3].toString()) : null);
+                dto.setMar(row[4] != null ? Double.parseDouble(row[4].toString()) : null);
+                dto.setApr(row[5] != null ? Double.parseDouble(row[5].toString()) : null);
+                dto.setMay(row[6] != null ? Double.parseDouble(row[6].toString()) : null);
+                dto.setJun(row[7] != null ? Double.parseDouble(row[7].toString()) : null);
+                dto.setJul(row[8] != null ? Double.parseDouble(row[8].toString()) : null);
+                dto.setAug(row[9] != null ? Double.parseDouble(row[9].toString()) : null);
+                dto.setSep(row[10] != null ? Double.parseDouble(row[10].toString()) : null);
+                dto.setOct(row[11] != null ? Double.parseDouble(row[11].toString()) : null);
+                dto.setNov(row[12] != null ? Double.parseDouble(row[12].toString()) : null);
+                dto.setDec(row[13] != null ? Double.parseDouble(row[13].toString()) : null);
              //   dto.setUom(row[2] != null ? row[2].toString() : null);
                 dto.setRemark(row[14] != null ? row[14].toString() : null);
                 dto.setInsertedDateTime(row[15] != null ? dateFormatter.parse(row[15].toString()) : null);
@@ -393,6 +393,9 @@ Verticals vertical = null;
                 }
                 entity.setCapacityType(capacityType);
             //    entity.setUom(dto.getUom());
+                  entity.setJan(dto.getJan());
+                  entity.setFeb(dto.getFeb());
+                  entity.setMar(dto.getMar());
                   entity.setApr(dto.getApr());
                   entity.setMay(dto.getMay());
                   entity.setJun(dto.getJun());
@@ -402,9 +405,7 @@ Verticals vertical = null;
                   entity.setOct(dto.getOct());
                   entity.setNov(dto.getNov());
                   entity.setDec(dto.getDec());
-                  entity.setJan(dto.getJan());
-                  entity.setFeb(dto.getFeb());
-                  entity.setMar(dto.getMar());
+                  
                 entity.setRemark(dto.getRemark());
                 entity.setAopYear(year);
                 entity.setPlantFkId(UUID.fromString(plantId));
@@ -430,6 +431,9 @@ Verticals vertical = null;
         return TCSUnitCapacityDTO.builder()
             .id(entity.getId() != null ? entity.getId().toString() : null)
           //  .uom(entity.getUom())
+                .jan(entity.getJan())
+                .feb(entity.getFeb())
+                .mar(entity.getMar())
                 .apr(entity.getApr())
                 .may(entity.getMay())
                 .jun(entity.getJun())
@@ -439,9 +443,7 @@ Verticals vertical = null;
                 .oct(entity.getOct())
                 .nov(entity.getNov())
                 .dec(entity.getDec())
-                .jan(entity.getJan())
-                .feb(entity.getFeb())
-                .mar(entity.getMar())
+                
             .remark(entity.getRemark())
             .build();
     }
@@ -590,12 +592,17 @@ Verticals vertical = null;
             Row monthHeaderRow = sheet.createRow(currentRow++);
             monthHeaderRow.createCell(0).setCellStyle(headerStyle); // Empty under Particulars
             
+            // String[] months = {
+            //     "Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix,
+            //     "Jul-" + startYearSuffix, "Aug-" + startYearSuffix, "Sep-" + startYearSuffix,
+            //     "Oct-" + startYearSuffix, "Nov-" + startYearSuffix, "Dec-" + startYearSuffix,
+            //     "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix
+            // };
+
             String[] months = {
-                "Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix,
-                "Jul-" + startYearSuffix, "Aug-" + startYearSuffix, "Sep-" + startYearSuffix,
-                "Oct-" + startYearSuffix, "Nov-" + startYearSuffix, "Dec-" + startYearSuffix,
-                "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix
+                "Jan-" + year,"Feb-" + year,"Mar-" + year,"Apr-" + year,"May-" + year,"Jun-" + year,"Jul-" + year,"Aug-" + year,"Sep-" + year,"Oct-" + year,"Nov-" + year,"Dec-" + year
             };
+            
             
             int colIndex = 1;
             for (String month : months) {
@@ -639,9 +646,8 @@ Verticals vertical = null;
 
                 // Month data (KBPSD and KTPD for each month)
                 Double[] monthValues = {
-                    dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
-                    dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
                 };
 
                 for (Double kbpsd : monthValues) {
@@ -805,6 +811,9 @@ Verticals vertical = null;
                     dto.setParticulates(getStringCellValue(row.getCell(col++)));
                     
                     // Month data (read only KBPSD columns, skip KTPD as it's calculated)
+                    dto.setJan(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
+                    dto.setFeb(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
+                    dto.setMar(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
                     dto.setApr(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
                     dto.setMay(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
                     dto.setJun(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
@@ -814,9 +823,6 @@ Verticals vertical = null;
                     dto.setOct(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
                     dto.setNov(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
                     dto.setDec(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setJan(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setFeb(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
-                    dto.setMar(getDoubleCellValue(row.getCell(col++))); col++; // Skip KTPD
                     
                     // Remark
                     dto.setRemark(getStringCellValue(row.getCell(col++)));
@@ -912,10 +918,7 @@ Verticals vertical = null;
             monthHeaderRow.createCell(0).setCellStyle(headerStyle);
             
             String[] months = {
-                "Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix,
-                "Jul-" + startYearSuffix, "Aug-" + startYearSuffix, "Sep-" + startYearSuffix,
-                "Oct-" + startYearSuffix, "Nov-" + startYearSuffix, "Dec-" + startYearSuffix,
-                "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix
+                "Jan-" + year, "Feb-" + year, "Mar-" + year, "Apr-" + year, "May-" + year, "Jun-" + year, "Jul-" + year, "Aug-" + year, "Sep-" + year, "Oct-" + year, "Nov-" + year, "Dec-" + year
             };
             
             int colIndex = 1;
@@ -962,9 +965,8 @@ Verticals vertical = null;
                 particularsDataCell.setCellStyle(dataStyle);
 
                 Double[] monthValues = {
-                    dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(),
-                    dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(),
+                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
                 };
 
                 for (Double kbpsd : monthValues) {
