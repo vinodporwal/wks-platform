@@ -86,8 +86,8 @@ const SpecificConsumptionCalculation = () => {
             }
           })
 
-          // Calculate averageTPH (row total) using transformed values
-          const total = cols
+          // Calculate Total (row total) using transformed values
+          const rowTotal = cols
             .filter((col) => col.type === 'number' && col.field !== 'Name')
             .reduce(
               (sum, col) => sum + (parseFloat(transformedItem[col.field]) || 0),
@@ -96,7 +96,7 @@ const SpecificConsumptionCalculation = () => {
 
           return {
             ...transformedItem,
-            averageTPH: total,
+            Total: rowTotal,
             _displayNameLower: String(transformedItem.Name || '').toLowerCase(),
           }
         })
@@ -131,6 +131,16 @@ const SpecificConsumptionCalculation = () => {
             }
           }
           return col
+        })
+
+        updatedCols.push({
+          field: 'Total',
+          editable: false,
+          title: 'Total',
+          type: 'number',
+          format: '{0:0.000}',
+          headerAttributes: { style: { textAlign: 'center' } },
+          attributes: { style: { textAlign: 'right' } },
         })
 
         // const totalsRow = computeTotalsRow(data, cols, 'Name')
