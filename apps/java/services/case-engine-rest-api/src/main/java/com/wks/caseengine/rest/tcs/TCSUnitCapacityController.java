@@ -41,6 +41,10 @@ if (plantId != null && (siteId != null || verticalId != null)) {
     throw new RestInvalidArgumentException("Plant ID and Site ID or Vertical ID cannot be provided together", null);
 }
 
+if(year == null || year.isEmpty() || year.length() != 4) {
+    throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+}
+
         return tcsUnitCapacityService.getAll(
             plantId,
             year,
@@ -56,6 +60,10 @@ if (plantId != null && (siteId != null || verticalId != null)) {
         @RequestParam String year,
         @RequestParam String capacityType
         ) {
+
+            if(year == null || year.isEmpty() || year.length() != 4) {
+                throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+            }
         
         return tcsUnitCapacityService.carryForwardTCSUnitCapacity(
             plantId,
@@ -71,6 +79,10 @@ if (plantId != null && (siteId != null || verticalId != null)) {
         @RequestParam String capacityType,
      //   @RequestParam(required = false) String uom,
         @RequestBody List<TCSUnitCapacityDTO> payload) {
+
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
 
         return tcsUnitCapacityService.saveOrUpdate(
             plantId,
@@ -117,6 +129,10 @@ if (plantId != null && (siteId != null || verticalId != null)) {
             throw new RestInvalidArgumentException("Plant ID and Site ID or Vertical ID cannot be provided together", null);
         }
 
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         byte[] excelData = tcsUnitCapacityService.exportTCSUnitCapacity(
             plantId,
             year,
@@ -141,6 +157,10 @@ if (plantId != null && (siteId != null || verticalId != null)) {
         @RequestParam String year,
         @RequestParam String capacityType,
         @RequestParam("file") MultipartFile file) {
+
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
 
         return tcsUnitCapacityService.importExcel(
             plantId,
