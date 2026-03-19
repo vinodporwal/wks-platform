@@ -6,7 +6,7 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiS
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import AdvanceKendoTable from '../../../common/AdvanceKendoTable/index'
 
 const FuelAvailability = () => {
   const keycloak = useSession()
@@ -630,7 +630,7 @@ const FuelAvailability = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        customHeight={60}
+        // customHeight={60}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,

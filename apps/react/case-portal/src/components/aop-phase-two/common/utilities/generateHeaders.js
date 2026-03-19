@@ -74,3 +74,18 @@ export const generateCalendarYearHeaders = (yearRange) => {
 
   return headerMap
 }
+
+export const extractYear = (yearRange) => {
+  if (!yearRange) {
+    console.error('YEAR not found')
+    return null
+  }
+
+  const [startYear] = yearRange.split('-').map(Number)
+  if (!startYear) {
+    console.error('Invalid YEAR format')
+    return null
+  }
+
+  return startYear
+}
