@@ -709,7 +709,7 @@ export const MockReportService = {
             {
               field: 'ProductionCostCalculations',
               title: 'Production cost calculations',
-              width: 220,
+              widthT: 220,
               editable: false,
             },
             {

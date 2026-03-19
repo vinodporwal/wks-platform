@@ -1,4 +1,7 @@
-import { BusinessDemandElastomerColumns, BusinessDemandElastomerJmdColumns } from 'components/colums/ElastomerColums'
+import {
+  BusinessDemandElastomerColumns,
+  BusinessDemandElastomerJmdColumns,
+} from 'components/colums/ElastomerColums'
 import { BusinessDemandMegColumns } from 'components/colums/MegColums'
 import { BusinessDemandPetColumns } from 'components/colums/PetColums'
 import { BusinessDemandPeColumns } from 'components/colums/PeColums'

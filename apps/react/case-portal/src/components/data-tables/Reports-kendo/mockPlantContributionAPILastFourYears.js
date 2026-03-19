@@ -1005,7 +1005,7 @@ export const MockPlantContributionAPILastFourYears = {
             {
               field: 'material',
               title: 'Production cost calculations',
-              width: 220,
+              widthT: 220,
               editable: false,
             },
             {
