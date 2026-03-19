@@ -81,6 +81,37 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 	}
 
 	@Override
+	public AOPMessageVM getCombinedProductionOptimizer(String plantId, String aopYear, String type) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			List<Object[]> results = getCombinedProductionOptimizerData(plantId, aopYear, type);
+			List<String> columnNames = getCombinedProductionOptimizerColumns(plantId, aopYear, type);
+
+			List<Map<String, Object>> resultList = new ArrayList<>();
+			for (Object[] row : results) {
+				Map<String, Object> rowMap = new LinkedHashMap<>();
+				for (int i = 0; i < columnNames.size(); i++) {
+					rowMap.put(columnNames.get(i), row[i]);
+				}
+				resultList.add(rowMap);
+			}
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("data", resultList);
+			data.put("columns", getCombinedProductionOptimizerColumnMetadata(plantId, aopYear, type));
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(data);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
 	public AOPMessageVM calculateProductionOptimizer(String plantId, String aopYear) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
@@ -186,6 +217,77 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 				ps.setString(2, aopYear);
 				ps.setString(3, lineFkId);
 				ps.setString(4, type);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData metaData = rs.getMetaData();
+					int columnCount = metaData.getColumnCount();
+					for (int i = 1; i <= columnCount; i++) {
+						Map<String, Object> column = new HashMap<>();
+						column.put("field", metaData.getColumnName(i));
+						column.put("title", metaData.getColumnName(i));
+						column.put("type", "text");
+						column.put("editable", false);
+						columnMetadata.add(column);
+					}
+				}
+			}
+			return columnMetadata;
+		});
+	}
+
+	private List<Object[]> getCombinedProductionOptimizerData(String plantId, String aopYear, String type) {
+		try {
+			String storedProcedure = resolveStoredProcedure(plantId).replace("_ProductionOptimizer",
+					"_CombinedProductionOptimizer");
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear, @type = :type";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("type", type);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	private List<String> getCombinedProductionOptimizerColumns(String plantId, String aopYear, String type) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+			String storedProcedure = resolveStoredProcedure(plantId).replace("_ProductionOptimizer",
+					"_CombinedProductionOptimizer");
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?, @type = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, aopYear);
+				ps.setString(3, type);
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData metaData = rs.getMetaData();
+					int columnCount = metaData.getColumnCount();
+					for (int i = 1; i <= columnCount; i++) {
+						columnNames.add(metaData.getColumnName(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getCombinedProductionOptimizerColumnMetadata(String plantId, String aopYear,
+			String type) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+			String storedProcedure = resolveStoredProcedure(plantId).replace("_ProductionOptimizer",
+					"_CombinedProductionOptimizer");
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?, @type = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, aopYear);
+				ps.setString(3, type);
 				try (ResultSet rs = ps.executeQuery()) {
 					ResultSetMetaData metaData = rs.getMetaData();
 					int columnCount = metaData.getColumnCount();
