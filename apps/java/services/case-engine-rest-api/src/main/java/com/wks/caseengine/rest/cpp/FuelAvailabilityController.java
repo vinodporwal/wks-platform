@@ -1,5 +1,6 @@
 package com.wks.caseengine.rest.cpp;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.cpp.service.FuelAvailabilityService;
 import com.wks.caseengine.dto.FuelAvailabilityDto;
@@ -108,6 +111,10 @@ public class FuelAvailabilityController {
         }
     }
     
+    // ============================================================
+    // EXPORT ENDPOINT
+    // ============================================================
+    
     @GetMapping("/fuel-availability/export/{cppId}/{financialYear}")
     @Operation(summary = "Export Fuel Availability", 
                description = "Export fuel availability data to Excel")
@@ -120,30 +127,50 @@ public class FuelAvailabilityController {
                 cppId, financialYear, fuelType);
         
         try {
-            List<FuelAvailabilityDto> data = fuelAvailabilityService.getFuelAvailability(cppId, financialYear, fuelType);
-            logger.debug("Retrieved {} records for export", data.size());
-            
-            byte[] excelFile = generateFuelAvailabilityExcel(data);
+            byte[] excelData = fuelAvailabilityService.exportFuelAvailability(cppId, financialYear, fuelType);
             logger.info("Successfully generated Excel file for CPPId: {}, FinancialYear: {}, Size: {} bytes", 
-                    cppId, financialYear, excelFile.length);
+                    cppId, financialYear, excelData.length);
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", "FuelAvailability_" + financialYear + ".xlsx");
             
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(excelFile);
-        } catch (Exception e) {
+            return new ResponseEntity<>(excelData, headers, HttpStatus.OK);
+        } catch (IOException e) {
             logger.error("Error exporting fuel availability data for CPPId: {}, FinancialYear: {}", 
                     cppId, financialYear, e);
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
-    private byte[] generateFuelAvailabilityExcel(List<FuelAvailabilityDto> data) {
-        logger.debug("Generating Excel file for {} fuel availability records", data.size());
-        // TODO: Implement Excel generation logic
-        return new byte[0];
+    // ============================================================
+    // IMPORT ENDPOINT
+    // ============================================================
+    
+    @PostMapping("/fuel-availability/import")
+    @Operation(summary = "Import Fuel Availability", 
+               description = "Import fuel availability data from Excel")
+    public ResponseEntity<AOPMessageVM> importFuelAvailability(@RequestParam("file") MultipartFile file) {
+        logger.info("Importing fuel availability data from file: {}, size: {} bytes", 
+                file.getOriginalFilename(), file.getSize());
+        
+        try {
+            fuelAvailabilityService.importFuelAvailability(file);
+            logger.info("Fuel availability import completed successfully");
+            
+            return ResponseEntity.ok(AOPMessageVM.builder()
+                    .code(0)
+                    .message("Fuel availability data imported successfully")
+                    .data(null)
+                    .build());
+        } catch (IOException e) {
+            logger.error("Error importing fuel availability data: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(AOPMessageVM.builder()
+                            .code(1)
+                            .message("Error importing fuel availability data: " + e.getMessage())
+                            .data(null)
+                            .build());
+        }
     }
 }
