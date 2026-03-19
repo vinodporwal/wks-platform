@@ -555,9 +555,9 @@ Verticals vertical = null;
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("TCS Unit Capacity");
 
-            // Parse financial year (e.g., "2025-26")
-            String startYearSuffix = year.substring(2, 4); // "25"
-            String endYearSuffix = year.substring(5, 7);   // "26"
+            //  Parse financial year (e.g., "2025-26")
+            // String startYearSuffix = year.substring(2, 4); // "25"
+            // String endYearSuffix = year.substring(5, 7);   // "26"
 
             // Create cell styles
             CellStyle headerStyle = createHeaderStyle(workbook);
