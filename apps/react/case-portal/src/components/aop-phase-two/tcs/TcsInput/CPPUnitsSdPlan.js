@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const CPPUnitsSdPlan = ({
   PLANT_ID,
@@ -53,6 +54,8 @@ const CPPUnitsSdPlan = ({
     ],
   })
 
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
+
   // Carry forward data from previous year
   const handleCarryForward = useCallback(async () => {
     try {
@@ -61,7 +64,7 @@ const CPPUnitsSdPlan = ({
       const carryForwardResponse =
         await TcsApiService.carryForwardCppUnitsSdPlan(
           keycloak,
-          AOP_YEAR,
+          apiYear,
           SITE_ID,
         )
 
@@ -96,7 +99,7 @@ const CPPUnitsSdPlan = ({
 
         const response = await TcsApiService.getCPPUnitsSdPlanData(
           keycloak,
-          AOP_YEAR,
+          apiYear,
           SITE_ID,
         )
 
@@ -326,7 +329,7 @@ const CPPUnitsSdPlan = ({
 
       const response = await TcsApiService.saveCPPUnitsSdPlanData(
         keycloak,
-        AOP_YEAR,
+        apiYear,
         SITE_ID,
         formattedData,
       )
@@ -403,7 +406,7 @@ const CPPUnitsSdPlan = ({
     })
 
     try {
-      await TcsApiService.exportCPPUnitsSdPlanExcel(keycloak, SITE_ID, AOP_YEAR)
+      await TcsApiService.exportCPPUnitsSdPlanExcel(keycloak, SITE_ID, apiYear)
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -427,7 +430,7 @@ const CPPUnitsSdPlan = ({
       const response = await TcsApiService.importCPPUnitsSdPlanExcel(
         keycloak,
         SITE_ID,
-        AOP_YEAR,
+        apiYear,
         file,
       )
 
