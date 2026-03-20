@@ -14,6 +14,9 @@ import lombok.NoArgsConstructor;
 public class TCSNetCapacityDTO {
   private String id;          
   private String particulates;
+  private Double jan;
+  private Double feb;
+  private Double mar;
   private Double apr;
   private Double may;
   private Double jun;
@@ -23,9 +26,7 @@ public class TCSNetCapacityDTO {
   private Double oct;
   private Double nov;
   private Double dec;
-  private Double jan;
-  private Double feb;
-  private Double mar;
+ 
   
   private String remark;
   private Date insertedDateTime;

@@ -82,7 +82,7 @@ public class PCGOutlookService {
 
     public void saveData(List<PCGOutlookDTO> data, String financialYear, UUID siteId) {
 
-        System.out.println("dto to save : " + data.size() +  " " + data);
+      
         int startYear = Integer.parseInt(financialYear.substring(0, 4));
         int endYear = startYear + 1;
 
@@ -115,36 +115,89 @@ public class PCGOutlookService {
                 }
             }
 
-             if(dto.getApr() != null) {  
+             if(dto.getJan() != null) {  
 
                     UUID fymId = financialMonthIds.get(4);
 
                     if(existingIds.contains(fymId)) {  
 
                         if ("GasifierAvailability".equals(dto.getProduct())) {
-                            gasifierAvailabilityupdates.add(new Object[]{ dto.getApr(), siteId, fymId });
+                            gasifierAvailabilityupdates.add(new Object[]{ dto.getJan(), siteId, fymId });
                         } else if ("SynGasProduction".equals(dto.getProduct())) {
-                            SynGasProductionupdates.add(new Object[]{ dto.getApr(), siteId, fymId });
+                            SynGasProductionupdates.add(new Object[]{ dto.getJan(), siteId, fymId });
                         }
                     }
                     else {
                         if ("GasifierAvailability".equals(dto.getProduct())) {
-                            gasifierAvailabilityInserts.add(new Object[]{ dto.getApr(), siteId, fymId });
+                            gasifierAvailabilityInserts.add(new Object[]{ dto.getJan(), siteId, fymId });
                         } else if ("SynGasProduction".equals(dto.getProduct())) {
-                            SynGasProductionInserts.add(new Object[]{ dto.getApr(), siteId, fymId });
+                            SynGasProductionInserts.add(new Object[]{ dto.getJan(), siteId, fymId });
                         }
                     }
                 }
 
-             if(dto.getMay() != null) {  
+             if(dto.getFeb() != null) {  
 
             UUID fymId = financialMonthIds.get(5);
 
             if(existingIds.contains(fymId)) {  
             if ("GasifierAvailability".equals(dto.getProduct())) {
+                    gasifierAvailabilityupdates.add(new Object[]{ dto.getFeb(), siteId, fymId });
+                } else if ("SynGasProduction".equals(dto.getProduct())) {
+                    SynGasProductionupdates.add(new Object[]{ dto.getFeb(), siteId, fymId });
+                }
+            }
+            else {
+                if ("GasifierAvailability".equals(dto.getProduct())) {
+                    gasifierAvailabilityInserts.add(new Object[]{ dto.getFeb(), siteId, fymId });
+                } else if ("SynGasProduction".equals(dto.getProduct())) {
+                    SynGasProductionInserts.add(new Object[]{ dto.getFeb(), siteId, fymId });
+                }
+            }
+        }
+        if(dto.getMar() != null) {  
+            UUID fymId = financialMonthIds.get(6);
+
+            if(existingIds.contains(fymId)) {  
+                if ("GasifierAvailability".equals(dto.getProduct())) {
+                    gasifierAvailabilityupdates.add(new Object[]{ dto.getMar(), siteId, fymId });
+                } else if ("SynGasProduction".equals(dto.getProduct())) {
+                    SynGasProductionupdates.add(new Object[]{ dto.getMar(), siteId, fymId });
+                }
+            }
+            else {
+                if ("GasifierAvailability".equals(dto.getProduct())) {
+                    gasifierAvailabilityInserts.add(new Object[]{ dto.getMar(), siteId, fymId });
+                } else if ("SynGasProduction".equals(dto.getProduct())) {
+                    SynGasProductionInserts.add(new Object[]{ dto.getMar(), siteId, fymId });
+                }
+            }
+        }
+        if(dto.getApr() != null) {  
+            UUID fymId = financialMonthIds.get(7);
+            if(existingIds.contains(fymId)) {  
+                if ("GasifierAvailability".equals(dto.getProduct())) {
+                    gasifierAvailabilityupdates.add(new Object[]{ dto.getApr(), siteId, fymId });
+                } else if ("SynGasProduction".equals(dto.getProduct())) {
+                    SynGasProductionupdates.add(new Object[]{ dto.getApr(), siteId, fymId });
+                }
+            }
+            else {
+                if ("GasifierAvailability".equals(dto.getProduct())) {
+                    gasifierAvailabilityInserts.add(new Object[]{ dto.getApr(), siteId, fymId });
+                } else if ("SynGasProduction".equals(dto.getProduct())) {
+                    SynGasProductionInserts.add(new Object[]{ dto.getApr(), siteId, fymId });
+                }
+            }
+        }
+
+        if(dto.getMay() != null) {  
+            UUID fymId = financialMonthIds.get(8);
+            if(existingIds.contains(fymId)) {  
+                if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityupdates.add(new Object[]{ dto.getMay(), siteId, fymId });
                 } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionupdates.add(new Object[]{ dto.getMay(), siteId, fymId });
+                    SynGasProductionupdates.add(new Object[]{ dto.getMay(), siteId, fymId });       
                 }
             }
             else {
@@ -155,9 +208,10 @@ public class PCGOutlookService {
                 }
             }
         }
-        if(dto.getJun() != null) {  
-            UUID fymId = financialMonthIds.get(6);
 
+
+        if(dto.getJun() != null) {  
+            UUID fymId = financialMonthIds.get(9);
             if(existingIds.contains(fymId)) {  
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityupdates.add(new Object[]{ dto.getJun(), siteId, fymId });
@@ -165,6 +219,7 @@ public class PCGOutlookService {
                     SynGasProductionupdates.add(new Object[]{ dto.getJun(), siteId, fymId });
                 }
             }
+
             else {
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityInserts.add(new Object[]{ dto.getJun(), siteId, fymId });
@@ -173,8 +228,9 @@ public class PCGOutlookService {
                 }
             }
         }
+
         if(dto.getJul() != null) {  
-            UUID fymId = financialMonthIds.get(7);
+            UUID fymId = financialMonthIds.get(10);
             if(existingIds.contains(fymId)) {  
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityupdates.add(new Object[]{ dto.getJul(), siteId, fymId });
@@ -184,15 +240,15 @@ public class PCGOutlookService {
             }
             else {
                 if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityInserts.add(new Object[]{ dto.getOct(), siteId, fymId });
+                        gasifierAvailabilityInserts.add(new Object[]{ dto.getJul(), siteId, fymId });
                 } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionInserts.add(new Object[]{ dto.getOct(), siteId, fymId });
+                    SynGasProductionInserts.add(new Object[]{ dto.getJul(), siteId, fymId });
                 }
             }
         }
 
         if(dto.getAug() != null) {  
-            UUID fymId = financialMonthIds.get(8);
+            UUID fymId = financialMonthIds.get(11);
             if(existingIds.contains(fymId)) {  
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityupdates.add(new Object[]{ dto.getAug(), siteId, fymId });
@@ -208,10 +264,8 @@ public class PCGOutlookService {
                 }
             }
         }
-
-
         if(dto.getSep() != null) {  
-            UUID fymId = financialMonthIds.get(9);
+            UUID fymId = financialMonthIds.get(12);
             if(existingIds.contains(fymId)) {  
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityupdates.add(new Object[]{ dto.getSep(), siteId, fymId });
@@ -219,7 +273,6 @@ public class PCGOutlookService {
                     SynGasProductionupdates.add(new Object[]{ dto.getSep(), siteId, fymId });
                 }
             }
-
             else {
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityInserts.add(new Object[]{ dto.getSep(), siteId, fymId });
@@ -228,9 +281,8 @@ public class PCGOutlookService {
                 }
             }
         }
-
         if(dto.getOct() != null) {  
-            UUID fymId = financialMonthIds.get(10);
+            UUID fymId = financialMonthIds.get(1);
             if(existingIds.contains(fymId)) {  
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityupdates.add(new Object[]{ dto.getOct(), siteId, fymId });
@@ -246,9 +298,8 @@ public class PCGOutlookService {
                 }
             }
         }
-
         if(dto.getNov() != null) {  
-            UUID fymId = financialMonthIds.get(11);
+            UUID fymId = financialMonthIds.get(2);
             if(existingIds.contains(fymId)) {  
                 if ("GasifierAvailability".equals(dto.getProduct())) {
                     gasifierAvailabilityupdates.add(new Object[]{ dto.getNov(), siteId, fymId });
@@ -265,10 +316,10 @@ public class PCGOutlookService {
             }
         }
         if(dto.getDec() != null) {  
-            UUID fymId = financialMonthIds.get(12);
+            UUID fymId = financialMonthIds.get(3);
             if(existingIds.contains(fymId)) {  
                 if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityupdates.add(new Object[]{ dto.getDec(), siteId, fymId });
+                        gasifierAvailabilityupdates.add(new Object[]{ dto.getDec(), siteId, fymId });
                 } else if ("SynGasProduction".equals(dto.getProduct())) {
                     SynGasProductionupdates.add(new Object[]{ dto.getDec(), siteId, fymId });
                 }
@@ -278,57 +329,6 @@ public class PCGOutlookService {
                     gasifierAvailabilityInserts.add(new Object[]{ dto.getDec(), siteId, fymId });
                 } else if ("SynGasProduction".equals(dto.getProduct())) {
                     SynGasProductionInserts.add(new Object[]{ dto.getDec(), siteId, fymId });
-                }
-            }
-        }
-        if(dto.getJan() != null) {  
-            UUID fymId = financialMonthIds.get(1);
-            if(existingIds.contains(fymId)) {  
-                if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityupdates.add(new Object[]{ dto.getJan(), siteId, fymId });
-                } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionupdates.add(new Object[]{ dto.getJan(), siteId, fymId });
-                }
-            }
-            else {
-                if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityInserts.add(new Object[]{ dto.getJan(), siteId, fymId });
-                } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionInserts.add(new Object[]{ dto.getJan(), siteId, fymId });
-                }
-            }
-        }
-        if(dto.getFeb() != null) {  
-            UUID fymId = financialMonthIds.get(2);
-            if(existingIds.contains(fymId)) {  
-                if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityupdates.add(new Object[]{ dto.getFeb(), siteId, fymId });
-                } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionupdates.add(new Object[]{ dto.getFeb(), siteId, fymId });
-                }
-            }
-            else {
-                if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityInserts.add(new Object[]{ dto.getFeb(), siteId, fymId });
-                } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionInserts.add(new Object[]{ dto.getFeb(), siteId, fymId });
-                }
-            }
-        }
-        if(dto.getMar() != null) {  
-            UUID fymId = financialMonthIds.get(3);
-            if(existingIds.contains(fymId)) {  
-                if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityupdates.add(new Object[]{ dto.getMar(), siteId, fymId });
-                } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionupdates.add(new Object[]{ dto.getMar(), siteId, fymId });
-                }
-            }
-            else {
-                if ("GasifierAvailability".equals(dto.getProduct())) {
-                    gasifierAvailabilityInserts.add(new Object[]{ dto.getMar(), siteId, fymId });
-                } else if ("SynGasProduction".equals(dto.getProduct())) {
-                    SynGasProductionInserts.add(new Object[]{ dto.getMar(), siteId, fymId });
                 }
             }
         }
@@ -391,7 +391,7 @@ public class PCGOutlookService {
 
             // Header row with specified sequence: Product, Apr-25, May-25, ..., Mar-26, Remark
             Row headerRow = sheet.createRow(currentRow++);
-            String[] monthNames = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+            String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
             List<String> headers = new ArrayList<>();
             headers.add("Product");
             
@@ -420,9 +420,8 @@ public class PCGOutlookService {
 
                 // Month columns
                 Double[] monthValues = {
-                    dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), 
-                    dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
+                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
                 };
 
                 for (Double value : monthValues) {
@@ -564,6 +563,9 @@ public class PCGOutlookService {
                     dto.setProduct(getStringCellValue(row.getCell(col++)));
                     
                     // Month columns (Apr to Mar)
+                    dto.setJan(getDoubleCellValue(row.getCell(col++)));
+                    dto.setFeb(getDoubleCellValue(row.getCell(col++)));
+                    dto.setMar(getDoubleCellValue(row.getCell(col++)));
                     dto.setApr(getDoubleCellValue(row.getCell(col++)));
                     dto.setMay(getDoubleCellValue(row.getCell(col++)));
                     dto.setJun(getDoubleCellValue(row.getCell(col++)));
@@ -573,9 +575,6 @@ public class PCGOutlookService {
                     dto.setOct(getDoubleCellValue(row.getCell(col++)));
                     dto.setNov(getDoubleCellValue(row.getCell(col++)));
                     dto.setDec(getDoubleCellValue(row.getCell(col++)));
-                    dto.setJan(getDoubleCellValue(row.getCell(col++)));
-                    dto.setFeb(getDoubleCellValue(row.getCell(col++)));
-                    dto.setMar(getDoubleCellValue(row.getCell(col++)));
                     
                     // Remark
                     dto.setRemarks(getStringCellValue(row.getCell(col++)));
@@ -643,7 +642,7 @@ public class PCGOutlookService {
 
             // Header row with status columns
             Row headerRow = sheet.createRow(currentRow++);
-            String[] monthNames = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+            String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
             List<String> headers = new ArrayList<>();
             headers.add("Product");
             
@@ -671,9 +670,8 @@ public class PCGOutlookService {
                 productCell.setCellStyle(dataStyle);
 
                 Double[] monthValues = {
-                    dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), 
-                    dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
+                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
                 };
 
                 for (Double value : monthValues) {
