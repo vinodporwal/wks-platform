@@ -53,7 +53,7 @@ const TurnaroundReport = () => {
 
   const [loading, setLoading] = useState(false)
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -69,7 +69,9 @@ const TurnaroundReport = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const columns = [
     {

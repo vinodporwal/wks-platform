@@ -54,7 +54,9 @@ const ExclusionDate = ({
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const IS_OLD_YEAR = false
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const colDefs = ExclusionDateColumns
 
   const handleRemarkCellClick = (row) => {

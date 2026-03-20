@@ -113,8 +113,10 @@ const ElastomerShutDown = ({ permissions }) => {
     'Shutdown History Config',
     ...(IS_ELASTOMER_HMD_PBR3 ? ['Finishing Shutdown Config'] : []),
   ]
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const headerMap = generateHeaderNames(AOP_YEAR)
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const handleRemarkCellClick1 = (row) => {

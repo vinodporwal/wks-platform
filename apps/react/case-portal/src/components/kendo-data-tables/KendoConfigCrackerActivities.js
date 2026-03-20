@@ -32,7 +32,6 @@ import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const tabs = ['IBR Plan']
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -53,7 +52,9 @@ const DecokingConfig = () => {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_NAME = plantObject?.name?.toUpperCase()
   const SITE_NAME = siteObject?.name?.toUpperCase()

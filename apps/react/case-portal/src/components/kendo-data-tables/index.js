@@ -206,7 +206,6 @@ const KendoDataTables = ({
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const { verticalChange, oldYear, year, plantObject, siteObject } =
     dataGridStore
@@ -214,7 +213,9 @@ const KendoDataTables = ({
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID = plantObject?.id
   const SiteName = siteObject?.name
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -1071,7 +1072,7 @@ const KendoDataTables = ({
         </tr>
       )
     },
-    [IS_OLD_YEAR],
+    [IS_OLD_YEAR, READ_ONLY],
   )
 
   const resetAllEdits = () => {

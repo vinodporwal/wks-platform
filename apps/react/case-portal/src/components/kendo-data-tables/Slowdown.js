@@ -97,8 +97,10 @@ const SlowDown = ({ permissions }) => {
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
   const [allLines, setAllLines] = useState([])
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'

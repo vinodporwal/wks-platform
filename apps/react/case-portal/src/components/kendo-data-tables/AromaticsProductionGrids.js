@@ -42,7 +42,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const [calculationObject, setCalculationObject] = useState([])
 
@@ -62,7 +61,9 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const isOldYear = false
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_ID = plantObject?.id
   const VERTICAL_ID = verticalObject?.id

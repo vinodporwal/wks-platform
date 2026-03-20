@@ -54,7 +54,9 @@ const LineConfiguration = ({
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
   const IS_OLD_YEAR = false
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   let FORMATE_VALUE = '{0:0.000}'
 
@@ -152,7 +154,7 @@ const LineConfiguration = ({
         return {
           ...converted,
           id: index,
-          TypeDisplayName: item?.TypeDisplayName || 'Recipe',
+          TypeDisplayName: item?.TypeDisplayName || 'Line',
         }
       })
 
@@ -177,38 +179,6 @@ const LineConfiguration = ({
     revision,
     loadBtnClicked,
   ])
-
-  const deleteRowData = async (paramsForDelete) => {
-    setLoading(true)
-    try {
-      const { idFromApi, id } = paramsForDelete
-      const deleteIdLocal = id
-      if (!idFromApi) {
-        setRows((prevRows) =>
-          prevRows.filter((row) => row.id !== deleteIdLocal),
-        )
-      } else {
-        await ExclusionDateApiDataService.deleteExclusionDate(
-          idFromApi,
-          keycloak,
-        )
-        setRows((prevRows) =>
-          prevRows.filter((row) => row.id !== deleteIdLocal),
-        )
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Record Deleted successfully!',
-          severity: 'success',
-        })
-        // refresh list
-        await fetchData()
-      }
-    } catch (error) {
-      console.error('Error deleting Record', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const downloadExcelForConfiguration = async () => {
     try {

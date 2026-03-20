@@ -113,8 +113,10 @@ const ShutdownNorms = () => {
     'Warning : Adding shutdown consumption to all grades will replace any existing individual grade consumption entries.'
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const saveChanges = React.useCallback(async () => {
     try {

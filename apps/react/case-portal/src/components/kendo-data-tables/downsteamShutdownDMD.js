@@ -11,7 +11,6 @@ import { validateFields } from 'utils/validationUtils'
 import KendoDataTables from './index'
 const DownsteamShutdownDMD = ({ viewOnly }) => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -41,7 +40,9 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
 
   const IS_OLD_YEAR = oldYear?.oldYear
   const isOldYear = false
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const dataConfig = useMemo(
     () => ({

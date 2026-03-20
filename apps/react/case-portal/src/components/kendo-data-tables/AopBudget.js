@@ -23,8 +23,6 @@ import { getRoleName } from 'services/role-service'
 export default function AopBudget() {
   const keycloak = useSession()
 
-  // const READ_ONLY = getRoleName(keycloak)
-
   const [row, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [textAreaRedDesign, setTextAreaRedDesign] = useState(false)
@@ -66,7 +64,9 @@ export default function AopBudget() {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()

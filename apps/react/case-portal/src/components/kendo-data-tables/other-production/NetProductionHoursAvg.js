@@ -34,7 +34,9 @@ const NetProductionHoursAvg = () => {
   const VERTICAL_NAME_NO_CASE = 'PP'
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const SCREEN_NAME = screenTitle?.title
   const lowerVertName = 'pp'
