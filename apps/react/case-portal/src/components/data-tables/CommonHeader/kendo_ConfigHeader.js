@@ -129,13 +129,13 @@ const getEnhancedAOPColDefs = ({
         field: 'GradeName',
         title: 'Grade',
         editable: false,
-        width1: 200,
+        widthT: 150,
       },
       {
         field: 'UOM',
         title: 'UOM',
         editable: false,
-        width1: 85,
+        widthT: 85,
       },
     ]
     allGradesRecipes?.forEach((line) => {
@@ -143,7 +143,7 @@ const getEnhancedAOPColDefs = ({
         field: line?.Id?.toUpperCase(), // use Id from API
         title: line?.DisplayName, // use DisplayName
         editable: true,
-        width1: 200,
+        widthT: 150,
         type: 'number',
         format: FORMATE_VALUE,
       })

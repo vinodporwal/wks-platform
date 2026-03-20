@@ -19,6 +19,7 @@ const initialState = {
   siteObject: null,
   verticalObject: null,
   verticalChangeFromDashboard: null,
+  isReleased: 0,
 }
 
 const dataGridStore = createSlice({
@@ -77,6 +78,10 @@ const dataGridStore = createSlice({
     setVerticalChangeFromDashboard(state, action) {
       state.verticalChangeFromDashboard = action.payload
     },
+
+    setIsReleased: (state, action) => {
+      state.isReleased = action.payload.isReleased
+    },
   },
 })
 
@@ -97,4 +102,5 @@ export const {
   setSiteObject,
   setVerticalObject,
   setVerticalChangeFromDashboard,
+  setIsReleased,
 } = dataGridStore.actions

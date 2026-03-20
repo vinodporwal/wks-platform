@@ -31,5 +31,6 @@ public interface AOPMCCalculatedDataService {
 	public byte[] createExcel(String year, String plantFKId, boolean isAfterSave,List<AOPMCCalculatedDataDTO> dtoList);
 	public AOPMessageVM importExcel(String year, String plantId, MultipartFile file);
 	public AOPMessageVM importExcelPE(String year, String plantFKId, MultipartFile file);
+	public AOPMessageVM importLineWiseExcel(String year, String plantFKId, MultipartFile file);
 
 }

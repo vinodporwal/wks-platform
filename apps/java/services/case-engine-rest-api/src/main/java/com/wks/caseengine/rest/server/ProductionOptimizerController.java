@@ -32,5 +32,15 @@ public class ProductionOptimizerController {
 	public AOPMessageVM calculateProductionOptimizer(@RequestParam String plantId, @RequestParam String aopYear) {
 		return productionOptimizerService.calculateProductionOptimizer(plantId, aopYear);
 	}
+
+	@GetMapping(value = "/combined-production-optimizer-dropdown")
+	public AOPMessageVM getCombinedProductionOptimizerDropdown(@RequestParam String plantId) {
+		return productionOptimizerService.getCombinedProductionOptimizerDropdown(plantId);
+	}
+
+	@GetMapping(value = "/production-optimizer-dropdown")
+	public AOPMessageVM getProductionOptimizerDropdown(@RequestParam String plantId) {
+		return productionOptimizerService.getProductionOptimizerDropdown(plantId);
+	}
 }
 

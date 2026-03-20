@@ -43,7 +43,6 @@ import PtaConfiguration from './tab-components/PtaConfiguration'
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const fetchDataTokenRef = useRef(0)
   const fetchConstantsTokenRef = useRef(0)
@@ -68,7 +67,9 @@ const ConfigurationTable = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
