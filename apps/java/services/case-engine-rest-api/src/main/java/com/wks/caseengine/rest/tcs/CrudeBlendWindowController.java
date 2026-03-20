@@ -66,10 +66,6 @@ public class CrudeBlendWindowController {
             throw new RestInvalidArgumentException("Invalid request parameters", null);
         }
 
-        if(financialYear == null || financialYear.length() != 4) {
-            throw new IllegalArgumentException("Financial year must be 4 digits");
-        }
-
         crudeBlendWindowService.deleteCrudeBlendWindowData(UUID.fromString(id), table);
         return ResponseEntity.ok("Data deleted successfully");
     }
