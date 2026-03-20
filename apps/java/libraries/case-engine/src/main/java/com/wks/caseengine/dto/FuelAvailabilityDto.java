@@ -1,6 +1,5 @@
 package com.wks.caseengine.dto;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -31,8 +30,4 @@ public class FuelAvailabilityDto {
     private Double mar;
     private String financialYear;
     private String remarks;
-    private LocalDateTime createdDate;
-    private LocalDateTime updatedDate;
-    private String createdBy;
-    private String updatedBy;
 }

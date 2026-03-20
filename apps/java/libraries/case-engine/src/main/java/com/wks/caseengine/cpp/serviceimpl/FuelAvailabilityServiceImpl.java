@@ -208,18 +208,19 @@ public class FuelAvailabilityServiceImpl implements FuelAvailabilityService {
         
         int rowNum = 0;
         
-        // Create header row - excluding audit fields (CreatedDate, UpdatedDate, CreatedBy, UpdatedBy) and Id
+        // Create header row - excluding audit fields (CreatedDate, UpdatedDate, CreatedBy, UpdatedBy)
         Row headerRow = sheet.createRow(rowNum++);
         String[] headers = {"Fuel Name", "Fuel Category", "UOM", "Apr", "May", "Jun", "Jul", "Aug", "Sep", 
-                           "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Financial Year", "Remarks", "Id"};
+                           "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Financial Year", "Remarks", "CPPId", "Id"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
             cell.setCellStyle(headerStyle);
         }
         
-        // Hide ID column (index 17)
+        // Hide CPPId column (index 17) and ID column (index 18)
         sheet.setColumnHidden(17, true);
+        sheet.setColumnHidden(18, true);
         
         // Create data rows
         for (FuelAvailabilityDto dto : data) {
@@ -295,6 +296,12 @@ public class FuelAvailabilityServiceImpl implements FuelAvailabilityService {
             cell.setCellValue(dto.getRemarks() != null ? dto.getRemarks() : "");
             cell.setCellStyle(remarksStyle);
             
+            // Hidden CPPId column
+            cell = row.createCell(colNum++);
+            cell.setCellValue(dto.getCppId() != null ? dto.getCppId().toString() : "");
+            cell.setCellStyle(dataStyle);
+            
+            // Hidden Id column
             cell = row.createCell(colNum++);
             cell.setCellValue(dto.getId() != null ? dto.getId().toString() : "");
             cell.setCellStyle(dataStyle);
@@ -342,13 +349,7 @@ public class FuelAvailabilityServiceImpl implements FuelAvailabilityService {
                 
                 FuelAvailabilityDto dto = new FuelAvailabilityDto();
                 
-                // Column order: Fuel Name, Fuel Category, UOM, Apr-Mar (12 months), Financial Year, Remarks, Id (hidden)
-                
-                // Read ID from hidden column (index 17)
-                String idStr = getCellValueAsString(row, 17);
-                if (idStr != null && !idStr.isEmpty()) {
-                    dto.setId(UUID.fromString(idStr));
-                }
+                // Column order: Fuel Name, Fuel Category, UOM, Apr-Mar (12 months), Financial Year, Remarks, CPPId (hidden), Id (hidden)
                 
                 dto.setFuelName(getCellValueAsString(row, 0));
                 dto.setFuelCategory(getCellValueAsString(row, 1));
@@ -370,6 +371,18 @@ public class FuelAvailabilityServiceImpl implements FuelAvailabilityService {
                 
                 dto.setFinancialYear(getCellValueAsString(row, 15));
                 dto.setRemarks(getCellValueAsString(row, 16));
+                
+                // Read CPPId from hidden column (index 17)
+                String cppIdStr = getCellValueAsString(row, 17);
+                if (cppIdStr != null && !cppIdStr.isEmpty()) {
+                    dto.setCppId(UUID.fromString(cppIdStr));
+                }
+                
+                // Read ID from hidden column (index 18)
+                String idStr = getCellValueAsString(row, 18);
+                if (idStr != null && !idStr.isEmpty()) {
+                    dto.setId(UUID.fromString(idStr));
+                }
                 
                 dtos.add(dto);
             }
