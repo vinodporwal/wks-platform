@@ -224,9 +224,25 @@ const JCBFuel = () => {
 
       console.log('Fuel Availability data:', res)
       const formattedData = res?.map((item, index) => ({
-        ...item,
-        remarks: item.remarks || '',
         id: item?.id || index + 1,
+        fuel: item.fuelName,
+        fuelCategory: item.fuelCategory,
+        uom: item.uom,
+        apr: item.apr,
+        may: item.may,
+        jun: item.jun,
+        jul: item.jul,
+        aug: item.aug,
+        sep: item.sep,
+        oct: item.oct,
+        nov: item.nov,
+        dec: item.dec,
+        jan: item.jan,
+        feb: item.feb,
+        mar: item.mar,
+        remarks: item.remarks || '',
+        cppId: item.cppId,
+        financialYear: item.financialYear,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -310,7 +326,29 @@ const JCBFuel = () => {
       return
     }
 
-    const payload = modifiedData
+    // Map UI fields back to API format
+    const payload = modifiedData.map((item) => ({
+      id: item.id,
+      cppId: item.cppId || PLANT_ID,
+      fuelName: item.fuel,
+      fuelCategory: item.fuelCategory,
+      uom: item.uom,
+      apr: item.apr,
+      may: item.may,
+      jun: item.jun,
+      jul: item.jul,
+      aug: item.aug,
+      sep: item.sep,
+      oct: item.oct,
+      nov: item.nov,
+      dec: item.dec,
+      jan: item.jan,
+      feb: item.feb,
+      mar: item.mar,
+      financialYear: item.financialYear || AOP_YEAR,
+      remarks: item.remarks || '',
+    }))
+
     try {
       console.log('Saving fuel availability data:', payload)
 
@@ -349,13 +387,14 @@ const JCBFuel = () => {
         keycloak,
       )
 
-      if (response?.code === 200) {
+      // Success case - code 0 means success
+      if (response?.code === 0) {
+        await fetchFuelAvailabilityData()
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchFuelAvailabilityData()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
