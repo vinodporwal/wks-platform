@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOutputApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const CrudBlendWindowGrid = ({
   tableKey,
@@ -28,6 +29,8 @@ const CrudBlendWindowGrid = ({
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
+
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
 
   // Process table data when it's provided
   useEffect(() => {
@@ -126,7 +129,7 @@ const CrudBlendWindowGrid = ({
       await TcsOutputApiService.exportCrudBlendWindowExcel(
         keycloak,
         SITE_ID,
-        AOP_YEAR,
+        apiYear,
         tableKey,
       )
 
