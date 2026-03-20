@@ -123,6 +123,7 @@ import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-producti
 import OtherProduction from 'components/kendo-data-tables/other-production/index'
 import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
 import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
+import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
 
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
