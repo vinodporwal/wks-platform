@@ -588,12 +588,12 @@ const WorkFlowMerge = () => {
   // Define tab sets
   const defaultTabs = [
     'Annual AOP Cost',
-    'Plant Production Summary',
-    'Month Wise Production Plan',
-    'Month Wise Raw Data',
-    'Turnaround Report',
-    'Annual Production Plan',
-    'Plant Contribution',
+    'Plant Production Summary (T-14)',
+    'Month Wise Production Plan (T-16)',
+    'Month Wise Raw Data (T-18)',
+    'Turnaround Report (T-19A)',
+    'Annual Production Plan (T-15)',
+    'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
   ]
   const customPETTabs = [
@@ -605,7 +605,7 @@ const WorkFlowMerge = () => {
     'Annual Production Plan (T-15)',
     'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
-    'Specific Consumption Norms',
+    'Specific Consumption Norms (T-17)',
   ]
   const customPPTabs = [
     'Annual AOP Cost',
@@ -633,31 +633,31 @@ const WorkFlowMerge = () => {
   ]
   const PPTabs = [
     'Annual AOP Cost',
-    'Plant Production Summary',
-    'Month Wise Production Plan',
-    'Month Wise Raw Data',
-    'Turnaround Report',
-    'Annual Production Plan',
-    'Plant Contribution',
-    'Plant Contribution Summary',
+    'Plant Production Summary (T-14)',
+    'Month Wise Production Plan (T-16)',
+    'Month Wise Raw Data (T-18)',
+    'Turnaround Report (T-19A)',
+    'Annual Production Plan (T-15)',
+    'Plant Contribution (T-21)',
+    'Plant Contribution Summary (T-22)',
   ]
   const crackerTabs = [
     'Optimizer Input / Output',
-    'Month Wise Production Plan',
+    'Month Wise Production Plan (T-16)',
     'Month Wise Norms',
     'Furnace Data',
-    'Turnaround',
+    'Turnaround (T-19A)',
     'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
   ]
   const elastomerTabs = [
     'Annual AOP Cost',
-    'Plant Production Summary',
-    'Month Wise Production Plan',
-    'Month Wise Consumption',
-    'Turnaround Report',
-    'Annual Production Plan',
-    'Plant Contribution',
+    'Plant Production Summary (T-14)',
+    'Month Wise Production Plan (T-16)',
+    'Month Wise Consumption (T-18)',
+    'Turnaround Report (T-19A)',
+    'Annual Production Plan (T-15)',
+    'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
   ]
   const ptaTabs = [
@@ -672,12 +672,12 @@ const WorkFlowMerge = () => {
   ]
   const vcmTabs = [
     'Annual AOP Cost',
-    'Plant Production Summary',
-    'Month Wise Production Plan',
-    'Month Wise Raw Data', // Changed for VCM
-    'Turnaround Report',
-    'Annual Production Plan',
-    'Plant Contribution',
+    'Plant Production Summary (T-14)',
+    'Month Wise Production Plan (T-16)',
+    'Month Wise Raw Data (T-18)', // Changed for VCM
+    'Turnaround Report (T-19A)',
+    'Annual Production Plan (T-15)',
+    'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
   ]
 

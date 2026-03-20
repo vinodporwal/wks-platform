@@ -303,6 +303,14 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
+          {
+            path: 'production-optimizer',
+            element: (
+              <PrivateRoute routeId='production-optimizer'>
+                <ProductionOptimizer />
+              </PrivateRoute>
+            ),
+          },
 
           {
             path: 'aop-design-basis',

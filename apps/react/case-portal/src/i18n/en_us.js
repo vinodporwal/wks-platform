@@ -119,6 +119,7 @@ const defs = {
     qualityPackagingBasis: 'Quality & Packaging Basis',
     // New Data Sets
     sapBasedRefNorms: 'SAP Based Reference Norms',
+    productionOptimizer: 'Production Optimizer',
   },
   pages: {
     dashboard: {
@@ -324,6 +325,7 @@ const defs = {
         propyleneBalance: 'Propylene Balance',
         sapBasedRefNorms: 'SAP Based Reference Norms',
         specificConsumptionC3: 'Feed Availability',
+        productionOptimizer: 'Production Optimizer'
       },
     },
   },

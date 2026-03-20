@@ -63,18 +63,15 @@ const SpecificConsumptionCalculation = () => {
       )
       if (response?.data) {
         const dataSet = response.data?.data || []
-        const cols = (response.data?.columns || []).map((col) => ({
-          ...col,
-          format: col.type === 'number' ? '{0:0.000}' : col.format,
-        }))
+        const cols = (response.data?.columns || [])
+          .filter((col) => col.field?.toLowerCase() !== 'id')
+          .map((col) => ({
+            ...col,
+            format: col.type === 'number' ? '{0:0.000}' : col.format,
+          }))
 
         const data = dataSet.map((item, index) => {
           const isKiloTon = selectedUnit === 'KT'
-
-          const skipConversion =
-            item.Name === 'Effective OPH Line 1' ||
-            item.Name === 'Effective OPH Line 2'
-
           const transformedItem = {
             ...item,
             idFromApi: item.id,
@@ -87,9 +84,10 @@ const SpecificConsumptionCalculation = () => {
           cols.forEach((col) => {
             if (col.type === 'number' && col.field !== 'Name') {
               const val = item[col.field]
-
               transformedItem[col.field] =
-                !skipConversion && isKiloTon && val ? val / 1000 : val
+                isKiloTon && val && index !== 0 && index !== 2
+                  ? val / 1000
+                  : val
             }
           })
 
@@ -178,12 +176,14 @@ const SpecificConsumptionCalculation = () => {
       )
       if (response?.data) {
         const dataSet = response.data?.data || []
-        const cols = (response.data?.columns || []).map((col) => ({
-          ...col,
-          format: col.type === 'number' ? '{0:0.000}' : col.format,
-          editable: false,
-          widthT: col.field === 'Value' ? 350 : 250,
-        }))
+        const cols = (response.data?.columns || [])
+          .filter((col) => col.field?.toLowerCase() !== 'id')
+          .map((col) => ({
+            ...col,
+            format: col.type === 'number' ? '{0:0.000}' : col.format,
+            editable: false,
+            widthT: col.field === 'Value' ? 350 : 250,
+          }))
 
         const data = dataSet.map((item, index) => {
           const transformedItem = {
