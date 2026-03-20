@@ -9,7 +9,11 @@ import {
   convertToKBPSD,
 } from './UnitCapacityComponents/uomConversionUtils'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import {
+  extractYear,
+  generateCalendarYearHeaders,
+  generateHeaderNames,
+} from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const NetUnitCapacity = ({
   title,
@@ -22,7 +26,8 @@ const NetUnitCapacity = ({
 }) => {
   const keycloak = useSession()
   const valueFormat = ValueFormatterPhaseTwo()
-  const headerMap = generateHeaderNames(AOP_YEAR)
+  // const headerMap = generateHeaderNames(AOP_YEAR)
+  const headerMap = generateCalendarYearHeaders(AOP_YEAR)
 
   // State management for this capacity type only
   const [loading, setLoading] = useState(false)
@@ -34,6 +39,7 @@ const NetUnitCapacity = ({
   const [currentRowId, setCurrentRowId] = useState(null)
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
 
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
   // Fetch Unit Capacity data for this capacity type
   const fetchNetCapacityData = useCallback(async () => {
     if (!AOP_YEAR) return
@@ -43,7 +49,7 @@ const NetUnitCapacity = ({
       const response = await TcsApiService.getTcsNetCapacityData(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
         'currentOperating',
       )
 
@@ -54,6 +60,9 @@ const NetUnitCapacity = ({
           .map((item, index) => {
             // Backend data is in KBPSD, create nested structure for each month with both KBPSD and KTPD
             const months = [
+              'jan',
+              'feb',
+              'mar',
               'apr',
               'may',
               'jun',
@@ -63,9 +72,6 @@ const NetUnitCapacity = ({
               'oct',
               'nov',
               'dec',
-              'jan',
-              'feb',
-              'mar',
             ]
             const monthData = {}
 
@@ -136,6 +142,9 @@ const NetUnitCapacity = ({
 
     // Add monthly columns with KBPSD and KTPD sub-columns
     const months = [
+      'jan',
+      'feb',
+      'mar',
       'apr',
       'may',
       'jun',
@@ -201,6 +210,9 @@ const NetUnitCapacity = ({
 
     // Group monthly columns with KBPSD and KTPD sub-columns
     const months = [
+      { key: 'jan', headerKey: 1 },
+      { key: 'feb', headerKey: 2 },
+      { key: 'mar', headerKey: 3 },
       { key: 'apr', headerKey: 4 },
       { key: 'may', headerKey: 5 },
       { key: 'jun', headerKey: 6 },
@@ -210,9 +222,6 @@ const NetUnitCapacity = ({
       { key: 'oct', headerKey: 10 },
       { key: 'nov', headerKey: 11 },
       { key: 'dec', headerKey: 12 },
-      { key: 'jan', headerKey: 1 },
-      { key: 'feb', headerKey: 2 },
-      { key: 'mar', headerKey: 3 },
     ]
 
     const otherCols = cols.filter(
@@ -271,7 +280,7 @@ const NetUnitCapacity = ({
     remarksEditable: false,
     showCalculate: false,
     downloadExcelBtnFromUI: true,
-    ExcelName: `Net_Unit_Capacity_${AOP_YEAR}`,
+    ExcelName: `Net_Unit_Capacity_${apiYear}`,
     showImport: false,
     saveBtnForRemark: false,
     saveBtn: false,
