@@ -39,6 +39,7 @@ import {
   NumberWithCheckboxCellEditor,
   NumberWithCheckboxDisplayCell,
 } from '../utilities/NumberWithCheckboxCellEditor'
+import dataGridStore from 'store/reducers/dataGridStore'
 
 // Helper function to extract flat row sequence from grouped data
 const extractFlatRowsFromGrouped = (data) => {
@@ -149,7 +150,12 @@ const NestedKendoTable = ({
   const [gridCurrent, setGridCurrent] = useState(0)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+
+  const { isReleased, oldYear } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field }))
     : groupBy
@@ -967,7 +973,7 @@ const NestedKendoTable = ({
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               edit: hasMinMaxConstraints
@@ -1005,8 +1011,8 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={true} // Always editable, ignore row-level isEditable
-            className='k-number-right'
+            editable={!READ_ONLY} // Always editable, ignore row-level isEditable
+            className={`${READ_ONLY ? 'non-editable-cell' : 'k-number-right'}`}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               edit: {
@@ -1014,7 +1020,7 @@ const NestedKendoTable = ({
                   <NumberWithCheckboxCellEditor
                     {...cellProps}
                     isNumberEditable={col.isNumberEditable}
-                    alwaysEditable={col.alwaysEditable}
+                    alwaysEditable={col.alwaysEditable && !READ_ONLY}
                   />
                 ),
               },
@@ -1023,7 +1029,7 @@ const NestedKendoTable = ({
                   {...props}
                   customModifiedCells={customModifiedCells}
                   format={col.format}
-                  alwaysEditable={col.alwaysEditable}
+                  alwaysEditable={col.alwaysEditable && !READ_ONLY}
                 />
               ),
               headerCell: SimpleHeaderWithTooltip,
@@ -1043,7 +1049,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1094,8 +1100,8 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
-            className={!col?.editable ? 'k-right-disabled' : undefined}
+            editable={isEditable}
+            className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               data: toolTipRenderer,
@@ -1109,6 +1115,9 @@ const NestedKendoTable = ({
       }
       // Textarea type handler (for dialog-based editing)
       if (col.type === 'textarea') {
+        const isTextareaEditable =
+          col.alwaysEditable && !READ_ONLY ? true : isEditable
+
         return (
           <GridColumn
             key={col.field}
@@ -1120,19 +1129,14 @@ const NestedKendoTable = ({
                 <RemarkCell
                   {...cellProps}
                   onRemarkClick={
-                    col.alwaysEditable || isEditable
-                      ? handleRemarkCellClick
-                      : () => {}
+                    isTextareaEditable ? handleRemarkCellClick : () => {}
                   }
-                  alwaysEditable={col.alwaysEditable}
+                  alwaysEditable={col.alwaysEditable && !READ_ONLY}
                 />
               ),
             }}
-            className={
-              !isEditable && !col.alwaysEditable
-                ? 'non-editable-cell'
-                : undefined
-            }
+            className={!isTextareaEditable ? 'non-editable-cell' : undefined}
+            editable={isTextareaEditable}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
           />
@@ -1145,7 +1149,7 @@ const NestedKendoTable = ({
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
-          editable={col.editable || false}
+          editable={isEditable}
           format={col.format || '{0:0.000}'}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
