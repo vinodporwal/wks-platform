@@ -191,4 +191,10 @@ public class AOPMCCalculatedDataController {
 
 	}
 
+	@PostMapping(value = "/production-target-line-import", consumes = "multipart/form-data")
+	public AOPMessageVM importLineWiseExcel(@RequestParam("plantId") String plantId,
+			@RequestParam("year") String year, @RequestParam("file") MultipartFile file) {
+		return aOPMCCalculatedDataService.importLineWiseExcel(year, plantId, file);
+	}
+
 }
