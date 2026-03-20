@@ -397,8 +397,8 @@ public class PCGOutlookService {
             
             // Add month headers with year suffix
             for (int i = 0; i < monthNames.length; i++) {
-                String yearSuffix = (i < 9) ? startYearShort : endYearShort; // Apr-Sep use start year, Oct-Mar use end year
-                headers.add(monthNames[i] + "-" + yearSuffix);
+              //  String yearSuffix = (i < 9) ? startYearShort : endYearShort; // Apr-Sep use start year, Oct-Mar use end year
+                headers.add(monthNames[i] + "-" + startYearShort);
             }
             headers.add("Remark");
             
