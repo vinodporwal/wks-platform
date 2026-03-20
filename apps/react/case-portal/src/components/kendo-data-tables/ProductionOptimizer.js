@@ -198,16 +198,15 @@ const ProductionOptimizer = () => {
           Mar: 3,
         }
         const dynamicColumns = res?.data?.columns?.map((col) => {
-          const isGradeName = col.field === 'GradeName'
           const monthKey = monthKeyMap[col.field]
           const isMonth = !!monthKey
           return {
             field: col.field,
             title: isMonth ? headerMap[monthKey] || col.title : col.title,
             editable: col.editable ?? false,
-            align: isMonth ? 'right' : 'left',
-            format: isMonth ? valueFormat : '{0:#.###}',
-            type: isMonth ? 'number' : col.type,
+            align: col.type === 'number' ? 'right' : 'left',
+            format: col.type === 'number' ? valueFormat : '{0:#.###}',
+            type: col.type,
             isEditable: false,
           }
         })
@@ -259,16 +258,15 @@ const ProductionOptimizer = () => {
           Mar: 3,
         }
         const dynamicColumns = res?.data?.columns?.map((col) => {
-          const isGradeName = col.field === 'GradeName'
           const monthKey = monthKeyMap[col.field]
           const isMonth = !!monthKey
           return {
             field: col.field,
             title: isMonth ? headerMap[monthKey] || col.title : col.title,
             editable: col.editable ?? false,
-            align: isMonth ? 'right' : 'left',
-            format: isMonth ? valueFormat : '{0:#.###}',
-            type: isMonth ? 'number' : col.type,
+            align: col.type === 'number' ? 'right' : 'left',
+            format: col.type === 'number' ? valueFormat : '{0:#.###}',
+            type: col.type,
           }
         })
         setColumns1(dynamicColumns || [])
