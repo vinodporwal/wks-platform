@@ -10,7 +10,7 @@ const container = document.getElementById('root')
 const root = createRoot(container)
 root.render(
   <Provider store={store}>
-    <BrowserRouter basename='/'>
+    <BrowserRouter basename='/cm'>
       <I18nextProvider i18n={i18n}>
         <App />
       </I18nextProvider>
