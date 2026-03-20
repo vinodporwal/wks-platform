@@ -129,6 +129,66 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 		}
 	}
 
+	@Override
+	public AOPMessageVM getCombinedProductionOptimizerDropdown(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			String viewName = "vwScrn" + vertical.getName() + "DropdownForCombinedProdctionOptimizer";
+
+			String sql = "SELECT name, displayName, displayOrder FROM " + viewName + " ORDER BY displayOrder";
+			List<Object[]> rows = entityManager.createNativeQuery(sql).getResultList();
+			List<Map<String, Object>> resultList = new ArrayList<>();
+			for (Object[] row : rows) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("name", row[0] != null ? row[0].toString() : null);
+				map.put("displayName", row[1] != null ? row[1].toString() : null);
+				map.put("displayOrder", row[2]);
+				resultList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(resultList);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch dropdown data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getProductionOptimizerDropdown(String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			String viewName = "vwScrn" + vertical.getName() + "DropdownForProdctionOptimizer";
+
+			String sql = "SELECT name, displayName, displayOrder FROM " + viewName + " ORDER BY displayOrder";
+			List<Object[]> rows = entityManager.createNativeQuery(sql).getResultList();
+			List<Map<String, Object>> resultList = new ArrayList<>();
+			for (Object[] row : rows) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("name", row[0] != null ? row[0].toString() : null);
+				map.put("displayName", row[1] != null ? row[1].toString() : null);
+				map.put("displayOrder", row[2]);
+				resultList.add(map);
+			}
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data fetched successfully");
+			aopMessageVM.setData(resultList);
+			return aopMessageVM;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch dropdown data", ex);
+		}
+	}
+
 	public int executeDynamicUpdateProcedure(String procedureName, String plantId, String aopYear) {
 		try {
 			String callSql = "{call " + procedureName + "(?, ?)}";
