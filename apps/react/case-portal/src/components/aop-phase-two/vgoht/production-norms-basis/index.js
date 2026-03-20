@@ -162,7 +162,6 @@ const ProductionNormsBasis = () => {
         <ConfigurationAccordian
           PLANT_ID={PLANT_ID}
           AOP_YEAR={AOP_YEAR}
-          READ_ONLY={READ_ONLY}
           isOldYear={isOldYear}
           isSummaryRequired={false}
           onDatesChange={handleDatesChange}
