@@ -62,6 +62,7 @@ const defs = {
     allSiteSummaryAop: 'Summary',
     UtilityPlant: 'Utility Plant',
     packagingConsumables: 'Consumíveis de Embalagem',
+    productionOptimizer: 'Production Optimizer',
   },
   pages: {
     dashboard: {
@@ -234,6 +235,7 @@ const defs = {
         plantSafetyPerformanceTarget: 'S&OR',
         plantTeam: 'People',
         packagingConsumables: 'Consumíveis de Embalagem',
+        productionOptimizer: 'Production Optimizer',
       },
     },
   },

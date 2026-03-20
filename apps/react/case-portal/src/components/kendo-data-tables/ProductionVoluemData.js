@@ -1196,13 +1196,24 @@ const ProductionvolumeData = ({ permissions }) => {
 
     setLoading(true)
     try {
-      const response =
-        await ProductionVolumeDataApiService.saveProductionVolDataExcel(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
+      let response
+      if (VERTICAL_NAME == 'pp' || IS_PVC_DMD) {
+        response =
+          await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+      } else {
+        response =
+          await ProductionVolumeDataApiService.saveProductionVolDataExcel(
+            rawFile,
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+      }
       if (response?.code == 200) {
         setSnackbarOpen(true)
         setSnackbarData({
