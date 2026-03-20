@@ -344,14 +344,14 @@ else {
 
             // Header row with specified sequence: Furnace, Apr-25, May-25, ..., Mar-26, Remark
             Row headerRow = sheet.createRow(currentRow++);
-            String[] monthNames = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+            String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
             List<String> headers = new ArrayList<>();
             headers.add("Furnace");
             
             // Add month headers with year suffix
             for (int i = 0; i < monthNames.length; i++) {
-                String yearSuffix = (i < 9) ? startYearShort : endYearShort; // Apr-Dec use start year, Jan-Mar use end year
-                headers.add(monthNames[i] + "-" + yearSuffix);
+             //   String yearSuffix = (i < 9) ? startYearShort : endYearShort; // Apr-Dec use start year, Jan-Mar use end year
+                headers.add(monthNames[i] + "-" + startYearShort);
             }
             headers.add("Remark");
             
@@ -373,9 +373,8 @@ else {
 
                 // Month columns
                 Double[] monthValues = {
-                    dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), 
-                    dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
+                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
                 };
 
                 for (Double value : monthValues) {
@@ -519,6 +518,9 @@ else {
                     dto.setFurnace(getStringCellValue(row.getCell(col++)));
                     
                     // Month columns (Apr to Mar)
+                    dto.setJan(getDoubleCellValue(row.getCell(col++)));
+                    dto.setFeb(getDoubleCellValue(row.getCell(col++)));
+                    dto.setMar(getDoubleCellValue(row.getCell(col++)));
                     dto.setApr(getDoubleCellValue(row.getCell(col++)));
                     dto.setMay(getDoubleCellValue(row.getCell(col++)));
                     dto.setJun(getDoubleCellValue(row.getCell(col++)));
@@ -528,9 +530,7 @@ else {
                     dto.setOct(getDoubleCellValue(row.getCell(col++)));
                     dto.setNov(getDoubleCellValue(row.getCell(col++)));
                     dto.setDec(getDoubleCellValue(row.getCell(col++)));
-                    dto.setJan(getDoubleCellValue(row.getCell(col++)));
-                    dto.setFeb(getDoubleCellValue(row.getCell(col++)));
-                    dto.setMar(getDoubleCellValue(row.getCell(col++)));
+                   
                     
                     // Remark
                     dto.setRemarks(getStringCellValue(row.getCell(col++)));
@@ -598,13 +598,13 @@ else {
 
             // Header row with status columns
             Row headerRow = sheet.createRow(currentRow++);
-            String[] monthNames = {"Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"};
+            String[] monthNames = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
             List<String> headers = new ArrayList<>();
             headers.add("Furnace");
             
             for (int i = 0; i < monthNames.length; i++) {
-                String yearSuffix = (i < 9) ? startYearShort : endYearShort;
-                headers.add(monthNames[i] + "-" + yearSuffix);
+          //      String yearSuffix = (i < 9) ? startYearShort : endYearShort;
+                headers.add(monthNames[i] + "-" + startYearShort);
             }
             headers.add("Remark");
             headers.add("Status");
@@ -626,9 +626,8 @@ else {
                 furnaceCell.setCellStyle(dataStyle);
 
                 Double[] monthValues = {
-                    dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
-                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), 
-                    dto.getDec(), dto.getJan(), dto.getFeb(), dto.getMar()
+                    dto.getJan(), dto.getFeb(), dto.getMar(), dto.getApr(), dto.getMay(), dto.getJun(), dto.getJul(), 
+                    dto.getAug(), dto.getSep(), dto.getOct(), dto.getNov(), dto.getDec()
                 };
 
                 for (Double value : monthValues) {

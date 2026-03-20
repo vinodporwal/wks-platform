@@ -38,12 +38,22 @@ public class CrudeBlendWindowController {
             return ResponseEntity.ok(crudeBlendWindowService.getCrudeBlendWindowData(null, siteId, financialYear));
         }
 
+        if(financialYear == null || financialYear.length() != 4) {
+            throw new IllegalArgumentException("Financial year must be 4 digits");
+        }
+
         List<CrudeBlendScreenDTO> crudeBlendScreenDTO = crudeBlendWindowService.getCrudeBlendWindowData(plantId, siteId, financialYear);
         return ResponseEntity.ok(crudeBlendScreenDTO);
     }
 
     @PostMapping("/crude-blend-window/carry-forward/{financialYear}/{siteId}/{plantId}")
     public AOPMessageVM carryForwardCrudeBlendWindow(@PathVariable String financialYear, @PathVariable String siteId, @PathVariable String plantId) {
+
+
+        if(financialYear == null || financialYear.length() != 4) {
+            throw new IllegalArgumentException("Financial year must be 4 digits");
+        }
+
         if(plantId == null || financialYear == null || siteId == null) {
             throw new RestInvalidArgumentException("Invalid request parameters", null);
         }
@@ -55,6 +65,7 @@ public class CrudeBlendWindowController {
         if(id == null || table == null) {
             throw new RestInvalidArgumentException("Invalid request parameters", null);
         }
+
         crudeBlendWindowService.deleteCrudeBlendWindowData(UUID.fromString(id), table);
         return ResponseEntity.ok("Data deleted successfully");
     }
@@ -62,7 +73,11 @@ public class CrudeBlendWindowController {
 
     @PostMapping("/crude-blend-window/{plantId}/{siteId}/{financialYear}/{table}")
     public void updateCrudeBlendWindow(@RequestBody CrudeBlendWindowPostRequestDTO<?> payload, @PathVariable String plantId, @PathVariable String siteId, @PathVariable String financialYear, @PathVariable String table) {
-      
+
+        if(financialYear == null || financialYear.length() != 4) {
+            throw new IllegalArgumentException("Financial year must be 4 digits");
+        }
+
        crudeBlendWindowService.updateCrudeBlendWindowData(payload, plantId, siteId, financialYear, table);
         
     }
@@ -75,7 +90,10 @@ public class CrudeBlendWindowController {
         @RequestParam String table) {
 
         // Default to CrudeBlendWindow if table is not specified
-   
+
+        if(financialYear == null || financialYear.length() != 4) {
+            throw new IllegalArgumentException("Financial year must be 4 digits");
+        }
        
         if(siteId == null || siteId.isEmpty()) {
             throw new IllegalArgumentException("Site ID is required");
@@ -124,8 +142,8 @@ public class CrudeBlendWindowController {
         if(siteId == null || siteId.isEmpty()) {
             throw new IllegalArgumentException("Site ID is required");
         }
-        if(financialYear == null || financialYear.isEmpty()) {
-            throw new IllegalArgumentException("Financial year is required");
+        if(financialYear == null || financialYear.isEmpty() || financialYear.length() != 4) {
+            throw new IllegalArgumentException("Financial year is required and must be 4 digits");
         }
 
         return crudeBlendWindowService.importExcel(
