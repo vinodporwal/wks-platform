@@ -70,6 +70,11 @@ const SpecificConsumptionCalculation = () => {
 
         const data = dataSet.map((item, index) => {
           const isKiloTon = selectedUnit === 'KT'
+
+          const skipConversion =
+            item.Name === 'Effective OPH Line 1' ||
+            item.Name === 'Effective OPH Line 2'
+
           const transformedItem = {
             ...item,
             idFromApi: item.id,
@@ -82,7 +87,9 @@ const SpecificConsumptionCalculation = () => {
           cols.forEach((col) => {
             if (col.type === 'number' && col.field !== 'Name') {
               const val = item[col.field]
-              transformedItem[col.field] = isKiloTon && val ? val / 1000 : val
+
+              transformedItem[col.field] =
+                !skipConversion && isKiloTon && val ? val / 1000 : val
             }
           })
 
