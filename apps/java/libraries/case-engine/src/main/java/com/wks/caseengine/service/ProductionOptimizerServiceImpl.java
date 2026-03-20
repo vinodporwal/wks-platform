@@ -282,9 +282,10 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 					int columnCount = metaData.getColumnCount();
 					for (int i = 1; i <= columnCount; i++) {
 						Map<String, Object> column = new HashMap<>();
+						String columnType = metaData.getColumnTypeName(i);
 						column.put("field", metaData.getColumnName(i));
 						column.put("title", metaData.getColumnName(i));
-						column.put("type", "text");
+						column.put("type", getFrontendType(columnType));
 						column.put("editable", false);
 						columnMetadata.add(column);
 					}
@@ -353,9 +354,10 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 					int columnCount = metaData.getColumnCount();
 					for (int i = 1; i <= columnCount; i++) {
 						Map<String, Object> column = new HashMap<>();
+						String columnType = metaData.getColumnTypeName(i);
 						column.put("field", metaData.getColumnName(i));
 						column.put("title", metaData.getColumnName(i));
-						column.put("type", "text");
+						column.put("type", getFrontendType(columnType));
 						column.put("editable", false);
 						columnMetadata.add(column);
 					}
@@ -363,6 +365,29 @@ public class ProductionOptimizerServiceImpl implements ProductionOptimizerServic
 			}
 			return columnMetadata;
 		});
+	}
+
+	
+	private String getFrontendType(String sqlTypeName) {
+		if (sqlTypeName == null) {
+			return "string";
+		}
+		
+		String typeUpper = sqlTypeName.toUpperCase();
+
+		if (typeUpper.contains("CHAR") || typeUpper.contains("TEXT") || typeUpper.contains("CLOB")) {
+			return "string";
+		}
+		if (typeUpper.contains("INT") || typeUpper.contains("TINYINT") || typeUpper.contains("BIGINT")
+				|| typeUpper.contains("SMALLINT") || typeUpper.contains("DECIMAL") || typeUpper.contains("NUMERIC")
+				|| typeUpper.contains("FLOAT") || typeUpper.contains("REAL") || typeUpper.contains("DOUBLE")
+				|| typeUpper.contains("MONEY")) {
+			return "number";
+		}
+		if (typeUpper.contains("DATE") || typeUpper.contains("DATETIME") || typeUpper.contains("TIME")) {
+			return "date";
+		}
+		return "string";
 	}
 }
 
