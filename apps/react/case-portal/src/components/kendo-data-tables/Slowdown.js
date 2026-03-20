@@ -102,6 +102,7 @@ const SlowDown = ({ permissions }) => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
@@ -111,7 +112,8 @@ const SlowDown = ({ permissions }) => {
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
     lowerVertName == 'meg' ||
-    IS_PVC_VMD
+    IS_PVC_VMD ||
+    IS_PVC_DMD
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
@@ -119,7 +121,6 @@ const SlowDown = ({ permissions }) => {
   const IS_PTA_HMD = lowerVertName === 'pta' && lowerSiteName === 'hmd'
   const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
   const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
-  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_ELASTOMER_HMD_SBR =
     lowerVertName === 'elastomer' &&
     lowerSiteName === 'hmd' &&
