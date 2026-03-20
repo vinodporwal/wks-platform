@@ -1197,7 +1197,7 @@ const ProductionvolumeData = ({ permissions }) => {
     setLoading(true)
     try {
       let response
-      if (VERTICAL_NAME == 'pp' || IS_PVC_DMD) {
+      if (IS_PP_SEZ || IS_PP_DTA || IS_PP_HMD || IS_PVC_DMD) {
         response =
           await ProductionVolumeDataApiService.saveProductionVolDataLineExcel(
             rawFile,
