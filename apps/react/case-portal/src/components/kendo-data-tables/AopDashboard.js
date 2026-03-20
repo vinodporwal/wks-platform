@@ -95,13 +95,16 @@ export default function AopDashboardCompact() {
     }))
 
     // Also toggle all sub-sites for this site
-    setExpandedSubSites((prev) => {
-      const next = { ...prev }
-      ;['Refining', 'Gasification', 'Aromatics'].forEach((sub) => {
-        next[`${siteName}-${sub}`] = isExpanding
+    const siteData = siteGroupedRows.find((s) => s.site === siteName)
+    if (siteData) {
+      setExpandedSubSites((prev) => {
+        const next = { ...prev }
+        siteData.businessCategories.forEach((cat) => {
+          next[`${siteName}-${cat}`] = isExpanding
+        })
+        return next
       })
-      return next
-    })
+    }
   }
   const toggleSubSite = (siteName, subCategory) => {
     const key = `${siteName}-${subCategory}`
@@ -121,8 +124,8 @@ export default function AopDashboardCompact() {
 
       siteGroupedRows.forEach((site) => {
         newExpandedSites[site.site] = true
-        ;['Refining', 'Gasification', 'Aromatics'].forEach((sub) => {
-          newExpandedSubSites[`${site.site}-${sub}`] = true
+        site.businessCategories.forEach((cat) => {
+          newExpandedSubSites[`${site.site}-${cat}`] = true
         })
       })
 
@@ -195,7 +198,8 @@ export default function AopDashboardCompact() {
         PLANT_ID,
         AOP_YEAR,
       )
-      const apiRows = res?.data?.data || []
+      // Robust handling of API response structure
+      const apiRows = res?.data?.data || res?.data || res || []
 
       setStatusData(apiRows)
 
@@ -203,35 +207,53 @@ export default function AopDashboardCompact() {
       const grouped = Object.values(
         apiRows.reduce((acc, item) => {
           const site = item.site_name || 'Unknown Site'
-          if (!acc[site]) acc[site] = { site, rows: [] }
+          if (!acc[site]) {
+            acc[site] = {
+              site,
+              rows: [],
+              businessCategories: new Set(),
+            }
+          }
 
+          const verticalName = item.vertical_name || 'N/A'
           acc[site].rows.push({
             idx: idx++,
-            id: idMap[item.vertical_name] ?? item.vertical_id,
+            id:
+              idMap[verticalName.toUpperCase().replace(/\s+/g, '_')] ??
+              item.vertical_id,
             sId: item.site_id,
-            verticalName: item.vertical_name,
+            verticalName: verticalName,
             status: item.status,
             status_color: item.status_color,
             status_text_color: item.status_text_color,
-            business_category: item.business_category,
+            business_category: item.business_category || 'Other',
             display_order: item.display_order,
           })
 
+          if (item.business_category) {
+            acc[site].businessCategories.add(item.business_category)
+          }
+
           return acc
         }, {}),
-      )
+      ).map((siteGroup) => ({
+        ...siteGroup,
+        businessCategories: Array.from(siteGroup.businessCategories).sort(),
+      }))
 
       setSiteGroupedRows(grouped)
-      // Expand the first site by default
+
+      // Expand the first site and its sub-categories by default
       if (grouped.length > 0) {
         const firstSite = grouped[0].site
         setExpandedSites((prev) => ({ ...prev, [firstSite]: true }))
-        setExpandedSubSites((prev) => ({
-          ...prev,
-          [`${firstSite}-Refining`]: true,
-          [`${firstSite}-Gasification`]: true,
-          [`${firstSite}-Aromatics`]: true,
-        }))
+        setExpandedSubSites((prev) => {
+          const next = { ...prev }
+          grouped[0].businessCategories.forEach((cat) => {
+            next[`${firstSite}-${cat}`] = true
+          })
+          return next
+        })
       }
     } catch (error) {
       console.error('Error fetching dashboard data', error)
@@ -318,7 +340,7 @@ export default function AopDashboardCompact() {
                       Total Business
                     </Typography>
                     <Typography component='span' className='summary-count'>
-                      3
+                      {site.businessCategories?.length || 0}
                     </Typography>
                   </Box>
                 </Box>
@@ -370,19 +392,18 @@ export default function AopDashboardCompact() {
               {/* Expanded Content: Sub-Accordions */}
               {isSiteExpanded && (
                 <Box className='bu-expanded-content'>
-                  {[
-                    { name: 'Refining', icon: IconBriefcase },
-                    { name: 'Gasification', icon: IconBriefcase },
-                    { name: 'Aromatics', icon: IconBriefcase },
-                  ].map((sub) => {
-                    const subKey = `${site.site}-${sub.name}`
+                  {site.businessCategories.map((catName) => {
+                    const subKey = `${site.site}-${catName}`
                     const isSubExpanded = expandedSubSites[subKey]
+                    const catRows = site?.rows?.filter(
+                      (i) => i?.business_category === catName,
+                    )
 
                     return (
-                      <Box key={sub.name} className='sub-accordion-wrapper'>
+                      <Box key={catName} className='sub-accordion-wrapper'>
                         <Box
                           className='sub-header-row'
-                          onClick={() => toggleSubSite(site.site, sub.name)}
+                          onClick={() => toggleSubSite(site.site, catName)}
                         >
                           <Box className='sub-header-left'>
                             <Box className='sub-header-title-box'>
@@ -398,9 +419,9 @@ export default function AopDashboardCompact() {
                                 />
                               )}
                               <Box className='sub-header-plants'>
-                                <sub.icon size={18} className='sub-icon' />
+                                <IconBriefcase size={18} className='sub-icon' />
                                 <Typography className='sub-category-name'>
-                                  {sub.name}
+                                  {catName}
                                 </Typography>
                               </Box>
                             </Box>
@@ -413,11 +434,7 @@ export default function AopDashboardCompact() {
                                 Plants
                               </Typography>
                               <Typography className='sub-count-small'>
-                                {
-                                  site?.rows?.filter(
-                                    (i) => i?.business_category === sub.name,
-                                  )?.length
-                                }
+                                {catRows?.length}
                               </Typography>
                             </Box>
                           </Box>
@@ -426,41 +443,41 @@ export default function AopDashboardCompact() {
                         {isSubExpanded && (
                           <Box className='sub-accordion-content'>
                             <Box className='plant-grid'>
-                              {site?.rows
-                                ?.filter(
-                                  (i) => i?.business_category === sub.name,
-                                )
-                                ?.map((plant) => (
-                                  <Box
-                                    key={`${sub.name}-${plant.idx}`}
-                                    className='plant-item-card'
-                                    // onClick={(e) =>
-                                    //   handlePlantClick(e, plant.id, plant.sId)
-                                    // }
-                                  >
-                                    <Box className='plant-card-left'>
-                                      <IconBuildingFactory
-                                        size={18}
-                                        className='plant-card-icon'
-                                      />
-                                      <Typography className='plant-name'>
-                                        {plant.verticalName}
-                                      </Typography>
-                                    </Box>
-
-                                    <Box className='plant-card-right'>
-                                      <Box
-                                        className={`plant-status-chip ${getStatusClass(plant.status)}`}
-                                      >
-                                        {plant.status}
-                                      </Box>
-                                      <IconChevronRight
-                                        size={18}
-                                        className='chevron-arrow'
-                                      />
-                                    </Box>
+                              {catRows?.map((plant) => (
+                                <Box
+                                  key={`${catName}-${plant.idx}`}
+                                  className='plant-item-card'
+                                  // onClick={(e) =>
+                                  //   handlePlantClick(e, plant.id, plant.sId)
+                                  // }
+                                >
+                                  <Box className='plant-card-left'>
+                                    <IconBuildingFactory
+                                      size={18}
+                                      className='plant-card-icon'
+                                    />
+                                    <Typography className='plant-name'>
+                                      {plant.verticalName}
+                                    </Typography>
                                   </Box>
-                                ))}
+
+                                  <Box className='plant-card-right'>
+                                    <Box
+                                      className={`plant-status-chip ${getStatusClass(plant.status)}`}
+                                      // style={{
+                                      //   backgroundColor: plant.status_color,
+                                      //   color: plant.status_text_color,
+                                      // }}
+                                    >
+                                      {plant.status}
+                                    </Box>
+                                    <IconChevronRight
+                                      size={18}
+                                      className='chevron-arrow'
+                                    />
+                                  </Box>
+                                </Box>
+                              ))}
                             </Box>
                           </Box>
                         )}
