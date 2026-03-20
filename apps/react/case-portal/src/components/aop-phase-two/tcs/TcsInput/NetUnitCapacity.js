@@ -280,7 +280,7 @@ const NetUnitCapacity = ({
     remarksEditable: false,
     showCalculate: false,
     downloadExcelBtnFromUI: true,
-    ExcelName: `Net_Unit_Capacity_${AOP_YEAR}`,
+    ExcelName: `Net_Unit_Capacity_${apiYear}`,
     showImport: false,
     saveBtnForRemark: false,
     saveBtn: false,
