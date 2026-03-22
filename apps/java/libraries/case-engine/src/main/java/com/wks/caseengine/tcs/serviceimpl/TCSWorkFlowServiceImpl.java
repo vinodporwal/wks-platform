@@ -11,12 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.camunda.community.rest.client.dto.TaskDto;
 import org.camunda.community.rest.client.dto.VariableValueDto;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,13 +33,21 @@ import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.Task;
 import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.UserScreenMapping;
 import com.wks.caseengine.exception.RestResourceNotFoundException;
+import com.wks.caseengine.repository.UserScreenMappingRepository;
+import com.wks.caseengine.service.KeycloakUserService;
 import com.wks.caseengine.service.PlantService;
 import com.wks.caseengine.service.VerticalsService;
 import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailDTO;
 import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailProjection;
+import com.wks.caseengine.tcs.enums.Roles;
 import com.wks.caseengine.tcs.repository.tcsworkflow.TCSAuditTrailRepository;
 import com.wks.caseengine.tcs.service.TCSWorkFlowService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.StoredProcedureQuery;
 
 @Service
 public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {  
@@ -60,6 +71,11 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
     private static final String CTS_SUBMISSION_VARIABLE_NAME = "cts_approved";
     private static final String CLUSTER_HEAD_APPROVAL_VARIABLE_NAME = "cluster_head_approved";
 
+    // for email notification
+
+    private static final String screenCode = "menu.tcsinput";
+    private static final String vertical = "CRUDE";
+
     @Value("${camunda.process.id.tcs.output.workflow}")
     private String tcsOutputWorkflowProcessId;
     
@@ -80,6 +96,15 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private KeycloakUserService keycloakUserService;
+
+    @Autowired
+    private UserScreenMappingRepository userScreenMappingRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
 
     @Override
@@ -1497,6 +1522,81 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
         .verifiedRemark(auditTrail.getVerifiedRemark())
         .status(auditTrail.getStatus())
         .build()).toList();
+    }
+
+
+    // schedular for email notification
+
+   // @Scheduled(cron = "0 0 12 * * ?")
+    public void notifyPlantManagers() {
+          
+         // get all the users with role Plant_Manager
+         try {
+
+             ObjectMapper objectMapper = new ObjectMapper();
+             Map<String, List<UUID>> result = new HashMap<>();
+
+             // get all the users with role Plant_Manager
+            List<UserRepresentation> userRepresentations = keycloakUserService.getUsersWithRole(Roles.Plant_Manager.name());
+
+
+
+            // fillter out users who have access to crude screen 
+
+            String userIdsJson  = objectMapper.writeValueAsString(userRepresentations.stream().map(UserRepresentation::getId).map(UUID::fromString).collect(Collectors.toList()));
+
+
+            StoredProcedureQuery query = entityManager
+            .createStoredProcedureQuery("GetUserIdsByPlantAndScreen_JSON");
+
+    query.registerStoredProcedureParameter("UserIdsJson", String.class, jakarta.persistence.ParameterMode.IN);
+    query.registerStoredProcedureParameter("ScreenCode", String.class, jakarta.persistence.ParameterMode.IN);
+
+    query.setParameter("UserIdsJson", userIdsJson);
+    query.setParameter("ScreenCode", screenCode);
+
+    // Execute
+    String jsonResult = (String) query.getSingleResult();
+
+    // Parse JSON response
+    JsonNode root = objectMapper.readTree(jsonResult);
+    JsonNode dataArray = root.get("data");
+
+    if (dataArray != null && dataArray.isArray()) {
+        for (JsonNode node : dataArray) {
+
+            String plantName = node.get("PlantName").asText();
+            List<UUID> users = new ArrayList<>();
+
+            JsonNode userIdsNode = node.get("UserIds");
+
+            if (userIdsNode != null && userIdsNode.isArray()) {
+                for (JsonNode userNode : userIdsNode) {
+                    UUID userId = UUID.fromString(userNode.get("UserId").asText());
+                    users.add(userId);
+                }
+            }
+
+            result.put(plantName, users);
+        }
+    }
+
+    System.out.println("map result: " + result);
+
+
+
+
+            
+
+
+          
+
+
+         } catch (Exception e) {
+           
+            e.printStackTrace();
+         }
+
     }
 
 }

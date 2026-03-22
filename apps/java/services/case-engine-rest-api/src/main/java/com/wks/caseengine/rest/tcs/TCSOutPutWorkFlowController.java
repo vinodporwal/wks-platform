@@ -238,6 +238,11 @@ public class TCSOutPutWorkFlowController {
 		return ResponseEntity.ok(processEngineClientFacade.findProcessInstances(Optional.ofNullable(tcsOutputWorkflowProcessDefinitionKey), Optional.ofNullable(businessKey), Optional.empty()));
 	}
 
+	@GetMapping(value = "/find-process/{processDefinitionKey}")
+	public ResponseEntity<ProcessInstance[]> findAllProcess(@PathVariable final String processDefinitionKey) {
+		return ResponseEntity.ok(processEngineClientFacade.findProcessInstances(Optional.ofNullable(processDefinitionKey), Optional.ofNullable(null), Optional.empty()));
+	}
+
 	//delete process instance by business key
 	@DeleteMapping(value = "/delete-process-instance/{businessKey}/{processDefinitionKey}")
 	public ResponseEntity<Void> deleteProcessInstanceByBusinessKey(@PathVariable final String businessKey, @PathVariable final String processDefinitionKey) {

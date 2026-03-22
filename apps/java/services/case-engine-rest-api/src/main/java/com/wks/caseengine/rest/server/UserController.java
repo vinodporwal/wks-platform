@@ -20,6 +20,11 @@ public class UserController {
 		return userService.getUsers();
 	}
 
+	@GetMapping("/role/{roleName}")
+	public Map<String, Object> getUsersWithRole(@PathVariable String roleName) throws Exception {
+		return userService.getUsersWithRole(roleName);
+	}
+
 	@PutMapping("/revoke-access/{userId}")
 	public Map<String, Object> revokeUserAccess(@PathVariable String userId, @RequestBody Map<String, Object> data) throws Exception {
 		return userService.revokeUserAccess(userId, data);
