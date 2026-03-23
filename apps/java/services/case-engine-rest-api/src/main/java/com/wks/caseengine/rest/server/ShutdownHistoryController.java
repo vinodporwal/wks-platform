@@ -6,6 +6,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
@@ -37,6 +43,30 @@ public class ShutdownHistoryController {
 	@GetMapping(value="/shutdown-history-pta")
 	public AOPMessageVM getShutdownHistoryPTA(@RequestParam String plantId,@RequestParam String year){
 		 return  shutdownHistoryService.getShutdownHistoryPTA(plantId,year);
+	}
+
+	@GetMapping(value = "/shutdown-history-pta-export-excel")
+	public ResponseEntity<byte[]> exportShutdownHistoryPTAExcel(@RequestParam String plantId,
+			@RequestParam String year) {
+		try {
+			byte[] excelBytes = shutdownHistoryService.createShutdownHistoryPTAExcel(plantId, year);
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("shutdown-history-pta.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PostMapping(value = "/shutdown-history-pta-import-excel", consumes = "multipart/form-data")
+	public AOPMessageVM importShutdownHistoryPTAExcel(@RequestParam String plantId, @RequestParam String year,
+			@RequestParam("file") MultipartFile file) {
+		return shutdownHistoryService.importShutdownHistoryPTAExcel(plantId, year, file);
 	}
 	
 	@GetMapping(value="/type-of-sd")

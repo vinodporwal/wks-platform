@@ -82,8 +82,9 @@ export default function QualityPackagingNorms() {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const valueFormat = ValueFormatterConsumption()
-  //const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
-  const READ_ONLY = false
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const [tabIndex, setTabIndex] = useState(0)
   const defaultTabs = ['Quality', 'Packaging & Consumables']
   const [packagingRows, setPackagingRows] = useState([])

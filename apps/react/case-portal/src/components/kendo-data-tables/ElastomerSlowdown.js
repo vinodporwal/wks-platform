@@ -64,7 +64,9 @@ const ElastomerSlowdown = ({ permissions }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const [startDate, setStartDate] = useState(null)
   const [endDate, setEndDate] = useState(null)
 

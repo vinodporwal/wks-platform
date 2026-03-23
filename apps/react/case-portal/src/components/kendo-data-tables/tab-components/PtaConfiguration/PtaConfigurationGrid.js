@@ -43,7 +43,10 @@ const PtaConfigurationGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const AOP_YEAR = year?.selectedYear
   const IS_OLD_YEAR = oldYear?.oldYear
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const isOldYear = false
 
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()

@@ -8,6 +8,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material'
+import { setIsReleased } from 'store/reducers/dataGridStore'
 import { useSession } from 'SessionStoreContext'
 import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
@@ -16,7 +17,7 @@ import { DataService } from 'services/DataService'
 import { MockPlantContributionAPILastFourYears } from './mockPlantContributionAPILastFourYears'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterProductionProductionNormBasis from 'utils/ValueFormatterProduction_ProductionNormBasis'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
 const categories = () => {
   return [
@@ -35,7 +36,8 @@ const categories = () => {
 
 export default function PlantContributionLastFourYears() {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+  const dispatch = useDispatch()
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -55,7 +57,9 @@ export default function PlantContributionLastFourYears() {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -333,6 +337,8 @@ export default function PlantContributionLastFourYears() {
         severity: 'success',
       })
       setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
     } catch (error) {
       console.error('Error releasing report:', error)
       setSnackbarOpen(true)
@@ -364,6 +370,7 @@ export default function PlantContributionLastFourYears() {
           return (
             <Box key={key} sx={{ mt: 0 }}>
               <KendoDataTablesReports
+                key={IS_RELEASED}
                 columns={rpt.columns || []}
                 rows={rpt.rows || []}
                 title={title}
@@ -388,6 +395,7 @@ export default function PlantContributionLastFourYears() {
         return (
           <Box key={key} sx={{ mt: 1 }}>
             <KendoDataTablesReports
+              key={IS_RELEASED}
               modifiedCells={modifiedCells}
               setRows={setOtherVariableRows}
               columns={rpt.columns || []}
@@ -423,6 +431,7 @@ export default function PlantContributionLastFourYears() {
         return (
           <Box key={key} sx={{ mt: 0 }}>
             <KendoDataTablesReports
+              key={IS_RELEASED}
               columns={rpt.columns || []}
               rows={rpt.rows || []}
               title={rpt.title || 'Cost & Contribution Summary'}

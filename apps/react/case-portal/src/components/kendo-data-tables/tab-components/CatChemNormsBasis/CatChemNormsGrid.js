@@ -39,7 +39,10 @@ const CatChemNormsGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
   const AOP_YEAR = year?.selectedYear
   const IS_OLD_YEAR = oldYear?.oldYear
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
   const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()

@@ -43,7 +43,9 @@ const MaintenanceTable = () => {
   const IS_PTA = verticalObject?.name?.toLowerCase() === 'pta'
   const IS_CHEMICAL = verticalObject?.name?.toLowerCase() === 'chemical'
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const SCREEN_NAME = screenTitle?.title

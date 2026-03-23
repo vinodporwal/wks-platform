@@ -107,8 +107,10 @@ const PtaShutDown = ({ permissions }) => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET_VERTICAL = lowerVertName === 'pet'
   const [allLines, setAllLines] = useState([])
@@ -1009,6 +1011,15 @@ const PtaShutDown = ({ permissions }) => {
 
     try {
       let response
+      if (tabIndex === 1 && IS_PTA_DMD) {
+        response = await DtaDataService.ExportShutdownHistoryConfig(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+        return
+      }
       if (IS_PP_DTA) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
@@ -1047,6 +1058,15 @@ const PtaShutDown = ({ permissions }) => {
 
     try {
       let response
+      if (tabIndex === 1 && IS_PTA_DMD) {
+        response = await DtaDataService.importShutdownHistoryConfig(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        return
+      }
       if (IS_PP_DTA) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
@@ -1078,6 +1098,7 @@ const PtaShutDown = ({ permissions }) => {
         })
         setModifiedCells({})
         fetchData()
+        fetchTabIndex1Data()
       } else if (response?.code === 400 && response?.data) {
         const byteCharacters = atob(response.data)
         const byteNumbers = Array.from(byteCharacters, (char) =>
@@ -1239,6 +1260,8 @@ const PtaShutDown = ({ permissions }) => {
     saveBtn: permissions?.saveBtn ?? true,
     customHeight: permissions?.customHeight,
     allAction: true,
+    downloadExcelBtn: true,
+    uploadExcelBtn: true,
   })
   if (lowerVertName == 'elastomer') {
     return <ElastomerShutDown permissions={permissions} />
@@ -1390,6 +1413,8 @@ const PtaShutDown = ({ permissions }) => {
           deleteRowData={deleteRowData}
           groupBy='normtype'
           permissions={adjustedPermissionsconfig}
+          downloadExcelForConfiguration={downloadExcelForConfiguration}
+          handleExcelUpload={handleExcelUpload}
         />
       )}
     </div>

@@ -46,7 +46,6 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import { useSelector } from 'react-redux'
 import { PostCrDaysEditorNMD } from './Utilities-Kendo/numbericColumns_nmd'
-
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -157,13 +156,15 @@ const KendoDataTablesCrackerNMD = ({
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
   const { oldYear } = dataGridStore
 
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const initialGroup = groupBy
     ? [

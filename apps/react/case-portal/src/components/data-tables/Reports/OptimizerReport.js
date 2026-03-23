@@ -22,7 +22,7 @@ const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
 const OptimizerReport = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -46,7 +46,9 @@ const OptimizerReport = () => {
   const AOP_YEAR = year?.selectedYear
 
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const timeoutIdsRef = useRef([])
   const activeRequestsRef = useRef(0)

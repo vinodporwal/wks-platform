@@ -20,7 +20,7 @@ const ProposedConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [open1, setOpen1] = useState(false)
   const valueFormat = ValueFormatterConsumption()
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
@@ -56,7 +56,9 @@ const ProposedConsumptionNorms = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
