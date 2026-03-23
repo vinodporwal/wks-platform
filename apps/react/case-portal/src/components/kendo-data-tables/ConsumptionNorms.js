@@ -89,6 +89,12 @@ const ConsumptionNorms = () => {
     VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
     SITE_NAME_NO_CASE === 'HMD' &&
     PLANT_NAME_NO_CASE === 'SBR'
+
+  const IS_ELASTOMER_JMD_HIIR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'JMD' &&
+    PLANT_NAME_NO_CASE === 'HIIR'
+
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
@@ -203,6 +209,7 @@ const ConsumptionNorms = () => {
 
       if (
         lowerVertName == 'pe' ||
+        IS_ELASTOMER_JMD_HIIR ||
         lowerVertName == 'pp' ||
         lowerVertName == 'pet' ||
         IS_PVC_VMD ||
@@ -313,7 +320,12 @@ const ConsumptionNorms = () => {
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
     if (
-      (isPEPP || isPET || IS_ELASTOMER_HMD_SBR || IS_PVC_VMD || IS_PVC_DMD) &&
+      (isPEPP ||
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD) &&
       !gradeId
     )
       return
@@ -326,6 +338,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD
       ) {
@@ -410,6 +423,7 @@ const ConsumptionNorms = () => {
       lowerVertName === 'pp' ||
       lowerVertName === 'pet' ||
       IS_ELASTOMER_HMD_SBR ||
+      IS_ELASTOMER_JMD_HIIR ||
       IS_PVC_VMD ||
       IS_PVC_DMD
     ) {
@@ -457,6 +471,7 @@ const ConsumptionNorms = () => {
           lowerVertName === 'pp' ||
           lowerVertName === 'pet' ||
           IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
           IS_PVC_VMD ||
           IS_PVC_DMD
         ) {
@@ -497,6 +512,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD
       ) {
@@ -558,6 +574,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD
           ? true
@@ -567,6 +584,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD
           ? true
@@ -577,6 +595,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD
           ? false
@@ -586,6 +605,7 @@ const ConsumptionNorms = () => {
         lowerVertName === 'pp' ||
         lowerVertName === 'pet' ||
         IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD
           ? true
