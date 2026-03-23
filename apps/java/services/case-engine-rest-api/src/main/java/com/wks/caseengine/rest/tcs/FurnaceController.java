@@ -61,6 +61,8 @@ public class FurnaceController {
         @RequestParam String financialYear,
         @RequestParam(required = false) String plantId) {
 
+        String sheetName = "Furnace_" + financialYear.substring(0,4) + ".xlsx";
+
         byte[] excelData = furnaceService.exportFurnace(
             UUID.fromString(siteId),
             financialYear,
@@ -68,7 +70,7 @@ public class FurnaceController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "Furnace_" + financialYear + ".xlsx");
+        headers.setContentDispositionFormData("attachment", sheetName);
 
         return ResponseEntity.ok()
             .headers(headers)

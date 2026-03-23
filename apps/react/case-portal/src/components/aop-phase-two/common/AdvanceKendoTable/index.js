@@ -53,6 +53,8 @@ import { NoSpinnerNumericEditor } from '../utilities/numbericColumns'
 import { getColumnMenuDateFilter } from '../utilities/ColumnMenuDateFilter'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
 import DateTimePickerEditor from '../utilities/DatePickeronSelectedYr'
+import dataGridStore from 'store/reducers/dataGridStore'
+import { useSelector } from '../../../../../node_modules/react-redux/dist/react-redux'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -196,6 +198,17 @@ const AdvanceKendoTable = ({
   externalCustomModifiedCells = null,
   externalSetCustomModifiedCells = null,
 }) => {
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const {
+    plantObject,
+    year,
+    oldYear,
+    yearChanged,
+    verticalObject,
+    siteObject,
+  } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
   const gridRef = useRef(null)
@@ -226,8 +239,12 @@ const AdvanceKendoTable = ({
     externalSetCustomModifiedCells !== null
       ? externalSetCustomModifiedCells
       : setInternalCustomModifiedCells
+
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field, dir: undefined }))
@@ -747,7 +764,7 @@ const AdvanceKendoTable = ({
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
         <SvgIcon
-          onClick={() => handleDeleteClick(dataItem)}
+          onClick={() => !READ_ONLY && handleDeleteClick(dataItem)}
           icon={trashIcon}
           themeColor='dark'
         />
@@ -1248,7 +1265,7 @@ const AdvanceKendoTable = ({
             }}
             format='{0:dd-MM-yyyy}'
             editor='date'
-            editable={col.editable || false}
+            editable={isEditable}
             hidden={col.hidden}
             className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
@@ -1290,6 +1307,8 @@ const AdvanceKendoTable = ({
             hidden={col.hidden}
             filter='date'
             columnMenu={ColumnMenuCheckboxFilterDate}
+            editable={isEditable}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={col?.width}
           />
         )
@@ -1300,7 +1319,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            editable={col.editable || false}
+            editable={isEditable}
             columnMenu={ColumnMenuCheckboxFilter}
             hidden={col.hidden}
             format={'{0:n2}'}
@@ -1320,8 +1339,10 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            className={'k-number-right'}
-            editable={col?.editable ? true : false}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               edit: { text: NoSpinnerNumericEditor },
@@ -1345,8 +1366,10 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            className={'k-number-right-disabled'}
-            editable={col?.editable ? true : false}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               edit: { text: NoSpinnerNumericEditor },
@@ -1395,7 +1418,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1450,7 +1473,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1500,7 +1523,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
@@ -1526,7 +1549,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1548,7 +1571,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1598,7 +1621,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             cells={{
               edit: {
                 text: (cellProps) => (
@@ -1617,6 +1640,7 @@ const AdvanceKendoTable = ({
                 : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
         )
@@ -1630,7 +1654,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             cells={{
               edit: {
                 text: (cellProps) => (
@@ -1650,6 +1674,7 @@ const AdvanceKendoTable = ({
                 : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
         )
@@ -1663,8 +1688,8 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
-            className={!col?.editable ? 'k-right-disabled' : undefined}
+            editable={isEditable}
+            className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: {
@@ -1703,7 +1728,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1754,8 +1779,8 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
-            className={!col?.editable ? 'k-right-disabled' : undefined}
+            editable={isEditable}
+            className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: {
@@ -1799,7 +1824,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             cells={{
               edit: {
                 text: (cellProps) => (
@@ -1818,6 +1843,7 @@ const AdvanceKendoTable = ({
                 : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
         )
@@ -2126,7 +2152,7 @@ const AdvanceKendoTable = ({
                 sort,
               )}
 
-              {permissions?.deleteButton && (
+              {!READ_ONLY && permissions?.deleteButton && (
                 <GridColumn
                   key='actions'
                   field='actions'

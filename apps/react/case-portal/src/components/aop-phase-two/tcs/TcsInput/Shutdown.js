@@ -12,6 +12,7 @@ import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiServi
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const Shutdown = ({
   PLANT_ID,
@@ -37,7 +38,7 @@ const Shutdown = ({
 
   // State to store API response metadata (headers and keys)
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
-
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
   // Carry forward data from previous year
   const handleCarryForward = useCallback(async () => {
     try {
@@ -46,7 +47,7 @@ const Shutdown = ({
       const carryForwardResponse = await TcsApiService.carryForwardTcsShutdown(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
       )
 
       console.log('Carry-forward response:', carryForwardResponse)
@@ -75,7 +76,7 @@ const Shutdown = ({
         const response = await TcsApiService.getTcsShutdownData(
           keycloak,
           PLANT_ID,
-          AOP_YEAR,
+          apiYear,
         )
         console.log('TCS Shutdown Response:', response)
 
@@ -287,7 +288,7 @@ const Shutdown = ({
         const response = await TcsApiService.saveShutdownData(
           keycloak,
           PLANT_ID,
-          AOP_YEAR,
+          apiYear,
           formattedData,
         )
         console.log('Save Shutdown response:', response)
@@ -483,7 +484,7 @@ const Shutdown = ({
     })
 
     try {
-      await TcsApiService.exportShutdownExcel(keycloak, PLANT_ID, AOP_YEAR)
+      await TcsApiService.exportShutdownExcel(keycloak, PLANT_ID, apiYear)
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -507,7 +508,7 @@ const Shutdown = ({
       const response = await TcsApiService.importShutdownExcel(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
         file,
       )
 

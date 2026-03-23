@@ -5,6 +5,7 @@ import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOu
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const Slowdown = ({
   SITE_ID,
@@ -31,7 +32,7 @@ const Slowdown = ({
 
   // State to store API response metadata (headers and keys)
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
-
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
   // Fetch Shutdown Data
   const fetchSlowdownData = useCallback(async () => {
     if (!SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
@@ -43,7 +44,7 @@ const Slowdown = ({
         keycloak,
         SITE_ID,
         VERTICAL_ID,
-        AOP_YEAR,
+        apiYear,
       )
       console.log('TCS Slowdown Response:', response)
 
@@ -177,7 +178,7 @@ const Slowdown = ({
         keycloak,
         SITE_ID,
         VERTICAL_ID,
-        AOP_YEAR,
+        apiYear,
       )
 
       setSnackbarData({

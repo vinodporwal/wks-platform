@@ -44,10 +44,18 @@ public class TCSNetCapacityController {
                     null);
         }
 
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         try {
             log.debug("Calling service method getAll with parameters - plantId: {}, year: {}, capacityType: {}, siteId: {}, verticalId: {}",
                     plantId, year, capacityType, siteId, verticalId);
             
+            if(year == null || year.isEmpty() || year.length() != 4) {
+                throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+            }
+
             Map<String, Object> response = tcsNetCapacityService.getAll(
                     plantId,
                     year,

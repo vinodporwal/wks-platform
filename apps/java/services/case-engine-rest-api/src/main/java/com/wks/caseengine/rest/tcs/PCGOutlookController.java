@@ -55,13 +55,15 @@ public class PCGOutlookController {
         @RequestParam String siteId,
         @RequestParam String financialYear) {
 
+        String sheetName = "PCGOutlook_" + financialYear.substring(0,4) + ".xlsx";
+
         byte[] excelData = service.exportPCGOutlook(
             UUID.fromString(siteId),
             financialYear);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "PCGOutlook_" + financialYear + ".xlsx");
+        headers.setContentDispositionFormData("attachment", sheetName);
 
         return ResponseEntity.ok()
             .headers(headers)

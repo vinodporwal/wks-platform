@@ -63,6 +63,11 @@ export const InputApiService = {
   saveFuelAvailabilityExcel,
   exportFuelAvailabilityExcel,
 
+  getFuelAvailabilityDataJCB,
+  saveFuelAvailabilityDataJCB,
+  saveFuelAvailabilityExcelJCB,
+  exportFuelAvailabilityExcelJCB,
+
   // Generic Excel Import/Export
   saveExcelData,
   exportExcelData,
@@ -1134,6 +1139,119 @@ async function exportFuelAvailabilityExcel(keycloak, PLANT_ID, AOP_YEAR) {
     endpoint: `fuel-availability/export/${PLANT_ID}/${AOP_YEAR}`,
     queryParams: {},
     fileName: `Fuel_Availability_${AOP_YEAR}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// ========================|| JCB Fuel Availability APIs ||=====================================//
+async function getFuelAvailabilityDataJCB(
+  keycloak,
+  cppId,
+  financialYear,
+  fuelType = null,
+) {
+  let url = `${Config.CaseEngineUrl}/task/fuel-availability/${cppId}/${financialYear}`
+
+  if (fuelType) {
+    url += `?fuelType=${encodeURIComponent(fuelType)}`
+  }
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveFuelAvailabilityDataJCB(
+  keycloak,
+  cppId,
+  financialYear,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/fuel-availability/${cppId}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveFuelAvailabilityExcelJCB(file, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/fuel-availability/import`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const responseData = await json(keycloak, resp)
+
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import JCB fuel availability data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    return responseData
+  } catch (e) {
+    console.error(`Error importing JCB Fuel Availability Excel:`, e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportFuelAvailabilityExcelJCB(
+  keycloak,
+  cppId,
+  financialYear,
+  fuelType = null,
+) {
+  const queryParams = {}
+  if (fuelType) {
+    queryParams.fuelType = fuelType
+  }
+
+  return exportExcelData(keycloak, {
+    endpoint: `fuel-availability/export/${cppId}/${financialYear}`,
+    queryParams: queryParams,
+    fileName: `JCB_Fuel_Availability_${financialYear}.xlsx`,
     method: 'GET',
   })
 }

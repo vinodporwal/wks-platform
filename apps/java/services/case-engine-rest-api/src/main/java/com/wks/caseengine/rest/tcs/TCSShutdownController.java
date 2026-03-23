@@ -37,6 +37,10 @@ public class TCSShutdownController {
             throw new RestInvalidArgumentException("Plant ID and Site ID or Vertical ID cannot be provided together", null);
         }
 
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         return tcsShutdownService.getAll(plantId, year, siteId, verticalId);
     }
 
@@ -47,8 +51,9 @@ public class TCSShutdownController {
             if(plantId == null || plantId.isEmpty()) {
                 throw new RestInvalidArgumentException("Plant ID cannot be null", null);
             }
-            if(year == null || year.isEmpty()) {
-                throw new RestInvalidArgumentException("Year cannot be null", null);
+           
+            if(year == null || year.isEmpty() || year.length() != 4) {
+                throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
             }
       
         return tcsShutdownService.carryForwardTCSShutdown(plantId, year);
@@ -59,6 +64,11 @@ public class TCSShutdownController {
         @RequestParam String plantId,
         @RequestParam String year,
         @RequestBody List<TCSShutdownDTO> payload) {
+
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         return tcsShutdownService.saveOrUpdate(plantId, year, payload);
     }
 
@@ -82,11 +92,19 @@ public class TCSShutdownController {
             throw new RestInvalidArgumentException("Plant ID and Site ID or Vertical ID cannot be provided together", null);
         }
 
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
+
         byte[] excelData = tcsShutdownService.exportTCSShutdown(
             plantId,
             year,
             siteId,
             verticalId);
+
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -102,6 +120,10 @@ public class TCSShutdownController {
         @RequestParam String plantId,
         @RequestParam String year,
         @RequestParam("file") MultipartFile file) {
+
+        if(year == null || year.isEmpty() || year.length() != 4) {
+            throw new RestInvalidArgumentException("Year must be a 4 digit year", null);
+        }
 
         return tcsShutdownService.importExcel(
             plantId,
