@@ -86,6 +86,10 @@ const ProductionNorms = ({ permissions }) => {
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'jmd' &&
     plantName == 'iir'
+  const IS_CHEMICAL_DMD_CHLOR_ALKALI =
+    lowerVertName === 'chemical' &&
+    SITE_NAME_LOWERCASE === 'dmd' &&
+    plantName === 'chlor alkali'
   const [loading, setLoading] = useState(false)
   const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -634,7 +638,8 @@ const ProductionNorms = ({ permissions }) => {
             !IS_AROMATIC_SEZ &&
             !IS_AROMATIC_HMD &&
             !IS_AROMATIC_DTA_PLATFORMER) ||
-          IS_ELASTOMER_JMD
+          IS_ELASTOMER_JMD ||
+          IS_CHEMICAL_DMD_CHLOR_ALKALI
         ) {
           finalData = [...formattedData, totalsRow]
         } else {

@@ -400,7 +400,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
-        IS_ELASTOMER_VERTICAL
+        IS_ELASTOMER_VERTICAL ||
+        lowerVertName === 'chemical'
           ? true
           : false,
 

@@ -377,3 +377,45 @@ export const ShutDownPTADMDColumns = [
     editable: true,
   },
 ]
+export const ShutDownChemicalColumns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD - From',
+  //   editable: true,
+  // },
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD - To',
+  //   editable: true,
+  // },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
+  },
+]

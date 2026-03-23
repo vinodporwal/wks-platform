@@ -22,6 +22,7 @@ import {
 import {
   ShutDownPTAColumns,
   ShutDownPTADMDColumns,
+  ShutDownChemicalColumns,
 } from 'components/colums/ShutdownColumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import { getRoleName } from 'services/role-service'
@@ -271,7 +272,10 @@ const ShutDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'pta' && !IS_CHEMICAL) {
+      if (
+        duplicate &&
+        lowerVertName !== 'pta'
+      ) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -701,7 +705,7 @@ const ShutDown = ({ permissions }) => {
           (p) => p.name === item.discription,
         )
 
-        if (lowerVertName == 'pta' || lowerVertName == 'chemical') {
+        if (lowerVertName == 'pta') {
           return {
             ...item,
             idFromApi: item?.id,
@@ -711,6 +715,24 @@ const ShutDown = ({ permissions }) => {
             maintStartDateTime: new Date(item?.maintStartDateTime),
             maintEndDateTime: new Date(item?.maintEndDateTime),
             discription: descriptionObj ? descriptionObj.displayName : '',
+            monthly:
+              item?.monthly ||
+              item?.month ||
+              (item?.maintStartDateTime
+                ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
+                : ''),
+          }
+        }
+        if (lowerVertName == 'chemical') {
+          return {
+            ...item,
+            idFromApi: item?.id,
+            id: index,
+            originalRemark: item.remark,
+            inEdit: false,
+            maintStartDateTime: new Date(item?.maintStartDateTime),
+            maintEndDateTime: new Date(item?.maintEndDateTime),
+            discription: item.discription,
             monthly:
               item?.monthly ||
               item?.month ||
@@ -917,7 +939,7 @@ const ShutDown = ({ permissions }) => {
       case verticalEnums.PTA:
         return IS_PTA ? ShutDownPTADMDColumns : ShutDownPTAColumns
       case verticalEnums.CHEMICAL:
-        return IS_CHEMICAL ? ShutDownPTADMDColumns : ShutDownAllColumns
+        return IS_CHEMICAL ? ShutDownChemicalColumns : ShutDownAllColumns
       case verticalEnums.PVC:
         return IS_PVC_DMD ? ShutDownPpDtaColumns : ShutDownPpColumns
       case verticalEnums.ELASTOMER:
