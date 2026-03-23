@@ -111,16 +111,18 @@ const BusinessDemand = ({ permissions }) => {
         AOP_YEAR,
       )
 
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.remark,
-        inEdit: false,
-        Particulars: item.normParameterTypeDisplayName,
-        expanded: false,
-        UOM: IS_VCM_VERTICAL ? '%' : item?.UOM,
-      }))
+      const formattedData = data
+        .filter((item) => item.normParameterTypeName == 'Business Demand')
+        .map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remark,
+          inEdit: false,
+          Particulars: item.normParameterTypeDisplayName,
+          expanded: false,
+          UOM: IS_VCM_VERTICAL ? '%' : item?.UOM,
+        }))
 
       setRows(formattedData)
 

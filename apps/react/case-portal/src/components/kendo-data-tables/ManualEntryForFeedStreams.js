@@ -68,22 +68,25 @@ const ManualEntryForFeedStreams = () => {
     if (!PLANT_ID || !AOP_YEAR) return
     setModifiedCells({})
     try {
-      setLoading(true)
-      const response =
-        await BusinessDemandDataApiService.getManualEntryForFeedStreamsData(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          'streams',
-        )
+      var data = await BusinessDemandDataApiService.getBDData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
 
-      const formattedData = response?.data?.map((row, index) => ({
-        ...row,
-        id: row.id || index,
-        normParameterFKId: row?.NormParameter_FK_Id,
-        remarks: row?.Remarks || '',
-        originalRemark: row.Remarks || '',
-      }))
+      const formattedData = data
+        .filter((item) => item.normParameterTypeName != 'Business Demand')
+        .map((row, index) => ({
+          ...row,
+          idFromApi: row.id,
+          id: index,
+          DisplayName: row?.displayName,
+          normParameterFKId: row?.normParameterId,
+          ConstantValue: row?.april || 0,
+          remarks: row?.remark || '',
+          originalRemark: row.remark || '',
+          inEdit: false,
+        }))
 
       setRows(formattedData || [])
     } catch (error) {
@@ -107,36 +110,37 @@ const ManualEntryForFeedStreams = () => {
     setLoading(true)
     try {
       let payload = updatedRows?.map((row) => {
-        const { id, inEdit, particulars, originalRemark, ...rest } = row
         const monthValue = row.ConstantValue
         return {
-          normParameterFKId: row.normParameterFKId,
-          jan: monthValue,
-          feb: monthValue,
-          mar: monthValue,
-          apr: monthValue,
+          april: monthValue,
           may: monthValue,
-          jun: monthValue,
-          jul: monthValue,
+          june: monthValue,
+          july: monthValue,
           aug: monthValue,
           sep: monthValue,
           oct: monthValue,
           nov: monthValue,
           dec: monthValue,
-          UOM: row?.UOM,
-          remarks: row?.remarks,
+          jan: monthValue,
+          feb: monthValue,
+          march: monthValue,
+          remark: row?.remarks || null,
+          avgTph: row?.avgTph || null,
+          year: AOP_YEAR,
+          plantId: PLANT_ID,
+          siteFKId: siteObject?.id,
+          verticalFKId: verticalObject?.id,
+          normParameterId: row.normParameterId,
+          id: row.idFromApi || null,
+          inEdit: row.inEdit || false,
         }
       })
 
       const response =
-        await BusinessDemandDataApiService.saveManualEntryForFeedStreamsData(
-          keycloak,
+        await BusinessDemandDataApiService.saveBusinessDemandData(
           payload,
-          PLANT_ID,
-          AOP_YEAR,
+          keycloak,
         )
-      console.log('PLANT_ID', PLANT_ID)
-      console.log('payload', payload)
 
       setSnackbarOpen(true)
       setSnackbarData({
@@ -144,8 +148,9 @@ const ManualEntryForFeedStreams = () => {
         severity: 'success',
       })
 
+      setModifiedCells({})
       await fetchData()
-      return { code: 200 }
+      return response
     } catch (error) {
       console.error('Error updating data:', error)
       setSnackbarOpen(true)
@@ -353,6 +358,7 @@ const ManualEntryForFeedStreams = () => {
         permissions={adjustedPermissions}
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         handleExcelUpload={handleExcelUpload}
+        groupBy={'normParameterTypeName'}
       />
     </Box>
   )
