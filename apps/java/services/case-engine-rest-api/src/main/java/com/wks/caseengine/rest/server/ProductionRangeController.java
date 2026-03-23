@@ -22,5 +22,12 @@ public class ProductionRangeController {
             @RequestParam String year) {
         return productionRangeService.getProductionRange(plantId, year);
     }
+
+    @GetMapping(value = "/production-range-limit")
+    public AOPMessageVM getProductionRangeLimit(
+            @RequestParam String plantId,
+            @RequestParam String year) {
+        return productionRangeService.getProductionRangeLimit(plantId, year);
+    }
 }
 
