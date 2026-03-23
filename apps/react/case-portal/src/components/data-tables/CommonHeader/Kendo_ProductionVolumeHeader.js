@@ -50,8 +50,8 @@ const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
     if (isPPDTAorHMD && nonAprilMonths.includes(col.field)) {
       updatedCol = {
         ...updatedCol,
-        editable: false,    // ? not editable
-        isDisabled: true,   // ? grey style via k-number-right-disabled
+        editable: false, // ? not editable
+        isDisabled: true, // ? grey style via k-number-right-disabled
       }
     }
 
