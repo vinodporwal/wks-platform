@@ -13,6 +13,7 @@ import { DataService } from 'services/DataService'
 import {
   setAopYear,
   setCurrentYear,
+  setIsReleased,
   setOldYear,
   setPlantID,
   setPlantObject,
@@ -116,6 +117,33 @@ export default function HeaderContent({ keycloak }) {
     setAllowedMap(parseAllowed(parsed))
   }, [keycloak])
 
+  const getIsReleased = async () => {
+    if (!selectedPlant || !selectedYear) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        selectedPlant,
+        selectedYear,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        // setIsReleaseDisabled(true)
+
+        let isReleased = 1
+        dispatch(setIsReleased({ isReleased }))
+      } else {
+        // setIsReleaseDisabled(false)
+        let isReleased = 0
+        dispatch(setIsReleased({ isReleased }))
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
   // 2?? fetch full details once
 
   const fetchAllSites = async () => {
@@ -133,8 +161,13 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     fetchAllSites()
+    getIsReleased()
     // }, [keycloak, verticalFromDashboard])
   }, [keycloak])
+
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, selectedYear, selectedPlant])
 
   useEffect(() => {
     if (!fullDetails.length || !Object.keys(allowedMap).length) return
