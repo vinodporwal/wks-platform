@@ -1018,9 +1018,7 @@ const PtaShutDown = ({ permissions }) => {
           AOP_YEAR,
           EXCEL_EXPORT_TITLE,
         )
-        return
-      }
-      if (IS_PP_DTA) {
+      } else if (IS_PP_DTA) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1065,9 +1063,7 @@ const PtaShutDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-        return
-      }
-      if (IS_PP_DTA) {
+      } else if (IS_PP_DTA) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1125,6 +1121,7 @@ const PtaShutDown = ({ permissions }) => {
           severity: 'warning',
         })
         fetchData()
+        fetchTabIndex1Data()
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -1135,7 +1132,7 @@ const PtaShutDown = ({ permissions }) => {
 
       return response
     } catch (error) {
-      console.error('Error uploading xcel:', error)
+      console.error('Error uploading Excel:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Unexpected error occurred!',

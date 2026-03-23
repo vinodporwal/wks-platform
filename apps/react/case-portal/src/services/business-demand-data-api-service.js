@@ -14,6 +14,8 @@ export const BusinessDemandDataApiService = {
   ssrsSiteMaintenanceSummary,
   SSRS_NormComparisonReport,
   getDashboardData,
+  getManualEntryForFeedStreamsData,
+  saveManualEntryForFeedStreamsData,
 }
 async function getBDData(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/business-demand?year=${AOP_YEAR}&plantId=${PLANT_ID}`
@@ -276,6 +278,52 @@ async function getDashboardData(keycloak, PLANT_ID, AOP_YEAR) {
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getManualEntryForFeedStreamsData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  type,
+) {
+  const url = `${Config.CaseEngineUrl}/task/production-constraints?year=${AOP_YEAR}&plantFKId=${PLANT_ID}&type=${type}`
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveManualEntryForFeedStreamsData(
+  keycloak,
+  payload,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  var url = `${Config.CaseEngineUrl}/task/production-norms?year=${AOP_YEAR}&plantFKId=${PLANT_ID}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)

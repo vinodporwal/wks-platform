@@ -123,6 +123,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 	    boolean pvc= verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 		Boolean withGrade = false;
+		Boolean elastomer = verticalName.equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		if (plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD")
 				&& vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 			withGrade = true;
@@ -146,7 +147,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				mCUNormsValueDTO.setVerticalFkId(row[3].toString());
 
 				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-						|| vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+						|| vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 					mCUNormsValueDTO.setGradeId(row[4].toString());
 					mCUNormsValueDTO.setMaterialFkId(row[5].toString());
 					mCUNormsValueDTO.setApril(row[6] != null ? Double.parseDouble(row[6].toString()) : null);

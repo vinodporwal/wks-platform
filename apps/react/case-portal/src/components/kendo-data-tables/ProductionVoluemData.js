@@ -214,10 +214,38 @@ const ProductionvolumeData = ({ permissions }) => {
         remark: row.remarks,
         remarks: row.remarks,
       }))
+      const aopmccCalculatedDataPPHMDDTA = newRows.map((row) => ({
+        april: isTPH && row.april ? row.april / 24 : row.april || null,
+        may: isTPH && row.april ? row.april / 24 : row.april || null,
+        june: isTPH && row.april ? row.april / 24 : row.april || null,
+        july: isTPH && row.april ? row.april / 24 : row.april || null,
+        august: isTPH && row.april ? row.april / 24 : row.april || null,
+        september: isTPH && row.april ? row.april / 24 : row.april || null,
+        october: isTPH && row.april ? row.april / 24 : row.april || null,
+        november: isTPH && row.april ? row.april / 24 : row.april || null,
+        december: isTPH && row.april ? row.april / 24 : row.april || null,
+        january: isTPH && row.april ? row.april / 24 : row.april || null,
+        february: isTPH && row.april ? row.april / 24 : row.april || null,
+        march: isTPH && row.april ? row.april / 24 : row.april || null,
+
+        financialYear: AOP_YEAR,
+        plantFKId: PLANT_ID,
+        siteFKId: SITE_ID,
+        materialFKId: row.normParametersFKId,
+        verticalFKId: VERTICAL_ID,
+        id: row.idFromApi || null,
+        avgTPH: findAvg('1', row) || null,
+        remark: row.remarks,
+        remarks: row.remarks,
+      }))
+      const Payload =
+        IS_PP_DTA || IS_PP_HMD
+          ? aopmccCalculatedDataPPHMDDTA
+          : aopmccCalculatedData
 
       const response =
         await ProductionVolumeDataApiService.editAOPMCCalculatedData(
-          aopmccCalculatedData,
+          Payload,
           PLANT_ID,
           AOP_YEAR,
           keycloak,
@@ -388,20 +416,33 @@ const ProductionvolumeData = ({ permissions }) => {
         'february',
         'march',
       ]
-
+      const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD
       const invalidRows = data.filter((row) => {
         if (!row.normParametersFKId || !row.normParametersFKId.trim()) {
           return true
         }
 
-        for (const month of months) {
-          const value = row[month]
+        if (isPPDTAorHMD) {
+          // Only "april" is required
+          const value = row['april']
           if (
             value === 0 ||
             value === null ||
-            (typeof value === 'string' && !value.trim())
+            (typeof value === 'string' && !value.toString().trim())
           ) {
             return true
+          }
+        } else {
+          // All months required
+          for (const month of months) {
+            const value = row[month]
+            if (
+              value === 0 ||
+              value === null ||
+              (typeof value === 'string' && !value.toString().trim())
+            ) {
+              return true
+            }
           }
         }
 
@@ -422,8 +463,9 @@ const ProductionvolumeData = ({ permissions }) => {
 
       if (invalidRows.length > 0) {
         setSnackbarData({
-          message:
-            'Please fill all fields in edited row and update the Remark!',
+          message: isPPDTAorHMD
+            ? 'Please fill April and Remark in edited row!'
+            : 'Please fill all fields in edited row and update the Remark!',
           severity: 'error',
         })
         setSnackbarOpen(true)
@@ -495,6 +537,7 @@ const ProductionvolumeData = ({ permissions }) => {
         return
       }
       setCalculationObject(response?.data?.aopCalculation)
+      const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD
       var formattedData = response?.data?.aopMCCalculatedDataDTOList.map(
         (item, index) => {
           const isTPH = selectedUnit == 'TPD'

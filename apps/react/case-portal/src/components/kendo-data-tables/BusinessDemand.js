@@ -20,6 +20,7 @@ import ProductionvolumeData from './ProductionVoluemData'
 import PropaneBusiness from 'components/kendo-data-tables/PropaneBusiness'
 import { getRoleName } from 'services/role-service'
 import ProductionTarget from './ProductionTarget'
+import ManualEntryForFeedStreams from './ManualEntryForFeedStreams'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -63,6 +64,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
+  const IS_CARCKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -109,16 +111,21 @@ const BusinessDemand = ({ permissions }) => {
         AOP_YEAR,
       )
 
-      const formattedData = data.map((item, index) => ({
-        ...item,
-        idFromApi: item.id,
-        id: index,
-        originalRemark: item.remark,
-        inEdit: false,
-        Particulars: item.normParameterTypeDisplayName,
-        expanded: false,
-        UOM: IS_VCM_VERTICAL ? '%' : item?.UOM,
-      }))
+      const formattedData = data
+        .filter(
+          (item) =>
+            item.normParameterTypeName === 'Business Demand' && IS_CRACKER_DMD,
+        )
+        .map((item, index) => ({
+          ...item,
+          idFromApi: item.id,
+          id: index,
+          originalRemark: item.remark,
+          inEdit: false,
+          Particulars: item.normParameterTypeDisplayName,
+          expanded: false,
+          UOM: IS_VCM_VERTICAL ? '%' : item?.UOM,
+        }))
 
       setRows(formattedData)
 
@@ -398,7 +405,8 @@ const BusinessDemand = ({ permissions }) => {
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
-        IS_ELASTOMER_VERTICAL
+        IS_ELASTOMER_VERTICAL ||
+        lowerVertName === 'chemical'
           ? true
           : false,
 
@@ -655,6 +663,8 @@ const BusinessDemand = ({ permissions }) => {
         downloadExcelForConfiguration={downloadExcelForConfiguration}
         totalRowConfiguration={totalRowConfiguration}
       />
+
+      {IS_CARCKER_DMD && <ManualEntryForFeedStreams />}
 
       {!IS_CARCKER_VMD && IS_CRACKER_VERTICAL && (
         <>
