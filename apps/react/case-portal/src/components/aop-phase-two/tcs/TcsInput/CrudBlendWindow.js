@@ -1,9 +1,9 @@
 import { Box, Backdrop, CircularProgress } from '@mui/material'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiService'
 import { useSession } from 'SessionStoreContext'
 import CrudBlendWindowGrid from './CrudBlendWindowComponents/CrudBlendWindowGrid'
-
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 const CrudBlendWindow = ({
   PLANT_ID,
   AOP_YEAR,
@@ -23,7 +23,7 @@ const CrudBlendWindow = ({
     { key: 'VGOVRDrop', title: 'VGO-VR Drop' },
     { key: 'CrudeSpecificConstraints', title: 'Crude Specific Constraints' },
   ]
-
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
   // Carry forward data from previous year
   const handleCarryForward = useCallback(async () => {
     try {
@@ -32,7 +32,7 @@ const CrudBlendWindow = ({
       const carryForwardResponse =
         await TcsApiService.carryForwardCrudBlendWindow(
           keycloak,
-          AOP_YEAR,
+          apiYear,
           SITE_ID,
           PLANT_ID,
         )
@@ -74,7 +74,7 @@ const CrudBlendWindow = ({
         const response = await TcsApiService.getCrudBlendWindowData(
           keycloak,
           PLANT_ID,
-          AOP_YEAR,
+          apiYear,
           SITE_ID,
         )
 

@@ -6,9 +6,9 @@ import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiS
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
-import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import AdvanceKendoTable from '../../../common/AdvanceKendoTable/index'
 
-const FuelAvailability = () => {
+const JCBFuel = () => {
   const keycloak = useSession()
 
   const [modifiedCells, setModifiedCells] = useState({})
@@ -207,169 +207,13 @@ const FuelAvailability = () => {
   const fetchFuelAvailabilityData = async () => {
     setLoading(true)
     try {
-      // Default mock data based on Excel structure
-      const defaultData = [
-        {
-          id: 1,
-          fuel: 'Fuel gas',
-          uom: 'MT',
-          fuelCategory: 'INTERNAL_LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 2,
-          fuel: 'High Speed Diesel-HSD',
-          uom: 'K15',
-          fuelCategory: 'LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 3,
-          fuel: 'Low Sulfur Heavy Stock',
-          uom: 'MT',
-          fuelCategory: 'LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 4,
-          fuel: 'MIXED OIL',
-          uom: 'MT',
-          fuelCategory: 'LNG',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 5,
-          fuel: 'FURNACE OIL ( MEDIUM VISCOSITY GRADE )',
-          uom: 'MT',
-          fuelCategory: 'FO',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 6,
-          fuel: 'NATURAL GAS',
-          uom: 'GBT',
-          fuelCategory: 'R-GAS',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 7,
-          fuel: 'AMBIENT ETHANE',
-          uom: 'MT',
-          fuelCategory: 'ETHANE',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-        {
-          id: 8,
-          fuel: 'COAL BED METHANE GAS',
-          uom: 'GBT',
-          fuelCategory: 'CBM',
-          apr: null,
-          may: null,
-          jun: null,
-          jul: null,
-          aug: null,
-          sep: null,
-          oct: null,
-          nov: null,
-          dec: null,
-          jan: null,
-          feb: null,
-          mar: null,
-          remarks: '',
-        },
-      ]
-
-      //   const res = await InputApiService.getFuelAvailabilityData(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
+      const res = await InputApiService.getFuelAvailabilityDataJCB(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
       // Fallback to default data if API returns empty
-      const res = defaultData
+      // const res = defaultData
 
       if (res?.length === 0) {
         setRows([])
@@ -380,9 +224,25 @@ const FuelAvailability = () => {
 
       console.log('Fuel Availability data:', res)
       const formattedData = res?.map((item, index) => ({
-        ...item,
-        remarks: item.remarks || '',
         id: item?.id || index + 1,
+        fuel: item.fuelName,
+        fuelCategory: item.fuelCategory,
+        uom: item.uom,
+        apr: item.apr,
+        may: item.may,
+        jun: item.jun,
+        jul: item.jul,
+        aug: item.aug,
+        sep: item.sep,
+        oct: item.oct,
+        nov: item.nov,
+        dec: item.dec,
+        jan: item.jan,
+        feb: item.feb,
+        mar: item.mar,
+        remarks: item.remarks || '',
+        cppId: item.cppId,
+        financialYear: item.financialYear,
       }))
       setRows(formattedData)
       setOriginalRows(formattedData)
@@ -403,11 +263,11 @@ const FuelAvailability = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `Fuel Availability - ${AOP_YEAR}`,
+    ExcelName: `JCB Fuel- ${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'Fuel Availability',
+    titleName: 'JCB Fuel',
   }
 
   const saveChanges = async () => {
@@ -466,12 +326,35 @@ const FuelAvailability = () => {
       return
     }
 
-    const payload = modifiedData
+    // Map UI fields back to API format
+    const payload = modifiedData.map((item) => ({
+      id: item.id,
+      cppId: item.cppId || PLANT_ID,
+      fuelName: item.fuel,
+      fuelCategory: item.fuelCategory,
+      uom: item.uom,
+      apr: item.apr,
+      may: item.may,
+      jun: item.jun,
+      jul: item.jul,
+      aug: item.aug,
+      sep: item.sep,
+      oct: item.oct,
+      nov: item.nov,
+      dec: item.dec,
+      jan: item.jan,
+      feb: item.feb,
+      mar: item.mar,
+      financialYear: item.financialYear || AOP_YEAR,
+      remarks: item.remarks || '',
+    }))
+
     try {
       console.log('Saving fuel availability data:', payload)
 
-      const response = await InputApiService.saveFuelAvailabilityData(
+      const response = await InputApiService.saveFuelAvailabilityDataJCB(
         keycloak,
+        PLANT_ID,
         AOP_YEAR,
         payload,
       )
@@ -499,20 +382,19 @@ const FuelAvailability = () => {
 
     setLoading(true)
     try {
-      const response = await InputApiService.saveFuelAvailabilityExcel(
+      const response = await InputApiService.saveFuelAvailabilityExcelJCB(
         file,
         keycloak,
-        PLANT_ID,
-        AOP_YEAR,
       )
 
-      if (response?.code === 200) {
+      // Success case - code 0 means success
+      if (response?.code === 0) {
+        await fetchFuelAvailabilityData()
         setSnackbarOpen(true)
         setSnackbarData({
           message: response?.message || 'Excel file imported successfully!',
           severity: 'success',
         })
-        await fetchFuelAvailabilityData()
       } else if (response?.code === 400 && response?.data) {
         try {
           const base64Data = response.data
@@ -576,7 +458,7 @@ const FuelAvailability = () => {
     })
 
     try {
-      await InputApiService.exportFuelAvailabilityExcel(
+      await InputApiService.exportFuelAvailabilityExcelJCB(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -630,7 +512,7 @@ const FuelAvailability = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        customHeight={60}
+        // customHeight={60}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
@@ -642,4 +524,4 @@ const FuelAvailability = () => {
   )
 }
 
-export default FuelAvailability
+export default JCBFuel

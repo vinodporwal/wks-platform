@@ -12,6 +12,7 @@ import {
   validateDateOverlaps,
 } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const Slowdown = ({
   PLANT_ID,
@@ -38,6 +39,7 @@ const Slowdown = ({
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
   const [originalRows, setOriginalRows] = useState([])
 
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
   // Carry forward data from previous year
   const handleCarryForward = useCallback(async () => {
     try {
@@ -46,7 +48,7 @@ const Slowdown = ({
       const carryForwardResponse = await TcsApiService.carryForwardTcsSlowdown(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
       )
 
       console.log('Carry-forward response:', carryForwardResponse)
@@ -75,7 +77,7 @@ const Slowdown = ({
         const response = await TcsApiService.getTcsSlowdownData(
           keycloak,
           PLANT_ID,
-          AOP_YEAR,
+          apiYear,
         )
         console.log('TCS Slowdown Response:', response)
 
@@ -304,7 +306,7 @@ const Slowdown = ({
         const response = await TcsApiService.saveSlowdownData(
           keycloak,
           PLANT_ID,
-          AOP_YEAR,
+          apiYear,
           formattedData,
         )
         console.log('Save Slowdown response:', response)
@@ -507,7 +509,7 @@ const Slowdown = ({
     })
 
     try {
-      await TcsApiService.exportSlowdownExcel(keycloak, PLANT_ID, AOP_YEAR)
+      await TcsApiService.exportSlowdownExcel(keycloak, PLANT_ID, apiYear)
 
       setSnackbarData({
         message: 'Excel download completed successfully!',
@@ -531,7 +533,7 @@ const Slowdown = ({
       const response = await TcsApiService.importSlowdownExcel(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
         file,
       )
 

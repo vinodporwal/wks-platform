@@ -19,11 +19,12 @@ import {
   Backdrop,
   CircularProgress,
 } from '../../../../../node_modules/@mui/material/index'
+import dataGridStore from 'store/reducers/dataGridStore'
+import { getRoleName } from 'services/role-service'
 
 const ConfigurationAccordian = ({
   PLANT_ID,
   AOP_YEAR,
-  READ_ONLY,
   isOldYear,
   isSummaryRequired = false,
   yearGap = 1,
@@ -33,6 +34,10 @@ const ConfigurationAccordian = ({
 }) => {
   const keycloak = useSession()
   const hasExecutedRef = useRef(false)
+  const { isReleased, oldYear } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   // State management
   const [startDate, setStartDate] = useState()

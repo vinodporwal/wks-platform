@@ -19,7 +19,7 @@ import { generateMockData, getColumnsForTab } from './InputUtility'
 import ExportAvailability from './ExportAvailability'
 import HeatRate from './HeatRate/index'
 import FixedNorms from './FixedNorms'
-import FuelAvailability from './FuelAvailability'
+import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
 
 const Inputs = () => {
@@ -171,7 +171,7 @@ const Inputs = () => {
       case 'fixed-norms':
         return <FixedNorms />
       case 'fuel-availability':
-        return <FuelAvailability />
+        return <Fuel />
       default:
         return null
     }
