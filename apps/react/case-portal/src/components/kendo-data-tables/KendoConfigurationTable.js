@@ -76,6 +76,7 @@ const ConfigurationTable = () => {
   const lowerSiteName = siteObject?.name?.toLowerCase()
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -139,7 +140,7 @@ const ConfigurationTable = () => {
   const handleOpenDialog = () => {
     const isPEorPP = lowerVertName === 'pe' || lowerVertName === 'pp'
 
-    if (isPEorPP || IS_PVC_DMD) {
+    if (isPEorPP || IS_PVC_DMD || IS_PVC_HMD) {
       if (!summaryEdited && !summary) {
         setSnackbarOpen(true)
         setSnackbarData({
