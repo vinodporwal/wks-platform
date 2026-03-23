@@ -569,7 +569,7 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-          
+
           //Vertical VGOHT Ended
           {
             path: 'quality-packaging-norms',
