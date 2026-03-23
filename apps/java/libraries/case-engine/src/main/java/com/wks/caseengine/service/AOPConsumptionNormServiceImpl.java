@@ -597,6 +597,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			Boolean withGrade=false;
+			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 				withGrade=true;
 			}
@@ -605,7 +606,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			if(withGrade){
 				viewName = "vwScrn" + vertical.getName() + "AOPConsumptionNormsGrade";
 			}
-			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear AND Grade_FK_Id = :gradeId";
 			}else {
 				 sql = "SELECT * FROM " + viewName + " WHERE Plant_FK_Id = :plantFkId AND AOPYear = :aopYear";
@@ -614,7 +615,7 @@ public class AOPConsumptionNormServiceImpl implements AOPConsumptionNormService 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantFkId", plantFkId);
 			query.setParameter("aopYear", aopYear);
-			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				query.setParameter("gradeId", gradeId);
 			}
 			return query.getResultList(); // Later you can map this to a
