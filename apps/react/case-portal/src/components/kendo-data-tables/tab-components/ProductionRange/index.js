@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import ProductionRangeGrid from './ProductionRangeGrid'
+import ProductionRangeGridLimit from './ProductionRangeGridLimit'
 
 const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
@@ -15,6 +16,15 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* Grid 1: Catalyst */}
       <ProductionRangeGrid
+        summary={summary}
+        summaryEdited={summaryEdited}
+        setSummaryEdited={setSummaryEdited}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+      />
+
+      {/* Grid 2: Production Range LIMIT */}
+      <ProductionRangeGridLimit
         summary={summary}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}

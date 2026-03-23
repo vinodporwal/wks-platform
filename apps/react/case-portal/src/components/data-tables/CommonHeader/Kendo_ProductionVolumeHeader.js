@@ -1,6 +1,7 @@
 import production_coldefs_pe from '../../../assets/kendo_production_coldefs_pe.json'
 import production_coldefs_meg from '../../../assets/kendo_production_coldefs_meg.json'
 import production_coldefs_elastomer from '../../../assets/kendo_production_coldefs_elastomer.json'
+import production_coldefs_pp_hmd from '../../../assets/kendo_production_coldefs_pp_hmd.json'
 import { useSelector } from 'react-redux'
 
 const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
@@ -10,7 +11,8 @@ const getEnhancedProductionColDefs = ({ headerMap, valueFormat }) => {
   const lowerVertName = vertName?.toLowerCase() || 'meg'
   const SITE_NAME = siteObject?.name?.toLowerCase()
   const IS_ELASTOMER_JMD = lowerVertName === 'elastomer' && SITE_NAME === 'jmd'
- const isPPDTAorHMD = lowerVertName === 'pp' && (SITE_NAME === 'hmd' || SITE_NAME === 'dta');
+  const isPPDTAorHMD =
+    lowerVertName === 'pp' && (SITE_NAME === 'hmd' || SITE_NAME === 'dta')
   const baseCols =
     lowerVertName == 'pp' && (SITE_NAME === 'hmd' || SITE_NAME === 'dta')
       ? production_coldefs_pp_hmd

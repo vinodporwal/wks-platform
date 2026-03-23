@@ -547,7 +547,6 @@ const ProductionvolumeData = ({ permissions }) => {
             normParametersFKId: item?.materialFKId.toLowerCase(),
             remarks: item?.remarks?.trim() || null,
             originalRemark: item?.remarks?.trim() || null,
-            isEditable: isPPDTAorHMD ? !!item.april : true,
 
             id: index,
 
@@ -591,9 +590,6 @@ const ProductionvolumeData = ({ permissions }) => {
       formattedData = formattedData.map((item) => ({
         ...item,
         remarks: item.remarks ? item.remarks.trim() : '',
-        isEditable: isPPDTAorHMD
-          ? item.april !== null && item.april !== undefined
-          : true,
       }))
       setRowsPercentageSummary(nonEditableRows)
       setRows(formattedData)

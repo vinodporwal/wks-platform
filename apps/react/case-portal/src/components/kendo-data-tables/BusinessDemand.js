@@ -112,7 +112,10 @@ const BusinessDemand = ({ permissions }) => {
       )
 
       const formattedData = data
-        .filter((item) => item.normParameterTypeName == 'Business Demand')
+        .filter(
+          (item) =>
+            item.normParameterTypeName === 'Business Demand' && IS_CRACKER_DMD,
+        )
         .map((item, index) => ({
           ...item,
           idFromApi: item.id,
