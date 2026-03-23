@@ -15,7 +15,7 @@ mongo.data.import.enabled: true
 mongo.data.import.folder: ${IMPORT_DIR_PATH:./data}/mongodb
 
 keycloak.data.import.enabled: true
-keycloak.data.import.url: ${KEYCLOAK_URL:http://localhost:8082}
+keycloak.data.import.url: ${KEYCLOAK_URL:http://localhost:8082/cm}
 keycloak.data.import.admin: ${KEYCLOAK_ADMIN:admin}
 keycloak.data.import.adminpass: ${KEYCLOAK_PASS:admin}
 keycloak.data.import.portal-clientid: wks-portal
@@ -30,7 +30,7 @@ keycloak.data.import.realm: ${spring.data.mongodb.database.tenant}
 keycloak.data.import.dns: apm-cm-exxonmobil-useast.connectedplant.honeywell.com
 keycloak.data.import.port: :8901
 keycloak.data.import.protocol: https://
-keycloak.data.import.redirecturl: ${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}/*
+keycloak.data.import.redirecturl: ${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}/cm/*
 keycloak.data.import.weborigins: ${keycloak.data.import.protocol}${keycloak.data.import.dns}${keycloak.data.import.port}
 keycloak.data.import.username: ${KEYCLOAK_DEFAULT_USER:demo}
 keycloak.data.import.password: ${KEYCLOAK_DEFAULT_USER_PASSWORD:demo}

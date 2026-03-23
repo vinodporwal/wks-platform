@@ -3,6 +3,6 @@ http:
     delpath:
       stripPrefix:
         prefixes:
-          - "/engine"
+          - "/cm"
           - "/inbound"
           - "/s3"

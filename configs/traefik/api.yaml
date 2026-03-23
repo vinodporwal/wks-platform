@@ -3,15 +3,13 @@ http:
     case-engine-rest-api:
       entryPoints:
         - web
-      middlewares:
-        - delpath
       service: case-engine-rest-api
-      rule: PathPrefix("/engine")
+      rule: PathPrefix("/cm")
     storage-api:
       entryPoints:
         - web
       service: storage-api
-      rule: PathPrefix("/storage")
+      rule: PathPrefix("/cm")
 
   services:
     case-engine-rest-api:
