@@ -34,4 +34,10 @@ public interface TCSWorkFlowService {
 
     void clusterHeadApproveReject(String siteId, boolean approvalStatus, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear);
 
+    void notifyPlantManagers();
+
+    String deleteProcess(String verticalId, String siteId, String finacialYear);
+
+    String generateBusinessKey(String verticalId, String siteId, String finacialYear);
+
 }

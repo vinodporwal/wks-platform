@@ -105,8 +105,8 @@ public class KeycloakUserService {
 			    })
 			    .collect(Collectors.toList());
 
+      	return userDetails;
 
-			return userDetails;
 		} catch (Exception ex) {
 			throw new Exception("Failed to fetch users from keyclok: " + ex.getMessage(), ex);
 		}

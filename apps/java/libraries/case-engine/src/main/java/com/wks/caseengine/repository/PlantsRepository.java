@@ -39,12 +39,15 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
 	
       //get all the plants for given vertical and site
       @Query(
-         value = "SELECT * FROM Plants p " +
-                 "WHERE p.Vertical_FK_Id = :verticalId " +
-                 "AND p.Site_FK_Id = :siteId ",
+         value = "SELECT p.* FROM Plants p " +
+				 "JOIN UserScreenMapping usm ON usm.PlantFKId = p.Id " + 
+				 "WHERE usm.ScreenCode = :screenCode " +
+				 "AND p.Vertical_FK_Id = :verticalId " +
+				 "AND p.Site_FK_Id = :siteId",
+				 
          nativeQuery = true
        )
        
-      List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId);
+      List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("screenCode") String screenCode);
 
 }
