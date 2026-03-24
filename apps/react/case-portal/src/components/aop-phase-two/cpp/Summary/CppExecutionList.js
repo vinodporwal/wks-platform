@@ -111,7 +111,6 @@ const CppExecutionList = ({ onViewClick }) => {
       }))
       setRows(formattedData)
     } catch (error) {
-      console.error('Error fetching CPP model logs:', error)
       setSnackbarOpen(true)
       setSnackbarData({ message: 'Error fetching data', severity: 'error' })
     } finally {
@@ -172,7 +171,6 @@ const CppExecutionList = ({ onViewClick }) => {
   }
 
   const handleViewClick = (dataItem) => {
-    console.log('View clicked for:', dataItem)
     if (onViewClick) {
       onViewClick(dataItem)
     } else {
@@ -192,15 +190,6 @@ const CppExecutionList = ({ onViewClick }) => {
       // Download annual Excel report from parent execution
       const url = `${Config.CaseEngineUrl}/task/cpp-model-logs/month/${dataItem.id}/download-excel`
 
-      console.log('========================================')
-      console.log('EXCEL DOWNLOAD REQUEST')
-      console.log('========================================')
-      console.log('Parent Execution ID:', dataItem.id)
-      console.log('Financial Year:', dataItem.financialYear)
-      console.log('API URL:', url)
-      console.log('Token available:', !!keycloak.token)
-      console.log('========================================')
-
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -208,22 +197,7 @@ const CppExecutionList = ({ onViewClick }) => {
         },
       })
 
-      console.log('========================================')
-      console.log('RESPONSE RECEIVED')
-      console.log('========================================')
-      console.log('Status:', response.status)
-      console.log('Status Text:', response.statusText)
-      console.log('OK:', response.ok)
-      console.log('Content-Type:', response.headers.get('Content-Type'))
-      console.log('Content-Length:', response.headers.get('Content-Length'))
-      console.log(
-        'Content-Disposition:',
-        response.headers.get('Content-Disposition'),
-      )
-      console.log('========================================')
-
       if (!response.ok) {
-        console.error('Response not OK - Status:', response.status)
         if (response.status === 404) {
           setSnackbarOpen(true)
           setSnackbarData({
@@ -267,7 +241,6 @@ const CppExecutionList = ({ onViewClick }) => {
         severity: 'success',
       })
     } catch (error) {
-      console.error('Error downloading annual Excel:', error)
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Failed to download annual Excel report',
