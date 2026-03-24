@@ -50,6 +50,8 @@ import SpecificConsumptionNormsII from '../Reports-kendo/specificConsumptionNorm
 import MonthwiseOperatingHours from '../Reports-kendo/kendo-MonthwiseOperatingHours'
 import PlantShutdownSlowdown from '../Reports-kendo/kendo-PlantShutdownSlowdown'
 import { getRoleName } from 'services/role-service'
+import ShutdownReport from '../Reports-kendo/kendo_DetailsPlannedShutdown'
+//import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFourYear'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -599,6 +601,17 @@ const WorkFlowMerge = () => {
     'Plant Contribution (T-21)',
     'Plant Contribution Summary (T-22)',
   ]
+  const customMegTabs = [
+    'Annual AOP Cost',
+    'Plant Production Summary (T-14)',
+    'Month Wise Production Plan (T-16)',
+    'Month Wise Raw Data (T-18)',
+    'Turnaround Report (T-19A)',
+    'Annual Production Plan (T-15)',
+    'Plant Contribution (T-21)',
+    'Plant Contribution Summary (T-22)',
+    'Shutdown Report (T-19B)',
+  ]
   const customPETTabs = [
     'Annual AOP Cost',
     'Plant Production Summary (T-14)',
@@ -633,8 +646,8 @@ const WorkFlowMerge = () => {
     'Plant Contribution Summary (T-22)',
     'Specific Consumption Norms (T-17)',
     'Norms Entry Sheet',
-    'Norms for Duration of Plant Shutdown and Slowdown (T-19D)',
-    'Month Wise Operating Hours (T-20)',
+    // 'Shutdown Report (T-19B)',
+    // 'Shutdown Break-up Last Four Year (T-19C)',
   ]
   const PPTabs = [
     'Annual AOP Cost',
@@ -704,6 +717,8 @@ const WorkFlowMerge = () => {
     activeTabs = customPPTabs
   } else if (lowerVertName === 'pta') {
     activeTabs = ptaTabs
+  } else if (lowerVertName === 'meg') {
+    activeTabs = customMegTabs
   }
   return (
     <div
@@ -903,6 +918,7 @@ const WorkFlowMerge = () => {
             {tabIndex === 5 && <AnnualProductionPlan />}
             {tabIndex === 6 && <PlantContribution />}
             {tabIndex === 7 && <PlantContributionLastFourYears />}
+            {tabIndex === 8 && lowerVertName === 'meg' && <ShutdownReport />}
             {(lowerVertName === 'pe' || lowerVertName === 'pp') && (
               <>{tabIndex === 8 && <SpecificConsumptionNormsII />}</>
             )}
@@ -911,12 +927,12 @@ const WorkFlowMerge = () => {
               lowerVertName === 'pet') && (
               <>{tabIndex === 9 && <SpecificConsumptionNorm />}</>
             )}
-            {lowerVertName === 'pe' && (
-              <>{tabIndex === 10 && <PlantShutdownSlowdown />}</>
+            {/* {(lowerVertName === 'pe') && (
+              <>{tabIndex === 10 && <ShutdownReport/>}</>
             )}
-            {lowerVertName === 'pe' && (
-              <>{tabIndex === 11 && <MonthwiseOperatingHours />}</>
-            )}
+            {(lowerVertName === 'pe') && (
+              <>{tabIndex === 11 && <ShutdownSummaryReport/>}</>
+            )} */}
 
             <Notification
               open={snackbarOpen}
