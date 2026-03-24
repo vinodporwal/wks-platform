@@ -623,7 +623,7 @@ const SlowdownNorms = () => {
       showUnit: false,
       units: ['TPH', 'TPD'],
       saveWithRemark: false,
-      saveBtn: IS_PE_PP || IS_ELASTOMER_JMD_HIIR ? false : true,
+      saveBtn: IS_PE_PP ? false : true,
       showCalculate:
         lowerVertName == 'meg' ||
         lowerVertName == 'elastomer' ||

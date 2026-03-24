@@ -879,6 +879,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 				withGrade = true;
 			}
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+			Boolean elastomer=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			String viewName = "vwScrn" + vertical.getName() + "NormalOperationNorms";
 			if (withGrade) {
 				viewName = "vwScrn" + vertical.getName() + "NormalOperationNormsGrade";
@@ -887,7 +888,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			// prevent SQL injection
 			String sql = null;
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-					|| vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+					|| vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				sql = "SELECT * FROM " + viewName
 						+ " WHERE FinancialYear = :financialYear AND Plant_FK_Id = :plantId AND Grade_FK_Id = :gradeId";
 			} else if (vertical.getName().equalsIgnoreCase("Cracker")) {
@@ -901,7 +902,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			query.setParameter("financialYear", financialYear);
 			query.setParameter("plantId", plantId);
 			if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-					|| vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc) {
+					|| vertical.getName().equalsIgnoreCase("PET") || withGrade || pvc || elastomer) {
 				query.setParameter("gradeId", UUID.fromString(gradeId));
 			}
 			if (vertical.getName().equalsIgnoreCase("Cracker")) {

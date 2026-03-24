@@ -129,7 +129,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-
+			Boolean elastomer = vertical.getName().equalsIgnoreCase("ELASTOMER")  && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			if (vertical.getName().equalsIgnoreCase("MEG")) {
 				String storedProcedure = vertical.getName() + "_" + site.getName() + "_SlowdownNormCalculation";
 
@@ -145,6 +145,13 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 				String storedProcedure = "vwScrn" + vertical.getName() + "SlowdownNorms";
 
 				objList = getSlowdownNorms(year, plant.getId(), storedProcedure);
+			}else if(elastomer) {
+				String viewName = "vwScrn" + vertical.getName()+site.getName() + "SlowdownNorms";
+				
+				if(gradeId!=null) {
+					 grade=UUID.fromString(gradeId);
+				}
+				objList = getSlowdownNormsWithGrades(year, plant.getId(), viewName,grade);
 			} else if (vertical.getName().equalsIgnoreCase("PTA") || vertical.getName().equalsIgnoreCase("ELASTOMER")
 					|| vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) {
 				String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetSlowdownnorms";
