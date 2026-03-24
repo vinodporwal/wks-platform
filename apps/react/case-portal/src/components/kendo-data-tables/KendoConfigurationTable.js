@@ -77,6 +77,7 @@ const ConfigurationTable = () => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_HMD = lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -1314,7 +1315,7 @@ const ConfigurationTable = () => {
             })}
           />
 
-          {lowerVertName === 'aromatics' && tabs?.length > 0 && (
+          {lowerVertName === 'aromatics' && (!IS_AROMATICS_HMD) && tabs?.length > 0 && (
             <Box ml='auto'>
               <ButtonGroup aria-label='revision group'>
                 {['1', '2', '3'].map((num) => {
