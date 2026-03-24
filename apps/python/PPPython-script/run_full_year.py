@@ -296,7 +296,8 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
                     financial_year_month_id=fy_month_id,
                     calculation_result=result,
                     execution_time_seconds=execution_time,
-                    parent_execution_id=parent_execution_id
+                    parent_execution_id=parent_execution_id,
+                    generate_excel=False  # Disable individual Excel - only annual report will be generated
                 )
                 result["calculation_log_saved"] = log_result.get("success", False)
                 result["calculation_log_id"] = log_result.get("log_id")
@@ -345,7 +346,8 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
                     financial_year_month_id=fy_month_id,
                     calculation_result=error_result,
                     execution_time_seconds=execution_time,
-                    parent_execution_id=parent_execution_id
+                    parent_execution_id=parent_execution_id,
+                    generate_excel=False  # Disable individual Excel for errors too
                 )
                 error_result["calculation_log_saved"] = log_result.get("success", False)
                 error_result["calculation_log_id"] = log_result.get("log_id")
@@ -521,6 +523,7 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                 "success": success,
                 "iterations": iterations_used,
                 "converged": converged,
+                "calculation_result": result,  # Store full calculation result for Excel report
             }
             
             # Track summary statistics
@@ -608,27 +611,6 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
         
         print()
     
-    # Update parent execution log with summary
-    if parent_execution_id:
-        total_execution_time = sum(
-            results["months"][key].get("execution_time", 0) 
-            for key in results["months"]
-        )
-        
-        update_result = update_parent_execution_summary(
-            parent_id=parent_execution_id,
-            total_execution_time=total_execution_time,
-            success_count=results["summary"]["successful"],
-            failed_count=results["summary"]["failed"],
-            warning_count=results["summary"]["warning"],
-            total_iterations=results["summary"]["total_iterations"]
-        )
-        
-        if update_result.get("success"):
-            print(f"\n[LOG] Parent execution log updated: {update_result.get('status')}")
-        else:
-            print(f"\n[LOG WARNING] Failed to update parent log: {update_result.get('message')}")
-    
     # Print final summary
     print("\n" + "=" * 80)
     print("FULL YEAR RUN COMPLETE - SUMMARY")
@@ -695,6 +677,52 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
                     f.write(f"Reason: {month_data.get('error', 'Unknown error')}\n")
     
     print(f"\nSummary saved to: {summary_path}")
+    
+    # Generate annual Excel balance report
+    excel_path = None
+    try:
+        from services.balance_report_service import create_annual_balance_report_excel
+        
+        print("\n" + "=" * 80)
+        print("GENERATING ANNUAL EXCEL BALANCE REPORT")
+        print("=" * 80)
+        
+        excel_path = create_annual_balance_report_excel(
+            financial_year=financial_year,
+            monthly_results=results,
+            output_folder=run_log_folder
+        )
+        
+        results["excel_report_path"] = excel_path
+        print(f"Annual Excel report saved to: {excel_path}")
+        
+    except Exception as e:
+        print(f"\n[WARNING] Failed to generate annual Excel report: {e}")
+        import traceback
+        traceback.print_exc()
+        results["excel_report_path"] = None
+    
+    # Update parent execution log with summary and Excel
+    if parent_execution_id:
+        total_execution_time = sum(
+            results["months"][key].get("execution_time", 0) 
+            for key in results["months"]
+        )
+        
+        update_result = update_parent_execution_summary(
+            parent_id=parent_execution_id,
+            total_execution_time=total_execution_time,
+            success_count=results["summary"]["successful"],
+            failed_count=results["summary"]["failed"],
+            warning_count=results["summary"]["warning"],
+            total_iterations=results["summary"]["total_iterations"],
+            excel_path=excel_path
+        )
+        
+        if update_result.get("success"):
+            print(f"\n[LOG] Parent execution log updated: {update_result.get('status')}")
+        else:
+            print(f"\n[LOG WARNING] Failed to update parent log: {update_result.get('message')}")
     
     return results
 

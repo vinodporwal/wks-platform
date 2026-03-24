@@ -124,11 +124,18 @@ if __name__ == "__main__":
         cw1_process = process_demands.get('cw1_process', 15194.0)
         cw2_process = process_demands.get('cw2_process', 9016.0)
         dm_process = process_demands.get('dm_process', 54779.0)
+        raw_water_process = process_demands.get('raw_water_process', 0.0)
+        oxygen_process = process_demands.get('oxygen_process', 0.0)
         
         lp_fixed = fixed_demands.get('lp_fixed', 5169.51)
         mp_fixed = fixed_demands.get('mp_fixed', 518.00)
         hp_fixed = fixed_demands.get('hp_fixed', 0.00)
         shp_fixed = fixed_demands.get('shp_fixed', 0.00)
+        dm_fixed = fixed_demands.get('dm_fixed', 0.00)
+        air_fixed = fixed_demands.get('air_fixed', 0.00)
+        cw1_fixed = fixed_demands.get('cw1_fixed', 0.00)
+        cw2_fixed = fixed_demands.get('cw2_fixed', 0.00)
+        raw_water_fixed = fixed_demands.get('raw_water_fixed', 0.00)
         
         # Display fetched values
         print("\n--- PROCESS DEMANDS (from DB) ---")
@@ -146,6 +153,10 @@ if __name__ == "__main__":
         print(f"  MP Fixed:  {mp_fixed:>12,.2f} MT")
         print(f"  HP Fixed:  {hp_fixed:>12,.2f} MT")
         print(f"  SHP Fixed: {shp_fixed:>12,.2f} MT")
+        print(f"  DM Water Fixed: {dm_fixed:>12,.2f} M3")
+        print(f"  Compressed Air Fixed: {air_fixed:>12,.2f} NM3")
+        print(f"  Cooling Water 1 Fixed: {cw1_fixed:>12,.2f} KM3")
+        print(f"  Cooling Water 2 Fixed: {cw2_fixed:>12,.2f} KM3")
         
         # Allow override if needed
         override_input = input("\nOverride any values? (y/n) [n]: ").strip().lower()
@@ -175,8 +186,26 @@ if __name__ == "__main__":
             
             shp_fixed_input = input(f"SHP Fixed [{shp_fixed:.2f}]: ").strip()
             if shp_fixed_input: shp_fixed = float(shp_fixed_input)
+            
+            dm_fixed_input = input(f"DM Water Fixed [{dm_fixed:.2f}]: ").strip()
+            if dm_fixed_input: dm_fixed = float(dm_fixed_input)
+            
+            air_fixed_input = input(f"Compressed Air Fixed [{air_fixed:.2f}]: ").strip()
+            if air_fixed_input: air_fixed = float(air_fixed_input)
+            
+            cw1_fixed_input = input(f"Cooling Water 1 Fixed [{cw1_fixed:.2f}]: ").strip()
+            if cw1_fixed_input: cw1_fixed = float(cw1_fixed_input)
+            
+            cw2_fixed_input = input(f"Cooling Water 2 Fixed [{cw2_fixed:.2f}]: ").strip()
+            if cw2_fixed_input: cw2_fixed = float(cw2_fixed_input)
     else:
         # Manual entry mode (original behavior)
+        dm_fixed = 0.0  # Default value for manual mode
+        air_fixed = 0.0
+        cw1_fixed = 0.0
+        cw2_fixed = 0.0
+        raw_water_process = 0.0
+        raw_water_fixed = 0.0
         print("\n--- INPUT: Steam Demands (MT) ---")
         print("(Press Enter for default test values)")
         
@@ -267,6 +296,13 @@ if __name__ == "__main__":
             cw1_process=cw1_process,
             cw2_process=cw2_process,
             dm_process=dm_process,
+            dm_fixed=dm_fixed,
+            air_fixed=air_fixed,
+            cw1_fixed=cw1_fixed,
+            cw2_fixed=cw2_fixed,
+            raw_water_process=raw_water_process,
+            raw_water_fixed=raw_water_fixed,
+            oxygen_mt=oxygen_process,
             save_to_db=True  # Auto-save QTY and Quantity to NormsMonthDetail
         )
     else:
@@ -286,7 +322,13 @@ if __name__ == "__main__":
             air_process=air_process,
             cw1_process=cw1_process,
             cw2_process=cw2_process,
-            dm_process=dm_process
+            dm_process=dm_process,
+            dm_fixed=dm_fixed,
+            air_fixed=air_fixed,
+            cw1_fixed=cw1_fixed,
+            cw2_fixed=cw2_fixed,
+            raw_water_process=raw_water_process,
+            raw_water_fixed=raw_water_fixed
         )
         
         # -----------------------------------------------------------
@@ -363,7 +405,32 @@ if __name__ == "__main__":
                 print(f"✗ Failed to save {save_result['failed_count']} records")
     
     # -----------------------------------------------------------
-    # STEP 6: SAVE LOG FILE
+    # STEP 6: GENERATE EXCEL BALANCE REPORT
+    # -----------------------------------------------------------
+    # Always generate Excel, even if calculation failed, to show available data
+    try:
+        from services.balance_report_service import create_balance_report_excel
+        
+        print(f"\n{'='*70}")
+        print("GENERATING EXCEL BALANCE REPORT...")
+        print(f"{'='*70}")
+        
+        excel_path = create_balance_report_excel(month, year, result, LOG_FOLDER)
+        
+        print(f"\n{'='*70}")
+        print(f"EXCEL BALANCE REPORT SAVED TO: {excel_path}")
+        print(f"{'='*70}")
+        
+    except Exception as excel_error:
+        print(f"\n{'='*70}")
+        print(f"[WARNING] Failed to generate Excel balance report:")
+        print(f"Error: {excel_error}")
+        print(f"{'='*70}")
+        import traceback
+        traceback.print_exc()
+    
+    # -----------------------------------------------------------
+    # STEP 7: SAVE LOG FILE
     # -----------------------------------------------------------
     # Restore original stdout
     sys.stdout = tee.original_stdout

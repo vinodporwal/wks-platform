@@ -60,6 +60,11 @@ UTILITY_MAPPING = {
     "CW1": "cw1_process",
     "Cooling Water 2": "cw2_process",
     "CW2": "cw2_process",
+    # Raw Water
+    "Water": "raw_water_process",
+    "Raw Water": "raw_water_process",
+    # Oxygen
+    "Oxygen": "oxygen_process",
 }
 
 
@@ -151,6 +156,8 @@ def get_process_demand_for_month(month: int, year: int) -> Dict[str, float]:
             "dm_process": 0.0,
             "cw1_process": 0.0,
             "cw2_process": 0.0,
+            "raw_water_process": 0.0,
+            "oxygen_process": 0.0,
         }
         
         # Map utility names to result keys
@@ -226,6 +233,8 @@ def get_default_process_demands() -> Dict[str, float]:
         "dm_process": 54779.0,
         "cw1_process": 15194.0,
         "cw2_process": 9016.0,
+        "raw_water_process": 0.0,
+        "oxygen_process": 0.0,
     }
 
 
