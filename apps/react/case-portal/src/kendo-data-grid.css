@@ -238,6 +238,7 @@ a.k-grid-header-menu.k-grid-column-menu {
   margin-left: -8px;
   margin-right: 4px;
   line-height: 1.3;
+  white-space: normal !important;
 }
 /* Add these styles to your ../../kendo-data-grid.css file */
 

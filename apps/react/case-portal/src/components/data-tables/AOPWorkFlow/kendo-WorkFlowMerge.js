@@ -47,6 +47,8 @@ import TurnaroundReportCracker from '../Reports/TurnaroundReportCracker'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import SpecificConsumptionNorm from '../Reports-kendo/SpecificConsumptionnorm'
 import SpecificConsumptionNormsII from '../Reports-kendo/specificConsumptionNormsII'
+import MonthwiseOperatingHours from '../Reports-kendo/kendo-MonthwiseOperatingHours'
+import PlantShutdownSlowdown from '../Reports-kendo/kendo-PlantShutdownSlowdown'
 import { getRoleName } from 'services/role-service'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
@@ -631,6 +633,8 @@ const WorkFlowMerge = () => {
     'Plant Contribution Summary (T-22)',
     'Specific Consumption Norms (T-17)',
     'Norms Entry Sheet',
+    'Norms for Duration of Plant Shutdown and Slowdown (T-19D)',
+    'Month Wise Operating Hours (T-20)',
   ]
   const PPTabs = [
     'Annual AOP Cost',
@@ -906,6 +910,12 @@ const WorkFlowMerge = () => {
               lowerVertName === 'pp' ||
               lowerVertName === 'pet') && (
               <>{tabIndex === 9 && <SpecificConsumptionNorm />}</>
+            )}
+            {lowerVertName === 'pe' && (
+              <>{tabIndex === 10 && <PlantShutdownSlowdown />}</>
+            )}
+            {lowerVertName === 'pe' && (
+              <>{tabIndex === 11 && <MonthwiseOperatingHours />}</>
             )}
 
             <Notification

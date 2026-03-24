@@ -440,7 +440,12 @@ const KendoDataTablesReports = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          padding: '0px',
+          borderRight: '1px solid #878787',
+          whiteSpace: 'normal',
+          verticalAlign: 'middle',
+        }}
       >
         <Tooltip
           position='top'
