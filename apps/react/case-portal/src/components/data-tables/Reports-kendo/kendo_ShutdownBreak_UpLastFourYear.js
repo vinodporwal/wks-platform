@@ -290,7 +290,7 @@ export default function ShutdownSummaryReport() {
         columns={getColumns}
         rows={rows}
         title='Shutdown Break-up for last 4 Years'
-        setRows={setRows} 
+        setRows={setRows}
         permissions={{
           textAlignment: 'center',
           showCalculate: false,

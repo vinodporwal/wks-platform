@@ -4229,11 +4229,7 @@ export async function getShutdownData(
     return Promise.reject(e)
   }
 }
-export async function getShutdownSummary(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
+export async function getShutdownSummary(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/shutdown-summary?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${reportType}`
   const headers = {
     Accept: 'application/json',
