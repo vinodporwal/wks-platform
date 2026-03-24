@@ -136,7 +136,14 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
   const CustomActionsCell = ({ dataItem }) => {
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '10px',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           <Tooltip anchorElement='target' position='top'>
             <SvgIcon
               icon={eyeIcon}
@@ -176,9 +183,9 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
   const handleDownloadExcel = async (dataItem) => {
     try {
       setLoading(true)
-      
+
       const url = `${Config.CaseEngineUrl}/task/cpp-model-logs/month/${dataItem.id}/download-excel`
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -201,9 +208,11 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
       // Get filename from Content-Disposition header
       const contentDisposition = response.headers.get('Content-Disposition')
       let filename = `balance_summary_${dataItem.monthName || dataItem.month}_${dataItem.financialYear}.xlsx`
-      
+
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        const filenameMatch = contentDisposition.match(
+          /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/,
+        )
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1].replace(/['"]/g, '')
         }
@@ -217,7 +226,7 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
       a.download = filename
       document.body.appendChild(a)
       a.click()
-      
+
       // Cleanup
       window.URL.revokeObjectURL(downloadUrl)
       document.body.removeChild(a)
@@ -227,7 +236,6 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
         message: `Excel report downloaded successfully`,
         severity: 'success',
       })
-
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarOpen(true)

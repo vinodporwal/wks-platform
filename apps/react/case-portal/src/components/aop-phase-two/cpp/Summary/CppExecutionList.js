@@ -140,7 +140,14 @@ const CppExecutionList = ({ onViewClick }) => {
   const CustomActionsCell = ({ dataItem }) => {
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '10px',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           <Tooltip anchorElement='target' position='top'>
             <SvgIcon
               icon={eyeIcon}
@@ -181,10 +188,10 @@ const CppExecutionList = ({ onViewClick }) => {
   const handleDownloadAllExcel = async (dataItem) => {
     try {
       setLoading(true)
-      
+
       // Download annual Excel report from parent execution
       const url = `${Config.CaseEngineUrl}/task/cpp-model-logs/month/${dataItem.id}/download-excel`
-      
+
       console.log('========================================')
       console.log('EXCEL DOWNLOAD REQUEST')
       console.log('========================================')
@@ -193,7 +200,7 @@ const CppExecutionList = ({ onViewClick }) => {
       console.log('API URL:', url)
       console.log('Token available:', !!keycloak.token)
       console.log('========================================')
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -209,7 +216,10 @@ const CppExecutionList = ({ onViewClick }) => {
       console.log('OK:', response.ok)
       console.log('Content-Type:', response.headers.get('Content-Type'))
       console.log('Content-Length:', response.headers.get('Content-Length'))
-      console.log('Content-Disposition:', response.headers.get('Content-Disposition'))
+      console.log(
+        'Content-Disposition:',
+        response.headers.get('Content-Disposition'),
+      )
       console.log('========================================')
 
       if (!response.ok) {
@@ -228,9 +238,11 @@ const CppExecutionList = ({ onViewClick }) => {
       // Get filename from Content-Disposition header
       const contentDisposition = response.headers.get('Content-Disposition')
       let filename = `Annual_Balance_Summary_FY${dataItem.financialYear}.xlsx`
-      
+
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        const filenameMatch = contentDisposition.match(
+          /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/,
+        )
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1].replace(/['"]/g, '')
         }
@@ -244,7 +256,7 @@ const CppExecutionList = ({ onViewClick }) => {
       a.download = filename
       document.body.appendChild(a)
       a.click()
-      
+
       // Cleanup
       window.URL.revokeObjectURL(downloadUrl)
       document.body.removeChild(a)
@@ -254,7 +266,6 @@ const CppExecutionList = ({ onViewClick }) => {
         message: `Annual Excel report downloaded successfully`,
         severity: 'success',
       })
-
     } catch (error) {
       console.error('Error downloading annual Excel:', error)
       setSnackbarOpen(true)
