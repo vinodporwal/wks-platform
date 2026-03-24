@@ -1,4 +1,7 @@
-import { NormalOpNormElastomerColumns } from 'components/colums/ElastomerColums'
+import {
+  NormalOpNormElastomerColumns,
+  NormalOpNormElastomerJmdColumns,
+} from 'components/colums/ElastomerColums'
 import { NormalOpNormMegColumns } from 'components/colums/MegColums'
 import { NormalOpNormVcmColumns } from 'components/colums/VcmColumns'
 import { CrackerColums } from 'components/colums/CrackerColums'
@@ -34,7 +37,12 @@ const getNormalOpNormColDef = ({
     return colDefsCache.get(cacheKey)
   }
 
-  const cols = VERTICAL_COLDEFS_MAP[lowerVertName] || NormalOpNormMegColumns
+  let cols = []
+  if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
+    cols = NormalOpNormElastomerJmdColumns
+  } else {
+    cols = VERTICAL_COLDEFS_MAP[lowerVertName] || NormalOpNormMegColumns
+  }
 
   const enhancedColDefs = cols.map((col) => {
     if (!headerMap || headerMap[col.title] === undefined) {
