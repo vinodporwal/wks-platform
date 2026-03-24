@@ -331,7 +331,7 @@ const ProductionRangeGridLimit = ({
         AOP_YEAR,
       )
 
-      const formattedData = response?.data?.productionRangeList?.map(
+      const formattedData = response?.data?.productionRangeLimitList?.map(
         (row, index) => ({
           ...row,
           id: row.id || index,
@@ -359,6 +359,14 @@ const ProductionRangeGridLimit = ({
     } finally {
       setLoading(false)
     }
+  }
+
+  const IS_ELASTOMER_JMD_IIR =
+    verticalObject?.name?.toLowerCase() === 'elastomer' &&
+    siteObject?.name?.toLowerCase() === 'jmd' &&
+    plantObject?.name?.toLowerCase() === 'iir'
+  if (IS_ELASTOMER_JMD_IIR) {
+    return null
   }
 
   return (
