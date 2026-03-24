@@ -263,11 +263,11 @@ const JCBFuel = () => {
     saveBtn: true,
     allAction: true,
     showExport: true,
-    ExcelName: `JCB Fuel- ${AOP_YEAR}`,
+    ExcelName: `NVC Fuel Availability - ${AOP_YEAR}`,
     showImport: true,
     showTitleNameBusiness: true,
     showTitle: true,
-    titleName: 'JCB Fuel',
+    titleName: 'NVC Fuel Availability',
   }
 
   const saveChanges = async () => {

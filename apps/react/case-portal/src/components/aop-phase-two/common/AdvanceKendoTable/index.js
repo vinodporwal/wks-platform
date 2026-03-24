@@ -54,8 +54,6 @@ import { getColumnMenuDateFilter } from '../utilities/ColumnMenuDateFilter'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
 import DateTimePickerEditor from '../utilities/DatePickeronSelectedYr'
 import dataGridStore from 'store/reducers/dataGridStore'
-import { useSelector } from 'react-redux'
-// import { useSelector } from '../../../../../node_modules/react-redux/dist/react-redux'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -199,7 +197,6 @@ const AdvanceKendoTable = ({
   externalCustomModifiedCells = null,
   externalSetCustomModifiedCells = null,
 }) => {
-  const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     plantObject,
     year,
