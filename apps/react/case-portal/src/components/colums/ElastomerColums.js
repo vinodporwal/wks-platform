@@ -497,7 +497,168 @@ export const NormalOpNormElastomerColumns = [
     hidden: true,
   },
 ]
+export const NormalOpNormElastomerJmdColumns = [
+  {
+    field: 'Particulars',
+    title: 'Type',
+    width: 110,
+    groupable: true,
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'materialFkId',
+    title: 'Particulars',
+    width: 120,
+    hidden: true,
+  },
+  {
+    field: 'productName',
+    title: 'Particulars',
+    width: 120,
+  },
 
+  {
+    field: 'UOM',
+    title: 'UOM',
+    width: 100,
+    editable: false,
+  },
+
+  {
+    field: 'april',
+    title: 4,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'may',
+    title: 5,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'june',
+    title: 6,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'july',
+    title: 7,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+
+  {
+    field: 'august',
+    title: 8,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'september',
+    title: 9,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'october',
+    title: 10,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'november',
+    title: 11,
+    editable: true,
+
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'december',
+    title: 12,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'january',
+    title: 1,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'february',
+    title: 2,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'march',
+    title: 3,
+    editable: true,
+    width: 120,
+    align: 'right',
+    format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'remarks',
+    title: 'Remark',
+    width: 125,
+    editable: true,
+  },
+
+  {
+    field: 'idFromApi',
+    title: 'idFromApi',
+    hidden: true,
+  },
+  {
+    field: 'isEditable',
+    title: 'isEditable',
+    hidden: true,
+  },
+]
 export const ShutdownConsumptionElastomerColumns = [
   {
     field: 'Particulars',
@@ -572,6 +733,58 @@ export const SlowdownNormsElastomerColumns = [
     editable: false,
   },
   { field: 'UOM', headerName: 'UOM / MT', width: 150, editable: false },
+
+  ...Array.from({ length: 12 }, (_, i) => {
+    const monthIndex = (i + 4) % 12 || 12
+    const monthField = new Date(2000, monthIndex - 1)
+      .toLocaleString('en-US', { month: 'long' })
+      .toLowerCase()
+
+    return {
+      field: monthField,
+      width: 120,
+      type: 'number',
+      format: '{0:#.###}',
+      editable: false,
+      isDisabled: true,
+      monthNumber: monthIndex,
+    }
+  }),
+
+  {
+    field: 'remarks',
+    headerName: 'Remark',
+    width: 120,
+    editable: false,
+  },
+  {
+    field: 'idFromApi',
+    headerName: 'idFromApi',
+    hidden: true,
+  },
+]
+export const SlowdownNormsElastomerJmdColumns = [
+  {
+    field: 'Particulars',
+    headerName: 'Type',
+    width: 120,
+    hidden: true,
+  },
+  {
+    field: 'materialFkId',
+    headerName: 'Particulars',
+    minWidth: 150,
+    editable: false,
+    hidden: true,
+    width: 120,
+  },
+  {
+    field: 'productName',
+    headerName: 'Particulars',
+    width: 180,
+    editable: false,
+  },
+  { field: 'UOM', headerName: 'UOM', width: 150, editable: false },
 
   ...Array.from({ length: 12 }, (_, i) => {
     const monthIndex = (i + 4) % 12 || 12
