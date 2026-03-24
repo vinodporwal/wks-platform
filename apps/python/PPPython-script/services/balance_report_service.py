@@ -868,6 +868,171 @@ def extract_utility_balance_data(month: int, year: int, calculation_result: dict
 # EXCEL GENERATION FUNCTIONS
 # ============================================================
 
+def create_annual_balance_report_excel(financial_year: int, monthly_results: dict, output_folder: str) -> str:
+    """
+    Create annual Excel balance report with 12 monthly sheets.
+    Each sheet contains the complete balance report for that month.
+    
+    Args:
+        financial_year: Starting year of FY (e.g., 2025 for FY 2025-26)
+        monthly_results: Dict with monthly calculation results (from run_full_year)
+        output_folder: Folder to save the Excel file
+    
+    Returns:
+        Path to the saved Excel file
+    """
+    print(f"GENERATING ANNUAL BALANCE SUMMARY EXCEL REPORT")
+    print(f"{'='*70}")
+    print(f"  Financial Year: FY {financial_year}-{str(financial_year + 1)[-2:]}")
+    print(f"  Output Folder: {output_folder}")
+    
+    # Create workbook
+    wb = Workbook()
+    
+    # Remove default sheet
+    if 'Sheet' in wb.sheetnames:
+        wb.remove(wb['Sheet'])
+    
+    # Define month order for financial year (April to March)
+    fy_months = [
+        (4, financial_year),      # April
+        (5, financial_year),      # May
+        (6, financial_year),      # June
+        (7, financial_year),      # July
+        (8, financial_year),      # August
+        (9, financial_year),      # September
+        (10, financial_year),     # October
+        (11, financial_year),     # November
+        (12, financial_year),     # December
+        (1, financial_year + 1),  # January
+        (2, financial_year + 1),  # February
+        (3, financial_year + 1),  # March
+    ]
+    
+    sheets_created = 0
+    
+    # Create a sheet for each month
+    for month, year in fy_months:
+        month_key = f"{year}_{month:02d}"
+        month_data = monthly_results.get('months', {}).get(month_key)
+        
+        if not month_data:
+            print(f"  ⚠ Skipping {MONTH_NAMES[month]} {year} - No data available")
+            continue
+        
+        # Check if calculation was successful
+        if not month_data.get('success', False):
+            print(f"  ⚠ Skipping {MONTH_NAMES[month]} {year} - Calculation failed")
+            continue
+        
+        # Get full calculation result
+        calculation_result = month_data.get('calculation_result')
+        if not calculation_result:
+            print(f"  ⚠ Skipping {MONTH_NAMES[month]} {year} - No calculation result stored")
+            continue
+        
+        # Debug: Check what data is available
+        has_usd_result = 'usd_result' in calculation_result
+        has_final_dispatch = False
+        if has_usd_result:
+            usd_result = calculation_result.get('usd_result', {})
+            has_final_dispatch = 'final_dispatch' in usd_result
+        
+        print(f"  ✓ Creating sheet for {MONTH_NAMES[month]} {year}")
+        print(f"    - Has usd_result: {has_usd_result}")
+        print(f"    - Has final_dispatch: {has_final_dispatch}")
+        print(f"    - Calculation result keys: {list(calculation_result.keys())[:10]}")
+        
+        # Create sheet for this month (use short name to fit Excel limits)
+        sheet_name = f"{MONTH_NAMES[month][:3]}-{year}"
+        ws = wb.create_sheet(title=sheet_name)
+        
+        # Set initial column widths
+        ws.column_dimensions['A'].width = 20
+        ws.column_dimensions['B'].width = 12
+        ws.column_dimensions['C'].width = 15
+        ws.column_dimensions['D'].width = 20
+        ws.column_dimensions['E'].width = 15
+        
+        current_row = 1
+        
+        # Title
+        ws.merge_cells(f'A{current_row}:E{current_row}')
+        title_cell = ws[f'A{current_row}']
+        title_cell.value = f"Power & Utility Loop Balance Summary - {MONTH_NAMES[month]} {year}"
+        title_cell.font = SECTION_FONT
+        title_cell.alignment = Alignment(horizontal='center', vertical='center')
+        title_cell.fill = SECTION_FILL
+        current_row += 2
+        
+        # SECTION I: FUEL DEMAND
+        current_row = write_fuel_demand_section(ws, current_row, month, year, calculation_result)
+        current_row += 2
+        
+        # SECTION II: POWER BALANCE
+        current_row = write_power_balance_section(ws, current_row, month, year, calculation_result)
+        current_row += 2
+        
+        # SECTION III: STEAM BALANCE
+        current_row = write_steam_balance_section(ws, current_row, month, year, calculation_result)
+        current_row += 2
+        
+        # SECTION IV: OTHER UTILITIES BALANCE
+        from services.other_utilities_balance_writer import write_other_utilities_balance_section
+        current_row = write_other_utilities_balance_section(ws, current_row, month, year, calculation_result)
+        current_row += 2
+        
+        # SECTION V: ASSET AVAILABILITY AND LOADING
+        current_row = write_asset_availability_section(ws, current_row, month, year, calculation_result)
+        
+        # Auto-fit column widths for this sheet
+        from openpyxl.cell.cell import MergedCell
+        
+        for column_cells in ws.columns:
+            max_length = 0
+            column_letter = None
+            
+            for cell in column_cells:
+                if isinstance(cell, MergedCell):
+                    continue
+                
+                if column_letter is None:
+                    column_letter = cell.column_letter
+                
+                try:
+                    if cell.value:
+                        cell_length = len(str(cell.value))
+                        if cell_length > max_length:
+                            max_length = cell_length
+                except:
+                    pass
+            
+            if column_letter:
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = max(adjusted_width, 12)
+        
+        sheets_created += 1
+    
+    # If no sheets were created, create a summary sheet
+    if sheets_created == 0:
+        ws = wb.create_sheet(title="Summary")
+        ws['A1'] = "No monthly data available for this financial year"
+        ws['A1'].font = SECTION_FONT
+        print(f"  ⚠ No sheets created - no successful monthly calculations found")
+    
+    # Save file
+    os.makedirs(output_folder, exist_ok=True)
+    filename = f"Annual_Balance_Summary_FY{financial_year}_{financial_year+1}.xlsx"
+    filepath = os.path.join(output_folder, filename)
+    
+    wb.save(filepath)
+    print(f"  ✓ Annual Excel report saved: {filepath}")
+    print(f"  ✓ Total sheets created: {sheets_created}/12")
+    print(f"{'='*70}\n")
+    
+    return filepath
+
+
 def create_balance_report_excel(month: int, year: int, calculation_result: dict, output_folder: str) -> str:
     """
     Generate Power & Utility Loop Balance Summary Excel report for a single month.

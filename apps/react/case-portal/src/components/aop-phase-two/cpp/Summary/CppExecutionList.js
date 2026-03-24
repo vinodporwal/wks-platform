@@ -4,8 +4,9 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { SummaryApiService } from '../../services/cpp/summaryApiService'
 import { SvgIcon } from '@progress/kendo-react-common'
-import { eyeIcon } from '@progress/kendo-svg-icons'
+import { eyeIcon, downloadIcon } from '@progress/kendo-svg-icons'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import Config from 'consts/index'
 
 const CppExecutionList = ({ onViewClick }) => {
   const keycloak = useSession()
@@ -135,19 +136,30 @@ const CppExecutionList = ({ onViewClick }) => {
     customActionButton: true, // Enable custom action button
   }
 
-  // Custom action cell with eye icon
+  // Custom action cell with view and download icons
   const CustomActionsCell = ({ dataItem }) => {
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-        <Tooltip anchorElement='target' position='top'>
-          <SvgIcon
-            icon={eyeIcon}
-            themeColor='primary'
-            style={{ cursor: 'pointer' }}
-            onClick={() => handleViewClick(dataItem)}
-            title='View'
-          />
-        </Tooltip>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={eyeIcon}
+              themeColor='primary'
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleViewClick(dataItem)}
+              title='View Details'
+            />
+          </Tooltip>
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={downloadIcon}
+              themeColor='success'
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleDownloadAllExcel(dataItem)}
+              title='Download All Monthly Reports'
+            />
+          </Tooltip>
+        </div>
       </td>
     )
   }
@@ -163,6 +175,95 @@ const CppExecutionList = ({ onViewClick }) => {
         message: `Viewing details for ${dataItem.financialYearDisplay || dataItem.financialYear}`,
         severity: 'info',
       })
+    }
+  }
+
+  const handleDownloadAllExcel = async (dataItem) => {
+    try {
+      setLoading(true)
+      
+      // Download annual Excel report from parent execution
+      const url = `${Config.CaseEngineUrl}/task/cpp-model-logs/month/${dataItem.id}/download-excel`
+      
+      console.log('========================================')
+      console.log('EXCEL DOWNLOAD REQUEST')
+      console.log('========================================')
+      console.log('Parent Execution ID:', dataItem.id)
+      console.log('Financial Year:', dataItem.financialYear)
+      console.log('API URL:', url)
+      console.log('Token available:', !!keycloak.token)
+      console.log('========================================')
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${keycloak.token}`,
+        },
+      })
+
+      console.log('========================================')
+      console.log('RESPONSE RECEIVED')
+      console.log('========================================')
+      console.log('Status:', response.status)
+      console.log('Status Text:', response.statusText)
+      console.log('OK:', response.ok)
+      console.log('Content-Type:', response.headers.get('Content-Type'))
+      console.log('Content-Length:', response.headers.get('Content-Length'))
+      console.log('Content-Disposition:', response.headers.get('Content-Disposition'))
+      console.log('========================================')
+
+      if (!response.ok) {
+        console.error('Response not OK - Status:', response.status)
+        if (response.status === 404) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Annual Excel report not available for this execution',
+            severity: 'warning',
+          })
+          return
+        }
+        throw new Error('Failed to download annual Excel report')
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = `Annual_Balance_Summary_FY${dataItem.financialYear}.xlsx`
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '')
+        }
+      }
+
+      // Download the file
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      
+      // Cleanup
+      window.URL.revokeObjectURL(downloadUrl)
+      document.body.removeChild(a)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Annual Excel report downloaded successfully`,
+        severity: 'success',
+      })
+
+    } catch (error) {
+      console.error('Error downloading annual Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download annual Excel report',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
