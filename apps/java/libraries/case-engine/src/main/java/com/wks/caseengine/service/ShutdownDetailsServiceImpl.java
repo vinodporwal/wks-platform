@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.ShutdownDetailsDTO;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
@@ -20,10 +21,11 @@ import jakarta.persistence.Query;
 @Service
 public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "db2")
     private EntityManager entityManager;
 
     @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
     public AOPMessageVM getShutdownDetails(String plantId, String year, String type) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
         try {
@@ -39,6 +41,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             List<ShutdownDetailsDTO> list = new ArrayList<>();
             for (Object[] row : results) {
                 ShutdownDetailsDTO dto = new ShutdownDetailsDTO();
+
                 if ("PlannedShutdown".equalsIgnoreCase(type)) {
                     // Id, Activities, ShutdownFrom, ShutdownTo, DurationHrs, Remarks, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
                     dto.setId(toStringOrEmpty(row, 0));
@@ -52,6 +55,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
                     dto.setCreatedOn(toTimestampAsDate(row, 8));
                     dto.setModifiedOn(toTimestampAsDate(row, 9));
                     dto.setUpdatedBy(toStringOrEmpty(row, 10));
+
                 } else if ("RoutineShutdown".equalsIgnoreCase(type)) {
                     // Id, Activities, April..March, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
                     dto.setId(toStringOrEmpty(row, 0));
@@ -73,6 +77,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
                     dto.setCreatedOn(toTimestampAsDate(row, 16));
                     dto.setModifiedOn(toTimestampAsDate(row, 17));
                     dto.setUpdatedBy(toStringOrEmpty(row, 18));
+
                 } else {
                     // RoutineShutdownPreviousYears
                     // Id, Activities, PrevYear1..PrevYear4, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
@@ -88,6 +93,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
                     dto.setModifiedOn(toTimestampAsDate(row, 9));
                     dto.setUpdatedBy(toStringOrEmpty(row, 10));
                 }
+
                 list.add(dto);
             }
 
@@ -97,10 +103,10 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             aopMessageVM.setMessage("Data fetched successfully");
             aopMessageVM.setData(data);
             return aopMessageVM;
+
         } catch (IllegalArgumentException e) {
             throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
         } catch (Exception ex) {
-            ex.printStackTrace();
             throw new RuntimeException("Failed to fetch shutdown details", ex);
         }
     }
@@ -141,4 +147,3 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         return null;
     }
 }
-
