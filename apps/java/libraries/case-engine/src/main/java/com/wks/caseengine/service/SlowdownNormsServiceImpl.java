@@ -60,7 +60,6 @@ import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.AopCalculationRepository;
-import com.wks.caseengine.repository.NormAttributeTransactionsRepository;
 import com.wks.caseengine.repository.NormParametersRepository;
 import com.wks.caseengine.repository.PlantMaintenanceTransactionRepository;
 import com.wks.caseengine.repository.PlantsRepository;
@@ -1318,7 +1317,12 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			// Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Boolean elastomer = vertical.getName().equalsIgnoreCase("ELASTOMER")  && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			String viewName="vwScrn"+vertical.getName()+"SlowdownNorms";
+			if(elastomer) {
+				viewName="vwScrn"+vertical.getName()+site.getName()+"SlowdownNorms";
+			}
 			List<String> grades=fetchUniqueGradeFkIds(viewName,UUID.fromString(plantId),year);
 			List<Map<String, String>> listOfMaps = new ArrayList<>();
 
