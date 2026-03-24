@@ -5,6 +5,7 @@ Saves model execution logs to ModelCalculationLogs table
 
 import json
 import uuid
+import os
 from datetime import datetime
 from decimal import Decimal
 from database.connection import get_connection
@@ -281,11 +282,38 @@ def save_calculation_log(
         cursor.close()
         conn.close()
         
+        # Generate Balance Summary Excel Report
+        excel_path = None
+        try:
+            from services.balance_report_service import create_balance_report_excel
+            
+            # Use the same log folder as main.py
+            # Default to environment variable or standard location
+            log_folder = os.environ.get("LOG_FOLDER")
+            if not log_folder:
+                # Fallback to the path used in main.py
+                log_folder = r"C:\Users\shrik\Desktop\Project\fork repo\development\PP python-script repo\PPPython-script\logs"
+            
+            # Generate Excel report
+            excel_path = create_balance_report_excel(month, year, calculation_result, log_folder)
+            print(f"\n{'='*70}")
+            print(f"EXCEL BALANCE REPORT SAVED TO: {excel_path}")
+            print(f"{'='*70}")
+            
+        except Exception as excel_error:
+            print(f"\n{'='*70}")
+            print(f"[WARNING] Failed to generate Excel balance report: {excel_error}")
+            print(f"{'='*70}")
+            import traceback
+            traceback.print_exc()
+            # Don't fail the entire save operation if Excel generation fails
+        
         return {
             "success": True,
             "log_id": log_id,
             "status": status,
-            "message": f"Calculation log saved successfully for {month}/{year}"
+            "message": f"Calculation log saved successfully for {month}/{year}",
+            "excel_report_path": excel_path
         }
     
     except Exception as e:
