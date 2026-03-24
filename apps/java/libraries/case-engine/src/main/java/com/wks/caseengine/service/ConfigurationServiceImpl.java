@@ -3124,6 +3124,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	        List<Map<String, Object>> data = getNormAttributeTransactionReceipe(year, plantFKId.toString());
 	        List<NormParameters> normParametersList = normParametersService.getAllGrades(plantFKId.toString());
 	        List<String> innerHeaders = new ArrayList<>();
+	        boolean hasTypeDisplayName = data != null && data.stream()
+	                .anyMatch(rec -> getMapValueIgnoreCase(rec, "TypeDisplayName") != null);
+	        if (hasTypeDisplayName) {
+	            innerHeaders.add("TypeDisplayName");
+	        }
 	        innerHeaders.add("Recipe");
 	        innerHeaders.add("UOM");
 	        for (NormParameters normParameters : normParametersList) {
@@ -3164,6 +3169,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	            Map<String, Object> newMap = new LinkedHashMap<>();
 	            List<Object> list = new ArrayList<>();
 
+	            if (hasTypeDisplayName) {
+	                Object typeDisplayName = getMapValueIgnoreCase(rec, "TypeDisplayName");
+	                list.add(typeDisplayName != null ? typeDisplayName : "");
+	            }
+
 	            if (rec.containsKey("ReceipeName")) {
 	                newMap.put("ReceipeName", rec.get("ReceipeName"));
 	                list.add(rec.get("ReceipeName"));
@@ -3190,7 +3200,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
 	           
 	            for (String header : innerHeaders) {
-	                if (header.equalsIgnoreCase("Recipe") || header.equalsIgnoreCase("RecipeId") || header.equalsIgnoreCase("UOM")
+	                if (header.equalsIgnoreCase("TypeDisplayName")
+	                        || header.equalsIgnoreCase("Recipe") || header.equalsIgnoreCase("RecipeId") || header.equalsIgnoreCase("UOM")
 	                        || (isAfterSave && (header.equalsIgnoreCase("Status") || header.equalsIgnoreCase("Error Description")))) {
 	                    continue;
 	                }
@@ -3523,20 +3534,37 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			    }
 			}
 
+			int recipeIdColIndex = allHeaders.indexOf("RecipeId");
+			if (recipeIdColIndex < 0) {
+				recipeIdColIndex = allHeaders.size() - 1; // fallback for backward compatibility
+			}
+
 			while (rowIterator.hasNext()) {
 			    Row row = rowIterator.next();
 			    NormAttributeTransactionReceipeRequestDTO dto = new NormAttributeTransactionReceipeRequestDTO();
 			    Map<String, String> grades = new LinkedHashMap<>();
 
-			    
-			    int lastColIndex = allHeaders.size() - 1;
-			    Cell recIdCell = row.getCell(lastColIndex);
+			    Cell recIdCell = row.getCell(recipeIdColIndex);
 			    String recId = getStringCellValue(recIdCell, dto);
 			    dto.setRecId(recId);
 
-			    
-			    for (int col = 2; col < lastColIndex; col++) {
+			    // Read dynamic grade columns by header name, so optional TypeDisplayName can be ignored safely.
+			    for (int col = 0; col < allHeaders.size(); col++) {
+			        if (col == recipeIdColIndex) {
+			            continue;
+			        }
 			        String header = allHeaders.get(col);
+			        if (header == null) {
+			        	continue;
+			        }
+			        if ("TypeDisplayName".equalsIgnoreCase(header)
+			        		|| "Recipe".equalsIgnoreCase(header)
+			        		|| "UOM".equalsIgnoreCase(header)
+			        		|| "RecipeId".equalsIgnoreCase(header)
+			        		|| "Status".equalsIgnoreCase(header)
+			        		|| "Error Description".equalsIgnoreCase(header)) {
+			        	continue;
+			        }
 			        Cell valueCell = row.getCell(col);
 			        Double numeric = getNumericCellValue(valueCell, dto);
 			        String valStr = (numeric != null ? numeric.toString() : "");
@@ -3558,6 +3586,18 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 
 		return recipeList;
+	}
+
+	private Object getMapValueIgnoreCase(Map<String, Object> map, String key) {
+		if (map == null || key == null) {
+			return null;
+		}
+		for (Map.Entry<String, Object> entry : map.entrySet()) {
+			if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(key)) {
+				return entry.getValue();
+			}
+		}
+		return null;
 	}
 
 	private List<NormLineRequestDTO> readLineConfigurationData(InputStream inputStream, UUID plantFKId, String year) {

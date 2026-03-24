@@ -21,6 +21,7 @@ import PropaneBusiness from 'components/kendo-data-tables/PropaneBusiness'
 import { getRoleName } from 'services/role-service'
 import ProductionTarget from './ProductionTarget'
 import ManualEntryForFeedStreams from './ManualEntryForFeedStreams'
+import ModeSelection from './ModeSelection'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -64,7 +65,8 @@ const BusinessDemand = ({ permissions }) => {
   const IS_VCM_VERTICAL = lowerVertName === 'vcm'
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
-  const IS_CARCKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
+  const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -112,10 +114,12 @@ const BusinessDemand = ({ permissions }) => {
       )
 
       const formattedData = data
-        // .filter(
-        //   (item) =>
-        //     item.normParameterTypeName === 'Business Demand' && IS_CRACKER_DMD,
-        // )
+        .filter((item) => {
+          if (IS_CRACKER_DMD) {
+            return item.normParameterTypeName === 'Business Demand'
+          }
+          return true // all items when not IS_CRACKER_DMD
+        })
         .map((item, index) => ({
           ...item,
           idFromApi: item.id,
@@ -664,15 +668,17 @@ const BusinessDemand = ({ permissions }) => {
         totalRowConfiguration={totalRowConfiguration}
       />
 
-      {IS_CARCKER_DMD && <ManualEntryForFeedStreams />}
+      {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
 
-      {!IS_CARCKER_VMD && IS_CRACKER_VERTICAL && (
+      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && IS_CRACKER_VERTICAL && (
         <>
           <Box sx={{ width: '100%', margin: 0 }}>
             <PropaneBusiness permissions={adjustedPermissions} />
           </Box>
         </>
       )}
+
+      {IS_CRACKER_HMD && <ModeSelection permissions={adjustedPermissions} />}
     </div>
   )
 }

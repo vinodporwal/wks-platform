@@ -325,7 +325,7 @@ const defs = {
         propyleneBalance: 'Propylene Balance',
         sapBasedRefNorms: 'SAP Based Reference Norms',
         specificConsumptionC3: 'Feed Availability',
-        productionOptimizer: 'Production Optimizer'
+        productionOptimizer: 'Production Optimizer',
       },
     },
   },

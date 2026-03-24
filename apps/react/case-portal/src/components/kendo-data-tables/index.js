@@ -69,6 +69,7 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
+import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -2810,6 +2811,34 @@ const KendoDataTables = ({
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: PropaneDropdown }, // <-- Use your custom editor here
+                        data: MonthDisplayCell,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                if (col.type === 'dynamicDropdown') {
+                  const dropdownOptions =
+                    permissions?.dynamicDropdownOptions || []
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: {
+                          text: (props) => (
+                            <DynamicDropdown
+                              {...props}
+                              options={dropdownOptions}
+                            />
+                          ),
+                        },
                         data: MonthDisplayCell,
                         headerCell: SimpleHeaderWithTooltip,
                       }}

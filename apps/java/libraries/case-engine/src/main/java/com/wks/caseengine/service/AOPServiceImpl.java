@@ -640,6 +640,28 @@ public class AOPServiceImpl implements AOPService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
+
+	@Override
+	public AOPMessageVM getAOPYearStatus() {
+		try {
+			List<Object[]> results = aopRepository.getAOPYearStatus();
+			List<Map<String, Object>> aopYearStatus = new ArrayList<>();
+
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("AOPYear", row[0] != null ? row[0].toString() : null);
+				map.put("IsOldYear", row[1] != null ? Integer.parseInt(row[1].toString()) : 0);
+				aopYearStatus.add(map);
+			}
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(aopYearStatus);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
 	
 	public byte[] exportAOPData(String plantId, String year,String type,boolean isAfterSave,List<AOPDTO> dtoList) {
 	    try {

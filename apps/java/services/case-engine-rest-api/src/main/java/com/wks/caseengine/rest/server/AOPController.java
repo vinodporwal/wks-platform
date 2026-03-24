@@ -80,5 +80,11 @@ public class AOPController {
         return ResponseEntity.ok(data);
     }
 
+    @GetMapping(value = "/aop-year-status")
+    public AOPMessageVM getAOPYearStatus() {
+       return aopService.getAOPYearStatus();
+       
+    }
+
   
 }
