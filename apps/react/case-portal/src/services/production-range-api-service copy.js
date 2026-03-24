@@ -23,7 +23,7 @@ async function getData(keycloak, PLANT_ID, AOP_YEAR, type) {
 }
 
 async function getDataForLimit(keycloak, PLANT_ID, AOP_YEAR, type) {
-  const url = `${Config.CaseEngineUrl}/task/production-range?year=${AOP_YEAR}&plantId=${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/production-range-limit?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
