@@ -21,6 +21,7 @@ import PropaneBusiness from 'components/kendo-data-tables/PropaneBusiness'
 import { getRoleName } from 'services/role-service'
 import ProductionTarget from './ProductionTarget'
 import ManualEntryForFeedStreams from './ManualEntryForFeedStreams'
+import ModeSelection from './ModeSelection'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -65,6 +66,7 @@ const BusinessDemand = ({ permissions }) => {
   const IS_CRACKER_VERTICAL = lowerVertName == 'cracker'
   const IS_CARCKER_VMD = lowerVertName === 'cracker' && lowerSiteName === 'vmd'
   const IS_CRACKER_DMD = lowerVertName === 'cracker' && lowerSiteName === 'dmd'
+  const IS_CRACKER_HMD = lowerVertName === 'cracker' && lowerSiteName === 'hmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
   const IS_CHEMICAL = lowerVertName === 'chemical'
@@ -668,13 +670,15 @@ const BusinessDemand = ({ permissions }) => {
 
       {IS_CRACKER_DMD && <ManualEntryForFeedStreams />}
 
-      {!IS_CARCKER_VMD && IS_CRACKER_VERTICAL && (
+      {!IS_CARCKER_VMD && !IS_CRACKER_HMD && IS_CRACKER_VERTICAL && (
         <>
           <Box sx={{ width: '100%', margin: 0 }}>
             <PropaneBusiness permissions={adjustedPermissions} />
           </Box>
         </>
       )}
+
+      {IS_CRACKER_HMD && <ModeSelection permissions={adjustedPermissions} />}
     </div>
   )
 }

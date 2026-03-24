@@ -1,13 +1,12 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
 import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import { DataService } from 'services/DataService'
-import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import { getRoleName } from 'services/role-service'
+import { OptimizerDataApiService } from 'services/optimizer-api-service'
 const getMonthYearTitles = (selectedYear) => {
   const yearShort = String(selectedYear).slice(-2)
   const nextYearShort = String(Number(selectedYear) + 1).slice(-2)
@@ -32,7 +31,7 @@ const getMonthYearTitles = (selectedYear) => {
   })
 }
 
-const PROPANE_MONTHS = [
+const MONTHS = [
   'apr',
   'may',
   'jun',
@@ -47,7 +46,7 @@ const PROPANE_MONTHS = [
   'mar',
 ]
 
-const PropaneBusiness = ({ permissions }) => {
+const ModeSelection = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -88,6 +87,8 @@ const PropaneBusiness = ({ permissions }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  const [modes, setModes] = useState([])
+
   const unsavedChangesRef = useRef({ unsavedRows: {}, rowsBeforeChange: {} })
   const monthTitles = getMonthYearTitles(
     Number(AOP_YEAR) || new Date().getFullYear(),
@@ -95,27 +96,15 @@ const PropaneBusiness = ({ permissions }) => {
   const yearRange =
     year?.selectedYearRange || `${AOP_YEAR}-${Number(AOP_YEAR) + 1}` // e.g. "2026-27"
   const headerMap = generateHeaderNames(yearRange)
-  const dynamicYearMonthColumns = PROPANE_MONTHS.map((month, idx) => {
+  const dynamicYearMonthColumns = MONTHS.map((month, idx) => {
     const headerIdx = ((idx + 4 - 1) % 12) + 1
     return {
       field: month,
       title: headerMap[headerIdx],
       editable: true,
-      type: 'propaneDropdown',
-      editor: PropaneDropdown,
+      type: 'dynamicDropdown',
     }
   })
-
-  // Numeric month columns (April=4, ..., Jan=1, etc.)
-  //   const numericMonthColumns = PROPANE_MONTHS_NUMERIC.map(({ field, title }) => ({
-  //     field,
-  //     title,
-  //     editable: true,
-  //     width: 120,
-  //     rightAlign: true,
-  //     headerAlign: 'left',
-  //     type: 'number',
-  //   }))
 
   // Choose which columns to use:
   // To use dynamic year headers:
@@ -126,12 +115,38 @@ const PropaneBusiness = ({ permissions }) => {
     ...dynamicYearMonthColumns,
     { field: 'remarks', title: 'Remarks', editable: true },
   ]
+
+  const fetchModes = useCallback(async () => {
+    try {
+      const resp = await OptimizerDataApiService.fetchModes(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        '1',
+      )
+
+      if (resp?.code === 200 && Array.isArray(resp.data)) {
+        setModes(resp.data)
+      } else {
+        setModes([])
+      }
+    } catch (err) {
+      console.error('Error fetching modes:', err)
+      setModes([])
+    }
+  }, [keycloak, PLANT_ID, AOP_YEAR])
+
+  useEffect(() => {
+    if (PLANT_ID && AOP_YEAR) {
+      fetchModes()
+    }
+  }, [keycloak, fetchModes, AOP_YEAR, PLANT_ID])
   // Fetch data
   const fetchData = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
     setLoading(true)
     try {
-      const response = await BusinessDemandDataApiService.getBDssData(
+      const response = await BusinessDemandDataApiService.getModeSelectionData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -142,7 +157,7 @@ const PropaneBusiness = ({ permissions }) => {
         inEdit: false,
         originalRemark: item.remarks || '', // Store original
         remarks: item.remarks || '', // Editable field
-        Particulars: 'Zone Selection',
+        Particulars: 'Mode Selection',
       }))
       setRows(formattedData)
     } catch (error) {
@@ -261,14 +276,28 @@ const PropaneBusiness = ({ permissions }) => {
       uploadExcelBtn: false,
     }
   }
-  const adjustedPermissions = getAdjustedPermissions(
-    {
-      ...permissions,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
-      titleName: 'Zone Selection',
-    },
-    isOldYear,
+  const dynamicDropdownOptions = useMemo(
+    () =>
+      modes.map((mode) => ({
+        name: mode.displayName,
+        value: mode.name,
+      })),
+    [modes],
+  )
+
+  const adjustedPermissions = useMemo(
+    () =>
+      getAdjustedPermissions(
+        {
+          ...permissions,
+          downloadExcelBtn: false,
+          uploadExcelBtn: false,
+          titleName: 'Mode Selection',
+          dynamicDropdownOptions: dynamicDropdownOptions,
+        },
+        isOldYear,
+      ),
+    [permissions, dynamicDropdownOptions, isOldYear],
   )
 
   return (
@@ -301,4 +330,4 @@ const PropaneBusiness = ({ permissions }) => {
   )
 }
 
-export default PropaneBusiness
+export default ModeSelection
