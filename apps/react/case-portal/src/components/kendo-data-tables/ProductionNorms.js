@@ -1027,7 +1027,7 @@ const ProductionNorms = ({ permissions }) => {
           allAction: true,
           saveBtn: false,
           showTitleNameBusiness: true,
-          titleName: 'IIR Annual production',
+          titleName: `${PLANT_NAME_UPPERCASE} Annual production`,
           ExcelName: EXCEL_NAME_JMD_GRID,
           downloadExcelBtnFromUI: true,
           showUnit: true,
@@ -1035,7 +1035,7 @@ const ProductionNorms = ({ permissions }) => {
         },
         isOldYear,
       ),
-    [lowerVertName, AOP_YEAR, isOldYear],
+    [lowerVertName, AOP_YEAR, isOldYear, PLANT_NAME_UPPERCASE],
   )
   if (lowerVertName === 'cracker' && !permissions?.hideByProducts) {
     return <ProductionNormsCracker />
