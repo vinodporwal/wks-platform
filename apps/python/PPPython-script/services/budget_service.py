@@ -201,6 +201,12 @@ def calculate_budget(
     cw1_process: float = 15194.0,     # Cooling Water 1 consumed by process plants (KM3)
     cw2_process: float = 9016.0,      # Cooling Water 2 consumed by process plants (KM3)
     dm_process: float = 54779.0,       # DM Water consumed by process plants (M3)
+    dm_fixed: float = 0.0,             # DM Water fixed consumption (M3)
+    air_fixed: float = 0.0,            # Compressed Air fixed consumption (NM3)
+    cw1_fixed: float = 0.0,            # Cooling Water 1 fixed consumption (KM3)
+    cw2_fixed: float = 0.0,            # Cooling Water 2 fixed consumption (KM3)
+    raw_water_process: float = 0.0,    # Raw Water consumed by process plants (M3)
+    raw_water_fixed: float = 0.0,      # Raw Water fixed consumption (M3)
 ) -> dict:
     """
     Complete budget calculation following the flowchart.
@@ -463,6 +469,13 @@ def calculate_budget_with_iteration(
     cw1_process: float = 15194.0,     # Cooling Water 1 consumed by process plants (KM3)
     cw2_process: float = 9016.0,      # Cooling Water 2 consumed by process plants (KM3)
     dm_process: float = 54779.0,       # DM Water consumed by process plants (M3)
+    dm_fixed: float = 0.0,             # DM Water fixed consumption (M3)
+    air_fixed: float = 0.0,            # Compressed Air fixed consumption (NM3)
+    cw1_fixed: float = 0.0,            # Cooling Water 1 fixed consumption (KM3)
+    cw2_fixed: float = 0.0,            # Cooling Water 2 fixed consumption (KM3)
+    raw_water_process: float = 0.0,    # Raw Water consumed by process plants (M3)
+    raw_water_fixed: float = 0.0,      # Raw Water fixed consumption (M3)
+    oxygen_mt: float = 0.0,            # Oxygen consumed by process plants (MT)
     save_to_db: bool = False,          # Auto-save calculated values to NormsMonthDetail
 ) -> dict:
     """
@@ -695,12 +708,18 @@ def calculate_budget_with_iteration(
         lp_from_prds=lp_from_prds,
         lp_from_stg=lp_from_stg,
         mp_from_stg=mp_from_stg,
-        oxygen_mt=5786.0,  # Default value - can be parameterized
+        oxygen_mt=oxygen_mt,  # Oxygen process consumption
         effluent_m3=243000.0,  # Default value - can be parameterized
         air_process_nm3=air_process,  # Process compressed air consumption
         cw1_process_km3=cw1_process,  # Cooling Water 1 process consumption
         cw2_process_km3=cw2_process,  # Cooling Water 2 process consumption
         dm_process_m3=dm_process,     # Process DM water consumption
+        air_fixed_nm3=air_fixed,      # Fixed Compressed Air consumption
+        cw1_fixed_km3=cw1_fixed,      # Fixed Cooling Water 1 consumption
+        cw2_fixed_km3=cw2_fixed,      # Fixed Cooling Water 2 consumption
+        dm_fixed_m3=dm_fixed,         # Fixed DM water consumption
+        raw_water_process_m3=raw_water_process,  # Process Raw Water consumption
+        raw_water_fixed_m3=raw_water_fixed,      # Fixed Raw Water consumption
         gt1_heat_rate=gt1_heat_rate,  # Heat rate from power dispatch (KCAL/KWH)
         gt2_heat_rate=gt2_heat_rate,  # Heat rate from power dispatch (KCAL/KWH)
         gt3_heat_rate=gt3_heat_rate,  # Heat rate from power dispatch (KCAL/KWH)

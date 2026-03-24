@@ -15,6 +15,9 @@ export const ProductionNormsApiService = {
   saveConstantsData,
   importConstantsExcel,
   exportConstantsExcel,
+
+  // Norm Calculation API
+  loadButtonNormCalculation,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -143,11 +146,23 @@ async function getConstantsData(keycloak, plantId, year) {
  * Save Production Norms Constants data
  * @param {Object} keycloak - Keycloak session
  * @param {string} year - AOP Year
+ * @param {string} plantId - Plant ID
+ * @param {string} siteId - Site ID
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
  * @param {Array} payload - Data to save
  * @returns {Promise} Save response
  */
-async function saveConstantsData(keycloak, year, plantId, payload) {
-  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}`
+async function saveConstantsData(
+  keycloak,
+  year,
+  plantId,
+  siteId,
+  periodFrom,
+  periodTo,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -203,4 +218,45 @@ async function exportConstantsExcel(keycloak, plantId, year) {
     fileName: `VGOHT_Production_Norms_Constants_${year}.xlsx`,
     method: 'GET',
   })
+}
+
+// ========================|| Norm Calculation API ||=====================================//
+/**
+ * Load Button Norm Calculation
+ * @param {Object} keycloak - Keycloak session
+ * @param {string} plantId - Plant ID
+ * @param {string} aopYear - AOP Year
+ * @param {string} siteId - Site ID
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
+ * @returns {Promise} Norm calculation response
+ */
+async function loadButtonNormCalculation(
+  keycloak,
+  plantId,
+  aopYear,
+  siteId,
+  periodFrom,
+  periodTo,
+) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/load-button-norm-calculation?plantId=${plantId}&aopYear=${aopYear}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
 }

@@ -607,6 +607,13 @@ def calculate_utilities_from_dispatch(
     cw1_process_km3: float = 15194.0,     # Cooling Water 1 consumed by process plants
     cw2_process_km3: float = 9016.0,      # Cooling Water 2 consumed by process plants
     dm_process_m3: float = 55787.0,        # DM Water consumed by process plants
+    raw_water_process_m3: float = 0.0,     # Raw Water consumed by process plants
+    # Fixed utility consumption
+    air_fixed_nm3: float = 0.0,            # Compressed Air fixed consumption
+    cw1_fixed_km3: float = 0.0,            # Cooling Water 1 fixed consumption
+    cw2_fixed_km3: float = 0.0,            # Cooling Water 2 fixed consumption
+    dm_fixed_m3: float = 0.0,              # DM Water fixed consumption
+    raw_water_fixed_m3: float = 0.0,       # Raw Water fixed consumption
     # Heat rates from power dispatch (KCAL/KWH) - from HeatRateLookup table
     gt1_heat_rate: float = None,           # GT1 Heat Rate from power dispatch
     gt2_heat_rate: float = None,           # GT2 Heat Rate from power dispatch
@@ -735,8 +742,8 @@ def calculate_utilities_from_dispatch(
     # =========================================================
     # 2. COOLING WATER CONSUMPTION (KM³) - CW1 and CW2 separately
     # =========================================================
-    # Cooling Water 1 (CW1) - Process plants
-    total_cw1 = cw1_process_km3
+    # Cooling Water 1 (CW1) - Process plants + Fixed
+    total_cw1 = cw1_process_km3 + cw1_fixed_km3
     
     # Cooling Water 2 (CW2) - Power Plants + Utility Plants + Process
     # Power Plants - Fixed per month when operating
@@ -755,8 +762,8 @@ def calculate_utilities_from_dispatch(
     # CW2 Plant cooling water (power + utility plants)
     cw2_plant = cw2_gt1 + cw2_gt2 + cw2_gt3 + cw2_stg + cw2_bfw + cw2_air + cw2_oxygen
     
-    # Total CW2 = Plant + Process consumption
-    total_cw2 = cw2_plant + cw2_process_km3
+    # Total CW2 = Plant + Process + Fixed consumption
+    total_cw2 = cw2_plant + cw2_process_km3 + cw2_fixed_km3
     
     # Total cooling water = CW1 + CW2
     total_cooling_water = total_cw1 + total_cw2
@@ -782,8 +789,8 @@ def calculate_utilities_from_dispatch(
     # Plant compressed air (utility plants only)
     air_plant = air_gt1 + air_gt2 + air_gt3 + air_stg + air_hrsg1 + air_hrsg2 + air_hrsg3 + air_cw1 + air_cw2
     
-    # Total compressed air = Plant + Process consumption
-    total_compressed_air = air_plant + air_process_nm3
+    # Total compressed air = Plant + Process + Fixed consumption
+    total_compressed_air = air_plant + air_process_nm3 + air_fixed_nm3
     
     # =========================================================
     # 4. BFW CONSUMPTION (M³)
@@ -805,8 +812,8 @@ def calculate_utilities_from_dispatch(
     # =========================================================
     dm_for_bfw = total_bfw * NORM_BFW_DM_WATER_M3_PER_M3
     
-    # Total DM water = BFW requirement + Process consumption
-    total_dm_water = dm_for_bfw + dm_process_m3
+    # Total DM water = BFW requirement + Process consumption + Fixed consumption
+    total_dm_water = dm_for_bfw + dm_process_m3 + dm_fixed_m3
     
     # =========================================================
     # 6. RAW WATER CONSUMPTION (M³)
@@ -827,7 +834,8 @@ def calculate_utilities_from_dispatch(
     # Effluent
     water_effluent = effluent_m3 * NORM_EFFLUENT_WATER_M3_PER_M3
     
-    total_raw_water = water_cw1 + water_cw2 + water_dm + water_hrsg2 + water_hrsg3 + water_effluent
+    # Total raw water = U4U (utility plants) + Process + Fixed
+    total_raw_water = water_cw1 + water_cw2 + water_dm + water_hrsg2 + water_hrsg3 + water_effluent + raw_water_process_m3 + raw_water_fixed_m3
     
     # =========================================================
     # 7. LP STEAM CONSUMPTION (MT) - for BFW heating
@@ -889,6 +897,7 @@ def calculate_utilities_from_dispatch(
         # Cooling Water (CW1 and CW2 separately)
         "cooling_water": {
             "cw1_process_km3": round(cw1_process_km3, 2),
+            "cw1_fixed_km3": round(cw1_fixed_km3, 2),
             "cw1_total_km3": round(total_cw1, 2),
             "cw2_gt1_km3": round(cw2_gt1, 2),
             "cw2_gt2_km3": round(cw2_gt2, 2),
@@ -898,6 +907,7 @@ def calculate_utilities_from_dispatch(
             "cw2_air_km3": round(cw2_air, 2),
             "cw2_oxygen_km3": round(cw2_oxygen, 2),
             "cw2_process_km3": round(cw2_process_km3, 2),
+            "cw2_fixed_km3": round(cw2_fixed_km3, 2),
             "cw2_total_km3": round(total_cw2, 2),
             "total_km3": round(total_cooling_water, 2),
         },
@@ -912,6 +922,8 @@ def calculate_utilities_from_dispatch(
             "hrsg3_nm3": round(air_hrsg3, 2),
             "cw1_nm3": round(air_cw1, 2),
             "cw2_nm3": round(air_cw2, 2),
+            "process_nm3": round(air_process_nm3, 2),
+            "fixed_nm3": round(air_fixed_nm3, 2),
             "total_nm3": round(total_compressed_air, 2),
         },
         # BFW
@@ -927,6 +939,8 @@ def calculate_utilities_from_dispatch(
         # DM Water
         "dm_water": {
             "for_bfw_m3": round(dm_for_bfw, 2),
+            "process_m3": round(dm_process_m3, 2),
+            "fixed_m3": round(dm_fixed_m3, 2),
             "total_m3": round(total_dm_water, 2),
         },
         # Raw Water
@@ -937,6 +951,8 @@ def calculate_utilities_from_dispatch(
             "hrsg2_m3": round(water_hrsg2, 2),
             "hrsg3_m3": round(water_hrsg3, 2),
             "effluent_m3": round(water_effluent, 2),
+            "process_m3": round(raw_water_process_m3, 2),
+            "fixed_m3": round(raw_water_fixed_m3, 2),
             "total_m3": round(total_raw_water, 2),
         },
         # LP Steam
