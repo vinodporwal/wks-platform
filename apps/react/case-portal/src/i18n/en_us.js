@@ -35,7 +35,7 @@ const defs = {
     spyroMenu: 'Optimizer Menu',
     decokingActivities: 'Net Production Hours (Furnace & SAD plan)',
     maintenanceDetails: 'Net Production Hours',
-    combinedProductionNorms: 'Combined Production Norms',
+    combinedProductionNorms: 'Combined Production Target',
     consumptionNorms: 'Overall AOP Consumption (Norm/Quantity)',
     productionNorms: 'Month wise Production plan',
     catalystSelectivity: 'Production & Norms Basis',
