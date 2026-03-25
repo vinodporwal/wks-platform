@@ -109,15 +109,19 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		try {
 			List<Object[]> objList = null;
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			// Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Boolean withGrade=false;
+			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 				withGrade=true;
+			}if(elastomer) {
+				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnormsGrade";
+				objList = getShutdownConsumptionData( plantId,year, storedProcedure);
+				return getShutdownGradeData(objList, plantId, year,gradeId);
 			}
-			if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA")) && (!withGrade)) {
+			else if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA")) && (!withGrade)) {
 				//objList = getShutdownNormsMEG(year, plant.getId(), "vwScrnShutdownNorms");
 				// view converted to sp
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnorms";

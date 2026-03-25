@@ -106,8 +106,7 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
                 if (dto == null) {
                     continue;
                 }
-                MonthwiseOperatingHours entity = upsertMonthwiseOperatingHours(dto, plantUuid, year, now);
-                entityManager.merge(entity);
+                upsertMonthwiseOperatingHours(dto, plantUuid, year, now);
                 savedCount++;
             }
 
@@ -163,6 +162,7 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
             entity.setModifiedOn(now);
         } else {
             entity.setCreatedOn(now);
+            entityManager.persist(entity);
         }
 
         return entity;

@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +21,6 @@ import com.wks.caseengine.entity.PlannedShutdownDetails;
 import com.wks.caseengine.entity.RoutineShutdownPreviousYears;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.repository.PlannedShutdownDetailsRepository;
-import com.wks.caseengine.repository.RoutineShutdownPreviousYearsRepository;
 import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
@@ -35,12 +32,6 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
     @PersistenceContext(unitName = "db2")
     private EntityManager entityManager;
-
-    @Autowired
-    private PlannedShutdownDetailsRepository plannedShutdownDetailsRepository;
-
-    @Autowired
-    private RoutineShutdownPreviousYearsRepository routineShutdownPreviousYearsRepository;
 
     @Override
     @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
@@ -147,9 +138,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
                     continue;
                 }
 
-                PlannedShutdownDetails entity =
-                        upsertPlannedShutdownDetails(dto, plantUuid, year, now);
-                plannedShutdownDetailsRepository.save(entity);
+                upsertPlannedShutdownDetails(dto, plantUuid, year, now);
                 savedCount++;
             }
 
@@ -161,10 +150,13 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             return aopMessageVM;
 
         } catch (IllegalArgumentException e) {
+        	e.printStackTrace();
             throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
         } catch (RestInvalidArgumentException e) {
+        	e.printStackTrace();
             throw e;
         } catch (Exception ex) {
+        	ex.printStackTrace();
             throw new RuntimeException("Failed to save shutdown details", ex);
         }
     }
@@ -178,9 +170,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             UUID plantUuid = UUID.fromString(plantId);
             Date now = new Date();
 
-            RoutineShutdownPreviousYears entity =
-                    upsertRoutineShutdownPreviousYears(shutdownDetailsDTO, plantUuid, year, now);
-            routineShutdownPreviousYearsRepository.save(entity);
+            upsertRoutineShutdownPreviousYears(shutdownDetailsDTO, plantUuid, year, now);
 
             Map<String, Object> data = new HashMap<>();
             data.put("savedCount", 1);
@@ -208,7 +198,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
         UUID id = parseUuidOrNull(dto.getId());
         if (id != null) {
-            entity = routineShutdownPreviousYearsRepository.findById(id).orElse(null);
+            entity = entityManager.find(RoutineShutdownPreviousYears.class, id);
             isUpdate = entity != null;
 
             // If id is provided but row doesn't exist, insert using the provided id.
@@ -233,6 +223,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             entity.setModifiedOn(now);
         } else {
             entity.setCreatedOn(now);
+            entityManager.persist(entity);
         }
 
         return entity;
@@ -248,12 +239,12 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
                 throw new RestInvalidArgumentException("id", new IllegalArgumentException("empty or invalid id"));
             }
 
-            boolean exists = plannedShutdownDetailsRepository.findById(uuid).isPresent();
-            if (!exists) {
+            PlannedShutdownDetails entity = entityManager.find(PlannedShutdownDetails.class, uuid);
+            if (entity == null) {
                 throw new RestInvalidArgumentException("PlannedShutdownDetails id", new RuntimeException("not found"));
             }
 
-            plannedShutdownDetailsRepository.deleteById(uuid);
+            entityManager.remove(entity);
 
             Map<String, Object> data = new HashMap<>();
             data.put("deletedCount", 1);
@@ -280,12 +271,12 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
                 throw new RestInvalidArgumentException("id", new IllegalArgumentException("empty or invalid id"));
             }
 
-            boolean exists = routineShutdownPreviousYearsRepository.findById(uuid).isPresent();
-            if (!exists) {
+            RoutineShutdownPreviousYears entity = entityManager.find(RoutineShutdownPreviousYears.class, uuid);
+            if (entity == null) {
                 throw new RestInvalidArgumentException("RoutineShutdownPreviousYears id", new RuntimeException("not found"));
             }
 
-            routineShutdownPreviousYearsRepository.deleteById(uuid);
+            entityManager.remove(entity);
 
             Map<String, Object> data = new HashMap<>();
             data.put("deletedCount", 1);
@@ -313,12 +304,12 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
         UUID id = parseUuidOrNull(dto.getId());
         if (id != null) {
-            entity = plannedShutdownDetailsRepository.findById(id).orElse(null);
+            entity = entityManager.find(PlannedShutdownDetails.class, id);
             isUpdate = entity != null;
 
             // If id is provided but row doesn't exist, insert using the provided id.
             if (entity == null) {
-                entity = new com.wks.caseengine.entity.PlannedShutdownDetails();
+                entity = new PlannedShutdownDetails();
                 entity.setId(id);
             }
         } else {
@@ -338,10 +329,12 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             entity.setModifiedOn(now);
         } else {
             entity.setCreatedOn(now);
+            entityManager.persist(entity);
         }
 
         return entity;
     }
+
 
     private static UUID parseUuidOrNull(String id) {
         if (id == null) {
