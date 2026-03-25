@@ -2,6 +2,8 @@ package com.wks.caseengine.dto;
 
 import java.util.Date;
 
+import org.springframework.context.annotation.Configuration;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Configuration
 public class ShutdownDetailsDTO {
     private String id;
     private String activities;
