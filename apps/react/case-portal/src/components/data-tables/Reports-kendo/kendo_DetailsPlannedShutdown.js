@@ -36,6 +36,7 @@ export default function ShutdownReport() {
   const SITE_NAME = siteObject?.name
   const AOP_YEAR = year?.selectedYear
   const IS_OLD_YEAR = oldYear?.oldYear
+  //const IS_OLD_YEAR = false
   const IS_RELEASED = isReleased
 
   const keycloak = useSession()
@@ -276,6 +277,7 @@ export default function ShutdownReport() {
       const shutdownList = res?.data?.shutdownDetailsList || []
       const mappedRows = shutdownList.map((item, idx) => ({
         id: item.id || idx + 1,
+        idFromApi: item?.id,
         Activities: item.activities,
         durationInHrs: item.durationHrs,
         maintStartDateTime: item.shutdownFrom,
@@ -351,6 +353,7 @@ export default function ShutdownReport() {
       const shutdownList = res?.data?.shutdownDetailsList || []
       const mappedRows = shutdownList.map((item, idx) => ({
         id: item.id || idx + 1,
+        idFromApi: item?.id,
         Activities: item.activities,
         PrevYear1: item.prevYear1,
         PrevYear2: item.prevYear2,
@@ -502,6 +505,42 @@ export default function ShutdownReport() {
       console.error('Error deleting Record', error)
     }
   }
+  //deleteRowDataPlannedShutdown
+  const deleteRowDataPlannedShutdown = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRowsPlanned((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deletePlannedShutdownData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRowsPlanned((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchPlannedShutdown()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
 
   const getAdjustedPermissionsPrevYears = (permissions, isOldYear) => {
     if (isOldYear !== 1) return permissions
@@ -535,6 +574,7 @@ export default function ShutdownReport() {
       deleteButton: true,
       showCalculate: false,
       showFinalSubmit: false,
+      editButton: true,
     },
     IS_OLD_YEAR,
   )
@@ -599,6 +639,7 @@ export default function ShutdownReport() {
       deleteButton: true,
       showCalculate: false,
       showFinalSubmit: false,
+      editButton: true,
     },
     IS_OLD_YEAR,
   )
@@ -640,6 +681,7 @@ export default function ShutdownReport() {
           handleRemarkCellClick={handleRemarkCellClickPlanned}
           saveChanges={savePlannedChanges}
           permissions={permissionsPlannedShutdown}
+          deleteRowData={deleteRowDataPlannedShutdown}
         />
 
         <KendoDataTables
