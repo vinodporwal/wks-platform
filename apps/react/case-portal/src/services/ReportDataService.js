@@ -6,6 +6,7 @@ export const ReportDataService = {
   saveShutdownPlannedData,
   saveShutdownPreviousYearsData,
   deleteRoutineShutdownData,
+  deletePlannedShutdownData,
 }
 
 async function getShutdownData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -30,7 +31,7 @@ async function saveShutdownPlannedData(
   type,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/shutdown-planned?plantId=${PLANT_ID}&year=${AOP_YEAR}&type=${type}`
+  const url = `${Config.CaseEngineUrl}/task/shutdown-details?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ async function saveShutdownPreviousYearsData(
   type,
   payload,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/routine-shutdown-PreviousYears?plantId=${PLANT_ID}&year=${AOP_YEAR}&type=${type}`
+  const url = `${Config.CaseEngineUrl}/task/routine-shutdown-previous-years?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ async function saveShutdownPreviousYearsData(
 }
 
 async function deleteRoutineShutdownData(Id, keycloak, PLANT_ID) {
-  const url = `${Config.CaseEngineUrl}/task/routine-shutdown/${Id}/${PLANT_ID}`
+  const url = `${Config.CaseEngineUrl}/task/routine-shutdown-previous-years?id=${Id}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,
@@ -93,6 +94,28 @@ async function deleteRoutineShutdownData(Id, keycloak, PLANT_ID) {
     return await resp.text() // Handle text response from the backend
   } catch (e) {
     console.error('Error deleting routine shutdown data:', e)
+    return Promise.reject(e)
+  }
+}
+async function deletePlannedShutdownData(Id, keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-details?id=${Id}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting planned shutdown data:', e)
     return Promise.reject(e)
   }
 }
