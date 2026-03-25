@@ -3250,7 +3250,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	            cell.setCellValue(innerHeaders.get(col));
 	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 	        }
-
 	        
 	        for (List<Object> rowData : rows) {
 	            Row row = sheet.createRow(currentRow++);
@@ -3259,6 +3258,200 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	                Object value = rowData.get(col);
 	                if (value instanceof Number) {
 	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }
+	            }
+	        }
+
+	        
+	        int recipeIdColIndex = innerHeaders.indexOf("RecipeId");
+	        if (recipeIdColIndex >= 0) {
+	            sheet.setColumnHidden(recipeIdColIndex, true);
+	        }
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+
+	@Override
+	public byte[] exportConfigDataPP(String year,
+	                               UUID plantFKId,
+	                               boolean isAfterSave,
+	                               List<NormAttributeTransactionReceipeRequestDTO> dtoList) {
+	    try {
+	        
+	        if (isAfterSave) {
+	            
+	            List<NormAttributeTransactionReceipeRequestDTO> failedDtos = dtoList.stream()
+	                .filter(d -> d.getSaveStatus() != null && d.getSaveStatus().equalsIgnoreCase("Failed"))
+	                .collect(Collectors.toList());
+
+	            
+	            if (failedDtos.isEmpty()) {
+	                
+	                dtoList = Collections.emptyList();
+	            } else {
+	                dtoList = failedDtos;
+	            }
+	        }
+	        List<Map<String, Object>> data = getNormAttributeTransactionReceipe(year, plantFKId.toString());
+	        List<NormParameters> normParametersList = normParametersService.getAllGrades(plantFKId.toString());
+	        List<String> innerHeaders = new ArrayList<>();
+	        boolean hasTypeDisplayName = data != null && data.stream()
+	                .anyMatch(rec -> getMapValueIgnoreCase(rec, "TypeDisplayName") != null);
+	        if (hasTypeDisplayName) {
+	            innerHeaders.add("TypeDisplayName");
+	        }
+	        innerHeaders.add("Recipe");
+	        innerHeaders.add("UOM");
+	        for (NormParameters normParameters : normParametersList) {
+	            innerHeaders.add(normParameters.getDisplayName());
+	        }
+	        innerHeaders.add("RecipeId");
+
+	        if (isAfterSave) {
+	            innerHeaders.add("Status");
+	            innerHeaders.add("Error Description");
+	        }
+
+	        
+	        Map<String, String> uuidToDisplayName = new HashMap<>();
+	        for (NormParameters np : normParametersList) {
+	            String id = np.getId().toString().toLowerCase();
+	            String displayName = np.getDisplayName();
+	            uuidToDisplayName.put(id, displayName);
+	        }
+
+	        
+	        List<List<Object>> rows = new ArrayList<>();
+	        for (Map<String, Object> rec : data) {
+	            if (isAfterSave) {
+	                Object recIdObj = rec.get("Reciepe_FK_ID");
+	                if (recIdObj == null) {
+	                    continue;
+	                }
+	                String recIdStr = recIdObj.toString();
+	                boolean inFailed = dtoList.stream()
+	                        .anyMatch(d -> d.getRecId() != null && d.getRecId().equals(recIdStr));
+	                if (!inFailed) {
+	                    
+	                    continue;
+	                }
+	            }
+
+	            Map<String, Object> newMap = new LinkedHashMap<>();
+	            List<Object> list = new ArrayList<>();
+
+	            if (hasTypeDisplayName) {
+	                Object typeDisplayName = getMapValueIgnoreCase(rec, "TypeDisplayName");
+	                list.add(typeDisplayName != null ? typeDisplayName : "");
+	            }
+
+	            if (rec.containsKey("ReceipeName")) {
+	                newMap.put("ReceipeName", rec.get("ReceipeName"));
+	                list.add(rec.get("ReceipeName"));
+	            } else {
+	                list.add("");  
+	            }
+	            if (rec.containsKey("UOM")) {
+	                newMap.put("UOM", rec.get("UOM"));
+	                list.add(rec.get("UOM"));
+	            } else {
+	                list.add("");  
+	            }
+
+	            
+	            for (Map.Entry<String, Object> e : rec.entrySet()) {
+	                String key = e.getKey();
+	                Object value = e.getValue();
+	                String lowerKey = key.toLowerCase();
+	                if (uuidToDisplayName.containsKey(lowerKey)) {
+	                    String dispName = uuidToDisplayName.get(lowerKey);
+	                    newMap.put(dispName, value);
+	                }
+	            }
+
+	           
+	            for (String header : innerHeaders) {
+	                if (header.equalsIgnoreCase("TypeDisplayName")
+	                        || header.equalsIgnoreCase("Recipe") || header.equalsIgnoreCase("RecipeId") || header.equalsIgnoreCase("UOM")
+	                        || (isAfterSave && (header.equalsIgnoreCase("Status") || header.equalsIgnoreCase("Error Description")))) {
+	                    continue;
+	                }
+	                
+	                list.add(newMap.get(header));
+	            }
+
+	            
+	            if (rec.containsKey("Reciepe_FK_ID")) {
+	                newMap.put("Reciepe_FK_ID", rec.get("Reciepe_FK_ID"));
+	                list.add(rec.get("Reciepe_FK_ID"));
+	            } else {
+	                list.add("");
+	            }
+
+	            if (isAfterSave) {
+	                
+	                String thisRecId = rec.get("Reciepe_FK_ID") != null ? rec.get("Reciepe_FK_ID").toString() : null;
+	                NormAttributeTransactionReceipeRequestDTO matched = null;
+	                for (NormAttributeTransactionReceipeRequestDTO d : dtoList) {
+	                    if (d.getRecId() != null && d.getRecId().equals(thisRecId)) {
+	                        matched = d;
+	                        break;
+	                    }
+	                }
+	                if (matched != null) {
+	                    list.add(matched.getSaveStatus());
+	                    list.add(matched.getErrDescription());
+	                } else {
+	                    list.add("");
+	                    list.add("");
+	                }
+	            }
+
+	            rows.add(list);
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        // PP SEZ export requirement: show numeric values with exactly 4 decimals.
+	        DataFormat fourDecimalDataFormat = workbook.createDataFormat();
+	        CellStyle fourDecimalCellStyle = workbook.createCellStyle();
+        // Use "up to" 4 decimals so values like 1 show as "1" not "1.0000"
+        fourDecimalCellStyle.setDataFormat(fourDecimalDataFormat.getFormat("0.####"));
+	        
+	        
+	        for (List<Object> rowData : rows) {
+	            Row row = sheet.createRow(currentRow++);
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                if (value instanceof Number) {
+	                    double d = ((Number) value).doubleValue();
+	                    BigDecimal bd = BigDecimal.valueOf(d).setScale(4, java.math.RoundingMode.HALF_UP);
+	                    cell.setCellValue(bd.doubleValue());
+	                    cell.setCellStyle(fourDecimalCellStyle);
 	                } else if (value instanceof Boolean) {
 	                    cell.setCellValue((Boolean) value);
 	                } else if (value != null) {

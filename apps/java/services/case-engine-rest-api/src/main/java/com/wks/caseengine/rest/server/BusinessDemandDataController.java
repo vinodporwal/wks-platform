@@ -22,12 +22,26 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.wks.caseengine.dto.BusinessDemandDataDTO;
 import com.wks.caseengine.dto.BusinessDemandMonthlyDTO;
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.service.BusinessDemandDataService;
+import com.wks.caseengine.service.PlantsService;
 
 @RestController
 @RequestMapping("task")
 public class BusinessDemandDataController {
+	
+	@Autowired
+	private PlantsRepository plantsRepository;
+
+	@Autowired
+	private SiteRepository siteRepository;
+	
+	@Autowired
+	private PlantsService plantsService;
 	
 	@Autowired
 	private BusinessDemandDataService businessDemandDataService;
@@ -72,9 +86,17 @@ public class BusinessDemandDataController {
             @RequestParam("year") String year
 	        ) {
 	    try {
+	    	String verticalName = plantsService.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			
-	        byte[] excelBytes = businessDemandDataService.exportBusinessDemand(year,plantId,false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
-
+			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+			byte[] excelBytes=null;
+			if(verticalName.equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ")) {
+				 excelBytes = businessDemandDataService.exportBusinessDemandPP(year,plantId,false,null);
+			}else {
+				 excelBytes = businessDemandDataService.exportBusinessDemand(year,plantId,false,null);
+			}
+	        
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(
 	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));

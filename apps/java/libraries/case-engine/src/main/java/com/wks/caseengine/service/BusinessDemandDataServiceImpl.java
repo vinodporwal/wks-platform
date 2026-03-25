@@ -34,6 +34,8 @@ import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -463,9 +465,8 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
+
 			for (List<Object> rowData : rows) {
-				
-				 
 				Row row = sheet.createRow(currentRow++);
 				for (int col = 0; col < rowData.size(); col++) {
 					Cell cell = row.createCell(col);
@@ -501,7 +502,146 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		return null;
 
 	}
-		
+
+	public byte[] exportBusinessDemandPP(String year, String plantId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList) {
+		try {
+			
+			List<Boolean> isEditable = new ArrayList<>();
+
+			if (!isAfterSave) {
+				 dtoList = getBusinessDemandData(year,plantId);
+			}
+
+			Workbook workbook = new XSSFWorkbook();
+
+			Sheet sheet = workbook.createSheet("Sheet1");
+			int currentRow = 0;
+			// List<List<Object>> rows = new ArrayList<>();
+
+			List<List<Object>> rows = new ArrayList<>();
+			
+			// Data rows
+			for (BusinessDemandDataDTO dto : dtoList) {
+				//if (isAfterSave) {
+					List<Object> list = new ArrayList<>();
+					
+					list.add(dto.getDisplayName());
+					list.add(dto.getUOM());
+					list.add(dto.getApril());
+					list.add(dto.getMay());
+					list.add(dto.getJune());
+					list.add(dto.getJuly());
+					list.add(dto.getAug());
+					list.add(dto.getSep());
+					list.add(dto.getOct());
+					list.add(dto.getNov());
+					list.add(dto.getDec());
+					list.add(dto.getJan());
+					list.add(dto.getFeb());
+					list.add(dto.getMarch());
+					list.add(dto.getRemark());
+					list.add(dto.getId());
+					list.add(dto.getNormParameterId());
+					
+					
+					if (isAfterSave) {
+						list.add(dto.getSaveStatus());
+						list.add(dto.getErrDescription());
+					}
+					rows.add(list);
+				//}
+			}
+
+			List<String> innerHeaders = new ArrayList<>();
+			
+			innerHeaders.add("Particulars");
+			innerHeaders.add("UOM");
+			innerHeaders.add(getMonth( year, 4));
+			innerHeaders.add(getMonth( year, 5));
+			innerHeaders.add(getMonth( year, 6));
+			innerHeaders.add(getMonth( year, 7));
+			innerHeaders.add(getMonth( year, 8));
+			innerHeaders.add(getMonth( year, 9));
+			innerHeaders.add(getMonth( year, 10));
+			innerHeaders.add(getMonth( year, 11));
+			innerHeaders.add(getMonth( year, 12));
+			innerHeaders.add(getMonth( year, 1));
+			innerHeaders.add(getMonth( year, 2));
+			innerHeaders.add(getMonth( year, 3));
+			innerHeaders.add("Remark");
+			innerHeaders.add("Id");
+			innerHeaders.add("NormParameterId");
+			// innerHeaders.add("NormParamterId");
+			 //innerHeaders.add("IsEditable");
+			if (isAfterSave) {
+				innerHeaders.add("Status");
+				innerHeaders.add("Error Description");
+			}
+			List<List<String>> headers = new ArrayList<>();
+			headers.add(innerHeaders);
+
+			for (List<String> headerRowData : headers) {
+				Row headerRow = sheet.createRow(currentRow++);
+				for (int col = 0; col < headerRowData.size(); col++) {
+					Cell cell = headerRow.createCell(col);
+					cell.setCellValue(headerRowData.get(col));
+					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+				}
+			}
+
+			// PP SEZ requirement: month values should be rounded to 3 decimals.
+			DataFormat threeDecimalDataFormat = workbook.createDataFormat();
+			CellStyle threeDecimalCellStyle = workbook.createCellStyle();
+			// Use "up to" 3 decimals so values like 1 show as "1" not "1.000"
+			threeDecimalCellStyle.setDataFormat(threeDecimalDataFormat.getFormat("0.###"));
+			
+
+			for (List<Object> rowData : rows) {
+				
+				 
+				Row row = sheet.createRow(currentRow++);
+				for (int col = 0; col < rowData.size(); col++) {
+					Cell cell = row.createCell(col);
+					Object value = rowData.get(col);
+
+					if (value instanceof Number) {
+						double d = ((Number) value).doubleValue();
+						if (col >= 2 && col <= 13) {
+							double rounded = Math.round(d * 1000d) / 1000d;
+							cell.setCellValue(rounded);
+							cell.setCellStyle(threeDecimalCellStyle);
+						} else {
+							cell.setCellValue(d);
+						}
+					} else if (value instanceof Boolean) {
+						cell.setCellValue((Boolean) value);
+					} else if (value != null) {
+						cell.setCellValue(value.toString());
+					} else {
+						cell.setCellValue("");
+					}
+				}
+			}
+			sheet.setColumnHidden(15, true);
+			sheet.setColumnHidden(16, true);
+			//sheet.setColumnHidden(18, true);
+			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
+
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+				workbook.write(outputStream);
+				workbook.close();
+				return outputStream.toByteArray();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+
 	public String getMonth(String year, int month) {
 	    
 	    if (year == null || !year.matches("\\d{4}-\\d{2}")) {
