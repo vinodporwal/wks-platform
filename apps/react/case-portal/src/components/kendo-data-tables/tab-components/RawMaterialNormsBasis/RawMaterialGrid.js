@@ -9,7 +9,12 @@ import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 
-const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
+const RawMaterialGrid = ({
+  summary,
+  summaryEdited,
+  setSummaryEdited,
+  triggerGrid3Refresh,
+}) => {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
@@ -178,6 +183,7 @@ const RawMaterialGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
       })
 
       await fetchData()
+      triggerGrid3Refresh()
       return { code: 200 }
     } catch (error) {
       console.error('Error updating data:', error)

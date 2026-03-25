@@ -16,8 +16,8 @@ public class ShutdownDetailsDTO {
     private String activities;
 
     // Planned shutdown fields
-    private String shutdownFrom;
-    private String shutdownTo;
+    private Date shutdownFrom;
+    private Date shutdownTo;
     private Double durationHrs;
     private String remarks;
 

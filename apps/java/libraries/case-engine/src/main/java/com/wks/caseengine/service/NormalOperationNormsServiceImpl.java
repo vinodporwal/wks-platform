@@ -881,7 +881,7 @@ public class NormalOperationNormsServiceImpl implements NormalOperationNormsServ
 			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			Boolean elastomer=vertical.getName().equalsIgnoreCase("ELASTOMER") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			String viewName = "vwScrn" + vertical.getName() + "NormalOperationNorms";
-			if (withGrade) {
+			if (withGrade || elastomer) {
 				viewName = "vwScrn" + vertical.getName() + "NormalOperationNormsGrade";
 			}
 			// Validate or sanitize viewName before using it directly in the query to

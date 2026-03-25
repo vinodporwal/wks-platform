@@ -77,7 +77,8 @@ const ConfigurationTable = () => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
-  const IS_AROMATICS_HMD = lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -613,9 +614,8 @@ const ConfigurationTable = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find(
-            (item) => item.Name === name,
-          )?.AttributeValue,
+          configurationExecutionDetails.find((item) => item.Name === name)
+            ?.AttributeValue,
         )
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
@@ -1315,44 +1315,46 @@ const ConfigurationTable = () => {
             })}
           />
 
-          {lowerVertName === 'aromatics' && (!IS_AROMATICS_HMD) && tabs?.length > 0 && (
-            <Box ml='auto'>
-              <ButtonGroup aria-label='revision group'>
-                {['1', '2', '3'].map((num) => {
-                  const selected = revision === num
+          {lowerVertName === 'aromatics' &&
+            !IS_AROMATICS_HMD &&
+            tabs?.length > 0 && (
+              <Box ml='auto'>
+                <ButtonGroup aria-label='revision group'>
+                  {['1', '2', '3'].map((num) => {
+                    const selected = revision === num
 
-                  return (
-                    <Button
-                      key={num}
-                      onClick={() => handleOpenDialogRev(num)}
-                      variant={selected ? 'contained' : 'outlined'}
-                      size='small'
-                      sx={{
-                        textTransform: 'none',
-                        fontSize: '0.75rem',
-                        padding: '1px 7px',
-                        minWidth: '36px',
-                        mr: 0.5,
-                        ...(selected && {
-                          bgcolor: '#0100cb',
-                          color: '#fff',
-                          borderColor: '#0100cb',
-                          fontWeight: 'bold',
-                        }),
-                        ...(!selected && {
-                          borderColor: '#000000ff',
-                          color: '#000000ff',
-                          fontWeight: 'bold',
-                        }),
-                      }}
-                    >
-                      {`Rev ${num}`}
-                    </Button>
-                  )
-                })}
-              </ButtonGroup>
-            </Box>
-          )}
+                    return (
+                      <Button
+                        key={num}
+                        onClick={() => handleOpenDialogRev(num)}
+                        variant={selected ? 'contained' : 'outlined'}
+                        size='small'
+                        sx={{
+                          textTransform: 'none',
+                          fontSize: '0.75rem',
+                          padding: '1px 7px',
+                          minWidth: '36px',
+                          mr: 0.5,
+                          ...(selected && {
+                            bgcolor: '#0100cb',
+                            color: '#fff',
+                            borderColor: '#0100cb',
+                            fontWeight: 'bold',
+                          }),
+                          ...(!selected && {
+                            borderColor: '#000000ff',
+                            color: '#000000ff',
+                            fontWeight: 'bold',
+                          }),
+                        }}
+                      >
+                        {`Rev ${num}`}
+                      </Button>
+                    )
+                  })}
+                </ButtonGroup>
+              </Box>
+            )}
         </Box>
 
         <Box>

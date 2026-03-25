@@ -13,6 +13,7 @@ const AsPerStoichiometryLossesGrid = ({
   summary,
   summaryEdited,
   setSummaryEdited,
+  refreshTrigger,
 }) => {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -97,6 +98,7 @@ const AsPerStoichiometryLossesGrid = ({
           name: row.name,
           remarks: row.remarks,
           originalRemark: row.remarks || '',
+          isEditable: false,
         }),
       )
 
@@ -112,6 +114,10 @@ const AsPerStoichiometryLossesGrid = ({
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchData()
+  }, [refreshTrigger])
 
   useEffect(() => {
     setModifiedCells({})

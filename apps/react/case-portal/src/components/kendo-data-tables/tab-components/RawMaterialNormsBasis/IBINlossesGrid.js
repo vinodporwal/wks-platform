@@ -10,7 +10,12 @@ import { getRoleName } from 'services/role-service'
 import { RawMaterialNormsBasisApiService } from 'services/raw-material-norms-basis-api-service'
 import { validateFields } from 'utils/validationUtils'
 
-const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
+const IBINlossesGrid = ({
+  summary,
+  summaryEdited,
+  setSummaryEdited,
+  triggerGrid3Refresh,
+}) => {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [modifiedCells, setModifiedCells] = useState({})
@@ -187,6 +192,7 @@ const IBINlossesGrid = ({ summary, summaryEdited, setSummaryEdited }) => {
         message: 'Saved Successfully!',
         severity: 'success',
       })
+      triggerGrid3Refresh()
 
       await fetchData()
       return { code: 200 }

@@ -468,32 +468,40 @@ export default function ShutdownReport() {
     showSnackbar,
   ])
   const deleteRowDataRoutineShutdown = async (paramsForDelete) => {
-      setLoading(true)
-  
-      try {
-        const { idFromApi, id } = paramsForDelete
-        const deleteId = id
-  
-        if (!idFromApi) {
-          setRowsPrevYears((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-        }
-  
-        if (idFromApi) {
-          await ReportDataService.deleteRoutineShutdownData(idFromApi, keycloak, PLANT_ID)
-          setRowsPrevYears((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Record Deleted successfully!',
-            severity: 'success',
-          })
-          fetchRoutineShutdownPreviousYears()
-        } else {
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('Error deleting Record', error)
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRowsPrevYears((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
       }
+
+      if (idFromApi) {
+        await ReportDataService.deleteRoutineShutdownData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRowsPrevYears((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchRoutineShutdownPreviousYears()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
     }
+  }
 
   const getAdjustedPermissionsPrevYears = (permissions, isOldYear) => {
     if (isOldYear !== 1) return permissions
