@@ -938,7 +938,7 @@ const WorkFlowMerge = () => {
               <>{tabIndex === 12 && <ShutdownReport/>}</>
             )}
             {(lowerVertName === 'pe') && (
-              <>{tabIndex === 11 && <ShutdownSummaryReport/>}</>
+              <>{tabIndex === 13 && <ShutdownSummaryReport/>}</>
             )} */}
 
               <Notification
