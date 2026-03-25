@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.ShutdownDetailsDTO;
 import com.wks.caseengine.entity.PlannedShutdownDetails;
+import com.wks.caseengine.entity.RoutineShutdownPreviousYears;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.repository.PlannedShutdownDetailsRepository;
@@ -177,7 +178,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             UUID plantUuid = UUID.fromString(plantId);
             Date now = new Date();
 
-            com.wks.caseengine.entity.RoutineShutdownPreviousYears entity =
+            RoutineShutdownPreviousYears entity =
                     upsertRoutineShutdownPreviousYears(shutdownDetailsDTO, plantUuid, year, now);
             routineShutdownPreviousYearsRepository.save(entity);
 
@@ -202,7 +203,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             String year,
             Date now) {
 
-        com.wks.caseengine.entity.RoutineShutdownPreviousYears entity = null;
+        RoutineShutdownPreviousYears entity = null;
         boolean isUpdate = false;
 
         UUID id = parseUuidOrNull(dto.getId());
@@ -212,11 +213,11 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
             // If id is provided but row doesn't exist, insert using the provided id.
             if (entity == null) {
-                entity = new com.wks.caseengine.entity.RoutineShutdownPreviousYears();
+                entity = new RoutineShutdownPreviousYears();
                 entity.setId(id);
             }
         } else {
-            entity = new com.wks.caseengine.entity.RoutineShutdownPreviousYears();
+            entity = new RoutineShutdownPreviousYears();
         }
 
         entity.setActivities(dto.getActivities());
