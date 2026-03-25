@@ -8,7 +8,7 @@ import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
-import { MockMonthwiseOperatingHoursAPI } from './MockMonthwiseOperatingHoursAPI'
+import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
 
 const MonthwiseOperatingHours = () => {
   const keycloak = useSession()
@@ -22,7 +22,6 @@ const MonthwiseOperatingHours = () => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [rows, setRows] = useState([])
-  const [columns, setColumns] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -37,16 +36,92 @@ const MonthwiseOperatingHours = () => {
 
   const valueFormatter = ValueFormatterProduction()
 
+  const columns = [
+    {
+      field: 'Month',
+      title: 'Month',
+      widthT: 120,
+      editable: false,
+    },
+    {
+      field: 'TotalAvailableHrs',
+      title: 'Total available Hrs',
+      widthT: 150,
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+    },
+    {
+      field: 'PlannedTurnaroundHrs',
+      title: 'Planned Turnaround Hrs',
+      widthT: 180,
+      editable: true,
+      type: 'number',
+      format: valueFormatter,
+    },
+    {
+      field: 'PlannedShutdownOtherThanTurnaroundHrs',
+      title: 'Planned shutdown other than Turnaround Hrs',
+      widthT: 250,
+      editable: true,
+      type: 'number',
+      format: valueFormatter,
+    },
+    {
+      field: 'RoutineShutdownHrs',
+      title: 'Routine shutdown Hrs',
+      widthT: 180,
+      editable: true,
+      type: 'number',
+      format: valueFormatter,
+    },
+    {
+      field: 'SlowdownHrs',
+      title: 'Slowdown Hrs',
+      widthT: 150,
+      editable: true,
+      type: 'number',
+      format: valueFormatter,
+    },
+    {
+      field: 'NetOperatingHours',
+      title: 'Net operating Hours',
+      widthT: 180,
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+    },
+    {
+      field: 'Remark',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
+    },
+  ]
+
   const fetchData = async () => {
     try {
       setLoading(true)
-      const { columns: cols, data } =
-        await MockMonthwiseOperatingHoursAPI.getReport({
-          AOP_YEAR,
-          valueFormat: valueFormatter,
+      const res = await AOPWorkFlowService.getMonthwiseOperatingHours(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (res?.code === 200) {
+        setRows(
+          (res?.data || []).map((item, index) => ({
+            ...item,
+            id: item.id ?? index,
+          })),
+        )
+      } else {
+        setRows([])
+        setSnackbarData({
+          message: res?.message || 'Failed to fetch data',
+          severity: 'error',
         })
-      setColumns(cols)
-      setRows(data)
+        setSnackbarOpen(true)
+      }
     } catch (err) {
       console.error('Error fetching operating hours data:', err)
       setSnackbarData({
@@ -60,7 +135,9 @@ const MonthwiseOperatingHours = () => {
   }
 
   useEffect(() => {
-    fetchData()
+    if (PLANT_ID && AOP_YEAR) {
+      fetchData()
+    }
   }, [AOP_YEAR, PLANT_ID])
 
   const handleRemarkCellClick = (row) => {
@@ -71,12 +148,50 @@ const MonthwiseOperatingHours = () => {
   }
 
   const saveChanges = async () => {
-    // Since this is mock, we just show success
-    setSnackbarData({
-      message: 'Data Saved Successfully (Mock)!',
-      severity: 'success',
-    })
-    setSnackbarOpen(true)
+    try {
+      setLoading(true)
+      const dataToSave = Object.values(modifiedCells)
+      if (dataToSave.length === 0) {
+        setSnackbarData({
+          message: 'No changes to save',
+          severity: 'info',
+        })
+        setSnackbarOpen(true)
+        return
+      }
+
+      const res = await AOPWorkFlowService.saveMonthwiseOperatingHours(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        dataToSave,
+      )
+
+      if (res?.code === 200) {
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarData({
+          message: res?.message || 'Failed to save data',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+      }
+    } catch (err) {
+      console.error('Error saving operating hours data:', err)
+      setSnackbarData({
+        message: 'Failed to save data',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
