@@ -3661,7 +3661,19 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		try {
 
 			System.out.println("started Read configuration in importExcel");
-			List<NormAttributeTransactionReceipeRequestDTO> data = readRecipeData(file.getInputStream(), plantFKId, year);
+			// PP SEZ: restrict imported recipe numeric values to max 4 decimal places.
+			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
+			Plants plant = plantsRepository.findById(plantFKId).orElseThrow();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+
+			boolean isPpSez = verticalName != null
+					&& verticalName.equalsIgnoreCase("PP")
+					&& site.getName() != null
+					&& site.getName().equalsIgnoreCase("SEZ");
+
+			List<NormAttributeTransactionReceipeRequestDTO> data = isPpSez
+					? readRecipeDataPP(file.getInputStream(), plantFKId, year)
+					: readRecipeData(file.getInputStream(), plantFKId, year);
 			System.out.println("Ended Read configuration in importExcel");
 			System.out.println("Started Save configuration in importExcel");
 			List<NormAttributeTransactionReceipeRequestDTO> failedRecords = updateCalculatedConsumptionNorms(year, plantFKId.toString(), data);
@@ -3779,6 +3791,90 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 		}
 
 		return recipeList;
+	}
+
+	
+	public List<NormAttributeTransactionReceipeRequestDTO> readRecipeDataPP(InputStream inputStream, UUID plantFKId, String year) {
+		List<NormAttributeTransactionReceipeRequestDTO> recipeList = new ArrayList<>();
+
+		try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+			Sheet sheet = workbook.getSheetAt(0);
+			Iterator<Row> rowIterator = sheet.iterator();
+
+			List<String> allHeaders = new ArrayList<>();
+			if (rowIterator.hasNext()) {
+				Row headerRow = rowIterator.next();
+				for (Cell cell : headerRow) {
+					String h = cell.toString().trim();
+					allHeaders.add(h);
+				}
+			}
+
+			int recipeIdColIndex = allHeaders.indexOf("RecipeId");
+			if (recipeIdColIndex < 0) {
+				recipeIdColIndex = allHeaders.size() - 1; // fallback for backward compatibility
+			}
+
+			while (rowIterator.hasNext()) {
+				Row row = rowIterator.next();
+				NormAttributeTransactionReceipeRequestDTO dto = new NormAttributeTransactionReceipeRequestDTO();
+				Map<String, String> grades = new LinkedHashMap<>();
+
+				Cell recIdCell = row.getCell(recipeIdColIndex);
+				String recId = getStringCellValue(recIdCell, dto);
+				dto.setRecId(recId);
+
+				// Read dynamic grade columns by header name
+				for (int col = 0; col < allHeaders.size(); col++) {
+					if (col == recipeIdColIndex) {
+						continue;
+					}
+					String header = allHeaders.get(col);
+					if (header == null) {
+						continue;
+					}
+					if ("TypeDisplayName".equalsIgnoreCase(header)
+							|| "Recipe".equalsIgnoreCase(header)
+							|| "UOM".equalsIgnoreCase(header)
+							|| "RecipeId".equalsIgnoreCase(header)
+							|| "Status".equalsIgnoreCase(header)
+							|| "Error Description".equalsIgnoreCase(header)) {
+						continue;
+					}
+
+					Cell valueCell = row.getCell(col);
+					Double numeric = getNumericCellValuePP(valueCell, dto);
+					String valStr = (numeric != null ? numeric.toString() : "");
+
+					Optional<NormParameters> opt = normParametersRepository.findFirstNameByDisplayNameAndPlantFkId(header, plantFKId);
+					if (opt.isPresent()) {
+						grades.put(opt.get().getId().toString(), valStr);
+					} else {
+						dto.setSaveStatus("Failed");
+						dto.setErrDescription("NormParameter not found for given recipe.");
+					}
+				}
+
+				dto.setGrades(grades);
+				recipeList.add(dto);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return recipeList;
+	}
+
+	private static Double getNumericCellValuePP(Cell cell, NormAttributeTransactionReceipeRequestDTO dto) {
+		Double numeric = getNumericCellValue(cell, dto);
+		if (numeric == null) {
+			return null;
+		}
+
+		// Restrict to max 4 decimal places.
+		BigDecimal bd = BigDecimal.valueOf(numeric);
+		bd = bd.setScale(4, java.math.RoundingMode.HALF_UP);
+		return bd.doubleValue();
 	}
 
 	private Object getMapValueIgnoreCase(Map<String, Object> map, String key) {

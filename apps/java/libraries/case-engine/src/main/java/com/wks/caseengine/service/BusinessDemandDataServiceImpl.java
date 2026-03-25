@@ -714,6 +714,11 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 	    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+	    // PP SEZ requirement (business-demand-import): month numeric values max 3 decimals.
+	    boolean isPpSez = verticalName != null
+	    		&& verticalName.equalsIgnoreCase("PP")
+	    		&& site.getName() != null
+	    		&& site.getName().equalsIgnoreCase("SEZ");
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
@@ -728,18 +733,18 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	            try {
 	                dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
 	                dto.setUOM(getStringCellValue(row.getCell(1), dto));
-	                dto.setApril(getNumericCellValue(row.getCell(2), dto));
-	                dto.setMay(getNumericCellValue(row.getCell(3), dto));
-	                dto.setJune(getNumericCellValue(row.getCell(4), dto));
-	                dto.setJuly(getNumericCellValue(row.getCell(5), dto));
-	                dto.setAug(getNumericCellValue(row.getCell(6), dto));
-	                dto.setSep(getNumericCellValue(row.getCell(7), dto));
-	                dto.setOct(getNumericCellValue(row.getCell(8), dto));
-	                dto.setNov(getNumericCellValue(row.getCell(9), dto));
-	                dto.setDec(getNumericCellValue(row.getCell(10), dto));
-	                dto.setJan(getNumericCellValue(row.getCell(11), dto));
-	                dto.setFeb(getNumericCellValue(row.getCell(12), dto));
-	                dto.setMarch(getNumericCellValue(row.getCell(13), dto));
+	                dto.setApril(isPpSez ? getNumericCellValuePP3(row.getCell(2), dto) : getNumericCellValue(row.getCell(2), dto));
+	                dto.setMay(isPpSez ? getNumericCellValuePP3(row.getCell(3), dto) : getNumericCellValue(row.getCell(3), dto));
+	                dto.setJune(isPpSez ? getNumericCellValuePP3(row.getCell(4), dto) : getNumericCellValue(row.getCell(4), dto));
+	                dto.setJuly(isPpSez ? getNumericCellValuePP3(row.getCell(5), dto) : getNumericCellValue(row.getCell(5), dto));
+	                dto.setAug(isPpSez ? getNumericCellValuePP3(row.getCell(6), dto) : getNumericCellValue(row.getCell(6), dto));
+	                dto.setSep(isPpSez ? getNumericCellValuePP3(row.getCell(7), dto) : getNumericCellValue(row.getCell(7), dto));
+	                dto.setOct(isPpSez ? getNumericCellValuePP3(row.getCell(8), dto) : getNumericCellValue(row.getCell(8), dto));
+	                dto.setNov(isPpSez ? getNumericCellValuePP3(row.getCell(9), dto) : getNumericCellValue(row.getCell(9), dto));
+	                dto.setDec(isPpSez ? getNumericCellValuePP3(row.getCell(10), dto) : getNumericCellValue(row.getCell(10), dto));
+	                dto.setJan(isPpSez ? getNumericCellValuePP3(row.getCell(11), dto) : getNumericCellValue(row.getCell(11), dto));
+	                dto.setFeb(isPpSez ? getNumericCellValuePP3(row.getCell(12), dto) : getNumericCellValue(row.getCell(12), dto));
+	                dto.setMarch(isPpSez ? getNumericCellValuePP3(row.getCell(13), dto) : getNumericCellValue(row.getCell(13), dto));
 	                dto.setPlantId(plantFKId.toString());
 	                String normParameterId = getStringCellValue(row.getCell(16), dto);
 	                dto.setNormParameterId(normParameterId); 
@@ -868,6 +873,17 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			}
 		}
 		return null;
+	}
+	
+	// PP SEZ: keep only max 3 digits after decimal for month numeric fields.
+	private static Double getNumericCellValuePP3(Cell cell, BusinessDemandDataDTO dto) {
+		Double numeric = getNumericCellValue(cell, dto);
+		if (numeric == null) {
+			return null;
+		}
+		java.math.BigDecimal bd = java.math.BigDecimal.valueOf(numeric);
+		bd = bd.setScale(3, java.math.RoundingMode.HALF_UP);
+		return bd.doubleValue();
 	}
 
 	public static Boolean getBooleanCellValue(Cell cell, BusinessDemandDataDTO dto) {
