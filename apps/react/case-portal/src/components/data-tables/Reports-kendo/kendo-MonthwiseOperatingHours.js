@@ -4,11 +4,11 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Backdrop, CircularProgress } from '@mui/material/index'
 
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
-import { AOPWorkFlowService } from 'services/AOPWorkFlowService'
+import { ReportDataService } from 'services/ReportDataService'
+import KendoDataTables from 'components/kendo-data-tables/index'
 
 const MonthwiseOperatingHours = () => {
   const keycloak = useSession()
@@ -38,61 +38,61 @@ const MonthwiseOperatingHours = () => {
 
   const columns = [
     {
+      field: 'id',
+      title: 'ID',
+      widthT: 50,
+      editable: false,
+      hidden: true,
+    },
+    {
       field: 'Month',
       title: 'Month',
-      widthT: 120,
       editable: false,
     },
     {
-      field: 'TotalAvailableHrs',
+      field: 'totalAvailableHrs',
       title: 'Total available Hrs',
-      widthT: 150,
       editable: false,
       type: 'number',
       format: valueFormatter,
     },
     {
-      field: 'PlannedTurnaroundHrs',
+      field: 'plannedTurnaroundHrs',
       title: 'Planned Turnaround Hrs',
-      widthT: 180,
       editable: true,
       type: 'number',
       format: valueFormatter,
     },
     {
-      field: 'PlannedShutdownOtherThanTurnaroundHrs',
+      field: 'plannedShutdownOtherThanTurnaroundHrs',
       title: 'Planned shutdown other than Turnaround Hrs',
-      widthT: 250,
       editable: true,
       type: 'number',
       format: valueFormatter,
     },
     {
-      field: 'RoutineShutdownHrs',
+      field: 'routineShutdownHrs',
       title: 'Routine shutdown Hrs',
-      widthT: 180,
       editable: true,
       type: 'number',
       format: valueFormatter,
     },
     {
-      field: 'SlowdownHrs',
+      field: 'slowdownHrs',
       title: 'Slowdown Hrs',
-      widthT: 150,
       editable: true,
       type: 'number',
       format: valueFormatter,
     },
     {
-      field: 'NetOperatingHours',
+      field: 'netOperatingHours',
       title: 'Net operating Hours',
-      widthT: 180,
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
     },
     {
-      field: 'Remark',
+      field: 'remarks',
       title: 'Remarks',
       widthT: 200,
       editable: true,
@@ -102,14 +102,14 @@ const MonthwiseOperatingHours = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const res = await AOPWorkFlowService.getMonthwiseOperatingHours(
+      const res = await ReportDataService.getMonthwiseOperatingHours(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
       if (res?.code === 200) {
         setRows(
-          (res?.data || []).map((item, index) => ({
+          (res?.data.monthwiseOperatingHoursList || []).map((item, index) => ({
             ...item,
             id: item.id ?? index,
           })),
@@ -142,7 +142,7 @@ const MonthwiseOperatingHours = () => {
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.Remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -160,7 +160,7 @@ const MonthwiseOperatingHours = () => {
         return
       }
 
-      const res = await AOPWorkFlowService.saveMonthwiseOperatingHours(
+      const res = await ReportDataService.saveMonthwiseOperatingHours(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
@@ -203,7 +203,7 @@ const MonthwiseOperatingHours = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <KendoDataTablesReports
+      <KendoDataTables
         rows={rows}
         setRows={setRows}
         title='Monthwise Operating Hours (T-20)'

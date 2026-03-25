@@ -7,6 +7,9 @@ export const ReportDataService = {
   saveShutdownPreviousYearsData,
   deleteRoutineShutdownData,
   deletePlannedShutdownData,
+  getShutdownSummaryLastFourYearData,
+  getMonthwiseOperatingHours,
+  saveMonthwiseOperatingHours,
 }
 
 async function getShutdownData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -117,5 +120,63 @@ async function deletePlannedShutdownData(Id, keycloak, PLANT_ID) {
   } catch (e) {
     console.error('Error deleting planned shutdown data:', e)
     return Promise.reject(e)
+  }
+}
+async function getShutdownSummaryLastFourYearData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-summary-last-four-year?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getMonthwiseOperatingHours(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/monthwise-operating-hours?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveMonthwiseOperatingHours(
+  keycloak,
+  plantId,
+  year,
+  monthwiseOperatingHoursDTOs,
+) {
+  const url = `${Config.CaseEngineUrl}/task/monthwise-operating-hours?plantId=${plantId}&year=${year}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(monthwiseOperatingHoursDTOs),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error saving monthwise operating hours:', e)
+    return await Promise.reject(e)
   }
 }
