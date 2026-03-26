@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.ShutdownDetailsDTO;
 import com.wks.caseengine.db2.entity.PlannedShutdownDetails;
-import com.wks.caseengine.entity.RoutineShutdownPreviousYears;
+import com.wks.caseengine.db2.entity.RoutineShutdownPreviousYears;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
@@ -187,7 +187,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         }
     }
 
-    private com.wks.caseengine.entity.RoutineShutdownPreviousYears upsertRoutineShutdownPreviousYears(
+    private RoutineShutdownPreviousYears upsertRoutineShutdownPreviousYears(
             ShutdownDetailsDTO dto,
             UUID plantUuid,
             String year,
