@@ -18,6 +18,10 @@ export const ProductionNormsApiService = {
 
   // Norm Calculation API
   loadButtonNormCalculation,
+
+  // Generic Import/Export helpers
+  saveExcelData,
+  exportExcelData,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -115,6 +119,106 @@ async function exportConfigurationExcel(keycloak, plantId, year) {
   })
 }
 
+// ===================== || GENERIC EXCEL IMPORT FUNCTION || ===================== //
+/**
+ * Generic function to upload Excel file to any Production Norms endpoint
+ * @param {File} file - The Excel file to upload
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} endpoint - The API endpoint base path (e.g., 'vgoht/norms-basis/constant/import')
+ * @param {Object} queryParams - Query parameters (plantFKId, year, etc.) - will be sent as form fields
+ * @returns {Promise} API response
+ */
+async function saveExcelData(file, keycloak, endpoint, queryParams = {}) {
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  // Append all query parameters as form fields
+  Object.keys(queryParams).forEach((key) => {
+    formData.append(key, queryParams[key])
+  })
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(`Error importing Excel data to ${endpoint}:`, e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== || GENERIC EXCEL EXPORT FUNCTION || ===================== //
+/**
+ * Generic function to export Excel file from backend
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} endpoint - The API endpoint base path (e.g., 'vgoht/norms-basis/constant/export')
+ * @param {Object} queryParams - Query parameters (plantFKId, year, etc.)
+ * @param {string} fileName - Downloaded file name
+ * @returns {Promise} Success/error response
+ */
+async function exportExcelData(keycloak, endpoint, queryParams = {}, fileName) {
+  const queryString = new URLSearchParams(queryParams).toString()
+  const url = queryString
+    ? `${Config.CaseEngineUrl}/task/${endpoint}?${queryString}`
+    : `${Config.CaseEngineUrl}/task/${endpoint}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = fileName
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error(`Error exporting Excel from ${endpoint}:`, e)
+    return Promise.reject(e)
+  }
+}
+
 // ========================|| Constants APIs ||=====================================//
 /**
  * Get Production Norms Constants data
@@ -192,16 +296,24 @@ async function saveConstantsData(
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
  * @returns {Promise} Import response
  */
-async function importConstantsExcel(file, keycloak, plantId, year) {
-  return ImportExportApiService.saveExcelData(
-    file,
-    keycloak,
-    'vgoht/production-norms/constants/import',
-    plantId,
-    year,
-  )
+async function importConstantsExcel(
+  file,
+  keycloak,
+  plantId,
+  year,
+  periodFrom,
+  periodTo,
+) {
+  return saveExcelData(file, keycloak, 'vgoht/norms-basis/constant/import', {
+    year: year,
+    plantFKId: plantId,
+    periodFrom: periodFrom,
+    periodTo: periodTo,
+  })
 }
 
 /**
@@ -212,12 +324,12 @@ async function importConstantsExcel(file, keycloak, plantId, year) {
  * @returns {Promise} Export response
  */
 async function exportConstantsExcel(keycloak, plantId, year) {
-  return ImportExportApiService.exportExcelData(keycloak, {
-    endpoint: `vgoht/production-norms/constants/export/${plantId}/${year}`,
-    queryParams: {},
-    fileName: `VGOHT_Production_Norms_Constants_${year}.xlsx`,
-    method: 'GET',
-  })
+  return exportExcelData(
+    keycloak,
+    'vgoht/norms-basis/constant/export',
+    { year: year, plantFKId: plantId },
+    `VGOHT_Production_Norms_Constants_${year}.xlsx`,
+  )
 }
 
 // ========================|| Norm Calculation API ||=====================================//
