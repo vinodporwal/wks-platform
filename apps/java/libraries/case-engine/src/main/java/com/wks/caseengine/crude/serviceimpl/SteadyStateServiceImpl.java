@@ -25,7 +25,9 @@ import jakarta.persistence.ParameterMode;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.StoredProcedureQuery;
 import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
 public class SteadyStateServiceImpl implements SteadyStateService {
 
     @PersistenceContext
