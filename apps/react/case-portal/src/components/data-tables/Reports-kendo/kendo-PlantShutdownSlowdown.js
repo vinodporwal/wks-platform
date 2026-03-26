@@ -35,7 +35,7 @@ const PlantShutdownSlowdown = () => {
   const [modifiedCells, setModifiedCells] = useState({})
 
   const valueFormatter = ValueFormatterProduction()
-  
+
   const columns = [
     {
       field: 'sno',
@@ -163,7 +163,7 @@ const PlantShutdownSlowdown = () => {
       editable: false,
     },
   ]
-    
+
   const fetchData = async () => {
     try {
       setLoading(true)
@@ -173,7 +173,28 @@ const PlantShutdownSlowdown = () => {
         AOP_YEAR,
       )
       if (res?.code === 200) {
-        const { data } = res?.data || {}
+        const responseData =
+          res.data.plantShutdownSlowdownNormsDurationList || []
+
+        const formattedData = responseData.map((item, index) => ({
+          id: item.id,
+          sno: index + 1,
+          criticalActivity: item.criticalRoutineActivity,
+          bestAchievedSiteFreq: item.bestAchievedLastYearFrequency,
+          bestAchievedSiteDur: item.bestAchievedLastYearDuration,
+          bestAchievedGroupFreq: item.bestAchievedGroupFrequency,
+          bestAchievedGroupDur: item.bestAchievedGroupDuration,
+          actualPrevYearFreq: item.actualFrequency,
+          actualPrevYearDur: item.prevYearDuration,
+          budgetNextYearFreq: item.budgetFrequency,
+          budgetNextYearDur: item.currentYearDuration,
+          clubbedActivities: item.activitiesClubbed,
+          explanationNotBest: item.explanationNotProposing,
+          throughputReduction: item.throughputReductionDuringPeriod,
+          lossRecoverable: item.isProductionLossRecoverable,
+        }))
+        setRows(formattedData || data)
+
         setRows(data || [])
       } else {
         setRows([])
