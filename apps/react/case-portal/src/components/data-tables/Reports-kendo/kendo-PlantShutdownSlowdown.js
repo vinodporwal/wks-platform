@@ -95,10 +95,10 @@ const PlantShutdownSlowdown = () => {
         columns={columns}
         permissions={{
           textAlignment: 'center',
-          remarksEditable: true,
+          remarksEditable: false,
           showCalculate: false,
-          saveBtn: !READ_ONLY,
-          showWorkFlowBtns: true,
+          saveBtn: false,
+          showWorkFlowBtns: false,
           showTitle: true,
         }}
         remarkDialogOpen={remarkDialogOpen}

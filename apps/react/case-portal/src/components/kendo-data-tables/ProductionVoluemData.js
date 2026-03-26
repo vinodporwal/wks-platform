@@ -33,7 +33,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import AopTabs from 'components/AopTabs'
 
-const ProductionvolumeData = ({ permissions }) => {
+const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   // State for tabs and line details
   const [tabIndex, setTabIndex] = useState(0)
   const [tabs, setTabs] = useState([])
@@ -516,7 +516,19 @@ const ProductionvolumeData = ({ permissions }) => {
     try {
       setLoading(true)
       let response = ''
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      let responsesForAllLines = []
+      if (IS_PP_SEZ && isBusinessDemand) {
+        const promises = lineDetails.map((line) =>
+          ProductionVolumeDataApiService.getAOPMCCalculatedDataLineWise(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            line.id,
+          ),
+        )
+        responsesForAllLines = await Promise.all(promises)
+        response = responsesForAllLines[tabIndex]
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response =
           await ProductionVolumeDataApiService.getAOPMCCalculatedDataLineWise(
             keycloak,
@@ -538,15 +550,50 @@ const ProductionvolumeData = ({ permissions }) => {
       }
       setCalculationObject(response?.data?.aopCalculation)
       const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD
+
+      const MONTH_FIELDS = [
+        'april', 'may', 'june', 'july', 'august', 'september',
+        'october', 'november', 'december', 'january', 'february', 'march',
+      ]
+
       var formattedData = response?.data?.aopMCCalculatedDataDTOList.map(
         (item, index) => {
           const isTPH = selectedUnit == 'TPD'
+
+          // Compute boldCells for IS_PP_SEZ by comparing across all lines
+          const boldCells = []
+          if (IS_PP_SEZ && responsesForAllLines.length > 0) {
+            const currentMaterialId = item?.materialFKId
+            MONTH_FIELDS.forEach((month) => {
+              const values = responsesForAllLines.map((res) => {
+                const list = res?.data?.aopMCCalculatedDataDTOList || []
+                const matchedItem = Array.isArray(list)
+                  ? list.find((r) => r?.materialFKId === currentMaterialId)
+                  : null
+                return matchedItem != null ? matchedItem[month] : null
+              })
+              const firstNonNull = values.find((v) => v !== null && v !== undefined)
+              const hasDifference = values.some((val) => {
+                if (val === null || val === undefined) return false
+                if (val === firstNonNull) return false
+                const v1 = Number(val)
+                const v2 = Number(firstNonNull)
+                if (!isNaN(v1) && !isNaN(v2)) {
+                  return Math.abs(v1 - v2) > 0.0001
+                }
+                return val !== firstNonNull
+              })
+              if (hasDifference) boldCells.push(month)
+            })
+          }
+
           return {
             ...item,
             idFromApi: item?.id || null,
             normParametersFKId: item?.materialFKId.toLowerCase(),
             remarks: item?.remarks?.trim() || null,
             originalRemark: item?.remarks?.trim() || null,
+            boldCells,
 
             id: index,
 

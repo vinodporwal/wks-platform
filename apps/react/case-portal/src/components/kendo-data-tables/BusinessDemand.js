@@ -579,6 +579,7 @@ const BusinessDemand = ({ permissions }) => {
             <CustomAccordionDetails>
               <Box sx={{ width: '100%', margin: 0 }}>
                 <ProductionvolumeData
+                  isBusinessDemand={true}
                   permissions={{
                     allAction: true,
                     showAction: false,

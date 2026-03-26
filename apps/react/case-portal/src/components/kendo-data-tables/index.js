@@ -1161,14 +1161,14 @@ const KendoDataTables = ({
     const isEdited = !!(
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
-
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
     return (
       <td
         {...tdProps}
         title={value}
         style={{
           color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: highlight && isEdited ? 'bold' : undefined,
+          fontWeight: (highlight && isEdited) || isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1187,9 +1187,10 @@ const KendoDataTables = ({
 
     const rowId = dataItem.id
     const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td {...tdProps} title={value} style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}>
           {children}
         </td>
       )
@@ -1217,7 +1218,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
+          fontWeight: shouldHighlight || isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1238,10 +1239,11 @@ const KendoDataTables = ({
 
     const rowId = dataItem.id
     const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td {...tdProps} title={value} style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}>
           {children}
         </td>
       )
@@ -1313,7 +1315,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: highlightColor,
-          fontWeight: highlightColor ? 'bold' : undefined,
+          fontWeight: highlightColor || isBoldFromCells ? 'bold' : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
