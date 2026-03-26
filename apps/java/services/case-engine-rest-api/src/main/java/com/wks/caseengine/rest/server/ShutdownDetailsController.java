@@ -42,8 +42,8 @@ public class ShutdownDetailsController {
     public AOPMessageVM saveRoutineShutdownPreviousYears(
             @RequestParam String plantId,
             @RequestParam String year,
-            @RequestBody ShutdownDetailsDTO shutdownDetailsDTO) {
-        return shutdownDetailsService.saveRoutineShutdownPreviousYears(plantId, year, shutdownDetailsDTO);
+            @RequestBody List<ShutdownDetailsDTO> shutdownDetailsDTOs) {
+        return shutdownDetailsService.saveRoutineShutdownPreviousYears(plantId, year, shutdownDetailsDTOs);
     }
 
     @DeleteMapping(value = "/shutdown-details")

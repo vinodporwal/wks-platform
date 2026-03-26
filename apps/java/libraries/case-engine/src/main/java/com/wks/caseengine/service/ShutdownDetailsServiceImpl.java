@@ -163,17 +163,19 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
     @Override
     @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
-    public AOPMessageVM saveRoutineShutdownPreviousYears(String plantId, String year, ShutdownDetailsDTO shutdownDetailsDTO) {
+    public AOPMessageVM saveRoutineShutdownPreviousYears(String plantId, String year, List<ShutdownDetailsDTO> shutdownDetailsDTOs) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
+        List<RoutineShutdownPreviousYears> routineShutdownPreviousYears = new ArrayList<RoutineShutdownPreviousYears>();
         try {
 
             UUID plantUuid = UUID.fromString(plantId);
             Date now = new Date();
-
-            upsertRoutineShutdownPreviousYears(shutdownDetailsDTO, plantUuid, year, now);
-
+            for(ShutdownDetailsDTO shutdownDetailsDTO:shutdownDetailsDTOs) {
+            	routineShutdownPreviousYears.add(upsertRoutineShutdownPreviousYears(shutdownDetailsDTO, plantUuid, year, now));
+            }
+            
             Map<String, Object> data = new HashMap<>();
-            data.put("savedCount", 1);
+            data.put("save", routineShutdownPreviousYears);
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data saved successfully");
             aopMessageVM.setData(data);
