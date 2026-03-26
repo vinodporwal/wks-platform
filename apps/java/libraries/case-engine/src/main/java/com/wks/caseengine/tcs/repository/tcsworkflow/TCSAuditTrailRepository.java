@@ -209,7 +209,15 @@ PlantSubmissionAuditTrailProjection getLatestPlantSubmissionAuditTrail(
             @Param("status") String status
             
     );
-    
+
+
+    @Query(value = "SELECT DISTINCT SiteId " +
+"FROM vwVerticalSitePlantMapping " +
+"WHERE VerticalId in (select Id from Verticals v where v.Name = :verticalName);", nativeQuery = true)
+    List<UUID> getSitesByVerticalName(@Param("verticalName") String verticalName);
+
+    @Query(value = "select Id from Verticals where name = :verticalName", nativeQuery = true)
+    UUID getVerticalIdByName(@Param("verticalName") String verticalName);
 
 
 }

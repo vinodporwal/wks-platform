@@ -1,8 +1,10 @@
 package com.wks.caseengine.rest.server;
 
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.web.bind.annotation.*;
 import com.wks.caseengine.service.KeycloakUserService;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,6 +20,12 @@ public class UserController {
 	@GetMapping
 	public Map<String, Object> getUsers() throws Exception {
 		return userService.getUsers();
+	}
+
+	@GetMapping("/role/{roleName}")
+	public List<UserRepresentation> getUsersWithRole(@PathVariable String roleName) throws Exception {
+
+		return userService.getUsersWithRole(roleName);
 	}
 
 	@PutMapping("/revoke-access/{userId}")
