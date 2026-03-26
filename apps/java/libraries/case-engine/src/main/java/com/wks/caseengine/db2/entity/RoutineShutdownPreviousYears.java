@@ -1,4 +1,4 @@
-package com.wks.caseengine.entity;
+package com.wks.caseengine.db2.entity;
 
 import java.math.BigDecimal;
 import java.util.Date;
