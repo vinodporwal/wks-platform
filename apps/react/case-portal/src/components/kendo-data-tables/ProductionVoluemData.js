@@ -554,8 +554,18 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       const isPPDTAorHMD = IS_PP_DTA || IS_PP_HMD
 
       const MONTH_FIELDS = [
-        'april', 'may', 'june', 'july', 'august', 'september',
-        'october', 'november', 'december', 'january', 'february', 'march',
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+        'january',
+        'february',
+        'march',
       ]
 
       var formattedData = response?.data?.aopMCCalculatedDataDTOList.map(
@@ -574,7 +584,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
                   : null
                 return matchedItem != null ? matchedItem[month] : null
               })
-              const firstNonNull = values.find((v) => v !== null && v !== undefined)
+              const firstNonNull = values.find(
+                (v) => v !== null && v !== undefined,
+              )
               const hasDifference = values.some((val) => {
                 if (val === null || val === undefined) return false
                 if (val === firstNonNull) return false

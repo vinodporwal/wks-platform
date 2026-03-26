@@ -1168,7 +1168,8 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: (highlight && isEdited) || isBoldFromCells ? 'bold' : undefined,
+          fontWeight:
+            (highlight && isEdited) || isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1190,7 +1191,11 @@ const KendoDataTables = ({
     const isBoldFromCells = dataItem?.boldCells?.includes(field)
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value} style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}>
+        <td
+          {...tdProps}
+          title={value}
+          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+        >
           {children}
         </td>
       )
@@ -1243,7 +1248,11 @@ const KendoDataTables = ({
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value} style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}>
+        <td
+          {...tdProps}
+          title={value}
+          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+        >
           {children}
         </td>
       )
