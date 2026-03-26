@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.MonthwiseOperatingHoursDTO;
-import com.wks.caseengine.entity.MonthwiseOperatingHours;
+import com.wks.caseengine.db2.entity.MonthwiseOperatingHours;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;

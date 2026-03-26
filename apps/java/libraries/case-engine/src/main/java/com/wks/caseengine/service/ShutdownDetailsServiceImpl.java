@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.ShutdownDetailsDTO;
-import com.wks.caseengine.entity.PlannedShutdownDetails;
+import com.wks.caseengine.db2.entity.PlannedShutdownDetails;
 import com.wks.caseengine.entity.RoutineShutdownPreviousYears;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
