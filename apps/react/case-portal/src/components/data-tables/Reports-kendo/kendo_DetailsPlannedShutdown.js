@@ -12,7 +12,7 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import { getRoleName } from 'services/role-service'
 import { validateFields } from 'utils/validationUtils'
-import dayjs from '../../../../node_modules/dayjs/index'
+import dayjs from 'dayjs'
 
 // ─── Helper: previous 4 year titles from AOP year ────────────────
 function getPrevYearTitles(aopYear, count = 4) {
