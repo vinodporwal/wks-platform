@@ -10,6 +10,7 @@ const RawMaterialNormsBasis = ({
   summaryEdited,
   setSummaryEdited,
 }) => {
+  const [refreshGrid3, setRefreshGrid3] = React.useState(0)
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* Grid 1: Raw Material */}
@@ -17,6 +18,7 @@ const RawMaterialNormsBasis = ({
         summary={summary}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        triggerGrid3Refresh={() => setRefreshGrid3((prev) => prev + 1)}
       />
 
       {/* Grid 2: IBIN Losses */}
@@ -24,6 +26,7 @@ const RawMaterialNormsBasis = ({
         summary={summary}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        triggerGrid3Refresh={() => setRefreshGrid3((prev) => prev + 1)}
       />
 
       {/* Grid 3: As Per Stoichiometry Losses */}
@@ -31,6 +34,7 @@ const RawMaterialNormsBasis = ({
         summary={summary}
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
+        refreshTrigger={refreshGrid3}
       />
     </Box>
   )

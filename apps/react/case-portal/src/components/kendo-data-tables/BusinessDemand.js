@@ -186,11 +186,9 @@ const BusinessDemand = ({ permissions }) => {
       if (
         IS_VCM_VERTICAL ||
         IS_PE_PP_VERTICAL ||
-        IS_PVC_DMD ||
         // FOR PTA THIS CONDITION IS REMOVED
         // IS_PTA_VERTICAL ||
         IS_PET_VERTICAL ||
-        IS_PVC_VMD ||
         IS_ELASTOMER_VERTICAL
       ) {
         const productionRows = (rows || []).filter(
@@ -213,13 +211,13 @@ const BusinessDemand = ({ permissions }) => {
             'march',
           ]
 
-          const SCALE = 100
+          const SCALE = 10000
 
           const toPreciseInt = (num) => {
             if (num === null || num === undefined || num === '') return 0
             const n = Number(num)
             if (isNaN(n)) return 0
-            return Math.round(n * SCALE)
+            return Math.round(Number(n || 0) * SCALE)
           }
 
           const formatFromIntRobust = (intVal) => {
@@ -234,6 +232,7 @@ const BusinessDemand = ({ permissions }) => {
             return sign + `${integerPart}.${fracStr}`
           }
 
+          const TOLERANCE = 1 // allows 0.0001 difference
           const expected = 100 * SCALE
           const failures = []
 
@@ -243,7 +242,7 @@ const BusinessDemand = ({ permissions }) => {
               0,
             )
 
-            if (sumInt !== expected) {
+            if (Math.abs(sumInt - expected) > TOLERANCE) {
               failures.push({ month, sumInt })
             }
           }

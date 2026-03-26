@@ -349,16 +349,58 @@ const KendoDataTables = ({
         </td>
       )
     }
-    const aggObj = props.dataItem?.aggregates?.[field]
+
     let cellContent = ''
-    if (aggObj) {
-      const aggKey = Object.keys(aggObj)[0]
-      const value = aggObj[aggKey]
-      cellContent =
-        value != null ? Math.trunc(Number(value) * 10000) / 10000 : ''
+
+    // Calculate sum the same way as validation - sum scaled integers from raw data
+    const items = dataItem?.items || []
+    if (items.length > 0 && field) {
+      const SCALE = 10000
+      const TOLERANCE = 1 // allows 0.0001 difference
+      const EXPECTED = 100 * SCALE
+
+      const toPreciseInt = (num) => {
+        if (num === null || num === undefined || num === '') return 0
+        const n = Number(num)
+        if (isNaN(n)) return 0
+        return Math.round(Number(n || 0) * SCALE)
+      }
+
+      const formatFromIntRobust = (intVal) => {
+        const sign = intVal < 0 ? '-' : ''
+        const abs = Math.abs(intVal)
+        const integerPart = Math.floor(abs / SCALE)
+        const remainder = abs % SCALE
+        if (remainder === 0) return sign + String(integerPart)
+        const scaleDigits = String(SCALE).length - 1
+        let fracStr = String(remainder).padStart(scaleDigits, '0')
+        fracStr = fracStr.replace(/0+$/, '')
+        return sign + `${integerPart}.${fracStr}`
+      }
+
+      const sumInt = items.reduce(
+        (acc, row) => acc + toPreciseInt(row[field]),
+        0,
+      )
+
+      const isWithinTolerance = Math.abs(sumInt - EXPECTED) <= TOLERANCE
+
+      // If sum is within tolerance of 100, display as exactly 100
+      if (isWithinTolerance) {
+        cellContent = '100'
+      } else {
+        cellContent = formatFromIntRobust(sumInt)
+      }
     }
+
     return (
-      <td {...props.tdProps} colSpan={1}>
+      <td
+        {...props.tdProps}
+        colSpan={1}
+        style={{
+          color: cellContent && cellContent !== '100' ? 'red' : 'inherit',
+        }}
+      >
         {cellContent}
       </td>
     )

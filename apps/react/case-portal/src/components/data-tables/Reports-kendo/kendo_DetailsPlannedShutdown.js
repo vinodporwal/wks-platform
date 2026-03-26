@@ -84,12 +84,12 @@ export default function ShutdownReport() {
       widthT: 250,
     },
     {
-      field: 'maintStartDateTime',
+      field: 'taSD',
       title: 'SD - From',
       editable: true,
     },
     {
-      field: 'maintEndDateTime',
+      field: 'taED',
       title: 'SD - To',
       editable: true,
     },
@@ -280,8 +280,8 @@ export default function ShutdownReport() {
         idFromApi: item?.id,
         Activities: item.activities,
         durationInHrs: item.durationHrs,
-        maintStartDateTime: item.shutdownFrom,
-        maintEndDateTime: item.shutdownTo,
+        taSD: item.shutdownFrom,
+        taED: item.shutdownTo,
         remarks: item.remarks,
         originalRemark: item.remarks,
         // add other fields if needed
@@ -383,11 +383,26 @@ export default function ShutdownReport() {
         return
       }
 
+      const payload1 = data.map((row) => ({
+        id: row.id || null,
+        activities: row.Activities,
+        shutdownFrom: row.taSD,
+        shutdownTo: row.taED,
+        durationHrs: row.durationInHrs,
+        remarks: row.remarks || '',
+      }))
+
       const payload = data.map((row) => ({
         id: row.id || null,
         activities: row.Activities,
-        fromDateReport: row.maintStartDateTime,
-        toDateReport: row.maintEndDateTime,
+        // Formats to "2026-04-10"
+        shutdownFrom: row.taSD
+          ? new Date(row.taSD).toISOString().split('T')[0]
+          : null,
+        // Formats to "2026-04-12"
+        shutdownTo: row.taED
+          ? new Date(row.taED).toISOString().split('T')[0]
+          : null,
         durationHrs: row.durationInHrs,
         remarks: row.remarks || '',
       }))
