@@ -1394,8 +1394,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
-	    Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
-	    boolean isPPSEZ= vertical.getName().equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ");      
+	            
 	    List<ShutDownPlanDTO> listOfSite = slowdownPlanService.findSlowdownDetailsByPlantIdAndType(plantFKId, "Slowdown", year);
 	    
 	    List<Object[]> slowdownTimeRanges = new ArrayList<>();
@@ -1564,7 +1563,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 	                                    }
 	                                }
 
-	                                if (overlapsSlowdown && !isPPSEZ) {
+	                                if (overlapsSlowdown) {
 	                                    dto.setSaveStatus("Failed");
 	                                    dto.setErrDescription("The date range is overlapping with an existing Slowdown period.");
 	                                    alreadyFailed = true;

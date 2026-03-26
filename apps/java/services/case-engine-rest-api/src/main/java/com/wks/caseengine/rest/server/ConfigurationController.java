@@ -23,14 +23,8 @@ import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
 import com.wks.caseengine.dto.NormLineRequestDTO;
-import com.wks.caseengine.entity.Plants;
-import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.repository.PlantsRepository;
-import com.wks.caseengine.repository.SiteRepository;
-import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.service.ConfigurationService;
-import com.wks.caseengine.service.PlantsService;
 
 @RestController
 @RequestMapping("task")
@@ -38,15 +32,6 @@ public class ConfigurationController {
 	
 	@Autowired
 	private ConfigurationService configurationService;
-	
-	@Autowired
-	private PlantsRepository plantsRepository;
-
-	@Autowired
-	private SiteRepository siteRepository;
-	
-	@Autowired
-	private PlantsService plantsService;
 	
 	@GetMapping(value="/production-norms")
 	public AOPMessageVM getConfigurationData(@RequestParam String year,@RequestParam UUID plantFKId,@RequestParam(required=false) String version) {
@@ -190,18 +175,8 @@ public class ConfigurationController {
             @RequestParam("year") String year
 	        ) {
 	    try {
-	    	String verticalName = plantsService.findVerticalNameByPlantId(UUID.fromString(plantId));
-			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow();
 			
-			Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
-			
-			byte[] excelBytes=null;
-			if(verticalName.equalsIgnoreCase("PP") && site.getName().equalsIgnoreCase("SEZ")) {
-				 excelBytes = configurationService.exportConfigDataPP(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
-			}else {
-				 excelBytes = configurationService.exportConfigData(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
-			}
-	        
+	        byte[] excelBytes = configurationService.exportConfigData(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 
 	        HttpHeaders headers = new HttpHeaders();
 	        headers.setContentType(MediaType.parseMediaType(

@@ -17,7 +17,6 @@ public interface BusinessDemandDataService {
 	AOPMessageVM loadPlantContribution(String year, String plantId);
 	public AOPMessageVM saveBusinessDemand( String year, String plantFKId, List<BusinessDemandMonthlyDTO> businessDemandMonthlyDTOs);
 	public byte[] exportBusinessDemand(String year, String plantFKId,boolean isAfterSave,List<BusinessDemandDataDTO> dtoList);
-	public byte[] exportBusinessDemandPP(String year, String plantFKId,boolean isAfterSave,List<BusinessDemandDataDTO> dtoList);
 	public 	List<BusinessDemandDataDTO>  saveBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	List<BusinessDemandDataDTO>  editBusinessDemandData(List<BusinessDemandDataDTO> businessDemandDataDTO);
 	public 	BusinessDemandDataDTO  deleteBusinessDemandData(UUID id);

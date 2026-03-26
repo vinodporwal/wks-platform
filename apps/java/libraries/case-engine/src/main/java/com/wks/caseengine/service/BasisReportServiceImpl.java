@@ -130,7 +130,9 @@ public class BasisReportServiceImpl implements BasisReportService {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionTargetBasis";
 	    }else if(type.equalsIgnoreCase("SapBasedRefNorms")) {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_SAP_Based_Ref_Norms";
-	    }
+		} else if (type.equalsIgnoreCase("AnnualAOPCost")) {
+			storedProcedure = vertical.getName() + "_Dataset_AnnualCostAOPReport";
+		}
 	    
 	    try {
 	        // 1. Fetch ALL column metadata (List of Lists of Maps) - NEW

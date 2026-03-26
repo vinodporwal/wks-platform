@@ -658,18 +658,18 @@ const WorkFlowMerge = () => {
     'Plant Contribution Summary (T-22)',
   ]
   const customMegTabs = [
-    'Annual AOP Cost',
-    'Plant Production Summary (T-14)',
-    'Month Wise Production Plan (T-16)',
-    'Month Wise Raw Data (T-18)',
-    'Turnaround Report (T-19A)',
-    'Annual Production Plan (T-15)',
-    'Plant Contribution (T-21)',
-    'Plant Contribution Summary (T-22)',
-    'Shutdown Report (T-19B)',
-    'Shutdown Break-up Last Four Year (T-19C)',
-    'MonthWise Operating Hours (T-20)',
-    `Norms for Shutdown & Slowdown activities (T-19D)`,
+    'Annual AOP Cost', // Index 0
+    'Plant Production Summary (T-14)', // Index 1
+    'Month Wise Production Plan (T-16)', // Index 2
+    'Month Wise Raw Data (T-18)', // Index 3
+    'Turnaround Report (T-19A)', // Index 4
+    'Shutdown Report (T-19B)', // Index 5 (Moved Up)
+    'Shutdown Break-up Last Four Year (T-19C)', // Index 6 (Moved Up)
+    'Norms for Shutdown & Slowdown (T-19D)', // Index 7 (Moved Up)
+    'Annual Production Plan (T-15)', // Index 8
+    'Plant Contribution (T-21)', // Index 9
+    'MonthWise Operating Hours (T-20)', // Index 10
+    'Plant Contribution Summary (T-22)', // Index 11
   ]
   const customPETTabs = [
     'Annual AOP Cost',
@@ -909,8 +909,7 @@ const WorkFlowMerge = () => {
         </Stack>
 
         {/* For OTHER verticals */}
-        {(lowerVertName === 'meg' ||
-          lowerVertName === 'pe' ||
+        {(lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
           lowerVertName === 'pet') && (
           <>
@@ -1010,6 +1009,86 @@ const WorkFlowMerge = () => {
               severity={snackbarData.severity}
               onClose={() => setSnackbarOpen(false)}
             />
+          </>
+        )}
+
+        {/* --- MEG SPECIFIC TABS --- */}
+        {lowerVertName === 'meg' && (
+          <>
+            {tabIndex === 0 && (
+              <>
+                <ProductionAopView
+                  handleCalculate={handleCalculate}
+                  handleExport={handleExport}
+                  fetchSecondGridData={fetchData}
+                />
+                {tabIndex === 0 && (
+                  <KendoDataTablesReports
+                    title='Annual AOP Cost'
+                    modifiedCells={modifiedCells}
+                    autoHeight={true}
+                    rows={rows}
+                    setRows={setRows}
+                    onRowUpdate={(updatedRow) =>
+                      console.log('Row Updated:', updatedRow)
+                    }
+                    columns={columns}
+                    loading={loadingCalculate}
+                    remarkDialogOpen={remarkDialogOpen}
+                    unsavedChangesRef={unsavedChangesRef}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    setCurrentRowId={setCurrentRowId}
+                    rowModesModel={rowModesModel}
+                    onRowModesModelChange={onRowModesModelChange}
+                    handleCalculate={handleCalculate}
+                    handleExport={handleExport}
+                    isCreatingCase={isCreatingCase}
+                    createCase={createCase}
+                    saveChanges={saveChanges}
+                    showCreateCasebutton={showCreateCasebutton}
+                    permissions={{
+                      saveBtn: !isOldYear,
+                      saveBtnForWorkflow: true,
+                      remarksEditable: true,
+                      showCreateCasebutton: showCreateCasebutton,
+                      showTitle: true,
+                      showWorkFlowBtns: true,
+                      // approveBtn: false,
+                    }}
+                    openAuditPopup={openAuditPopup}
+                    handleAuditOpen={handleAuditOpen}
+                    handleAuditClose={handleAuditClose}
+                    handleRejectClick={handleRejectClick}
+                    openRejectDialog={openRejectDialog}
+                    handleRejectCancel={handleRejectCancel}
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    handleSubmit={handleSubmit}
+                    taskId={taskId}
+                    text={text}
+                    setText={setText}
+                  />
+                )}
+              </>
+            )}
+            {tabIndex === 1 && <PlantsProductionSummary />}
+            {tabIndex === 2 && <MonthwiseProduction />}
+            {tabIndex === 3 && <MonthwiseRawMaterial />}
+
+            {/* T-19 Group */}
+            {tabIndex === 4 && <TurnaroundReport />}
+            {tabIndex === 5 && <ShutdownReport />}
+            {tabIndex === 6 && <ShutdownSummaryReport />}
+            {tabIndex === 7 && <PlantShutdownSlowdown />}
+
+            {/* Remaining MEG Reports */}
+            {tabIndex === 8 && <AnnualProductionPlan />}
+            {tabIndex === 9 && <PlantContribution />}
+
+            {tabIndex === 10 && <MonthwiseOperatingHours />}
+            {tabIndex === 11 && <PlantContributionLastFourYears />}
           </>
         )}
 

@@ -34,8 +34,6 @@ import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -266,7 +264,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			
 				String procedureName = verticalName + "_GetBusinessDemandMonthly";
 				obj = getData(year, plantFKId, procedureName);
-				
+			
 			List<BusinessDemandMonthlyDTO> configurationDTOList = new ArrayList<BusinessDemandMonthlyDTO>();
 			int i = 0;
 			for (Object[] row : obj) {
@@ -465,8 +463,9 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
 				}
 			}
-
 			for (List<Object> rowData : rows) {
+				
+				 
 				Row row = sheet.createRow(currentRow++);
 				for (int col = 0; col < rowData.size(); col++) {
 					Cell cell = row.createCell(col);
@@ -502,146 +501,7 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		return null;
 
 	}
-
-	public byte[] exportBusinessDemandPP(String year, String plantId, boolean isAfterSave, List<BusinessDemandDataDTO> dtoList) {
-		try {
-			
-			List<Boolean> isEditable = new ArrayList<>();
-
-			if (!isAfterSave) {
-				 dtoList = getBusinessDemandData(year,plantId);
-			}
-
-			Workbook workbook = new XSSFWorkbook();
-
-			Sheet sheet = workbook.createSheet("Sheet1");
-			int currentRow = 0;
-			// List<List<Object>> rows = new ArrayList<>();
-
-			List<List<Object>> rows = new ArrayList<>();
-			
-			// Data rows
-			for (BusinessDemandDataDTO dto : dtoList) {
-				//if (isAfterSave) {
-					List<Object> list = new ArrayList<>();
-					
-					list.add(dto.getDisplayName());
-					list.add(dto.getUOM());
-					list.add(dto.getApril());
-					list.add(dto.getMay());
-					list.add(dto.getJune());
-					list.add(dto.getJuly());
-					list.add(dto.getAug());
-					list.add(dto.getSep());
-					list.add(dto.getOct());
-					list.add(dto.getNov());
-					list.add(dto.getDec());
-					list.add(dto.getJan());
-					list.add(dto.getFeb());
-					list.add(dto.getMarch());
-					list.add(dto.getRemark());
-					list.add(dto.getId());
-					list.add(dto.getNormParameterId());
-					
-					
-					if (isAfterSave) {
-						list.add(dto.getSaveStatus());
-						list.add(dto.getErrDescription());
-					}
-					rows.add(list);
-				//}
-			}
-
-			List<String> innerHeaders = new ArrayList<>();
-			
-			innerHeaders.add("Particulars");
-			innerHeaders.add("UOM");
-			innerHeaders.add(getMonth( year, 4));
-			innerHeaders.add(getMonth( year, 5));
-			innerHeaders.add(getMonth( year, 6));
-			innerHeaders.add(getMonth( year, 7));
-			innerHeaders.add(getMonth( year, 8));
-			innerHeaders.add(getMonth( year, 9));
-			innerHeaders.add(getMonth( year, 10));
-			innerHeaders.add(getMonth( year, 11));
-			innerHeaders.add(getMonth( year, 12));
-			innerHeaders.add(getMonth( year, 1));
-			innerHeaders.add(getMonth( year, 2));
-			innerHeaders.add(getMonth( year, 3));
-			innerHeaders.add("Remark");
-			innerHeaders.add("Id");
-			innerHeaders.add("NormParameterId");
-			// innerHeaders.add("NormParamterId");
-			 //innerHeaders.add("IsEditable");
-			if (isAfterSave) {
-				innerHeaders.add("Status");
-				innerHeaders.add("Error Description");
-			}
-			List<List<String>> headers = new ArrayList<>();
-			headers.add(innerHeaders);
-
-			for (List<String> headerRowData : headers) {
-				Row headerRow = sheet.createRow(currentRow++);
-				for (int col = 0; col < headerRowData.size(); col++) {
-					Cell cell = headerRow.createCell(col);
-					cell.setCellValue(headerRowData.get(col));
-					cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
-				}
-			}
-
-			// PP SEZ requirement: month values should be rounded to 3 decimals.
-			DataFormat threeDecimalDataFormat = workbook.createDataFormat();
-			CellStyle threeDecimalCellStyle = workbook.createCellStyle();
-			// Use "up to" 3 decimals so values like 1 show as "1" not "1.000"
-			threeDecimalCellStyle.setDataFormat(threeDecimalDataFormat.getFormat("0.###"));
-			
-
-			for (List<Object> rowData : rows) {
-				
-				 
-				Row row = sheet.createRow(currentRow++);
-				for (int col = 0; col < rowData.size(); col++) {
-					Cell cell = row.createCell(col);
-					Object value = rowData.get(col);
-
-					if (value instanceof Number) {
-						double d = ((Number) value).doubleValue();
-						if (col >= 2 && col <= 13) {
-							double rounded = Math.round(d * 1000d) / 1000d;
-							cell.setCellValue(rounded);
-							cell.setCellStyle(threeDecimalCellStyle);
-						} else {
-							cell.setCellValue(d);
-						}
-					} else if (value instanceof Boolean) {
-						cell.setCellValue((Boolean) value);
-					} else if (value != null) {
-						cell.setCellValue(value.toString());
-					} else {
-						cell.setCellValue("");
-					}
-				}
-			}
-			sheet.setColumnHidden(15, true);
-			sheet.setColumnHidden(16, true);
-			//sheet.setColumnHidden(18, true);
-			try {// (FileOutputStream fileOut = new FileOutputStream("output/generated.xlsx")) {
-
-				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-				workbook.write(outputStream);
-				workbook.close();
-				return outputStream.toByteArray();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-
-	}
-
+		
 	public String getMonth(String year, int month) {
 	    
 	    if (year == null || !year.matches("\\d{4}-\\d{2}")) {
@@ -714,11 +574,6 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 	    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
-	    // PP SEZ requirement (business-demand-import): month numeric values max 3 decimals.
-	    boolean isPpSez = verticalName != null
-	    		&& verticalName.equalsIgnoreCase("PP")
-	    		&& site.getName() != null
-	    		&& site.getName().equalsIgnoreCase("SEZ");
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
@@ -733,18 +588,18 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 	            try {
 	                dto.setDisplayName(getStringCellValue(row.getCell(0), dto));
 	                dto.setUOM(getStringCellValue(row.getCell(1), dto));
-	                dto.setApril(isPpSez ? getNumericCellValuePP3(row.getCell(2), dto) : getNumericCellValue(row.getCell(2), dto));
-	                dto.setMay(isPpSez ? getNumericCellValuePP3(row.getCell(3), dto) : getNumericCellValue(row.getCell(3), dto));
-	                dto.setJune(isPpSez ? getNumericCellValuePP3(row.getCell(4), dto) : getNumericCellValue(row.getCell(4), dto));
-	                dto.setJuly(isPpSez ? getNumericCellValuePP3(row.getCell(5), dto) : getNumericCellValue(row.getCell(5), dto));
-	                dto.setAug(isPpSez ? getNumericCellValuePP3(row.getCell(6), dto) : getNumericCellValue(row.getCell(6), dto));
-	                dto.setSep(isPpSez ? getNumericCellValuePP3(row.getCell(7), dto) : getNumericCellValue(row.getCell(7), dto));
-	                dto.setOct(isPpSez ? getNumericCellValuePP3(row.getCell(8), dto) : getNumericCellValue(row.getCell(8), dto));
-	                dto.setNov(isPpSez ? getNumericCellValuePP3(row.getCell(9), dto) : getNumericCellValue(row.getCell(9), dto));
-	                dto.setDec(isPpSez ? getNumericCellValuePP3(row.getCell(10), dto) : getNumericCellValue(row.getCell(10), dto));
-	                dto.setJan(isPpSez ? getNumericCellValuePP3(row.getCell(11), dto) : getNumericCellValue(row.getCell(11), dto));
-	                dto.setFeb(isPpSez ? getNumericCellValuePP3(row.getCell(12), dto) : getNumericCellValue(row.getCell(12), dto));
-	                dto.setMarch(isPpSez ? getNumericCellValuePP3(row.getCell(13), dto) : getNumericCellValue(row.getCell(13), dto));
+	                dto.setApril(getNumericCellValue(row.getCell(2), dto));
+	                dto.setMay(getNumericCellValue(row.getCell(3), dto));
+	                dto.setJune(getNumericCellValue(row.getCell(4), dto));
+	                dto.setJuly(getNumericCellValue(row.getCell(5), dto));
+	                dto.setAug(getNumericCellValue(row.getCell(6), dto));
+	                dto.setSep(getNumericCellValue(row.getCell(7), dto));
+	                dto.setOct(getNumericCellValue(row.getCell(8), dto));
+	                dto.setNov(getNumericCellValue(row.getCell(9), dto));
+	                dto.setDec(getNumericCellValue(row.getCell(10), dto));
+	                dto.setJan(getNumericCellValue(row.getCell(11), dto));
+	                dto.setFeb(getNumericCellValue(row.getCell(12), dto));
+	                dto.setMarch(getNumericCellValue(row.getCell(13), dto));
 	                dto.setPlantId(plantFKId.toString());
 	                String normParameterId = getStringCellValue(row.getCell(16), dto);
 	                dto.setNormParameterId(normParameterId); 
@@ -873,17 +728,6 @@ public class BusinessDemandDataServiceImpl implements BusinessDemandDataService 
 			}
 		}
 		return null;
-	}
-	
-	// PP SEZ: keep only max 3 digits after decimal for month numeric fields.
-	private static Double getNumericCellValuePP3(Cell cell, BusinessDemandDataDTO dto) {
-		Double numeric = getNumericCellValue(cell, dto);
-		if (numeric == null) {
-			return null;
-		}
-		java.math.BigDecimal bd = java.math.BigDecimal.valueOf(numeric);
-		bd = bd.setScale(3, java.math.RoundingMode.HALF_UP);
-		return bd.doubleValue();
 	}
 
 	public static Boolean getBooleanCellValue(Cell cell, BusinessDemandDataDTO dto) {

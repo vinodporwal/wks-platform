@@ -21,6 +21,8 @@ import {
 import { Button } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import NormsHistorianBasisPe from './NormsHistorianBasisPe'
+import AnnualAOPCostDynamic from './AnnualAOPCostDynamic'
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -237,6 +239,10 @@ const AnnualAopCost = () => {
   }
 
   const fileName = `Annual AOP Cost ${new Date().toISOString().replace(/T/, ' ').replace(/:/g, '-').split('.')[0]}.xlsx`
+
+  if (lowerVertName == 'meg') {
+    return <AnnualAOPCostDynamic />
+  }
 
   return (
     <div>

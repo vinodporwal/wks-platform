@@ -392,15 +392,8 @@ const KendoDataTables = ({
         cellContent = formatFromIntRobust(sumInt)
       }
     }
-
     return (
-      <td
-        {...props.tdProps}
-        colSpan={1}
-        style={{
-          color: cellContent && cellContent !== '100' ? 'red' : 'inherit',
-        }}
-      >
+      <td {...props.tdProps} colSpan={1}>
         {cellContent}
       </td>
     )
