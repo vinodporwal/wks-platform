@@ -700,6 +700,7 @@ def usd_iterate(
     final_power_result = None
     final_steam_balance = None
     final_shp_capacity = None
+    final_u4u_power = None
     final_hrsg_availability = None
     final_lp_balance = None  # STG load-based LP balance
     final_mp_balance = None  # STG load-based MP balance
@@ -1122,7 +1123,7 @@ def usd_iterate(
         print(f"  |   STG SHP = {stg_gross_mwh * 1000:,.2f} KWh x {NORM_STG_SHP_PER_KWH} MT/KWh = {stg_shp_required:,.2f} MT")
         print(f"  " + "-"*90)
         print(f"  | Free Steam Calculation (per GT):")
-        print(f"  |   Formula: Free Steam = GT_Gross_MWh x FreeSteamFactor (from HeatRateLookup)")
+        print(f"  |   Formula: Free Steam = GT_Gross_MWh x FreeSteamFactor (from CPP_GTHeatRate)")
         print(f"  |   Total Free Steam = {total_free_steam:,.2f} MT")
         print(f"  " + "-"*90)
         print(f"  | Supplementary Firing Calculation (per HRSG):")
@@ -1561,6 +1562,7 @@ def usd_iterate(
         final_hrsg_availability = hrsg_availability
         final_lp_balance = lp_balance  # STG load-based LP balance
         final_mp_balance = mp_balance  # STG load-based MP balance
+        final_u4u_power = u4u_power  # Store final U4U calculation for Excel
         
         # ---------------------------------------------------------
         # Calculate STG limit based on steam availability for NEXT iteration
@@ -1756,6 +1758,9 @@ def usd_iterate(
         # Export power
         "excess_power_for_export_mwh": round(final_excess_power, 2),
         "export_available": export_available,
+        
+        # U4U Power (final calculation matching console output)
+        "final_u4u_power": final_u4u_power,
         
         # Iteration history
         "iteration_history": iteration_history,

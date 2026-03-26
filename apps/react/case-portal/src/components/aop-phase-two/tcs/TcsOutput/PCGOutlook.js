@@ -3,7 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOutputApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import {
+  generateCalendarYearHeaders,
+  generateHeaderNames,
+} from 'components/aop-phase-two/common/utilities/generateHeaders'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
@@ -84,7 +87,12 @@ const PCGOutlook = ({
   }, [SITE_ID, AOP_YEAR, fetchPcgOutlookData])
 
   // Generate header names with month-year format
-  const headerMap = useMemo(() => generateHeaderNames(AOP_YEAR), [AOP_YEAR])
+  const headerMap = useMemo(
+    () =>
+      // generateHeaderNames(AOP_YEAR)
+      generateCalendarYearHeaders(AOP_YEAR),
+    [AOP_YEAR],
+  )
 
   // Column configuration for PCG Outlook
   const columns = useMemo(() => {
@@ -97,6 +105,33 @@ const PCGOutlook = ({
         minWidth: 150,
         type: 'text',
         editable: false,
+      },
+      {
+        field: 'jan',
+        title: headerMap[1],
+        editable: true,
+        width: 100,
+        minWidth: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'feb',
+        title: headerMap[2],
+        editable: true,
+        width: 100,
+        minWidth: 80,
+        type: 'number1',
+        format: valueFormat,
+      },
+      {
+        field: 'mar',
+        title: headerMap[3],
+        editable: true,
+        width: 100,
+        minWidth: 80,
+        type: 'number1',
+        format: valueFormat,
       },
       {
         field: 'apr',
@@ -180,33 +215,6 @@ const PCGOutlook = ({
         format: valueFormat,
       },
       {
-        field: 'jan',
-        title: headerMap[1],
-        editable: true,
-        width: 100,
-        minWidth: 80,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'feb',
-        title: headerMap[2],
-        editable: true,
-        width: 100,
-        minWidth: 80,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
-        field: 'mar',
-        title: headerMap[3],
-        editable: true,
-        width: 100,
-        minWidth: 80,
-        type: 'number1',
-        format: valueFormat,
-      },
-      {
         field: 'remarks',
         title: 'Remark',
         editable: true,
@@ -216,6 +224,34 @@ const PCGOutlook = ({
       },
     ]
   }, [headerMap])
+
+  // Export handler
+  const handleExport = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'info',
+    })
+
+    try {
+      await TcsOutputApiService.exportPcgOutlookExcel(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error exporting PCG Outlook data:', error)
+      setSnackbarData({
+        message: 'Excel download failed. Please try again.',
+        severity: 'error',
+      })
+    }
+  }
 
   // Handle remark cell click
   const handleRemarkCellClick = (row) => {
@@ -280,6 +316,7 @@ const PCGOutlook = ({
           setModifiedCells={setModifiedCells}
           permissions={permissions}
           readonly={true}
+          handleExport={handleExport}
         />
       </Stack>
     </Box>

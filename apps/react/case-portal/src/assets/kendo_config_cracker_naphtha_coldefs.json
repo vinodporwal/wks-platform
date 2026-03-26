@@ -1,0 +1,167 @@
+[
+  {
+    "field": "id",
+    "title": "Id",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "jmdNaphthaId",
+    "title": "jmdNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "pmdNaphthaId",
+    "title": "pmdNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "ioclNaphthaId",
+    "title": "ioclNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "gailNaphthaId",
+    "title": "gailNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "bpclNaphthaId",
+    "title": "bpclNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "ongcNaphthaId",
+    "title": "ongcNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "otherNaphthaId",
+    "title": "otherNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "bcoiNaphthaId",
+    "title": "bcoiNaphthaId",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "type",
+    "title": "Type",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": true
+  },
+  {
+    "field": "limsTagName",
+    "title": "LIMS Tag Name",
+    "editable": false,
+    "widthT": 180,
+    "minWidth": 150,
+    "hidden": false
+  },
+  {
+    "field": "uom",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 80,
+    "minWidth": 60
+  },
+  {
+    "field": "jmdNaphtha",
+    "title": "JMD Naphtha",
+    "editable": true,
+    "type": "number",
+    "widthT": 110,
+    "minWidth": 90
+  },
+  {
+    "field": "pmdNaphtha",
+    "title": "PMD Naphtha",
+    "editable": true,
+    "type": "number",
+    "widthT": 110,
+    "minWidth": 90
+  },
+  {
+    "field": "ioclNaphtha",
+    "title": "IOCL Naphtha",
+    "editable": true,
+    "type": "number",
+    "widthT": 110,
+    "minWidth": 90
+  },
+  {
+    "field": "gailNaphtha",
+    "title": "GAIL Naphtha",
+    "editable": true,
+    "type": "number",
+    "widthT": 110,
+    "minWidth": 90
+  },
+  {
+    "field": "bpclNaphtha",
+    "title": "BPCL Naphtha",
+    "editable": true,
+    "type": "number",
+    "widthT": 110,
+    "minWidth": 90
+  },
+  {
+    "field": "ongcNaphtha",
+    "title": "ONGC Naphtha",
+    "editable": true,
+    "type": "number",
+    "widthT": 120,
+    "minWidth": 100
+  },
+  {
+    "field": "otherNaphtha",
+    "title": "Other Naphtha",
+    "editable": true,
+    "type": "number",
+    "widthT": 110,
+    "minWidth": 90
+  },
+  {
+    "field": "naphthaBlendCompositionForOptimizerInput",
+    "title": "Naphtha Blend Composition For Optimizer Input",
+    "editable": true,
+    "type": "number",
+    "widthT": 110,
+    "minWidth": 90
+  },
+  {
+    "field": "normParameterFKID",
+    "title": "normParameterFKID",
+    "filterable": false,
+    "hidden": true
+  }
+]

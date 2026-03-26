@@ -1,0 +1,156 @@
+[
+  {
+    "field": "idFromApi",
+    "title": "ID",
+    "hidden": true
+  },
+  {
+    "field": "aopCaseId",
+    "title": "Case ID",
+    "width": 120,
+    "editable": false,
+    "hidden": true
+  },
+  {
+    "field": "normParametersFKId",
+    "title": "Particulars",
+    "editable": false,
+    "width": 175,
+    "hidden": true
+  },
+
+  {
+    "field": "productName",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 100
+  },
+
+  {
+    "field": "april",
+    "title": "4",
+    "editable": true,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "may",
+    "title": "5",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "june",
+    "title": "6",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "july",
+    "title": "7",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "august",
+    "title": "8",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "september",
+    "title": "9",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "october",
+    "title": "10",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "november",
+    "title": "11",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "december",
+    "title": "12",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "january",
+    "title": "1",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "february",
+    "title": "2",
+    "editable": false,
+    "width": 120,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "march",
+    "title": "3",
+    "editable": false,
+    "widthT": 110,
+    "align": "left",
+    "headerAlign": "left",
+    "type": "number"
+  },
+  {
+    "field": "avgTph",
+    "title": "AVG",
+    "width": 150,
+    "editable": false,
+
+    "hidden": true
+  },
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": false,
+    "widthT": 90
+  },
+  {
+    "field": "isEditable",
+    "title": "isEditable",
+    "hidden": true
+  }
+]

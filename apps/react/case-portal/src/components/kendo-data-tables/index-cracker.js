@@ -88,6 +88,8 @@ export const dateFieldsCracker = [
   'ShutDown_SD',
   'ShutDown_ED',
   'date',
+  'HSS_SD',
+  'HSS_ED',
 ]
 export const hiddenFields = []
 export const monthMap = {
@@ -157,13 +159,15 @@ const KendoDataTablesCracker = ({
   const [isDateFilterActive, setIsDateFilterActive] = useState([])
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
   const { oldYear } = dataGridStore
 
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const initialGroup = groupBy
     ? [

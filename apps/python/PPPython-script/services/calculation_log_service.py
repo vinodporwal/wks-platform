@@ -5,6 +5,8 @@ Saves model execution logs to ModelCalculationLogs table
 
 import json
 import uuid
+import os
+import gzip
 from datetime import datetime
 from decimal import Decimal
 from database.connection import get_connection
@@ -98,7 +100,8 @@ def update_parent_execution_summary(
     success_count: int,
     failed_count: int,
     warning_count: int,
-    total_iterations: int
+    total_iterations: int,
+    excel_path: str = None
 ) -> dict:
     """
     Update parent execution log with summary after all months complete.
@@ -110,6 +113,7 @@ def update_parent_execution_summary(
         failed_count: Number of failed months
         warning_count: Number of months with warnings
         total_iterations: Total iterations across all months
+        excel_path: Path to annual Excel report (optional)
     
     Returns:
         dict with update status
@@ -129,13 +133,48 @@ def update_parent_execution_summary(
             status = 'Success'
             error_message = None
         
+        # Prepare Excel BLOB if path provided
+        excel_blob = None
+        excel_filename = None
+        excel_filesize = None
+        excel_generated_dt = None
+        
+        if excel_path and os.path.exists(excel_path):
+            try:
+                # Read Excel file
+                with open(excel_path, 'rb') as f:
+                    excel_content = f.read()
+                
+                # Compress with GZIP
+                excel_blob = gzip.compress(excel_content)
+                excel_filename = os.path.basename(excel_path)
+                excel_filesize = len(excel_content)
+                excel_generated_dt = datetime.now()
+                
+                print(f"\n{'='*70}")
+                print(f"ANNUAL EXCEL SAVED TO DATABASE")
+                print(f"{'='*70}")
+                print(f"  Filename: {excel_filename}")
+                print(f"  Original Size: {excel_filesize:,} bytes ({excel_filesize/1024:.2f} KB)")
+                print(f"  Compressed Size: {len(excel_blob):,} bytes ({len(excel_blob)/1024:.2f} KB)")
+                print(f"  Compression Ratio: {(1 - len(excel_blob)/excel_filesize)*100:.1f}%")
+                print(f"{'='*70}\n")
+                
+            except Exception as e:
+                print(f"\n[WARNING] Failed to compress annual Excel: {e}")
+        
+        # Update query with Excel columns
         update_query = """
         UPDATE CPPModelCalculationLogs
         SET Status = ?,
             ErrorMessage = ?,
             ExecutionTimeSeconds = ?,
             IterationCount = ?,
-            ConvergenceAchieved = ?
+            ConvergenceAchieved = ?,
+            BalanceSummaryExcel = ?,
+            ExcelFileName = ?,
+            ExcelFileSize = ?,
+            ExcelGeneratedDateTime = ?
         WHERE Id = ?
         """
         
@@ -144,7 +183,11 @@ def update_parent_execution_summary(
             error_message,
             total_execution_time,
             total_iterations,
-            1 if success_count == 12 else 0,  # All months converged
+            1 if success_count == 12 else 0,
+            excel_blob,
+            excel_filename,
+            excel_filesize,
+            excel_generated_dt,
             parent_id
         ))
         
@@ -172,7 +215,8 @@ def save_calculation_log(
     financial_year_month_id: str,
     calculation_result: dict,
     execution_time_seconds: float = None,
-    parent_execution_id: str = None
+    parent_execution_id: str = None,
+    generate_excel: bool = True
 ) -> dict:
     """
     Save calculation log to ModelCalculationLogs table.
@@ -184,6 +228,7 @@ def save_calculation_log(
         calculation_result: Result dict from calculate_budget_with_iteration
         execution_time_seconds: Time taken to execute (optional)
         parent_execution_id: FK to parent execution log (for full year runs)
+        generate_excel: Whether to generate individual Excel report (default True)
     
     Returns:
         dict with save status
@@ -252,14 +297,68 @@ def save_calculation_log(
             AssetStatusJSON,
             PowerBalanceJSON,
             SteamBalanceJSON,
+            BalanceSummaryExcel,
+            ExcelFileName,
+            ExcelFileSize,
+            ExcelGeneratedDateTime,
             CreatedBy,
             CreatedDate
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         
+        # Generate Balance Summary Excel Report (before DB insert)
+        excel_blob = None
+        excel_filename = None
+        excel_filesize = None
+        excel_generated_dt = None
+        excel_path = None
+        
+        if generate_excel:
+            try:
+                from services.balance_report_service import create_balance_report_excel
+                import tempfile
+                
+                # Generate Excel to temporary location
+                temp_dir = tempfile.gettempdir()
+                excel_path = create_balance_report_excel(month, year, calculation_result, temp_dir)
+                
+                if excel_path and os.path.exists(excel_path):
+                    # Read Excel file as binary
+                    with open(excel_path, 'rb') as f:
+                        excel_content = f.read()
+                    
+                    # Compress the Excel file
+                    excel_blob = gzip.compress(excel_content)
+                    excel_filename = os.path.basename(excel_path)
+                    excel_filesize = len(excel_content)  # Uncompressed size
+                    excel_generated_dt = datetime.now()
+                    
+                    print(f"\n{'='*70}")
+                    print(f"EXCEL GENERATED: {excel_filename}")
+                    print(f"  Original Size: {excel_filesize:,} bytes ({excel_filesize/1024:.2f} KB)")
+                    print(f"  Compressed Size: {len(excel_blob):,} bytes ({len(excel_blob)/1024:.2f} KB)")
+                    print(f"  Compression Ratio: {(1 - len(excel_blob)/excel_filesize)*100:.1f}%")
+                    print(f"  Saved to Database: CPPModelCalculationLogs.BalanceSummaryExcel")
+                    print(f"{'='*70}")
+                    
+                    # Clean up temporary file
+                    try:
+                        os.remove(excel_path)
+                    except:
+                        pass
+                
+            except Exception as excel_error:
+                print(f"\n{'='*70}")
+                print(f"[WARNING] Failed to generate Excel balance report: {excel_error}")
+                print(f"{'='*70}")
+                import traceback
+                traceback.print_exc()
+                # Don't fail the entire save operation if Excel generation fails
+        
+        # Insert into database with Excel BLOB
         cursor.execute(insert_query, (
             log_id,
-            parent_execution_id,  # Link to parent execution
+            parent_execution_id,
             financial_year_month_id,
             financial_year,
             month,
@@ -268,11 +367,15 @@ def save_calculation_log(
             error_message,
             error_type,
             iterations_used,
-            1 if overall_success else 0,  # ConvergenceAchieved: 1 if converged, 0 otherwise
+            1 if overall_success else 0,
             execution_time_seconds,
             json.dumps(asset_status_json, cls=DecimalEncoder) if asset_status_json else None,
             json.dumps(power_balance_json, cls=DecimalEncoder) if power_balance_json else None,
             json.dumps(steam_balance_json, cls=DecimalEncoder) if steam_balance_json else None,
+            excel_blob,
+            excel_filename,
+            excel_filesize,
+            excel_generated_dt,
             'PythonModel',
             datetime.now()
         ))
@@ -285,7 +388,8 @@ def save_calculation_log(
             "success": True,
             "log_id": log_id,
             "status": status,
-            "message": f"Calculation log saved successfully for {month}/{year}"
+            "message": f"Calculation log saved successfully for {month}/{year}",
+            "excel_report_path": excel_path
         }
     
     except Exception as e:
@@ -349,26 +453,35 @@ def _build_asset_status_json(calculation_result: dict, month: int = None, year: 
                         "MaxCapacity": row[4]
                     }
                 
-                # Get all HRSG assets from HRSGConfig (if table exists)
+                # Get all HRSG assets from SteamGenerationAssets table
                 try:
                     cursor.execute("""
-                        SELECT Name, Priority
-                        FROM HRSGConfig
-                        ORDER BY Priority
+                        SELECT s.AssetName, s.Priority
+                        FROM SteamGenerationAssets s
+                        WHERE s.AssetType = 'HRSG'
+                        ORDER BY s.Priority
                     """)
                     
                     for row in cursor.fetchall():
                         all_hrsg_assets[row[0]] = {
                             "Name": row[0],
-                            "Priority": row[1]
+                            "Priority": row[1] if row[1] is not None else 999
                         }
                 except Exception as hrsg_err:
-                    # HRSGConfig table doesn't exist - will use dispatch data as fallback
-                    pass
+                    print(f"Warning: Could not fetch HRSG assets from SteamGenerationAssets: {hrsg_err}")
+                    # Will use fallback below
         except Exception as e:
             print(f"Warning: Could not fetch all assets: {e}")
         finally:
             cursor.close()
+    
+    # Ensure all_hrsg_assets is always populated (fallback if database query didn't run or failed)
+    if not all_hrsg_assets:
+        all_hrsg_assets = {
+            "HRSG-1": {"Name": "HRSG-1", "Priority": 1},
+            "HRSG-2": {"Name": "HRSG-2", "Priority": 2},
+            "HRSG-3": {"Name": "HRSG-3", "Priority": 3}
+        }
     
     # Create dispatch lookup for easy access
     dispatch_lookup = {asset.get("AssetName", ""): asset for asset in final_dispatch}
@@ -748,6 +861,63 @@ def _build_steam_balance_json(calculation_result: dict) -> dict:
         }
     
     return steam_data
+
+
+def get_excel_report_from_log(log_id: str) -> dict:
+    """
+    Retrieve Excel report BLOB from CPPModelCalculationLogs table.
+    
+    Args:
+        log_id: Calculation log ID (GUID)
+    
+    Returns:
+        dict with excel_content (decompressed bytes), filename, filesize, and generated_datetime
+        Returns None if not found or no Excel attached
+    """
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        query = """
+        SELECT 
+            BalanceSummaryExcel,
+            ExcelFileName,
+            ExcelFileSize,
+            ExcelGeneratedDateTime
+        FROM CPPModelCalculationLogs
+        WHERE Id = ?
+        """
+        
+        cursor.execute(query, (log_id,))
+        row = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if row and row[0]:
+            # Decompress the Excel BLOB
+            compressed_blob = row[0]
+            excel_content = gzip.decompress(compressed_blob)
+            
+            return {
+                "success": True,
+                "excel_content": excel_content,
+                "filename": row[1],
+                "filesize": row[2],
+                "generated_datetime": row[3]
+            }
+        else:
+            return {
+                "success": False,
+                "message": "No Excel report found for this calculation log"
+            }
+    
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "message": f"Failed to retrieve Excel report: {str(e)}"
+        }
 
 
 def get_financial_year_month_id(month: int, year: int) -> str:

@@ -10,7 +10,7 @@ public interface PlantService {
 	public List<Plant> getPlantBySite(String siteId);
 	public List<Object[]> getPlantAndSite();
 	public List getShutdownMonths(UUID plantId,String maintenanceName,String year,String gradeId);
-	public List<Plants> findUniqueNamesPlantsByVerticalAndSite(UUID verticalId, UUID siteId);
+	public List<Plants> findUniqueNamesPlantsByVerticalAndSite(UUID verticalId, UUID siteId, String screenCode);
 	
 
 }

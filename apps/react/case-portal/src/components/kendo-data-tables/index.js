@@ -13,6 +13,9 @@ import PropaneDropdown from './Utilities-Kendo/PropaneDropdown'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useSelector } from 'react-redux'
 import YearDropdownEditor from './Utilities-Kendo/YearDropdownEditor'
+import SDDaysDropdownEditorWrapper from './Utilities-Kendo/SdDaysDropdownEditor'
+import LineDropdownEditor from './Utilities-Kendo/LineDropdownEditor'
+import CategoryDropdownEditor from './Utilities-Kendo/CategoryDropdown'
 import {
   Box,
   Button,
@@ -43,6 +46,7 @@ import '../../kendo-data-grid.css'
 import BudgetConstrainsCellEditor from './Utilities-Kendo/BudgetConstrainsCellEditor'
 import DateOnlyPicker from './Utilities-Kendo/DatePicker'
 import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
+import DatePickerNoLimit from './Utilities-Kendo/DatePickerNoLimit'
 
 import { descLimit } from './Utilities-Kendo/descLimit'
 import {
@@ -65,6 +69,7 @@ import { getRoleName } from 'services/role-service'
 import { getColumnMenuDateFilter } from 'components/data-tables/Reports-kendo/ColumnMenuDateFilter'
 import DateTimePickerEditor24HourFormat from './Utilities-Kendo/DatePickeronSelectedYr24HourFomat'
 import { NoSpinnerNumericEditorCrackerValidation } from './Utilities-Kendo/numbericColumnsCrackerValidation'
+import DynamicDropdown from './Utilities-Kendo/DynamicDropdown'
 
 export const dateFields = [
   'maintStartDateTime',
@@ -85,6 +90,7 @@ export const dateFields1 = [
   'targetDate',
   'exclusionEndDate',
   'exclusionStartDate',
+  'shutdownDate',
 ]
 
 export const monthMap = {
@@ -103,6 +109,8 @@ export const monthMap = {
 }
 
 const KendoDataTables = ({
+  resetEditSignal,
+  setEditResetKey,
   showCatChemUtilityCheckbox = false,
   showCatChemUtilityCheckbox2 = false,
   screenType = 'slowdown',
@@ -167,6 +175,12 @@ const KendoDataTables = ({
   deleteNoteOnDeleteDialogeBox = '',
   shutdownMonths = [],
   slowdownMonths = [],
+  sdDaysValues = [],
+  allLines = [],
+  startDate,
+  endDate,
+  mcuMaxCapValues = [],
+  key = [],
 }) => {
   const _export = useRef(null)
   const _grid = React.useRef(undefined)
@@ -193,7 +207,6 @@ const KendoDataTables = ({
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const { verticalChange, oldYear, year, plantObject, siteObject } =
     dataGridStore
@@ -201,14 +214,15 @@ const KendoDataTables = ({
   const AOP_YEAR = year?.selectedYear
   const PLANT_ID = plantObject?.id
   const SiteName = siteObject?.name
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SiteName?.toLowerCase()
   const isPEPP = ['pe', 'pp'].includes(lowerVertName)
   const IS_VCM_VERTICAL = ['vcm'].includes(lowerVertName)
-
 
   // ...inside columns?.map((col) => { ... })...
   const fieldToMonthNumber = {
@@ -255,6 +269,43 @@ const KendoDataTables = ({
       </td>
     )
   }
+  const isMcuMaxCapRedCell = useCallback(
+    (productName, field) => {
+      if (!mcuMaxCapValues?.aopMaxCapMCValueList?.length) return false
+      // console.log('mcuMaxCapValues received:', mcuMaxCapValues)
+      const monthNameMap = {
+        april: 'April',
+        may: 'May',
+        june: 'June',
+        july: 'July',
+        august: 'August',
+        september: 'September',
+        october: 'October',
+        november: 'November',
+        december: 'December',
+        january: 'January',
+        february: 'February',
+        march: 'March',
+      }
+
+      const monthName = monthNameMap[field?.toLowerCase()]
+      if (!monthName) return false
+      console.log(
+        'Checking:',
+        productName,
+        monthName,
+        mcuMaxCapValues.aopMaxCapMCValueList,
+      )
+
+      return mcuMaxCapValues.aopMaxCapMCValueList.some(
+        (item) =>
+          item.isValid === 1 &&
+          item.monthName?.toLowerCase() === monthName.toLowerCase() &&
+          item.productName?.toLowerCase() === productName?.toLowerCase(),
+      )
+    },
+    [mcuMaxCapValues],
+  )
   const monthFields = [
     'april',
     'may',
@@ -298,13 +349,48 @@ const KendoDataTables = ({
         </td>
       )
     }
-    const aggObj = props.dataItem?.aggregates?.[field]
+
     let cellContent = ''
-    if (aggObj) {
-      const aggKey = Object.keys(aggObj)[0]
-      const value = aggObj[aggKey]
-      cellContent =
-        value != null ? Math.trunc(Number(value) * 10000) / 10000 : ''
+
+    // Calculate sum the same way as validation - sum scaled integers from raw data
+    const items = dataItem?.items || []
+    if (items.length > 0 && field) {
+      const SCALE = 10000
+      const TOLERANCE = 1 // allows 0.0001 difference
+      const EXPECTED = 100 * SCALE
+
+      const toPreciseInt = (num) => {
+        if (num === null || num === undefined || num === '') return 0
+        const n = Number(num)
+        if (isNaN(n)) return 0
+        return Math.round(Number(n || 0) * SCALE)
+      }
+
+      const formatFromIntRobust = (intVal) => {
+        const sign = intVal < 0 ? '-' : ''
+        const abs = Math.abs(intVal)
+        const integerPart = Math.floor(abs / SCALE)
+        const remainder = abs % SCALE
+        if (remainder === 0) return sign + String(integerPart)
+        const scaleDigits = String(SCALE).length - 1
+        let fracStr = String(remainder).padStart(scaleDigits, '0')
+        fracStr = fracStr.replace(/0+$/, '')
+        return sign + `${integerPart}.${fracStr}`
+      }
+
+      const sumInt = items.reduce(
+        (acc, row) => acc + toPreciseInt(row[field]),
+        0,
+      )
+
+      const isWithinTolerance = Math.abs(sumInt - EXPECTED) <= TOLERANCE
+
+      // If sum is within tolerance of 100, display as exactly 100
+      if (isWithinTolerance) {
+        cellContent = '100'
+      } else {
+        cellContent = formatFromIntRobust(sumInt)
+      }
     }
     return (
       <td {...props.tdProps} colSpan={1}>
@@ -480,7 +566,7 @@ const KendoDataTables = ({
               desc === 'Furnace Decoking H-210' ||
               desc === 'Furnace Decoking H-220'
             ) {
-              updated.rate = 27
+              updated.rate = 27.0833
             } else if (desc === 'Furnace Decoking H-1220') {
               updated.rate = 26.458
             } else if (desc === 'Furnace Decoking') {
@@ -736,6 +822,8 @@ const KendoDataTables = ({
     setRemarkDialogOpen(false)
   }
 
+  // console.log('columns', columns)
+
   const handleAddRow = () => {
     setEdit({})
     if (isButtonDisabled) return
@@ -861,10 +949,51 @@ const KendoDataTables = ({
       </td>
     )
   }
+  const LineDisplayCell = (props) => {
+    const {
+      dataItem,
+      field,
+      tdProps,
+      customModifiedCells,
+      highlightField,
+      highlight,
+    } = props
+    const rowId = dataItem.id
+    const checkField = highlightField || field
+    const isEdited = !!(
+      customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
+    )
+    const lineObj = props.allLines?.find((l) => l.id === dataItem[field])
+    const displayLabel = lineObj ? lineObj.displayName : ''
+    return (
+      <td
+        {...tdProps}
+        style={{
+          color: highlight && isEdited ? 'orange' : undefined,
+          fontWeight: highlight && isEdited ? 'bold' : undefined,
+        }}
+        title={displayLabel}
+      >
+        {displayLabel || ''}
+      </td>
+    )
+  }
   const MonthDropdownPEPPDisplayCell = ({ dataItem, field, tdProps }) => {
     return (
       <td {...tdProps} title={dataItem[field]}>
         {dataItem[field]}
+      </td>
+    )
+  }
+  const ElastomerSDDaysDisplayCell = (props) => {
+    const { dataItem, field, tdProps, sdDaysValues = [] } = props
+    const value = dataItem[field]
+    const option = sdDaysValues.find((opt) => opt.value === value)
+    const displayValue = option ? option.name : `${value} Days`
+
+    return (
+      <td {...tdProps} title={displayValue}>
+        {displayValue}
       </td>
     )
   }
@@ -979,8 +1108,17 @@ const KendoDataTables = ({
         </tr>
       )
     },
-    [IS_OLD_YEAR],
+    [IS_OLD_YEAR, READ_ONLY],
   )
+
+  const resetAllEdits = () => {
+    setEditState({
+      design: {},
+      max: {},
+      current: {},
+      summary: {},
+    })
+  }
 
   const toolTipRendererdescLimit = (props) => {
     const value = props.dataItem[props.field]
@@ -1016,14 +1154,15 @@ const KendoDataTables = ({
     const isEdited = !!(
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
-
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
     return (
       <td
         {...tdProps}
         title={value}
         style={{
           color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: highlight && isEdited ? 'bold' : undefined,
+          fontWeight:
+            (highlight && isEdited) || isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1042,9 +1181,14 @@ const KendoDataTables = ({
 
     const rowId = dataItem.id
     const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={value}
+          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+        >
           {children}
         </td>
       )
@@ -1072,7 +1216,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
+          fontWeight: shouldHighlight || isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1093,10 +1237,15 @@ const KendoDataTables = ({
 
     const rowId = dataItem.id
     const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={value}
+          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+        >
           {children}
         </td>
       )
@@ -1168,7 +1317,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: highlightColor,
-          fontWeight: highlightColor ? 'bold' : undefined,
+          fontWeight: highlightColor || isBoldFromCells ? 'bold' : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >
@@ -1398,6 +1547,12 @@ const KendoDataTables = ({
   }, [rows?.length])
 
   useEffect(() => {
+    if (resetEditSignal !== undefined) {
+      setEdit({})
+    }
+  }, [resetEditSignal])
+
+  useEffect(() => {
     const modes = permissions?.modes
     if (Array.isArray(modes) && modes.length && selectMode === undefined) {
       setSelectMode(modes[0])
@@ -1625,7 +1780,7 @@ const KendoDataTables = ({
                   variant='contained'
                   className='btn-save'
                   onClick={downloadExcelForConfiguration}
-                  disabled={isButtonDisabled || rows?.length === 0}
+                  disabled={isButtonDisabled}
                 >
                   Export
                 </Button>
@@ -1636,9 +1791,7 @@ const KendoDataTables = ({
                   <Button
                     variant='contained'
                     onClick={triggerFileUpload}
-                    disabled={
-                      isButtonDisabled || READ_ONLY || rows?.length === 0
-                    }
+                    disabled={isButtonDisabled || READ_ONLY}
                     className='btn-save'
                   >
                     Import
@@ -1742,6 +1895,7 @@ const KendoDataTables = ({
                   value={selectedUnit || permissions?.units?.[0]}
                   onChange={(e) => {
                     setEdit({})
+                    setEditResetKey((k) => k + 1)
                     setSelectedUnit(e.target.value)
                     handleUnitChange(e.target.value)
                   }}
@@ -1824,6 +1978,7 @@ const KendoDataTables = ({
                 // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
                 // height: `${calculatedVH}vh`,
               }}
+              key={groupBy}
               modifiedCells={modifiedCells}
               autoProcessData={true}
               defaultGroup={initialGroup}
@@ -1928,6 +2083,60 @@ const KendoDataTables = ({
                 }
 
                 if (dateFields.includes(col.field)) {
+                  if (
+                    screenType === 'ElastomerSlowdown' &&
+                    lowerVertName === 'elastomer'
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        cells={{
+                          edit: {
+                            date: (props) => (
+                              <DatePickerNoLimit
+                                {...props}
+                                min={startDate}
+                                max={endDate}
+                              />
+                            ),
+                          },
+                          data: (props) => (
+                            <SimpleHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              highlight={permissions?.highlightDate || false} // Add this permission
+                            />
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        format={
+                          [
+                            'fromDate',
+                            'toDate',
+                            'periodFrom',
+                            'periodTo',
+                            'toDateReport',
+                            'fromDateReport',
+                          ].includes(col.field)
+                            ? '{0:dd-MM-yyyy}'
+                            : '{0:dd-MM-yyyy hh:mm a}'
+                        }
+                        editor='date'
+                        hidden={col.hidden}
+                        // columnMenu={DateColumnMenu}
+                        filter='date'
+                        columnMenu={ColumnMenuCheckboxFilterDate}
+                        width={col?.widthT}
+                        headerClassName={
+                          isDateFilterActive.includes(col.field)
+                            ? 'active-column'
+                            : ''
+                        }
+                      />
+                    )
+                  }
                   return (
                     <GridColumn
                       key={col.field}
@@ -2036,7 +2245,8 @@ const KendoDataTables = ({
                 }
                 if (
                   lowerVertName === 'vcm' &&
-                  monthFields.includes(col.field)
+                  monthFields.includes(col.field) &&
+                  permissions?.highlightShutdownConsumption
                 ) {
                   return (
                     <GridColumn
@@ -2376,7 +2586,38 @@ const KendoDataTables = ({
                     />
                   )
                 }
-
+                if (col.type === 'Categorydropdown') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      editable={!!col?.editable}
+                      cells={{
+                        edit: { text: CategoryDropdownEditor },
+                        data: (props) => {
+                          // Show the value as text in display mode
+                          const options = [
+                            { id: 0, value: '0' },
+                            { id: 1, value: '1' },
+                            { id: 2, value: '2' },
+                          ]
+                          const valueObj = options.find(
+                            (opt) => opt.id === props.dataItem[props.field],
+                          )
+                          return (
+                            <td {...props.tdProps}>
+                              {valueObj ? valueObj.value : ''}
+                            </td>
+                          )
+                        },
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
                 const YearDropdownEditorWrapper = (props) => (
                   <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
                 )
@@ -2393,6 +2634,68 @@ const KendoDataTables = ({
                       cells={{
                         edit: { text: YearDropdownEditorWrapper }, // ✅ REQUIRED
                         data: ElastomerYearDisplayCell,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                if (col.type === 'typesdDropdown') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={!!col?.editable}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: {
+                          text: (props) => (
+                            <SDDaysDropdownEditorWrapper
+                              {...props}
+                              sdDaysValues={sdDaysValues}
+                            />
+                          ),
+                        },
+                        data: ElastomerSDDaysDisplayCell,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                const LineDropdownEditorWrapper = (props) => (
+                  <LineDropdownEditor
+                    {...props}
+                    allLines={allLines}
+                    customModifiedCells={customModifiedCells}
+                    highlightField={props.field}
+                    highlight={!!permissions?.highlightLine}
+                    rowId={props.dataItem?.id}
+                  />
+                )
+                if (col.type === 'lineDropdown') {
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title}
+                      width={col.width}
+                      editable={col.editable}
+                      cells={{
+                        edit: { text: LineDropdownEditorWrapper },
+                        data: (props) => (
+                          <LineDisplayCell
+                            {...props}
+                            allLines={allLines}
+                            customModifiedCells={customModifiedCells}
+                            highlightField={col.field}
+                            highlight={!!permissions?.highlightLine}
+                            rowId={props.dataItem?.id}
+                          />
+                        ),
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
@@ -2555,6 +2858,34 @@ const KendoDataTables = ({
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: PropaneDropdown }, // <-- Use your custom editor here
+                        data: MonthDisplayCell,
+                        headerCell: SimpleHeaderWithTooltip,
+                      }}
+                      columnMenu={ColumnMenuCheckboxFilter}
+                    />
+                  )
+                }
+                if (col.type === 'dynamicDropdown') {
+                  const dropdownOptions =
+                    permissions?.dynamicDropdownOptions || []
+                  return (
+                    <GridColumn
+                      key={col.field}
+                      field={col.field}
+                      title={col.title || col.headerName}
+                      width={col.width}
+                      hidden={col.hidden}
+                      editable={col?.editable ? true : false}
+                      headerClassName={isActive ? 'active-column' : ''}
+                      cells={{
+                        edit: {
+                          text: (props) => (
+                            <DynamicDropdown
+                              {...props}
+                              options={dropdownOptions}
+                            />
+                          ),
+                        },
                         data: MonthDisplayCell,
                         headerCell: SimpleHeaderWithTooltip,
                       }}
@@ -2746,7 +3077,10 @@ const KendoDataTables = ({
                   )
                 }
 
-                if (col.type === 'number') {
+                if (
+                  col.type === 'number' &&
+                  permissions?.showRedCellsForOroductionTarget
+                ) {
                   return (
                     <GridColumn
                       key={col.field}
@@ -2755,15 +3089,38 @@ const KendoDataTables = ({
                       width={col.widthT}
                       hidden={col.hidden}
                       className={`
-                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-                  ${col?.isBold ? 'bold-text' : ''}
-                `}
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{
                         edit: { text: NoSpinnerNumericEditor },
-                        data: (props) =>
-                          showThreeColors ? (
+                        data: (props) => {
+                          const productName =
+                            props.dataItem?.productName ||
+                            props.dataItem?.displayName ||
+                            props.dataItem?.materialDisplayName ||
+                            ''
+                          const isMcuRed = isMcuMaxCapRedCell(
+                            productName,
+                            props.field,
+                          )
+                          if (isMcuRed) {
+                            return (
+                              <td
+                                {...props.tdProps}
+                                title={String(
+                                  props.dataItem[props.field] ?? '',
+                                )}
+                                style={{ color: 'red', fontWeight: 'bold' }}
+                              >
+                                {props.children}
+                              </td>
+                            )
+                          }
+
+                          return showThreeColors ? (
                             <RedHighlightCell2
                               {...props}
                               customModifiedCells={customModifiedCells}
@@ -2778,7 +3135,8 @@ const KendoDataTables = ({
                               allRedCell={allRedCell}
                               disableRedHighlight={disableRedHighlight}
                             />
-                          ),
+                          )
+                        },
                         headerCell: SimpleHeaderWithTooltip,
                       }}
                       columnMenu={ColumnMenuCheckboxFilter}
@@ -2797,9 +3155,9 @@ const KendoDataTables = ({
                       width={col.widthT}
                       hidden={col.hidden}
                       className={`
-                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-                  ${col?.isBold ? 'bold-text' : ''}
-                `}
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
                       editable={col?.editable ? true : false}
                       headerClassName={isActive ? 'active-column' : ''}
                       cells={{

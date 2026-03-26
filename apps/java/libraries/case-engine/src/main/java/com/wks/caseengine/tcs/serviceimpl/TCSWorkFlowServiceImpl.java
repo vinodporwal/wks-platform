@@ -3,23 +3,30 @@ package com.wks.caseengine.tcs.serviceimpl;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.camunda.community.rest.client.dto.TaskDto;
 import org.camunda.community.rest.client.dto.VariableValueDto;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -28,13 +35,25 @@ import com.wks.bpm.engine.client.facade.BpmEngineClientFacade;
 import com.wks.bpm.engine.model.spi.ProcessInstance;
 import com.wks.bpm.engine.model.spi.ProcessVariable;
 import com.wks.bpm.engine.model.spi.Task;
+import com.wks.caseengine.dto.VerticalsDTO;
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
+import com.wks.caseengine.entity.UserScreenMapping;
 import com.wks.caseengine.exception.RestResourceNotFoundException;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.UserScreenMappingRepository;
+import com.wks.caseengine.service.KeycloakUserService;
 import com.wks.caseengine.service.PlantService;
+import com.wks.caseengine.service.VerticalsService;
 import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailDTO;
 import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailProjection;
+import com.wks.caseengine.tcs.enums.Roles;
 import com.wks.caseengine.tcs.repository.tcsworkflow.TCSAuditTrailRepository;
 import com.wks.caseengine.tcs.service.TCSWorkFlowService;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.StoredProcedureQuery;
 
 @Service
 public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {  
@@ -58,6 +77,11 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
     private static final String CTS_SUBMISSION_VARIABLE_NAME = "cts_approved";
     private static final String CLUSTER_HEAD_APPROVAL_VARIABLE_NAME = "cluster_head_approved";
 
+    // for email notification
+
+    private static final String screenCode = "menu.tcsinput";
+    private static final String vertical = "CRUDE";
+
     @Value("${camunda.process.id.tcs.output.workflow}")
     private String tcsOutputWorkflowProcessId;
     
@@ -68,6 +92,9 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
     private PlantService plantService;
 
     @Autowired
+    private VerticalsService verticalsService;
+
+    @Autowired
     private TCSAuditTrailRepository tcsAuditTrailRepository;
 
     @Autowired
@@ -76,25 +103,56 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private KeycloakUserService keycloakUserService;
+
+    @Autowired
+    private SiteRepository siteRepository;
+
+    @Autowired
+    private UserScreenMappingRepository userScreenMappingRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+
+    @Override
+    public String generateBusinessKey(String verticalId, String siteId, String finacialYear) {  
+
+        VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
+
+        if(vertical == null) {  
+            throw new RestResourceNotFoundException("Vertical not found");
+        }
+
+        return vertical.getName() + "-" + siteId + "-" + finacialYear;
+    }
+
+
 
     @Override
     public void startProcess(String verticalId, String siteId, String finacialYear) {
 
-       
+        VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
+
+        if(vertical == null) {
+            throw new RestResourceNotFoundException("Vertical not found");
+        }
+        
         String key = tcsOutputWorkflowProcessId;
         // business key = siteId-finacialYear
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
-   //     List<String> plantList = Arrays.asList("CDU-1", "Crude-1", "HPIB");
 
-        // fetch all the plants from database and then filter for given vertical and site
-        List<Plants> plants = plantService.findUniqueNamesPlantsByVerticalAndSite(UUID.fromString(verticalId), UUID.fromString(siteId));
+        // fetch the plants for given vertical and site and plants with access to tcs input screen
+        List<Plants> plants = plantService.findUniqueNamesPlantsByVerticalAndSite(UUID.fromString(verticalId), UUID.fromString(siteId), screenCode);
         
-        List<String> plantList1 = plants.stream().map(Plants::getDisplayName).toList();
+        List<String> plantList1 = plants.stream().map(Plants::getName).toList();
 
         // temporary short the list for cdu-1, crude-1, hpid
 
-   List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("Crude-1") || plantName.equals("HPIB")).toList();
+//    List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("Crude-1") || plantName.equals("HPIB")).toList();
+List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU1") || plantName.equals("CDU2")).toList();
 
         Map<String, Boolean> submissionStatusMap = new HashMap<>();
         Map<String, Boolean> approvalStatusMap = new HashMap<>();
@@ -174,6 +232,24 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 		ProcessInstance processInstance = processEngineClientFacade.startProcess(key, Optional.ofNullable(businessKey), processVariables);
     }
 
+    @Override
+    public String deleteProcess(String verticalId, String siteId, String finacialYear) {
+
+       String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
+
+    ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
+
+		if(processInstances.length == 0) {
+			throw new RestResourceNotFoundException("No process instance found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
+		}
+
+		processEngineClientFacade.deleteProcessInstance(processInstances[0].getId());
+
+        return "Process deleted successfully";
+
+
+    }
+
 
 
 
@@ -200,7 +276,13 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
                 throw new RuntimeException("Vertical id is required");
             }
 
-        String businessKey =  siteId + "-" + finacialYear;
+            VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
+
+            if(vertical == null) {
+                throw new RestResourceNotFoundException("Vertical not found");
+            }
+
+        String businessKey =  generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -322,8 +404,13 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             throw new RuntimeException("Vertical id is required");
         }
 
+        VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
 
-        String businessKey = siteId + "-" + finacialYear;
+        if(vertical == null) {
+            throw new RestResourceNotFoundException("Vertical not found");
+        }
+
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -473,7 +560,13 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             throw new RuntimeException("Vertical id is required");
         }
 
-        String businessKey = siteId + "-" + finacialYear;
+        VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
+
+        if(vertical == null) {
+            throw new RestResourceNotFoundException("Vertical not found");
+        }
+
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -584,7 +677,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             throw new RuntimeException("Vertical id is required");
         }
 
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -765,7 +858,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             throw new RuntimeException("Vertical id is required");
         }
 
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -877,7 +970,7 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
             throw new RuntimeException("Vertical id is required");
         }
 
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -964,7 +1057,7 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
             throw new RuntimeException("Vertical id is required");
         }
 
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -1233,7 +1326,7 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
             throw new RuntimeException("Vertical id is required");
         }
 
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
          List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getPlantSubmissionAuditTrail(UUID.fromString(plantId), UUID.fromString(siteId), UUID.fromString(verticalId), businessKey, type);
 
@@ -1270,7 +1363,7 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
         if(verticalId == null || verticalId.isEmpty()) { 
             throw new RuntimeException("Vertical id is required");
         }
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
         List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getLatestPlantWiseSubmissionAuditTrail(UUID.fromString(siteId), UUID.fromString(verticalId), businessKey, type);
 
         return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
@@ -1306,7 +1399,7 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
         if(verticalId == null || verticalId.isEmpty()) { 
             throw new RuntimeException("Vertical id is required");
         }
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getPlantSubmissionAuditTrailByVerfiedDate(UUID.fromString(plantId), UUID.fromString(siteId), UUID.fromString(verticalId),businessKey, type);
        
@@ -1342,7 +1435,7 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
         if(verticalId == null || verticalId.isEmpty()) { 
             throw new RuntimeException("Vertical id is required");
         }
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getEbsSubmissionAuditTrailByVerfiedDate(UUID.fromString(siteId), UUID.fromString(verticalId), businessKey, type);
 
@@ -1373,7 +1466,7 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
         if(verticalId == null || verticalId.isEmpty()) { 
             throw new RuntimeException("Vertical id is required");
         }
-        String businessKey = siteId + "-" + finacialYear;
+        String businessKey =  generateBusinessKey(verticalId, siteId, finacialYear);
 
         PlantSubmissionAuditTrailProjection auditTrail = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(UUID.fromString(siteId), UUID.fromString(verticalId), businessKey, type);
         return PlantSubmissionAuditTrailDTO.builder()
@@ -1402,7 +1495,8 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
         if(verticalId == null || verticalId.isEmpty()) { 
             throw new RuntimeException("Vertical id is required");
         }
-        String businessKey = siteId + "-" + finacialYear;
+
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getEbsSubmissionAuditTrail(UUID.fromString(siteId), UUID.fromString(verticalId), businessKey, type);
         return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
@@ -1418,5 +1512,221 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
         .status(auditTrail.getStatus())
         .build()).toList();
     }
+
+
+    // schedular for email notification
+
+   // @Scheduled(cron = "0 0 12 * * ?")
+  @Override
+    public void notifyPlantManagers() {
+          
+         // get all the users with role Plant_Manager
+             ObjectMapper objectMapper = new ObjectMapper();
+             Map<String, List<UUID>> result = new HashMap<>();
+
+            List<UserRepresentation> userRepresentations;
+            try {
+                userRepresentations = keycloakUserService.getUsersWithRole(Roles.Plant_Manager.name());
+            } catch (Exception e) {
+                throw new RestResourceNotFoundException("Error getting users with role Plant_Manager: " + e.getMessage());
+            }
+
+
+     // ************ filter userIds which has access to tcs input screen  | Map plant name to user ids eg : {"CDU-1": ["123", "456"], "CDU-2": ["112"]}  ***************
+            String userIdsJson;
+            try {
+                userIdsJson = objectMapper.writeValueAsString(userRepresentations.stream().map(UserRepresentation::getId).map(UUID::fromString).collect(Collectors.toList()));
+            } catch (JsonProcessingException e) {
+                throw new RestResourceNotFoundException("Error converting userIds to JSON: " + e.getMessage());
+            }
+
+            StoredProcedureQuery query = entityManager
+            .createStoredProcedureQuery("GetUserIdsByPlantAndScreen_JSON");
+
+    query.registerStoredProcedureParameter("UserIdsJson", String.class, jakarta.persistence.ParameterMode.IN);
+    query.registerStoredProcedureParameter("ScreenCode", String.class, jakarta.persistence.ParameterMode.IN);
+
+    query.setParameter("UserIdsJson", userIdsJson);
+    query.setParameter("ScreenCode", screenCode);
+
+    // Execute
+    String jsonResult = (String) query.getSingleResult();
+
+    // Parse JSON response
+    JsonNode root;
+    try {
+        root = objectMapper.readTree(jsonResult);
+    } catch (JsonMappingException e) {
+        throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
+    } catch (JsonProcessingException e) {
+        throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
+    }
+
+
+    JsonNode dataArray = root.get("data");
+
+    if (dataArray != null && dataArray.isArray()) {
+        for (JsonNode node : dataArray) {
+
+            String plantName = node.get("PlantName").asText();
+            List<UUID> users = new ArrayList<>();
+
+            JsonNode userIdsNode = node.get("UserIds");
+
+            if (userIdsNode != null && userIdsNode.isArray()) {
+                for (JsonNode userNode : userIdsNode) {
+                    UUID userId = UUID.fromString(userNode.get("UserId").asText());
+                    users.add(userId);
+                }
+            }
+
+            result.put(plantName, users);
+        }
+    }
+
+    //   ********************* Finished :  Map plant name to user ids     ******************
+
+
+
+// ***************** Map Plant name to email Ids eg : {"CDU-1": ["123@gmail.com", "456@gmail.com"], "CDU-2": ["112@gmail.com"]}  ******************
+    Map<UUID, String> userIdToEmailMap = userRepresentations.stream()
+        .collect(Collectors.toMap(
+                user -> UUID.fromString(user.getId()),
+                UserRepresentation::getEmail
+        ));
+
+
+        Map<String, List<String>> plantToEmails = new HashMap<>();
+
+for (Map.Entry<String, List<UUID>> entry : result.entrySet()) {
+    String plant = entry.getKey();
+    List<UUID> userIds = entry.getValue();
+
+    List<String> emails = userIds.stream()
+            .map(userIdToEmailMap::get)   // get email from map
+            .filter(Objects::nonNull)     // remove missing users (safety)
+            .collect(Collectors.toList());
+
+    plantToEmails.put(plant, emails);
+}
+
+System.out.println("plantToEmails: " + plantToEmails);
+
+// ********************* Finished :  Map Plant name to email Ids     ******************
+
+ 
+
+List<UUID> sites = tcsAuditTrailRepository.getSitesByVerticalName(vertical);
+
+UUID verticalId = tcsAuditTrailRepository.getVerticalIdByName(vertical);
+
+int year = LocalDate.now().getYear();
+int nextYear = year + 1;
+
+
+
+// Format: 2025-26
+ String finacialYear = year + "-" + String.valueOf(nextYear).substring(2);
+
+ List<String> emailsToNotify = new ArrayList<>();
+
+for(UUID siteId : sites) {  
+
+   
+
+    String businessKey = generateBusinessKey(String.valueOf(verticalId).toUpperCase(), String.valueOf(siteId).toUpperCase(), finacialYear);
+
+    
+
+
+
+    ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
+
+			if(processInstances.length > 1) {
+				throw new RestResourceNotFoundException("Multiple process instances found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
+			}
+
+    if(processInstances.length == 0) {
+        continue;
+    }
+
+    ProcessVariable[] processVariables = processEngineClientFacade.findVariables(processInstances[0].getId());
+
+
+   
+
+    for(ProcessVariable processVariable : processVariables) {
+        System.out.println("processVariable: " + processVariable.getName());
+        if(processVariable.getName().equals("submissionStatus")) {
+            String submissionStatus = processVariable.getValue().toString();
+           
+
+            String submissionStatusJson = processVariable.getValue().toString();
+
+            objectMapper = new ObjectMapper();
+    
+            // Convert JSON -> Map<String, Boolean>
+            Map<String, Boolean> submissionStatusMap;
+            try {
+                submissionStatusMap = objectMapper.readValue(
+                        submissionStatusJson,
+                        new TypeReference<Map<String, Boolean>>() {}
+                );
+            } catch (JsonMappingException e) {
+                throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
+                
+            } catch (JsonProcessingException e) {
+               
+                throw new RestResourceNotFoundException("Error converting submissionStatusDTO to JSON: " + e.getMessage());
+            }
+    
+            // Iterate over map
+            System.out.println("submissionStatusMap: " + submissionStatusMap);
+            for (Map.Entry<String, Boolean> entry : submissionStatusMap.entrySet()) {
+                String plant = entry.getKey();
+                Boolean status = entry.getValue();
+    
+                // If status is false, collect emails
+                if (Boolean.FALSE.equals(status)) {
+                    List<String> emails = plantToEmails.get(plant);
+                    if (emails != null) {
+                        System.out.println("emails: " + emails);
+                        emailsToNotify.addAll(emails);
+                    }
+                }
+        }
+    }
+
+}
+
+
+
+    }
+
+    System.out.println("emailsToNotify: " + emailsToNotify);
+
+
+        
+
+
+    // @Override
+    // public void notifyPlantManagers() {
+          
+    //      // get all the users with role Plant_Manager
+    //      try {
+
+    //          ObjectMapper objectMapper = new ObjectMapper();
+    //          Map<String, List<UUID>> result = new HashMap<>();
+
+    //          // get all the users with role Plant_Manager
+    //        Map<String, Object> users = keycloakUserService.getUsers();
+
+    //         System.out.println("users: " + users);
+    //      } catch (Exception e) {
+    //         e.printStackTrace();
+    //      }
+    // }
+
+}
 
 }

@@ -2,6 +2,7 @@ package com.wks.caseengine.cpp.serviceimpl;
 
 import java.math.BigDecimal;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -61,9 +62,9 @@ public class CPPNormsServiceImpl implements CPPNormsService {
     }
 
     @Override
-    public AOPMessageVM getCPPNorms(UUID cppPlantId, String financialYear) {
+    public AOPMessageVM getCPPNorms(UUID cppPlantId, String financialYear, String fromDate, String toDate) {
         log.info("=== Starting getCPPNorms ===");
-        log.info("CPPPlantId: {}, FinancialYear: {}", cppPlantId, financialYear);
+        log.info("CPPPlantId: {}, FinancialYear: {}, FromDate: {}, ToDate: {}", cppPlantId, financialYear, fromDate, toDate);
 
         AOPMessageVM vm = new AOPMessageVM();
 
@@ -74,6 +75,31 @@ public class CPPNormsServiceImpl implements CPPNormsService {
                 vm.setMessage("CPPPlantId cannot be null");
                 vm.setData(new ArrayList<>());
                 return vm;
+            }
+
+            if (financialYear == null || financialYear.isEmpty()) {
+                log.error("FinancialYear is null or empty");
+                vm.setCode(400);
+                vm.setMessage("FinancialYear cannot be null or empty");
+                vm.setData(new ArrayList<>());
+                return vm;
+            }
+
+            if (fromDate != null && !fromDate.isEmpty() && toDate != null && !toDate.isEmpty()) {
+                log.info("FromDate and ToDate provided, calculating utility norms first...");
+                try {
+                    AOPMessageVM calcResult = calculateUtilityNorms(financialYear, fromDate, toDate);
+                    
+                    if (calcResult.getCode() != 200) {
+                        log.warn("Failed to calculate utility norms: {}. Continuing with existing calculated norms.", calcResult.getMessage());
+                    } else {
+                        log.info("Utility norms calculated successfully: {}", calcResult.getMessage());
+                    }
+                } catch (Exception calcEx) {
+                    log.warn("Exception during utility norms calculation: {}. Continuing with existing calculated norms.", calcEx.getMessage());
+                }
+            } else {
+                log.info("FromDate/ToDate not provided, fetching with existing calculated norms");
             }
 
             StoredProcedureQuery sp = entityManager
@@ -129,11 +155,16 @@ public class CPPNormsServiceImpl implements CPPNormsService {
                 dto.setRemarks(row[idx++] != null ? row[idx - 1].toString() : null);
                 dto.setModifiedBy(row[idx++] != null ? row[idx - 1].toString() : null);
                 dto.setModifiedDate(row[idx++] != null ? row[idx - 1].toString() : null);
+                dto.setActualNorm(row[idx++] != null ? new BigDecimal(row[idx - 1].toString()) : BigDecimal.ZERO);
+                dto.setApplyActualNormToAll(row[idx++] != null ? (Boolean) row[idx - 1] : false);
 
                 dtoList.add(dto);
             }
 
             log.info("Successfully mapped {} CPPNorms records", dtoList.size());
+
+            // Apply business logic: Override applyActualNormToAll if any month differs from ActualNorm
+            applyActualNormOverrideLogic(dtoList);
 
             vm.setCode(200);
             vm.setMessage("Success");
@@ -150,26 +181,34 @@ public class CPPNormsServiceImpl implements CPPNormsService {
     }
 
     @Override
-    public byte[] exportCPPNorms(UUID cppPlantId, String financialYear, boolean isAfterSave, List<CPPNormsResponseDTO> dtoList) {
+    public byte[] exportCPPNorms(UUID cppPlantId, String financialYear, String startDate, String endDate) throws IOException {
+        log.info("=== Starting exportCPPNorms ===");
+        log.info("CPPPlantId: {}, FinancialYear: {}, StartDate: {}, EndDate: {}", cppPlantId, financialYear, startDate, endDate);
+        
         try {
-            if (!isAfterSave) {
-                AOPMessageVM result = getCPPNorms(cppPlantId, financialYear);
-                if (result.getData() instanceof List) {
-                    @SuppressWarnings("unchecked")
-                    List<CPPNormsResponseDTO> data = (List<CPPNormsResponseDTO>) result.getData();
-                    dtoList = data;
-                }
+            // Fetch data with optional date range
+            AOPMessageVM result = getCPPNorms(cppPlantId, financialYear, startDate, endDate);
+            
+            List<CPPNormsResponseDTO> dtoList = new ArrayList<>();
+            if (result.getData() instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<CPPNormsResponseDTO> data = (List<CPPNormsResponseDTO>) result.getData();
+                dtoList = data;
             }
 
-            if (dtoList == null) {
+            if (dtoList == null || dtoList.isEmpty()) {
+                log.warn("No data found for export");
                 dtoList = new ArrayList<>();
             }
+            
+            log.info("Exporting {} CPP norms records", dtoList.size());
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("CPP Norms");
 
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle numericStyle = createNumericStyle(workbook);
 
             int rowNum = 0;
             int col = 0;
@@ -215,6 +254,10 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             headerRow.createCell(col).setCellValue("Remarks");
             headerRow.getCell(col++).setCellStyle(headerStyle);
 
+            int applyActualNormToAllCol = col;
+            headerRow.createCell(col).setCellValue("applyActualNormToAll");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
             int idCol = col;
             headerRow.createCell(col).setCellValue("id");
             headerRow.getCell(col++).setCellStyle(headerStyle);
@@ -230,13 +273,6 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             int normTypeFkIdCol = col;
             headerRow.createCell(col).setCellValue("normTypeFkId");
             headerRow.getCell(col++).setCellStyle(headerStyle);
-
-            if (isAfterSave) {
-                headerRow.createCell(col).setCellValue("Status");
-                headerRow.getCell(col++).setCellStyle(headerStyle);
-                headerRow.createCell(col).setCellValue("Error Description");
-                headerRow.getCell(col++).setCellStyle(headerStyle);
-            }
 
             int totalColumns = col;
 
@@ -256,32 +292,29 @@ public class CPPNormsServiceImpl implements CPPNormsService {
                 setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getNormTypeName(), dataStyle);
 
-                setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 2), dto.getJunNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 3), dto.getJulNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 4), dto.getAugNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 5), dto.getSepNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 6), dto.getOctNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 7), dto.getNovNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 8), dto.getDecNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 9), dto.getJanNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFebNorms(), dataStyle);
-                setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarNorms(), dataStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 2), dto.getJunNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 3), dto.getJulNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 4), dto.getAugNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 5), dto.getSepNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 6), dto.getOctNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 7), dto.getNovNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 8), dto.getDecNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 9), dto.getJanNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFebNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarNorms(), numericStyle);
                 col = monthStartCol + 12;
 
                 setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getApplyActualNormToAll() != null ? dto.getApplyActualNormToAll().toString() : "false", dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getCppNormsId() != null ? dto.getCppNormsId().toString() : null, dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getNormsHeaderFkId() != null ? dto.getNormsHeaderFkId().toString() : null, dataStyle);
                 setStringCellValue(row.createCell(col++), dto.getNormTypeFkId() != null ? dto.getNormTypeFkId().toString() : null, dataStyle);
-
-                if (isAfterSave) {
-                    setStringCellValue(row.createCell(col++), dto.getSaveStatus(), dataStyle);
-                    setStringCellValue(row.createCell(col++), dto.getErrDescription(), dataStyle);
-                }
             }
 
+            sheet.setColumnHidden(applyActualNormToAllCol, true);
             sheet.setColumnHidden(idCol, true);
             sheet.setColumnHidden(cppNormsIdCol, true);
             sheet.setColumnHidden(normsHeaderFkIdCol, true);
@@ -298,19 +331,30 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             workbook.write(outputStream);
             workbook.close();
-            return outputStream.toByteArray();
+            
+            byte[] excelBytes = outputStream.toByteArray();
+            log.info("Excel file generated successfully, size: {} bytes", excelBytes.length);
+            return excelBytes;
 
+        } catch (IOException e) {
+            log.error("IOException while exporting CPP norms", e);
+            throw e;
         } catch (Exception e) {
             log.error("Error exporting CPP norms", e);
-            return null;
+            throw new IOException("Failed to export CPP norms: " + e.getMessage(), e);
         }
     }
 
     @Override
     @Transactional
-    public AOPMessageVM importExcel(UUID cppPlantId, String financialYear, MultipartFile file, String modifiedBy) {
+    public AOPMessageVM importExcel(UUID cppPlantId, String financialYear, MultipartFile file, String modifiedBy) throws IOException {
+        log.info("=== Starting importExcel ===");
+        log.info("CPPPlantId: {}, FinancialYear: {}, FileName: {}, FileSize: {}", 
+                 cppPlantId, financialYear, file.getOriginalFilename(), file.getSize());
+        
         try {
             List<CPPNormsResponseDTO> data = readCPPNorms(file.getInputStream());
+            log.info("Read {} records from Excel file", data.size());
 
             List<CPPNormsRequestDTO> updateRequests = convertToUpdateRequests(data);
             AOPMessageVM saveResponse = saveOrUpdateCPPNorms(updateRequests, financialYear, modifiedBy);
@@ -331,7 +375,7 @@ public class CPPNormsServiceImpl implements CPPNormsService {
                 }
 
                 List<CPPNormsResponseDTO> failedRecords = applyErrorsToDtos(data, errorMessages);
-                byte[] fileByteArray = exportCPPNorms(cppPlantId, financialYear, true, failedRecords);
+                byte[] fileByteArray = exportCPPNormsWithErrors(cppPlantId, financialYear, failedRecords);
                 String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 
                 AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -347,12 +391,162 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             errorVM.setData(saveResponse.getData());
             return errorVM;
 
+        } catch (IOException e) {
+            log.error("IOException while importing CPP norms", e);
+            throw e;
         } catch (Exception e) {
             log.error("Error importing CPP norms", e);
-            AOPMessageVM errorVM = new AOPMessageVM();
-            errorVM.setCode(500);
-            errorVM.setMessage("Error importing file: " + e.getMessage());
-            return errorVM;
+            throw new IOException("Failed to import CPP norms: " + e.getMessage(), e);
+        }
+    }
+    
+    // Helper method for exporting with error information
+    private byte[] exportCPPNormsWithErrors(UUID cppPlantId, String financialYear, List<CPPNormsResponseDTO> dtoList) throws IOException {
+        log.info("Exporting {} failed records with error information", dtoList.size());
+        
+        try {
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("CPP Norms");
+
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle numericStyle = createNumericStyle(workbook);
+
+            int rowNum = 0;
+            int col = 0;
+
+            Row headerRow = sheet.createRow(rowNum++);
+
+            headerRow.createCell(col).setCellValue("Generating Plant");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Utility");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Utility ID");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("UOM");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Account");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Material");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("SAP Code");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Issuing Plant");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Issuing UOM");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("AOP Year");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Norm Type");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            String startYearSuffix = financialYear.substring(2, 4);
+            String endYearSuffix = financialYear.substring(5, 7);
+            String[] months = {"Apr-" + startYearSuffix, "May-" + startYearSuffix, "Jun-" + startYearSuffix, "Jul-" + startYearSuffix,
+                    "Aug-" + startYearSuffix, "Sep-" + startYearSuffix, "Oct-" + startYearSuffix, "Nov-" + startYearSuffix,
+                    "Dec-" + startYearSuffix, "Jan-" + endYearSuffix, "Feb-" + endYearSuffix, "Mar-" + endYearSuffix};
+
+            int monthStartCol = col;
+            for (String month : months) {
+                headerRow.createCell(col).setCellValue(month);
+                headerRow.getCell(col++).setCellStyle(headerStyle);
+            }
+
+            int remarksCol = col;
+            headerRow.createCell(col).setCellValue("Remarks");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int applyActualNormToAllCol = col;
+            headerRow.createCell(col).setCellValue("applyActualNormToAll");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int idCol = col;
+            headerRow.createCell(col).setCellValue("id");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int cppNormsIdCol = col;
+            headerRow.createCell(col).setCellValue("cppNormsId");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int normsHeaderFkIdCol = col;
+            headerRow.createCell(col).setCellValue("normsHeaderFkId");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int normTypeFkIdCol = col;
+            headerRow.createCell(col).setCellValue("normTypeFkId");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            // Add error columns
+            headerRow.createCell(col).setCellValue("Status");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+            headerRow.createCell(col).setCellValue("Error Description");
+            headerRow.getCell(col++).setCellStyle(headerStyle);
+
+            int totalColumns = col;
+
+            for (CPPNormsResponseDTO dto : dtoList) {
+                Row row = sheet.createRow(rowNum++);
+                col = 0;
+
+                setStringCellValue(row.createCell(col++), dto.getGeneratingPlantName(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUtilityName(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUtilityId(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getUom(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getAccountName(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getMaterialName(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getMaterialId(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getIssuingPlantName(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getIssuingUom(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getAopYear(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getNormTypeName(), dataStyle);
+
+                setBigDecimalCellValue(row.createCell(monthStartCol + 0), dto.getAprNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 1), dto.getMayNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 2), dto.getJunNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 3), dto.getJulNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 4), dto.getAugNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 5), dto.getSepNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 6), dto.getOctNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 7), dto.getNovNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 8), dto.getDecNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 9), dto.getJanNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 10), dto.getFebNorms(), numericStyle);
+                setBigDecimalCellValue(row.createCell(monthStartCol + 11), dto.getMarNorms(), numericStyle);
+                col = monthStartCol + 12;
+
+                setStringCellValue(row.createCell(col++), dto.getRemarks(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getApplyActualNormToAll() != null ? dto.getApplyActualNormToAll().toString() : "false", dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getId() != null ? dto.getId().toString() : null, dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getCppNormsId() != null ? dto.getCppNormsId().toString() : null, dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getNormsHeaderFkId() != null ? dto.getNormsHeaderFkId().toString() : null, dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getNormTypeFkId() != null ? dto.getNormTypeFkId().toString() : null, dataStyle);
+
+                setStringCellValue(row.createCell(col++), dto.getSaveStatus(), dataStyle);
+                setStringCellValue(row.createCell(col++), dto.getErrDescription(), dataStyle);
+            }
+
+            sheet.setColumnHidden(applyActualNormToAllCol, true);
+            sheet.setColumnHidden(idCol, true);
+            sheet.setColumnHidden(cppNormsIdCol, true);
+            sheet.setColumnHidden(normsHeaderFkIdCol, true);
+            sheet.setColumnHidden(normTypeFkIdCol, true);
+
+            for (int i = 0; i < totalColumns; i++) {
+                if (i == remarksCol) {
+                    sheet.setColumnWidth(i, 8000);
+                    continue;
+                }
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Error exporting CPP norms with errors", e);
+            throw new IOException("Failed to export error file: " + e.getMessage(), e);
         }
     }
 
@@ -399,6 +593,11 @@ public class CPPNormsServiceImpl implements CPPNormsService {
                     dto.setMarNorms(getBigDecimalCellValue(row.getCell(col++)));
 
                     dto.setRemarks(getStringCellValue(row.getCell(col++)));
+
+                    String applyActualNormToAllStr = getStringCellValue(row.getCell(col++));
+                    if (applyActualNormToAllStr != null && !applyActualNormToAllStr.isEmpty()) {
+                        dto.setApplyActualNormToAll(Boolean.parseBoolean(applyActualNormToAllStr));
+                    }
 
                     String idStr = getStringCellValue(row.getCell(col++));
                     if (idStr != null && !idStr.isEmpty()) {
@@ -464,6 +663,7 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             request.setFebNorms(dto.getFebNorms());
             request.setMarNorms(dto.getMarNorms());
             request.setRemarks(dto.getRemarks());
+            request.setApplyActualNormToAll(dto.getApplyActualNormToAll());
             requests.add(request);
         }
         return requests;
@@ -543,8 +743,23 @@ public class CPPNormsServiceImpl implements CPPNormsService {
         return style;
     }
 
+    private CellStyle createNumericStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        // Set number format to preserve decimal precision (up to 10 decimal places)
+        style.setDataFormat(workbook.createDataFormat().getFormat("0.##########"));
+        return style;
+    }
+
     private void setStringCellValue(Cell cell, String value, CellStyle style) {
-        cell.setCellValue(value != null ? value : "");
+        if (value != null) {
+            cell.setCellValue(value);
+        }
         cell.setCellStyle(style);
     }
 
@@ -555,6 +770,84 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             cell.setCellValue("");
         }
         cell.setCellStyle(style);
+    }
+
+    /**
+     * Apply business logic to override applyActualNormToAll flag.
+     * If applyActualNormToAll is true but any month's norm differs from ActualNorm,
+     * set applyActualNormToAll to false to indicate calculated/modified values.
+     * 
+     * Performance: O(n*12) where n = number of records, but with early exit optimization.
+     * Accuracy: Uses BigDecimal.compareTo() for precise decimal comparison.
+     * 
+     * @param dtoList List of CPPNormsResponseDTO to process
+     */
+    private void applyActualNormOverrideLogic(List<CPPNormsResponseDTO> dtoList) {
+        if (dtoList == null || dtoList.isEmpty()) {
+            return;
+        }
+
+        int overrideCount = 0;
+        
+        for (CPPNormsResponseDTO dto : dtoList) {
+            // Only check if applyActualNormToAll is currently true
+            if (dto.getApplyActualNormToAll() != null && dto.getApplyActualNormToAll()) {
+                BigDecimal actualNorm = dto.getActualNorm();
+                
+                // If actualNorm is null, skip (no data to process)
+                if (actualNorm == null) {
+                    continue;
+                }
+                
+                // Check if ANY month differs from ActualNorm (early exit on first difference)
+                // This includes the case where actualNorm=0 but months have values (calculated norms)
+                if (hasAnyMonthDifferentFromActual(dto, actualNorm)) {
+                    dto.setApplyActualNormToAll(false);
+                    overrideCount++;
+                }
+            }
+        }
+        
+        if (overrideCount > 0) {
+            log.info("Overridden applyActualNormToAll for {} records where month values differ from ActualNorm", overrideCount);
+        }
+    }
+
+    /**
+     * Optimized check if any month's norm value differs from the actual norm.
+     * Uses early exit strategy - returns true immediately on first difference found.
+     * 
+     * Performance: Best case O(1), Worst case O(12) - exits early on first difference.
+     * Accuracy: Uses BigDecimal.compareTo() for exact decimal comparison.
+     * 
+     * @param dto CPPNormsResponseDTO containing month norms
+     * @param actualNorm The actual norm value to compare against
+     * @return true if any month differs from actualNorm, false otherwise
+     */
+    private boolean hasAnyMonthDifferentFromActual(CPPNormsResponseDTO dto, BigDecimal actualNorm) {
+        // Array of month values for efficient iteration (avoids 12 separate if statements)
+        BigDecimal[] monthNorms = {
+            dto.getAprNorms(), dto.getMayNorms(), dto.getJunNorms(),
+            dto.getJulNorms(), dto.getAugNorms(), dto.getSepNorms(),
+            dto.getOctNorms(), dto.getNovNorms(), dto.getDecNorms(),
+            dto.getJanNorms(), dto.getFebNorms(), dto.getMarNorms()
+        };
+        
+        // Early exit optimization: return true immediately on first difference
+        for (BigDecimal monthNorm : monthNorms) {
+            // Skip null values (month not set)
+            if (monthNorm == null) {
+                continue;
+            }
+            
+            // Use BigDecimal.compareTo() for accurate decimal comparison
+            // compareTo returns 0 if equal, non-zero if different
+            if (monthNorm.compareTo(actualNorm) != 0) {
+                return true; // Early exit - found a difference
+            }
+        }
+        
+        return false; // All months match actualNorm
     }
 
     private String getStringCellValue(Cell cell) {
@@ -639,6 +932,7 @@ public class CPPNormsServiceImpl implements CPPNormsService {
                             .registerStoredProcedureParameter("Feb_Norms", BigDecimal.class, ParameterMode.IN)
                             .registerStoredProcedureParameter("Mar_Norms", BigDecimal.class, ParameterMode.IN)
                             .registerStoredProcedureParameter("Remarks", String.class, ParameterMode.IN)
+                            .registerStoredProcedureParameter("ApplyActualNormToAll", Boolean.class, ParameterMode.IN)
                             .registerStoredProcedureParameter("ModifiedBy", String.class, ParameterMode.IN);
 
                     sp.setParameter("Id", dto.getCppNormsId());
@@ -659,6 +953,7 @@ public class CPPNormsServiceImpl implements CPPNormsService {
                     sp.setParameter("Feb_Norms", dto.getFebNorms());
                     sp.setParameter("Mar_Norms", dto.getMarNorms());
                     sp.setParameter("Remarks", dto.getRemarks());
+                    sp.setParameter("ApplyActualNormToAll", dto.getApplyActualNormToAll() != null ? dto.getApplyActualNormToAll() : false);
                     sp.setParameter("ModifiedBy", modifiedBy);
 
                     sp.execute();
@@ -692,6 +987,68 @@ public class CPPNormsServiceImpl implements CPPNormsService {
             vm.setCode(500);
             vm.setMessage("Error: " + e.getMessage());
             vm.setData(null);
+        }
+
+        return vm;
+    }
+
+    private AOPMessageVM calculateUtilityNorms(String financialYear, String fromDate, String toDate) {
+        log.info("=== Starting calculateUtilityNorms ===");
+        log.info("FinancialYear: {}, FromDate: {}, ToDate: {}", financialYear, fromDate, toDate);
+
+        AOPMessageVM vm = new AOPMessageVM();
+
+        try {
+            if (financialYear == null || financialYear.isEmpty()) {
+                log.error("FinancialYear is null or empty");
+                vm.setCode(400);
+                vm.setMessage("FinancialYear cannot be null or empty");
+                vm.setData(new ArrayList<>());
+                return vm;
+            }
+
+            if (fromDate == null || fromDate.isEmpty()) {
+                log.error("FromDate is null or empty");
+                vm.setCode(400);
+                vm.setMessage("FromDate cannot be null or empty");
+                vm.setData(new ArrayList<>());
+                return vm;
+            }
+
+            if (toDate == null || toDate.isEmpty()) {
+                log.error("ToDate is null or empty");
+                vm.setCode(400);
+                vm.setMessage("ToDate cannot be null or empty");
+                vm.setData(new ArrayList<>());
+                return vm;
+            }
+
+            StoredProcedureQuery sp = entityManager
+                    .createStoredProcedureQuery("dbo.CPP_FixedUtilityCalculatedNorms")
+                    .registerStoredProcedureParameter(1, String.class, ParameterMode.IN)
+                    .registerStoredProcedureParameter(2, String.class, ParameterMode.IN)
+                    .registerStoredProcedureParameter(3, String.class, ParameterMode.IN);
+
+            sp.setParameter(1, financialYear);
+            sp.setParameter(2, fromDate);
+            sp.setParameter(3, toDate);
+
+            log.info("Executing stored procedure dbo.CPP_FixedUtilityCalculatedNorms ...");
+            sp.execute();
+
+            @SuppressWarnings("unchecked")
+            List<Object[]> rawResults = sp.getResultList();
+            log.info("Calculated norms result count: {}", rawResults.size());
+
+            vm.setCode(200);
+            vm.setMessage(String.format("Successfully calculated and saved %d utility norms records", rawResults.size()));
+            vm.setData(rawResults.size());
+
+        } catch (Exception e) {
+            log.error("=== ERROR in calculateUtilityNorms ===", e);
+            vm.setCode(500);
+            vm.setMessage("Error: " + e.getMessage());
+            vm.setData(0);
         }
 
         return vm;

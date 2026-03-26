@@ -7,6 +7,7 @@ import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
+import { configurationAndReportManualEntryResponse } from '../dummyData'
 
 const Configuration = () => {
   const keycloak = useSession()
@@ -32,7 +33,7 @@ const Configuration = () => {
 
   const columns = [
     {
-      field: 'particulars',
+      field: 'productName',
       title: 'Particulars',
       widthT: 250,
       minWidth: 200,
@@ -41,7 +42,7 @@ const Configuration = () => {
       hidden: false,
     },
     {
-      field: 'uom',
+      field: 'UOM',
       title: 'UOM',
       widthT: 80,
       minWidth: 60,
@@ -192,28 +193,43 @@ const Configuration = () => {
 
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
-      // fetchConfigurationData()
+      fetchConfigurationData()
     }
   }, [PLANT_ID, AOP_YEAR])
 
   const fetchConfigurationData = async () => {
     setLoading(true)
     try {
-      const res = await ProductionNormsApiService.getConfigurationData(
+      const response = await ProductionNormsApiService.getConfigurationData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
 
-      if (res?.length === 0) {
+      if (response?.code !== 200) {
+        setRows([])
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Failed to fetch data',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      // const res = response?.data || []
+      const res = []
+
+      if (res.length === 0) {
         setRows([])
         setSnackbarOpen(true)
         setSnackbarData({ message: 'No data found', severity: 'info' })
+        setLoading(false)
         return
       }
 
       console.log('Configuration data:', res)
-      const formattedData = res?.map((item, index) => ({
+      const formattedData = res.map((item, index) => ({
         ...item,
         remarks: item.remarks || '',
         id: item?.id || index + 1,
@@ -308,6 +324,7 @@ const Configuration = () => {
         keycloak,
         AOP_YEAR,
         payload,
+        PLANT_ID,
       )
 
       setModifiedCells({})
@@ -316,6 +333,7 @@ const Configuration = () => {
         message: `Successfully saved ${modifiedData.length} changes!`,
         severity: 'success',
       })
+      await fetchConfigurationData()
     } catch (error) {
       console.error('Error saving configuration data:', error)
       setSnackbarOpen(true)
@@ -464,6 +482,7 @@ const Configuration = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
+        groupBy={['TypeDisplayName']}
         // customHeight={60}
         paginationConfig={{
           threshold: 100,

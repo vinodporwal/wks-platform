@@ -5,6 +5,7 @@ import {
   isColumnMenuFilterActive,
   isColumnMenuSortActive,
 } from '@progress/kendo-react-grid'
+import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import GenericDropdown from 'components/aop-phase-two/common/utilities/GenericDropdown'
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react'
@@ -12,6 +13,7 @@ import '../../../../../src/kendo-data-grid.css'
 import '../../css/advance-kendo-table.css'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
+import { handleTabKeyNavigation, applyDateCalculations } from './utility'
 import RemarkDialog from './components/RemarkDialog'
 import DeleteDialog from './components/DeleteDialog'
 import SaveConfirmationDialog from './components/SaveConfirmationDialog'
@@ -19,6 +21,7 @@ import ApproveDialog from '../../tcs/TcsInput/workflow/ApproveDialog'
 import { TextCellEditorUpdated } from '../utilities/TextCellEditorUpdated'
 import { SelectCellEditor } from '../utilities/SelectCellEditor'
 import { MultiselectCellEditor } from '../utilities/MultiselectCellEditor'
+import { ConditionalCellEditor } from '../utilities/ConditionalCellEditor'
 import { ExcelExport } from '../../../../../node_modules/@progress/kendo-react-excel-export/index'
 import { NumberCellEditor } from '../utilities/NumberCellEditor'
 import { SvgIcon } from '../../../../../node_modules/@progress/kendo-react-common/index'
@@ -26,6 +29,12 @@ import { trashIcon } from '../../../../../node_modules/@progress/kendo-svg-icons
 import { Tooltip } from '../../../../../node_modules/@progress/kendo-react-tooltip/index'
 import { BooleanCellEditor } from '../utilities/BooleanCellEditor'
 import { NumericEditorWithMinMax } from '../utilities/NumericEditorWithMinMax'
+import {
+  RadioCellEditor,
+  RadioDisplayCell,
+  InlineRadioCellEditor,
+  InlineRadioDisplayCell,
+} from '../utilities/RadioCellEditor'
 import {
   Backdrop,
   Box,
@@ -43,8 +52,8 @@ import {
 import { NoSpinnerNumericEditor } from '../utilities/numbericColumns'
 import { getColumnMenuDateFilter } from '../utilities/ColumnMenuDateFilter'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
-import valueFormatterByUOM from '../commonUtilityFunctions'
 import DateTimePickerEditor from '../utilities/DatePickeronSelectedYr'
+import dataGridStore from 'store/reducers/dataGridStore'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -55,6 +64,25 @@ const getNestedValue = (obj, path) => {
     value = value?.[part]
   }
   return value
+}
+
+// Helper function to extract flat row sequence from grouped data
+const extractFlatRowsFromGrouped = (data) => {
+  const flatRows = []
+  const traverse = (items) => {
+    if (!items || !Array.isArray(items)) return
+    items.forEach((item) => {
+      if (item.items && Array.isArray(item.items)) {
+        // This is a group header, traverse its children
+        traverse(item.items)
+      } else {
+        // This is an actual data row
+        flatRows.push(item)
+      }
+    })
+  }
+  traverse(data)
+  return flatRows
 }
 
 // Helper function to apply Kendo number format
@@ -82,13 +110,6 @@ const applyKendoNumberFormat = (value, format) => {
   return value
 }
 
-export const particulars = [
-  'normParameterId',
-  'normParametersFKId',
-  'NormParameterFKId',
-  'materialFkId',
-  'normParameterFKId',
-]
 export const hiddenFields = [
   'maintenanceId',
   'id',
@@ -173,10 +194,24 @@ const AdvanceKendoTable = ({
   customHeight = null,
   customAddRow = null,
   customActionCell = null,
+  externalCustomModifiedCells = null,
+  externalSetCustomModifiedCells = null,
 }) => {
+  const {
+    plantObject,
+    year,
+    oldYear,
+    yearChanged,
+    verticalObject,
+    siteObject,
+  } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+
   const fileInputRef = useRef(null)
   const minGridWidth = useRef(0)
   const gridRef = useRef(null)
+  const gridContainerRef = useRef(null)
+  const activeCellRef = useRef({ rowId: null, field: null })
   const _export = useRef(null)
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -189,16 +224,46 @@ const AdvanceKendoTable = ({
   const [issRowEdited, setIsRowEdited] = useState(false)
   const [applyMinWidth, setApplyMinWidth] = useState(false)
   const [gridCurrent, setGridCurrent] = useState(0)
-  const [customModifiedCells, setCustomModifiedCells] = useState({})
+  const [internalCustomModifiedCells, setInternalCustomModifiedCells] =
+    useState({})
   const [disableRedHighlight, setDisableRedHighlight] = useState(false)
+
+  // Use external customModifiedCells if provided, otherwise use internal
+  const customModifiedCells =
+    externalCustomModifiedCells !== null
+      ? externalCustomModifiedCells
+      : internalCustomModifiedCells
+  const setCustomModifiedCells =
+    externalSetCustomModifiedCells !== null
+      ? externalSetCustomModifiedCells
+      : setInternalCustomModifiedCells
+
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
   const ColumnMenuCheckboxFilterDate = getColumnMenuDateFilter(rows)
   const initialGroup = Array.isArray(groupBy)
-    ? groupBy.map((field) => ({ field }))
+    ? groupBy.map((field) => ({ field, dir: undefined }))
     : groupBy
       ? [{ field: groupBy, dir: undefined }]
       : []
+
+  // Process grouped data to get flat row sequence for tab navigation
+  const processedFlatRows = useMemo(() => {
+    if (!groupBy || initialGroup.length === 0) {
+      return rows
+    }
+
+    const processedData = process(rows, {
+      group: initialGroup,
+      sort: sort,
+      filter: filter,
+    })
+
+    return extractFlatRowsFromGrouped(processedData.data)
+  }, [rows, groupBy, initialGroup, sort, filter])
 
   // Build pagination configuration with defaults
   const getPaginationConfig = useCallback(() => {
@@ -344,7 +409,14 @@ const AdvanceKendoTable = ({
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
-    // }
+    // e.edit = { rowId: [field] } — extract active cell
+    if (e.edit && typeof e.edit === 'object') {
+      const rowId = Object.keys(e.edit)[0]
+      const field = e.edit[rowId]?.[0]
+      if (rowId && field) {
+        activeCellRef.current = { rowId, field }
+      }
+    }
   }, [])
 
   // Helper function to add IST timezone offset (+5:30) to dates before sending to backend
@@ -424,6 +496,29 @@ const AdvanceKendoTable = ({
       }
 
       const itemId = dataItem.id
+
+      // First update modifiedCells to accumulate all changes
+      let updatedModifiedCells
+      setModifiedCells((prev) => {
+        // Merge with previous modified cells to get all accumulated changes
+        const previousModified = prev[itemId] || {}
+        const base = { ...dataItem, ...previousModified, [field]: value }
+
+        // Apply date calculations if config is provided (convert dates to ISO strings)
+        const dateUpdates = applyDateCalculations(
+          base,
+          field,
+          value,
+          dateCalculationConfig,
+          true,
+        )
+        Object.assign(base, dateUpdates)
+
+        updatedModifiedCells = base
+        return { ...prev, [itemId]: base }
+      })
+
+      // Then update rows using the accumulated modified data
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== itemId) return r
@@ -444,38 +539,21 @@ const AdvanceKendoTable = ({
             updated[field] = value
           }
 
-          if (dateCalculationConfig) {
-            const {
-              dateField1,
-              dateField2,
-              daysField,
-              requiredInHr,
-              roundDaysAndDates,
-            } = dateCalculationConfig
+          // Apply date calculations using the accumulated modified data
+          if (updatedModifiedCells && dateCalculationConfig) {
+            const { dateField1, dateField2, daysField } = dateCalculationConfig
+            // Copy calculated date fields from modifiedCells (which has ISO strings)
+            if (updatedModifiedCells[dateField1] && field !== dateField1) {
+              updated[dateField1] = new Date(updatedModifiedCells[dateField1])
+            }
+            if (updatedModifiedCells[dateField2] && field !== dateField2) {
+              updated[dateField2] = new Date(updatedModifiedCells[dateField2])
+            }
             if (
-              dateField1 in updated &&
-              dateField2 in updated &&
-              daysField in updated
+              updatedModifiedCells[daysField] !== undefined &&
+              field !== daysField
             ) {
-              if (field === dateField1 || field === dateField2) {
-                const duration = recalcDuration(
-                  updated[dateField1],
-                  updated[dateField2],
-                  requiredInHr,
-                )
-                updated[daysField] = roundDaysAndDates
-                  ? Math.floor(duration)
-                  : duration
-              } else if (field === daysField) {
-                const newEnd = recalcEndDate(
-                  updated[dateField1],
-                  value,
-                  requiredInHr,
-                )
-                if (newEnd) {
-                  updated[dateField2] = newEnd
-                }
-              }
+              updated[daysField] = updatedModifiedCells[daysField]
             }
           }
 
@@ -483,79 +561,20 @@ const AdvanceKendoTable = ({
         }),
       )
 
-      setModifiedCells((prev) => {
-        const base = { ...dataItem, [field]: value }
-
-        if (dateCalculationConfig) {
-          const {
-            dateField1,
-            dateField2,
-            daysField,
-            requiredInHr,
-            roundDaysAndDates,
-          } = dateCalculationConfig
-          if (dateField1 in base && dateField2 in base && daysField in base) {
-            if (field === dateField1 || field === dateField2) {
-              const duration = recalcDuration(
-                base[dateField1],
-                base[dateField2],
-                requiredInHr,
-              )
-              base[daysField] = roundDaysAndDates
-                ? Math.floor(duration)
-                : duration
-            } else if (field === daysField) {
-              const newEnd = recalcEndDate(
-                base[dateField1],
-                value,
-                requiredInHr,
-              )
-              if (newEnd) base[dateField2] = newEnd.toISOString()
-            }
-          }
-        }
-
-        return { ...prev, [itemId]: base }
-      })
-
       // customModifiedCells: always set per-row custom changes (include months if percentChange)
       setCustomModifiedCells((prev) => {
         const base = { ...(prev[itemId] || {}), [field]: value }
 
-        if (dateCalculationConfig) {
-          const {
-            dateField1,
-            dateField2,
-            daysField,
-            requiredInHr,
-            roundDaysAndDates,
-          } = dateCalculationConfig
-          if (
-            dateField1 in dataItem &&
-            dateField2 in dataItem &&
-            daysField in dataItem
-          ) {
-            if (field === dateField1 || field === dateField2) {
-              // When dates change, also highlight the calculated duration field
-              const calculatedDuration = recalcDuration(
-                field === dateField1 ? value : dataItem[dateField1],
-                field === dateField2 ? value : dataItem[dateField2],
-                requiredInHr,
-              )
-              base[daysField] = roundDaysAndDates
-                ? Math.floor(calculatedDuration)
-                : calculatedDuration
-            } else if (field === daysField) {
-              // When duration changes, also highlight the calculated end date field
-              const newEnd = recalcEndDate(
-                dataItem[dateField1],
-                value,
-                requiredInHr,
-              )
-              if (newEnd) base[dateField2] = newEnd.toISOString()
-            }
-          }
-        }
+        // For customModifiedCells, use dataItem as source for unchanged fields
+        const sourceData = { ...dataItem, ...base }
+        const dateUpdates = applyDateCalculations(
+          sourceData,
+          field,
+          value,
+          dateCalculationConfig,
+          true,
+        )
+        Object.assign(base, dateUpdates)
 
         return {
           ...prev,
@@ -571,7 +590,44 @@ const AdvanceKendoTable = ({
     [setRows, setModifiedCells, setCustomModifiedCells, customItemChange],
   )
 
+  // Handle Tab key navigation between editable cells in the grid
+  const onTabKeyPressed = (e) => {
+    handleTabKeyNavigation({
+      e,
+      activeCellRef,
+      columns,
+      hiddenFields,
+      rows: processedFlatRows, // Use processed flat rows for correct grouped sequence
+      setRows,
+      setEdit,
+      extractAllColumns,
+    })
+  }
+
   const prevModifiedCellsRef = useRef(modifiedCells)
+
+  // Close inline edit mode when user clicks outside the grid container
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      // Check if click is on Kendo popup/portal elements (dropdown, date picker, etc.)
+      const isKendoPopup = e.target.closest(
+        '.k-animation-container, .k-popup, .k-list-container, .k-calendar-container',
+      )
+
+      if (
+        gridContainerRef.current &&
+        !gridContainerRef.current.contains(e.target) &&
+        !isKendoPopup // Don't close if clicking on Kendo popup elements
+      ) {
+        setRows((prev) =>
+          prev.map((r) => (r.inEdit ? { ...r, inEdit: false } : r)),
+        )
+        setEdit({})
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [setRows])
 
   useEffect(() => {
     const isModifiedCellsEmpty = Object.keys(modifiedCells).length === 0
@@ -706,7 +762,7 @@ const AdvanceKendoTable = ({
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
         <SvgIcon
-          onClick={() => handleDeleteClick(dataItem)}
+          onClick={() => !READ_ONLY && handleDeleteClick(dataItem)}
           icon={trashIcon}
           themeColor='dark'
         />
@@ -741,7 +797,15 @@ const AdvanceKendoTable = ({
   }
 
   const RemarkCell = (props) => {
-    const { dataItem, field, onRemarkClick, ...tdProps } = props
+    const {
+      dataItem,
+      field,
+      onRemarkClick,
+      isSorted,
+      tdProps,
+      selectionChange,
+      ...restProps
+    } = props
     const rawValue = dataItem[field]
     const displayText = String(rawValue ?? '')
     const rowId = dataItem.id
@@ -759,7 +823,7 @@ const AdvanceKendoTable = ({
 
     return (
       <td
-        {...tdProps}
+        {...restProps}
         title={displayText}
         style={{
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
@@ -1055,6 +1119,7 @@ const AdvanceKendoTable = ({
 
   const SimpleHeaderWithTooltip = (props) => {
     const { ariaSort, ...restThProps } = props.thProps || {}
+    const subtitle = props.subtitle
 
     return (
       <th
@@ -1064,7 +1129,7 @@ const AdvanceKendoTable = ({
         style={{
           padding: '0px',
           borderRight: '1px solid #878787',
-          textAlign: 'center',
+          textAlign: 'start',
           width: { ...restThProps['width'] },
         }}
       >
@@ -1074,10 +1139,32 @@ const AdvanceKendoTable = ({
           parentTitle={true}
           className='test'
         >
-          {props.children}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div>{props.children}</div>
+            {subtitle && (
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 'normal',
+                  fontStyle: 'italic',
+                }}
+              >
+                {subtitle}
+              </div>
+            )}
+          </div>
         </Tooltip>
       </th>
     )
+  }
+
+  // Helper to create header cell with subtitle
+  const createHeaderWithSubtitle = (subtitle) => {
+    const HeaderWithSubtitle = (props) => (
+      <SimpleHeaderWithTooltip {...props} subtitle={subtitle} />
+    )
+    HeaderWithSubtitle.displayName = `HeaderWithSubtitle(${subtitle})`
+    return HeaderWithSubtitle
   }
 
   const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
@@ -1170,11 +1257,13 @@ const AdvanceKendoTable = ({
             cells={{
               edit: { date: DateOnlyPicker },
               data: toolTipRenderer,
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             format='{0:dd-MM-yyyy}'
             editor='date'
-            editable={col.editable || false}
+            editable={isEditable}
             hidden={col.hidden}
             className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
@@ -1203,7 +1292,9 @@ const AdvanceKendoTable = ({
                   format={col.format}
                 />
               ),
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             format={
               col.type == 'dateTime'
@@ -1214,6 +1305,8 @@ const AdvanceKendoTable = ({
             hidden={col.hidden}
             filter='date'
             columnMenu={ColumnMenuCheckboxFilterDate}
+            editable={isEditable}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={col?.width}
           />
         )
@@ -1224,7 +1317,7 @@ const AdvanceKendoTable = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
-            editable={col.editable || false}
+            editable={isEditable}
             columnMenu={ColumnMenuCheckboxFilter}
             hidden={col.hidden}
             format={'{0:n2}'}
@@ -1244,13 +1337,17 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            className={'k-number-right'}
-            editable={col?.editable ? true : false}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               edit: { text: NoSpinnerNumericEditor },
               data: toolTipRenderer,
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
@@ -1267,8 +1364,10 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            className={'k-number-right-disabled'}
-            editable={col?.editable ? true : false}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               edit: { text: NoSpinnerNumericEditor },
@@ -1291,7 +1390,9 @@ const AdvanceKendoTable = ({
                     format={col.format}
                   />
                 ),
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
@@ -1315,7 +1416,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1351,7 +1452,9 @@ const AdvanceKendoTable = ({
                     format={col.format}
                   />
                 ),
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
@@ -1368,7 +1471,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -1398,7 +1501,9 @@ const AdvanceKendoTable = ({
                     format={col.format}
                   />
                 ),
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
@@ -1416,16 +1521,90 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: { text: TextCellEditorUpdated },
               data: toolTipRenderer,
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             // filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Row-Based Type - uses custom cells from RowBasedKendoTable wrapper
+      if (col.type === 'row-based' && col.cells) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={col.cells}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Conditional Type - handles both dropdown and numeric based on row data
+      if (col.type === 'conditional') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <ConditionalCellEditor {...cellProps} format={col.format} />
+                ),
+              },
+              data: (props) =>
+                showThreeColors ? (
+                  <RedHighlightCell2
+                    {...props}
+                    customModifiedCells={customModifiedCells}
+                    allRedCell={allRedCell}
+                    allRedCell2={allRedCell2}
+                    disableRedHighlight={disableRedHighlight}
+                    format={col.format}
+                  />
+                ) : (
+                  <RedHighlightCell
+                    {...props}
+                    customModifiedCells={customModifiedCells}
+                    allRedCell={allRedCell}
+                    disableRedHighlight={disableRedHighlight}
+                    format={col.format}
+                  />
+                ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
             format={col.format}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
@@ -1440,7 +1619,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             cells={{
               edit: {
                 text: (cellProps) => (
@@ -1454,9 +1633,12 @@ const AdvanceKendoTable = ({
                 ),
               },
               data: toolTipRenderer,
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
         )
@@ -1470,7 +1652,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             cells={{
               edit: {
                 text: (cellProps) => (
@@ -1485,9 +1667,12 @@ const AdvanceKendoTable = ({
                 ),
               },
               data: toolTipRenderer,
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
         )
@@ -1501,8 +1686,8 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
-            className={!col?.editable ? 'k-right-disabled' : undefined}
+            editable={isEditable}
+            className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
             cells={{
               edit: {
@@ -1523,7 +1708,97 @@ const AdvanceKendoTable = ({
                   disableRedHighlight={disableRedHighlight}
                 />
               ),
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Number with Inline Radio Type Handler
+      if (col.type === 'numberWithRadio') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            editable={isEditable}
+            className={
+              !isEditable ? 'k-number-right-disabled' : 'k-number-right'
+            }
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <InlineRadioCellEditor
+                    {...cellProps}
+                    radioGroupField={
+                      col.radioGroupField || 'selectedHeatRateSource'
+                    }
+                    targetField={col.targetField || 'finalHeatRate'}
+                    radioValue={col.radioValue}
+                    isNumberEditable={col.numericEditable || false}
+                  />
+                ),
+              },
+              data: (cellProps) => (
+                <InlineRadioDisplayCell
+                  {...cellProps}
+                  radioGroupField={
+                    col.radioGroupField || 'selectedHeatRateSource'
+                  }
+                  format={col.format}
+                  radioValue={col.radioValue}
+                  customModifiedCells={customModifiedCells}
+                  isNumberEditable={col.numericEditable || false}
+                />
+              ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
+      // Radio Type Handler
+      if (col.type === 'radio') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            editable={isEditable}
+            className={!isEditable ? 'k-right-disabled' : undefined}
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <RadioCellEditor
+                    {...cellProps}
+                    sourceFields={col.sourceFields || []}
+                    targetField={col.targetField || ''}
+                  />
+                ),
+              },
+              data: (cellProps) => (
+                <RadioDisplayCell
+                  {...cellProps}
+                  sourceFields={col.sourceFields || []}
+                />
+              ),
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
             width={setWidth(col?.minWidth || col?.widthT)}
@@ -1547,7 +1822,7 @@ const AdvanceKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             cells={{
               edit: {
                 text: (cellProps) => (
@@ -1561,9 +1836,12 @@ const AdvanceKendoTable = ({
                 ),
               },
               data: toolTipRenderer,
-              headerCell: SimpleHeaderWithTooltip,
+              headerCell: col.subtitle
+                ? createHeaderWithSubtitle(col.subtitle)
+                : SimpleHeaderWithTooltip,
             }}
             columnMenu={ColumnMenuCheckboxFilter}
+            className={!isEditable ? 'non-editable-cell' : ''}
             width={setWidth(col?.minWidth || col?.widthT)}
           />
         )
@@ -1579,7 +1857,9 @@ const AdvanceKendoTable = ({
           cells={{
             edit: { text: NoSpinnerNumericEditor },
             data: toolTipRenderer,
-            headerCell: SimpleHeaderWithTooltip,
+            headerCell: col.subtitle
+              ? createHeaderWithSubtitle(col.subtitle)
+              : SimpleHeaderWithTooltip,
           }}
           className={`${!isEditable ? 'non-editable-cell' : ''}`}
           columnMenu={ColumnMenuCheckboxFilter}
@@ -1818,7 +2098,7 @@ const AdvanceKendoTable = ({
           },
         }}
       > */}
-      <div className='kendo-data-grid'>
+      <div className='kendo-data-grid' ref={gridContainerRef}>
         <Tooltip openDelay={50} position='auto' anchorElement='target'>
           <ExcelExport
             data={rows}
@@ -1850,6 +2130,7 @@ const AdvanceKendoTable = ({
               filter={filter}
               onFilterChange={(e) => setFilter(e.filter)}
               onItemChange={itemChange}
+              onKeyDown={(e) => onTabKeyPressed(e)}
               resizable={true}
               defaultSkip={0}
               defaultGroup={initialGroup}
@@ -1869,7 +2150,7 @@ const AdvanceKendoTable = ({
                 sort,
               )}
 
-              {permissions?.deleteButton && (
+              {!READ_ONLY && permissions?.deleteButton && (
                 <GridColumn
                   key='actions'
                   field='actions'
@@ -1910,6 +2191,7 @@ const AdvanceKendoTable = ({
         message={snackbarData?.message || ''}
         severity={snackbarData?.severity || 'info'}
         onClose={() => setSnackbarOpen(false)}
+        autoHide={snackbarData?.autoHide}
       />
 
       {/* Delete Dialog */}

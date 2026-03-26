@@ -63,6 +63,75 @@ export const ShutDownAllColumns = [
     editable: true,
   },
 ]
+export const ShutDown_Elastomer_JMD_Columns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD - From',
+  //   editable: true,
+  // },
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD - To',
+  //   editable: true,
+  // },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+  },
+]
+
+export const SlowdownConfigColumns = [
+  {
+    field: 'description',
+    title: 'Slowdown Desc',
+    editable: true,
+  },
+
+  {
+    field: 'maintStartDateTime',
+    title: 'SD - From',
+    editable: true,
+  },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (Hrs)',
+    editable: true,
+  },
+
+  {
+    field: 'rate',
+    title: 'Rate',
+    editable: true,
+  },
+  {
+    field: 'remarks',
+    title: 'Remarks',
+    editable: true,
+  },
+]
 
 // PE Shutdown Columns (adds productName)
 export const ShutDownPeColumns = [
@@ -182,10 +251,57 @@ export const ShutDownPpColumns = [
     editable: true,
   },
 ]
+export const ShutDownPpDtaColumns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+  {
+    field: 'lineId',
+    title: 'Line',
+    type: 'lineDropdown',
+    editable: true,
+    width: 130,
+  },
+  // {
+  //   field: 'productName1',
+  //   title: 'Particulars',
+  //   editable: true,
+  //   widthT: 130,
+  // },
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'maintStartDateTime',
+    title: 'SD - From',
+    editable: true,
+  },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
+  },
+]
 
 export const ShutDownPTAColumns = [
   {
-    field: 'discriptionDrpdwn',
+    field: 'discription',
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
@@ -221,10 +337,52 @@ export const ShutDownPTAColumns = [
 
 export const ShutDownPTADMDColumns = [
   {
-    field: 'discriptionDrpdwn',
+    field: 'discription',
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD - From',
+  //   editable: true,
+  // },
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD - To',
+  //   editable: true,
+  // },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
+  },
+]
+export const ShutDownChemicalColumns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
   },
 
   {

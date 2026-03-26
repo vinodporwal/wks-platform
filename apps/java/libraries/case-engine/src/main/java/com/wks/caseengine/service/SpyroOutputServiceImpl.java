@@ -3,11 +3,15 @@ package com.wks.caseengine.service;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +39,7 @@ import com.wks.caseengine.dto.SpyroOutputDTO;
 import com.wks.caseengine.dto.YieldDMDDTO;
 import com.wks.caseengine.dto.YieldDTO;
 import com.wks.caseengine.dto.YieldParticularDTO;
+import com.wks.caseengine.dto.YieldVMDDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.NormAttributeTransactions;
 import com.wks.caseengine.entity.NormParameters;
@@ -57,6 +62,9 @@ import com.wks.caseengine.utility.Utility;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+
+import org.hibernate.Session;
+
 
 @Service
 public class SpyroOutputServiceImpl implements SpyroOutputService{
@@ -184,6 +192,130 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+
+	@Override
+	public AOPMessageVM getDynamicYield(String plantId, String year, String mode) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		try {
+			List<Object[]> results = getDynamicYieldData(plantId, year, mode);
+			List<String> columnNames = getDynamicYieldColumns(plantId, year, mode);
+
+			List<Map<String, Object>> resultList = new ArrayList<>();
+			for (Object[] row : results) {
+				Map<String, Object> rowMap = new LinkedHashMap<>();
+				for (int i = 0; i < columnNames.size(); i++) {
+					rowMap.put(columnNames.get(i), row[i]);
+				}
+				resultList.add(rowMap);
+			}
+
+			Map<String, Object> data = new HashMap<>();
+			data.put("data", resultList);
+			data.put("columns", getDynamicYieldColumnMetadata(plantId, year, mode));
+
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("SP Executed successfully");
+			aopMessageVM.setData(data);
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch yield data", ex);
+		}
+	}
+
+	private List<Object[]> getDynamicYieldData(String plantId, String year, String mode) {
+		try {
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetYield";
+			String sql = "EXEC " + storedProcedure + " @plantId = :plantId, @aopYear = :aopYear, @mode = :mode";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", year);
+			query.setParameter("mode", mode);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch yield data", ex);
+		}
+	}
+
+	private List<String> getDynamicYieldColumns(String plantId, String year, String mode) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<String> columnNames = new ArrayList<>();
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetYield";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?, @mode = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				ps.setString(3, mode);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						columnNames.add(rsMetaData.getColumnLabel(i));
+					}
+				}
+			}
+			return columnNames;
+		});
+	}
+
+	private List<Map<String, Object>> getDynamicYieldColumnMetadata(String plantId, String year, String mode) {
+		return entityManager.unwrap(Session.class).doReturningWork(connection -> {
+			List<Map<String, Object>> columnMetadata = new ArrayList<>();
+
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			Sites site = siteRepository.findById(plant.getSiteFkId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+			String storedProcedure = vertical.getName() + "_" + site.getName() + "_GetYield";
+			String sql = "EXEC " + storedProcedure + " @plantId = ?, @aopYear = ?, @mode = ?";
+
+			try (PreparedStatement ps = connection.prepareStatement(sql)) {
+				ps.setString(1, plantId);
+				ps.setString(2, year);
+				ps.setString(3, mode);
+
+				try (ResultSet rs = ps.executeQuery()) {
+					ResultSetMetaData rsMetaData = rs.getMetaData();
+					for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
+						Map<String, Object> columnInfo = new HashMap<>();
+						String columnName = rsMetaData.getColumnLabel(i);
+						String columnType = rsMetaData.getColumnTypeName(i);
+
+						columnInfo.put("field", columnName);
+						columnInfo.put("title", columnName);
+						columnInfo.put("type", columnType);
+						columnInfo.put("editable", false);
+						columnMetadata.add(columnInfo);
+					}
+				}
+			}
+			return columnMetadata;
+		});
 	}
 
 	@Override
@@ -451,23 +583,21 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	    try {
 	        List<Object[]> results = getYieldData(plantId, year, procedureName);
 	        
-	        double[] totals = new double[18];
+	        double[] totals = new double[24];
 
 	        for (Object[] row : results) {
 	        	YieldDMDDTO yieldDTO = new YieldDMDDTO();
 	            yieldDTO.setParticulars(row[0] != null ? row[0].toString() : " ");
-	            double[] vals = new double[18];
-	            for (int i = 0; i < 18; i++) {
+	            double[] vals = new double[24];
+	            for (int i = 0; i < 24; i++) {
 	                vals[i] = parseDoubleSafe(row[i + 1]);
 	                totals[i] += vals[i]; 
 	            }
 
-	            // Map values to DTO
 	            mapValuesToDTO(yieldDTO, vals);
 	            spyroOutputYieldDataList.add(yieldDTO);
 	        }
 
-	        // Add the Total row
 	        YieldDMDDTO totalRow = new YieldDMDDTO();
 	        totalRow.setParticulars("Total");
 	        mapValuesToDTO(totalRow, totals);
@@ -481,6 +611,56 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	    } catch (IllegalArgumentException e) {
 	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
 	    } catch (Exception ex) {
+	        throw new RuntimeException("Failed to fetch data", ex);
+	    }
+	}
+
+	@Override
+	public AOPMessageVM getSpyroOutputYieldVMD(String year, String plantId) {
+	    AOPMessageVM aopMessageVM = new AOPMessageVM();
+	    List<YieldVMDDTO> spyroOutputYieldDataList = new ArrayList<YieldVMDDTO>();
+	    
+	    Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+	            .orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
+	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+	            .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+	    Sites site = siteRepository.findById(plant.getSiteFkId())
+	            .orElseThrow(() -> new IllegalArgumentException("Invalid site ID"));
+
+	    String procedureName = vertical.getName() + "_" + site.getName() + "_GetYield";
+
+	    try {
+	        List<Object[]> results = getYieldData(plantId, year, procedureName);
+	        
+	        double[] totals = new double[8];
+
+	        for (Object[] row : results) {
+	        	YieldVMDDTO yieldDTO = new YieldVMDDTO();
+	            yieldDTO.setParticulars(row[0] != null ? row[0].toString() : " ");
+	            double[] vals = new double[8];
+	            for (int i = 0; i < 5; i++) {
+	                vals[i] = parseDoubleSafe(row[i + 1]);
+	                totals[i] += vals[i]; 
+	            }
+
+	            mapValuesToDTO(yieldDTO, vals);
+	            spyroOutputYieldDataList.add(yieldDTO);
+	        }
+
+	        YieldVMDDTO totalRow = new YieldVMDDTO();
+	        totalRow.setParticulars("Total");
+	        mapValuesToDTO(totalRow, totals);
+	        spyroOutputYieldDataList.add(totalRow);
+
+	        aopMessageVM.setCode(200);
+	        aopMessageVM.setMessage("Data fetched successfully");
+	        aopMessageVM.setData(spyroOutputYieldDataList);
+	        return aopMessageVM;
+
+	    } catch (IllegalArgumentException e) {
+	        throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+	    } catch (Exception ex) {
+	    	ex.printStackTrace();
 	        throw new RuntimeException("Failed to fetch data", ex);
 	    }
 	}
@@ -519,7 +699,20 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	    dto.setSevenFC2C3(v[15]);
 	    dto.setSevenFPropane(v[16]);
 	    dto.setSevenFEthane(v[17]);
-	}	
+	    dto.setThreeFC2C3(v[18]);
+	    dto.setThreeFPropane(v[19]);
+	    dto.setThreeFEthane(v[20]);
+	    dto.setFourF2SC2C3(v[21]);
+	    dto.setFourF2SPropane(v[22]);
+	    dto.setFourF2SEthane(v[23]);
+	}
+	private void mapValuesToDTO(YieldVMDDTO dto, double[] v) {
+	    dto.setFiveNE(v[0]);
+	    dto.setFiveNS(v[1]);
+	    dto.setFourNE(v[2]);
+	    dto.setFourNS(v[3]);
+	    dto.setThreeNE(v[4]);
+	}
 	public byte[] exportYieldReport(String year, String plantId, boolean isAfterSave, List<YieldDTO> dtoList) {
 	    try {
 	        AOPMessageVM aopMessageVM = getSpyroOutputYieldData(year,plantId);
@@ -649,6 +842,12 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	        innerHeaders.add("6F+BFD-C2C3");
 	        innerHeaders.add("6F+BFD-Propane");
 	        innerHeaders.add("6F+BFD-Ethane");
+	        innerHeaders.add("3F-C2C3");
+	        innerHeaders.add("3F-Propane");
+	        innerHeaders.add("3F-Ethane");
+	        innerHeaders.add("4F+2SFD 1BFD-C2C3");
+	        innerHeaders.add("4F+2SFD 1BFD-Propane");
+	        innerHeaders.add("4F+2SFD 1BFD-Ethane");
 	        if (isAfterSave) {
 	            innerHeaders.add("Status");
 	            innerHeaders.add("Error Description");
@@ -685,6 +884,105 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	            rowData.add(dto.getSixFBFDC2C3());
 	            rowData.add(dto.getSixFBFDPropane());
 	            rowData.add(dto.getSixFBFDEthane());
+	            rowData.add(dto.getThreeFC2C3());
+	            rowData.add(dto.getThreeFPropane());
+	            rowData.add(dto.getThreeFEthane());
+	    	    rowData.add(dto.getFourF2SC2C3());
+	    	    rowData.add(dto.getFourF2SPropane());
+	    	    rowData.add(dto.getFourF2SEthane());
+	    	    
+	            if (isAfterSave) {
+	                rowData.add(dto.getSaveStatus());
+	                rowData.add(dto.getErrDescription());
+	            }
+
+	            boolean isLastRow = (i == dataRowCount - 1);
+	            CellStyle styleToUse = isLastRow ? totalRowStyle : normalStyle;
+
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                if (value instanceof Number) {
+	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }
+	                cell.setCellStyle(styleToUse);
+	            }
+	        }
+
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+	public byte[] exportYieldVMD(String year, String plantId, boolean isAfterSave, List<YieldVMDDTO> dtoList) {
+	    try {
+	        AOPMessageVM aopMessageVM = getSpyroOutputYieldVMD(year,plantId);
+	        if (!isAfterSave) {
+	            dtoList = (List<YieldVMDDTO>) aopMessageVM.getData();
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+
+	        CellStyle normalStyle = workbook.createCellStyle();
+	        CellStyle totalRowStyle = workbook.createCellStyle();
+	        totalRowStyle.cloneStyleFrom(normalStyle);
+	        totalRowStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	        totalRowStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+	        CellStyle headerStyle = workbook.createCellStyle();
+	        Font headerFont = workbook.createFont();
+	        headerFont.setBold(true);
+	        headerStyle.setFont(headerFont);
+	        headerStyle.setBorderTop(BorderStyle.THIN);
+	        headerStyle.setBorderBottom(BorderStyle.THIN);
+	        headerStyle.setBorderLeft(BorderStyle.THIN);
+	        headerStyle.setBorderRight(BorderStyle.THIN);
+
+	        int currentRow = 0;
+
+	        // (Ensure your header writing is here)
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Particulars");
+	        innerHeaders.add("5NE");
+	        innerHeaders.add("5NS");
+	        innerHeaders.add("4NE");
+	        innerHeaders.add("4NS");
+	        innerHeaders.add("3NE");
+	        if (isAfterSave) {
+	            innerHeaders.add("Status");
+	            innerHeaders.add("Error Description");
+	        }
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(headerStyle);
+	        }
+
+	        int dataRowCount = dtoList.size();
+	        for (int i = 0; i < dataRowCount; i++) {
+	            YieldVMDDTO dto = dtoList.get(i);
+	            Row row = sheet.createRow(currentRow++);
+	            List<Object> rowData = new ArrayList<>();
+	            rowData.add(dto.getParticulars());
+	            rowData.add(dto.getFiveNE());
+	            rowData.add(dto.getFiveNS());
+	            rowData.add(dto.getFourNE());
+	            rowData.add(dto.getFourNS());
+	            rowData.add(dto.getThreeNE());
+	            
 	            if (isAfterSave) {
 	                rowData.add(dto.getSaveStatus());
 	                rowData.add(dto.getErrDescription());
@@ -760,6 +1058,36 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 			List<YieldDMDDTO> failedList = (List<YieldDMDDTO>) map.get("Failed");
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray = exportYieldDMD(year, plantId.toString(), true, failedList);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				// aopMessageVM.setData();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			// return ResponseEntity.ok(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// return ResponseEntity.internalServerError().build();
+		}
+		return null;
+	}
+
+	@Override
+	public AOPMessageVM importYieldVMD(String year,UUID plantId,MultipartFile file) {
+		// TODO Auto-generated method stub
+		try {
+			List<YieldVMDDTO> data = readYieldVMD(file.getInputStream(), plantId, year);
+			 AOPMessageVM aopMessageVM = updateSpyroOutputYieldVMD( plantId.toString(),  year, data);
+			 Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+
+			List<YieldVMDDTO> failedList = (List<YieldVMDDTO>) map.get("Failed");
+			if (failedList != null && failedList.size() > 0) {
+				byte[] fileByteArray = exportYieldVMD(year, plantId.toString(), true, failedList);
 				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
 				aopMessageVM.setData(base64File);
 				aopMessageVM.setCode(400);
@@ -863,6 +1191,12 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	               dto.setSixFBFDC2C3(getNumericCellValue(row.getCell(16), dto));
 	               dto.setSixFBFDPropane(getNumericCellValue(row.getCell(17), dto));
 	               dto.setSixFBFDEthane(getNumericCellValue(row.getCell(18), dto));
+	               dto.setThreeFC2C3(getNumericCellValue(row.getCell(19), dto));
+	               dto.setThreeFPropane(getNumericCellValue(row.getCell(20), dto));
+	               dto.setThreeFEthane(getNumericCellValue(row.getCell(21), dto));
+	               dto.setFourF2SC2C3(getNumericCellValue(row.getCell(22), dto));
+	               dto.setFourF2SPropane(getNumericCellValue(row.getCell(23), dto));
+	               dto.setFourF2SEthane(getNumericCellValue(row.getCell(24), dto));
 	            } catch (Exception e) {
 	                e.printStackTrace();
 	                dto.setErrDescription(e.getMessage());
@@ -874,7 +1208,46 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
+	    return yieldList;
+	}
 
+	public List<YieldVMDDTO> readYieldVMD(InputStream inputStream, UUID plantFKId, String year) {
+	    List<YieldVMDDTO> yieldList = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	        Sheet sheet = workbook.getSheetAt(0);
+
+	        int lastRowNum = sheet.getLastRowNum();  
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext())
+	            rowIterator.next();  
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+	            if (row.getRowNum() == lastRowNum) {
+	                
+	                break;
+	            }
+	            YieldVMDDTO dto = new YieldVMDDTO();
+	            try {
+	                dto.setParticulars(getStringCellValue(row.getCell(0), dto));
+	                dto.setFiveNE(getNumericCellValue(row.getCell(1), dto));
+	                dto.setFiveNS(getNumericCellValue(row.getCell(2), dto));
+	                dto.setFourNE(getNumericCellValue(row.getCell(3), dto));
+	                dto.setFourNS(getNumericCellValue(row.getCell(4), dto));
+	                dto.setThreeNE(getNumericCellValue(row.getCell(5), dto));
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+	            yieldList.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	    return yieldList;
 	}
 
@@ -897,6 +1270,7 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	    }
 	    return null;
 	}
+	
 	private static Double getNumericCellValue(Cell cell, YieldDTO dto) {
 	    if (cell == null || cell.getCellType() == CellType.BLANK) {
 	        return null;
@@ -939,7 +1313,50 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	    }
 	    return null;
 	}
+	private static String getStringCellValue(Cell cell, YieldVMDDTO dto) {
+	    try {
+	        if (cell == null || cell.getCellType() == CellType.BLANK) {
+	            return null;
+	        }
+	        
+	        cell.setCellType(CellType.STRING);
+	        String val = cell.getStringCellValue().trim();
+	        
+	        // Return null if the string is empty after trimming
+	        return val.isEmpty() ? null : val;
+	        
+	    } catch (Exception e) {
+	        dto.setSaveStatus("Failed");
+	        dto.setErrDescription("Please enter correct values");
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
 	private static Double getNumericCellValue(Cell cell, YieldDMDDTO dto) {
+	    if (cell == null || cell.getCellType() == CellType.BLANK) {
+	        return null;
+	    }
+
+	    if (cell.getCellType() == CellType.NUMERIC) {
+	        return cell.getNumericCellValue();
+	    } 
+	    
+	    if (cell.getCellType() == CellType.STRING) {
+	        String val = cell.getStringCellValue().trim();
+	        if (val.isEmpty()) {
+	            return null; // Return null for blank strings
+	        }
+	        try {
+	            return Double.parseDouble(val);
+	        } catch (NumberFormatException e) {
+	            dto.setSaveStatus("Failed");
+	            dto.setErrDescription("Please enter numeric values");
+	        }
+	    }
+	    return null;
+	}
+
+	private static Double getNumericCellValue(Cell cell, YieldVMDDTO dto) {
 	    if (cell == null || cell.getCellType() == CellType.BLANK) {
 	        return null;
 	    }
@@ -1150,6 +1567,73 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 		}
 	}
 	
+	@Override
+	public AOPMessageVM updateSpyroOutputYieldVMD(String plantId, String year,
+			List<YieldVMDDTO> yieldDTOs) {
+		
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<NormAttributeTransactions> normAttributeTransactionsList = new ArrayList<>();
+		List<YieldVMDDTO> failedList = new ArrayList<YieldVMDDTO>();
+		List<YieldParticularDTO> yieldParticularDTOs = makeNormParameterNameVMD(yieldDTOs);
+		for(YieldVMDDTO yieldDTO:yieldDTOs) {
+			if (yieldDTO.getSaveStatus() != null
+					&& yieldDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+				failedList.add(yieldDTO);
+				continue;
+			}
+		}
+		
+		try {
+			for(YieldParticularDTO yieldParticularDTO:yieldParticularDTOs) {
+				
+				String normParameterName=yieldParticularDTO.getNormParameterName();
+				Optional<NormParameters> normParameterOpt=normParametersRepository.findFirstOneByNameAndPlantFkId(normParameterName, UUID.fromString(plantId));
+				if(normParameterOpt.isPresent()) {
+					NormParameters normParameters = normParameterOpt.get();
+					NormAttributeTransactions normAttributeTransactions=normAttributeTransactionsRepository.findByNormParameterFKIdAndAuditYear(normParameters.getId(),year);
+					if(normAttributeTransactions==null) {
+						normAttributeTransactions=new NormAttributeTransactions();
+						normAttributeTransactions.setAopMonth(4);
+						normAttributeTransactions.setNormParameterFKId(normParameters.getId());
+						if(yieldParticularDTO.getValue()!=null) {
+							normAttributeTransactions.setAttributeValue(yieldParticularDTO.getValue().toString());
+						}
+						
+						normAttributeTransactions.setAuditYear(year);
+						normAttributeTransactions.setCreatedOn(new Date());
+						normAttributeTransactions.setUserName(Utility.getUserName());
+						normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
+					}else {
+						if(yieldParticularDTO.getValue()!=null) {
+							normAttributeTransactions.setAttributeValue(yieldParticularDTO.getValue().toString());
+						}
+						normAttributeTransactionsList.add(normAttributeTransactionsRepository.save(normAttributeTransactions));
+					}
+				}
+			
+			}
+			List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("spyro-output");
+			for (ScreenMapping screenMapping : screenMappingList) {
+				AopCalculation aopCalculation = new AopCalculation();
+				aopCalculation.setAopYear(year);
+				aopCalculation.setIsChanged(true);
+				aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+				aopCalculation.setPlantId(UUID.fromString(plantId));
+				aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+				aopCalculationRepository.save(aopCalculation);
+			}
+			aopMessageVM.setCode(200);
+			aopMessageVM.setMessage("Data updated successfully");
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("Success", normAttributeTransactionsList);
+			map.put("Failed", failedList);
+			aopMessageVM.setData(map);
+			return aopMessageVM;
+		}catch (Exception ex) {
+			throw new RuntimeException("Failed to update data", ex);
+		}
+	}
+	
 	private List<YieldParticularDTO> makeNormParameterName(List<YieldDTO> yieldDTOs) {
 		List<YieldParticularDTO> yieldParticularDTOs = new ArrayList<YieldParticularDTO>();
 		for(YieldDTO dto:yieldDTOs) {
@@ -1251,7 +1735,32 @@ public class SpyroOutputServiceImpl implements SpyroOutputService{
 	        addToList(yieldParticularDTOs, "7F_" + part + "_C2C3", dto.getSevenFC2C3());
 	        addToList(yieldParticularDTOs, "7F_" + part + "_Propane", dto.getSevenFPropane());
 	        addToList(yieldParticularDTOs, "7F_" + part + "_Ethane", dto.getSevenFEthane());
+
+	      	addToList(yieldParticularDTOs, "3F_" + part + "_C2C3", dto.getThreeFC2C3());
+	        addToList(yieldParticularDTOs, "3F_" + part + "_Propane", dto.getThreeFPropane());
+	        addToList(yieldParticularDTOs, "3F_" + part + "_Ethane", dto.getThreeFEthane());
+
+	        addToList(yieldParticularDTOs, "4F+2SFD1BFD_" + part + "_C2C3", dto.getFourF2SC2C3());
+	        addToList(yieldParticularDTOs, "4F+2SFD1BFD_" + part + "_Propane", dto.getFourF2SPropane());
+	        addToList(yieldParticularDTOs, "4F+2SFD1BFD_" + part + "_Ethane", dto.getFourF2SEthane());
 	    }
+	    
+	    return yieldParticularDTOs;
+	}
+	
+	private List<YieldParticularDTO> makeNormParameterNameVMD(List<YieldVMDDTO> yieldDTOs) {
+	    List<YieldParticularDTO> yieldParticularDTOs = new ArrayList<>();
+	    
+	    for (YieldVMDDTO dto : yieldDTOs) {
+	        String part = dto.getParticulars();
+	        if (part == null) continue; 
+
+	        addToList(yieldParticularDTOs, "5NE_" + part, dto.getFiveNE());
+	        addToList(yieldParticularDTOs, "5NS_" + part , dto.getFiveNS());
+	        addToList(yieldParticularDTOs, "4NE_" + part , dto.getFourNE());
+	        addToList(yieldParticularDTOs, "4NS_" + part , dto.getFourNS());
+	        addToList(yieldParticularDTOs, "3NE_" + part , dto.getThreeNE());
+	        	    }
 	    
 	    return yieldParticularDTOs;
 	}

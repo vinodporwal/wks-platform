@@ -175,7 +175,7 @@ function GridPanel({
 // ---------------------------------------------------------------------------
 export default function BestAchievedNorms() {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -195,12 +195,16 @@ export default function BestAchievedNorms() {
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
+  const SITE_NAME = siteObject?.name
   const VERTICAL_ID = verticalObject?.id
 
   const AOP_YEAR = year?.selectedYear
 
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -212,7 +216,7 @@ export default function BestAchievedNorms() {
   const [allRedCellList, setAllRedCellList] = useState([])
   const redLookupRef = useRef(new Map())
 
-  // accordion expanded state — start with a Set so we can expand multiple independently
+  // accordion expanded state � start with a Set so we can expand multiple independently
   const [expanded, setExpanded] = useState(() => new Set())
 
   // export control (dynamic ExcelExport mount)
@@ -248,7 +252,7 @@ export default function BestAchievedNorms() {
           filterable: true,
           filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
           align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-          ...(isNumberCol ? { format: '{0:0.00}' } : {}),
+          ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
           editable: false,
           isRightAlligned: isNumberCol ? 'numeric' : undefined,
           // hide Material FK field (both common casings)
@@ -621,14 +625,16 @@ export default function BestAchievedNorms() {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
-        <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> - Propane
-        (1Z)&nbsp;&nbsp;
-        <span style={{ color: 'green', fontWeight: 'bold' }}>Green</span> -
-        Propane (2Z)&nbsp;&nbsp;
-        <span style={{ color: 'purple', fontWeight: 'bold' }}>Purple</span> -
-        Copied From Other Season&nbsp;&nbsp;
-      </Typography>
+      {SITE_NAME !== 'VMD' && (
+        <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
+          <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
+          Propane (1Z)&nbsp;&nbsp;
+          <span style={{ color: 'green', fontWeight: 'bold' }}>Green</span> -
+          Propane (2Z)&nbsp;&nbsp;
+          <span style={{ color: 'purple', fontWeight: 'bold' }}>Purple</span> -
+          Copied From Other Season&nbsp;&nbsp;
+        </Typography>
+      )}
 
       {/* transient ExcelExport: only mounted during actual export */}
       {isExporting && (

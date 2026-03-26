@@ -1,11 +1,10 @@
-import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import AdvanceKendoTable from 'components/aop-phase-two/common/AdvanceKendoTable/index'
-import { validateRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOutputApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { ROLES } from '../../utils/roleUtils'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const CrudBlendWindowGrid = ({
   tableKey,
@@ -18,7 +17,6 @@ const CrudBlendWindowGrid = ({
   snackbarOpen,
   setSnackbarOpen,
   onRefresh,
-  userRole,
 }) => {
   const keycloak = useSession()
   const valueFormat = ValueFormatterPhaseTwo()
@@ -31,6 +29,8 @@ const CrudBlendWindowGrid = ({
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
+
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
 
   // Process table data when it's provided
   useEffect(() => {
@@ -117,6 +117,35 @@ const CrudBlendWindowGrid = ({
 
   console.log('columns', columns)
 
+  // Export handler
+  const handleExport = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'info',
+    })
+
+    try {
+      await TcsOutputApiService.exportCrudBlendWindowExcel(
+        keycloak,
+        SITE_ID,
+        apiYear,
+        tableKey,
+      )
+
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error exporting Crud Blend Window data:', error)
+      setSnackbarData({
+        message: 'Excel download failed. Please try again.',
+        severity: 'error',
+      })
+    }
+  }
+
   // Handle remark cell click
   const handleRemarkCellClick = useCallback(
     (row) => {
@@ -147,18 +176,15 @@ const CrudBlendWindowGrid = ({
     }
   }, [modifiedCells])
 
-  const permissions = useMemo(
-    () => ({
-      customHeight: { mainBox: '32vh', otherBox: '100%' },
-      textAlignment: 'center',
-      allAction: true,
-      showExport: true,
-      showTitle: true,
-      filterable: false,
-      approveBtn: userRole === ROLES.EPS_ENGINEER,
-    }),
-    [userRole],
-  )
+  const permissions = {
+    customHeight: { mainBox: '32vh', otherBox: '100%' },
+    textAlignment: 'center',
+    allAction: true,
+    showExport: true,
+    showTitle: true,
+    filterable: false,
+    approveBtn: false,
+  }
 
   return (
     <Box>
@@ -191,6 +217,7 @@ const CrudBlendWindowGrid = ({
           {...(tableKey === 'CrudeBlendWindow' && { groupBy: 'type' })}
           {...(tableKey === 'CrudeBlendWindow' && { labelField: 'property' })}
           readonly={true}
+          handleExport={handleExport}
         />
       </Stack>
     </Box>

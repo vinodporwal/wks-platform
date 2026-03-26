@@ -13,13 +13,14 @@ import getEnhancedColDefsProposedNorms from 'components/data-tables/CommonHeader
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import KendoDataTables from './index'
 
 const ProposedConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [open1, setOpen1] = useState(false)
   const valueFormat = ValueFormatterConsumption()
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
@@ -55,7 +56,9 @@ const ProposedConsumptionNorms = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -369,7 +372,79 @@ const ProposedConsumptionNorms = () => {
       console.error('Error!', error)
     }
   }
+  const handleExcelUpload = (rawFile) => {
+    uploadProposedNorms(rawFile)
+  }
+  const uploadProposedNorms = async (rawFile) => {
+    setLoading(true)
 
+    try {
+      let response
+
+      response = await ConsumptionNormsApiService.proposedNormsImport(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData(gradeId)
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute(
+          'download',
+          'Error File - Proposed Consumption Norms.xlsx',
+        )
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData(gradeId)
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading xcel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
   const downloadExcelForConfiguration = async () => {
     setSnackbarOpen(true)
     setSnackbarData({
@@ -379,20 +454,15 @@ const ProposedConsumptionNorms = () => {
 
     try {
       let response
-      if (
-        lowerVertName === 'pe' ||
-        lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
-      ) {
-        response =
-          await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
-            keycloak,
-            PLANT_ID,
-            AOP_YEAR,
-            EXCEL_EXPORT_TITLE,
-            SCREEN_NAME,
-          )
-      }
+
+      response =
+        await ConsumptionNormsApiService.ProposedConsumptionNormsExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+          SCREEN_NAME,
+        )
     } catch (error) {
       console.error('Error downloading Excel:', error)
       setSnackbarData({
@@ -440,11 +510,14 @@ const ProposedConsumptionNorms = () => {
       showG: true,
       marginBottom: true,
       dropdownLabel: 'Select Grade',
-      downloadExcelBtnFromUI: true,
-      downloadExcelBtn: false,
+      uploadExcelBtn: true,
+      showImport: false,
+      showExport: true,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
       isHeight: rows?.length > 10,
       showTitleNameBusiness: true,
+      showTitle: true,
+      title: `${SCREEN_NAME}`,
       titleName: `${SCREEN_NAME}`,
     },
     isOldYear,
@@ -476,7 +549,7 @@ const ProposedConsumptionNorms = () => {
               borderBottom: 'none',
             }}
           >
-            <KendoDataTables
+            <KendoDataTablesReports
               modifiedCells={modifiedCells}
               setModifiedCells={setModifiedCells}
               columns={productionColumns}
@@ -506,8 +579,10 @@ const ProposedConsumptionNorms = () => {
               grades={grades}
               handleGradeChange={handleGradeChange}
               calculatebtnClicked={calculatebtnClicked}
-              downloadExcelForConfiguration={downloadExcelForConfiguration}
+              handleExport={downloadExcelForConfiguration}
+              handleExcelUpload={handleExcelUpload}
               plantID={PLANT_ID}
+              title={SCREEN_NAME}
             />
           </Box>
         }

@@ -29,6 +29,7 @@ import CrakcerConstantsBestAchieved from './CrakcerConstantsBestAchieved'
 import CrakcerConstants from './CrakcerConstants'
 import { validateFields } from 'utils/validationUtils'
 import CrackerConfiguration from './CrackerConfiguration'
+import CrackerReportMannualEntry from './CrackerReportMannualEntry'
 // Constants
 const MONTHS = [
   'april',
@@ -83,8 +84,14 @@ const NormalOpNormsScreenCracker = () => {
   const [allRedCellFinalNorms, setAllRedCellFinalNorms] = useState([])
 
   const dataGridStore = useSelector((s) => s.dataGridStore) || {}
-  const { verticalChange, yearChanged, oldYear, plantObject, year } =
-    dataGridStore || {}
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantObject,
+    siteObject,
+    year,
+  } = dataGridStore || {}
 
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
@@ -92,17 +99,21 @@ const NormalOpNormsScreenCracker = () => {
   const AOP_YEAR = year?.selectedYear
   const vertName = verticalChange?.selectedVertical || ''
   const lowerVertName = (vertName || '').toLowerCase()
-  const lowerSiteName = (plantObject?.siteName || '').toLowerCase()
+  const lowerSiteName = (siteObject?.name || '').toLowerCase()
   const lowerPlantName = (plantObject?.name || '').toLowerCase()
 
   const dispatch = useDispatch()
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const [loading, setLoading] = useState(false)
+  const [loading1, setLoading1] = useState(false)
+
   const [grades, setGrades] = useState([])
   const [rows, setRows] = useState([])
   const [rowsExpression, setRowsExpression] = useState([])
@@ -321,7 +332,7 @@ const NormalOpNormsScreenCracker = () => {
       saveWithRemark: false,
       saveBtn: false,
       isOldYear: isOldYearFlag,
-      showCalculate: true,
+      showCalculate: false,
     }
   }, [])
 
@@ -362,6 +373,7 @@ const NormalOpNormsScreenCracker = () => {
       downloadExcelBtnFromUI: true,
       ExcelName: `${lowerVertName}_Expression_(Norms)`,
       showCheckbox: true,
+      showCalculateVisibility: true,
     }),
     [lowerVertName],
   )
@@ -409,7 +421,7 @@ const NormalOpNormsScreenCracker = () => {
   const mainPermissions = useMemo(() => {
     const base = { ...baseModePermissions }
     base.saveBtn = selectedTab === 3 ? true : mainIsTop && base.saveBtn
-    base.showCalculate = base.showCalculate
+    base.showCalculate = false
     return getAdjustedPermissions(base, isOldYear)
   }, [
     baseModePermissions,
@@ -423,7 +435,7 @@ const NormalOpNormsScreenCracker = () => {
     const base = { ...baseExpressionPermissions }
     const showSave = !mainIsTop && !monthlyIsTop && isModeTab
     base.saveBtn = selectedTab === 3 ? true : showSave && base.saveBtn
-    base.showCalculate = showSave && base.showCalculate
+    base.showCalculate = true
     return getAdjustedPermissions(base, isOldYear)
   }, [
     baseExpressionPermissions,
@@ -438,7 +450,7 @@ const NormalOpNormsScreenCracker = () => {
   const monthlyPermissions = useMemo(() => {
     const base = { ...baseMonthlyPermissions }
     base.saveBtn = selectedTab === 3 ? true : monthlyIsTop && base.saveBtn
-    base.showCalculate = base.showCalculate
+    base.showCalculate = false
 
     return getAdjustedPermissions(base, isOldYear)
   }, [
@@ -453,7 +465,7 @@ const NormalOpNormsScreenCracker = () => {
   const finalPermissions = useMemo(() => {
     const base = { ...baseFinalPermissions }
     base.saveBtn = false
-    base.showCalculate = base.showCalculate
+    base.showCalculate = true
 
     return getAdjustedPermissions(base, isOldYear)
   }, [baseFinalPermissions, finalIsTop, getAdjustedPermissions, isOldYear])
@@ -560,11 +572,12 @@ const NormalOpNormsScreenCracker = () => {
   const fetchModeData = useCallback(
     async (gradeIdParam) => {
       if (!lowerVertName) return
-      setLoading(true)
 
-      getNormTransactions()
+      setLoading1(true)
 
       try {
+        await getNormTransactions()
+
         if (lowerVertName === 'cracker') {
           const [bestResp, exprResp, yearlyResp, colorResp] = await Promise.all(
             [
@@ -621,9 +634,9 @@ const NormalOpNormsScreenCracker = () => {
           )
         }
       } catch (err) {
-        console.error('fetchModeData', err)
+        console.error('fetchModeData error:', err)
       } finally {
-        setLoading(false)
+        setLoading1(false)
       }
     },
     [AOP_YEAR, PLANT_ID, keycloak, lowerVertName],
@@ -716,7 +729,7 @@ const NormalOpNormsScreenCracker = () => {
       } catch (err) {
         console.error('fetchAllData', err)
       } finally {
-        setLoading(false)
+        // setLoading(false)
       }
     },
     [fetchModeData, selectedTab, PLANT_ID, AOP_YEAR],
@@ -864,7 +877,7 @@ const NormalOpNormsScreenCracker = () => {
           severity: 'error',
         })
       } finally {
-        setLoading(false)
+        // setLoading(false)
       }
     },
     [dispatch, fetchModeData, gradeId, keycloak],
@@ -943,7 +956,7 @@ const NormalOpNormsScreenCracker = () => {
       })
       console.error('handleCalculate', err)
     } finally {
-      setLoading(false)
+      // setLoading(false)
     }
   }, [PLANT_ID, AOP_YEAR, fetchModeData, gradeId, keycloak, year])
 
@@ -976,7 +989,7 @@ const NormalOpNormsScreenCracker = () => {
       })
       console.error('handleCalculateFinalNorms', err)
     } finally {
-      setLoading(false)
+      // setLoading(false)
     }
   }, [PLANT_ID, fetchModeData, gradeId, keycloak, AOP_YEAR])
 
@@ -1159,6 +1172,7 @@ const NormalOpNormsScreenCracker = () => {
     'Criteria for Best Achieved',
     'Norms Selection',
     'Final monthly norms',
+    // 'Report Manual Entry',
   ]
 
   // UI render
@@ -1166,7 +1180,7 @@ const NormalOpNormsScreenCracker = () => {
     <div>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
+        open={!!loading1}
       >
         <CircularProgress color='inherit' />
       </Backdrop>
@@ -1187,31 +1201,8 @@ const NormalOpNormsScreenCracker = () => {
           ))}
         </Tabs>
       </Box>
-      {/* {selectedTab === 0 && (
-        <SelectivityData
-          rows={productionRows}
-          loading={loading}
-          fetchData={fetchData}
-          setRows={setProductionRows}
-          configType='cracker_configuration'
-          groupBy='Particulars'
-          tabIndex='0'
-          setGradeId={handleGradeChange}
-          reportTypes={reportTypes}
-        />
-      )} */}
+
       {selectedTab === 0 && <CrackerConfiguration tabIndex={0} />}
-      {/* {selectedTab === 1 && (
-        <SelectivityData
-          rows={productionRowsConstants}
-          loading={loading}
-          fetchData={fetchConstantsData}
-          setRows={setProductionRowsConstants}
-          configType='cracker_constants'
-          groupBy='Particulars'
-          tabIndex='1'
-        />
-      )} */}
 
       {/* Constant Tab */}
       {selectedTab === 1 && <CrakcerConstants />}
@@ -1246,16 +1237,21 @@ const NormalOpNormsScreenCracker = () => {
                 Orange
               </span>{' '}
               - Overridden&nbsp;&nbsp;
-              <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
-              Propane (1Z)&nbsp;&nbsp;
-              <span style={{ color: 'green', fontWeight: 'bold' }}>
-                Green
-              </span>{' '}
-              - Propane (2Z)&nbsp;&nbsp;
-              <span style={{ color: 'purple', fontWeight: 'bold' }}>
-                Purple
-              </span>{' '}
-              - Copied From Other Season
+              {/* Only show the following if SITE_NAME is NOT 'vmd' */}
+              {lowerSiteName !== 'vmd' && (
+                <>
+                  <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span>{' '}
+                  - Propane (1Z)&nbsp;&nbsp;
+                  <span style={{ color: 'green', fontWeight: 'bold' }}>
+                    Green
+                  </span>{' '}
+                  - Propane (2Z)&nbsp;&nbsp;
+                  <span style={{ color: 'purple', fontWeight: 'bold' }}>
+                    Purple
+                  </span>{' '}
+                  - Copied From Other Season
+                </>
+              )}
             </Typography>
           </Box>
 
@@ -1299,6 +1295,7 @@ const NormalOpNormsScreenCracker = () => {
               />
 
               {/* expression below */}
+              {/* {lowerSiteName !== 'vmd' && ( */}
               <KendoDataTables
                 modifiedCells={modifiedCells}
                 setModifiedCells={setModifiedCells}
@@ -1335,6 +1332,7 @@ const NormalOpNormsScreenCracker = () => {
                 showThreeColors={true}
                 showCatChemUtilityCheckbox2={true}
               />
+              {/* )} */}
             </>
           ) : (
             <>
@@ -1374,40 +1372,42 @@ const NormalOpNormsScreenCracker = () => {
               />
 
               {/* expression below */}
-              <KendoDataTables
-                modifiedCells={modifiedCells}
-                setModifiedCells={setModifiedCells}
-                title='Normal Operations Norms'
-                columns={colDefsExpressionCatChem}
-                setRows={setRowsExpression}
-                rows={rowsExpression}
-                grades={grades}
-                paginationOptions={[100, 200, 300]}
-                saveChanges={saveChangesUnified}
-                isCellEditable={isCellEditable}
-                snackbarData={snackbarData}
-                handleCalculate={handleCalculateUnified}
-                snackbarOpen={snackbarOpen}
-                apiRef={apiRef}
-                setSnackbarOpen={setSnackbarOpen}
-                setSnackbarData={setSnackbarData}
-                remarkDialogOpen={remarkDialogOpen4}
-                setRemarkDialogOpen={setRemarkDialogOpen4}
-                currentRemark={currentRemark4}
-                setCurrentRemark={setCurrentRemark4}
-                currentRowId={currentRowId4}
-                handleRemarkCellClick={handleRemarkCellClick4}
-                permissions={expressionPermissions}
-                groupBy='Particulars'
-                downloadExcelForConfiguration={downloadExcelForConfiguration}
-                handleGradeChange={handleGradeChange}
-                plantID={PLANT_ID}
-                onGlobalCheckboxChange={handleGlobalCheckboxChange}
-                gridName='expression'
-                showCatChemUtilityCheckbox={true}
-                allRedCell2={allRedCell2}
-                showThreeColors={true}
-              />
+              {lowerSiteName !== 'vmd' && (
+                <KendoDataTables
+                  modifiedCells={modifiedCells}
+                  setModifiedCells={setModifiedCells}
+                  title='Normal Operations Norms'
+                  columns={colDefsExpressionCatChem}
+                  setRows={setRowsExpression}
+                  rows={rowsExpression}
+                  grades={grades}
+                  paginationOptions={[100, 200, 300]}
+                  saveChanges={saveChangesUnified}
+                  isCellEditable={isCellEditable}
+                  snackbarData={snackbarData}
+                  handleCalculate={handleCalculateUnified}
+                  snackbarOpen={snackbarOpen}
+                  apiRef={apiRef}
+                  setSnackbarOpen={setSnackbarOpen}
+                  setSnackbarData={setSnackbarData}
+                  remarkDialogOpen={remarkDialogOpen4}
+                  setRemarkDialogOpen={setRemarkDialogOpen4}
+                  currentRemark={currentRemark4}
+                  setCurrentRemark={setCurrentRemark4}
+                  currentRowId={currentRowId4}
+                  handleRemarkCellClick={handleRemarkCellClick4}
+                  permissions={expressionPermissions}
+                  groupBy='Particulars'
+                  downloadExcelForConfiguration={downloadExcelForConfiguration}
+                  handleGradeChange={handleGradeChange}
+                  plantID={PLANT_ID}
+                  onGlobalCheckboxChange={handleGlobalCheckboxChange}
+                  gridName='expression'
+                  showCatChemUtilityCheckbox={true}
+                  allRedCell2={allRedCell2}
+                  showThreeColors={true}
+                />
+              )}
             </>
           )}
         </>
@@ -1464,6 +1464,9 @@ const NormalOpNormsScreenCracker = () => {
           />
         </>
       )}
+
+      {/* Report Mannual Entry Tab */}
+      {/* {selectedTab === 5 && <CrackerReportMannualEntry tabIndex={5} />} */}
     </div>
   )
 }

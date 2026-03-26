@@ -22,6 +22,7 @@ import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
+import com.wks.caseengine.dto.NormLineRequestDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ConfigurationService;
 
@@ -80,8 +81,16 @@ public class ConfigurationController {
 	}
 	
 	@GetMapping(value="/configuration-constants")
-	public AOPMessageVM getConfigurationConstants(@RequestParam String year,@RequestParam String plantFKId) {
+	public AOPMessageVM getConfigurationConstants(@RequestParam String year,
+												  @RequestParam String plantFKId) {
 		return configurationService.getConfigurationConstants(year,plantFKId);
+	}
+
+	@GetMapping(value="/production-constraints")
+	public AOPMessageVM getProductionConstraints(@RequestParam String year,
+												 @RequestParam String plantFKId,
+												 @RequestParam(required = false) String type) {
+		return configurationService.getProductionConstraints(year, plantFKId, type);
 	}
 
 
@@ -112,6 +121,29 @@ public class ConfigurationController {
 	    } catch (Exception e) {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
+	}
+
+	@GetMapping(value = "/production-constraints-export-excel")
+	public ResponseEntity<byte[]> exportProductionConstraintsReport(
+			@RequestParam("plantFKId") String plantFKId,
+			@RequestParam("year") String year,
+			@RequestParam(required = false) String type) {
+		try {
+			byte[] excelBytes = configurationService.createProductionConstraintsExcel(year,
+					UUID.fromString(plantFKId), type);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.parseMediaType(
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDisposition(ContentDisposition.builder("attachment")
+					.filename("production_constraints.xlsx")
+					.build());
+			headers.setContentLength(excelBytes.length);
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 	
 	@GetMapping(value = "/configuration-constants-norms-export-excel")
@@ -159,7 +191,30 @@ public class ConfigurationController {
 	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
 	}
-	
+
+	@GetMapping(value = "/line-configuration-export")
+	public ResponseEntity<byte[]> exportLineConfigData(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = configurationService.exportLineConfigData(year,UUID.fromString(plantId),false,null); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("line_configuration.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
 	@PostMapping(value = "/recipe-import", consumes = "multipart/form-data")
 	public AOPMessageVM importRecipe(
 	         @RequestParam("plantId") String plantId,
@@ -249,6 +304,15 @@ public class ConfigurationController {
 		
 	        return configurationService.importConfigurationConstantsExcel(year,UUID.fromString(plantFKId),version, file,calculation); //excelService.generateFlexibleExcel(data, plantId, year);//productionVolumeDataReportExportService.getReportForPlantProductionPlanData(plantId, year, reportType);
 	}
+
+	@PostMapping(value = "/line-configuration-import", consumes = "multipart/form-data")
+	public AOPMessageVM importLineConfiguration(
+	         @RequestParam("plantId") String plantId,
+             @RequestParam("year") String year,
+			 @RequestParam("file") MultipartFile file
+	        ) {
+			return configurationService.importLineConfiguration(year, UUID.fromString(plantId), file);
+	}
 	
 	@GetMapping(value="/configuration-execution")
 	public AOPMessageVM getConfigurationExecution(@RequestParam String year,@RequestParam String plantId) {
@@ -280,5 +344,44 @@ public class ConfigurationController {
 		return configurationService.updateConfigurationVersion(configurationVersionDTOs);
 	}
 
+	@PostMapping(value = "/other-production-norms")
+	public List<ConfigurationDTO> saveOtherConfigurationData(@RequestParam String year, @RequestParam String plantFKId,
+			@RequestParam(required = false) String version, @RequestBody List<ConfigurationDTO> configurationDTOList,
+			@RequestParam(required = false) Boolean calculation) {
+		configurationService.saveOtherConfigurationData(year, plantFKId, version, configurationDTOList, calculation);
+		return configurationDTOList;
+	}
+
+	@GetMapping(value = "/other-production-norms")
+	public AOPMessageVM getOtherProductionNormsData(
+			@RequestParam String year,
+			@RequestParam String plantId,
+			@RequestParam(required = false) String gradeId) {
+
+		return configurationService.getOtherProductionNormsData(year, plantId, gradeId);
+	}
+
+	@GetMapping(value = "/line-configuration")
+	public AOPMessageVM getNormAttributeTransactionLine(
+			@RequestParam String year,
+			@RequestParam String plantId) {
+
+		return configurationService.getNormAttributeTransactionLine(year, plantId);
+	}
+
+	@GetMapping(value = "/report-mannual-entry")
+	public AOPMessageVM getConfigurationDataReportMannualEntry(@RequestParam String year, @RequestParam UUID plantFKId,
+			@RequestParam(required = false) String version) {
+		return configurationService.getConfigurationDataReportMannualEntry(year, plantFKId, version);
+	}
+
+	@PostMapping("/line-configuration")
+	public AOPMessageVM updateLineConfiguration(
+			@RequestParam String year,
+			@RequestParam String plantId,
+			@RequestBody List<NormLineRequestDTO> normLineRequestDTOList) {
+
+		return configurationService.updateLineConfiguration(year, plantId, normLineRequestDTOList);
+	}
 
 }

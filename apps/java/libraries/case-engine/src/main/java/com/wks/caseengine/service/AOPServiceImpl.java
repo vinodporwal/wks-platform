@@ -133,15 +133,78 @@ public class AOPServiceImpl implements AOPService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		    boolean pvc= vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
 			if(vertical.getName().equalsIgnoreCase("AROMATICS")) {
 				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOP";
 				obj = getData(year,plant.getId(),site.getId(),vertical.getId(),procedureName);
-			}else if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")){
+			}else if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc){
 				String view="vwScrn"+vertical.getName()+"AOP";
 				obj= findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type,view);
+			}else if(vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD")){
+				String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetMonthWiseProductionPlan";
+				obj = getDataElastomer(year,plant.getId(),procedureName);
 			}else {
 				 obj = aopRepository.findByAOPYearAndPlantFkId(year, UUID.fromString(plantId), type);
 			}
+			
+			for (Object[] row : obj) {
+				AOPDTO aopDTO = new AOPDTO();
+
+				aopDTO.setId(row[0] != null ? row[0].toString() : null);
+				aopDTO.setNormParameterName(row[1] != null ? row[1].toString() : null);
+				aopDTO.setNormParameterDisplayName(row[2] != null ? row[2].toString() : null);
+				aopDTO.setNormParameterTypeId(row[3] != null ? row[3].toString() : null);
+				aopDTO.setMaterialFKId(row[4] != null ? row[4].toString() : null);
+				aopDTO.setDisplayName(row[5] != null ? row[5].toString() : null);
+
+				 aopDTO.setApril(safeParseDouble(row[6]));
+			        aopDTO.setMay(safeParseDouble(row[7]));
+			        aopDTO.setJune(safeParseDouble(row[8]));
+			        aopDTO.setJuly(safeParseDouble(row[9]));
+			        aopDTO.setAug(safeParseDouble(row[10]));
+			        aopDTO.setSep(safeParseDouble(row[11]));
+			        aopDTO.setOct(safeParseDouble(row[12]));
+			        aopDTO.setNov(safeParseDouble(row[13]));
+			        aopDTO.setDec(safeParseDouble(row[14]));
+			        aopDTO.setJan(safeParseDouble(row[15]));
+			        aopDTO.setFeb(safeParseDouble(row[16]));
+			        aopDTO.setMarch(safeParseDouble(row[17]));
+			        aopDTO.setAvgTPH(safeParseDouble(row[18]));
+			        aopDTO.setRemark(row[19] != null ? row[19].toString() : "");
+				aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
+				aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
+				aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
+
+				aOPDTOList.add(aopDTO);
+			}
+			Map<String, Object> map = new HashMap<>();
+
+			List<AopCalculation> aopCalculation = aopCalculationRepository
+					.findByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year, "production-aop");
+			map.put("aopDTOList", aOPDTOList);
+			map.put("aopCalculation", aopCalculation);
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(map);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getMonthlyProduction(String plantId, String year, String type,String lineId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		List<AOPDTO> aOPDTOList = new ArrayList<>();
+		try {
+			List<Object[]> obj=null;
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			String procedureName=vertical.getName()+"_"+site.getName()+"_"+"GetAOP";
+			obj = getLineData(year,plant.getId(),UUID.fromString(lineId),procedureName);
 			
 			for (Object[] row : obj) {
 				AOPDTO aopDTO = new AOPDTO();
@@ -170,7 +233,7 @@ public class AOPServiceImpl implements AOPService {
 				aopDTO.setDisplayOrder(row[20] != null ? Integer.valueOf(row[20].toString()) : null);
 				aopDTO.setIsEditable(row[21] != null ? Boolean.valueOf(row[21].toString()) : null);
 				aopDTO.setIsVisible(row[22] != null ? Boolean.valueOf(row[22].toString()) : null);
-
+				aopDTO.setLineId(row[23] != null ? row[23].toString() : null);
 				aOPDTOList.add(aopDTO);
 			}
 			Map<String, Object> map = new HashMap<>();
@@ -189,7 +252,7 @@ public class AOPServiceImpl implements AOPService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-	
+
 	
     public List<Object[]> findByAOPYearAndPlantFkId(
             String AOPYear, 
@@ -245,6 +308,44 @@ public class AOPServiceImpl implements AOPService {
 			query.setParameter("finYear", finYear);
 			query.setParameter("siteId", siteId);
 			query.setParameter("verticalId", verticalId);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<Object[]> getDataElastomer(String finYear, UUID plantId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @plantId = :plantId, @aopYear = :finYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	public List<Object[]> getLineData(String finYear, UUID plantId,UUID lineId, String procedureName) {
+		try {
+
+			String sql = "EXEC " + procedureName
+					+ " @PlantId = :plantId, @AOPYear = :finYear, @lineId = :lineId";
+
+			Query query = entityManager.createNativeQuery(sql);
+			query.setParameter("plantId", plantId);
+			query.setParameter("finYear", finYear);
+			query.setParameter("lineId", lineId);
+			
 
 			return query.getResultList();
 		} catch (IllegalArgumentException e) {
@@ -315,7 +416,7 @@ public class AOPServiceImpl implements AOPService {
 					aOP.setAopStatus(aOPDTO.getAopStatus());
 					aOP.setAopType(aOPDTO.getAopType());
 				}
-				aOP.setAopRemarks(aOPDTO.getAopRemarks());
+				aOP.setAopRemarks(aOPDTO.getRemark());
 				aOP.setAopType(aOPDTO.getAopType());
 				aOP.setAopYear(aOPDTO.getAopYear());
 				aOP.setApril(aOPDTO.getApril());
@@ -535,6 +636,28 @@ public class AOPServiceImpl implements AOPService {
 			}
 
 			return aopYears;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Override
+	public AOPMessageVM getAOPYearStatus() {
+		try {
+			List<Object[]> results = aopRepository.getAOPYearStatus();
+			List<Map<String, Object>> aopYearStatus = new ArrayList<>();
+
+			for (Object[] row : results) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("AOPYear", row[0] != null ? row[0].toString() : null);
+				map.put("IsOldYear", row[1] != null ? Integer.parseInt(row[1].toString()) : 0);
+				aopYearStatus.add(map);
+			}
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			aopMessageVM.setCode(200);
+			aopMessageVM.setData(aopYearStatus);
+			aopMessageVM.setMessage("Data fetched successfully");
+			return aopMessageVM;
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}

@@ -34,11 +34,16 @@ import { getRoleName } from 'services/role-service'
 import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
 import QualityParameters from './QualityParameters'
 import ExclusionDate from './ExclusionDate'
+import LineConfiguration from './LineConfiguration'
+import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
+import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
+import ProductionRange from './tab-components/ProductionRange'
+import PtaConfiguration from './tab-components/PtaConfiguration'
+import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const fetchDataTokenRef = useRef(0)
   const fetchConstantsTokenRef = useRef(0)
@@ -63,11 +68,18 @@ const ConfigurationTable = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
-
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -131,7 +143,7 @@ const ConfigurationTable = () => {
   const handleOpenDialog = () => {
     const isPEorPP = lowerVertName === 'pe' || lowerVertName === 'pp'
 
-    if (isPEorPP) {
+    if (isPEorPP || IS_PVC_DMD || IS_PVC_HMD) {
       if (!summaryEdited && !summary) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -479,7 +491,9 @@ const ConfigurationTable = () => {
       )
       if (response?.code == 200) {
         const parsedData = JSON.parse(response?.data)
+
         setTabs(parsedData)
+
         setLoading(false)
       } else {
         setTabs([])
@@ -526,7 +540,10 @@ const ConfigurationTable = () => {
     try {
       var response = await DataService.getConfigurationAvailableTabs(keycloak)
       if (response?.code == 200) {
-        setAvailableTabs(response?.data?.configurationTypeList)
+        const originalTabs = response?.data?.configurationTypeList || []
+
+        setAvailableTabs(originalTabs)
+
         setLoading(false)
       } else {
         setAvailableTabs([])
@@ -1116,12 +1133,14 @@ const ConfigurationTable = () => {
     )
   }, [openConfirmDialogRev])
 
-  if (
-    (lowerVertName == 'meg' || lowerVertName == 'pvc') &&
-    lowerVertName !== 'cracker'
-  ) {
+  if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
+    const megTabs = [
+      'Configuration',
+      'Constants',
+      'Report Manual Entry',
+      'NSR & Material Prices',
+    ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1204,6 +1223,8 @@ const ConfigurationTable = () => {
                     reportTypes={reportTypes}
                   />
                 )
+              case 'nsr & material prices':
+                return <NSRAndMaterialPrices />
               case 'pio impact':
                 return (
                   <SelectivityData
@@ -1303,44 +1324,46 @@ const ConfigurationTable = () => {
             })}
           />
 
-          {lowerVertName === 'aromatics' && tabs?.length > 0 && (
-            <Box ml='auto'>
-              <ButtonGroup aria-label='revision group'>
-                {['1', '2', '3'].map((num) => {
-                  const selected = revision === num
+          {lowerVertName === 'aromatics' &&
+            !IS_AROMATICS_HMD &&
+            tabs?.length > 0 && (
+              <Box ml='auto'>
+                <ButtonGroup aria-label='revision group'>
+                  {['1', '2', '3'].map((num) => {
+                    const selected = revision === num
 
-                  return (
-                    <Button
-                      key={num}
-                      onClick={() => handleOpenDialogRev(num)}
-                      variant={selected ? 'contained' : 'outlined'}
-                      size='small'
-                      sx={{
-                        textTransform: 'none',
-                        fontSize: '0.75rem',
-                        padding: '1px 7px',
-                        minWidth: '36px',
-                        mr: 0.5,
-                        ...(selected && {
-                          bgcolor: '#0100cb',
-                          color: '#fff',
-                          borderColor: '#0100cb',
-                          fontWeight: 'bold',
-                        }),
-                        ...(!selected && {
-                          borderColor: '#000000ff',
-                          color: '#000000ff',
-                          fontWeight: 'bold',
-                        }),
-                      }}
-                    >
-                      {`Rev ${num}`}
-                    </Button>
-                  )
-                })}
-              </ButtonGroup>
-            </Box>
-          )}
+                    return (
+                      <Button
+                        key={num}
+                        onClick={() => handleOpenDialogRev(num)}
+                        variant={selected ? 'contained' : 'outlined'}
+                        size='small'
+                        sx={{
+                          textTransform: 'none',
+                          fontSize: '0.75rem',
+                          padding: '1px 7px',
+                          minWidth: '36px',
+                          mr: 0.5,
+                          ...(selected && {
+                            bgcolor: '#0100cb',
+                            color: '#fff',
+                            borderColor: '#0100cb',
+                            fontWeight: 'bold',
+                          }),
+                          ...(!selected && {
+                            borderColor: '#000000ff',
+                            color: '#000000ff',
+                            fontWeight: 'bold',
+                          }),
+                        }}
+                      >
+                        {`Rev ${num}`}
+                      </Button>
+                    )
+                  })}
+                </ButtonGroup>
+              </Box>
+            )}
         </Box>
 
         <Box>
@@ -1527,6 +1550,50 @@ const ConfigurationTable = () => {
                   <ExclusionDate
                     revision={revision}
                     loadBtnClicked={loadBtnClicked}
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('LineConfiguration'):
+                return (
+                  <LineConfiguration
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('raw-material-norms-basis'):
+                return (
+                  <RawMaterialNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('cat-chem-norms-basis'):
+                return (
+                  <CatChemNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('ProductionRange'):
+                return (
+                  <ProductionRange
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('pta-configuration'):
+                return (
+                  <PtaConfiguration
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     setSummaryEdited={setSummaryEdited}

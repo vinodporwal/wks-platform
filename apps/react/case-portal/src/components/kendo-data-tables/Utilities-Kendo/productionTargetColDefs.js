@@ -21,7 +21,40 @@ export function getColDefsPercentageSummary(headerMap = {}, valueFormat) {
     //add here
   ]
 }
-
+export function getColDefsPercentageSummaryElastomerJMD(
+  headerMap = {},
+  valueFormat,
+) {
+  return [
+    { field: 'idFromApi', title: 'ID', hidden: true },
+    { field: 'aopCaseId', title: 'Case ID', editable: false, hidden: true },
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 200,
+      editable: false,
+    },
+    {
+      field: 'april',
+      title: 'Value',
+      widthT: 200,
+      editable: false,
+      type: 'number',
+      format: valueFormat,
+      align: 'left',
+      headerAlign: 'left',
+    },
+    { field: 'avgTph', title: 'AVG', editable: false, hidden: true },
+    { field: 'isEditable', title: 'isEditable', hidden: true },
+  ]
+}
 export function getColDefsPercentageSummaryPEPP(headerMap = {}, valueFormat) {
   return [
     { field: 'idFromApi', title: 'ID', hidden: true },
@@ -189,6 +222,36 @@ export function getColDefsDesignCapacityAROMATICS(headerMap = {}, valueFormat) {
     },
   ]
 }
+export function getColDefsDesignCapacityELASTOMERJMD(
+  headerMap = {},
+  valueFormat,
+) {
+  return [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 200,
+      editable: false,
+    },
+    {
+      field: 'april',
+      title: 'Value',
+      editable: false,
+      align: 'left',
+      widthT: 200,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
+    },
+  ]
+}
 
 export function getColDefsDesignCapacityPEPP(headerMap = {}, valueFormat) {
   return [
@@ -330,6 +393,36 @@ export function getColDefsMaxAchievedCapacityAROMATICS(
       editable: true,
       align: 'left',
       headerAlign: 'left',
+    },
+  ]
+}
+export function getColDefsMaxAchievedCapacityELASTOMERJMD(
+  headerMap = {},
+  valueFormat,
+) {
+  return [
+    {
+      field: 'materialFKId',
+      title: 'Particulars',
+      widthT: 100,
+      editable: true,
+      hidden: true,
+    },
+    {
+      field: 'productName',
+      title: 'Particulars',
+      widthT: 200,
+      editable: false,
+    },
+    {
+      field: 'april',
+      title: 'Value',
+      align: 'left',
+      widthT: 200,
+      editable: false,
+      headerAlign: 'left',
+      type: 'number',
+      format: valueFormat,
     },
   ]
 }

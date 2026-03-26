@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box, Backdrop, CircularProgress } from '@mui/material'
+import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -7,11 +7,19 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
+import useConfigurationDates from 'components/aop-phase-two/common/hooks/useConfigurationDates'
+import Notification from 'components/aop-phase-two/common/utilities/Notification'
 
 const FixedNorms = () => {
   const keycloak = useSession()
-  // State management
+  const {
+    startDate,
+    endDate,
+    dateLoading,
+    error: configError,
+  } = useConfigurationDates()
 
+  // State management
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -128,6 +136,17 @@ const FixedNorms = () => {
       editable: false,
       minWidth: 120,
     },
+    {
+      field: 'actualNorm',
+      title: 'Actual Norm',
+      widthT: 120,
+      type: 'numberWithCheckbox',
+      editable: true,
+      isNumberEditable: false,
+      format: valueFormat,
+      minWidth: 120,
+      alwaysEditable: true,
+    },
     // Apr
     {
       field: 'aprNorms',
@@ -243,6 +262,7 @@ const FixedNorms = () => {
       type: 'textarea',
       editable: true,
       minWidth: 250,
+      alwaysEditable: true,
     },
   ]
 
@@ -250,20 +270,43 @@ const FixedNorms = () => {
   const [originalRows, setOriginalRows] = useState([])
   const [calculationLoading, setCaculationLoading] = useState(false)
 
+  const formatDate = (date) => {
+    if (!date) return ''
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // Show error notification if configuration is not set up
   useEffect(() => {
-    if (PLANT_ID && AOP_YEAR) {
-      fetchNormsData()
+    if (configError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: configError,
+        severity: 'warning',
+      })
+    }
+  }, [configError])
+
+  useEffect(() => {
+    if (PLANT_ID && AOP_YEAR && startDate && endDate) {
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+      fetchNormsData(formattedStartDate, formattedEndDate)
       setModifiedCells({})
     }
-  }, [PLANT_ID, AOP_YEAR])
+  }, [PLANT_ID, AOP_YEAR, startDate, endDate])
 
-  const fetchNormsData = async () => {
+  const fetchNormsData = async (startDate, endDate) => {
     setLoading(true)
     try {
       const res = await InputApiService.getNormBasedUtilityBudget(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        startDate,
+        endDate,
       )
 
       if (res?.data?.length === 0) {
@@ -272,11 +315,51 @@ const FixedNorms = () => {
         setSnackbarData({ message: 'No data found', severity: 'info' })
         return
       }
-      let tempRes = res?.data?.map((item, index) => ({
-        ...item,
-        id: item.id || index + 1,
-        remarks: item.remarks || '',
-      }))
+      let tempRes = res?.data?.map((item, index) => {
+        const actualNormValue =
+          item.actualNorm !== null && item.actualNorm !== undefined
+            ? item.actualNorm
+            : 0
+        const applyToAll = item.applyActualNormToAll || false
+
+        // If applyActualNormToAll is true, populate all 12 months with actualNorm value
+        if (
+          applyToAll &&
+          actualNormValue !== null &&
+          actualNormValue !== undefined
+        ) {
+          return {
+            ...item,
+            id: item.id || index + 1,
+            remarks: item.remarks || '',
+            actualNorm: actualNormValue,
+            applyActualNormToAll: applyToAll,
+            isEditable: false, // Row not editable when checkbox is checked
+            aprNorms: actualNormValue,
+            mayNorms: actualNormValue,
+            junNorms: actualNormValue,
+            julNorms: actualNormValue,
+            augNorms: actualNormValue,
+            sepNorms: actualNormValue,
+            octNorms: actualNormValue,
+            novNorms: actualNormValue,
+            decNorms: actualNormValue,
+            janNorms: actualNormValue,
+            febNorms: actualNormValue,
+            marNorms: actualNormValue,
+          }
+        }
+
+        // Otherwise, keep the original month values
+        return {
+          ...item,
+          id: item.id || index + 1,
+          remarks: item.remarks || '',
+          actualNorm: actualNormValue,
+          applyActualNormToAll: applyToAll,
+          isEditable: true, // Row editable when checkbox unchecked
+        }
+      })
 
       setRows(tempRes)
       setOriginalRows(tempRes)
@@ -420,7 +503,9 @@ const FixedNorms = () => {
           severity: 'success',
         })
         // Refresh data after import
-        await fetchNormsData()
+        const formattedStartDate = formatDate(startDate)
+        const formattedEndDate = formatDate(endDate)
+        await fetchNormsData(formattedStartDate, formattedEndDate)
       } else if (response?.code === 400 && response?.data) {
         // Handle error response with Excel file download
         try {
@@ -450,7 +535,9 @@ const FixedNorms = () => {
             severity: 'error',
           })
           // Refresh data after import
-          await fetchNormsData()
+          const formattedStartDate = formatDate(startDate)
+          const formattedEndDate = formatDate(endDate)
+          await fetchNormsData(formattedStartDate, formattedEndDate)
         } catch (downloadError) {
           console.error('Error downloading error file:', downloadError)
           setSnackbarOpen(true)
@@ -486,7 +573,16 @@ const FixedNorms = () => {
     })
 
     try {
-      await InputApiService.exportCPPNormsExcel(keycloak, PLANT_ID, AOP_YEAR)
+      const formattedStartDate = formatDate(startDate)
+      const formattedEndDate = formatDate(endDate)
+
+      await InputApiService.exportCPPNormsExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        formattedStartDate,
+        formattedEndDate,
+      )
       setSnackbarData({
         message: 'Excel download completed successfully!',
         severity: 'success',
@@ -507,12 +603,117 @@ const FixedNorms = () => {
     setRemarkDialogOpen(true)
   }
 
+  // Custom item change handler for actualNorm checkbox logic
+  const handleCustomItemChange = (e, setRows) => {
+    const { dataItem, field, value } = e
+    const itemId = dataItem.id
+
+    // When checkbox is toggled
+    if (field === 'applyActualNormToAll') {
+      const actualNormValue = dataItem.actualNorm
+
+      if (value && actualNormValue !== null && actualNormValue !== undefined) {
+        // Checkbox is checked - copy actualNorm to all 12 months and disable row
+        const updatedRow = {
+          ...dataItem,
+          applyActualNormToAll: value,
+          isEditable: false, // Disable row when checkbox is checked
+          aprNorms: actualNormValue,
+          mayNorms: actualNormValue,
+          junNorms: actualNormValue,
+          julNorms: actualNormValue,
+          augNorms: actualNormValue,
+          sepNorms: actualNormValue,
+          octNorms: actualNormValue,
+          novNorms: actualNormValue,
+          decNorms: actualNormValue,
+          janNorms: actualNormValue,
+          febNorms: actualNormValue,
+          marNorms: actualNormValue,
+        }
+
+        setRows((prev) => prev.map((r) => (r.id === itemId ? updatedRow : r)))
+
+        setModifiedCells((prev) => ({
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || dataItem),
+            ...updatedRow,
+            inEdit: true,
+          },
+        }))
+        return false
+      } else {
+        // Checkbox is unchecked - restore entire original row
+        const originalRow = originalRows.find((r) => r.id === itemId)
+
+        const updatedRow = {
+          ...originalRow,
+          applyActualNormToAll: value,
+          isEditable: true, // Enable row when checkbox is unchecked
+        }
+
+        setRows((prev) => prev.map((r) => (r.id === itemId ? updatedRow : r)))
+
+        setModifiedCells((prev) => ({
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || dataItem),
+            ...updatedRow,
+            inEdit: true,
+          },
+        }))
+        return false
+      }
+    }
+
+    // When actualNorm value changes and checkbox is checked
+    if (field === 'actualNorm') {
+      const isChecked = dataItem.applyActualNormToAll
+
+      if (isChecked) {
+        // Update actualNorm and all 12 months
+        const updatedRow = {
+          ...dataItem,
+          actualNorm: value,
+          aprNorms: value,
+          mayNorms: value,
+          junNorms: value,
+          julNorms: value,
+          augNorms: value,
+          sepNorms: value,
+          octNorms: value,
+          novNorms: value,
+          decNorms: value,
+          janNorms: value,
+          febNorms: value,
+          marNorms: value,
+        }
+
+        setRows((prev) => prev.map((r) => (r.id === itemId ? updatedRow : r)))
+
+        setModifiedCells((prev) => ({
+          ...prev,
+          [itemId]: {
+            ...(prev[itemId] || dataItem),
+            ...updatedRow,
+            inEdit: true,
+          },
+        }))
+        return false
+      }
+    }
+  }
+
   return (
     <Box>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading || calculationLoading}
-      ></Backdrop>
+        open={!!loading || !!dateLoading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
       <NestedKendoTable
         columns={nestedColumns}
         rows={rows}
@@ -537,6 +738,15 @@ const FixedNorms = () => {
         setSnackbarData={setSnackbarData}
         customHeight={70}
         groupBy={['generatingPlantName', 'accountName']}
+        customItemChange={handleCustomItemChange}
+      />
+
+      {/* Notification for configuration warnings */}
+      <Notification
+        open={snackbarOpen}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarData.message}
+        severity={snackbarData.severity}
       />
     </Box>
   )

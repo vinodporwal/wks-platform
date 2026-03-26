@@ -1,37 +1,30 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
-  Backdrop,
   Box,
-  CircularProgress,
   Stack,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from '../../../../../node_modules/@mui/material/index'
 import TabSection from 'components/aop-phase-two/common/utilities/Tabs'
-import ConfigurationAccordian from './components/ConfigurationAccordian'
-import ConfigurationDialog from './components/ConfigurationDialog'
+import ConfigurationAccordian from '../../common/components/ConfigurationAccordian'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
-import {
-  validateDateRange,
-  buildConfigurationPayload,
-  executeConfiguration,
-  getAopSummary,
-  saveSummary,
-  getConfigurationExecutionDetails,
-} from './utils/utility'
-import Notification from 'components/aop-phase-two/common/utilities/Notification'
 import Configuration from './Configuration'
 import Constants from './Constants'
 import ReportManualEntry from './ReportManualEntry'
 import TabAccessApiService from 'components/aop-phase-two/services/common/tabAccessApiService'
+import PIMSThroughput from './PIMSThroughput'
+import { ProductionNormsApiService } from 'components/aop-phase-two/services/vgoht/productionNormsApiService'
+import Notification from 'components/aop-phase-two/common/utilities/Notification'
 
 const ProductionNormsBasis = () => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { oldYear, plantObject, siteObject, verticalObject, year } =
     dataGridStore
-
-  const hasExecutedRef = useRef(false)
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
@@ -43,51 +36,18 @@ const ProductionNormsBasis = () => {
 
   const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [loading1, setLoading1] = useState(false)
-  const [dateEdited, setDateEdited] = useState(false)
-  const [summaryEdited, setSummaryEdited] = useState(false)
-  const [summary, setSummary] = useState('')
-  const [startDate, setStartDate] = useState()
-  const [endDate, setEndDate] = useState()
-  const [configurationExecutionDetails, setConfigurationExecutionDetails] =
-    useState([])
-  const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
+  const [tabs, setTabs] = useState([])
+  const [availableTabs, setAvailableTabs] = useState([])
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
+  const [normCalculationLoading, setNormCalculationLoading] = useState(false)
+  const [refreshData, setRefreshData] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
+    autoHide: true,
   })
-  const [tabs, setTabs] = useState([])
-  const [availableTabs, setAvailableTabs] = useState([])
-
-  const handleOpenDialog = () => {
-    setOpenConfirmDialog(true)
-  }
-
-  const handleCloseDialog = () => {
-    setOpenConfirmDialog(false)
-  }
-
-  const handleConfirmLoad = async () => {
-    setOpenConfirmDialog(false)
-    await onLoad()
-  }
-
-  const fetchConfigurationDetails = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    const details = await getConfigurationExecutionDetails(
-      keycloak,
-      PLANT_ID,
-      AOP_YEAR,
-    )
-    setConfigurationExecutionDetails(details)
-  }, [keycloak, PLANT_ID, AOP_YEAR])
-
-  const fetchSummary = useCallback(async () => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    const summaryData = await getAopSummary(keycloak, PLANT_ID, AOP_YEAR)
-    setSummary(summaryData || '')
-  }, [keycloak, PLANT_ID, AOP_YEAR])
 
   const getConfigurationTabsMatrix = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR || !SITE_ID || !VERTICAL_ID) return
@@ -132,89 +92,105 @@ const ProductionNormsBasis = () => {
     }
   }, [keycloak])
 
-  const onLoad = async () => {
-    // Validate dates
-    const validation = validateDateRange(startDate, endDate)
-    if (!validation.valid) {
+  useEffect(() => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    setTabIndex(0)
+    getConfigurationTabsMatrix()
+    getConfigurationAvailableTabs()
+  }, [
+    PLANT_ID,
+    AOP_YEAR,
+    getConfigurationTabsMatrix,
+    getConfigurationAvailableTabs,
+  ])
+
+  // Callback to receive dates from ConfigurationAccordian
+  const handleDatesChange = (start, end) => {
+    setStartDate(start)
+    setEndDate(end)
+  }
+
+  // Helper function to format date for API
+  const formatDateForAPI = (date) => {
+    if (!date) return null
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  // Handler for Load Norm Calculation button
+  const handleLoadNormCalculation = async () => {
+    if (!startDate || !endDate) {
       setSnackbarOpen(true)
       setSnackbarData({
-        message: validation.message,
+        message: 'Please select both start date and end date',
         severity: 'warning',
+        autoHide: true,
       })
       return
     }
 
-    setLoading1(true)
-    setLoading(true)
-
-    try {
-      // Build payload
-      const payload = buildConfigurationPayload(
-        startDate,
-        endDate,
-        configurationExecutionDetails,
-        PLANT_ID,
-        AOP_YEAR,
-      )
-
-      if (!payload) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Start/End date configuration is incomplete.',
-          severity: 'error',
-        })
-        return
-      }
-
-      // Execute configuration
-      const response = await executeConfiguration(payload, keycloak)
-
-      if (response) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Execution Started Successfully!',
-          severity: 'success',
-        })
-        await fetchConfigurationDetails()
-        await fetchSummary()
-      } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Execution Failed!',
-          severity: 'error',
-        })
-      }
-    } catch (error) {
-      console.error('Execution Failed!', error)
+    if (!PLANT_ID || !AOP_YEAR || !SITE_ID) {
       setSnackbarOpen(true)
       setSnackbarData({
-        message: 'Execution Failed!',
+        message: 'Missing required parameters',
         severity: 'error',
+        autoHide: true,
+      })
+      return
+    }
+
+    setNormCalculationLoading(true)
+    try {
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
+      const response =
+        await ProductionNormsApiService.loadButtonNormCalculation(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          SITE_ID,
+          periodFrom,
+          periodTo,
+        )
+
+      if (response?.code === 422) {
+        // Then show validation error after a delay
+        setTimeout(() => {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response.message || 'Validation error occurred.',
+            severity: 'error',
+            autoHide: false,
+          })
+          setRefreshData(true)
+        }, 500)
+      } else {
+        // Code 200 - show only success notification
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message:
+            response?.message || 'Norm calculation completed successfully!',
+          severity: 'success',
+          autoHide: true,
+        })
+        setRefreshData(true)
+      }
+    } catch (error) {
+      console.error('Error in norm calculation:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to calculate norms. Please try again.',
+        severity: 'error',
+        autoHide: true,
       })
     } finally {
-      setLoading(false)
-      setLoading1(false)
-      setDateEdited(false)
+      setNormCalculationLoading(false)
     }
   }
-
-  useEffect(() => {
-    if (!PLANT_ID || !AOP_YEAR) return
-    setTabIndex(0)
-    fetchConfigurationDetails()
-    fetchSummary()
-    getConfigurationTabsMatrix()
-    getConfigurationAvailableTabs()
-    setSummaryEdited(false)
-    setDateEdited(false)
-  }, [
-    PLANT_ID,
-    AOP_YEAR,
-    fetchConfigurationDetails,
-    fetchSummary,
-    getConfigurationTabsMatrix,
-    getConfigurationAvailableTabs,
-  ])
 
   const [start, end] = AOP_YEAR ? AOP_YEAR.split('-').map(Number) : [0, 0]
   const prevYearFormatted = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
@@ -235,23 +211,25 @@ const ProductionNormsBasis = () => {
     return tab ? tab.displayName : null
   }
 
-  // Dynamic tab list from API
-  const tablist = tabs.map((tabId) => {
-    if (!tabId || !availableTabs.length) return ''
-    const tabInfo = availableTabs.find(
-      (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
-    )
+  // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
+  const tablist = tabs
+    .map((tabId) => {
+      if (!tabId || !availableTabs.length) return ''
+      const tabInfo = availableTabs.find(
+        (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
+      )
 
-    if (tabInfo) {
-      const originalName = tabInfo.displayName
-      // Add year suffix for Report Manual Entry
-      if (originalName === 'Report Manual Entry') {
-        return `${originalName} (${prevYearFormatted})`
+      if (tabInfo) {
+        const originalName = tabInfo.displayName
+        // Filter out Report Manual Entry
+        if (originalName === 'Report Manual Entry') {
+          return null
+        }
+        return originalName
       }
-      return originalName
-    }
-    return tabId
-  })
+      return tabId
+    })
+    .filter((tab) => tab !== null)
 
   const renderTab = () => {
     if (!tabs.length || !availableTabs.length) {
@@ -265,11 +243,19 @@ const ProductionNormsBasis = () => {
 
     switch (currentTabName) {
       case 'Configuration':
-        return <Configuration />
+        return (
+          <Configuration
+            startDate={startDate}
+            endDate={endDate}
+            refreshData={refreshData}
+          />
+        )
       case 'Constants':
-        return <Constants />
+        return <Constants startDate={startDate} endDate={endDate} />
+      case 'PIMS Throughput':
+        return <PIMSThroughput startDate={startDate} endDate={endDate} />
       case 'Report Manual Entry':
-        return <ReportManualEntry />
+        return <ReportManualEntry startDate={startDate} endDate={endDate} />
       default:
         return null
     }
@@ -277,57 +263,41 @@ const ProductionNormsBasis = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
-
       <Stack sx={{ mt: 1, mb: 1 }}>
         <ConfigurationAccordian
-          startDate={startDate}
-          endDate={endDate}
-          summary={summary}
-          configurationExecutionDetails={configurationExecutionDetails}
+          PLANT_ID={PLANT_ID}
+          AOP_YEAR={AOP_YEAR}
           isOldYear={isOldYear}
-          READ_ONLY={READ_ONLY}
-          setStartDate={setStartDate}
-          setEndDate={setEndDate}
-          setSummary={setSummary}
-          setDateEdited={setDateEdited}
-          setSummaryEdited={setSummaryEdited}
-          handleOpenDialog={handleOpenDialog}
+          isSummaryRequired={true}
+          onDatesChange={handleDatesChange}
+          onLoadNormCalculation={handleLoadNormCalculation}
+          normCalculationLoading={normCalculationLoading}
         />
       </Stack>
 
       {tabs.length > 0 && availableTabs.length > 0 && (
-        <Box>
+        <Stack
+          direction='row'
+          justifyContent='space-between'
+          alignItems='center'
+        >
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
             tabs={tablist}
           />
-        </Box>
+        </Stack>
       )}
 
       {/* Tab Content */}
       <Box sx={{ mt: 2 }}>{renderTab()}</Box>
-
-      {/* Dialog sections */}
-      <ConfigurationDialog
-        open={openConfirmDialog}
-        onClose={handleCloseDialog}
-        onConfirm={handleConfirmLoad}
-        startDate={startDate}
-        endDate={endDate}
-      />
-
+      {/* Notification */}
       <Notification
         open={snackbarOpen}
-        setOpen={setSnackbarOpen}
+        onClose={() => setSnackbarOpen(false)}
         message={snackbarData.message}
         severity={snackbarData.severity}
+        autoHide={snackbarData.autoHide}
       />
     </div>
   )

@@ -31,12 +31,13 @@ import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinpu
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
 import { getRoleName } from 'services/role-service'
+import CrakcerConstants from './CrakcerConstants'
+import CrakcerProductionConst from './CrakcerProductionConst'
 
 const AopDesignBasis = () => {
   const hasExecutedRef = useRef(false)
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -53,6 +54,7 @@ const AopDesignBasis = () => {
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
+  const SITE_NAME = siteObject?.name
   const VERTICAL_ID = verticalObject?.id
   const VERTICAL_NAME = verticalObject?.name
   const AOP_YEAR = year?.selectedYear
@@ -60,7 +62,9 @@ const AopDesignBasis = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
 
@@ -667,6 +671,7 @@ const AopDesignBasis = () => {
           flexDirection: 'column',
         }}
       ></div>
+      {SITE_NAME === 'VMD' && <CrakcerProductionConst />}
     </div>
   )
 }

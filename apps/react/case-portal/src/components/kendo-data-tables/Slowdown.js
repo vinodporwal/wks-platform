@@ -1,13 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
+import { DtaDataService } from 'services/DtaDataservice'
 import { useSession } from 'SessionStoreContext'
 import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 
 import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 
-import { SlowDownElastomerColumns } from 'components/colums/ElastomerColums'
+import {
+  SlowDownElastomerColumns,
+  SlowDownElastomerColumnsSBR,
+  SlowDown_Elastomer_JMD_Columns,
+} from 'components/colums/ElastomerColums'
 import {
   SlowDownDmdVcmColumns,
   SlowDownVcmColumns,
@@ -15,7 +20,10 @@ import {
 import { SlowDownAromaticsColumns } from 'components/colums/AromaticsColumns'
 import { SlowDownMegColumns } from 'components/colums/MegColums'
 import { SlowDownPeColumns } from 'components/colums/PeColums'
-import { SlowDownPpColumns } from 'components/colums/PpColums'
+import {
+  SlowDownPpColumns,
+  SlowDownPpDtaColumns,
+} from 'components/colums/PpColums'
 import {
   SlowDownPtaColumns,
   SlowDownPtadmdColumns,
@@ -28,6 +36,8 @@ import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+
+import ElastomerSlowdown from './ElastomerSlowdown'
 const SlowDown = ({ permissions }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -65,6 +75,7 @@ const SlowDown = ({ permissions }) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const [errorRows, setErrorRows] = useState(new Set())
   const lowerVertName = vertName?.toLowerCase()
+  const lowerPlantName = plantName?.toLowerCase()
   const lowerSiteName = SITE_NAME_LOWER
   const [rowModesModel, setRowModesModel] = useState({})
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -84,24 +95,40 @@ const SlowDown = ({ permissions }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [allDescriptionDrpdwn, setAllDescriptionDrpdwn] = useState([])
+  const [allLines, setAllLines] = useState([])
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
 
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_ELASTOMER_JMD =
+    lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
     lowerVertName === 'pet' ||
-    lowerVertName == 'elastomer' ||
-    lowerVertName == 'pvc' ||
+    (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
     lowerVertName == 'vcm' ||
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
-    lowerVertName == 'meg'
+    lowerVertName == 'meg' ||
+    IS_PVC_VMD ||
+    IS_PVC_DMD
 
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PET = lowerVertName === 'pet'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
+  const IS_PTA_HMD = lowerVertName === 'pta' && lowerSiteName === 'hmd'
+  const IS_PP_DTA = lowerVertName === 'pp' && lowerSiteName === 'dta'
+  const IS_PP_SEZ = lowerVertName === 'pp' && lowerSiteName === 'sez'
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'sbr'
+  const IS_PP_HMD = lowerVertName === 'pp' && lowerSiteName === 'hmd'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -245,6 +272,13 @@ const SlowDown = ({ permissions }) => {
         rateEOE: row.rateEOE,
       }))
       const slowDownDetailsElastomer = newRow.map((row) => ({
+        productId: (() => {
+          const matched = allProducts.find(
+            (p) => p.displayName === row.productName1,
+          )
+          return matched?.realId || null
+        })(),
+        productName: row.productName1,
         discription: row.discription,
         durationInHrs: (() => {
           const v = findDuration('1', row)
@@ -288,6 +322,9 @@ const SlowDown = ({ permissions }) => {
         id: row.idFromApi || null,
         rateEO: null,
         rateEOE: null,
+        ...(IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+          ? { lineId: row.lineId }
+          : {}),
       }))
       const slowDownDetailsPTADMD = newRow.map((row) => ({
         productId: (() => {
@@ -327,7 +364,9 @@ const SlowDown = ({ permissions }) => {
             ? slowDownDetailsPTADMD
             : lowerVertName === 'pe' ||
                 lowerVertName === 'pp' ||
-                lowerVertName === 'pet'
+                lowerVertName === 'pet' ||
+                IS_PVC_VMD ||
+                IS_PVC_DMD
               ? slowDownDetailsPEPP
               : slowDownDetailsMEG,
         keycloak,
@@ -446,7 +485,10 @@ const SlowDown = ({ permissions }) => {
         lowerVertName != 'pe' &&
         lowerVertName !== 'pp' &&
         lowerVertName !== 'pet' &&
-        !IS_PTA_DMD
+        !IS_PTA_DMD &&
+        !IS_PVC_VMD &&
+        !IS_PVC_DMD &&
+        !IS_ELASTOMER_JMD
       ) {
         for (const record of data) {
           const startDate =
@@ -519,7 +561,7 @@ const SlowDown = ({ permissions }) => {
           ? requiredFieldsForElastomer
           : lowerVertName === 'meg'
             ? requiredFieldsForMeg
-            : IS_PE_PP || IS_PET
+            : IS_PE_PP || IS_PET || IS_PVC_VMD
               ? requiredFieldsForPe
               : IS_PTA_DMD
                 ? requiredFieldsISPTADMD
@@ -580,7 +622,13 @@ const SlowDown = ({ permissions }) => {
         (d, i) => d && allDescriptions.indexOf(d) !== i,
       )
 
-      if (duplicate && lowerVertName !== 'vcm' && !IS_PTA_DMD) {
+      if (
+        duplicate &&
+        lowerVertName !== 'vcm' &&
+        !IS_PTA_DMD &&
+        !IS_PTA_HMD &&
+        !IS_CHEMICAL
+      ) {
         rows.forEach((row) => {
           if ((row.discription || '').trim().toLowerCase() === duplicate) {
             row.isError = true
@@ -599,7 +647,10 @@ const SlowDown = ({ permissions }) => {
         lowerVertName != 'pe' &&
         lowerVertName !== 'pp' &&
         !IS_PTA_DMD &&
-        lowerVertName !== 'pet'
+        lowerVertName !== 'pet' &&
+        !IS_PVC_VMD &&
+        !IS_PVC_DMD &&
+        !IS_ELASTOMER_JMD
       ) {
         for (const record of data) {
           const startMissing = !record.maintStartDateTime
@@ -670,8 +721,8 @@ const SlowDown = ({ permissions }) => {
 
       if (lowerVertName === 'vcm') {
         const furnaceDecokingRates = {
-          'Furnace Decoking H-210': 27,
-          'Furnace Decoking H-220': 27,
+          'Furnace Decoking H-210': 27.0833,
+          'Furnace Decoking H-220': 27.0833,
           'Furnace Decoking H-1220': 26.458,
         }
         for (const record of data) {
@@ -697,15 +748,21 @@ const SlowDown = ({ permissions }) => {
       // MEG specific checks
       if (
         lowerVertName === 'meg' ||
-        lowerVertName === 'pvc' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'pet' ||
-        lowerVertName === 'vcm'
+        lowerVertName === 'vcm' ||
+        IS_PVC_VMD ||
+        IS_CHEMICAL
       ) {
         // Month span check
         //check timeframe Multiple month spilt into single
 
-        if (lowerVertName != 'vcm' || !IS_PTA_DMD || lowerVertName !== 'pet') {
+        if (
+          lowerVertName != 'vcm' &&
+          !IS_PTA_DMD &&
+          lowerVertName !== 'pet' &&
+          !IS_PVC_VMD
+        ) {
           for (const row of rows) {
             const start = new Date(row.maintStartDateTime)
             const end = new Date(row.maintEndDateTime)
@@ -727,7 +784,13 @@ const SlowDown = ({ permissions }) => {
           }
         }
         // Overlap within Slowdown  of timeframe ovelaping
-        if (!IS_PTA_DMD && lowerVertName !== 'pet') {
+        if (
+          !IS_PTA_DMD &&
+          lowerVertName !== 'pet' &&
+          !IS_PTA_HMD &&
+          !IS_PVC_VMD &&
+          !IS_CHEMICAL
+        ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -764,9 +827,12 @@ const SlowDown = ({ permissions }) => {
         if (
           lowerVertName !== 'elastomer' &&
           // lowerVertName !== 'vcm' &&
-          lowerVertName !== 'pvc' &&
           !IS_PTA_DMD &&
-          lowerVertName !== 'pet'
+          lowerVertName !== 'pet' &&
+          !IS_PTA_HMD &&
+          !IS_PVC_VMD &&
+          !IS_CHEMICAL &&
+          !IS_PP_SEZ
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -979,6 +1045,7 @@ const SlowDown = ({ permissions }) => {
             (item?.maintStartDateTime
               ? monthNames[new Date(item?.maintStartDateTime).getMonth()]
               : ''),
+          lineId: item?.lineId || null,
         }
       })
 
@@ -1101,7 +1168,7 @@ const SlowDown = ({ permissions }) => {
         var data = []
         if (lowerVertName == 'meg')
           data = await DataService.getAllProducts(keycloak, PLANT_ID, AOP_YEAR)
-        else if (IS_PE_PP || IS_PET) {
+        else if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_ELASTOMER_HMD_SBR) {
           data = await DataService.gradeDetails(keycloak, AOP_YEAR, PLANT_ID)
         } else {
           data = await DataService.getAllProductsAll(
@@ -1119,7 +1186,7 @@ const SlowDown = ({ permissions }) => {
               displayName: product.displayName,
               realId: product.id,
             }))
-        } else if (IS_PE_PP || IS_PET) {
+        } else if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_ELASTOMER_HMD_SBR) {
           productList = data?.data.map((product) => ({
             id: product.displayName,
             displayName: product.displayName,
@@ -1172,6 +1239,24 @@ const SlowDown = ({ permissions }) => {
     lowerSiteName,
     PLANT_NAME_LOWER,
   ])
+  const fetchLineDetails = async () => {
+    try {
+      const response = await DtaDataService.getLineDetails(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      const lines = Array.isArray(response?.data) ? response.data : []
+      setAllLines(lines)
+    } catch (error) {
+      console.error('Error fetching line details:', error)
+    }
+  }
+  useEffect(() => {
+    if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      fetchLineDetails()
+    }
+  }, [lowerVertName, lowerSiteName, keycloak, PLANT_ID, AOP_YEAR])
 
   const focusFirstField = async () => {
     const newRowId = rows.length
@@ -1189,25 +1274,41 @@ const SlowDown = ({ permissions }) => {
       PLANT_NAME_LOWER === 'vcm' &&
       SITE_NAME_LOWER === 'dmd'
 
+    var IS_ELASTOMER_HMD_SBR =
+      lowerVertName === 'elastomer' &&
+      PLANT_NAME_LOWER === 'sbr' &&
+      SITE_NAME_LOWER === 'hmd'
+
+    var IS_ELASTOMER_JMD =
+      lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+
     switch (lowerVertName) {
       case verticalEnums.PE:
         return SlowDownPeColumns
       case verticalEnums.PP:
-        return SlowDownPpColumns
+        return IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD
+          ? SlowDownPpDtaColumns
+          : SlowDownPpColumns
       case verticalEnums.PTA:
         return IS_PTA_DMD ? SlowDownPtadmdColumns : SlowDownPtaColumns
       case verticalEnums.ELASTOMER:
-        return SlowDownElastomerColumns
+        return IS_ELASTOMER_JMD
+          ? SlowDown_Elastomer_JMD_Columns
+          : IS_ELASTOMER_HMD_SBR
+            ? SlowDownElastomerColumnsSBR
+            : SlowDownElastomerColumns
       case verticalEnums.MEG:
         return SlowDownMegColumns
       case verticalEnums.AROMATICS:
         return SlowDownAromaticsColumns
       case verticalEnums.PVC:
-        return SlowDownElastomerColumns
+        return IS_PVC_VMD ? SlowDownPeColumns : SlowDownPpDtaColumns
       case verticalEnums.VCM:
         return IS_VCM_DMD_VCM ? SlowDownVcmColumns : SlowDownDmdVcmColumns
       case verticalEnums.PET:
         return SlowDownPeColumns
+      case verticalEnums.CHEMICAL:
+        return SlowDownPtaColumns
       default:
         return SlowDownMegColumns
     }
@@ -1256,7 +1357,14 @@ const SlowDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PTA_DMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+        response = await DtaDataService.exportSlowdownLineWise(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PTA_DMD) {
         response = await DataService.ExportSlowdownDetailsPTADMD(
           keycloak,
           PLANT_ID,
@@ -1264,11 +1372,11 @@ const SlowDown = ({ permissions }) => {
           EXCEL_EXPORT_TITLE,
         )
       } else if (
-        lowerVertName == 'elastomer' ||
-        lowerVertName == 'pvc' ||
+        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
         lowerVertName == 'vcm' ||
         lowerVertName === 'aromatics' ||
-        lowerVertName === 'pta'
+        lowerVertName === 'pta' ||
+        IS_CHEMICAL
       ) {
         response = await DataService.slowdownDetailsElastomerExport(
           keycloak,
@@ -1307,7 +1415,14 @@ const SlowDown = ({ permissions }) => {
     try {
       let response
 
-      if (IS_PTA_DMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+        response = await DtaDataService.ImportSlowdownLineWise(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PTA_DMD) {
         response = await DataService.ImportSlowdownPTADMDDetails(
           rawFile,
           keycloak,
@@ -1315,10 +1430,10 @@ const SlowDown = ({ permissions }) => {
           AOP_YEAR,
         )
       } else if (
-        lowerVertName == 'elastomer' ||
-        lowerVertName == 'pvc' ||
+        (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
         lowerVertName == 'vcm' ||
-        lowerVertName == 'pta'
+        lowerVertName == 'pta' ||
+        IS_CHEMICAL
       ) {
         response = await DataService.ImportSlowdownElastomerDetails(
           rawFile,
@@ -1326,7 +1441,7 @@ const SlowDown = ({ permissions }) => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (lowerVertName === 'chemical' || lowerVertName === 'meg') {
+      } else if (lowerVertName === 'meg') {
         response = await DataService.ImportSlowdownDetailsEOE(
           rawFile,
           keycloak,
@@ -1427,7 +1542,7 @@ const SlowDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: true,
+      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
       showTitleNameBusiness: true,
       titleName: SCREEN_NAME,
       uploadExcelBtn: SHOW_EXCEL_UPLOAD_BUTTON,
@@ -1441,6 +1556,8 @@ const SlowDown = ({ permissions }) => {
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
       highlightProductName1:
         lowerVertName === 'pp' || lowerVertName === 'pe' ? true : false,
+      highlightLine:
+        IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD ? true : false,
     },
     isOldYear,
   )
@@ -1454,7 +1571,8 @@ const SlowDown = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {lowerVertName === 'meg' && (
+      {(lowerVertName === 'meg' ||
+        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD)) && (
         <Box style={{ margin: 0, padding: 0 }}>
           <Tabs
             value={selectedTab}
@@ -1478,7 +1596,7 @@ const SlowDown = ({ permissions }) => {
             />
 
             <Tab
-              label='Configuration'
+              label='Slowdown History Config'
               sx={{
                 border: '1px solid #ADD8E6',
                 borderBottom: '1px solid #ADD8E6',
@@ -1491,6 +1609,7 @@ const SlowDown = ({ permissions }) => {
         </Box>
       )}
 
+      {/* TAB 1 - SAME FOR MEG + ELASTOMER */}
       {selectedTab === 0 && (
         <KendoDataTables
           modifiedCells={modifiedCells}
@@ -1529,10 +1648,12 @@ const SlowDown = ({ permissions }) => {
           screenType='slowdown'
           downloadExcelForConfiguration={downloadExcelForConfiguration}
           allDescriptionDrpdwn={allDescriptionDrpdwn}
+          allLines={allLines}
         />
       )}
 
-      {selectedTab === 1 && (
+      {/* TAB 2 FOR MEG (EXISTING CONFIG GRID) */}
+      {selectedTab === 1 && lowerVertName === 'meg' && (
         <KendoDataTables
           modifiedCells={modifiedCells2}
           setModifiedCells={setModifiedCells2}
@@ -1556,6 +1677,9 @@ const SlowDown = ({ permissions }) => {
           unsavedChangesRef={unsavedChangesRef}
           permissions={{
             saveBtn: true,
+            addButton: false,
+            deleteButton: false,
+            editButton: true,
             allAction: true,
             onlyCellUpdate: true,
             downloadExcelBtnFromUI: true,
@@ -1568,6 +1692,11 @@ const SlowDown = ({ permissions }) => {
           allRedCell={allRedCell}
         />
       )}
+
+      {/* TAB 2 FOR ELASTOMER */}
+      {selectedTab === 1 &&
+        lowerVertName === 'elastomer' &&
+        !IS_ELASTOMER_JMD && <ElastomerSlowdown />}
     </div>
   )
 }

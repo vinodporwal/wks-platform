@@ -28,10 +28,10 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
+import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const tabs = ['IBR Plan']
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -52,7 +52,9 @@ const DecokingConfig = () => {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_NAME = plantObject?.name?.toUpperCase()
   const SITE_NAME = siteObject?.name?.toUpperCase()
@@ -64,6 +66,7 @@ const DecokingConfig = () => {
   const lowerVertName = vertName?.toLowerCase()
   const SCREEN_NAME = screenTitle?.title
   const siteName = siteObject?.name?.toLowerCase()
+  const IS_DMD = siteObject?.name?.toLowerCase() == 'dmd'
   const [loading, setLoading] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -318,6 +321,7 @@ const DecokingConfig = () => {
               const dynamicColumnDeckoking = (data3?.data?.columns || []).map(
                 (col) => ({
                   ...col,
+                  filter: col.field === 'Month' ? true : false,
                   isDisabled:
                     ['Id', 'Month', 'AOPYear', 'Plant_FK_Id'].includes(
                       col.field,
@@ -387,7 +391,7 @@ const DecokingConfig = () => {
   function validateAllDateOverlaps(rows) {
     const pairs = [
       ['IBR_SD', 'IBR_ED', 'IBR'],
-      ['ShutDown_SD', 'ShutDown_ED', 'ShutDown'],
+      // ['ShutDown_SD', 'ShutDown_ED', 'ShutDown'],
     ]
     rows.forEach((row) => {
       row.isError = false
@@ -524,16 +528,19 @@ const DecokingConfig = () => {
       }
 
       var rawData1 = getRows('IBR Plan')[2]
-      const result = validateAllDateOverlaps(rawData1)
-      if (result.overlap) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: result.message,
-          severity: 'error',
-        })
-        setLoading(false)
-        return
-      }
+
+      //DATES OVERLLAPING IS REVERTED NOW
+
+      // const result = validateAllDateOverlaps(rawData1)
+      // if (result.overlap) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: result.message,
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
 
       postIbr2(rawData)
     } catch (error) {
@@ -581,7 +588,7 @@ const DecokingConfig = () => {
       d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()
 
     const pairs = [
-      ['ShutDown_SD', 'ShutDown_ED'],
+      // ['ShutDown_SD', 'ShutDown_ED'],
       ['IBR_SD', 'IBR_ED'],
     ]
 
@@ -647,6 +654,62 @@ const DecokingConfig = () => {
         setDateError(true)
         setLoading(false)
         return
+      }
+
+      const shutdownDateFields = ibrPlanColumns
+        .filter(
+          (col) =>
+            col.type === 'date' && col.field.toLowerCase().includes('shutdown'),
+        )
+        .map((col) => col.field)
+
+      for (const record of ibrScreen2Rows) {
+        for (const field of shutdownDateFields) {
+          const dateValue = record[field]
+          if (dateValue) {
+            const dateObj = new Date(dateValue)
+            if (dateObj < startLimit || dateObj > endLimit) {
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `Shutdown dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year.`,
+                severity: 'error',
+              })
+              setLoading(false)
+              return
+            }
+          }
+        }
+      }
+      const shutdownPairs = shutdownDateFields
+        .filter((field) => field.toLowerCase().endsWith('_sd'))
+        .map((startField) => {
+          const base = startField.slice(0, -3) // Remove '_SD'
+          const endField = shutdownDateFields.find(
+            (f) => f.toLowerCase() === `${base.toLowerCase()}_ed`,
+          )
+          return endField ? [startField, endField] : null
+        })
+        .filter(Boolean)
+
+      // Now validate each pair for each record
+      for (const record of ibrScreen2Rows) {
+        for (const [startField, endField] of shutdownPairs) {
+          const sd = record[startField]
+          const ed = record[endField]
+          if (sd && ed) {
+            const sdDate = new Date(sd)
+            const edDate = new Date(ed)
+            if (edDate < sdDate) {
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `${startField} must be before or equal to ${endField} for ${record.DisplayName || 'row'}.`,
+                severity: 'error',
+              })
+              setLoading(false)
+              return
+            }
+          }
+        }
       }
       if (globalTaStartDate > globalTaEndDate) {
         setSnackbarOpen(true)
@@ -1524,6 +1587,24 @@ const DecokingConfig = () => {
         summaryEdited={summaryEdited}
         setSummaryEdited={setSummaryEdited}
       />
+
+      {IS_DMD && (
+        <CustomAccordion defaultExpanded disableGutters>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Downstream Plant Shutdown
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <DownsteamShutdownDMD />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )}
 
       <FurnaceRunLengthGrid
         columns={runLengthColumns}

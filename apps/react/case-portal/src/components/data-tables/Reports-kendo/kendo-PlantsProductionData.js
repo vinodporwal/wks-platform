@@ -14,7 +14,7 @@ import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { getRoleName } from 'services/role-service'
 const PlantsProductionSummary = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -36,7 +36,9 @@ const PlantsProductionSummary = () => {
   const lowerVertName = vertName?.toLowerCase()
 
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const thisYear = AOP_YEAR
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
@@ -111,7 +113,7 @@ const PlantsProductionSummary = () => {
         {
           field: 'Particulates',
           title: 'Production Volume',
-          width: 150,
+          widthT: 180,
           editable: false,
         },
       ],
@@ -199,7 +201,7 @@ const PlantsProductionSummary = () => {
       ],
     },
 
-    { field: 'Remark', title: 'Remarks', width: 200, editable: true },
+    { field: 'Remark', title: 'Remarks', widthT: 200, editable: true },
   ]
 
   const fetchData = async () => {

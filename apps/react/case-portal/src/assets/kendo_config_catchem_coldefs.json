@@ -1,0 +1,29 @@
+[
+  {
+    "field": "particulars",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 220,
+    "hidden": false
+  },
+  {
+    "field": "uom",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 80
+  },
+  {
+    "field": "value",
+    "title": "Value",
+    "editable": true,
+    "type": "number",
+    "widthT": 120
+  },
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": false,
+    "type": "string",
+    "widthT": 250
+  }
+]

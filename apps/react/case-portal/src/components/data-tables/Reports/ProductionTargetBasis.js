@@ -44,7 +44,9 @@ const ProductionTargetBasis = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -74,7 +76,7 @@ const ProductionTargetBasis = () => {
             filterable: true,
             filter: isTextCol ? 'text' : isNumberCol ? 'numeric' : undefined,
             align: isTextCol ? 'left' : isNumberCol ? 'right' : undefined,
-            ...(isNumberCol ? { format: '{0:0.00}' } : {}),
+            ...(isNumberCol ? { format: '{0:0.0000}' } : {}),
             editable: false,
             isRightAlligned: isNumberCol ? 'numeric' : undefined,
           }
@@ -362,7 +364,7 @@ const ProductionTargetBasis = () => {
           variant='contained'
           onClick={exportAllGrids}
           className='btn-save'
-         // disabled={READ_ONLY}
+          // disabled={READ_ONLY}
         >
           Export
         </Button>

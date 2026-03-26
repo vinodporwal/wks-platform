@@ -10,9 +10,12 @@ import KendoDataTables from './index'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import StartAndEndPicker from './Utilities-Kendo/StartAndEndPicker'
+import NaphthaLimsDataSet from './NaphthaLimsDataSet'
+
 const CrackerConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -38,7 +41,9 @@ const CrackerConfig = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -53,6 +58,8 @@ const CrackerConfig = () => {
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
 
+  const [carbonFilterDataNaphtha, setCarbonFilterDataNaphtha] = useState([])
+  const [naphthaLoadedFlag, setNaphthaLoadedFlag] = useState(false)
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -73,6 +80,8 @@ const CrackerConfig = () => {
     'Recovery',
     'Furnace',
     'Constant',
+    'Naphtha',
+    'External Streams',
   ]
   const [tabs, setTabs] = useState(rawTabsStatic)
   const [availableTabs, setAvailableTabs] = useState([])
@@ -90,6 +99,12 @@ const CrackerConfig = () => {
 
   const [selectMode, setSelectMode] = useState('')
   const [constantsRows, setConstantsRows] = useState([])
+  const [naphthaRows, setNaphthaRows] = useState([])
+  const [naphthaDateRange, setNaphthaDateRange] = useState({
+    startDate: null,
+    endDate: null,
+  })
+  const [exsternalSteamRows, setExsternalSteamRows] = useState([])
 
   const currentTabDisplay = useMemo(() => {
     const idLower = tabs[tabIndex]?.toLowerCase() || ''
@@ -135,14 +150,38 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showModes: lowerVertName === 'cracker',
+      showModes:
+        lowerVertName === 'cracker' &&
+        currentTabDisplay !== 'Naphtha' &&
+        currentTabDisplay !== 'External Streams',
       saveWithRemark: true,
       saveBtn: true,
       allAction: lowerVertName === 'cracker',
       modes: modes,
-      uploadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
-      downloadExcelBtn: currentTabDisplay == 'Constant' ? false : true,
+      uploadExcelBtn:
+        currentTabDisplay == 'Constant' ||
+        currentTabDisplay == 'External Streams'
+          ? false
+          : true,
+      downloadExcelBtn:
+        currentTabDisplay == 'Constant' ||
+        currentTabDisplay == 'External Streams'
+          ? false
+          : true,
       hideRemarkForNonEditableRows: true,
+    },
+    isOldYear,
+  )
+  const adjustedPermissionsType = getAdjustedPermissions(
+    {
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      saveBtn: false,
+      allAction: lowerVertName === 'cracker',
+      showCalculate: false,
+      showCalculateVisibility: true,
     },
     isOldYear,
   )
@@ -155,7 +194,11 @@ const CrackerConfig = () => {
           ? 'cracker_constants'
           : currentTabDisplay === 'Yield'
             ? 'cracker_yield'
-            : 'cracker'
+            : currentTabDisplay === 'Naphtha'
+              ? 'Naphtha'
+              : currentTabDisplay === 'External Streams'
+                ? 'External_Streams'
+                : 'cracker'
 
     return getEnhancedAOPColDefs({
       headerMap,
@@ -193,7 +236,7 @@ const CrackerConfig = () => {
       console.error('Error fetching cracker tabs matrix:', err)
       setTabs(rawTabsStatic)
     }
-  }, [keycloak])
+  }, [keycloak, PLANT_ID, AOP_YEAR, SITE_ID, VERTICAL_ID])
 
   const fetchAvailableTabs = useCallback(async () => {
     try {
@@ -274,6 +317,10 @@ const CrackerConfig = () => {
           return furnace
         case 'Constant':
           return constantsRows
+        case 'Naphtha':
+          return naphthaRows
+        case 'External Streams':
+          return exsternalSteamRows
         default:
           return []
       }
@@ -286,6 +333,8 @@ const CrackerConfig = () => {
       furnace,
       optimizing,
       constantsRows,
+      naphthaRows,
+      exsternalSteamRows,
     ],
   )
 
@@ -314,18 +363,27 @@ const CrackerConfig = () => {
       case 'Constant':
         setConstantsRows(data)
         break
+
+      case 'Naphtha':
+        setNaphthaRows(data)
+        break
+      case 'External Streams':
+        setExsternalSteamRows(data)
+        break
+
       default:
         console.warn('No state for tab:', tabId)
     }
   }, [])
 
   const fetchCrackerRows = useCallback(
-    async (currentTabDisplay, mode) => {
+    async (currentTabDisplay, mode, startDate = null, endDate = null) => {
       if (!currentTabDisplay) return
       try {
         setLoading(true)
         let transformedData = []
         let transformedData1 = []
+        let transformedData12 = []
         var spyroVM1 = []
         if (currentTabDisplay == 'Constant') {
           spyroVM1 = await DataService.getSpyroInputData(
@@ -352,6 +410,97 @@ const CrackerConfig = () => {
             }))
           }
           setRowsForTab(currentTabDisplay, transformedData1)
+          return
+        }
+        if (currentTabDisplay == 'Naphtha') {
+          const formatDate = (date) => {
+            if (!date) return ''
+            const year = date.getFullYear()
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const day = String(date.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
+          }
+
+          const getDefaultStartDate = () => {
+            const date = new Date()
+            date.setFullYear(date.getFullYear() - 2)
+            return formatDate(date)
+          }
+
+          const getDefaultEndDate = () => {
+            return formatDate(new Date())
+          }
+
+          spyroVM1 = await DataService.getNaphthaData(
+            keycloak,
+            currentTabDisplay,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+          const naphthaRows = (spyroVM1.data.Data || []).map((item, idx) => ({
+            id: idx + 1,
+            type: item.type,
+            limsTagName: item.limsTagName,
+            uom: item.uom,
+            jmdNaphtha: item.jmdNaphtha,
+            pmdNaphtha: item.pmdNaphtha,
+            ioclNaphtha: item.ioclNaphtha,
+            gailNaphtha: item.gailNaphtha,
+            bpclNaphtha: item.bpclNaphtha,
+            ongcNaphtha: item.ongcNaphtha,
+            otherNaphtha: item.otherNaphtha,
+            naphthaBlendCompositionForOptimizerInput:
+              item.naphthaBlendCompositionForOptimizerInput,
+            normParameterFKID: item.normParameterFKID || '',
+            // Include all NaphthaId fields!
+            jmdNaphthaId: item.jmdNaphthaId,
+            pmdNaphthaId: item.pmdNaphthaId,
+            ioclNaphthaId: item.ioclNaphthaId,
+            gailNaphthaId: item.gailNaphthaId,
+            bpclNaphthaId: item.bpclNaphthaId,
+            ongcNaphthaId: item.ongcNaphthaId,
+            otherNaphthaId: item.otherNaphthaId,
+            bcoiNaphthaId: item.bcoiNaphthaId,
+          }))
+
+          setRowsForTab(currentTabDisplay, naphthaRows)
+          return
+        }
+        if (currentTabDisplay == 'External Streams') {
+          spyroVM1 = await DataService.getExsternalSteamData(
+            keycloak,
+            currentTabDisplay,
+            VERTICAL_ID,
+            SITE_ID,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+
+          const dataList =
+            spyroVM1?.data?.externalStreamDataList || spyroVM1?.data || []
+
+          if (Array.isArray(dataList)) {
+            transformedData12 = dataList.map((item, index) => ({
+              id: item.normParameterId || `row_${index}`,
+              particulars: item.particulars,
+              uom: item.uom,
+              remarks: item.remarks ?? '',
+              originalRemark: item.remarks ?? '',
+              ParticularsType: item.normParameterTypeDisplayName,
+              april: item.apr ?? null,
+              may: item.may ?? null,
+              june: item.jun ?? null,
+              july: item.jul ?? null,
+              august: item.aug ?? null,
+              september: item.sep ?? null,
+              october: item.oct ?? null,
+              november: item.nov ?? null,
+              december: item.dec ?? null,
+              NormParameterFKID: item.normParameterId,
+              ...item,
+            }))
+          }
+          setRowsForTab(currentTabDisplay, transformedData12)
           return
         }
 
@@ -394,7 +543,7 @@ const CrackerConfig = () => {
 
   useEffect(() => {
     if (keycloak && PLANT_ID && AOP_YEAR && currentTabDisplay) {
-      if (!selectMode) {
+      if (currentTabDisplay !== 'Naphtha' && !selectMode) {
         console.log('Skipping fetchCrackerRows until selectMode is set')
         return
       }
@@ -421,21 +570,49 @@ const CrackerConfig = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const saveChanges = useCallback(async () => {
     try {
-      if (Object.keys(modifiedCells).length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
-        setLoading(false)
-        return
+      let data = []
+      if (currentTabDisplay === 'Naphtha') {
+        const editedRows = Object.values(modifiedCells).filter(
+          (row) => row.inEdit,
+        )
+        // Get first two records
+        const firstTwoRows = naphthaRows.slice(0, 2)
+        // Merge and deduplicate by id
+        const merged = [...firstTwoRows, ...editedRows].reduce((acc, row) => {
+          acc[row.id] = row
+          return acc
+        }, {})
+        data = Object.values(merged)
+      } else {
+        if (Object.keys(modifiedCells).length === 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          setLoading(false)
+          return
+        }
+        const rawData = Object.values(modifiedCells)
+        data = rawData.filter((row) => row.inEdit)
+        if (data.length === 0) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'No Records to Save!',
+            severity: 'info',
+          })
+          setLoading(false)
+          return
+        }
       }
-      const rawData = Object.values(modifiedCells)
-      const data = rawData.filter((row) => row.inEdit)
-      if (data.length === 0) {
-        setSnackbarOpen(true)
-        setSnackbarData({ message: 'No Records to Save!', severity: 'info' })
-        setLoading(false)
-        return
-      }
-      const validationMessage = validateFields(data, ['particulars', 'remarks'])
+      console.log('data', data)
+      const naphthaFields = []
+      const validationMessage = validateFields(
+        data,
+        currentTabDisplay == 'Naphtha'
+          ? naphthaFields
+          : ['particulars', 'remarks'],
+      )
       if (validationMessage) {
         setSnackbarOpen(true)
         setSnackbarData({ message: validationMessage, severity: 'error' })
@@ -451,30 +628,76 @@ const CrackerConfig = () => {
   const saveSpyroData = async (newRows) => {
     setLoading(true)
     try {
-      const SpyroInputData = newRows.map((row) => ({
-        normParameterFKID: row.normParameterFKID ?? null,
-        Remarks: row.remarks ?? row.Remarks ?? null,
-        remarks: row.remarks ?? row.Remarks ?? null,
-        jan: row.jan || null,
-        feb: row.feb || null,
-        mar: row.mar || null,
-        apr: row.apr || null,
-        may: row.may || null,
-        jun: row.jun || null,
-        jul: row.jul || null,
-        aug: row.aug || null,
-        sep: row.sep || null,
-        oct: row.oct || null,
-        nov: row.nov || null,
-        dec: row.dec || null,
-        id: null,
-      }))
-      const response = await DataService.saveSpyroInput(
-        SpyroInputData,
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      let SpyroInputData
+      if (currentTabDisplay == 'Naphtha') {
+        SpyroInputData = newRows.map(({ id, inEdit, ...rest }) => rest)
+      } else if (currentTabDisplay == 'External Streams') {
+        SpyroInputData = newRows.map((row) => ({
+          normParameterId: row.normParameterId ?? row.NormParameterFKID ?? null,
+          particulars: row.particulars ?? null,
+          uom: row.uom ?? null,
+          remarks: row.remarks ?? null,
+          jan: row.jan ?? null,
+          feb: row.feb ?? null,
+          mar: row.mar ?? null,
+          apr: row.apr ?? null,
+          may: row.may ?? null,
+          jun: row.jun ?? null,
+          jul: row.jul ?? null,
+          aug: row.aug ?? null,
+          sep: row.sep ?? null,
+          oct: row.oct ?? null,
+          nov: row.nov ?? null,
+          dec: row.dec ?? null,
+          verticalId: row.verticalId ?? VERTICAL_ID,
+          plantId: row.plantId ?? PLANT_ID,
+          normParameterTypeFkId: row.normParameterTypeFkId ?? null,
+        }))
+      } else {
+        SpyroInputData = newRows.map((row) => ({
+          normParameterFKID: row.normParameterFKID ?? null,
+          Remarks: row.remarks ?? row.Remarks ?? null,
+          remarks: row.remarks ?? row.Remarks ?? null,
+          jan: row.jan || null,
+          feb: row.feb || null,
+          mar: row.mar || null,
+          apr: row.apr || null,
+          may: row.may || null,
+          jun: row.jun || null,
+          jul: row.jul || null,
+          aug: row.aug || null,
+          sep: row.sep || null,
+          oct: row.oct || null,
+          nov: row.nov || null,
+          dec: row.dec || null,
+          id: null,
+        }))
+      }
+      let response
+      if (currentTabDisplay == 'Naphtha') {
+        response = await DataService.saveNaphthaData(
+          SpyroInputData,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (currentTabDisplay == 'External Streams') {
+        response = await DataService.saveExternalStreamData(
+          SpyroInputData,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          SITE_ID,
+          VERTICAL_ID,
+        )
+      } else {
+        response = await DataService.saveSpyroInput(
+          SpyroInputData,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -482,7 +705,7 @@ const CrackerConfig = () => {
           severity: 'success',
         })
         setModifiedCells({})
-
+        setNaphthaLoadedFlag(false)
         const tabId = tabs[tabIndex]
         if (tabId) fetchCrackerRows(currentTabDisplay, selectMode)
       } else {
@@ -506,13 +729,22 @@ const CrackerConfig = () => {
       const mode = selectMode || ''
       let response
 
-      response = await DataService.importSpyroInputExcel(
-        rawFile,
-        keycloak,
-        mode,
-        PLANT_ID,
-        AOP_YEAR,
-      )
+      if (currentTabDisplay == 'Naphtha') {
+        response = await DataService.importNaphthaExcel(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await DataService.importSpyroInputExcel(
+          rawFile,
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -571,16 +803,47 @@ const CrackerConfig = () => {
     })
 
     const mode = selectMode
-    const EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Input_${AOP_YEAR}`
+    const EXCEL_NAME =
+      currentTabDisplay == 'Naphtha'
+        ? `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Optimizer_Input_${AOP_YEAR}`
+        : `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Input_${AOP_YEAR}`
+
+    const formatDate = (date) => {
+      if (!date) return ''
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    const getDefaultStartDate = () => {
+      const date = new Date()
+      date.setFullYear(date.getFullYear() - 2)
+      return formatDate(date)
+    }
+
+    const getDefaultEndDate = () => {
+      return formatDate(new Date())
+    }
 
     try {
-      const response = await DataService.exportSpyroInputExcel(
-        keycloak,
-        mode,
-        PLANT_ID,
-        AOP_YEAR,
-        EXCEL_NAME,
-      )
+      let response
+      if (currentTabDisplay == 'Naphtha') {
+        response = await DataService.exportNaphthaExcel(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
+      } else {
+        response = await DataService.exportSpyroInputExcel(
+          keycloak,
+          mode,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_NAME,
+        )
+      }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -609,7 +872,85 @@ const CrackerConfig = () => {
       setSnackbarOpen(false)
     }
   }
+  const handleLoadNaphthaData = async (startDate, endDate) => {
+    try {
+      setLoading(true)
+      const resp = await DataService.loadNaphthaData(
+        keycloak,
+        currentTabDisplay,
+        PLANT_ID,
+        AOP_YEAR,
+        startDate,
+        endDate,
+      )
+      // Parse and set rows for Naphtha
+      const naphthaRows = (resp.data.Data || []).map((item, idx) => ({
+        id: idx + 1,
+        type: item.type,
+        limsTagName: item.limsTagName,
+        uom: item.uom,
+        jmdNaphtha: item.jmdNaphtha,
+        pmdNaphtha: item.pmdNaphtha,
+        ioclNaphtha: item.ioclNaphtha,
+        gailNaphtha: item.gailNaphtha,
+        bpclNaphtha: item.bpclNaphtha,
+        ongcNaphtha: item.ongcNaphtha,
+        otherNaphtha: item.otherNaphtha,
+        naphthaBlendCompositionForOptimizerInput:
+          item.naphthaBlendCompositionForOptimizerInput,
+        normParameterFKID: item.normParameterFKID || '',
+        jmdNaphthaId: item.jmdNaphthaId,
+        pmdNaphthaId: item.pmdNaphthaId,
+        ioclNaphthaId: item.ioclNaphthaId,
+        gailNaphthaId: item.gailNaphthaId,
+        bpclNaphthaId: item.bpclNaphthaId,
+        ongcNaphthaId: item.ongcNaphthaId,
+        otherNaphthaId: item.otherNaphthaId,
+        bcoiNaphthaId: item.bcoiNaphthaId,
+      }))
 
+      setNaphthaRows(naphthaRows)
+      setModifiedCells({})
+      setNaphthaLoadedFlag(true)
+      setSnackbarData({ message: 'Naphtha data loaded!', severity: 'success' })
+      setSnackbarOpen(true)
+    } catch (error) {
+      setSnackbarData({
+        message: 'Failed to load Naphtha data.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    if (currentTabDisplay === 'Naphtha') {
+      // Reset FIRST ? this clears the picker immediately
+      setNaphthaDateRange({ startDate: null, endDate: null })
+      setNaphthaLoadedFlag(false)
+
+      if (PLANT_ID && AOP_YEAR) {
+        DataService.getNaphthatabDate(
+          keycloak,
+          currentTabDisplay,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+          .then((resp) => {
+            const startDate = resp?.data?.startDate
+            const endDate = resp?.data?.endDate
+            if (startDate && endDate) {
+              setNaphthaDateRange({ startDate, endDate }) // Only set if API returns dates
+            }
+            // If null/undefined ? stays null ? picker shows empty
+          })
+          .catch(() => {
+            setNaphthaDateRange({ startDate: null, endDate: null })
+          })
+      }
+    }
+  }, [currentTabDisplay, PLANT_ID, AOP_YEAR, keycloak])
   return (
     <Box>
       <Backdrop
@@ -618,6 +959,7 @@ const CrackerConfig = () => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
+
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
         <Tabs
           sx={{
@@ -679,6 +1021,95 @@ const CrackerConfig = () => {
                       fetchCrackerRows(currentTabDisplay, selectMode)
                     }
                     configType='cracker'
+                    handleRemarkCellClick={handleRemarkCellClick}
+                    columns={productionColumns}
+                    remarkDialogOpen={remarkDialogOpen}
+                    setRemarkDialogOpen={setRemarkDialogOpen}
+                    currentRemark={currentRemark}
+                    setCurrentRemark={setCurrentRemark}
+                    currentRowId={currentRowId}
+                    permissions={adjustedPermissions}
+                    selectMode={selectMode}
+                    setSelectMode={setSelectMode}
+                    saveChanges={saveChanges}
+                    snackbarData={snackbarData}
+                    snackbarOpen={snackbarOpen}
+                    setSnackbarOpen={setSnackbarOpen}
+                    setSnackbarData={setSnackbarData}
+                    modifiedCells={modifiedCells}
+                    setModifiedCells={setModifiedCells}
+                    handleExcelUpload={handleExcelUpload}
+                    downloadExcelForConfiguration={
+                      downloadExcelForConfiguration
+                    }
+                    groupBy={currentTabDisplay == 'Naphtha' ? 'type' : ''}
+                  />
+                </Box>
+              )
+            case 'Naphtha':
+              return (
+                <Box key={currentTabDisplay}>
+                  {/* Carbon Number Distribution Grid with Date Filter */}
+                  <Box sx={{ mb: 2 }}>
+                    <StartAndEndPicker
+                      dateFormat='YYYY-MM-DD'
+                      startDate={naphthaDateRange.startDate}
+                      endDate={naphthaDateRange.endDate}
+                      onLoad={({ startDate, endDate }) => {
+                        setNaphthaDateRange({ startDate, endDate })
+                        handleLoadNaphthaData(startDate, endDate)
+                      }}
+                    />
+
+                    <KendoDataTables
+                      rows={rows}
+                      setRows={setRowsForCurrent}
+                      fetchData={() =>
+                        fetchCrackerRows(currentTabDisplay, selectMode)
+                      }
+                      configType='Naphtha'
+                      handleRemarkCellClick={handleRemarkCellClick}
+                      columns={productionColumns}
+                      remarkDialogOpen={remarkDialogOpen}
+                      setRemarkDialogOpen={setRemarkDialogOpen}
+                      currentRemark={currentRemark}
+                      setCurrentRemark={setCurrentRemark}
+                      currentRowId={currentRowId}
+                      permissions={{
+                        ...adjustedPermissions,
+                        naphthaLoadedFlag: naphthaLoadedFlag,
+                      }}
+                      selectMode={selectMode}
+                      setSelectMode={setSelectMode}
+                      saveChanges={saveChanges}
+                      snackbarData={snackbarData}
+                      snackbarOpen={snackbarOpen}
+                      setSnackbarOpen={setSnackbarOpen}
+                      setSnackbarData={setSnackbarData}
+                      modifiedCells={modifiedCells}
+                      setModifiedCells={setModifiedCells}
+                      handleExcelUpload={handleExcelUpload}
+                      downloadExcelForConfiguration={
+                        downloadExcelForConfiguration
+                      }
+                      groupBy='type'
+                    />
+                  </Box>
+
+                  <NaphthaLimsDataSet />
+                </Box>
+              )
+            case 'External Streams':
+              return (
+                <Box key={currentTabDisplay}>
+                  <KendoDataTables
+                    rows={rows}
+                    setRows={setRowsForCurrent}
+                    fetchData={() =>
+                      fetchCrackerRows(currentTabDisplay, selectMode)
+                    }
+                    configType='External_Streams'
+                    groupBy='ParticularsType'
                     handleRemarkCellClick={handleRemarkCellClick}
                     columns={productionColumns}
                     remarkDialogOpen={remarkDialogOpen}

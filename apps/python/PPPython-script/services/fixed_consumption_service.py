@@ -82,6 +82,7 @@ def get_fixed_consumption_for_month(month: int, year: int) -> Dict[str, float]:
             "dm_fixed": 0.0,
             "cw1_fixed": 0.0,
             "cw2_fixed": 0.0,
+            "raw_water_fixed": 0.0,
         }
         
         # Map utility names to result keys
@@ -107,6 +108,8 @@ def get_fixed_consumption_for_month(month: int, year: int) -> Dict[str, float]:
                 result["cw1_fixed"] = value
             elif utility_name == "Cooling Water 2":
                 result["cw2_fixed"] = value
+            elif utility_name == "Water":
+                result["raw_water_fixed"] = value
         
         return result
         
@@ -162,6 +165,7 @@ def get_default_fixed_consumption() -> Dict[str, float]:
         "dm_fixed": 366.0,
         "cw1_fixed": 0.0,
         "cw2_fixed": 8.0,
+        "raw_water_fixed": 0.0,
     }
 
 

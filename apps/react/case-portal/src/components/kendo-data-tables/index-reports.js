@@ -9,7 +9,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { ColumnMenu } from 'components/@extended/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import {
   Backdrop,
   Box,
@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Dialog,
   DialogActions,
+  MenuItem,
   DialogContent,
   DialogContentText,
   DialogTitle,
@@ -123,7 +124,12 @@ const KendoDataTablesReports = ({
   handleUnitChange = () => {},
   handleRemarkCellClick = () => {},
   handleExport = () => {},
+  handleExcelUpload = () => {},
   groupBy = null,
+  grades = [],
+  handleGradeChange = () => {},
+  handleRelease = () => {},
+  isReleaseDisabled = true,
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -135,13 +141,33 @@ const KendoDataTablesReports = ({
   const [sort, setSort] = useState([])
   const [issRowEdited, setIsRowEdited] = useState(false)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-
+  const [selectedGrade, setSelectedGrade] = useState()
   const keycloak = useSession()
-  const { verticalChange, oldYear } = dataGridStore
+  const { verticalChange, plantObject, oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
+  const plantID = plantObject?.id
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
-
+  const TextCellEditor = (props) => (
+    <td>
+      <input
+        type='text'
+        className='k-textbox'
+        value={props.dataItem[props.field] || ''}
+        onChange={(e) =>
+          props.onChange({
+            dataItem: props.dataItem,
+            field: props.field,
+            value: e.target.value,
+          })
+        }
+        style={{ width: '100%' }}
+        autoFocus
+      />
+    </td>
+  )
   const initialGroup = groupBy
     ? [
         {
@@ -250,7 +276,20 @@ const KendoDataTablesReports = ({
 
     setRemarkDialogOpen(false)
   }
+  const fileInputRef = useRef(null)
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
 
+  const onFileChange = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    handleExcelUpload(file)
+    event.target.value = ''
+  }
   const handleAddRow = () => {
     if (isButtonDisabled) return
     setIsButtonDisabled(true)
@@ -372,6 +411,26 @@ const KendoDataTablesReports = ({
     },
     [IS_OLD_YEAR],
   )
+  useEffect(() => {
+    if (!permissions?.showG || !grades?.length) return
+    setSelectedGrade((prev) => {
+      if (prev) {
+        return prev
+      }
+      const firstGrade = grades[0]
+
+      handleGradeChange(
+        firstGrade.gradeId,
+        firstGrade?.displayName,
+        firstGrade?.name,
+      )
+      return firstGrade.gradeId
+    })
+  }, [grades, permissions?.showG])
+
+  useEffect(() => {
+    setSelectedGrade(null)
+  }, [plantID])
 
   const SimpleHeaderWithTooltip = (props) => {
     const { ariaSort, ...restThProps } = props.thProps || {}
@@ -449,6 +508,25 @@ const KendoDataTablesReports = ({
           />
         )
       }
+      if (col.field === 'particular') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            editable={col.editable || false}
+            cells={{
+              edit: { text: TextCellEditor }, // <-- Use text editor for particulars
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            columnMenu={ColumnMenuCheckboxFilter}
+            headerClassName={isActive ? 'active-column' : ''}
+            width={col?.widthT || col?.fixedWidth}
+          />
+        )
+      }
       if (dateFields.includes(col.field)) {
         return (
           <GridColumn
@@ -504,7 +582,7 @@ const KendoDataTablesReports = ({
             columnMenu={ColumnMenuCheckboxFilter}
             filter='numeric'
             format={col.format}
-            width={col?.widthT}
+            width={col?.widthT || col?.fixedWidth}
           />
         )
       }
@@ -515,6 +593,7 @@ const KendoDataTablesReports = ({
             key={col.field}
             field={col.field}
             title={col.title || col.headerName}
+            width={col?.fixedWidth || col?.width || undefined}
             hidden={col.hidden}
             className={'k-number-right-disabled'}
             editable={col?.editable ? true : false}
@@ -559,7 +638,7 @@ const KendoDataTablesReports = ({
           field={col.field}
           title={col.title || col.headerName}
           editable={col.editable || false}
-          format={col.format || '{0:0.000}'}
+          format={col.format}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
             data: toolTipRenderer,
@@ -568,7 +647,7 @@ const KendoDataTablesReports = ({
           className={!isEditable ? 'non-editable-cell' : ''}
           columnMenu={ColumnMenuCheckboxFilter}
           headerClassName={isActive ? 'active-column' : ''}
-          width={col?.widthT}
+          width={col?.widthT || col?.fixedWidth}
         />
       )
     })
@@ -623,9 +702,11 @@ const KendoDataTablesReports = ({
           <Box
             sx={{
               display: 'flex',
-              alignItems: 'center',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
               gap: 1,
               flexGrow: 1, // ? key to take up all left space
+              textAlign: 'left',
             }}
           >
             {permissions?.showTitle && (
@@ -636,6 +717,44 @@ const KendoDataTablesReports = ({
               >
                 {title}
               </Typography>
+            )}
+            {permissions?.showG && (
+              <TextField
+                select
+                value={selectedGrade || ''}
+                onChange={(e) => {
+                  const selectedGradeId = e.target.value
+                  const selectedGradeObj = grades.find(
+                    (g) => g.gradeId === selectedGradeId,
+                  )
+                  setSelectedGrade(selectedGradeId)
+                  handleGradeChange(
+                    selectedGradeObj?.gradeId,
+                    selectedGradeObj?.displayName,
+                    selectedGradeObj?.name,
+                  )
+                }}
+                className='dropdown-select'
+                variant='outlined'
+                label={permissions?.dropdownLabel || 'Select Grade'}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: { fontWeight: 'bold' },
+                }}
+                SelectProps={{
+                  MenuProps: { disableScrollLock: true },
+                }}
+                sx={{ width: 180, mb: 1 }} // Compact width, margin bottom for spacing
+              >
+                <MenuItem value='' disabled>
+                  {permissions?.dropdownLabel || 'Select Grade'}
+                </MenuItem>
+                {grades?.map((unit) => (
+                  <MenuItem key={unit.gradeId} value={unit.gradeId}>
+                    {unit.displayName}
+                  </MenuItem>
+                ))}
+              </TextField>
             )}
           </Box>
 
@@ -713,16 +832,36 @@ const KendoDataTablesReports = ({
                 Import
               </Button>
             )}
+            {permissions?.uploadExcelBtn && (
+              <>
+                <Button
+                  variant='contained'
+                  onClick={triggerFileUpload}
+                  disabled={isButtonDisabled || READ_ONLY}
+                  className='btn-save'
+                >
+                  Import
+                </Button>
+
+                <input
+                  type='file'
+                  accept='.xlsx,.xls'
+                  onChange={onFileChange}
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+              </>
+            )}
 
             {permissions?.showFinalSubmit && (
               <Button
                 variant='contained'
-                // onClick={handleExport}
-                // disabled={isButtonDisabled|| READ_ONLY}
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
                 className='btn-save'
-                disabled={READ_ONLY}
               >
-                Submit
+                {/* Submit */}
+                Release
               </Button>
             )}
 

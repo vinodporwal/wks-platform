@@ -11,6 +11,7 @@ import com.wks.caseengine.dto.ConfigurationDTO;
 import com.wks.caseengine.dto.ConfigurationVersionDTO;
 import com.wks.caseengine.dto.ExecutionDetailDto;
 import com.wks.caseengine.dto.NormAttributeTransactionReceipeRequestDTO;
+import com.wks.caseengine.dto.NormLineRequestDTO;
 import com.wks.caseengine.entity.NormAttributeTransactionReceipe;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 
@@ -23,6 +24,7 @@ public interface ConfigurationService {
 	AOPMessageVM calculateSteadyNorms(String year, String plantId,String periodTo,String periodFrom);
 	AOPMessageVM carryForward(String year, String plantId);
 	public AOPMessageVM getConfigurationConstants(String year,String plantFKId);
+	public AOPMessageVM getProductionConstraints(String year, String plantFKId, String type);
 	public AOPMessageVM getConfigurationIntermediateValues(String year, UUID plantFKId);
     public List<ConfigurationDTO> saveConfigurationData( String year, String plantFKId,String version, List<ConfigurationDTO> configurationDTOList,Boolean calculation);
     public   List<Map<String, Object>>  getNormAttributeTransactionReceipe(String year, String plantId);
@@ -31,8 +33,10 @@ public interface ConfigurationService {
     public byte[] createExcel(String year, UUID plantFKId, List<String> reportTypes,String version,boolean isAfterSave, List<ConfigurationDTO> list);
     public byte[] createShutdownRateExcel(String year, UUID plantFKId,String type, boolean isAfterSave, List<ConfigurationDTO> list);
     public byte[] createConfigurationConstantsExcel(String year, UUID plantFKId);
+    public byte[] createProductionConstraintsExcel(String year, UUID plantFKId, String type);
     public byte[] exportConfigurationConstantsNorms(String year, String plantId);
     public byte[] exportConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList);
+    public byte[] exportLineConfigData(String year, UUID plantFKId, boolean isAfterSave, List<NormAttributeTransactionReceipeRequestDTO> dtoList);
     public AOPMessageVM importExcel(String year, UUID fromString,List<String> reportTypes,String version, MultipartFile file,Boolean calculation);
     public AOPMessageVM importShutdownRateExcel(String year, UUID fromString,String type,String version, MultipartFile file,Boolean calculation);
     public AOPMessageVM importRecipe(String year, UUID fromString, MultipartFile file);
@@ -45,5 +49,19 @@ public interface ConfigurationService {
     public AOPMessageVM saveConfigurationExecutionNorms( List<ExecutionDetailDto> executionDetailDtoList);
     byte[] createConfigurationConstantsExcelResponse(String year, UUID plantFKId, List<ConfigurationDTO> list);
     public AOPMessageVM getConfigurationConstantsNorms(String year, String plantFKId);
+
+    public List<ConfigurationDTO> saveOtherConfigurationData(String year, String plantFKId, String version,
+            List<ConfigurationDTO> configurationDTOList, Boolean calculation);
+
+    public AOPMessageVM getOtherProductionNormsData(String year, String plantId, String gradeId);
+    public AOPMessageVM getNormAttributeTransactionLine(String year, String plantId);
+
+    public AOPMessageVM getConfigurationDataReportMannualEntry(String year, UUID plantFKId, String version);
+        public AOPMessageVM updateLineConfiguration(
+                        String year,
+                        String plantId,
+                        List<NormLineRequestDTO> normLineRequestDTOList);
+
+        public AOPMessageVM importLineConfiguration(String year, UUID plantFKId, MultipartFile file);
 
 }

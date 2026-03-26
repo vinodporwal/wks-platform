@@ -198,7 +198,7 @@ export const SlowDownPtaColumns = [
 export const SlowDownPtadmdColumns = [
   {
     field: 'discriptionDrpdwn',
-    title: 'Shutdown Desc',
+    title: 'Slowdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
   },
@@ -393,6 +393,15 @@ export const NormalOpNormPtaColumns = [
     width: 120,
     align: 'right',
     format: '{0:#.###}',
+    type: 'number',
+  },
+  {
+    field: 'wtAverage',
+    title: 'Weighted Avg',
+    align: 'right',
+    format: '{0:#.###}',
+    editable: false,
+    width: 120,
     type: 'number',
   },
   {

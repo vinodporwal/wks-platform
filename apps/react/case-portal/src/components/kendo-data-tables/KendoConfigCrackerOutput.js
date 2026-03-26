@@ -12,7 +12,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 const CrackerConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -40,7 +40,9 @@ const CrackerConfig = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -106,7 +108,9 @@ const CrackerConfig = () => {
           : currentTabDisplay === 'Yield'
             ? SITE_NAME == 'NMD'
               ? 'cracker_yield'
-              : 'cracker_yield_dmd'
+              : SITE_NAME == 'VMD'
+                ? 'cracker_yield_vmd'
+                : 'cracker_yield_dmd'
             : 'cracker'
 
     return getEnhancedAOPColDefs({
@@ -142,13 +146,21 @@ const CrackerConfig = () => {
       deleteButton: false,
       editButton: false,
       showUnit: false,
-      showModes: lowerVertName === 'cracker' && currentTabDisplay != 'Yield',
+      showModes:
+        lowerVertName === 'cracker' &&
+        (SITE_NAME === 'VMD' || currentTabDisplay !== 'Yield'),
       saveWithRemark: true,
-      saveBtn: true,
+      saveBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
       allAction: lowerVertName === 'cracker',
       modes: modes,
-      uploadExcelBtn: true,
-      downloadExcelBtn: true,
+      uploadExcelBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+      downloadExcelBtn:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? false : true,
+      downloadExcelBtnFromUI:
+        SITE_NAME === 'VMD' && currentTabDisplay == 'Yield' ? true : false,
+      ExcelName: `Production_Constarints_${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${AOP_YEAR}`,
     },
     isOldYear,
   )
@@ -346,6 +358,41 @@ const CrackerConfig = () => {
               PLANT_ID,
               AOP_YEAR,
             )
+          } else if (SITE_NAME == 'VMD') {
+            var data = await DataService.getSpyroOutputDataYieldVMD(
+              keycloak,
+              mode,
+              currentTabDisplay,
+              PLANT_ID,
+              AOP_YEAR,
+            )
+
+            // Convert month strings to numbers so formatting can be applied
+            const months = [
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec',
+            ]
+
+            spyroVMYield1 = data?.data?.data?.map((item) => {
+              const newItem = { ...item }
+              months.forEach((month) => {
+                // Check if the property exists and convert it
+                if (newItem[month] !== undefined) {
+                  newItem[month] = parseFloat(newItem[month]) || 0
+                }
+              })
+              return newItem
+            })
           } else {
             spyroVMYield1 = await DataService.getSpyroOutputDataYieldNONNMD(
               keycloak,
@@ -356,13 +403,13 @@ const CrackerConfig = () => {
             )
           }
         }
-        let transformedData1 = (spyroVMYield1.data || []).map(
-          (item, index) => ({
-            ...item,
-            id: index,
-            isEditable: index !== spyroVMYield1?.data?.length - 1,
-          }),
-        )
+
+        let data1 = SITE_NAME == 'VMD' ? spyroVMYield1 : spyroVMYield1.data
+        let transformedData1 = (data1 || []).map((item, index) => ({
+          ...item,
+          id: index,
+          isEditable: SITE_NAME == 'VMD' ? false : index !== data1?.length - 1,
+        }))
 
         if (transformedData1.length > 0 && currentTabDisplay === 'Yield') {
           var numericColumns = []
@@ -387,6 +434,12 @@ const CrackerConfig = () => {
               'sevenFC2C3',
               'sevenFPropane',
               'sevenFEthane',
+              'threeFC2C3',
+              'threeFEthane',
+              'threeFPropane',
+              'fourF2SPropane',
+              'fourF2SEthane',
+              'fourF2SC2C3',
             ]
           } else {
             numericColumns = [
@@ -575,6 +628,26 @@ const CrackerConfig = () => {
           fourFDPropane: row.fourFDPropane || 0,
           fourFEthane: row.fourFEthane || 0,
         }))
+      } else if (SITE_NAME === 'VMD') {
+        SpyroOutputYield = dataToSave.map((row) => ({
+          apr: row.Apr || '0',
+          may: row.May || 0,
+          jun: row.Jun || 0,
+          jul: row.Jul || 0,
+          aug: row.Aug || 0,
+          sep: row.Sep || 0,
+          oct: row.Oct || 0,
+          nov: row.Nov || 0,
+          dec: row.Dec || 0,
+          jan: row.Jan || 0,
+          feb: row.Feb || 0,
+          mar: row.Mar || 0,
+          UOM: row.UOM || '',
+          auditYear: row.AuditYear,
+          normParameterFKId: row.NormParameter_FK_Id,
+          remarks: row.Remarks || '',
+          id: row.id || null,
+        }))
       } else {
         SpyroOutputYield = dataToSave.map((row) => ({
           particulars: row.particulars,
@@ -601,6 +674,14 @@ const CrackerConfig = () => {
           sevenFC2C3: row.sevenFC2C3 || 0,
           sevenFPropane: row.sevenFPropane || 0,
           sevenFEthane: row.sevenFEthane || 0,
+
+          threeFC2C3: row.threeFC2C3 || 0,
+          threeFPropane: row.threeFPropane || 0,
+          threeFEthane: row.threeFEthane || 0,
+
+          fourF2SC2C3: row.fourF2SC2C3 || 0,
+          fourF2SPropane: row.fourF2SPropane || 0,
+          fourF2SEthane: row.fourF2SEthane || 0,
         }))
       }
 
@@ -608,6 +689,13 @@ const CrackerConfig = () => {
 
       if (SITE_NAME == 'NMD') {
         response = await DataService.saveSpyroOutputYield(
+          SpyroOutputYield,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (SITE_NAME == 'VMD') {
+        response = await DataService.saveSpyroOutputYieldVMD(
           SpyroOutputYield,
           keycloak,
           PLANT_ID,
@@ -663,6 +751,14 @@ const CrackerConfig = () => {
       if (currentTabDisplay === 'Yield') {
         if (SITE_NAME == 'NMD') {
           response = await DataService.importSpyroOutputExcelYield(
+            rawFile,
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+          )
+        } else if (SITE_NAME == 'VMD') {
+          response = await DataService.importSpyroOutputExcelYieldVMD(
             rawFile,
             keycloak,
             mode,
@@ -770,6 +866,15 @@ const CrackerConfig = () => {
         if (SITE_NAME == 'NMD') {
           const YieldExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_Yield_${AOP_YEAR}`
           response = await DataService.exportSpyroOutputExcelYield(
+            keycloak,
+            mode,
+            PLANT_ID,
+            AOP_YEAR,
+            YieldExcelName,
+          )
+        } else if (SITE_NAME == 'VMD') {
+          const YieldExcelName = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${mode}_Optimizer_Output_Yield_${AOP_YEAR}`
+          response = await DataService.exportSpyroOutputExcelYieldVMD(
             keycloak,
             mode,
             PLANT_ID,

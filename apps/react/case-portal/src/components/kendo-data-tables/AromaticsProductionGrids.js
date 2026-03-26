@@ -24,6 +24,8 @@ import {
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 const AromaticsProductionGrids = ({ permissions }) => {
+  const [editResetKey, setEditResetKey] = useState(0)
+
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [enableSaveAddBtn, setEnableSaveAddBtn] = useState(false)
   const [modifiedCellsDesignCapacity, setModifiedCellsDesignCapacity] =
@@ -40,7 +42,6 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const [calculationObject, setCalculationObject] = useState([])
 
@@ -60,7 +61,9 @@ const AromaticsProductionGrids = ({ permissions }) => {
   const IS_OLD_YEAR = oldYear?.oldYear
   const isOldYear = false
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_ID = plantObject?.id
   const VERTICAL_ID = verticalObject?.id
@@ -1190,6 +1193,8 @@ const AromaticsProductionGrids = ({ permissions }) => {
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('max')
           }
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
         />
       )}
 
@@ -1225,6 +1230,8 @@ const AromaticsProductionGrids = ({ permissions }) => {
           downloadExcelForConfiguration={() =>
             downloadExcelForConfiguration('design')
           }
+          resetEditSignal={editResetKey}
+          setEditResetKey={setEditResetKey}
         />
       )}
 
@@ -1260,6 +1267,8 @@ const AromaticsProductionGrids = ({ permissions }) => {
         downloadExcelForConfiguration={() =>
           downloadExcelForConfiguration('main')
         }
+        resetEditSignal={editResetKey}
+        setEditResetKey={setEditResetKey}
       />
 
       {/* PERCENTAGE_SUMMARY */}

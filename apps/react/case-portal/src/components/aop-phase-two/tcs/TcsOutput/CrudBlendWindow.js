@@ -1,8 +1,9 @@
 import { Box, Backdrop, CircularProgress } from '@mui/material'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOutputApiService'
 import { useSession } from 'SessionStoreContext'
 import CrudBlendWindowGrid from './CrudBlendWindowComponents/CrudBlendWindowGrid'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const CrudBlendWindow = ({
   PLANT_ID,
@@ -20,9 +21,11 @@ const CrudBlendWindow = ({
 
   const gridConfigs = [
     { key: 'CrudeBlendWindow', title: 'Crude Blend Window' },
-    { key: 'VGOVRDROP', title: 'VGO-VR Drop' },
+    { key: 'VGOVRDrop', title: 'VGO-VR Drop' },
     { key: 'CrudeSpecificConstraints', title: 'Crude Specific Constraints' },
   ]
+
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
 
   // Fetch all tables data once
   const fetchAllTablesData = useCallback(async () => {
@@ -39,7 +42,7 @@ const CrudBlendWindow = ({
 
       const response = await TcsOutputApiService.getCrudBlendWindowData(
         keycloak,
-        AOP_YEAR,
+        apiYear,
         SITE_ID,
       )
 

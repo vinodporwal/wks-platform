@@ -1,7 +1,9 @@
 import productionColDefs from '../../../assets/kendo_consumption_aop.json'
+import productionColDefsElastomerJmd from '../../../assets/kendo_consumption_aop_elastomerJmd.json'
 import productionColDefsElastomer from '../../../assets/kendo_consumption_aop_elastomer.json'
 import productionColDefs1 from '../../../assets/kendo_consumption_aop_cracker.json'
 import productionColDefsVcm from '../../../assets/kendo_consumption_aop_vcm.json'
+import productionColDefsPta from '../../../assets/kendo_consumption_aop_pta.json'
 // import productionColDefsVcmDmd from '../../../assets/kendo_consumption_aop_vcmdmd.json'
 const getEnhancedColDefs = ({
   headerMap,
@@ -16,8 +18,12 @@ const getEnhancedColDefs = ({
 
   if (lowerVertName === 'cracker') {
     colDefs = productionColDefs1
+  } else if (lowerVertName === 'elastomer' && lowerSiteName === 'jmd') {
+    colDefs = productionColDefsElastomerJmd
   } else if (lowerVertName === 'elastomer') {
     colDefs = productionColDefsElastomer
+  } else if (lowerVertName === 'pta') {
+    colDefs = productionColDefsPta
   } else if (lowerVertName === 'vcm') {
     colDefs = productionColDefsVcm
   }

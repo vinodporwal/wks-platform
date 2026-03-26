@@ -4,8 +4,9 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { SummaryApiService } from '../../services/cpp/summaryApiService'
 import { SvgIcon } from '@progress/kendo-react-common'
-import { eyeIcon } from '@progress/kendo-svg-icons'
+import { eyeIcon, fileExcelIcon } from '@progress/kendo-svg-icons'
 import { Tooltip } from '@progress/kendo-react-tooltip'
+import Config from '../../../../config'
 
 const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
   const keycloak = useSession()
@@ -30,7 +31,7 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
       hidden: true,
     },
     {
-      field: 'financialYear',
+      field: 'financialYearDisplay',
       title: 'Financial Year',
       widthT: 150,
       minWidth: 150,
@@ -92,7 +93,15 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
         return
       }
 
-      const formattedData = res?.map((item, index) => ({
+      // Sort data in financial year order (April to March)
+      // Months 4-12 come first, then months 1-3
+      const sortedData = res?.sort((a, b) => {
+        const monthA = a.month >= 4 ? a.month : a.month + 12
+        const monthB = b.month >= 4 ? b.month : b.month + 12
+        return monthA - monthB
+      })
+
+      const formattedData = sortedData?.map((item, index) => ({
         ...item,
         id: item?.id || index + 1,
       }))
@@ -123,19 +132,37 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
     customActionButton: true,
   }
 
-  // Custom action cell with eye icon
+  // Custom action cell with view and download icons
   const CustomActionsCell = ({ dataItem }) => {
     return (
       <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
-        <Tooltip anchorElement='target' position='top'>
-          <SvgIcon
-            icon={eyeIcon}
-            themeColor='primary'
-            style={{ cursor: 'pointer' }}
-            onClick={() => handleViewClick(dataItem)}
-            title='View'
-          />
-        </Tooltip>
+        <div
+          style={{
+            display: 'flex',
+            gap: '10px',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={eyeIcon}
+              themeColor='primary'
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleViewClick(dataItem)}
+              title='View Details'
+            />
+          </Tooltip>
+          <Tooltip anchorElement='target' position='top'>
+            <SvgIcon
+              icon={fileExcelIcon}
+              themeColor='success'
+              style={{ cursor: 'pointer' }}
+              onClick={() => handleDownloadExcel(dataItem)}
+              title='Download Excel Report'
+            />
+          </Tooltip>
+        </div>
       </td>
     )
   }
@@ -150,6 +177,74 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
         message: `Viewing details for Month ${dataItem.month}`,
         severity: 'info',
       })
+    }
+  }
+
+  const handleDownloadExcel = async (dataItem) => {
+    try {
+      setLoading(true)
+
+      const url = `${Config.CaseEngineUrl}/task/cpp-model-logs/month/${dataItem.id}/download-excel`
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${keycloak.token}`,
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Excel report not available for this month',
+            severity: 'warning',
+          })
+          return
+        }
+        throw new Error('Failed to download Excel report')
+      }
+
+      // Get filename from Content-Disposition header
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = `balance_summary_${dataItem.monthName || dataItem.month}_${dataItem.financialYear}.xlsx`
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(
+          /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/,
+        )
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '')
+        }
+      }
+
+      // Download the file
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+
+      // Cleanup
+      window.URL.revokeObjectURL(downloadUrl)
+      document.body.removeChild(a)
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: `Excel report downloaded successfully`,
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel report',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
   }
 

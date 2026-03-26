@@ -12,9 +12,21 @@ export const MaintenanceDetailsApiService = {
   CrackerMaintenanceImportNMD,
   CrackerMaintenanceExport,
   CrackerMaintenanceExportNMD,
+  deleteShutdownConfig,
+  saveShutdownConfig,
+  getShutdownConfig,
+  getFinishingShutdownConfig,
+  getCrackerDownsteamShutdownDMD,
+  getSdDaysValues,
+  getSlowdownConfig,
   deleteSlowdownConfig,
   saveSlowdownConfig,
-  getSlowdownConfig,
+  saveFinishingShutdown,
+  deleteFinishingShutdownConfig,
+  getShutdownHistoryConfig,
+  updateSlowdownNormsForPTA,
+  getMaintenanceDataLineWise,
+  getMaintenanceDataLineAvg,
 }
 
 async function getCrackerMaintenanceData(keycloak, PLANT_ID, AOP_YEAR) {
@@ -277,7 +289,7 @@ async function CrackerMaintenanceExportNMD(
     return Promise.reject(e)
   }
 }
-async function deleteSlowdownConfig(id, keycloak, PLANT_ID, AOP_YEAR) {
+async function deleteShutdownConfig(id, keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/shutdown-history?id=${encodeURIComponent(id)}`
   const headers = {
     Accept: 'application/json',
@@ -299,7 +311,7 @@ async function deleteSlowdownConfig(id, keycloak, PLANT_ID, AOP_YEAR) {
     return Promise.reject(e)
   }
 }
-async function saveSlowdownConfig(PLANT_ID, AOP_YEAR, dataList, keycloak) {
+async function saveShutdownConfig(PLANT_ID, AOP_YEAR, dataList, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/shutdown-history?plantFKId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}`
   const headers = {
     Accept: 'application/json',
@@ -318,8 +330,227 @@ async function saveSlowdownConfig(PLANT_ID, AOP_YEAR, dataList, keycloak) {
     return await Promise.reject(e)
   }
 }
-async function getSlowdownConfig(keycloak, PLANT_ID, AOP_YEAR) {
+async function getShutdownConfig(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/shutdown-history?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getCrackerDownsteamShutdownDMD(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/maintenance-other-plants?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getSdDaysValues(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/type-of-sd?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function deleteSlowdownConfig(id, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown-history?id=${encodeURIComponent(id)}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting slowdown data:', e)
+    return Promise.reject(e)
+  }
+}
+async function saveSlowdownConfig(PLANT_ID, AOP_YEAR, dataList, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown-history?plantFKId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dataList),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in saveAnnualProduction:', e)
+    return await Promise.reject(e)
+  }
+}
+async function getSlowdownConfig(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown-history?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function getFinishingShutdownConfig(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/finishing-shutdown?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveFinishingShutdown(PLANT_ID, AOP_YEAR, dataList, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/finishing-shutdown?plantId=${encodeURIComponent(PLANT_ID)}&year=${encodeURIComponent(AOP_YEAR)}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dataList),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in saveFinishingShutdown:', e)
+    return await Promise.reject(e)
+  }
+}
+async function deleteFinishingShutdownConfig(id, keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/finishing-shutdown?id=${encodeURIComponent(id)}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.json()
+  } catch (e) {
+    console.error('Error deleting finishing shutdown config data:', e)
+    return Promise.reject(e)
+  }
+}
+async function getShutdownHistoryConfig(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-history-pta?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function updateSlowdownNormsForPTA(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  dataList,
+) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-history-pta?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(dataList),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error('Error in update Slowdown Norms:', e)
+    return await Promise.reject(e)
+  }
+}
+async function getMaintenanceDataLineWise(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  lineId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/maintenance-details-line?year=${AOP_YEAR}&plantId=${PLANT_ID}&lineId=${lineId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getMaintenanceDataLineAvg(keycloak, PLANT_ID, AOP_YEAR) {
+  const url = `${Config.CaseEngineUrl}/task/maintenance-details-avg?year=${AOP_YEAR}&plantId=${PLANT_ID}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
