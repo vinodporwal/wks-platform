@@ -1105,6 +1105,20 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     isOldYear,
   )
 
+  const excelBtnGrid2 = useMemo(() => {
+    if (IS_PP_SEZ && unitDesignCapacity === 'TPD') {
+      return false
+    }
+    if (
+      IS_PE_PP ||
+      IS_PET ||
+      IS_PVC_VMD ||
+      IS_PP_SEZ
+    ) {
+      return true
+    }
+    return false
+  }, [IS_PE_PP, IS_PET, IS_PVC_VMD, IS_PP_SEZ, unitDesignCapacity])
   const adjustedPermissionsGrid2 = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? false,
@@ -1120,9 +1134,9 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      downloadExcelBtnFromUI: IS_PE_PP || IS_PET || IS_PVC_VMD ? false : true,
-      downloadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? true : false,
-      uploadExcelBtn: IS_PE_PP || IS_PET || IS_PVC_VMD ? true : false,
+      downloadExcelBtnFromUI: IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ ? false : true,
+      downloadExcelBtn: excelBtnGrid2,
+      uploadExcelBtn: excelBtnGrid2,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Design Capacity`,
 
       showTitleAndInformation:

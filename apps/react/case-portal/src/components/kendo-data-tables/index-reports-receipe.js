@@ -135,6 +135,10 @@ const KendoDataTablesReciepe = ({
   downloadExcelForConfiguration,
   summaryEdited,
 }) => {
+  const NumericEditorWithLimit = useCallback(
+    (props) => <NoSpinnerNumericEditor {...props} maxLength={10} />,
+    [],
+  )
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -464,7 +468,7 @@ const KendoDataTablesReciepe = ({
             format={FORMATE_DECIMAL}
             width='65px'
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
+              edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
@@ -484,7 +488,7 @@ const KendoDataTablesReciepe = ({
             className={'k-number-right'}
             width='150px'
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
+              edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
@@ -502,7 +506,7 @@ const KendoDataTablesReciepe = ({
           format={FORMATE_DECIMAL}
           width='150px'
           cells={{
-            edit: { text: NoSpinnerNumericEditor },
+            edit: { text: NumericEditorWithLimit },
             data: toolTipRenderer,
             headerCell: SimpleHeaderWithTooltip,
           }}
