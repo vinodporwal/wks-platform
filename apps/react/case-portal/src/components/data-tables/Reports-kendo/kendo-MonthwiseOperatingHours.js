@@ -45,9 +45,10 @@ const MonthwiseOperatingHours = () => {
       hidden: true,
     },
     {
-      field: 'Month',
+      field: '_month',
       title: 'Month',
       editable: false,
+      isDisabled: true,
     },
     {
       field: 'totalAvailableHrs',
@@ -55,41 +56,48 @@ const MonthwiseOperatingHours = () => {
       editable: false,
       type: 'number',
       format: valueFormatter,
+
+      isDisabled: true,
     },
     {
       field: 'plannedTurnaroundHrs',
       title: 'Planned Turnaround Hrs',
-      editable: true,
+      editable: false,
       type: 'number',
       format: valueFormatter,
+      isDisabled: true,
     },
     {
       field: 'plannedShutdownOtherThanTurnaroundHrs',
       title: 'Planned shutdown other than Turnaround Hrs',
-      editable: true,
+      editable: false,
       type: 'number',
       format: valueFormatter,
+      isDisabled: true,
     },
     {
       field: 'routineShutdownHrs',
       title: 'Routine shutdown Hrs',
-      editable: true,
+      editable: false,
       type: 'number',
       format: valueFormatter,
+      isDisabled: true,
     },
     {
       field: 'slowdownHrs',
       title: 'Slowdown Hrs',
-      editable: true,
+      editable: false,
       type: 'number',
       format: valueFormatter,
+      isDisabled: true,
     },
     {
       field: 'netOperatingHours',
       title: 'Net operating Hours',
-      editable: true,
+      editable: false,
       type: 'number',
       format: valueFormatter,
+      isDisabled: true,
     },
     {
       field: 'remarks',
@@ -112,6 +120,8 @@ const MonthwiseOperatingHours = () => {
           (res?.data.monthwiseOperatingHoursList || []).map((item, index) => ({
             ...item,
             id: item.id ?? index,
+            idFromApi: item.id || null,
+            _month: item?.month,
           })),
         )
       } else {
@@ -211,12 +221,15 @@ const MonthwiseOperatingHours = () => {
         setModifiedCells={setModifiedCells}
         columns={columns}
         permissions={{
+          allAction: true,
           textAlignment: 'center',
           remarksEditable: true,
           showCalculate: false,
-          saveBtn: !READ_ONLY,
+          saveBtn: true,
           showWorkFlowBtns: true,
           showTitle: true,
+          showTitleNameBusiness: true,
+          titleName: 'Monthwise Operating Hours (T-20)',
         }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}

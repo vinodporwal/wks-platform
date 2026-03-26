@@ -669,6 +669,7 @@ const WorkFlowMerge = () => {
     'Shutdown Report (T-19B)',
     'Shutdown Break-up Last Four Year (T-19C)',
     'MonthWise Operating Hours (T-20)',
+    `Norms for Shutdown & Slowdown activities (T-19D)`,
   ]
   const customPETTabs = [
     'Annual AOP Cost',
@@ -983,6 +984,11 @@ const WorkFlowMerge = () => {
             {tabIndex === 10 && lowerVertName === 'meg' && (
               <MonthwiseOperatingHours />
             )}
+
+            {tabIndex === 11 && lowerVertName === 'meg' && (
+              <PlantShutdownSlowdown />
+            )}
+
             {(lowerVertName === 'pe' || lowerVertName === 'pp') && (
               <>{tabIndex === 8 && <SpecificConsumptionNormsII />}</>
             )}

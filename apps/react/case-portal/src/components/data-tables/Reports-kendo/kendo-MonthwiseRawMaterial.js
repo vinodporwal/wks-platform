@@ -69,6 +69,20 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       widthT: 50,
     },
+
+    ...(lowerVertName === 'meg'
+      ? [
+          {
+            field: 'price',
+            headerName: 'Price',
+            editable: false,
+            align: 'left',
+            headerAlign: 'left',
+            flex: 1,
+            widthT: 50,
+          },
+        ]
+      : []),
     {
       field: 'spec',
       headerName: 'Spec',

@@ -275,7 +275,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
       saveBtn: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'Shutdown Details',
+      titleName: 'Shutdown Breakup For Last 4 Years (19-C)',
       ExcelName: `${EXCEL_NAME_GRID2}`,
       downloadExcelBtn: false,
       uploadExcelBtn: false,

@@ -14,7 +14,7 @@ export const MockPlantShutdownSlowdownAPI = {
         {
           field: 'criticalActivity',
           title: 'Critical Routine Activity',
-          widthT: 300,
+          widthT: 200,
           editable: false,
         },
         {
