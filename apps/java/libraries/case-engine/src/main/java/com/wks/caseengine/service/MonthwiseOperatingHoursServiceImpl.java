@@ -49,24 +49,15 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
             for (Object[] row : results) {
                 MonthwiseOperatingHoursDTO dto = new MonthwiseOperatingHoursDTO();
 
-                // Id, Month, TotalAvailableHrs, PlannedTurnaroundHrs, PlannedShutdownOtherThanTurnaroundHrs,
-                // RoutineShutdownHrs, SlowdownHrs, NetOperatingHours, Remarks, year, Plant_FK_Id,
-                // CreatedOn, ModifiedOn, UpdatedBy
                 dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : "");
-                dto.setMonth(toInteger(row.length > 1 ? row[1] : null));
-                dto.setTotalAvailableHrs(toDouble(row.length > 2 ? row[2] : null));
-                dto.setPlannedTurnaroundHrs(toDouble(row.length > 3 ? row[3] : null));
-                dto.setPlannedShutdownOtherThanTurnaroundHrs(toDouble(row.length > 4 ? row[4] : null));
-                dto.setRoutineShutdownHrs(toDouble(row.length > 5 ? row[5] : null));
-                dto.setSlowdownHrs(toDouble(row.length > 6 ? row[6] : null));
-                dto.setNetOperatingHours(toDouble(row.length > 7 ? row[7] : null));
-                dto.setRemarks(row.length > 8 && row[8] != null ? row[8].toString() : null);
-                dto.setYear(row.length > 9 && row[9] != null ? row[9].toString() : null);
-                dto.setPlantFkId(row.length > 10 && row[10] != null ? row[10].toString() : null);
-                dto.setCreatedOn(toDate(row.length > 11 ? row[11] : null));
-                dto.setModifiedOn(toDate(row.length > 12 ? row[12] : null));
-                dto.setUpdatedBy(row.length > 13 && row[13] != null ? row[13].toString() : null);
-
+                dto.setMonth(toInteger(row.length > 1 ? row[1] : 0));
+                dto.setTotalAvailableHrs(toDouble(row.length > 2 ? row[2] : 0.0));
+                dto.setPlannedTurnaroundHrs(toDouble(row.length > 3 ? row[3] : 0.0));
+                dto.setPlannedShutdownOtherThanTurnaroundHrs(toDouble(row.length > 4 ? row[4] : 0.0));
+                dto.setRoutineShutdownHrs(toDouble(row.length > 5 ? row[5] : 0.0));
+                dto.setSlowdownHrs(toDouble(row.length > 6 ? row[6] : 0.0));
+                dto.setNetOperatingHours(toDouble(row.length > 7 ? row[7] : 0.0));
+                dto.setRemarks(row.length > 8 && row[8] != null ? row[8].toString() : "");
                 list.add(dto);
             }
 
