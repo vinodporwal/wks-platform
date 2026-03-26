@@ -237,13 +237,28 @@ const Constants = ({ startDate, endDate }) => {
   const handleExcelUpload = async (file) => {
     if (!file) return
 
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Period dates are required. Please ensure dates are loaded from AOP Period Basis.',
+        severity: 'error',
+      })
+      return
+    }
+
     setLoading(true)
     try {
+      const periodFrom = formatDateForAPI(startDate)
+      const periodTo = formatDateForAPI(endDate)
+
       const response = await ProductionNormsApiService.importConstantsExcel(
         file,
         keycloak,
         PLANT_ID,
         AOP_YEAR,
+        periodFrom,
+        periodTo,
       )
 
       if (response?.code === 200) {
@@ -370,7 +385,7 @@ const Constants = ({ startDate, endDate }) => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['TypeDisplayName']}
+        groupBy={['type']}
         paginationConfig={{
           threshold: 100,
           buttonCount: 5,
