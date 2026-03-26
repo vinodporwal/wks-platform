@@ -1105,6 +1105,12 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     isOldYear,
   )
 
+  useEffect(() => {
+    setUnitDesignCapacity('TPH')
+    setUnitMaxCapacity('TPH')
+    setSelectedUnit('TPH')
+  }, [tabIndex, PLANT_ID])
+
   const excelBtnGrid2 = useMemo(() => {
     if (IS_PP_SEZ && unitDesignCapacity === 'TPD') {
       return false
