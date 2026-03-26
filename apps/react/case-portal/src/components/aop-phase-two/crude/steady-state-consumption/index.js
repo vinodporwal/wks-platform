@@ -5,7 +5,8 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
-import { SteadyStateConsumptionApiService } from '../../services/vgoht/steadyStateConsumptionApiService'
+import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
+import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
 import { steadyStateConsumptionResponse } from '../dummyData'
 
 const SteadyStateConsumption = () => {
@@ -198,16 +199,21 @@ const SteadyStateConsumption = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      // const response =
-      //   await SteadyStateConsumptionApiService.getSteadyStateConsumption(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
-      const data =
-        steadyStateConsumptionResponse.data.mcuNormsValueDTOList || dummyRows
-      setRows(data)
-      setOriginalRows(data)
+      const response =
+        await SteadyStateConsumptionApiService.getSteadyStateConsumption(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      const data = response?.data?.mcuNormsValueDTOList || []
+      const formattedData = data?.map((item, index) => ({
+        ...item,
+        remarks: item.remarks || '',
+        id: item?.id || index + 1,
+        isEditable: true,
+      }))
+      setRows(formattedData)
+      setOriginalRows(formattedData)
     } catch (error) {
       console.error('Error fetching steady state consumption data:', error)
       setSnackbarOpen(true)
@@ -215,6 +221,8 @@ const SteadyStateConsumption = () => {
         message: 'Error fetching data',
         severity: 'error',
       })
+      setRows([])
+      setOriginalRows([])
     } finally {
       setLoading(false)
     }
@@ -234,12 +242,54 @@ const SteadyStateConsumption = () => {
       return
     }
 
+    const data = modifiedData.filter((row) => row.inEdit)
+    if (data.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'No Records to Save!',
+        severity: 'info',
+      })
+      setLoading(false)
+      return
+    }
+
+    const fieldsToCheck = [
+      'april',
+      'may',
+      'june',
+      'july',
+      'august',
+      'september',
+      'october',
+      'november',
+      'december',
+      'january',
+      'february',
+      'march',
+    ]
+    const validationError = validateRowDataWithRemarks(
+      data,
+      originalRows,
+      fieldsToCheck,
+      'productName',
+    )
+
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
     try {
       await SteadyStateConsumptionApiService.saveSteadyStateConsumption(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        modifiedData,
+        data,
       )
 
       setSnackbarOpen(true)
@@ -248,7 +298,9 @@ const SteadyStateConsumption = () => {
         severity: 'success',
       })
       setModifiedCells({})
-      setOriginalRows(rows)
+      setOriginalRows([])
+      setRows([])
+      await fetchData()
     } catch (error) {
       console.error('Error saving steady state consumption data:', error)
       setSnackbarOpen(true)
@@ -270,20 +322,33 @@ const SteadyStateConsumption = () => {
     })
 
     try {
-      const calculatedData =
+      const response =
         await SteadyStateConsumptionApiService.calculateSteadyStateConsumption(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-      setRows(calculatedData)
-      setOriginalRows(calculatedData)
-      setSnackbarData({
-        message: 'Calculation completed successfully!',
-        severity: 'success',
-      })
+
+      if (response?.code === 422) {
+        setTimeout(() => {
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: response.message || 'Validation error occurred.',
+            severity: 'error',
+            autoHide: false,
+          })
+        }, 500)
+      } else {
+        await fetchData()
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation completed successfully!',
+          severity: 'success',
+        })
+      }
     } catch (error) {
       console.error('Error calculating steady state consumption:', error)
+      setSnackbarOpen(true)
       setSnackbarData({
         message: 'Calculation failed. Please try again.',
         severity: 'error',
@@ -363,7 +428,7 @@ const SteadyStateConsumption = () => {
   }
 
   const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }

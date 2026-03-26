@@ -31,4 +31,8 @@ public interface UserScreenMappingRepository extends JpaRepository<UserScreenMap
 	List<String> findPermissionsByVerticalFKIdAndPlantFKIdandUserId(@Param("verticalId") String verticalId, @Param("plantId") String plantId, @Param("userId") String userId);
 
 
+
+	List<UserScreenMapping> findByUserIdIn(List<UUID> userIds);
+
+
 }
