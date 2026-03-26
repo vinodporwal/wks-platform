@@ -145,6 +145,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
   const [rowsDesignCapacity, setRowsDesignCapacity] = useState([])
   const [rowsMaxCapacity, setRowsMaxCapacity] = useState([])
   const [mcuMaxCapValues, setMcuMaxCapValues] = useState(null)
+
+  const textNoteWhileSaving = IS_PP_SEZ ? 'Update MCU for All Line' : ''
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
     setCurrentRemark(row.remarks || '')
@@ -1178,6 +1180,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           : IS_VCM
             ? 'Steady State Operating Capacity'
             : 'Proposed Operating Capacity',
+      showNoteWhileSaving: IS_PP_SEZ ? true : false,
     },
     isOldYear,
   )
@@ -1499,6 +1502,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
           resetEditSignal={editResetKey}
           setEditResetKey={setEditResetKey}
           mcuMaxCapValues={mcuMaxCapValues}
+          noteOnSaveDialogeBox={textNoteWhileSaving}
         />
       )}
 
