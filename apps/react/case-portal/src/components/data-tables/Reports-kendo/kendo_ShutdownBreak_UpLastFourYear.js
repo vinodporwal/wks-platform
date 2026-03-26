@@ -68,111 +68,129 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
   const getColumns = [
     {
-      field: 'lastFourYears',
+      field: 'year',
       title: 'Year',
       editable: false,
+      widthT: 100,
     },
     {
       field: 'totalAvailableHours',
       title: 'Total Available Hours',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'budgetedShutdownHours',
       title: 'Budgeted Shutdown Hours',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'actualNoOfTurnaroundHrs',
       title: 'Actual No. of Turnaround Hours',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'actualNoOfPlannedSD',
       title: 'Actual No of Planned Shutdowns other than TA',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'actualNoOfRoutineSDHrs',
       title: 'Actual No of Routine SD Hrs',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'totalActualPlannedSDHrs',
       title: 'Total (Actual) Planned Shutdown Hrs',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'process',
       title: 'Process',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'mech',
       title: 'Mech',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'inst',
       title: 'Inst',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'elect',
       title: 'Elect',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'utility',
       title: 'Utility',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'upStreamDownStream',
       title: 'Up Stream / Down Stream',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'extFeedStock',
       title: 'Ext Feed Stock',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'business',
       title: 'Business',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'others',
       title: 'Others',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'totalUnplannedSD',
       title: 'TOTAL Un-planned SD',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
     {
       field: 'unplannedSlowdownHours',
       title: 'Unplanned Slowdown Hours',
       editable: false,
       type: 'number',
+      widthT: 100,
     },
   ]
 
@@ -209,6 +227,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
           others: item.others,
           totalUnplannedSD: item.totalUnplannedSD,
           unplannedSlowdownHours: item.unplannedSlowdownHours,
+          year: item.year,
           isEditable: false,
         }),
       )
@@ -246,24 +265,21 @@ const ShutdownSummaryReport = ({ permissions }) => {
       saveWithRemark: false,
       saveBtn: false,
       isOldYear: isOldYear,
-      // showStepper:false,
     }
   }
 
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: permissions?.showAction ?? false,
-
       saveWithRemark: permissions?.saveWithRemark ?? true,
       saveBtn: false,
       allAction: true,
       showTitleNameBusiness: true,
-      titleName: 'shutdown details',
+      titleName: 'Shutdown Details',
       ExcelName: `${EXCEL_NAME_GRID2}`,
-
       downloadExcelBtn: false,
       uploadExcelBtn: false,
-      downloadExcelBtnFromUI: true,
+      downloadExcelBtnFromUI: false,
     },
     isOldYear,
   )
