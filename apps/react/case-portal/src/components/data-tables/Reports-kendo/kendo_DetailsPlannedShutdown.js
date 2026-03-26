@@ -12,6 +12,7 @@ import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import KendoDataTables from 'components/kendo-data-tables/index'
 import { getRoleName } from 'services/role-service'
 import { validateFields } from 'utils/validationUtils'
+import dayjs from 'dayjs'
 
 // ─── Helper: previous 4 year titles from AOP year ────────────────
 function getPrevYearTitles(aopYear, count = 4) {
@@ -36,6 +37,7 @@ export default function ShutdownReport() {
   const SITE_NAME = siteObject?.name
   const AOP_YEAR = year?.selectedYear
   const IS_OLD_YEAR = oldYear?.oldYear
+  //const IS_OLD_YEAR = false
   const IS_RELEASED = isReleased
 
   const keycloak = useSession()
@@ -71,24 +73,18 @@ export default function ShutdownReport() {
 
   const columnsPlanned = [
     {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
-    {
       field: 'Activities',
       title: 'Activities',
       editable: true,
       widthT: 250,
     },
     {
-      field: 'maintStartDateTime',
+      field: 'taSD',
       title: 'SD - From',
       editable: true,
     },
     {
-      field: 'maintEndDateTime',
+      field: 'taED',
       title: 'SD - To',
       editable: true,
     },
@@ -107,12 +103,6 @@ export default function ShutdownReport() {
     },
   ]
   const columnsRoutine = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
     {
       field: 'Activities',
       title: 'Activities',
@@ -204,14 +194,7 @@ export default function ShutdownReport() {
       type: 'number',
     },
   ]
-
   const columnsPrevYears = [
-    {
-      field: 'id',
-      title: 'ID',
-      editable: false,
-      hidden: true,
-    },
     {
       field: 'Activities',
       title: 'Activities',
@@ -274,16 +257,22 @@ export default function ShutdownReport() {
         'PlannedShutdown',
       )
       const shutdownList = res?.data?.shutdownDetailsList || []
+
       const mappedRows = shutdownList.map((item, idx) => ({
-        id: item.id || idx + 1,
+        ...item,
+        idFromApi: item?.id,
+        id: idx,
+        idRow: `PS-${idx}`,
         Activities: item.activities,
         durationInHrs: item.durationHrs,
-        maintStartDateTime: item.shutdownFrom,
-        maintEndDateTime: item.shutdownTo,
+        taSD: item.shutdownFrom,
+        taED: item.shutdownTo,
         remarks: item.remarks,
-        originalRemark: item.remarks,
-        // add other fields if needed
+        originalRemark: item.remarks ?? '',
+        inEdit: false,
+        isEditable: true,
       }))
+
       setRowsPlanned(mappedRows)
     } catch (error) {
       console.error('Error loading PlannedShutdown:', error)
@@ -323,6 +312,8 @@ export default function ShutdownReport() {
         February: item.february,
         March: item.march,
         isEditable: false,
+        inEdit: false,
+
         // add other fields if needed
       }))
 
@@ -350,13 +341,17 @@ export default function ShutdownReport() {
       )
       const shutdownList = res?.data?.shutdownDetailsList || []
       const mappedRows = shutdownList.map((item, idx) => ({
-        id: item.id || idx + 1,
+        ...item,
+        id: idx,
+        idFromApi: item?.id,
+        idRow: `RSPY-${idx}`,
         Activities: item.activities,
         PrevYear1: item.prevYear1,
         PrevYear2: item.prevYear2,
         PrevYear3: item.prevYear3,
         PrevYear4: item.prevYear4,
-        // add other fields if needed
+        inEdit: false,
+        isEditable: true,
       }))
       setRowsPrevYears(mappedRows)
     } catch (error) {
@@ -381,10 +376,12 @@ export default function ShutdownReport() {
       }
 
       const payload = data.map((row) => ({
-        id: row.id || null,
+        id: row?.idFromApi || null,
         activities: row.Activities,
-        fromDateReport: row.maintStartDateTime,
-        toDateReport: row.maintEndDateTime,
+
+        shutdownFrom: row.taSD ? dayjs(row.taSD).format('YYYY-MM-DD') : null,
+        shutdownTo: row.taED ? dayjs(row.taED).format('YYYY-MM-DD') : null,
+
         durationHrs: row.durationInHrs,
         remarks: row.remarks || '',
       }))
@@ -429,7 +426,8 @@ export default function ShutdownReport() {
       }
 
       const payload = data.map((row) => ({
-        id: row.id || null,
+        id: row?.idFromApi || null,
+
         activities: row.Activities,
         prevYear1: row.PrevYear1,
         prevYear2: row.PrevYear2,
@@ -467,6 +465,7 @@ export default function ShutdownReport() {
     fetchRoutineShutdownPreviousYears,
     showSnackbar,
   ])
+
   const deleteRowDataRoutineShutdown = async (paramsForDelete) => {
     setLoading(true)
 
@@ -503,6 +502,43 @@ export default function ShutdownReport() {
     }
   }
 
+  //deleteRowDataPlannedShutdown
+  const deleteRowDataPlannedShutdown = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRowsPlanned((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deletePlannedShutdownData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRowsPlanned((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchPlannedShutdown()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
+
   const getAdjustedPermissionsPrevYears = (permissions, isOldYear) => {
     if (isOldYear !== 1) return permissions
     return {
@@ -520,7 +556,7 @@ export default function ShutdownReport() {
 
   const permissionsRoutineShutdownPrevYears = getAdjustedPermissionsPrevYears(
     {
-      allAction: true, // columns are editable:false — read-only display
+      allAction: true,
       saveBtn: true,
       showTitle: true,
       showTitleNameBusiness: true,
@@ -528,13 +564,14 @@ export default function ShutdownReport() {
         'Details of Routine Shutdowns for Previous Four Years(Total Shutdown Hours)',
       adjustedPermissions: true,
       downloadExcelBtn: false,
-      downloadExcelBtnFromUI: true,
+      downloadExcelBtnFromUI: false,
       uploadExcelBtn: false,
       ExcelName: `${PLANT_NAME}_Routine_Shutdown_Prev_Years`,
       addButton: true,
       deleteButton: true,
       showCalculate: false,
       showFinalSubmit: false,
+      editButton: true,
     },
     IS_OLD_YEAR,
   )
@@ -551,14 +588,14 @@ export default function ShutdownReport() {
 
   const permissionsRoutineShutdown = getAdjustedPermissionsRoutine(
     {
-      allAction: true, // read-only — no inline editing
+      allAction: true,
       saveBtn: false,
       showTitle: true,
       showTitleNameBusiness: true,
       titleName: 'Details of Routine Shutdowns (Monthwise)',
       adjustedPermissions: true,
       downloadExcelBtn: false,
-      downloadExcelBtnFromUI: true,
+      downloadExcelBtnFromUI: false,
       uploadExcelBtn: false,
       ExcelName: `${PLANT_NAME}_Routine_Shutdown`,
       addButton: false,
@@ -599,6 +636,7 @@ export default function ShutdownReport() {
       deleteButton: true,
       showCalculate: false,
       showFinalSubmit: false,
+      editButton: true,
     },
     IS_OLD_YEAR,
   )
@@ -640,6 +678,7 @@ export default function ShutdownReport() {
           handleRemarkCellClick={handleRemarkCellClickPlanned}
           saveChanges={savePlannedChanges}
           permissions={permissionsPlannedShutdown}
+          deleteRowData={deleteRowDataPlannedShutdown}
         />
 
         <KendoDataTables

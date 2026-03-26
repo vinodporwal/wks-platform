@@ -1,5 +1,6 @@
-package com.wks.caseengine.entity;
+package com.wks.caseengine.db2.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.UUID;
 
@@ -18,12 +19,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "MonthwiseOperatingHours")
+@Table(name = "RoutineShutdownPreviousYears")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MonthwiseOperatingHours {
+public class RoutineShutdownPreviousYears {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -31,29 +32,20 @@ public class MonthwiseOperatingHours {
     @Column(name = "Id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "Month")
-    private Integer month;
+    @Column(name = "Activities")
+    private String activities;
 
-    @Column(name = "TotalAvailableHrs")
-    private Double totalAvailableHrs;
+    @Column(name = "PrevYear1")
+    private Double prevYear1;
 
-    @Column(name = "PlannedTurnaroundHrs")
-    private Double plannedTurnaroundHrs;
+    @Column(name = "PrevYear2")
+    private Double prevYear2;
 
-    @Column(name = "PlannedShutdownOtherThanTurnaroundHrs")
-    private Double plannedShutdownOtherThanTurnaroundHrs;
+    @Column(name = "PrevYear3")
+    private Double prevYear3;
 
-    @Column(name = "RoutineShutdownHrs")
-    private Double routineShutdownHrs;
-
-    @Column(name = "SlowdownHrs")
-    private Double slowdownHrs;
-
-    @Column(name = "NetOperatingHours")
-    private Double netOperatingHours;
-
-    @Column(name = "Remarks")
-    private String remarks;
+    @Column(name = "PrevYear4")
+    private Double prevYear4;
 
     @Column(name = "Year", length = 7)
     private String year;

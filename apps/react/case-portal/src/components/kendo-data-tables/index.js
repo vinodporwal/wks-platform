@@ -350,13 +350,48 @@ const KendoDataTables = ({
         </td>
       )
     }
-    const aggObj = props.dataItem?.aggregates?.[field]
+
     let cellContent = ''
-    if (aggObj) {
-      const aggKey = Object.keys(aggObj)[0]
-      const value = aggObj[aggKey]
-      cellContent =
-        value != null ? Math.trunc(Number(value) * 10000) / 10000 : ''
+
+    // Calculate sum the same way as validation - sum scaled integers from raw data
+    const items = dataItem?.items || []
+    if (items.length > 0 && field) {
+      const SCALE = 10000
+      const TOLERANCE = 1 // allows 0.0001 difference
+      const EXPECTED = 100 * SCALE
+
+      const toPreciseInt = (num) => {
+        if (num === null || num === undefined || num === '') return 0
+        const n = Number(num)
+        if (isNaN(n)) return 0
+        return Math.round(Number(n || 0) * SCALE)
+      }
+
+      const formatFromIntRobust = (intVal) => {
+        const sign = intVal < 0 ? '-' : ''
+        const abs = Math.abs(intVal)
+        const integerPart = Math.floor(abs / SCALE)
+        const remainder = abs % SCALE
+        if (remainder === 0) return sign + String(integerPart)
+        const scaleDigits = String(SCALE).length - 1
+        let fracStr = String(remainder).padStart(scaleDigits, '0')
+        fracStr = fracStr.replace(/0+$/, '')
+        return sign + `${integerPart}.${fracStr}`
+      }
+
+      const sumInt = items.reduce(
+        (acc, row) => acc + toPreciseInt(row[field]),
+        0,
+      )
+
+      const isWithinTolerance = Math.abs(sumInt - EXPECTED) <= TOLERANCE
+
+      // If sum is within tolerance of 100, display as exactly 100
+      if (isWithinTolerance) {
+        cellContent = '100'
+      } else {
+        cellContent = formatFromIntRobust(sumInt)
+      }
     }
     return (
       <td {...props.tdProps} colSpan={1}>
@@ -1118,14 +1153,15 @@ const KendoDataTables = ({
     const isEdited = !!(
       customModifiedCells?.[rowId] && checkField in customModifiedCells[rowId]
     )
-
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
     return (
       <td
         {...tdProps}
         title={value}
         style={{
           color: highlight && isEdited ? 'orange' : undefined,
-          fontWeight: highlight && isEdited ? 'bold' : undefined,
+          fontWeight:
+            (highlight && isEdited) || isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1144,9 +1180,14 @@ const KendoDataTables = ({
 
     const rowId = dataItem.id
     const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={value}
+          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+        >
           {children}
         </td>
       )
@@ -1174,7 +1215,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: shouldHighlight ? 'orange' : undefined,
-          fontWeight: shouldHighlight ? 'bold' : undefined,
+          fontWeight: shouldHighlight || isBoldFromCells ? 'bold' : undefined,
         }}
       >
         {children}
@@ -1195,10 +1236,15 @@ const KendoDataTables = ({
 
     const rowId = dataItem.id
     const value = dataItem[field]
+    const isBoldFromCells = dataItem?.boldCells?.includes(field)
 
     if (disableRedHighlight) {
       return (
-        <td {...tdProps} title={value}>
+        <td
+          {...tdProps}
+          title={value}
+          style={{ fontWeight: isBoldFromCells ? 'bold' : undefined }}
+        >
           {children}
         </td>
       )
@@ -1270,7 +1316,7 @@ const KendoDataTables = ({
         title={value}
         style={{
           color: highlightColor,
-          fontWeight: highlightColor ? 'bold' : undefined,
+          fontWeight: highlightColor || isBoldFromCells ? 'bold' : undefined,
           // backgroundColor: highlightColorFullCell ? 'lightGrey' : undefined,
         }}
       >

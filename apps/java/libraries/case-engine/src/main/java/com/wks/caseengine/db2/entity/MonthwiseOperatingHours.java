@@ -1,5 +1,4 @@
-package com.wks.caseengine.entity;
-
+package com.wks.caseengine.db2.entity;
 
 import java.util.Date;
 import java.util.UUID;
@@ -19,12 +18,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "PlannedShutdownDetails")
+@Table(name = "MonthwiseOperatingHours")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PlannedShutdownDetails {
+public class MonthwiseOperatingHours {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -32,24 +31,31 @@ public class PlannedShutdownDetails {
     @Column(name = "Id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "Activities")
-    private String activities;
+    @Column(name = "Month")
+    private String month;
 
-    @Temporal(TemporalType.DATE)
-    @Column(name = "ShutdownFrom")
-    private Date shutdownFrom;
+    @Column(name = "TotalAvailableHrs")
+    private Double totalAvailableHrs;
 
-    @Temporal(TemporalType.DATE)
-    @Column(name = "ShutdownTo")
-    private Date shutdownTo;
+    @Column(name = "PlannedTurnaroundHrs")
+    private Double plannedTurnaroundHrs;
 
-    @Column(name = "DurationHrs")
-    private Double durationHrs;
+    @Column(name = "PlannedShutdownOtherThanTurnaroundHrs")
+    private Double plannedShutdownOtherThanTurnaroundHrs;
+
+    @Column(name = "RoutineShutdownHrs")
+    private Double routineShutdownHrs;
+
+    @Column(name = "SlowdownHrs")
+    private Double slowdownHrs;
+
+    @Column(name = "NetOperatingHours")
+    private Double netOperatingHours;
 
     @Column(name = "Remarks")
     private String remarks;
 
-    @Column(name = "Year")
+    @Column(name = "Year", length = 7)
     private String year;
 
     @Column(name = "Plant_FK_Id")

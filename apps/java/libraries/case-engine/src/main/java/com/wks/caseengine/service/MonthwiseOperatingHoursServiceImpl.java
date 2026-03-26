@@ -1,6 +1,5 @@
 package com.wks.caseengine.service;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.MonthwiseOperatingHoursDTO;
-import com.wks.caseengine.entity.MonthwiseOperatingHours;
+import com.wks.caseengine.db2.entity.MonthwiseOperatingHours;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
@@ -49,24 +48,20 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
             for (Object[] row : results) {
                 MonthwiseOperatingHoursDTO dto = new MonthwiseOperatingHoursDTO();
 
-                // Id, Month, TotalAvailableHrs, PlannedTurnaroundHrs, PlannedShutdownOtherThanTurnaroundHrs,
-                // RoutineShutdownHrs, SlowdownHrs, NetOperatingHours, Remarks, year, Plant_FK_Id,
-                // CreatedOn, ModifiedOn, UpdatedBy
-                dto.setId(row.length > 0 && row[0] != null ? row[0].toString() : "");
-                dto.setMonth(toInteger(row.length > 1 ? row[1] : null));
-                dto.setTotalAvailableHrs(toDouble(row.length > 2 ? row[2] : null));
-                dto.setPlannedTurnaroundHrs(toDouble(row.length > 3 ? row[3] : null));
-                dto.setPlannedShutdownOtherThanTurnaroundHrs(toDouble(row.length > 4 ? row[4] : null));
-                dto.setRoutineShutdownHrs(toDouble(row.length > 5 ? row[5] : null));
-                dto.setSlowdownHrs(toDouble(row.length > 6 ? row[6] : null));
-                dto.setNetOperatingHours(toDouble(row.length > 7 ? row[7] : null));
-                dto.setRemarks(row.length > 8 && row[8] != null ? row[8].toString() : null);
-                dto.setYear(row.length > 9 && row[9] != null ? row[9].toString() : null);
-                dto.setPlantFkId(row.length > 10 && row[10] != null ? row[10].toString() : null);
-                dto.setCreatedOn(toDate(row.length > 11 ? row[11] : null));
-                dto.setModifiedOn(toDate(row.length > 12 ? row[12] : null));
-                dto.setUpdatedBy(row.length > 13 && row[13] != null ? row[13].toString() : null);
-
+                dto.setId(row[0] != null ? row[0].toString() : null);
+                dto.setMonth(row[1] != null ? (row[1].toString()) : "");
+                dto.setTotalAvailableHrs(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+                dto.setPlannedTurnaroundHrs(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+                dto.setPlannedShutdownOtherThanTurnaroundHrs(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+                dto.setRoutineShutdownHrs(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+                dto.setSlowdownHrs(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+                dto.setNetOperatingHours(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+                dto.setRemarks(row[8] != null ? row[8].toString() : null);
+                dto.setYear(row[9] != null ? row[9].toString() : null);
+                dto.setPlantFkId(row[10] != null ? row[10].toString() : null);
+                dto.setCreatedOn(row[11] != null ? (Date) row[11] : null);
+                dto.setModifiedOn(row[12] != null ? (Date) row[12] : null);
+                dto.setUpdatedBy(row[13] != null ? row[13].toString() : null);
                 list.add(dto);
             }
 
@@ -179,45 +174,5 @@ public class MonthwiseOperatingHoursServiceImpl implements MonthwiseOperatingHou
         return UUID.fromString(trimmed);
     }
 
-    private static Integer toInteger(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
-        try {
-            return Integer.parseInt(value.toString());
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static Double toDouble(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
-        }
-        try {
-            return Double.parseDouble(value.toString());
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static java.util.Date toDate(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof java.util.Date) {
-            return (java.util.Date) value;
-        }
-        if (value instanceof Timestamp) {
-            return new java.util.Date(((Timestamp) value).getTime());
-        }
-        return null;
-    }
 }
 

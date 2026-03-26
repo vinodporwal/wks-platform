@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.ShutdownDetailsDTO;
-import com.wks.caseengine.entity.PlannedShutdownDetails;
-import com.wks.caseengine.entity.RoutineShutdownPreviousYears;
+import com.wks.caseengine.db2.entity.PlannedShutdownDetails;
+import com.wks.caseengine.db2.entity.RoutineShutdownPreviousYears;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
@@ -53,54 +53,54 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
                 if ("PlannedShutdown".equalsIgnoreCase(type)) {
                     // Id, Activities, ShutdownFrom, ShutdownTo, DurationHrs, Remarks, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
-                    dto.setId(toStringOrEmpty(row, 0));
-                    dto.setActivities(toStringOrEmpty(row, 1));
+                    dto.setId(row[0] != null ? row[0].toString() : null);
+                    dto.setActivities(row[1] != null ? row[1].toString() : null);
                     dto.setShutdownFrom(toTimestampAsDate(row, 2));
                     dto.setShutdownTo(toTimestampAsDate(row, 3));
-                    dto.setDurationHrs(toDouble(row, 4));
-                    dto.setRemarks(toStringOrEmpty(row, 5));
-                    dto.setYear(toStringOrEmpty(row, 6));
-                    dto.setPlantFkId(toStringOrEmpty(row, 7));
+                    dto.setDurationHrs(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+                    dto.setRemarks(row[5] != null ? row[5].toString() : null);
+                    dto.setYear(row[6] != null ? row[6].toString() : null);
+                    dto.setPlantFkId(row[7] != null ? row[7].toString() : null);
                     dto.setCreatedOn(toTimestampAsDate(row, 8));
                     dto.setModifiedOn(toTimestampAsDate(row, 9));
-                    dto.setUpdatedBy(toStringOrEmpty(row, 10));
+                    dto.setUpdatedBy(row[10] != null ? row[10].toString() : null);
 
                 } else if ("RoutineShutdown".equalsIgnoreCase(type)) {
                     // Id, Activities, April..March, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
-                    dto.setId(toStringOrEmpty(row, 0));
-                    dto.setActivities(toStringOrEmpty(row, 1));
-                    dto.setApril(toDouble(row, 2));
-                    dto.setMay(toDouble(row, 3));
-                    dto.setJune(toDouble(row, 4));
-                    dto.setJuly(toDouble(row, 5));
-                    dto.setAugust(toDouble(row, 6));
-                    dto.setSeptember(toDouble(row, 7));
-                    dto.setOctober(toDouble(row, 8));
-                    dto.setNovember(toDouble(row, 9));
-                    dto.setDecember(toDouble(row, 10));
-                    dto.setJanuary(toDouble(row, 11));
-                    dto.setFebruary(toDouble(row, 12));
-                    dto.setMarch(toDouble(row, 13));
-                    dto.setYear(toStringOrEmpty(row, 14));
-                    dto.setPlantFkId(toStringOrEmpty(row, 15));
+                    dto.setId(row[0] != null ? row[0].toString() : null);
+                    dto.setActivities(row[1] != null ? row[1].toString() : null);
+                    dto.setApril(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+                    dto.setMay(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+                    dto.setJune(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+                    dto.setJuly(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+                    dto.setAugust(row[6] != null ? Double.parseDouble(row[6].toString()) : 0.0);
+                    dto.setSeptember(row[7] != null ? Double.parseDouble(row[7].toString()) : 0.0);
+                    dto.setOctober(row[8] != null ? Double.parseDouble(row[8].toString()) : 0.0);
+                    dto.setNovember(row[9] != null ? Double.parseDouble(row[9].toString()) : 0.0);
+                    dto.setDecember(row[10] != null ? Double.parseDouble(row[10].toString()) : 0.0);
+                    dto.setJanuary(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
+                    dto.setFebruary(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
+                    dto.setMarch(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
+                    dto.setYear(row[14] != null ? row[14].toString() : null);
+                    dto.setPlantFkId(row[15] != null ? row[15].toString() : null);
                     dto.setCreatedOn(toTimestampAsDate(row, 16));
                     dto.setModifiedOn(toTimestampAsDate(row, 17));
-                    dto.setUpdatedBy(toStringOrEmpty(row, 18));
+                    dto.setUpdatedBy(row[18] != null ? row[18].toString() : null);
 
                 } else {
                     // RoutineShutdownPreviousYears
                     // Id, Activities, PrevYear1..PrevYear4, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
-                    dto.setId(toStringOrEmpty(row, 0));
-                    dto.setActivities(toStringOrEmpty(row, 1));
-                    dto.setPrevYear1(toDouble(row, 2));
-                    dto.setPrevYear2(toDouble(row, 3));
-                    dto.setPrevYear3(toDouble(row, 4));
-                    dto.setPrevYear4(toDouble(row, 5));
-                    dto.setYear(toStringOrEmpty(row, 6));
-                    dto.setPlantFkId(toStringOrEmpty(row, 7));
+                    dto.setId(row[0] != null ? row[0].toString() : null);
+                    dto.setActivities(row[1] != null ? row[1].toString() : null);
+                    dto.setPrevYear1(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
+                    dto.setPrevYear2(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
+                    dto.setPrevYear3(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
+                    dto.setPrevYear4(row[5] != null ? Double.parseDouble(row[5].toString()) : 0.0);
+                    dto.setYear(row[6] != null ? row[6].toString() : null);
+                    dto.setPlantFkId(row[7] != null ? row[7].toString() : null);
                     dto.setCreatedOn(toTimestampAsDate(row, 8));
                     dto.setModifiedOn(toTimestampAsDate(row, 9));
-                    dto.setUpdatedBy(toStringOrEmpty(row, 10));
+                    dto.setUpdatedBy(row[10] != null ? row[10].toString() : null);
                 }
 
                 list.add(dto);
@@ -163,17 +163,19 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
     @Override
     @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
-    public AOPMessageVM saveRoutineShutdownPreviousYears(String plantId, String year, ShutdownDetailsDTO shutdownDetailsDTO) {
+    public AOPMessageVM saveRoutineShutdownPreviousYears(String plantId, String year, List<ShutdownDetailsDTO> shutdownDetailsDTOs) {
         AOPMessageVM aopMessageVM = new AOPMessageVM();
+        List<RoutineShutdownPreviousYears> routineShutdownPreviousYears = new ArrayList<RoutineShutdownPreviousYears>();
         try {
 
             UUID plantUuid = UUID.fromString(plantId);
             Date now = new Date();
-
-            upsertRoutineShutdownPreviousYears(shutdownDetailsDTO, plantUuid, year, now);
-
+            for(ShutdownDetailsDTO shutdownDetailsDTO:shutdownDetailsDTOs) {
+            	routineShutdownPreviousYears.add(upsertRoutineShutdownPreviousYears(shutdownDetailsDTO, plantUuid, year, now));
+            }
+            
             Map<String, Object> data = new HashMap<>();
-            data.put("savedCount", 1);
+            data.put("save", routineShutdownPreviousYears);
             aopMessageVM.setCode(200);
             aopMessageVM.setMessage("Data saved successfully");
             aopMessageVM.setData(data);
@@ -187,7 +189,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         }
     }
 
-    private com.wks.caseengine.entity.RoutineShutdownPreviousYears upsertRoutineShutdownPreviousYears(
+    private RoutineShutdownPreviousYears upsertRoutineShutdownPreviousYears(
             ShutdownDetailsDTO dto,
             UUID plantUuid,
             String year,
@@ -391,28 +393,6 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         }
 
        return null;
-    }
-
-    private static String toStringOrEmpty(Object[] row, int index) {
-        if (row.length <= index || row[index] == null) {
-            return "";
-        }
-        return row[index].toString();
-    }
-
-    private static Double toDouble(Object[] row, int index) {
-        if (row.length <= index || row[index] == null) {
-            return 0.0;
-        }
-        Object value = row[index];
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
-        }
-        try {
-            return Double.parseDouble(value.toString());
-        } catch (NumberFormatException e) {
-            return 0.0;
-        }
     }
 
     private static java.util.Date toTimestampAsDate(Object[] row, int index) {

@@ -52,7 +52,6 @@ const MonthwiseRawMaterial = () => {
 
   const columnDefs = [
     { field: 'id', headerName: 'ID', editable: false },
-
     {
       field: 'material',
       headerName: 'Particulars',
@@ -69,6 +68,20 @@ const MonthwiseRawMaterial = () => {
       flex: 1,
       widthT: 50,
     },
+
+    ...(lowerVertName === 'meg'
+      ? [
+          {
+            field: 'price',
+            headerName: 'Price',
+            editable: false,
+            align: 'left',
+            headerAlign: 'left',
+            flex: 1,
+            widthT: 50,
+          },
+        ]
+      : []),
     {
       field: 'spec',
       headerName: 'Spec',
@@ -197,6 +210,7 @@ const MonthwiseRawMaterial = () => {
       type: 'number',
     },
   ]
+
   const columns = [
     { field: 'id', headerName: 'ID' },
     {

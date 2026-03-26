@@ -4,11 +4,11 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Backdrop, CircularProgress } from '@mui/material/index'
 
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
-import { MockMonthwiseOperatingHoursAPI } from './MockMonthwiseOperatingHoursAPI'
+import { ReportDataService } from 'services/ReportDataService'
+import KendoDataTables from 'components/kendo-data-tables/index'
 
 const MonthwiseOperatingHours = () => {
   const keycloak = useSession()
@@ -22,7 +22,6 @@ const MonthwiseOperatingHours = () => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [rows, setRows] = useState([])
-  const [columns, setColumns] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -37,16 +36,102 @@ const MonthwiseOperatingHours = () => {
 
   const valueFormatter = ValueFormatterProduction()
 
+  const columns = [
+    {
+      field: 'id',
+      title: 'ID',
+      widthT: 50,
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: '_month',
+      title: 'Month',
+      editable: false,
+      isDisabled: true,
+    },
+    {
+      field: 'totalAvailableHrs',
+      title: 'Total available Hrs',
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+
+      isDisabled: true,
+    },
+    {
+      field: 'plannedTurnaroundHrs',
+      title: 'Planned Turnaround Hrs',
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+      isDisabled: true,
+    },
+    {
+      field: 'plannedShutdownOtherThanTurnaroundHrs',
+      title: 'Planned shutdown other than Turnaround Hrs',
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+      isDisabled: true,
+    },
+    {
+      field: 'routineShutdownHrs',
+      title: 'Routine shutdown Hrs',
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+      isDisabled: true,
+    },
+    {
+      field: 'slowdownHrs',
+      title: 'Slowdown Hrs',
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+      isDisabled: true,
+    },
+    {
+      field: 'netOperatingHours',
+      title: 'Net operating Hours',
+      editable: false,
+      type: 'number',
+      format: valueFormatter,
+      isDisabled: true,
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
+    },
+  ]
+
   const fetchData = async () => {
     try {
       setLoading(true)
-      const { columns: cols, data } =
-        await MockMonthwiseOperatingHoursAPI.getReport({
-          AOP_YEAR,
-          valueFormat: valueFormatter,
+      const res = await ReportDataService.getMonthwiseOperatingHours(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (res?.code === 200) {
+        setRows(
+          (res?.data.monthwiseOperatingHoursList || []).map((item, index) => ({
+            ...item,
+            id: item.id ?? index,
+            idFromApi: item.id || null,
+            _month: item?.month,
+          })),
+        )
+      } else {
+        setRows([])
+        setSnackbarData({
+          message: res?.message || 'Failed to fetch data',
+          severity: 'error',
         })
-      setColumns(cols)
-      setRows(data)
+        setSnackbarOpen(true)
+      }
     } catch (err) {
       console.error('Error fetching operating hours data:', err)
       setSnackbarData({
@@ -60,23 +145,63 @@ const MonthwiseOperatingHours = () => {
   }
 
   useEffect(() => {
-    fetchData()
+    if (PLANT_ID && AOP_YEAR) {
+      fetchData()
+    }
   }, [AOP_YEAR, PLANT_ID])
 
   const handleRemarkCellClick = (row) => {
     if (READ_ONLY) return
-    setCurrentRemark(row.Remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
   const saveChanges = async () => {
-    // Since this is mock, we just show success
-    setSnackbarData({
-      message: 'Data Saved Successfully (Mock)!',
-      severity: 'success',
-    })
-    setSnackbarOpen(true)
+    try {
+      setLoading(true)
+      const dataToSave = Object.values(modifiedCells)
+      if (dataToSave.length === 0) {
+        setSnackbarData({
+          message: 'No changes to save',
+          severity: 'info',
+        })
+        setSnackbarOpen(true)
+        return
+      }
+
+      const res = await ReportDataService.saveMonthwiseOperatingHours(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        dataToSave,
+      )
+
+      if (res?.code === 200) {
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        setSnackbarOpen(true)
+        setModifiedCells({})
+        fetchData()
+      } else {
+        setSnackbarData({
+          message: res?.message || 'Failed to save data',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+      }
+    } catch (err) {
+      console.error('Error saving operating hours data:', err)
+      setSnackbarData({
+        message: 'Failed to save data',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -88,7 +213,7 @@ const MonthwiseOperatingHours = () => {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      <KendoDataTablesReports
+      <KendoDataTables
         rows={rows}
         setRows={setRows}
         title='Monthwise Operating Hours (T-20)'
@@ -96,12 +221,15 @@ const MonthwiseOperatingHours = () => {
         setModifiedCells={setModifiedCells}
         columns={columns}
         permissions={{
+          allAction: true,
           textAlignment: 'center',
           remarksEditable: true,
           showCalculate: false,
-          saveBtn: !READ_ONLY,
+          saveBtn: true,
           showWorkFlowBtns: true,
           showTitle: true,
+          showTitleNameBusiness: true,
+          titleName: 'Monthwise Operating Hours (T-20)',
         }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}

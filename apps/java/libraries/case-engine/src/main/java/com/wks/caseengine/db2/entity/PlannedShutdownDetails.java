@@ -1,6 +1,6 @@
-package com.wks.caseengine.entity;
+package com.wks.caseengine.db2.entity;
 
-import java.math.BigDecimal;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -19,12 +19,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "RoutineShutdownPreviousYears")
+@Table(name = "PlannedShutdownDetails")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoutineShutdownPreviousYears {
+public class PlannedShutdownDetails {
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -35,19 +35,21 @@ public class RoutineShutdownPreviousYears {
     @Column(name = "Activities")
     private String activities;
 
-    @Column(name = "PrevYear1")
-    private Double prevYear1;
+    @Temporal(TemporalType.DATE)
+    @Column(name = "ShutdownFrom")
+    private Date shutdownFrom;
 
-    @Column(name = "PrevYear2")
-    private Double prevYear2;
+    @Temporal(TemporalType.DATE)
+    @Column(name = "ShutdownTo")
+    private Date shutdownTo;
 
-    @Column(name = "PrevYear3")
-    private Double prevYear3;
+    @Column(name = "DurationHrs")
+    private Double durationHrs;
 
-    @Column(name = "PrevYear4")
-    private Double prevYear4;
+    @Column(name = "Remarks")
+    private String remarks;
 
-    @Column(name = "Year", length = 7)
+    @Column(name = "Year")
     private String year;
 
     @Column(name = "Plant_FK_Id")

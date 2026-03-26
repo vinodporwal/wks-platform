@@ -421,7 +421,8 @@ const ShutDown = ({ permissions }) => {
           !IS_PTA &&
           !IS_PET &&
           !IS_PVC_VMD &&
-          !IS_CHEMICAL
+          !IS_CHEMICAL &&
+          !IS_PP_SEZ
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -1154,6 +1155,7 @@ const ShutDown = ({ permissions }) => {
         lowerVertName === 'pta' ||
         lowerVertName === 'chemical' ||
         lowerVertName === 'pet' ||
+        lowerVertName === 'aromatics' ||
         IS_PVC_VMD ||
         IS_PVC_DMD
           ? true

@@ -1,283 +1,291 @@
+import { Box } from '@mui/material'
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { useGridApiRef } from '@mui/x-data-grid'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
 import React, { useEffect, useState } from 'react'
-import { Box, Backdrop } from '@mui/material'
-import Notification from 'components/Utilities/Notification'
-import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
-import { DataService } from 'services/DataService'
-import {
-  CircularProgress,
-  Typography,
-} from '../../../../node_modules/@mui/material/index'
+import { useSession } from 'SessionStoreContext'
+import { getRoleName } from 'services/role-service'
+import { ReportDataService } from 'services/ReportDataService'
+import KendoDataTables from 'components/kendo-data-tables/index'
 
-// ─── Dummy Data ───────────────────────────────────────────────────
+const ShutdownSummaryReport = ({ permissions }) => {
+  const [modifiedCells, setModifiedCells] = React.useState({})
+  const keycloak = useSession()
 
-export default function ShutdownSummaryReport() {
+  const [open1, setOpen1] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
   const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { yearChanged, oldYear, plantObject, verticalObject, year } =
-    dataGridStore
-
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
   const PLANT_ID = plantObject?.id
-  const AOP_YEAR = year?.selectedYear
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
 
-  const [loading, setLoading] = useState(false) // ✅ init with dummy
+  const AOP_YEAR = year?.selectedYear
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name.toLowerCase()
+
+  const SCREEN_NAME = screenTitle?.title
+
+  const PLANT_NAME = plantObject?.name?.toUpperCase()
+  const SITE_NAME = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_NAME = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Business_Demand_${AOP_YEAR}`
+  const EXCEL_NAME_GRID2 = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_${SCREEN_NAME}_${AOP_YEAR}`
+
+  const apiRef = useGridApiRef()
+  const [rows, setRows] = useState()
+  const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const keycloak = useSession()
+  const [loading, setLoading] = useState(false)
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+
   const getColumns = [
     {
-      field: 'AopYears',
+      field: 'year',
       title: 'Year',
       editable: false,
       widthT: 100,
     },
     {
-      field: 'TotalAvailableHours',
+      field: 'totalAvailableHours',
       title: 'Total Available Hours',
       editable: false,
-      widthT: 120,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'BudgetedShutdownHours',
+      field: 'budgetedShutdownHours',
       title: 'Budgeted Shutdown Hours',
       editable: false,
-      widthT: 120,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'ActualNoOfTurnaroundHrs',
+      field: 'actualNoOfTurnaroundHrs',
       title: 'Actual No. of Turnaround Hours',
       editable: false,
-      widthT: 130,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'ActualNoOfPlannedSD',
+      field: 'actualNoOfPlannedSD',
       title: 'Actual No of Planned Shutdowns other than TA',
       editable: false,
-      widthT: 150,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'ActualNoOfRoutineSDHrs',
+      field: 'actualNoOfRoutineSDHrs',
       title: 'Actual No of Routine SD Hrs',
       editable: false,
-      widthT: 130,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'TotalActualPlannedSDHrs',
+      field: 'totalActualPlannedSDHrs',
       title: 'Total (Actual) Planned Shutdown Hrs',
       editable: false,
-      widthT: 140,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'Process',
+      field: 'process',
       title: 'Process',
       editable: false,
-      widthT: 100,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'Mech',
+      field: 'mech',
       title: 'Mech',
       editable: false,
-      widthT: 100,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'Inst',
+      field: 'inst',
       title: 'Inst',
       editable: false,
-      widthT: 100,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'Elect',
+      field: 'elect',
       title: 'Elect',
       editable: false,
-      widthT: 100,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'Utility',
+      field: 'utility',
       title: 'Utility',
       editable: false,
-      widthT: 100,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'UpStreamDownStream',
+      field: 'upStreamDownStream',
       title: 'Up Stream / Down Stream',
       editable: false,
-      widthT: 130,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'ExtFeedStock',
+      field: 'extFeedStock',
       title: 'Ext Feed Stock',
       editable: false,
-      widthT: 110,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'Business',
+      field: 'business',
       title: 'Business',
       editable: false,
-      widthT: 100,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'Others',
+      field: 'others',
       title: 'Others',
       editable: false,
-      widthT: 100,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'TotalUnplannedSD',
+      field: 'totalUnplannedSD',
       title: 'TOTAL Un-planned SD',
       editable: false,
-      widthT: 120,
       type: 'number',
+      widthT: 100,
     },
     {
-      field: 'UnplannedSlowdownHours',
+      field: 'unplannedSlowdownHours',
       title: 'Unplanned Slowdown Hours',
       editable: false,
-      widthT: 130,
       type: 'number',
-    },
-  ]
-  const DUMMY_DATA = [
-    {
-      id: 1,
-      AopYears: '2024-25',
-      TotalAvailableHours: 8760,
-      BudgetedShutdownHours: 544,
-      ActualNoOfTurnaroundHrs: 528,
-      ActualNoOfPlannedSD: 0,
-      ActualNoOfRoutineSDHrs: 0,
-      TotalActualPlannedSDHrs: 528,
-      Process: 0,
-      Mech: 312,
-      Inst: 0,
-      Elect: 0,
-      Utility: 0,
-      UpStreamDownStream: 67,
-      ExtFeedStock: 0,
-      Business: 0,
-      Others: 0,
-      TotalUnplannedSD: 379,
-      UnplannedSlowdownHours: 0,
-    },
-    {
-      id: 2,
-      AopYears: '2023-24',
-      TotalAvailableHours: 8760,
-      BudgetedShutdownHours: 304,
-      ActualNoOfTurnaroundHrs: 0,
-      ActualNoOfPlannedSD: 312,
-      ActualNoOfRoutineSDHrs: 0,
-      TotalActualPlannedSDHrs: 312,
-      Process: 0,
-      Mech: 0,
-      Inst: 15,
-      Elect: 0,
-      Utility: 0,
-      UpStreamDownStream: 0,
-      ExtFeedStock: 0,
-      Business: 0,
-      Others: 0,
-      TotalUnplannedSD: 15,
-      UnplannedSlowdownHours: 0,
-    },
-    {
-      id: 3,
-      AopYears: '2022-23',
-      TotalAvailableHours: 8784,
-      BudgetedShutdownHours: 48,
-      ActualNoOfTurnaroundHrs: 0,
-      ActualNoOfPlannedSD: 0,
-      ActualNoOfRoutineSDHrs: 0,
-      TotalActualPlannedSDHrs: 0,
-      Process: 0,
-      Mech: 0,
-      Inst: 6,
-      Elect: 0,
-      Utility: 0,
-      UpStreamDownStream: 0,
-      ExtFeedStock: 0,
-      Business: 0,
-      Others: 0,
-      TotalUnplannedSD: 6,
-      UnplannedSlowdownHours: 77,
-    },
-    {
-      id: 4,
-      AopYears: '2021-22',
-      TotalAvailableHours: 8760,
-      BudgetedShutdownHours: 312,
-      ActualNoOfTurnaroundHrs: 0,
-      ActualNoOfPlannedSD: 312,
-      ActualNoOfRoutineSDHrs: 0,
-      TotalActualPlannedSDHrs: 312,
-      Process: 144,
-      Mech: 0,
-      Inst: 3,
-      Elect: 0,
-      Utility: 375,
-      UpStreamDownStream: 106,
-      ExtFeedStock: 0,
-      Business: 0,
-      Others: 17,
-      TotalUnplannedSD: 643,
-      UnplannedSlowdownHours: 0,
+      widthT: 100,
     },
   ]
 
-  // ─── Helper: map rows with id ─────────────────────────────────────
-  const mapRows = (data) =>
-    data.map((item, index) => ({
-      ...item,
-      id: index + 1,
-    }))
-  const [rows, setRows] = useState(mapRows(DUMMY_DATA))
-  // ─── Fetch Data ───────────────────────────────────────────────────
-  const loadData = async () => {
-    if (!PLANT_ID || !AOP_YEAR) {
-      setRows(mapRows(DUMMY_DATA)) // ✅ fallback dummy if no plant/year
-      return
-    }
+  const fetchData = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    console.log('Fetching data with:', { PLANT_ID, AOP_YEAR })
+
     setLoading(true)
     try {
-      const res = await DataService.getShutdownSummary(
+      const res = await ReportDataService.getShutdownSummaryLastFourYearData(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
       )
-      const data = res?.data?.length > 0 ? res.data : DUMMY_DATA
-      //  setRows(mapRows(data))
-      setRows(mapRows(DUMMY_DATA))
+
+      const formattedData = res?.data?.shutdownSummaryLastFourYearList?.map(
+        (item, index) => ({
+          id: index,
+          aopYears: item.lastFourYears,
+          totalAvailableHours: item.totalAvailableHours,
+          budgetedShutdownHours: item.budgetedShutdownHours,
+          actualNoOfTurnaroundHrs: item.actualNoOfTurnaroundHrs,
+          actualNoOfPlannedSD: item.actualNoOfPlannedSD,
+          actualNoOfRoutineSDHrs: item.actualNoOfRoutineSDHrs,
+          totalActualPlannedSDHrs: item.totalActualPlannedSDHrs,
+          process: item.process,
+          mech: item.mech,
+          inst: item.inst,
+          elect: item.elect,
+          utility: item.utility,
+          upStreamDownStream: item.upStreamDownStream,
+          extFeedStock: item.extFeedStock,
+          business: item.business,
+          others: item.others,
+          totalUnplannedSD: item.totalUnplannedSD,
+          unplannedSlowdownHours: item.unplannedSlowdownHours,
+          year: item.year,
+          isEditable: false,
+        }),
+      )
+
+      setRows(formattedData)
+
+      setLoading(false)
     } catch (error) {
-      console.error('Error loading shutdown summary:', error)
-      setRows(mapRows(DUMMY_DATA)) // ✅ fallback dummy on error
-    } finally {
+      console.error('Error fetching data:', error)
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadData()
-  }, [keycloak, AOP_YEAR, PLANT_ID])
+    fetchData()
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  const handleRemarkCellClick = (dataItem) => {
+    // if (!dataItem?.isEditable) return
+    if (READ_ONLY) return
+    setCurrentRemark(dataItem.remark || '')
+    setCurrentRowId(dataItem.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+    }
+  }
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      saveWithRemark: permissions?.saveWithRemark ?? true,
+      saveBtn: false,
+      allAction: true,
+      showTitleNameBusiness: true,
+      titleName: 'Shutdown Breakup For Last 4 Years (19-C)',
+      ExcelName: `${EXCEL_NAME_GRID2}`,
+      downloadExcelBtn: false,
+      uploadExcelBtn: false,
+      downloadExcelBtnFromUI: false,
+    },
+    isOldYear,
+  )
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <div>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
@@ -285,26 +293,34 @@ export default function ShutdownSummaryReport() {
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {/* ✅ Shutdown Summary Grid */}
-      <KendoDataTablesReports
+      <KendoDataTables
+        modifiedCells={modifiedCells}
+        setModifiedCells={setModifiedCells}
+        setRows={setRows}
         columns={getColumns}
-        rows={rows}
-        title='Shutdown Break-up for last 4 Years'
-        setRows={setRows} 
-        permissions={{
-          textAlignment: 'center',
-          showCalculate: false,
-          showFinalSubmit: false,
-          showTitle: true,
-        }}
+        rows={rows || []}
+        title='Business Demand'
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
+        apiRef={apiRef}
+        deleteId={deleteId}
+        setDeleteId={setDeleteId}
+        setOpen1={setOpen1}
+        open1={open1}
+        fetchData={fetchData}
+        remarkDialogOpen={remarkDialogOpen}
+        setRemarkDialogOpen={setRemarkDialogOpen}
+        currentRemark={currentRemark}
+        setCurrentRemark={setCurrentRemark}
+        currentRowId={currentRowId}
+        setCurrentRowId={setCurrentRowId}
+        handleRemarkCellClick={handleRemarkCellClick}
+        permissions={adjustedPermissions}
       />
-
-      <Notification
-        open={snackbarOpen}
-        message={snackbarData.message}
-        severity={snackbarData.severity}
-        onClose={() => setSnackbarOpen(false)}
-      />
-    </Box>
+    </div>
   )
 }
+
+export default ShutdownSummaryReport
