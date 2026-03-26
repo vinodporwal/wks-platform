@@ -32,7 +32,7 @@ public class MonthwiseOperatingHours {
     private UUID id;
 
     @Column(name = "Month")
-    private Integer month;
+    private String month;
 
     @Column(name = "TotalAvailableHrs")
     private Double totalAvailableHrs;

@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MonthwiseOperatingHoursDTO {
     private String id;
-    private Integer month;
+    private String month;
 
     private Double totalAvailableHrs;
     private Double plannedTurnaroundHrs;
