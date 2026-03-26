@@ -146,6 +146,10 @@ const WorkFlowMerge = () => {
 
   const handleCalculate = async () => {
     try {
+      if (lowerVertName === 'meg') {
+        return handleCalculateForMEG()
+      }
+
       setLoadingCalculate(true)
 
       if (!PLANT_ID || !AOP_YEAR) {
@@ -227,6 +231,58 @@ const WorkFlowMerge = () => {
         res8,
         res9,
       ]
+
+      const allSuccess = responses.every(
+        (res) => res !== null && res !== undefined,
+      )
+
+      if (allSuccess) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+        setLoadingCalculate(false)
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Failed!',
+          severity: 'error',
+        })
+        setLoadingCalculate(false)
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      setLoadingCalculate(false)
+      console.error('Error!', error)
+    } finally {
+      // setLoadingCalculate(false)
+      // console.log('false 1')
+    }
+  }
+
+  const handleCalculateForMEG = async () => {
+    try {
+      setLoadingCalculate(true)
+
+      if (!PLANT_ID || !AOP_YEAR) {
+        throw new Error('PLANT_ID or AOP_YEAR not found ')
+      }
+
+      const [data] = await Promise.all([
+        AOPWorkFlowService.handleCalculateAll(PLANT_ID, AOP_YEAR, keycloak),
+
+        Promise.resolve(null),
+      ])
+
+      const responses = [data]
 
       const allSuccess = responses.every(
         (res) => res !== null && res !== undefined,
