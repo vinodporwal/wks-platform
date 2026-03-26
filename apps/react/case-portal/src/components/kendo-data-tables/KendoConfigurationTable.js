@@ -39,6 +39,7 @@ import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
 import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import ProductionRange from './tab-components/ProductionRange'
 import PtaConfiguration from './tab-components/PtaConfiguration'
+import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
 
 const ConfigurationTable = () => {
   const hasExecutedRef = useRef(false)
@@ -614,8 +615,9 @@ const ConfigurationTable = () => {
     if (hasModifiedOn) {
       const getDateValue = (name) =>
         new Date(
-          configurationExecutionDetails.find((item) => item.Name === name)
-            ?.AttributeValue,
+          configurationExecutionDetails.find(
+            (item) => item.Name === name,
+          )?.AttributeValue,
         )
       setStartDate(getDateValue('StartDate'))
       setEndDate(getDateValue('EndDate'))
@@ -1133,7 +1135,12 @@ const ConfigurationTable = () => {
 
   if (lowerVertName == 'meg' && lowerVertName !== 'cracker') {
     // const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
-    const megTabs = ['Configuration', 'Constants', 'Report Manual Entry']
+    const megTabs = [
+      'Configuration',
+      'Constants',
+      'Report Manual Entry',
+      'NSR & Material Prices',
+    ]
     const auditYear = AOP_YEAR
     let displayYear = ''
     if (auditYear) {
@@ -1216,6 +1223,8 @@ const ConfigurationTable = () => {
                     reportTypes={reportTypes}
                   />
                 )
+              case 'nsr & material prices':
+                return <NSRAndMaterialPrices />
               case 'pio impact':
                 return (
                   <SelectivityData
