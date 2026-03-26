@@ -52,6 +52,7 @@ import PlantShutdownSlowdown from '../Reports-kendo/kendo-PlantShutdownSlowdown'
 import { getRoleName } from 'services/role-service'
 import ShutdownReport from '../Reports-kendo/kendo_DetailsPlannedShutdown'
 import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFourYear'
+import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionnormForMeg'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -667,9 +668,11 @@ const WorkFlowMerge = () => {
     'Shutdown Break-up Last Four Year (T-19C)', // Index 6 (Moved Up)
     'Norms for Shutdown & Slowdown (T-19D)', // Index 7 (Moved Up)
     'Annual Production Plan (T-15)', // Index 8
+
     'Plant Contribution (T-21)', // Index 9
     'MonthWise Operating Hours (T-20)', // Index 10
-    'Plant Contribution Summary (T-22)', // Index 11
+    'Specific Consumption Norms (T-17)', // Index 11
+    'Plant Contribution Summary (T-22)', // Index 12
   ]
   const customPETTabs = [
     'Annual AOP Cost',
@@ -1088,7 +1091,9 @@ const WorkFlowMerge = () => {
             {tabIndex === 9 && <PlantContribution />}
 
             {tabIndex === 10 && <MonthwiseOperatingHours />}
-            {tabIndex === 11 && <PlantContributionLastFourYears />}
+            {tabIndex === 11 && <SpecificConsumptionnormForMeg />}
+
+            {tabIndex === 12 && <PlantContributionLastFourYears />}
           </>
         )}
 

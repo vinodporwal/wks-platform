@@ -10,6 +10,7 @@ export const ReportDataService = {
   getShutdownSummaryLastFourYearData,
   getMonthwiseOperatingHours,
   saveMonthwiseOperatingHours,
+  getPlantShutdownSlowdownNormsDuration,
 }
 
 async function getShutdownData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -177,6 +178,26 @@ async function saveMonthwiseOperatingHours(
     return json(keycloak, resp)
   } catch (e) {
     console.error('Error saving monthwise operating hours:', e)
+    return await Promise.reject(e)
+  }
+}
+
+async function getPlantShutdownSlowdownNormsDuration(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+) {
+  const url = `${Config.CaseEngineUrl}/task/plant-shutdown-slowdown-norms-duration?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
     return await Promise.reject(e)
   }
 }

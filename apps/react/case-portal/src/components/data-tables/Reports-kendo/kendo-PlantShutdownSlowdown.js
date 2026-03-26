@@ -8,7 +8,7 @@ import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
-import { MockPlantShutdownSlowdownAPI } from './MockPlantShutdownSlowdownAPI'
+import { ReportDataService } from 'services/ReportDataService'
 
 const PlantShutdownSlowdown = () => {
   const keycloak = useSession()
@@ -22,7 +22,6 @@ const PlantShutdownSlowdown = () => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [rows, setRows] = useState([])
-  const [columns, setColumns] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
@@ -37,15 +36,174 @@ const PlantShutdownSlowdown = () => {
 
   const valueFormatter = ValueFormatterProduction()
 
+  const columns = [
+    {
+      field: 'sno',
+      title: 'Sl no',
+      widthT: 58,
+      editable: false,
+      align: 'right',
+      type: 'number',
+      format: '{0:0}',
+    },
+    {
+      field: 'criticalActivity',
+      title: 'Critical Routine Activity',
+      widthT: 200,
+      editable: false,
+    },
+    {
+      title: 'Best achieved at site in the last 4 years',
+      children: [
+        {
+          field: 'bestAchievedSiteFreq',
+          title: 'Frequency',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+        {
+          field: 'bestAchievedSiteDur',
+          title: 'Duration',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      title: 'Best achieved in the group',
+      children: [
+        {
+          field: 'bestAchievedGroupFreq',
+          title: 'Frequency',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+        {
+          field: 'bestAchievedGroupDur',
+          title: 'Duration',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      title: 'Actual 2024-25',
+      children: [
+        {
+          field: 'actualPrevYearFreq',
+          title: 'Frequency',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+        {
+          field: 'actualPrevYearDur',
+          title: 'Duration',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      title: 'Budget 2025-26',
+      children: [
+        {
+          field: 'budgetNextYearFreq',
+          title: 'Frequency',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+        {
+          field: 'budgetNextYearDur',
+          title: 'Duration',
+          widthT: 150,
+          editable: false,
+          type: 'number',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      field: 'clubbedActivities',
+      title: 'Activities that can be clubbed with the critical activity',
+      widthT: 150,
+      editable: false,
+    },
+    {
+      field: 'explanationNotBest',
+      title:
+        'Explanation for not proposing the best achieved frequency / duration',
+      widthT: 150,
+      editable: false,
+    },
+    {
+      field: 'throughputReduction',
+      title: 'Throughput reduction during the period',
+      widthT: 150,
+      type: 'number',
+      editable: false,
+    },
+    {
+      field: 'lossRecoverable',
+      title: 'Is the production Loss recoverable',
+      widthT: 150,
+      editable: false,
+    },
+  ]
+
   const fetchData = async () => {
     try {
       setLoading(true)
-      const { columns: cols, data } =
-        await MockPlantShutdownSlowdownAPI.getReport({
-          valueFormat: valueFormatter,
+      const res = await ReportDataService.getPlantShutdownSlowdownNormsDuration(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (res?.code === 200) {
+        const responseData =
+          res.data.plantShutdownSlowdownNormsDurationList || []
+
+        const formattedData = responseData.map((item, index) => ({
+          id: item.id,
+          sno: index + 1,
+          criticalActivity: item.criticalRoutineActivity,
+          bestAchievedSiteFreq: item.bestAchievedLastYearFrequency,
+          bestAchievedSiteDur: item.bestAchievedLastYearDuration,
+          bestAchievedGroupFreq: item.bestAchievedGroupFrequency,
+          bestAchievedGroupDur: item.bestAchievedGroupDuration,
+          actualPrevYearFreq: item.actualFrequency,
+          actualPrevYearDur: item.prevYearDuration,
+          budgetNextYearFreq: item.budgetFrequency,
+          budgetNextYearDur: item.currentYearDuration,
+          clubbedActivities: item.activitiesClubbed,
+          explanationNotBest: item.explanationNotProposing,
+          throughputReduction: item.throughputReductionDuringPeriod,
+          lossRecoverable: item.isProductionLossRecoverable,
+        }))
+        setRows(formattedData || data)
+
+        // setRows(data || [])
+      } else {
+        setRows([])
+        setSnackbarData({
+          message: res?.message || 'Failed to fetch data',
+          severity: 'error',
         })
-      setColumns(cols)
-      setRows(data)
+        setSnackbarOpen(true)
+      }
     } catch (err) {
       console.error('Error fetching plant shutdown slowdown data:', err)
       setSnackbarData({
