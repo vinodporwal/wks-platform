@@ -2,13 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { Box, Backdrop } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
-import { MockSpecificConsumptionNormsAPI } from './MockSpecificConsumptionNormsAPI'
-//F:\MNT\workspace\wks-platform\apps\react\case-portal\src\components\data-tables\Reports-kendo\MockSpecificConsumptionNormsAPI.js
-// import { DataService } from 'services/DataService' // or your actual API service path
+import { MockSpecificConsumptionNormsIIAPI } from './MockSpecificConsumptionNormsIIAPI'
 import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
-import { DataService } from 'services/DataService'
+import { SpecificConsumptionService } from 'services/SpecificConsumptionService'
 import {
   CircularProgress,
   Typography,
@@ -16,11 +14,11 @@ import {
 
 const specificConsumptionCategories = () => [
   {
-    key: 'RawMaterial',
+    key: 'RAWMATERIAL',
     title: 'Raw Material',
   },
   {
-    key: 'ByProduct',
+    key: 'BYPRODUCT',
     title: 'By Product',
   },
   {
@@ -31,27 +29,7 @@ const specificConsumptionCategories = () => [
     key: 'Utilities',
     title: 'Utilities',
   },
-  // {
-  //   key: 'QualityParameters',
-  //   title: 'Quality Parameters',
-  // },
-  // {
-  //   key: 'OtherVariable',
-  //   title: 'Other Variable',
-  // },
-  // {
-  //   key: 'PackingConsumables',
-  //   title: 'Packing & Consumables',
-  // },
 ]
-
-// Categories that should have norms grid with their custom titles
-const categoriesWithNorms = {
-  RawMaterial: 'Raw Material',
-  ByProducts: 'By Product',
-  CatChem: 'Catalysts & Chemicals',
-  UtilityConsumption: 'Utilities',
-}
 
 export default function SpecificConsumptionnormForMeg() {
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -77,73 +55,219 @@ export default function SpecificConsumptionnormForMeg() {
   const lowerVertName = vertName?.toLowerCase()
   const [loading, setLoading] = useState(false)
   const [reports, setReports] = useState({})
-  const [normsData, setNormsData] = useState({})
-  const [normColumns, setNormColumns] = useState([])
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const keycloak = useSession()
-  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
-  const [currentRemark, setCurrentRemark] = useState('')
-  const [currentRowId, setCurrentRowId] = useState(null)
-  const [modifiedCells, setModifiedCells] = React.useState({})
-  const [otherVariableRows, setOtherVariableRows] = useState([])
+  const [modifiedCells, setModifiedCells] = useState({})
+  // Create separate state for each grid
+  const [gridStates, setGridStates] = useState({})
+
   const valueFormat = ValueFormatterConsumption()
 
-  // Function to generate dynamic norm columns from backend data
-  const generateNormColumns = (columnsFromBackend) => {
-    if (!columnsFromBackend || columnsFromBackend.length === 0) {
-      // Default columns if backend doesn't provide them
-      return [
-        { field: 'NormName', title: 'Particular', editable: false, flex: 1 },
-        { field: 'UOM', title: 'UOM', editable: false, width: 100 },
-      ]
+  // Initialize grid states
+  useEffect(() => {
+    const initialStates = {}
+    specificConsumptionCategories().forEach(({ key }) => {
+      initialStates[key] = {
+        remarkDialogOpen: false,
+        currentRemark: '',
+        currentRowId: null,
+        modifiedCells: {},
+      }
+    })
+    setGridStates(initialStates)
+  }, [])
+
+  // Helper functions to update individual grid state
+  const updateGridState = (key, updates) => {
+    setGridStates((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        ...updates,
+      },
+    }))
+  }
+
+  const handleRemarkCellClick = (key, row) => {
+    updateGridState(key, {
+      currentRemark: row.remarks || '',
+      currentRowId: row.id,
+      remarkDialogOpen: true,
+    })
+  }
+
+  const updateCategoryRows = (key, updatedRows) => {
+    setReports((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        rows: updatedRows,
+      },
+    }))
+  }
+
+  // Handle modified cells update and sync with rows
+  const handleModifiedCellsUpdate = (key, modifiedCells) => {
+    updateGridState(key, { modifiedCells })
+
+    // Update the rows in reports to reflect the changes
+    setReports((prev) => {
+      const currentRows = prev[key]?.rows || []
+      const updatedRows = currentRows.map((row) => {
+        const modifiedRow = modifiedCells[row.id]
+        return modifiedRow ? { ...row, ...modifiedRow } : row
+      })
+
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          rows: updatedRows,
+        },
+      }
+    })
+  }
+
+  const saveChanges = async (key) => {
+    try {
+      setLoading(true)
+      if (Object.keys(modifiedCells).length === 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      // Get the original rows to merge with modified data
+      const currentRows = reports[key]?.rows || []
+
+      var data = Object.values(modifiedCells)
+
+      // Map data with proper field handling
+      const payload = data.map((item) => {
+        // Find the original row to get all fields
+        const originalRow = currentRows.find((row) => row.id === item.id) || {}
+
+        return {
+          sno: item.sno ?? originalRow.sno,
+          id: item.id ?? originalRow.id,
+          material: item.material ?? originalRow.material,
+          price: item.price ?? originalRow.price,
+          uom: item.uom ?? item.unit ?? originalRow.uom ?? originalRow.unit,
+          design: item.design ?? originalRow.design,
+          designRsMt: item.designRsMt ?? originalRow.designRsMt,
+          bestAchivedActual:
+            item.bestAchivedActual ?? originalRow.bestAchivedActual,
+          bestAchivedActualRsMT:
+            item.bestAchivedActualRsMT ?? originalRow.bestAchivedActualRsMT,
+          globalBenchmark: item.globalBenchmark ?? originalRow.globalBenchmark,
+          globalBenchmarkRsMT:
+            item.globalBenchmarkRsMT ?? originalRow.globalBenchmarkRsMT,
+          budgetPrevYear: item.budgetPrevYear ?? originalRow.budgetPrevYear,
+          budgetPrevYearRsMT:
+            item.budgetPrevYearRsMT ?? originalRow.budgetPrevYearRsMT,
+          actualPrevYear: item.actualPrevYear ?? originalRow.actualPrevYear,
+          actualPrevYearRsMT:
+            item.actualPrevYearRsMT ?? originalRow.actualPrevYearRsMT,
+          proposedBudget: item.proposedBudget ?? originalRow.proposedBudget,
+          proposedBudgetRsMT:
+            item.proposedBudgetRsMT ?? originalRow.proposedBudgetRsMT,
+          plantFkId: item.plantFkId ?? originalRow.plantFkId ?? PLANT_ID,
+          aopYear: item.aopYear ?? originalRow.aopYear ?? AOP_YEAR,
+          remarks: item.remarks ?? originalRow.remarks ?? '',
+        }
+      })
+
+      console.log('Saving payload:', payload) // Debug log
+
+      // Save to API
+      const response =
+        await SpecificConsumptionService.saveSpecificConsumptionII(
+          keycloak,
+          payload,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Saved Successfully!',
+          severity: 'success',
+        })
+        updateGridState(key, { modifiedCells: {} })
+        await loadAll()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: response?.message || 'Save failed!',
+          severity: 'error',
+        })
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error?.message || 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
     }
-    return columnsFromBackend
   }
 
   const loadAll = async () => {
     setLoading(true)
-    const out = {}
-    const normsOut = {}
-    let dynamicColumns = []
-
-    await Promise.all(
-      specificConsumptionCategories().map(async ({ key }) => {
-        const { columns } = await MockSpecificConsumptionNormsAPI.getReport({
-          category: key,
-          AOP_YEAR,
-          valueFormat,
-        })
-        const apiResp = await DataService.getSpecificConsumption(
-          keycloak,
-          key,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-        let rows = []
-        if (
-          key === 'PackingConsumables' &&
-          apiResp?.data?.packingConsumablesData
-        ) {
-          rows = apiResp.data.packingConsumablesData
-        } else if (apiResp?.data?.plantProductionData) {
-          rows = apiResp.data.plantProductionData
-        }
-        out[key] = { columns, rows }
-      }),
-    )
-
-    setReports(out)
-    // setNormsData(normsOut)
-    // setNormColumns(generateNormColumns(dynamicColumns))
-    setLoading(false)
+    try {
+      const out = {}
+      await Promise.all(
+        specificConsumptionCategories().map(async ({ key }) => {
+          try {
+            const { columns } =
+              await MockSpecificConsumptionNormsIIAPI.getReport({
+                category: key,
+                AOP_YEAR,
+                valueFormat,
+              })
+            const apiResp =
+              await SpecificConsumptionService.getSpecificConsumptionII(
+                keycloak,
+                key,
+                PLANT_ID,
+                AOP_YEAR,
+              )
+            const rows = apiResp?.data?.plantProductionData || []
+            out[key] = { columns, rows }
+          } catch (error) {
+            console.error(`Error loading data for ${key}:`, error)
+            out[key] = { columns: [], rows: [] }
+          }
+        }),
+      )
+      setReports(out)
+    } catch (error) {
+      console.error('Error in loadAll:', error)
+      setSnackbarData({
+        message: 'Error loading data. Please try again.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
-    loadAll()
+    if (keycloak && PLANT_ID && AOP_YEAR) {
+      loadAll()
+    }
   }, [keycloak, AOP_YEAR, PLANT_ID, VERTICAL_ID])
 
   return (
@@ -156,22 +280,57 @@ export default function SpecificConsumptionnormForMeg() {
       </Backdrop>
 
       <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
-        {'Specific Consumption Norms'}
+        {`Specific Consumption Norms (T-17)`}
       </Typography>
 
-      {specificConsumptionCategories().map(({ key, title }) => {
+      {specificConsumptionCategories().map(({ key, title }, index) => {
         const rpt = reports[key] || {}
+        const gridState = gridStates[key] || {
+          remarkDialogOpen: false,
+          currentRemark: '',
+          currentRowId: null,
+          modifiedCells: {},
+        }
+
         return (
           <Box key={key} sx={{ mt: 0 }}>
             <KendoDataTablesReports
               columns={rpt.columns || []}
               rows={rpt.rows || []}
               title={title}
-              setRows={() => {}}
+              setRows={(updaterFn) => {
+                if (typeof updaterFn === 'function') {
+                  const currentRows = rpt.rows || []
+                  const newRows = updaterFn(currentRows)
+                  updateCategoryRows(key, newRows)
+                } else {
+                  updateCategoryRows(key, updaterFn)
+                }
+              }}
+              remarkDialogOpen={gridState.remarkDialogOpen}
+              setRemarkDialogOpen={(value) =>
+                updateGridState(key, { remarkDialogOpen: value })
+              }
+              currentRemark={gridState.currentRemark}
+              setCurrentRemark={(value) =>
+                updateGridState(key, { currentRemark: value })
+              }
+              currentRowId={gridState.currentRowId}
+              setCurrentRowId={(value) =>
+                updateGridState(key, { currentRowId: value })
+              }
+              modifiedCells={modifiedCells}
+              setModifiedCells={setModifiedCells}
+              handleRemarkCellClick={(row) => handleRemarkCellClick(key, row)}
+              saveChanges={() => saveChanges(key)}
               permissions={{
+                customHeight: { mainBox: '32vh', otherBox: '100%' },
                 textAlignment: 'center',
+                remarksEditable: true,
                 showCalculate: false,
-                showFinalSubmit: false,
+                saveBtnForRemark: true,
+                saveBtn: index === 0,
+                showWorkFlowBtns: true,
                 showTitle: true,
               }}
             />
