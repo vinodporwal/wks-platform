@@ -31,5 +31,6 @@ public class PlantShutdownSlowdownNormsDurationDTO {
     private Date createdOn;
     private Date modifiedOn;
     private String updatedBy;
+    private String remarks;
 }
 

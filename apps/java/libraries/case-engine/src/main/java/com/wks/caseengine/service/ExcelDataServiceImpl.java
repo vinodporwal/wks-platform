@@ -38,8 +38,20 @@ public class ExcelDataServiceImpl implements ExcelDataService {
     @Autowired
     private ShutdownNormsService shutdownNormsService;
 
+    @Autowired
+    private MonthwiseOperatingHoursService monthwiseOperatingHoursService;
+    
+    @Autowired
+    private ShutdownSummaryLastFourYearService shutdownSummaryLastFourYearService;
+
+    @Autowired
+    private ShutdownDetailsService shutdownDetailsService;
+
+    
     @Override
     public List<List<Object>> getDataForProductionVolumeReport(String plantId, String year, List<String> headers) {
+
+    
 
         AOPMessageVM aopMessageVM = productionVolumeDataReportService.getReportForProductionVolumnData(plantId, year);
 
@@ -517,7 +529,6 @@ public class ExcelDataServiceImpl implements ExcelDataService {
                     list.add(value);
                     
                 } catch (NoSuchFieldException | IllegalAccessException e) {
-                    // If field doesn't exist or not accessible, add null
                     list.add(null);
                 }
             }
@@ -526,7 +537,6 @@ public class ExcelDataServiceImpl implements ExcelDataService {
         map.put("rows", dataList);
         return map;
     }
-
     @Override
     public Map<String, Object> getAnnualAOPWorkflowData(String plantId, String year, List<String> headers) {
         Map<String, Object> outMap = new HashMap<>();
@@ -741,6 +751,97 @@ public class ExcelDataServiceImpl implements ExcelDataService {
         }
 
         return dataList;
+    }
+
+
+     @Override
+    public Map<String, Object> getMonthwiseOperatingHours(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = monthwiseOperatingHoursService.getMonthwiseOperatingHours(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<WorkflowYearDTO> dtoList = (List<WorkflowYearDTO>) map.get("monthwiseOperatingHoursList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (WorkflowYearDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    String value = (String) field.get(dto);
+                    list.add(value);
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    // If field doesn't exist or not accessible, add null
+                    list.add(null);
+                }
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+
+    @Override
+    public Map<String, Object> getShutdownSummaryLastFourYear(String plantId, String year, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = shutdownSummaryLastFourYearService.getShutdownSummaryLastFourYear(plantId, year);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<WorkflowYearDTO> dtoList = (List<WorkflowYearDTO>) map.get("monthwiseOperatingHoursList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (WorkflowYearDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    String value = (String) field.get(dto);
+                    list.add(value);
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    // If field doesn't exist or not accessible, add null
+                    list.add(null);
+                }
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
+    }
+
+
+
+    @Override
+    public Map<String, Object> getShutdownDetails(String plantId, String year, String dataInput, List<String> headers) {
+        Map<String, Object> outMap = new HashMap<>();
+         AOPMessageVM aopMessageVM  = shutdownDetailsService.getShutdownDetails(plantId, year, dataInput);
+        // List<String> headers = (List<String>) map.get("headers");
+        Map<String, Object> map = (Map<String, Object>) aopMessageVM.getData();
+        List<WorkflowYearDTO> dtoList = (List<WorkflowYearDTO>) map.get("monthwiseOperatingHoursList");
+        List<List<Object>> dataList = new ArrayList<>();
+        // Data rows
+        for (WorkflowYearDTO dto : dtoList) {
+            List<Object> list = new ArrayList<>();
+            for (String fieldName : headers) {
+                try {
+                    Field field = dto.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true); // in case field is private
+                    String value = (String) field.get(dto);
+                    list.add(value);
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    // If field doesn't exist or not accessible, add null
+                    list.add(null);
+                }
+            }
+            dataList.add(list);
+        }
+
+        map.put("rows", dataList);
+        return map;
     }
 
 }

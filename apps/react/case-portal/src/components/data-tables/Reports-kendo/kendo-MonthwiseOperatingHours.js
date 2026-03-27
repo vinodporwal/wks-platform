@@ -53,51 +53,51 @@ const MonthwiseOperatingHours = () => {
     {
       field: 'totalAvailableHrs',
       title: 'Total available Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
 
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'plannedTurnaroundHrs',
       title: 'Planned Turnaround Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'plannedShutdownOtherThanTurnaroundHrs',
       title: 'Planned shutdown other than Turnaround Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'routineShutdownHrs',
       title: 'Routine shutdown Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'slowdownHrs',
       title: 'Slowdown Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'netOperatingHours',
       title: 'Net operating Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'remarks',
@@ -126,19 +126,9 @@ const MonthwiseOperatingHours = () => {
         )
       } else {
         setRows([])
-        setSnackbarData({
-          message: res?.message || 'Failed to fetch data',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
       }
     } catch (err) {
       console.error('Error fetching operating hours data:', err)
-      setSnackbarData({
-        message: 'Failed to fetch data',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }

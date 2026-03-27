@@ -1091,7 +1091,7 @@ const WorkFlowMerge = () => {
             {tabIndex === 9 && <PlantContribution />}
 
             {tabIndex === 10 && <MonthwiseOperatingHours />}
-            {tabIndex === 11 && <SpecificConsumptionnormForMeg />}
+            {tabIndex === 11 && <SpecificConsumptionNormsII />}
 
             {tabIndex === 12 && <PlantContributionLastFourYears />}
           </>
