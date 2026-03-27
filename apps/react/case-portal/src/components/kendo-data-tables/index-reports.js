@@ -508,7 +508,7 @@ const KendoDataTablesReports = ({
           />
         )
       }
-      if (col.field === 'particular') {
+      if (col.field === 'particular' || col.type === 'text') {
         return (
           <GridColumn
             key={col.field}
