@@ -1,6 +1,6 @@
 import { Box } from '@mui/material/index'
 import Notification from 'components/Utilities/Notification'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { Backdrop, CircularProgress } from '@mui/material/index'
 
@@ -9,6 +9,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { ReportDataService } from 'services/ReportDataService'
+import { validateFields } from 'utils/validationUtils'
 
 const PlantShutdownSlowdown = () => {
   const keycloak = useSession()
@@ -28,6 +29,10 @@ const PlantShutdownSlowdown = () => {
     message: '',
     severity: 'info',
   })
+  const showSnackbar = useCallback((message, severity = 'info') => {
+    setSnackbarData({ message, severity })
+    setSnackbarOpen(true)
+  }, [])
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -37,15 +42,6 @@ const PlantShutdownSlowdown = () => {
   const valueFormatter = ValueFormatterProduction()
 
   const columns = [
-    {
-      field: 'sno',
-      title: 'Sl no',
-      widthT: 58,
-      editable: false,
-      align: 'right',
-      type: 'number',
-      format: '{0:0}',
-    },
     {
       field: 'criticalActivity',
       title: 'Critical Routine Activity',
@@ -184,9 +180,8 @@ const PlantShutdownSlowdown = () => {
           res.data.plantShutdownSlowdownNormsDurationList || []
 
         const formattedData = responseData.map((item, index) => ({
-          id: item.id,
-          idFromApi: item.id || null,
-          sno: index + 1,
+          idFromApi: item.id,
+          id: index,
           criticalActivity: item.criticalRoutineActivity,
           bestAchievedSiteFreq: item.bestAchievedLastYearFrequency,
           bestAchievedSiteDur: item.bestAchievedLastYearDuration,
@@ -237,9 +232,21 @@ const PlantShutdownSlowdown = () => {
         setLoading(false)
         return
       }
+      // const requiredFields = ['remarks']
+
+      // const validationMessage = validateFields(data, requiredFields)
+      // if (validationMessage) {
+      //   setSnackbarOpen(true)
+      //   setSnackbarData({
+      //     message: validationMessage,
+      //     severity: 'error',
+      //   })
+      //   setLoading(false)
+      //   return
+      // }
 
       const rowsToUpdate = data.map((item) => ({
-        id: item.Id,
+        id: item.idFromApi || null,
         criticalRoutineActivity: item.criticalActivity,
         bestAchievedLastYearFrequency: item.bestAchievedSiteFreq,
         bestAchievedLastYearDuration: item.bestAchievedSiteDur,
@@ -255,6 +262,7 @@ const PlantShutdownSlowdown = () => {
         isProductionLossRecoverable: item.lossRecoverable,
         remarks: item.remarks,
         updatedBy: keycloak?.userName || 'system',
+        originalRemarks: item.remarks,
       }))
       const res =
         await ReportDataService.savePlantShutdownSlowdownNormsDuration(
@@ -266,26 +274,18 @@ const PlantShutdownSlowdown = () => {
 
       // console.log(res)
 
-      if (res?.code == 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Saved Successfully!',
-          severity: 'success',
-        })
+      if (res?.code === 200) {
+        showSnackbar('Data Saved Successfully!', 'success')
         setModifiedCells({})
+        fetchData()
       } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Saved Failed!',
-          severity: 'error',
-        })
+        showSnackbar('Data Save Failed!', 'error')
       }
     } catch (err) {
-      console.error('Error while save', err)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: err.message, severity: 'error' })
+      console.error('Error saving data:', err)
+      showSnackbar(err.message || 'An error occurred', 'error')
     } finally {
-      setSnackbarOpen(true)
+      setLoading(false)
     }
   }
 
@@ -342,6 +342,7 @@ const PlantShutdownSlowdown = () => {
           deleteButton: true,
           showWorkFlowBtns: true,
           showTitle: true,
+          saveWithRemark: true,
         }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}

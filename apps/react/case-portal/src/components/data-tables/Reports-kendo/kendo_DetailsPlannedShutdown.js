@@ -111,7 +111,7 @@ export default function ShutdownReport() {
     {
       field: 'Activities',
       title: 'Activities',
-      editable: false,
+      editable: true,
       widthT: 200,
     },
     {
@@ -316,7 +316,7 @@ export default function ShutdownReport() {
       const mappedRows = shutdownList.map((item, idx) => ({
         ...item,
         idFromApi: item?.id,
-        id: item.id || idx + 1,
+        id: idx,
         Activities: item.activities,
         April: item.april,
         May: item.may,
@@ -507,7 +507,7 @@ export default function ShutdownReport() {
       }
 
       const payload = data.map((row) => ({
-        id: row?.idFromApi || row?.id || null,
+        id: row?.idFromApi || null,
         activities: row.Activities,
         april: row.April,
         may: row.May,
