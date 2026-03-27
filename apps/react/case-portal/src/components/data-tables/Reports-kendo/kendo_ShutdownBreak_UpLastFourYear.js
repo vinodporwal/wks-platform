@@ -289,7 +289,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
       const payload = data.map((row) => ({
         id: row?.idFromApi || null,
-        lastFourYears: row.aopYears, // or row.lastFourYears if you use that key in your UI
+        lastFourYears: row.year, // or row.lastFourYears if you use that key in your UI
         totalAvailableHours: row.totalAvailableHours,
         budgetedShutdownHours: row.budgetedShutdownHours,
         actualNoOfTurnaroundHrs: row.actualNoOfTurnaroundHrs,

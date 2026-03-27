@@ -628,6 +628,41 @@ export default function ShutdownReport() {
       console.error('Error deleting Record', error)
     }
   }
+  const deleteRowDataRoutineShutdownMonthwise = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRowsRoutine((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deleteRoutineShutdownsMonthwiseData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRowsRoutine((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchRoutineShutdown()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
 
   const getAdjustedPermissionsPrevYears = (permissions, isOldYear) => {
     if (isOldYear !== 1) return permissions
@@ -784,7 +819,7 @@ export default function ShutdownReport() {
           currentRemark={currentRemarkRoutine}
           setCurrentRemark={setCurrentRemarkRoutine}
           currentRowId={currentRowIdRoutine}
-          deleteRowData={deleteRowDataRoutineShutdown}
+          deleteRowData={deleteRowDataRoutineShutdownMonthwise}
           setCurrentRowId={setCurrentRowIdRoutine}
           handleRemarkCellClick={handleRemarkCellClickRoutine}
           saveChanges={saveRoutineChanges}

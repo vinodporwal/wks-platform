@@ -16,6 +16,7 @@ export const ReportDataService = {
   saveShutdownRoutineData,
   saveShutdownSummaryLastFourYearData,
   deleteShutdownLastFourYears,
+  deleteRoutineShutdownsMonthwiseData,
 }
 
 async function getShutdownData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -322,6 +323,28 @@ async function deleteShutdownLastFourYears(id, keycloak) {
     return await resp.text() // Handle text response from the backend
   } catch (e) {
     console.error('Error deleting shutdown data:', e)
+    return Promise.reject(e)
+  }
+}
+async function deleteRoutineShutdownsMonthwiseData(Id, keycloak, PLANT_ID) {
+  const url = `${Config.CaseEngineUrl}/task/shutdowon_monthwise?id=${Id}`
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to delete data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return await resp.text() // Handle text response from the backend
+  } catch (e) {
+    console.error('Error deleting routine shutdown data:', e)
     return Promise.reject(e)
   }
 }
