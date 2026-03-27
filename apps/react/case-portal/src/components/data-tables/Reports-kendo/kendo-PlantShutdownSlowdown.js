@@ -50,7 +50,7 @@ const PlantShutdownSlowdown = () => {
       field: 'criticalActivity',
       title: 'Critical Routine Activity',
       widthT: 200,
-      editable: false,
+      editable: true,
     },
     {
       title: 'Best achieved at site in the last 4 years',
@@ -59,7 +59,7 @@ const PlantShutdownSlowdown = () => {
           field: 'bestAchievedSiteFreq',
           title: 'Frequency',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -67,7 +67,7 @@ const PlantShutdownSlowdown = () => {
           field: 'bestAchievedSiteDur',
           title: 'Duration',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -80,7 +80,7 @@ const PlantShutdownSlowdown = () => {
           field: 'bestAchievedGroupFreq',
           title: 'Frequency',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -88,7 +88,7 @@ const PlantShutdownSlowdown = () => {
           field: 'bestAchievedGroupDur',
           title: 'Duration',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -101,7 +101,7 @@ const PlantShutdownSlowdown = () => {
           field: 'actualPrevYearFreq',
           title: 'Frequency',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -109,7 +109,7 @@ const PlantShutdownSlowdown = () => {
           field: 'actualPrevYearDur',
           title: 'Duration',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -122,7 +122,7 @@ const PlantShutdownSlowdown = () => {
           field: 'budgetNextYearFreq',
           title: 'Frequency',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -130,7 +130,7 @@ const PlantShutdownSlowdown = () => {
           field: 'budgetNextYearDur',
           title: 'Duration',
           widthT: 150,
-          editable: false,
+          editable: true,
           type: 'number',
           format: valueFormatter,
         },
@@ -140,27 +140,33 @@ const PlantShutdownSlowdown = () => {
       field: 'clubbedActivities',
       title: 'Activities that can be clubbed with the critical activity',
       widthT: 150,
-      editable: false,
+      editable: true,
     },
     {
       field: 'explanationNotBest',
       title:
         'Explanation for not proposing the best achieved frequency / duration',
       widthT: 150,
-      editable: false,
+      editable: true,
     },
     {
       field: 'throughputReduction',
       title: 'Throughput reduction during the period',
       widthT: 150,
       type: 'number',
-      editable: false,
+      editable: true,
     },
     {
       field: 'lossRecoverable',
       title: 'Is the production Loss recoverable',
       widthT: 150,
-      editable: false,
+      editable: true,
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
     },
   ]
 
@@ -178,6 +184,7 @@ const PlantShutdownSlowdown = () => {
 
         const formattedData = responseData.map((item, index) => ({
           id: item.id,
+          idFromApi: item.id || null,
           sno: index + 1,
           criticalActivity: item.criticalRoutineActivity,
           bestAchievedSiteFreq: item.bestAchievedLastYearFrequency,
@@ -192,25 +199,16 @@ const PlantShutdownSlowdown = () => {
           explanationNotBest: item.explanationNotProposing,
           throughputReduction: item.throughputReductionDuringPeriod,
           lossRecoverable: item.isProductionLossRecoverable,
+          remarks: item.remarks,
         }))
         setRows(formattedData || data)
 
         setRows(data || [])
       } else {
         setRows([])
-        setSnackbarData({
-          message: res?.message || 'Failed to fetch data',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
       }
     } catch (err) {
       console.error('Error fetching plant shutdown slowdown data:', err)
-      setSnackbarData({
-        message: 'Failed to fetch data',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }
@@ -221,19 +219,97 @@ const PlantShutdownSlowdown = () => {
   }, [AOP_YEAR, PLANT_ID])
 
   const handleRemarkCellClick = (row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.Remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
   const saveChanges = async () => {
-    setSnackbarData({
-      message: 'Data Saved Successfully (Mock)!',
-      severity: 'success',
-    })
-    setSnackbarOpen(true)
+    try {
+      const data = Object.values(modifiedCells)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+
+      const rowsToUpdate = data.map((item) => ({
+        id: item.Id,
+        criticalRoutineActivity: item.criticalActivity,
+        bestAchievedLastYearFrequency: item.bestAchievedSiteFreq,
+        bestAchievedLastYearDuration: item.bestAchievedSiteDur,
+        bestAchievedGroupFrequency: item.bestAchievedGroupFreq,
+        bestAchievedGroupDuration: item.bestAchievedGroupDur,
+        actualFrequency: item.actualPrevYearFreq,
+        prevYearDuration: item.actualPrevYearDur,
+        budgetFrequency: item.budgetNextYearFreq,
+        currentYearDuration: item.budgetNextYearDur,
+        activitiesClubbed: item.clubbedActivities,
+        explanationNotProposing: item.explanationNotBest,
+        throughputReductionDuringPeriod: item.throughputReduction,
+        isProductionLossRecoverable: item.lossRecoverable,
+        remarks: item.remarks,
+        updatedBy: keycloak?.userName || 'system',
+      }))
+      const res = await ReportDataService.savePlantShutdownSlowdownNormsDuration(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        rowsToUpdate,
+      )
+
+      // console.log(res)
+
+      if (res?.code == 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Saved Failed!',
+          severity: 'error',
+        })
+      }
+    } catch (err) {
+      console.error('Error while save', err)
+      setSnackbarOpen(true)
+      setSnackbarData({ message: err.message, severity: 'error' })
+    } finally {
+      setSnackbarOpen(true)
+    }
   }
+
+  const deleteRowData = async (paramsForDelete) => {
+      try {
+        const { idFromApi, id } = paramsForDelete
+        const deleteId = id
+  
+        if (!idFromApi) {
+          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        }
+  
+        if (idFromApi) {
+          await ReportDataService.deletePlantShutdownSlowdownNormsDuration(idFromApi, keycloak)
+          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+          setSnackbarOpen(true)
+          setSnackbarData({
+            message: 'Record Deleted successfully!',
+            severity: 'success',
+          })
+          fetchPreviousYear()
+        }
+      } catch (error) {
+        console.error('Error deleting Record!', error)
+      }
+    }
 
   return (
     <Box>
@@ -252,11 +328,14 @@ const PlantShutdownSlowdown = () => {
         setModifiedCells={setModifiedCells}
         columns={columns}
         permissions={{
+          allAction: true,
           textAlignment: 'center',
-          remarksEditable: false,
+          remarksEditable: true,
           showCalculate: false,
-          saveBtn: false,
-          showWorkFlowBtns: false,
+          saveBtn: true,
+          addButton: true,
+          deleteButton: true,
+          showWorkFlowBtns: true,
           showTitle: true,
         }}
         remarkDialogOpen={remarkDialogOpen}
@@ -267,6 +346,7 @@ const PlantShutdownSlowdown = () => {
         setCurrentRowId={setCurrentRowId}
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
+        deleteRowData={deleteRowData}
       />
 
       <Notification
