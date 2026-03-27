@@ -3,12 +3,13 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { ReportDataService } from 'services/ReportDataService'
 import KendoDataTables from 'components/kendo-data-tables/index'
+import { validateFields } from 'utils/validationUtils'
 
 const ShutdownSummaryReport = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -61,6 +62,10 @@ const ShutdownSummaryReport = ({ permissions }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const showSnackbar = useCallback((message, severity = 'info') => {
+    setSnackbarData({ message, severity })
+    setSnackbarOpen(true)
+  }, [])
   const [loading, setLoading] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -83,114 +88,120 @@ const ShutdownSummaryReport = ({ permissions }) => {
     {
       field: 'budgetedShutdownHours',
       title: 'Budgeted Shutdown Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'actualNoOfTurnaroundHrs',
       title: 'Actual No. of Turnaround Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'actualNoOfPlannedSD',
       title: 'Actual No of Planned Shutdowns other than TA',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'actualNoOfRoutineSDHrs',
       title: 'Actual No of Routine SD Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'totalActualPlannedSDHrs',
       title: 'Total (Actual) Planned Shutdown Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'process',
       title: 'Process',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'mech',
       title: 'Mech',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'inst',
       title: 'Inst',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'elect',
       title: 'Elect',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'utility',
       title: 'Utility',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'upStreamDownStream',
       title: 'Up Stream / Down Stream',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'extFeedStock',
       title: 'Ext Feed Stock',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'business',
       title: 'Business',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'others',
       title: 'Others',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'totalUnplannedSD',
       title: 'TOTAL Un-planned SD',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'unplannedSlowdownHours',
       title: 'Unplanned Slowdown Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      editable: true,
+      widthT: 200,
     },
   ]
 
@@ -208,7 +219,8 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
       const formattedData = res?.data?.shutdownSummaryLastFourYearList?.map(
         (item, index) => ({
-          id: index,
+          id: item.id,
+          idFromApi: item?.id,
           aopYears: item.lastFourYears,
           totalAvailableHours: item.totalAvailableHours,
           budgetedShutdownHours: item.budgetedShutdownHours,
@@ -227,8 +239,9 @@ const ShutdownSummaryReport = ({ permissions }) => {
           others: item.others,
           totalUnplannedSD: item.totalUnplannedSD,
           unplannedSlowdownHours: item.unplannedSlowdownHours,
-          year: item.year,
-          isEditable: false,
+          year: item.lastFourYears,
+          remarks: item.remarks,
+          originalRemarks: item.remarks,
         }),
       )
 
@@ -248,10 +261,69 @@ const ShutdownSummaryReport = ({ permissions }) => {
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return
     if (READ_ONLY) return
-    setCurrentRemark(dataItem.remark || '')
+    setCurrentRemark(dataItem.remarks || '')
     setCurrentRowId(dataItem.id)
     setRemarkDialogOpen(true)
   }
+  const saveChanges = useCallback(async () => {
+    try {
+      const data = Object.values(modifiedCells)
+      if (data.length === 0) {
+        showSnackbar('No Records to Save!', 'info')
+        return
+      }
+  
+      const validationMessage = validateFields(data, ['remarks'])
+      if (validationMessage) {
+        showSnackbar(validationMessage, 'error')
+        return
+      }
+
+      const payload = data.map((row) => ({
+        id: row?.idFromApi || row?.id || null,
+        lastFourYears: row.aopYears, // or row.lastFourYears if you use that key in your UI
+        totalAvailableHours: row.totalAvailableHours,
+        budgetedShutdownHours: row.budgetedShutdownHours,
+        actualNoOfTurnaroundHrs: row.actualNoOfTurnaroundHrs,
+        actualNoOfPlannedSD: row.actualNoOfPlannedSD,
+        actualNoOfRoutineSDHrs: row.actualNoOfRoutineSDHrs,
+        totalActualPlannedSDHrs: row.totalActualPlannedSDHrs,
+        process: row.process,
+        mech: row.mech,
+        inst: row.inst,
+        elect: row.elect,
+        utility: row.utility,
+        upStreamDownStream: row.upStreamDownStream,
+        extFeedStock: row.extFeedStock,
+        business: row.business,
+        others: row.others,
+        totalUnplannedSD: row.totalUnplannedSD,
+        unplannedSlowdownHours: row.unplannedSlowdownHours,
+        remarks: row.remarks || '',
+      }))
+
+      setLoading(true)
+      const res = await ReportDataService.saveShutdownSummaryLastFourYearData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        payload,
+      )
+
+      if (res?.code === 200) {
+        showSnackbar('Data Saved Successfully!', 'success')
+        setModifiedCells({})
+        fetchData()
+      } else {
+        showSnackbar('Data Save Failed!', 'error')
+      }
+    } catch (err) {
+      console.error('Error saving data:', err)
+      showSnackbar(err.message || 'An error occurred', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, showSnackbar])
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
@@ -270,9 +342,9 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
   const adjustedPermissions = getAdjustedPermissions(
     {
-      showAction: permissions?.showAction ?? false,
+      showAction: true,
       saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: false,
+      saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
       titleName: 'Shutdown Breakup For Last 4 Years (19-C)',
@@ -318,6 +390,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
         setCurrentRowId={setCurrentRowId}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
+        saveChanges={saveChanges}
       />
     </div>
   )

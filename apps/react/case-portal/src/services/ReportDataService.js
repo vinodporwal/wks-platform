@@ -13,6 +13,8 @@ export const ReportDataService = {
   getPlantShutdownSlowdownNormsDuration,
   savePlantShutdownSlowdownNormsDuration,
   deletePlantShutdownSlowdownNormsDuration,
+  saveShutdownRoutineData,
+  saveShutdownSummaryLastFourYearData,
 }
 
 async function getShutdownData(keycloak, PLANT_ID, AOP_YEAR, type) {
@@ -229,10 +231,7 @@ async function savePlantShutdownSlowdownNormsDuration(
   }
 }
 
-async function deletePlantShutdownSlowdownNormsDuration(
-  id,
-  keycloak,
-) {
+async function deletePlantShutdownSlowdownNormsDuration(id, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/plant-shutdown-slowdown-norms-duration?id=${id}`
   const headers = {
     Accept: 'application/json',
@@ -252,5 +251,54 @@ async function deletePlantShutdownSlowdownNormsDuration(
   } catch (e) {
     console.error('Error deleting slowdown data:', e)
     return Promise.reject(e)
+  }
+}
+async function saveShutdownRoutineData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  type,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/routine-shutdown?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+async function saveShutdownSummaryLastFourYearData(
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/shutdown-summary-last-four-year?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
