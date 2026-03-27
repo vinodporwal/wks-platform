@@ -38,6 +38,13 @@ public class ShutdownDetailsController {
         return shutdownDetailsService.saveShutdownDetails(plantId, year, shutdownDetailsDTOs);
     }
     
+    @PostMapping(value = "/routine-shutdown")
+    public AOPMessageVM saveRoutineShutdwn(
+            @RequestParam String plantId,
+            @RequestParam String year,
+            @RequestBody List<ShutdownDetailsDTO> shutdownDetailsDTOs) {
+        return shutdownDetailsService.saveRoutineShutdwn(plantId, year, shutdownDetailsDTOs);
+    }
     @PostMapping(value = "/routine-shutdown-previous-years")
     public AOPMessageVM saveRoutineShutdownPreviousYears(
             @RequestParam String plantId,
