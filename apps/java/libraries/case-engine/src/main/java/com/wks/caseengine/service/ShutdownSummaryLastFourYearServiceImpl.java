@@ -187,6 +187,8 @@ public class ShutdownSummaryLastFourYearServiceImpl implements ShutdownSummaryLa
         entity.setUnplannedSlowdownHours(dto.getUnplannedSlowdownHours());
         entity.setRemarks(dto.getRemarks());
         entity.setUpdatedBy(Utility.getUserName());
+        entity.setPlantFkId(plantUuid);
+        entity.setYear(year);
 
         if (isUpdate) {
             entity.setModifiedOn(now);

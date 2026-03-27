@@ -409,6 +409,8 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         entity.setMarch(dto.getMarch());
         entity.setRemarks(dto.getRemarks());
         entity.setUpdatedBy(Utility.getUserName());
+        entity.setPlantFkId(plantUuid);
+        entity.setYear(year);
 
         if (isUpdate) {
             entity.setModifiedOn(now);
