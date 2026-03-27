@@ -532,6 +532,51 @@ const TcsOutput = () => {
     }
   }
 
+  const handleResetWorkflow = async () => {
+    try {
+      // Validate required parameters
+      if (!keycloak || !SITE_ID || !VERTICAL_ID || !userRole || !AOP_YEAR) {
+        setSnackbarData({
+          message: 'Missing required parameters. Please refresh and try again.',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+        return
+      }
+
+      setIsSubmittingRemark(true)
+
+      // Call reset workflow API
+      await TcsWorkflowApiService.resetWorkflow(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+        userRole,
+        VERTICAL_ID,
+      )
+
+      setSnackbarData({
+        message: 'Workflow reset successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
+
+      // Refresh eligibility after reset
+      await checkSubmitEligibility()
+    } catch (err) {
+      console.error('Error resetting workflow:', err)
+
+      setSnackbarData({
+        message: 'Failed to reset workflow. Please try again.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+      throw err
+    } finally {
+      setIsSubmittingRemark(false)
+    }
+  }
+
   return (
     <Box
       sx={{
@@ -601,6 +646,10 @@ const TcsOutput = () => {
           submitTooltip={submitTooltip}
           showReviewBtn={userRole === ROLES.EPS_ENGINEER}
           reviewTooltip='Review and approve/reject plants'
+          onResetWorkflow={handleResetWorkflow}
+          showResetBtn={
+            userRole === ROLES.CLUSTER_HEAD && timelineData?.length > 0
+          }
         />
       </Box>
 

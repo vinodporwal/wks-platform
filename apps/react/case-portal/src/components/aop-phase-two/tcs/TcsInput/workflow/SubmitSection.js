@@ -1,12 +1,16 @@
 import { Box, Button, Tooltip, CircularProgress } from '@mui/material'
 import HistoryIcon from '@mui/icons-material/History'
 import RateReviewIcon from '@mui/icons-material/RateReview'
+import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { ROLES } from '../../utils/roleUtils'
+import { useState } from 'react'
+import DeleteDialog from '../../../common/AdvanceKendoTable/components/DeleteDialog'
 
 const SubmitSection = ({
   onSubmitClick,
   onViewHistory,
   onReviewClick,
+  onResetWorkflow,
   isEligible = true,
   isLoading = false,
   isWorkflowTriggered = true,
@@ -14,7 +18,9 @@ const SubmitSection = ({
   showReviewBtn = false,
   reviewTooltip = 'Review and approve/reject plants',
   userRole = '',
+  showResetBtn = false,
 }) => {
+  const [openResetDialog, setOpenResetDialog] = useState(false)
   const handleSubmitClick = () => {
     if (!isEligible) {
       return
@@ -22,6 +28,21 @@ const SubmitSection = ({
     if (onSubmitClick) {
       onSubmitClick()
     }
+  }
+
+  const handleResetClick = () => {
+    setOpenResetDialog(true)
+  }
+
+  const handleResetConfirm = () => {
+    setOpenResetDialog(false)
+    if (onResetWorkflow) {
+      onResetWorkflow()
+    }
+  }
+
+  const handleResetCancel = () => {
+    setOpenResetDialog(false)
   }
 
   // Role-based tooltip messages
@@ -104,6 +125,37 @@ const SubmitSection = ({
           <HistoryIcon />
         </Button>
       </Tooltip>
+
+      {showResetBtn && onResetWorkflow && (
+        <Tooltip position='top' title='Reset Workflow'>
+          <Button
+            variant='outlined'
+            onClick={handleResetClick}
+            disabled={isLoading}
+            sx={{
+              textTransform: 'none',
+              borderColor: '#d32f2f',
+              color: '#d32f2f',
+              padding: '6px 16px',
+              maxHeight: '1.8rem',
+              '&:hover': {
+                borderColor: '#c62828',
+                backgroundColor: '#ffebee',
+              },
+            }}
+          >
+            <RestartAltIcon />
+          </Button>
+        </Tooltip>
+      )}
+
+      <DeleteDialog
+        message='Are you sure you want to reset the workflow? This action cannot be undone.'
+        openDeleteDialogeBox={openResetDialog}
+        setOpenDeleteDialogeBox={setOpenResetDialog}
+        deleteTheRecord={handleResetConfirm}
+        confirmButtonText='Reset'
+      />
     </Box>
   )
 }
