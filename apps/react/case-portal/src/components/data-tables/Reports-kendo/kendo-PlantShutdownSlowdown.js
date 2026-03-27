@@ -46,6 +46,7 @@ const PlantShutdownSlowdown = () => {
       field: 'criticalActivity',
       title: 'Critical Routine Activity',
       widthT: 200,
+      type: 'text',
       editable: true,
     },
     {
@@ -136,6 +137,7 @@ const PlantShutdownSlowdown = () => {
       field: 'clubbedActivities',
       title: 'Activities that can be clubbed with the critical activity',
       widthT: 150,
+      type: 'text',
       editable: true,
     },
     {
@@ -143,6 +145,7 @@ const PlantShutdownSlowdown = () => {
       title:
         'Explanation for not proposing the best achieved frequency / duration',
       widthT: 150,
+      type: 'text',
       editable: true,
     },
     {
@@ -156,7 +159,7 @@ const PlantShutdownSlowdown = () => {
       field: 'lossRecoverable',
       title: 'Is the production Loss recoverable',
       widthT: 80,
-      type: 'numberNonGrey',
+      type: 'text',
       editable: true,
     },
     {
@@ -196,10 +199,9 @@ const PlantShutdownSlowdown = () => {
           throughputReduction: item.throughputReductionDuringPeriod,
           lossRecoverable: item.isProductionLossRecoverable,
           remarks: item.remarks,
+          originalRemarks: item.remarks,
         }))
-        setRows(formattedData || data)
-
-        setRows(data || [])
+        setRows(formattedData || responseData)
       } else {
         setRows([])
       }
@@ -232,18 +234,18 @@ const PlantShutdownSlowdown = () => {
         setLoading(false)
         return
       }
-      // const requiredFields = ['remarks']
+      const requiredFields = ['remarks']
 
-      // const validationMessage = validateFields(data, requiredFields)
-      // if (validationMessage) {
-      //   setSnackbarOpen(true)
-      //   setSnackbarData({
-      //     message: validationMessage,
-      //     severity: 'error',
-      //   })
-      //   setLoading(false)
-      //   return
-      // }
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
 
       const rowsToUpdate = data.map((item) => ({
         id: item.idFromApi || null,
@@ -343,6 +345,8 @@ const PlantShutdownSlowdown = () => {
           showWorkFlowBtns: true,
           showTitle: true,
           saveWithRemark: true,
+          showFinalSubmit: false,
+          editButton: true,
         }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
