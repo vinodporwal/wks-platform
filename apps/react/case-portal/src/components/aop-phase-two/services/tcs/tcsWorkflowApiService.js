@@ -30,6 +30,9 @@ export const TcsWorkflowApiService = {
   clusterHeadSubmission,
   getClusterHeadSubmissionHistory,
   getClusterHeadApproveRejectAuditTrail,
+
+  // ============ Reset Workflow API ============
+  resetWorkflow,
 }
 
 // ========================================================================
@@ -626,6 +629,40 @@ async function getClusterHeadApproveRejectAuditTrail(
     const data = await json(keycloak, resp)
 
     return data
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ========================================================================
+// ============ RESET WORKFLOW API ============
+// ========================================================================
+
+async function resetWorkflow(
+  keycloak,
+  siteId,
+  financialYear,
+  userRole,
+  verticalId,
+) {
+  const url = `${Config.CaseEngineUrl}/task/delete-process-instance/${verticalId}/${siteId}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    // Backend returns plain text, not JSON
+    const result = await resp.text()
+    return { success: true, message: result }
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
