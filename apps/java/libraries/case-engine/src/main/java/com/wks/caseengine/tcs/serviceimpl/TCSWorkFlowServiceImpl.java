@@ -154,6 +154,8 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
 //    List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("Crude-1") || plantName.equals("HPIB")).toList();
 List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU1") || plantName.equals("CDU2")).toList();
 
+
+
         Map<String, Boolean> submissionStatusMap = new HashMap<>();
         Map<String, Boolean> approvalStatusMap = new HashMap<>();
         Map<String, Integer> plantCountMap = new HashMap<>();
@@ -248,6 +250,16 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
         return "Process deleted successfully";
 
 
+    }
+    
+    @Override
+    public String resetAuditTrail(String businessKey) {
+        
+        tcsAuditTrailRepository.deleteAuditTrailByBusinessKey(businessKey);
+
+        return "Audit trail reset successfully";
+        
+        
     }
 
 

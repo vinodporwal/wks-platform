@@ -40,4 +40,6 @@ public interface TCSWorkFlowService {
 
     String generateBusinessKey(String verticalId, String siteId, String finacialYear);
 
+    String resetAuditTrail(String businessKey);
+
 }

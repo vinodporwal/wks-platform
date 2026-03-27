@@ -246,7 +246,14 @@ public class TCSOutPutWorkFlowController {
 
 
 		String result = tcsWorkFlowService.deleteProcess(verticalId, siteId, finacialYear);
-		return ResponseEntity.ok(result);
+
+		String businessKey = tcsWorkFlowService.generateBusinessKey(verticalId, siteId, finacialYear);
+
+		String message = tcsWorkFlowService.resetAuditTrail(businessKey);
+
+    
+
+		return ResponseEntity.ok("process reset successfully");
 	}
 
 	@PostMapping(value = "/complete-plant-submission-task/{plantName}/{siteId}/{finacialYear}")
