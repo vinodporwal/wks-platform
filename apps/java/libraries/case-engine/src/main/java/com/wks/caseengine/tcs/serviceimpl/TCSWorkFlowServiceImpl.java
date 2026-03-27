@@ -147,13 +147,20 @@ public class TCSWorkFlowServiceImpl implements TCSWorkFlowService {
         // fetch the plants for given vertical and site and plants with access to tcs input screen
         List<Plants> plants = plantService.findUniqueNamesPlantsByVerticalAndSite(UUID.fromString(verticalId), UUID.fromString(siteId), screenCode);
         
-        List<String> plantList1 = plants.stream().map(Plants::getName).toList();
+    //    List<String> plantList1 = plants.stream().map(Plants::getName).toList();
+
+    List<String> plantList1 = plants.stream().map(Plants::getDisplayName).toList();
+
+        System.out.println("plantList1: " + plantList1);
 
         // temporary short the list for cdu-1, crude-1, hpid
 
 //    List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("Crude-1") || plantName.equals("HPIB")).toList();
-List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU1") || plantName.equals("CDU2")).toList();
+List<String> plantList = plantList1.stream().filter(plantName -> plantName.equals("CDU-1") || plantName.equals("CDU-2")).toList();
 
+
+
+System.out.println("plantList: " + plantList);
 
 
         Map<String, Boolean> submissionStatusMap = new HashMap<>();
@@ -162,6 +169,7 @@ List<String> plantList = plantList1.stream().filter(plantName -> plantName.equal
 
 
         for(String plantName : plantList) {
+            System.out.println("putting submissionStatusMap for plantName: " + plantName);
             submissionStatusMap.put(plantName, false);
         }
 
