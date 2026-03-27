@@ -219,5 +219,8 @@ PlantSubmissionAuditTrailProjection getLatestPlantSubmissionAuditTrail(
     @Query(value = "select Id from Verticals where name = :verticalName", nativeQuery = true)
     UUID getVerticalIdByName(@Param("verticalName") String verticalName);
 
+    @Query(value = "DELETE FROM TCS_Submission_History WHERE BusinessKey = :businessKey", nativeQuery = true)
+    void deleteAuditTrailByBusinessKey(@Param("businessKey") String businessKey);
+
 
 }
