@@ -272,7 +272,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
         showSnackbar('No Records to Save!', 'info')
         return
       }
-  
+
       const validationMessage = validateFields(data, ['remarks'])
       if (validationMessage) {
         showSnackbar(validationMessage, 'error')
@@ -352,6 +352,8 @@ const ShutdownSummaryReport = ({ permissions }) => {
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       downloadExcelBtnFromUI: false,
+      addButton: true,
+      deleteButton: true,
     },
     isOldYear,
   )

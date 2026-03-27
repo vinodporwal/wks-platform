@@ -58,17 +58,17 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedSiteFreq',
           title: 'Frequency',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
         {
           field: 'bestAchievedSiteDur',
           title: 'Duration',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
       ],
@@ -79,17 +79,17 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedGroupFreq',
           title: 'Frequency',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
         {
           field: 'bestAchievedGroupDur',
           title: 'Duration',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
       ],
@@ -100,17 +100,17 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'actualPrevYearFreq',
           title: 'Frequency',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
         {
           field: 'actualPrevYearDur',
           title: 'Duration',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
       ],
@@ -121,17 +121,17 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'budgetNextYearFreq',
           title: 'Frequency',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
         {
           field: 'budgetNextYearDur',
           title: 'Duration',
-          widthT: 150,
+          widthT: 80,
           editable: true,
-          type: 'number',
+          type: 'numberNonGrey',
           format: valueFormatter,
         },
       ],
@@ -152,14 +152,15 @@ const PlantShutdownSlowdown = () => {
     {
       field: 'throughputReduction',
       title: 'Throughput reduction during the period',
-      widthT: 150,
-      type: 'number',
+      widthT: 80,
+      type: 'numberNonGrey',
       editable: true,
     },
     {
       field: 'lossRecoverable',
       title: 'Is the production Loss recoverable',
-      widthT: 150,
+      widthT: 80,
+      type: 'numberNonGrey',
       editable: true,
     },
     {
@@ -255,12 +256,13 @@ const PlantShutdownSlowdown = () => {
         remarks: item.remarks,
         updatedBy: keycloak?.userName || 'system',
       }))
-      const res = await ReportDataService.savePlantShutdownSlowdownNormsDuration(
-        keycloak,
-        PLANT_ID,
-        AOP_YEAR,
-        rowsToUpdate,
-      )
+      const res =
+        await ReportDataService.savePlantShutdownSlowdownNormsDuration(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rowsToUpdate,
+        )
 
       // console.log(res)
 
@@ -288,28 +290,31 @@ const PlantShutdownSlowdown = () => {
   }
 
   const deleteRowData = async (paramsForDelete) => {
-      try {
-        const { idFromApi, id } = paramsForDelete
-        const deleteId = id
-  
-        if (!idFromApi) {
-          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-        }
-  
-        if (idFromApi) {
-          await ReportDataService.deletePlantShutdownSlowdownNormsDuration(idFromApi, keycloak)
-          setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: 'Record Deleted successfully!',
-            severity: 'success',
-          })
-          fetchPreviousYear()
-        }
-      } catch (error) {
-        console.error('Error deleting Record!', error)
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
       }
+
+      if (idFromApi) {
+        await ReportDataService.deletePlantShutdownSlowdownNormsDuration(
+          idFromApi,
+          keycloak,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchPreviousYear()
+      }
+    } catch (error) {
+      console.error('Error deleting Record!', error)
     }
+  }
 
   return (
     <Box>
