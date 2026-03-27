@@ -6,6 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "@ant-design/icons": "^5.3.6",
+    "@bpmn-io/properties-panel": "^3.40.4",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@formio/react": "^5.3.0",
@@ -56,7 +57,9 @@
     "@wkspower/camunda-web-modeler": "^0.0.5",
     "ajv": "^8.17.1",
     "ajv-keywords": "^5.1.0",
-    "bpmn-js": "^10.0.0",
+    "bpmn-js": "^18.13.1",
+    "bpmn-js-properties-panel": "^5.53.0",
+    "camunda-bpmn-moddle": "^7.0.1",
     "date-fns": "^3.6.0",
     "dayjs": "^1.11.13",
     "dompurify": "^3.1.0",
