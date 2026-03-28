@@ -42,4 +42,6 @@ public interface TCSWorkFlowService {
 
     String resetAuditTrail(String businessKey);
 
+    List<PlantSubmissionAuditTrailDTO> getAuditTrail(String verticalId, String siteId, String finacialYear);
+
 }

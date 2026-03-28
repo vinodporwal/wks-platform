@@ -23,10 +23,10 @@ public interface TCSAuditTrailRepository extends JpaRepository<DummyEntity, Long
     @Query(
         value = """
             INSERT INTO TCS_Submission_History
-            (Plant_Id, PlantName, Site_Id, Vertical_Id, SubmittedBy, SubmissionDate,
+            (Plant_Id, PlantName, Site_Id, Vertical_Id, SubmittedBy, UserName, SubmissionDate,
              SubmissionRemark, VerifiedDate, VerifiedBy, VerifiedRemark, Status, Type, BusinessKey)
             VALUES
-            (:plantId, :plantName, :siteId, :verticalId, :submittedBy, :submissionDateTime,
+            (:plantId, :plantName, :siteId, :verticalId, :submittedBy, :userName, :submissionDateTime,
              :submissionRemark, :verifiedDateTime, :verifiedBy, :verifiedRemark,
              :status, :type, :businessKey)
             """,
@@ -38,6 +38,7 @@ public interface TCSAuditTrailRepository extends JpaRepository<DummyEntity, Long
             @Param("siteId") UUID siteId,
             @Param("verticalId") UUID verticalId,
             @Param("submittedBy") String submittedBy,
+            @Param("userName") String userName,
             @Param("submissionDateTime") Date submissionDateTime,
             @Param("submissionRemark") String submissionRemark,
             @Param("verifiedDateTime") Date verifiedDateTime,
@@ -49,6 +50,9 @@ public interface TCSAuditTrailRepository extends JpaRepository<DummyEntity, Long
            
     );
     
+    @Query(value = "SELECT Plant_Id, PlantName, Site_Id, Vertical_Id, SubmittedBy, SubmissionDate, SubmissionRemark, VerifiedDate, VerifiedBy, VerifiedRemark, Status, Type FROM TCS_Submission_History WHERE BusinessKey = :businessKey order by submissiondate", nativeQuery = true)
+    List<PlantSubmissionAuditTrailProjection> getAuditTrail(@Param("businessKey") String businessKey);
+
 
     // get the existing audit trail for given plant, site and vertical
     @Query(value = "SELECT Plant_Id, PlantName, Site_Id, Vertical_Id, SubmittedBy, SubmissionDate, SubmissionRemark, VerifiedDate, VerifiedBy, VerifiedRemark, Status, Type FROM TCS_Submission_History WHERE Plant_Id = :plantId AND Site_Id = :siteId AND Vertical_Id = :verticalId AND BusinessKey = :businessKey AND Type = :type", nativeQuery = true)

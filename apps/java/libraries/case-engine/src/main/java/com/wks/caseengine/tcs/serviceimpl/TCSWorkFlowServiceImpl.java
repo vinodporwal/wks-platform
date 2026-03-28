@@ -48,6 +48,7 @@ import com.wks.caseengine.service.VerticalsService;
 import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailDTO;
 import com.wks.caseengine.tcs.dto.camundadto.PlantSubmissionAuditTrailProjection;
 import com.wks.caseengine.tcs.enums.Roles;
+import com.wks.caseengine.tcs.enums.Status;
 import com.wks.caseengine.tcs.repository.tcsworkflow.TCSAuditTrailRepository;
 import com.wks.caseengine.tcs.service.TCSWorkFlowService;
 
@@ -352,9 +353,11 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
             plantSubmissionAuditTrailDTO.setType("PLANT");
             plantSubmissionAuditTrailDTO.setPlantName(plantName);
-            plantSubmissionAuditTrailDTO.setStatus("PENDING");
+         //   plantSubmissionAuditTrailDTO.setStatus("PENDING");
+         plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
+           
 
-            tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+            tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
 
          return;
 
@@ -400,9 +403,9 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
           plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
           plantSubmissionAuditTrailDTO.setType("PLANT");
-          plantSubmissionAuditTrailDTO.setStatus("PENDING");
+          plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
 
-          tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+          tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
     }
 
     // ebs submit buttons 
@@ -503,7 +506,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
       plantSubmissionAuditTrailDTO.setType("EBS");
-      plantSubmissionAuditTrailDTO.setStatus("PENDING");
+    //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
+    plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
 
       if(plantSubmissionAuditTrailDTO.getSiteId() == null ||  plantSubmissionAuditTrailDTO.getVerticalId() == null) {  
         
@@ -511,7 +515,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
       }
 
       // plantName is null for ebs submission
-      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
 
         return;
 
@@ -554,9 +558,10 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
       plantSubmissionAuditTrailDTO.setType("EBS");
-      plantSubmissionAuditTrailDTO.setStatus("PENDING");
+    //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
+    plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
 
-      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
 
 
     }
@@ -646,36 +651,41 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         // *************** save audit trail for submission history *************************
 
-   PlantSubmissionAuditTrailProjection existingAuditTrail = tcsAuditTrailRepository.getLatestPlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey,"PLANT");
+//    PlantSubmissionAuditTrailProjection existingAuditTrail = tcsAuditTrailRepository.getLatestPlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey,"PLANT");
     
-            if(existingAuditTrail == null) { 
+//             if(existingAuditTrail == null) { 
 
-                throw new RuntimeException("No audit trail found for given plant, site and vertical");
-            }
+//                 throw new RuntimeException("No audit trail found for given plant, site and vertical");
+//             }
     // pick any audit history to get remark as it is comman for all
           
 
             plantSubmissionAuditTrailDTO.setVerifiedDateTime(new Date());
 
-            plantSubmissionAuditTrailDTO.setSubmissionDateTime(existingAuditTrail.getSubmissionDate());
-            plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
-            plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
+            // plantSubmissionAuditTrailDTO.setSubmissionDateTime(existingAuditTrail.getSubmissionDate());
+            // plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
+            // plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
+
+
+            plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+            
+
             plantSubmissionAuditTrailDTO.setType("PLANT");
 
             // set the status of new entry
-            plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? "APPROVED" : "REJECTED");
+            plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? Status.APPROVED.name() : Status.REJECTED.name());
 
 
             // get the latest plant submission and set the status to pending
-            PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestPlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "PLANT");
+            // PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestPlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "PLANT");
 
-            if(latestPlantSubmission == null)  {
-                throw new RuntimeException("No latest plant submission found for given site and vertical");
-            }
-            tcsAuditTrailRepository.updateSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? "APPROVED" : "REJECTED");
+            // if(latestPlantSubmission == null)  {
+            //     throw new RuntimeException("No latest plant submission found for given site and vertical");
+            // }
+            // tcsAuditTrailRepository.updateSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? "APPROVED" : "REJECTED");
 
             
-         tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+         tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
      
          // *************** finished saving audit trail for submission history *************************
 
@@ -752,10 +762,11 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
     
             plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
           plantSubmissionAuditTrailDTO.setType("CTS");
-          plantSubmissionAuditTrailDTO.setStatus("PENDING");
+        //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
+        plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
     
           // plantName is null for cts submission
-          tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+          tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
     
 
             // ************** cts approve-reject logic (applicable only for approved as cts submit == cts approved) *******************
@@ -820,9 +831,11 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
       plantSubmissionAuditTrailDTO.setType("CTS");
-      plantSubmissionAuditTrailDTO.setStatus("PENDING");
+      //plantSubmissionAuditTrailDTO.setStatus("PENDING");
+      plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
 
-      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+
+      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
 
 
       // ************** cts approve-reject logic (applicable only for approved as cts submit == cts approved) *******************
@@ -918,50 +931,56 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
            // *************** save audit trail for eps submission history *************************
 
-   PlantSubmissionAuditTrailProjection existingAuditTrail = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "EBS");
+//    PlantSubmissionAuditTrailProjection existingAuditTrail = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "EBS");
     
-   if(existingAuditTrail == null) { 
+//    if(existingAuditTrail == null) { 
 
-       throw new RuntimeException("No audit trail found for given site and vertical");
-   }
+//        throw new RuntimeException("No audit trail found for given site and vertical");
+//    }
 // pick any audit history to get remark as it is comman for all
    
 
    plantSubmissionAuditTrailDTO.setVerifiedDateTime(new Date());
 
-   plantSubmissionAuditTrailDTO.setSubmissionDateTime(existingAuditTrail.getSubmissionDate());
-   plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
-   plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
+//    plantSubmissionAuditTrailDTO.setSubmissionDateTime(existingAuditTrail.getSubmissionDate());
+//    plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
+//    plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
+
+
+plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+
+
    plantSubmissionAuditTrailDTO.setType("EBS");
-   plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? "APPROVED" : "REJECTED");
+ //  plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? "APPROVED" : "REJECTED");
+ plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? Status.APPROVED.name() : Status.REJECTED.name());
 
    // PlantName is null for resubmission 
-tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
 
   // get the latest plant submission and set the status to pending
-  PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey,  "EBS");
+//   PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey,  "EBS");
 
-  if(latestPlantSubmission == null)  {
-      throw new RuntimeException("No latest ebs submission found for given site and vertical");
-  }
-  tcsAuditTrailRepository.updateSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? "APPROVED" : "REJECTED");
+//   if(latestPlantSubmission == null)  {
+//       throw new RuntimeException("No latest ebs submission found for given site and vertical");
+//   }
+//   tcsAuditTrailRepository.updateSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? "APPROVED" : "REJECTED");
 
-  // reset the status to PENDING for all plant submissions
-  List<PlantSubmissionAuditTrailProjection> plantWiseLatestSubmissions = tcsAuditTrailRepository.getLatestPlantWiseSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "PLANT");
+//   // reset the status to PENDING for all plant submissions
+//   List<PlantSubmissionAuditTrailProjection> plantWiseLatestSubmissions = tcsAuditTrailRepository.getLatestPlantWiseSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "PLANT");
 
-  List<Object[]> statusUpdates = new ArrayList<>();
-  for(PlantSubmissionAuditTrailProjection plantSubmission : plantWiseLatestSubmissions) {  
+//   List<Object[]> statusUpdates = new ArrayList<>();
+//   for(PlantSubmissionAuditTrailProjection plantSubmission : plantWiseLatestSubmissions) {  
 
-    String status = approvalStatus ? "APPROVED" : "PENDING";
-statusUpdates.add(new Object[] { status, plantSubmission.getId() });
+//     String status = approvalStatus ? "APPROVED" : "PENDING";
+// statusUpdates.add(new Object[] { status, plantSubmission.getId() });
 
 
-  }
+//   }
 
-  if(!statusUpdates.isEmpty()) {
-    String updateSql = "UPDATE TCS_Submission_History SET Status = ? WHERE Id = ?";
-    jdbcTemplate.batchUpdate(updateSql, statusUpdates);
-  }
+//   if(!statusUpdates.isEmpty()) {
+//     String updateSql = "UPDATE TCS_Submission_History SET Status = ? WHERE Id = ?";
+//     jdbcTemplate.batchUpdate(updateSql, statusUpdates);
+//   }
 
    
 
@@ -1029,31 +1048,37 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
 
         // *************** save audit trail for cts head approval history *************************
         
-        PlantSubmissionAuditTrailProjection existingAuditTrail = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "CTS");
+    //     PlantSubmissionAuditTrailProjection existingAuditTrail = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "CTS");
 
-       if(existingAuditTrail == null) {
+    //    if(existingAuditTrail == null) {
            
-        throw new RuntimeException("No audit trail found for given site and vertical");
-       }
+    //     throw new RuntimeException("No audit trail found for given site and vertical");
+    //    }
 
         
 
         plantSubmissionAuditTrailDTO.setVerifiedDateTime(new Date());
 
-        plantSubmissionAuditTrailDTO.setSubmissionDateTime(existingAuditTrail.getSubmissionDate());
-        plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
-        plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
+        // plantSubmissionAuditTrailDTO.setSubmissionDateTime(existingAuditTrail.getSubmissionDate());
+        // plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
+        // plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
+
+        plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+
+
         plantSubmissionAuditTrailDTO.setType("CTS");
-        plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? "APPROVED" : "REJECTED");
+    //    plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? "APPROVED" : "REJECTED");
 
-        tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+    plantSubmissionAuditTrailDTO.setStatus(approvalStatus ? Status.APPROVED.name() : Status.REJECTED.name());
+
+        tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
     
-        PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "CTS");
+        // PlantSubmissionAuditTrailProjection latestPlantSubmission = tcsAuditTrailRepository.getLatestEbsSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), businessKey, "CTS");
 
-        if(latestPlantSubmission == null)  {
-            throw new RuntimeException("No latest plant submission found for given site and vertical");
-        }
-        tcsAuditTrailRepository.updateSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? "APPROVED" : "REJECTED");
+        // if(latestPlantSubmission == null)  {
+        //     throw new RuntimeException("No latest plant submission found for given site and vertical");
+        // }
+        // tcsAuditTrailRepository.updateSubmissionStatusById(UUID.fromString(latestPlantSubmission.getId()), approvalStatus ? "APPROVED" : "REJECTED");
 
        
 
@@ -1132,10 +1157,11 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
     
             plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
           plantSubmissionAuditTrailDTO.setType("CLUSTER_HEAD");
-          plantSubmissionAuditTrailDTO.setStatus("PENDING");
+       //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
+       plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
     
           // plantName is null for cts submission
-          tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+          tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
     
 
             // ************** cluster head approve-reject logic (applicable only for approved as cluster head submit == cluster head approved) *******************
@@ -1197,9 +1223,10 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
 
       plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
       plantSubmissionAuditTrailDTO.setType("CLUSTER_HEAD");
-      plantSubmissionAuditTrailDTO.setStatus("PENDING");
+    //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
+    plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
 
-      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
+      tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
 
 
       
@@ -1326,6 +1353,44 @@ statusUpdates.add(new Object[] { status, plantSubmission.getId() });
             }
         
     }
+
+
+    @Override
+    public List<PlantSubmissionAuditTrailDTO> getAuditTrail(String verticalId, String siteId, String finacialYear) { 
+  
+     
+
+        if(siteId == null || siteId.isEmpty()) {
+            throw new RuntimeException("Site id is required");
+        }
+
+        if(finacialYear == null || finacialYear.isEmpty()) {
+            throw new RuntimeException("Financial year is required");
+        }
+
+        if(verticalId == null || verticalId.isEmpty()) {
+            throw new RuntimeException("Vertical id is required");
+        }
+
+        String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
+
+         List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getAuditTrail(businessKey);
+
+         
+
+         return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
+        
+         .plantName(auditTrail.getPlantName())
+         .submittedBy(auditTrail.getSubmittedBy())
+         .userName(auditTrail.getUserName())
+         .submissionDateTime(auditTrail.getSubmissionDate())
+         .submissionRemark(auditTrail.getSubmissionRemark())
+         .status(auditTrail.getStatus())
+         .build()).toList();
+
+    }
+
+
   
     @Override
     public List<PlantSubmissionAuditTrailDTO> getPlantSubmissionAuditTrail(String plantId, String siteId, String verticalId, String type, String finacialYear) { 
