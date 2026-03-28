@@ -265,6 +265,40 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         return entity;
     }
 
+    
+    
+    @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
+    public AOPMessageVM deleteRoutineShutdown(String id) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            UUID uuid = parseUuidOrNull(id);
+            if (uuid == null) {
+                throw new RestInvalidArgumentException("id", new IllegalArgumentException("empty or invalid id"));
+            }
+
+            RoutineShutdownDetails entity = entityManager.find(RoutineShutdownDetails.class, uuid);
+            if (entity == null) {
+                throw new RestInvalidArgumentException("RoutineShutdownDetails id", new RuntimeException("not found"));
+            }
+
+            entityManager.remove(entity);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("deletedCount", 1);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data deleted successfully");
+            aopMessageVM.setData(data);
+            return aopMessageVM;
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for id", e);
+        } catch (RestInvalidArgumentException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to delete routine shutdown details", ex);
+        }
+    }
+
     @Override
     @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
     public AOPMessageVM deletePlannedShutdownDetails(String id) {

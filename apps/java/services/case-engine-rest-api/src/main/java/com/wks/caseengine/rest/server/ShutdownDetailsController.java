@@ -45,6 +45,7 @@ public class ShutdownDetailsController {
             @RequestBody List<ShutdownDetailsDTO> shutdownDetailsDTOs) {
         return shutdownDetailsService.saveRoutineShutdwn(plantId, year, shutdownDetailsDTOs);
     }
+    
     @PostMapping(value = "/routine-shutdown-previous-years")
     public AOPMessageVM saveRoutineShutdownPreviousYears(
             @RequestParam String plantId,
@@ -56,6 +57,11 @@ public class ShutdownDetailsController {
     @DeleteMapping(value = "/shutdown-details")
     public AOPMessageVM deletePlannedShutdownDetails(@RequestParam String id) {
         return shutdownDetailsService.deletePlannedShutdownDetails(id);
+    }
+    
+    @DeleteMapping(value = "/routine-shutdown")
+    public AOPMessageVM deleteRoutineShutdown(@RequestParam String id) {
+        return shutdownDetailsService.deleteRoutineShutdown(id);
     }
 
     @DeleteMapping(value = "/routine-shutdown-previous-years")

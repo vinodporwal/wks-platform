@@ -17,5 +17,9 @@ public interface ShutdownDetailsService {
     AOPMessageVM deletePlannedShutdownDetails(String id);
 
     AOPMessageVM deleteRoutineShutdownPreviousYears(String id);
+    
+    AOPMessageVM deleteRoutineShutdown(String id);
+    
+    
 }
 
