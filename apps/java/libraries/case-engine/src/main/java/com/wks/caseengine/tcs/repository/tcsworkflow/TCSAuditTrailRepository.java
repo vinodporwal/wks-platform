@@ -50,7 +50,7 @@ public interface TCSAuditTrailRepository extends JpaRepository<DummyEntity, Long
            
     );
     
-    @Query(value = "SELECT Plant_Id, PlantName, Site_Id, Vertical_Id, SubmittedBy, SubmissionDate, SubmissionRemark, VerifiedDate, VerifiedBy, VerifiedRemark, Status, Type FROM TCS_Submission_History WHERE BusinessKey = :businessKey order by submissiondate", nativeQuery = true)
+    @Query(value = "SELECT Plant_Id, PlantName, Site_Id, Vertical_Id, SubmittedBy, UserName, SubmissionDate, SubmissionRemark, VerifiedDate, VerifiedBy, VerifiedRemark, Status, Type FROM TCS_Submission_History WHERE BusinessKey = :businessKey order by submissiondate", nativeQuery = true)
     List<PlantSubmissionAuditTrailProjection> getAuditTrail(@Param("businessKey") String businessKey);
 
 
