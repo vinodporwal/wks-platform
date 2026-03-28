@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -271,6 +274,15 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
         
     }
 
+    public Date getISTDateTime() {  
+
+        ZonedDateTime istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+        Date date = Date.from(istTime.toInstant());
+
+        return date;
+
+    }
+
     @Override
     public void resetProcessVariables(String businessKey) {
 
@@ -347,54 +359,35 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", approvalStatusDto);
     }
 
+    public void dataValidation(String siteId, String finacialYear, String verticalId) {  
 
-
-
-    @Override
-        public void completePlantSubmissionTask(String plantName, String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear) {
-        
-            if(plantName == null || plantName.isEmpty()) {  
-
-                throw new RuntimeException("Plant name is required");
-            }
-
-            if(siteId == null || siteId.isEmpty()) {  
-                
-                throw new RuntimeException("Site id is required");
-            }
-        
-            if(finacialYear == null || finacialYear.isEmpty()) {   
-                
-                throw new RuntimeException("Financial year is required");
-            }
- String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
-
-            if(verticalId == null || verticalId.isEmpty()) {
-                throw new RuntimeException("Vertical id is required");
-            }
-
-            VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
-
-            if(vertical == null) {
-                throw new RestResourceNotFoundException("Vertical not found");
-            }
-
-        String businessKey =  generateBusinessKey(verticalId, siteId, finacialYear);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        // get process Instance for given business key and process definition key
-        ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
-
-        if(processInstances.length == 0) {
-            throw new RuntimeException("No process instance found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
+       
+        if(siteId == null || siteId.isEmpty()) {  
+            
+            throw new RuntimeException("Site id is required");
+        }
+    
+        if(finacialYear == null || finacialYear.isEmpty()) {   
+            
+            throw new RuntimeException("Financial year is required");
         }
 
-        if(processInstances.length > 1) {
-            throw new RuntimeException("Multiple process instances found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
+
+        if(verticalId == null || verticalId.isEmpty()) {
+            throw new RuntimeException("Vertical id is required");
         }
 
-        ProcessInstance processInstance = processInstances[0];
+        VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
+
+        if(vertical == null) {
+            throw new RestResourceNotFoundException("Vertical not found");
+        }
+
+
+        
+    }
+
+    public List<TaskDto> getTasks(String businessKey) {    
 
         // get tasks for given business key and process definition key
         List<TaskDto> tasks = processEngineClientFacade.findTasksByBusinessKeyAndProcessDefinitionKey(Optional.ofNullable(businessKey), Optional.ofNullable(PROCESS_DEFINITION_KEY));
@@ -403,6 +396,54 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             throw new RuntimeException("No task found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
         }
 
+        return tasks;
+    }
+
+    public ProcessInstance getProcessInstance(String businessKey) {      
+
+         // get process Instance for given business key and process definition key
+         ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
+
+         if(processInstances.length == 0) {
+             throw new RuntimeException("No process instance found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
+         }
+ 
+         if(processInstances.length > 1) {
+             throw new RuntimeException("Multiple process instances found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
+         }
+ 
+         ProcessInstance processInstance = processInstances[0];
+         return processInstance;
+    }
+
+    public void createAuditTrail(PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String type, String plantName, String status, String businessKey) {    
+
+
+
+    }
+
+
+
+
+    @Override
+        public void completePlantSubmissionTask(String plantName, String siteId, PlantSubmissionAuditTrailDTO plantSubmissionAuditTrailDTO, String finacialYear) {
+        
+            String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
+
+            if(plantName == null || plantName.isEmpty()) {  
+                throw new RuntimeException("Plant name is required");
+            }
+
+            dataValidation( siteId, finacialYear, verticalId);
+
+              String businessKey =  generateBusinessKey(verticalId, siteId, finacialYear);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        
+   List<TaskDto> tasks = getTasks(businessKey);
+
+        ProcessInstance processInstance = getProcessInstance(businessKey);
 // **************   // variable update and audit trail logic for re-submission *******************
 
      int totalSubmissionTasks =   tasks.stream().filter(t -> SUBMIT_PLANT_TASK_DEFINITION_KEY.equals(t.getTaskDefinitionKey())).toList().size();
@@ -426,10 +467,12 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             processEngineClientFacade.updateProcessVariable(processInstance.getId(), "submissionStatus", submissionStatusVariable);
     
 
-            plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+            // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+             plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+          
 
             System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
-            
+
             plantSubmissionAuditTrailDTO.setType("PLANT");
             plantSubmissionAuditTrailDTO.setPlantName(plantName);
             plantSubmissionAuditTrailDTO.setPlantStatus(Status.PENDING.name());
@@ -481,7 +524,11 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       DateFormat dateTimeFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-          plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+          // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+          plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+
+          System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
+
           plantSubmissionAuditTrailDTO.setType("PLANT");
           plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
           plantSubmissionAuditTrailDTO.setPlantStatus(Status.PENDING.name());
@@ -495,50 +542,15 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
 
-        if(siteId == null || siteId.isEmpty()) {
-
-            throw new RuntimeException("Site id is required");
-        }
-
-        if(finacialYear == null || finacialYear.isEmpty()) {
-            throw new RuntimeException("Financial year is required");
-        }
-
-        if(verticalId == null || verticalId.isEmpty()) {
-            throw new RuntimeException("Vertical id is required");
-        }
-
-        VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
-
-        if(vertical == null) {
-            throw new RestResourceNotFoundException("Vertical not found");
-        }
+      dataValidation(siteId, finacialYear, verticalId);
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // get process Instance for given business key and process definition key
-        ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
 
-        if(processInstances.length == 0) {
-            throw new RuntimeException("No process instance found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        if(processInstances.length > 1) {
-            throw new RuntimeException("Multiple process instances found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        ProcessInstance processInstance = processInstances[0];
-
-        // get tasks for given business key and process definition key
-        List<TaskDto> tasks = processEngineClientFacade.findTasksByBusinessKeyAndProcessDefinitionKey(Optional.ofNullable(businessKey), Optional.ofNullable(PROCESS_DEFINITION_KEY));
-
-        if(tasks.isEmpty()) {  
-            throw new RuntimeException("No task found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-
+        ProcessInstance processInstance = getProcessInstance(businessKey);
+        List<TaskDto> tasks = getTasks(businessKey);
 
       List<TaskDto> taskForPlant = tasks.stream()
         .filter(t -> EBS_APPROVAL_TASK_DEFINITION_KEY.equals(t.getTaskDefinitionKey()))
@@ -585,7 +597,11 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", submissionStatusVariable);
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "plantCount", plantCountVariable);
 
-        plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+        // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+        plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+
+        System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
+
       plantSubmissionAuditTrailDTO.setType("EBS");
     //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
     plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
@@ -637,7 +653,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       // *************** save audit trail for ebs approval history *************************
 
-      plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+     // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+     plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
       plantSubmissionAuditTrailDTO.setType("EBS");
     //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
     plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
@@ -654,23 +671,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
 
-        if(siteId == null || siteId.isEmpty()) {  
-            throw new RuntimeException("Site id is required");
-        }
-
-        if(finacialYear == null || finacialYear.isEmpty()) {
-            throw new RuntimeException("Financial year is required");
-        }
-
-        if(verticalId == null || verticalId.isEmpty()) {
-            throw new RuntimeException("Vertical id is required");
-        }
-
-        VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
-
-        if(vertical == null) {
-            throw new RestResourceNotFoundException("Vertical not found");
-        }
+       dataValidation( siteId, finacialYear, verticalId);
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
@@ -678,17 +679,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         // get the process instance 
 
-        ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
-
-        if(processInstances.length == 0) {
-            throw new RuntimeException("No process instance found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        if(processInstances.length > 1) {
-            throw new RuntimeException("Multiple process instances found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        ProcessInstance processInstance = processInstances[0];
+       ProcessInstance processInstance = getProcessInstance(businessKey);
 
         List<ProcessVariable> submissionStatusVariables = Arrays.stream(processEngineClientFacade.findVariables(processInstance.getId())).filter(v -> v.getName().equals("submissionStatus")).toList();
 
@@ -748,7 +739,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             // plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
 
 
-            plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+         //   plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+            plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
             
 
             plantSubmissionAuditTrailDTO.setType("PLANT");
@@ -782,42 +774,14 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
 
-        if(siteId == null || siteId.isEmpty()) {
-            throw new RuntimeException("Site id is required");
-        }
-
-        if(finacialYear == null || finacialYear.isEmpty()) {
-            throw new RuntimeException("Financial year is required");
-        }
-
-        if(verticalId == null || verticalId.isEmpty()) {
-            throw new RuntimeException("Vertical id is required");
-        }
+      dataValidation(siteId, finacialYear, verticalId);
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // get process Instance for given business key and process definition key
-        ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
-
-        if(processInstances.length == 0) {
-            throw new RuntimeException("No process instance found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        if(processInstances.length > 1) {
-            throw new RuntimeException("Multiple process instances found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        ProcessInstance processInstance = processInstances[0];
-
-        // get tasks for given business key and process definition key
-        List<TaskDto> tasks = processEngineClientFacade.findTasksByBusinessKeyAndProcessDefinitionKey(Optional.ofNullable(businessKey), Optional.ofNullable(PROCESS_DEFINITION_KEY));
-
-        if(tasks.isEmpty()) {  
-            throw new RuntimeException("No task found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
+      ProcessInstance processInstance = getProcessInstance(businessKey);
+      List<TaskDto> tasks = getTasks(businessKey);
 
 
       List<TaskDto> taskForPlant = tasks.stream()
@@ -847,10 +811,12 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
     
             processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", submissionStatusVariable);
     
-            plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+          //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+          plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
           plantSubmissionAuditTrailDTO.setType("CTS");
         //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
-        plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
+     //   plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
+     plantSubmissionAuditTrailDTO.setStatus(Status.APPROVED.name());
     
           // plantName is null for cts submission
           tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getPlantStatus(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
@@ -916,7 +882,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       // *************** save audit trail for cts approval history *************************
 
-      plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+    //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+    plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
       plantSubmissionAuditTrailDTO.setType("CTS");
       //plantSubmissionAuditTrailDTO.setStatus("PENDING");
       plantSubmissionAuditTrailDTO.setStatus(Status.APPROVED.name());
@@ -969,18 +936,7 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
         String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
 
-        if(siteId == null || siteId.isEmpty()) { 
-
-            throw new RuntimeException("Site id is required");
-        }
-
-        if(finacialYear == null || finacialYear.isEmpty()) {
-            throw new RuntimeException("Financial year is required");
-        }
-
-        if(verticalId == null || verticalId.isEmpty()) {
-            throw new RuntimeException("Vertical id is required");
-        }
+      dataValidation( siteId, finacialYear, verticalId);
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
@@ -1040,7 +996,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 //    plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
 
 
-plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+// plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
 
 
    plantSubmissionAuditTrailDTO.setType("EBS");
@@ -1094,17 +1051,7 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
         
         String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
 
-        if(siteId == null || siteId.isEmpty()) {
-            throw new RuntimeException("Site id is required");
-        }
-
-        if(finacialYear == null || finacialYear.isEmpty()) {
-            throw new RuntimeException("Financial year is required");
-        }
-
-        if(verticalId == null || verticalId.isEmpty()) {
-            throw new RuntimeException("Vertical id is required");
-        }
+        dataValidation(siteId, finacialYear, verticalId);
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
@@ -1162,7 +1109,8 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
         // plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
         // plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
 
-        plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+      //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+      plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
 
 
         plantSubmissionAuditTrailDTO.setType("CTS");
@@ -1189,41 +1137,15 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
 
         String verticalId = String.valueOf(plantSubmissionAuditTrailDTO.getVerticalId());
 
-        if(siteId == null || siteId.isEmpty()) {
-            throw new RuntimeException("Site id is required");
-        }
-
-        if(finacialYear == null || finacialYear.isEmpty()) {
-            throw new RuntimeException("Financial year is required");
-        }
-
-        if(verticalId == null || verticalId.isEmpty()) {  
-            throw new RuntimeException("Vertical id is required");
-        }
+        dataValidation(siteId, finacialYear, verticalId);
 
         String businessKey = generateBusinessKey(verticalId, siteId, finacialYear);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
         // get process Instance for given business key and process definition key
-        ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(PROCESS_DEFINITION_KEY), Optional.ofNullable(businessKey), Optional.empty());
-
-        if(processInstances.length == 0) {
-            throw new RuntimeException("No process instance found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        if(processInstances.length > 1) {
-            throw new RuntimeException("Multiple process instances found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
-
-        ProcessInstance processInstance = processInstances[0];
-
-        // get tasks for given business key and process definition key
-        List<TaskDto> tasks = processEngineClientFacade.findTasksByBusinessKeyAndProcessDefinitionKey(Optional.ofNullable(businessKey), Optional.ofNullable(PROCESS_DEFINITION_KEY));
-
-        if(tasks.isEmpty()) {  
-            throw new RuntimeException("No task found for business key: " + businessKey + " and process definition key: " + PROCESS_DEFINITION_KEY);
-        }
+        ProcessInstance processInstance = getProcessInstance(businessKey);
+        List<TaskDto> tasks = getTasks(businessKey);
 
 
 
@@ -1254,7 +1176,8 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
     
             processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", submissionStatusVariable);
     
-            plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+        //    plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+        plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
           plantSubmissionAuditTrailDTO.setType("CLUSTER_HEAD");
        //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
        plantSubmissionAuditTrailDTO.setStatus(Status.APPROVED.name());
@@ -1320,10 +1243,12 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
 
       // *************** save audit trail for cts approval history *************************
 
-      plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+    //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+    plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
       plantSubmissionAuditTrailDTO.setType("CLUSTER_HEAD");
     //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
-    plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
+  //  plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
+  plantSubmissionAuditTrailDTO.setStatus(Status.APPROVED.name());
 
       tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailDTO.getPlantId(), plantSubmissionAuditTrailDTO.getPlantName(), plantSubmissionAuditTrailDTO.getPlantStatus(), plantSubmissionAuditTrailDTO.getSiteId(), plantSubmissionAuditTrailDTO.getVerticalId(), plantSubmissionAuditTrailDTO.getSubmittedBy(), plantSubmissionAuditTrailDTO.getUserName(), plantSubmissionAuditTrailDTO.getSubmissionDateTime(), plantSubmissionAuditTrailDTO.getSubmissionRemark(), plantSubmissionAuditTrailDTO.getVerifiedDateTime(), plantSubmissionAuditTrailDTO.getVerifiedBy(), plantSubmissionAuditTrailDTO.getVerifiedRemark(), plantSubmissionAuditTrailDTO.getStatus(), plantSubmissionAuditTrailDTO.getType(), businessKey);
 
