@@ -1401,29 +1401,19 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
 
          List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getAuditTrail(businessKey);
 
-         Instant instant = auditTrails.stream().map(auditTrail -> auditTrail.getSubmissionDate()).findFirst().orElse(null).toInstant();
-         ZonedDateTime istTime = instant.atZone(ZoneId.of("Asia/Kolkata"));
+       
 
-        //  return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
+         return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
           
-        //  .plantName(auditTrail.getPlantName())
-        //  .submittedBy(auditTrail.getSubmittedBy())
-        //  .userName(auditTrail.getUserName())
-        //  .submissionDateTime(auditTrail.getSubmissionDate())
-        //  .submissionRemark(auditTrail.getSubmissionRemark())
-        //  .status(auditTrail.getStatus())
-        //  .build()).toList();
+         .plantName(auditTrail.getPlantName())
+         .submittedBy(auditTrail.getSubmittedBy())
+         .userName(auditTrail.getUserName())
+         .submissionDateTime(auditTrail.getSubmissionDate())
+         .submissionRemark(auditTrail.getSubmissionRemark())
+         .status(auditTrail.getStatus())
+         .build()).toList();
 
 
-        return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
-          
-        .plantName(auditTrail.getPlantName())
-        .submittedBy(auditTrail.getSubmittedBy())
-        .userName(auditTrail.getUserName())
-        .submissionDateTime(Date.from(istTime.toInstant()))
-        .submissionRemark(auditTrail.getSubmissionRemark())
-        .status(auditTrail.getStatus())
-        .build()).toList();
 
     }
 
