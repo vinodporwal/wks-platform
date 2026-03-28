@@ -53,7 +53,7 @@ const SubmitSection = ({
 
     switch (userRole) {
       case ROLES.PLANT_MANAGER:
-        return 'Submit data to EPS Engineer'
+        return 'Submit data to AOM'
       case ROLES.EPS_ENGINEER:
         return 'Submit approval to CTS Head / EPS Head'
       case ROLES.CTS_HEAD:

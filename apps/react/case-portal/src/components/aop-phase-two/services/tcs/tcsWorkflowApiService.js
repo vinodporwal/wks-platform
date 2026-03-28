@@ -1,5 +1,6 @@
 import Config from 'consts/index'
 import { json } from '../../../../services/request'
+import { getRoleLabel } from 'components/aop-phase-two/tcs/utils/roleUtils'
 
 export const TcsWorkflowApiService = {
   // ============ Common/Shared APIs ============
@@ -8,6 +9,7 @@ export const TcsWorkflowApiService = {
   triggerWorkflow,
   getPlantwiseHistory,
   getPlantDataForApproveReject,
+  getAuditTrail,
 
   // ============ Plant Manager APIs ============
   saveRemark,
@@ -165,6 +167,7 @@ async function saveRemark(
   siteId,
   verticalId,
   userRole,
+  userName,
   remark,
   aopYear,
 ) {
@@ -179,7 +182,8 @@ async function saveRemark(
     plantName,
     siteId,
     verticalId,
-    submittedBy: userRole,
+    submittedBy: getRoleLabel(userRole),
+    userName,
     submissionRemark: remark,
   })
   try {
@@ -238,7 +242,8 @@ async function epsEngineerSingleApproveReject(
   approvalStatus,
   remark,
   year,
-  verifiedBy,
+  userRole,
+  userName,
   plantName,
 ) {
   const url = `${Config.CaseEngineUrl}/task/ebs-approve-reject/${plantName}/${siteId}/${approvalStatus}/${year}`
@@ -248,12 +253,13 @@ async function epsEngineerSingleApproveReject(
     Authorization: `Bearer ${keycloak.token}`,
   }
   const body = JSON.stringify({
-    verifiedRemark: remark,
-    verifiedBy,
     plantId,
     plantName,
     siteId,
     verticalId,
+    submissionRemark: remark,
+    submittedBy: getRoleLabel(userRole),
+    userName,
   })
   try {
     const resp = await fetch(url, {
@@ -312,7 +318,8 @@ async function epsEngineerSubmission(
   verticalId,
   financialYear,
   remark,
-  submittedBy,
+  userRole,
+  userName,
 ) {
   const url = `${Config.CaseEngineUrl}/task/ebs-submission/${siteId}/${financialYear}`
   const headers = {
@@ -323,8 +330,9 @@ async function epsEngineerSubmission(
   const body = JSON.stringify({
     siteId: siteId,
     verticalId: verticalId,
-    submittedBy: submittedBy,
     submissionRemark: remark,
+    submittedBy: getRoleLabel(userRole),
+    userName,
   })
   try {
     const resp = await fetch(url, {
@@ -379,8 +387,9 @@ async function ctsHeadApproveReject(
   siteId,
   approvalStatus,
   financialYear,
-  verifiedRemark,
-  verifiedBy,
+  remark,
+  userRole,
+  userName,
   verticalId,
 ) {
   const url = `${Config.CaseEngineUrl}/task/cts-approve-reject/${siteId}/${approvalStatus}/${financialYear}`
@@ -392,8 +401,9 @@ async function ctsHeadApproveReject(
   const body = JSON.stringify({
     siteId,
     verticalId,
-    verifiedRemark,
-    verifiedBy,
+    submissionRemark: remark,
+    submittedBy: getRoleLabel(userRole),
+    userName,
   })
   try {
     const resp = await fetch(url, {
@@ -417,8 +427,9 @@ async function ctsHeadSubmission(
   keycloak,
   siteId,
   financialYear,
-  submissionRemark,
-  submittedBy,
+  remark,
+  userRole,
+  userName,
   verticalId,
 ) {
   const url = `${Config.CaseEngineUrl}/task/cts-submission/${siteId}/${financialYear}`
@@ -430,8 +441,9 @@ async function ctsHeadSubmission(
   const body = JSON.stringify({
     siteId,
     verticalId,
-    submissionRemark,
-    submittedBy,
+    submissionRemark: remark,
+    submittedBy: getRoleLabel(userRole),
+    userName,
   })
   try {
     const resp = await fetch(url, {
@@ -512,8 +524,9 @@ async function clusterHeadApproveReject(
   siteId,
   approvalStatus,
   financialYear,
-  verifiedRemark,
-  verifiedBy,
+  remark,
+  userRole,
+  userName,
   verticalId,
 ) {
   const url = `${Config.CaseEngineUrl}/task/cluster-head-approve-reject/${siteId}/${approvalStatus}/${financialYear}`
@@ -525,8 +538,9 @@ async function clusterHeadApproveReject(
   const body = JSON.stringify({
     siteId,
     verticalId,
-    verifiedRemark,
-    verifiedBy,
+    submissionRemark: remark,
+    submittedBy: getRoleLabel(userRole),
+    userName,
   })
   try {
     const resp = await fetch(url, {
@@ -550,8 +564,9 @@ async function clusterHeadSubmission(
   keycloak,
   siteId,
   financialYear,
-  submissionRemark,
-  submittedBy,
+  remark,
+  userRole,
+  userName,
   verticalId,
 ) {
   const url = `${Config.CaseEngineUrl}/task/cluster-head-submission/${siteId}/${financialYear}`
@@ -563,8 +578,9 @@ async function clusterHeadSubmission(
   const body = JSON.stringify({
     siteId,
     verticalId,
-    submissionRemark,
-    submittedBy,
+    submissionRemark: remark,
+    submittedBy: getRoleLabel(userRole),
+    userName,
   })
   try {
     const resp = await fetch(url, {
@@ -663,6 +679,30 @@ async function resetWorkflow(
     // Backend returns plain text, not JSON
     const result = await resp.text()
     return { success: true, message: result }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+// ========================================================================
+// ============ AUDIT TRAIL API ============
+// ========================================================================
+
+async function getAuditTrail(keycloak, verticalId, siteId, financialYear) {
+  const url = `${Config.CaseEngineUrl}/task/audit-trail/${verticalId}/${siteId}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await resp.json()
+    return result
   } catch (e) {
     console.log(e)
     return await Promise.reject(e)
