@@ -21,4 +21,5 @@ public interface PlantSubmissionAuditTrailProjection {
    // String getTab();
     String getStatus();
     String getType();
+    String getPlantStatus();
 }
