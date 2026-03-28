@@ -3,6 +3,7 @@ package com.wks.caseengine.tcs.serviceimpl;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -467,8 +468,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             processEngineClientFacade.updateProcessVariable(processInstance.getId(), "submissionStatus", submissionStatusVariable);
     
 
-            // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-             plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+             plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+           //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
           
 
             System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
@@ -524,8 +525,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       DateFormat dateTimeFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-          // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-          plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+           plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+      //    plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
 
           System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
 
@@ -597,8 +598,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", submissionStatusVariable);
         processEngineClientFacade.updateProcessVariable(processInstance.getId(), "plantCount", plantCountVariable);
 
-        // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-        plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+         plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+      //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
 
         System.out.println("submissionDateTime: " + plantSubmissionAuditTrailDTO.getSubmissionDateTime());
 
@@ -653,8 +654,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       // *************** save audit trail for ebs approval history *************************
 
-     // plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-     plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+      plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+   //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
       plantSubmissionAuditTrailDTO.setType("EBS");
     //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
     plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
@@ -739,8 +740,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
             // plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
 
 
-         //   plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-            plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+           plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+       //     plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
             
 
             plantSubmissionAuditTrailDTO.setType("PLANT");
@@ -811,8 +812,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
     
             processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", submissionStatusVariable);
     
-          //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-          plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+            plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+        //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
           plantSubmissionAuditTrailDTO.setType("CTS");
         //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
      //   plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
@@ -882,8 +883,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 
       // *************** save audit trail for cts approval history *************************
 
-    //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-    plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+      plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+  //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
       plantSubmissionAuditTrailDTO.setType("CTS");
       //plantSubmissionAuditTrailDTO.setStatus("PENDING");
       plantSubmissionAuditTrailDTO.setStatus(Status.APPROVED.name());
@@ -996,8 +997,8 @@ ProcessVariable plantListVariable = ProcessVariable.builder()
 //    plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
 
 
-// plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+ plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+//plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
 
 
    plantSubmissionAuditTrailDTO.setType("EBS");
@@ -1109,8 +1110,8 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
         // plantSubmissionAuditTrailDTO.setSubmissionRemark(existingAuditTrail.getSubmissionRemark());
         // plantSubmissionAuditTrailDTO.setSubmittedBy(existingAuditTrail.getSubmittedBy());
 
-      //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-      plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+        plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+   //   plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
 
 
         plantSubmissionAuditTrailDTO.setType("CTS");
@@ -1176,8 +1177,8 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
     
             processEngineClientFacade.updateProcessVariable(processInstance.getId(), "approvalStatus", submissionStatusVariable);
     
-        //    plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-        plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+           plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+     //   plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
           plantSubmissionAuditTrailDTO.setType("CLUSTER_HEAD");
        //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
        plantSubmissionAuditTrailDTO.setStatus(Status.APPROVED.name());
@@ -1243,8 +1244,8 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
 
       // *************** save audit trail for cts approval history *************************
 
-    //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
-    plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
+      plantSubmissionAuditTrailDTO.setSubmissionDateTime(new Date());
+  //  plantSubmissionAuditTrailDTO.setSubmissionDateTime(getISTDateTime());
       plantSubmissionAuditTrailDTO.setType("CLUSTER_HEAD");
     //  plantSubmissionAuditTrailDTO.setStatus("PENDING");
   //  plantSubmissionAuditTrailDTO.setStatus(Status.SUBMITTED.name());
@@ -1400,17 +1401,29 @@ tcsAuditTrailRepository.savePlantSubmissionAuditTrail(plantSubmissionAuditTrailD
 
          List<PlantSubmissionAuditTrailProjection> auditTrails = tcsAuditTrailRepository.getAuditTrail(businessKey);
 
-         
+         Instant instant = auditTrails.stream().map(auditTrail -> auditTrail.getSubmissionDate()).findFirst().orElse(null).toInstant();
+         ZonedDateTime istTime = instant.atZone(ZoneId.of("Asia/Kolkata"));
 
-         return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
-        
-         .plantName(auditTrail.getPlantName())
-         .submittedBy(auditTrail.getSubmittedBy())
-         .userName(auditTrail.getUserName())
-         .submissionDateTime(auditTrail.getSubmissionDate())
-         .submissionRemark(auditTrail.getSubmissionRemark())
-         .status(auditTrail.getStatus())
-         .build()).toList();
+        //  return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
+          
+        //  .plantName(auditTrail.getPlantName())
+        //  .submittedBy(auditTrail.getSubmittedBy())
+        //  .userName(auditTrail.getUserName())
+        //  .submissionDateTime(auditTrail.getSubmissionDate())
+        //  .submissionRemark(auditTrail.getSubmissionRemark())
+        //  .status(auditTrail.getStatus())
+        //  .build()).toList();
+
+
+        return auditTrails.stream().map(auditTrail -> PlantSubmissionAuditTrailDTO.builder()
+          
+        .plantName(auditTrail.getPlantName())
+        .submittedBy(auditTrail.getSubmittedBy())
+        .userName(auditTrail.getUserName())
+        .submissionDateTime(Date.from(istTime.toInstant()))
+        .submissionRemark(auditTrail.getSubmissionRemark())
+        .status(auditTrail.getStatus())
+        .build()).toList();
 
     }
 
