@@ -274,39 +274,32 @@ const ShutdownSummaryReport = ({ permissions }) => {
         return
       }
 
-      const requiredFields = ['remarks']
-
-      const validationMessage = validateFields(data, requiredFields)
+      const validationMessage = validateFields(data, ['remarks', 'year'])
       if (validationMessage) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: validationMessage,
-          severity: 'error',
-        })
-        setLoading(false)
+        showSnackbar(validationMessage, 'error')
         return
       }
 
       const payload = data.map((row) => ({
         id: row?.idFromApi || null,
         lastFourYears: row.year, // or row.lastFourYears if you use that key in your UI
-        totalAvailableHours: row.totalAvailableHours,
-        budgetedShutdownHours: row.budgetedShutdownHours,
-        actualNoOfTurnaroundHrs: row.actualNoOfTurnaroundHrs,
-        actualNoOfPlannedSD: row.actualNoOfPlannedSD,
-        actualNoOfRoutineSDHrs: row.actualNoOfRoutineSDHrs,
-        totalActualPlannedSDHrs: row.totalActualPlannedSDHrs,
-        process: row.process,
-        mech: row.mech,
-        inst: row.inst,
-        elect: row.elect,
-        utility: row.utility,
-        upStreamDownStream: row.upStreamDownStream,
-        extFeedStock: row.extFeedStock,
-        business: row.business,
-        others: row.others,
-        totalUnplannedSD: row.totalUnplannedSD,
-        unplannedSlowdownHours: row.unplannedSlowdownHours,
+        totalAvailableHours: row.totalAvailableHours || null,
+        budgetedShutdownHours: row.budgetedShutdownHours || null,
+        actualNoOfTurnaroundHrs: row.actualNoOfTurnaroundHrs || null,
+        actualNoOfPlannedSD: row.actualNoOfPlannedSD || null,
+        actualNoOfRoutineSDHrs: row.actualNoOfRoutineSDHrs || null,
+        totalActualPlannedSDHrs: row.totalActualPlannedSDHrs || null,
+        process: row.process || null,
+        mech: row.mech || null,
+        inst: row.inst || null,
+        elect: row.elect || null,
+        utility: row.utility || null,
+        upStreamDownStream: row.upStreamDownStream || null,
+        extFeedStock: row.extFeedStock || null,
+        business: row.business || null,
+        others: row.others || null,
+        totalUnplannedSD: row.totalUnplannedSD || null,
+        unplannedSlowdownHours: row.unplannedSlowdownHours || null,
         remarks: row.remarks || '',
       }))
 

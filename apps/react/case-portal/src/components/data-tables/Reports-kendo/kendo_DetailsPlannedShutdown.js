@@ -389,7 +389,13 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
-      const requiredFields = ['remarks']
+      const requiredFields = [
+        'remarks',
+        'Activities',
+        'taSD',
+        'taED',
+        'durationInHrs',
+      ]
 
       const validationMessage = validateFields(data, requiredFields)
 
@@ -452,15 +458,28 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
+      const requiredFields = ['Activities']
+
+      const validationMessage = validateFields(data, requiredFields)
+
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
 
       const payload = data.map((row) => ({
         id: row?.idFromApi || null,
 
-        activities: row.Activities,
-        prevYear1: row.PrevYear1,
-        prevYear2: row.PrevYear2,
-        prevYear3: row.PrevYear3,
-        prevYear4: row.PrevYear4,
+        activities: row.Activities || null,
+        prevYear1: row.PrevYear1 || null,
+        prevYear2: row.PrevYear2 || null,
+        prevYear3: row.PrevYear3 || null,
+        prevYear4: row.PrevYear4 || null,
       }))
 
       setLoading(true)
@@ -500,7 +519,7 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
-      const validationMessage = validateFields(data, ['remarks'])
+      const validationMessage = validateFields(data, ['remarks', 'Activities'])
       if (validationMessage) {
         showSnackbar(validationMessage, 'error')
         return
@@ -508,19 +527,19 @@ export default function ShutdownReport() {
 
       const payload = data.map((row) => ({
         id: row?.idFromApi || null,
-        activities: row.Activities,
-        april: row.April,
-        may: row.May,
-        june: row.June,
-        july: row.July,
-        august: row.August,
-        september: row.September,
-        october: row.October,
-        november: row.November,
-        december: row.December,
-        january: row.January,
-        february: row.February,
-        march: row.March,
+        activities: row.Activities || null,
+        april: row.April || null,
+        may: row.May || null,
+        june: row.June || null,
+        july: row.July || null,
+        august: row.August || null,
+        september: row.September || null,
+        october: row.October || null,
+        november: row.November || null,
+        december: row.December || null,
+        january: row.January || null,
+        february: row.February || null,
+        march: row.March || null,
         remarks: row.remarks || '',
         originalRemark: row.remarks || '',
       }))

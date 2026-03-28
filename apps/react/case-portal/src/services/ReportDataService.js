@@ -327,7 +327,7 @@ async function deleteShutdownLastFourYears(id, keycloak) {
   }
 }
 async function deleteRoutineShutdownsMonthwiseData(Id, keycloak, PLANT_ID) {
-  const url = `${Config.CaseEngineUrl}/task/shutdowon_monthwise?id=${Id}`
+  const url = `${Config.CaseEngineUrl}/task/routine-shutdown?id=${Id}`
   const headers = {
     Accept: 'application/json',
     Authorization: `Bearer ${keycloak.token}`,

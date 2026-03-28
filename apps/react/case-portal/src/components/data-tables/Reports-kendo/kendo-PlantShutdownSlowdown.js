@@ -234,7 +234,7 @@ const PlantShutdownSlowdown = () => {
         setLoading(false)
         return
       }
-      const requiredFields = ['remarks']
+      const requiredFields = ['criticalActivity', 'remarks']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {
@@ -249,22 +249,21 @@ const PlantShutdownSlowdown = () => {
 
       const rowsToUpdate = data.map((item) => ({
         id: item.idFromApi || null,
-        criticalRoutineActivity: item.criticalActivity,
-        bestAchievedLastYearFrequency: item.bestAchievedSiteFreq,
-        bestAchievedLastYearDuration: item.bestAchievedSiteDur,
-        bestAchievedGroupFrequency: item.bestAchievedGroupFreq,
-        bestAchievedGroupDuration: item.bestAchievedGroupDur,
-        actualFrequency: item.actualPrevYearFreq,
-        prevYearDuration: item.actualPrevYearDur,
-        budgetFrequency: item.budgetNextYearFreq,
-        currentYearDuration: item.budgetNextYearDur,
-        activitiesClubbed: item.clubbedActivities,
-        explanationNotProposing: item.explanationNotBest,
-        throughputReductionDuringPeriod: item.throughputReduction,
-        isProductionLossRecoverable: item.lossRecoverable,
+        criticalRoutineActivity: item.criticalActivity || null,
+        bestAchievedLastYearFrequency: item.bestAchievedSiteFreq || null,
+        bestAchievedLastYearDuration: item.bestAchievedSiteDur || null,
+        bestAchievedGroupFrequency: item.bestAchievedGroupFreq || null,
+        bestAchievedGroupDuration: item.bestAchievedGroupDur || null,
+        actualFrequency: item.actualPrevYearFreq || null,
+        prevYearDuration: item.actualPrevYearDur || null,
+        budgetFrequency: item.budgetNextYearFreq || null,
+        currentYearDuration: item.budgetNextYearDur || null,
+        activitiesClubbed: item.clubbedActivities || null,
+        explanationNotProposing: item.explanationNotBest || null,
+        throughputReductionDuringPeriod: item.throughputReduction || null,
+        isProductionLossRecoverable: item.lossRecoverable || null,
         remarks: item.remarks,
         updatedBy: keycloak?.userName || 'system',
-        originalRemarks: item.remarks,
       }))
       const res =
         await ReportDataService.savePlantShutdownSlowdownNormsDuration(
