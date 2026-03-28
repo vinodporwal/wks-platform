@@ -30,4 +30,5 @@ public class PlantSubmissionAuditTrailDTO {
   //  private String tab;
     private String status;
     private String type;
+    private String plantStatus;
 }
