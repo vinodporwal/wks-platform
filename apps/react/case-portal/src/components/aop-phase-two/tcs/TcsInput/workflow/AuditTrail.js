@@ -180,7 +180,7 @@ const AuditTrail = ({
     },
     {
       field: 'submissionRemark',
-      header: 'Submission Remark',
+      header: 'Submission Remarks',
       width: '20%',
       minWidth: '180px',
     },
