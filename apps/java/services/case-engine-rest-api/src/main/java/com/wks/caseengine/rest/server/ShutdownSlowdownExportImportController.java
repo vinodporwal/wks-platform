@@ -26,7 +26,7 @@ public class ShutdownSlowdownExportImportController {
 	private ShutdownSlowdownExportImportService shutdownSlowdownExportImportService;
 		
 	@GetMapping(value = "/shutdown-export-hiir")
-	public ResponseEntity<byte[]> exportQualityTransaction(
+	public ResponseEntity<byte[]> exportShutdown(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year
 	        ) {
@@ -49,12 +49,45 @@ public class ShutdownSlowdownExportImportController {
 	}
 	
 	@PostMapping(value = "/shutdown-import-hiir", consumes = "multipart/form-data")
-	public AOPMessageVM importQualityTransaction(
+	public AOPMessageVM importShutdown(
 	         @RequestParam("plantId") String plantId,
             @RequestParam("year") String year,
 			@RequestParam("file") MultipartFile file
 	        ) {
 			return	shutdownSlowdownExportImportService.importShutdown(year,UUID.fromString(plantId), file); 
 	}
+	
+	@GetMapping(value = "/slowdown-export-hiir")
+	public ResponseEntity<byte[]> exportSlowdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year
+	        ) {
+	    try {
+			
+	        byte[] excelBytes = shutdownSlowdownExportImportService.exportSlowdown(year,plantId,false,null); 
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("Shutdown.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@PostMapping(value = "/slowdown-import-hiir", consumes = "multipart/form-data")
+	public AOPMessageVM importSlowdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	shutdownSlowdownExportImportService.importSlowdown(year,UUID.fromString(plantId), file); 
+	}
+
 	
 }

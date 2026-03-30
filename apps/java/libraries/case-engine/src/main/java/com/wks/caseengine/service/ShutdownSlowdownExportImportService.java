@@ -12,4 +12,7 @@ public interface ShutdownSlowdownExportImportService {
 	public byte[] exportShutdown(String year, String plantFKId,boolean isAfterSave,List<ShutDownPlanDTO> dtoList);
 	public AOPMessageVM importShutdown(String year,UUID plantId,MultipartFile file);
 	
+	public byte[] exportSlowdown(String year, String plantFKId,boolean isAfterSave,List<ShutDownPlanDTO> dtoList);
+	public AOPMessageVM importSlowdown(String year,UUID plantId,MultipartFile file);
+	
 }

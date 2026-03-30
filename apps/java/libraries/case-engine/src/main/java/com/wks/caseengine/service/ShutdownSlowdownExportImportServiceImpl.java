@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.math.RoundingMode;
 
@@ -24,31 +22,15 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.wks.caseengine.dto.OtherCostsTransactionDto;
-import com.wks.caseengine.dto.PeopleInitiativeDTO;
-import com.wks.caseengine.dto.QualityTransactionDTO;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
-import com.wks.caseengine.entity.OtherCostsTransaction;
-import com.wks.caseengine.entity.Plants;
-import com.wks.caseengine.entity.QualityTransaction;
-import com.wks.caseengine.entity.Sites;
-import com.wks.caseengine.entity.Verticals;
-import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
-import com.wks.caseengine.repository.OtherCostsTransactionRepository;
-import com.wks.caseengine.repository.PlantsRepository;
-import com.wks.caseengine.repository.QualityTransactionRepository;
-import com.wks.caseengine.repository.SiteRepository;
-import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
+
 
 @Service
 public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdownExportImportService{
@@ -57,22 +39,10 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	private EntityManager entityManager;
 	
 	@Autowired
-	private PlantsRepository plantsRepository;
-
-	@Autowired
-	private SiteRepository siteRepository;
-
-	@Autowired
-	private VerticalsRepository verticalRepository;
-	
-	@Autowired
-	private QualityTransactionRepository qualityTransactionRepository;
-	
-	@Autowired
-	private OtherCostsTransactionRepository otherCostsTransactionRepository;
-	
-	@Autowired
 	private ShutDownPlanService shutDownPlanService;
+	
+	@Autowired
+	private SlowdownPlanService slowdownPlanService;
 	
 	public byte[] exportShutdown(String year, String plantId, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
 	    try {   
@@ -129,7 +99,8 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	                }  
 	            }
 	        }
-	        sheet.setColumnHidden(7, true);
+	        // Hide Id column in shutdown export.
+	        sheet.setColumnHidden(3, true);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
 	        workbook.close();
@@ -370,5 +341,166 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	    }
 	    return null;
 	}
+	
+	public byte[] exportSlowdown(String year, String plantId, boolean isAfterSave, List<ShutDownPlanDTO> dtoList) {
+	    try {   
+	    	if (!isAfterSave) {
+				dtoList = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(UUID.fromString(plantId), "Slowdown", year);
+			}
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Slowdown Desc");
+	        innerHeaders.add("Duration (hrs)");
+	        innerHeaders.add("Rate (TPH)");
+	        innerHeaders.add("Remarks");
+	        innerHeaders.add("Id");
+	        
+	        if (isAfterSave) {
+	            innerHeaders.add("Status");
+	            innerHeaders.add("Error Description");
+	        }
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        int dataRowCount = dtoList.size();
+	        for (int i = 0; i < dataRowCount; i++) {
+	        	ShutDownPlanDTO dto = dtoList.get(i);
+	            Row row = sheet.createRow(currentRow++);
+	            List<Object> rowData = new ArrayList<>();
+	            rowData.add(dto.getDiscription());
+	            rowData.add(dto.getDurationInHrs());
+	            rowData.add(dto.getRate());
+	            rowData.add(dto.getRemark());
+	            rowData.add(dto.getId());
+	            if (isAfterSave) {
+	                rowData.add(dto.getSaveStatus());
+	                rowData.add(dto.getErrDescription());
+	            }
+
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                if (value instanceof Number) {
+	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }  
+	            }
+	        }
+	        // Hide Id column in shutdown export.
+	        sheet.setColumnHidden(4, true);
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+	
+	@Override
+	public AOPMessageVM importSlowdown(String year,UUID plantId,MultipartFile file) {
+		try {
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			List<ShutDownPlanDTO> data = readSlowdown(file.getInputStream(), plantId, year);
+			List<ShutDownPlanDTO> failedList = slowdownPlanService.saveShutdownData(plantId, data);	 
+			
+			if (failedList != null && failedList.size() > 0) {
+				byte[] fileByteArray = exportSlowdown(year, plantId.toString(), true, failedList);
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+
+			return aopMessageVM;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			
+		}
+		return null;
+	}
+	public List<ShutDownPlanDTO> readSlowdown(InputStream inputStream, UUID plantFKId, String year) {
+	    List<ShutDownPlanDTO> shutDownPlanDTOs = new ArrayList<>();
+
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	    	Map<String, String> idToMonth = new HashMap<>();
+	    	try {
+	    		List<ShutDownPlanDTO> existing = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(plantFKId, "Shutdown", year);
+	    		for (ShutDownPlanDTO existingDto : existing) {
+	    			if (existingDto == null || existingDto.getId() == null || existingDto.getMaintStartDateTime() == null) {
+	    				continue;
+	    			}
+	    			int monthValue = existingDto.getMaintStartDateTime()
+	    					.toInstant()
+	    					.atZone(java.time.ZoneId.systemDefault())
+	    					.getMonthValue();
+	    			String monthName = java.time.Month.of(monthValue).name(); 
+	    			idToMonth.put(existingDto.getId(), monthName);
+	    		}
+	    	} catch (Exception ignored) {
+	    	}
+
+	        Sheet sheet = workbook.getSheetAt(0);
+	        Iterator<Row> rowIterator = sheet.iterator();
+
+	        if (rowIterator.hasNext())
+	            rowIterator.next();  
+
+	        while (rowIterator.hasNext()) {
+	            Row row = rowIterator.next();
+	            
+	            ShutDownPlanDTO dto = new ShutDownPlanDTO();
+	            try {
+	            	dto.setDiscription(getStringCellValue(row.getCell(0), dto));
+	                dto.setDurationInHrs(getValidatedDurationInHrs(row.getCell(1), dto));
+	                dto.setRate(getNumericCellValue(row.getCell(2), dto));
+	                dto.setRemark(getStringCellValue(row.getCell(3), dto));
+	                dto.setId(getStringCellValue(row.getCell(4), dto));
+	                dto.setPlantId(plantFKId);
+	                dto.setAudityear(year);
+	                dto.setType("Slowdown");
+	                dto.setMaintStartDateTime(new Date());
+	                dto.setMaintEndDateTime(new Date());
+	                
+	              } 
+	              catch (Exception e) {
+	                e.printStackTrace();
+	                dto.setErrDescription(e.getMessage());
+	                dto.setSaveStatus("Failed");
+	            }
+
+	            if (dto.getId() != null) {
+	            	String monthName = idToMonth.get(dto.getId());
+	            	dto.setMonth(monthName);
+	            }
+	            shutDownPlanDTOs.add(dto);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return shutDownPlanDTOs;
+	}
+
+
 
 }
