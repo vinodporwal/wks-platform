@@ -410,12 +410,13 @@ const SteadyStateConsumption = () => {
           AOP_YEAR,
           file,
         )
-      setRows(importedData)
-      setOriginalRows(importedData)
+      setRows([])
+      setOriginalRows([])
       setSnackbarData({
         message: 'Data imported successfully!',
         severity: 'success',
       })
+      await fetchData()
     } catch (error) {
       console.error('Error importing steady state consumption data:', error)
       setSnackbarData({
@@ -477,7 +478,7 @@ const SteadyStateConsumption = () => {
         setCurrentRowId={() => {}}
         saveChanges={saveChanges}
         handleExport={handleExport}
-        handleImport={handleImport}
+        handleExcelUpload={handleImport}
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
