@@ -53,6 +53,7 @@ import { getRoleName } from 'services/role-service'
 import ShutdownReport from '../Reports-kendo/kendo_DetailsPlannedShutdown'
 import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFourYear'
 import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionnormForMeg'
+import AopTabs from 'components/AopTabs'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
