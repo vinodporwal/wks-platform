@@ -19,6 +19,7 @@ public class PlantSubmissionAuditTrailDTO {
     private UUID siteId;
     private UUID verticalId;
     private String submittedBy;
+    private String userName;
     private Date submissionDateTime;
     private String submissionRemark;
 
@@ -29,4 +30,5 @@ public class PlantSubmissionAuditTrailDTO {
   //  private String tab;
     private String status;
     private String type;
+    private String plantStatus;
 }

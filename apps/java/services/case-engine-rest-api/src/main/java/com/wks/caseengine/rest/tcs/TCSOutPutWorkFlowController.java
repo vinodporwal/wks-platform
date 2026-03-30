@@ -389,6 +389,23 @@ public class TCSOutPutWorkFlowController {
 		return ResponseEntity.ok("Bulk EBS approval completed successfully");
 	}
 
+
+	@GetMapping(value = "audit-trail/{verticalId}/{siteId}/{finacialYear}")
+	public ResponseEntity<List<PlantSubmissionAuditTrailDTO>> auditTrail(@PathVariable final String verticalId, @PathVariable final String siteId, @PathVariable final String finacialYear) {
+		if(verticalId == null || verticalId.isEmpty()) {
+			throw new RestResourceNotFoundException("Vertical ID is required to create audit trail");
+		}
+		if(siteId == null || siteId.isEmpty()) {
+			throw new RestResourceNotFoundException("Site ID is required to create audit trail");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to create audit trail");
+		}
+
+		List<PlantSubmissionAuditTrailDTO> auditTrails = tcsWorkFlowService.getAuditTrail(verticalId, siteId, finacialYear);
+		return ResponseEntity.ok(auditTrails);
+	}
+
 	@GetMapping(value = "plant-submission-audit-trail/{plantName}/{siteId}/{verticalId}/{finacialYear}")
 	public ResponseEntity<List<PlantSubmissionAuditTrailDTO>> submissionAuditTrail(@PathVariable final String plantName, @PathVariable final String siteId, @PathVariable final String verticalId, @PathVariable final String finacialYear) {
 		if(plantName == null || plantName.isEmpty()) { 

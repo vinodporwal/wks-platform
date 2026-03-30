@@ -1,3 +1,28 @@
+export const formatToIST = (dateInput) => {
+  if (!dateInput) return ''
+
+  // Handle unsafe formats like "Mar 28, 2026, 12:36:38 PM"
+  const safeInput =
+    typeof dateInput === 'string' && !dateInput.includes('T')
+      ? dateInput + ' UTC'
+      : dateInput
+
+  const date = new Date(safeInput)
+
+  if (isNaN(date)) return 'Invalid Date'
+
+  return date.toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  })
+}
+
 // Helper function to get nested field value using dot notation
 const getNestedValue = (obj, path) => {
   return path.split('.').reduce((current, prop) => current?.[prop], obj)
