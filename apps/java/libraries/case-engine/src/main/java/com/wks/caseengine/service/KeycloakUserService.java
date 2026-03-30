@@ -64,7 +64,8 @@ public class KeycloakUserService {
 			        Map<String, Object> userMap = new HashMap<>();
 			        userMap.put("user", userRep);
 			        userMap.put("realmRoles", realmRoleNames);
-			        return userMap;
+			        return userMap; 
+
 			    })
 			    .collect(Collectors.toList());
 
@@ -78,6 +79,45 @@ public class KeycloakUserService {
 
 		return result;
 	}
+
+
+	public List<UserRepresentation> getUsersWithRole(String roleName) throws Exception {
+
+		try {
+			Keycloak keycloak = keycloakAdminClient.getInstance();
+			List<UserRepresentation> summaryUsers = 
+			
+			keycloak.realm(keycloakRealmName)
+            .roles()
+            .get(roleName)
+            .getUserMembers();
+
+			List<UserRepresentation> userDetails = summaryUsers.stream()
+			    .map(user -> {
+			        String userId = user.getId();
+			        UserResource userResource = keycloak.realm(keycloakRealmName).users().get(userId);
+			        UserRepresentation userRep = userResource.toRepresentation();
+
+			      
+			        // Construct response map
+			        return userRep; 
+					
+			    })
+			    .collect(Collectors.toList());
+
+      	return userDetails;
+
+		} catch (Exception ex) {
+			throw new Exception("Failed to fetch users from keyclok: " + ex.getMessage(), ex);
+		}
+
+		
+
+		
+	}
+
+
+
 
 	public Map<String, Object> updateUser(Map<String, Object> data) throws Exception {
 		Map<String, Object> result = new HashMap<>();

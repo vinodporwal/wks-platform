@@ -33,7 +33,6 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const tabs = ['IBR Plan']
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -54,7 +53,9 @@ const DecokingConfig = () => {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_NAME = plantObject?.name?.toUpperCase()
   const SITE_NAME = siteObject?.name?.toUpperCase()
@@ -654,6 +655,62 @@ const DecokingConfig = () => {
         setDateError(true)
         setLoading(false)
         return
+      }
+
+      const shutdownDateFields = ibrPlanColumns
+        .filter(
+          (col) =>
+            col.type === 'date' && col.field.toLowerCase().includes('shutdown'),
+        )
+        .map((col) => col.field)
+
+      for (const record of ibrScreen2Rows) {
+        for (const field of shutdownDateFields) {
+          const dateValue = record[field]
+          if (dateValue) {
+            const dateObj = new Date(dateValue)
+            if (dateObj < startLimit || dateObj > endLimit) {
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `Shutdown dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year.`,
+                severity: 'error',
+              })
+              setLoading(false)
+              return
+            }
+          }
+        }
+      }
+      const shutdownPairs = shutdownDateFields
+        .filter((field) => field.toLowerCase().endsWith('_sd'))
+        .map((startField) => {
+          const base = startField.slice(0, -3) // Remove '_SD'
+          const endField = shutdownDateFields.find(
+            (f) => f.toLowerCase() === `${base.toLowerCase()}_ed`,
+          )
+          return endField ? [startField, endField] : null
+        })
+        .filter(Boolean)
+
+      // Now validate each pair for each record
+      for (const record of ibrScreen2Rows) {
+        for (const [startField, endField] of shutdownPairs) {
+          const sd = record[startField]
+          const ed = record[endField]
+          if (sd && ed) {
+            const sdDate = new Date(sd)
+            const edDate = new Date(ed)
+            if (edDate < sdDate) {
+              setSnackbarOpen(true)
+              setSnackbarData({
+                message: `${startField} must be before or equal to ${endField} for ${record.DisplayName || 'row'}.`,
+                severity: 'error',
+              })
+              setLoading(false)
+              return
+            }
+          }
+        }
       }
       if (globalTaStartDate > globalTaEndDate) {
         setSnackbarOpen(true)
@@ -1532,7 +1589,7 @@ const DecokingConfig = () => {
             id='meg-grid-header'
           >
             <Typography component='span' className='grid-title'>
-              Downstream Shutdown
+              Downstream Plant Shutdown
             </Typography>
           </CustomAccordionSummary>
           <CustomAccordionDetails>

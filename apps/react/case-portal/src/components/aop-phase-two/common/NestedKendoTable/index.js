@@ -5,6 +5,7 @@ import {
   isColumnMenuFilterActive,
   isColumnMenuSortActive,
 } from '@progress/kendo-react-grid'
+import { process } from '@progress/kendo-data-query'
 import '@progress/kendo-theme-default/dist/all.css'
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react'
 import { SvgIcon } from '@progress/kendo-react-common'
@@ -33,6 +34,31 @@ import valueFormatterByUOM, {
   recalcEndDate,
 } from '../commonUtilityFunctions'
 import { NoSpinnerNumericEditor } from '../utilities/numbericColumns'
+import { handleTabKeyNavigation } from '../AdvanceKendoTable/utility'
+import {
+  NumberWithCheckboxCellEditor,
+  NumberWithCheckboxDisplayCell,
+} from '../utilities/NumberWithCheckboxCellEditor'
+import dataGridStore from 'store/reducers/dataGridStore'
+
+// Helper function to extract flat row sequence from grouped data
+const extractFlatRowsFromGrouped = (data) => {
+  const flatRows = []
+  const traverse = (items) => {
+    if (!items || !Array.isArray(items)) return
+    items.forEach((item) => {
+      if (item.items && Array.isArray(item.items)) {
+        // This is a group header, traverse its children
+        traverse(item.items)
+      } else {
+        // This is an actual data row
+        flatRows.push(item)
+      }
+    })
+  }
+  traverse(data)
+  return flatRows
+}
 
 // Helper function to apply Kendo number format
 const applyKendoNumberFormat = (value, format) => {
@@ -111,6 +137,7 @@ const NestedKendoTable = ({
   const minGridWidth = useRef(0)
   const gridRef = useRef(null)
   const _export = useRef(null)
+  const activeCellRef = useRef({ rowId: null, field: null })
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -123,12 +150,32 @@ const NestedKendoTable = ({
   const [gridCurrent, setGridCurrent] = useState(0)
   const [customModifiedCells, setCustomModifiedCells] = useState({})
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak)
+
+  const { isReleased, oldYear } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
   const initialGroup = Array.isArray(groupBy)
     ? groupBy.map((field) => ({ field }))
     : groupBy
       ? [{ field: groupBy }]
       : []
+
+  // Process grouped data to get flat row sequence for tab navigation
+  const processedFlatRows = useMemo(() => {
+    if (!groupBy || initialGroup.length === 0) {
+      return rows
+    }
+
+    const processedData = process(rows, {
+      group: initialGroup,
+      sort: sort,
+      filter: filter,
+    })
+
+    return extractFlatRowsFromGrouped(processedData.data)
+  }, [rows, groupBy, initialGroup, sort, filter])
 
   // Extract all leaf columns (columns with field property)
   const extractAllColumns = useCallback((cols) => {
@@ -252,7 +299,27 @@ const NestedKendoTable = ({
 
   const handleEditChange = useCallback((e) => {
     setEdit(e.edit)
+    if (e.edit && typeof e.edit === 'object') {
+      const rowId = Object.keys(e.edit)[0]
+      const field = e.edit[rowId]?.[0]
+      if (rowId && field) {
+        activeCellRef.current = { rowId, field }
+      }
+    }
   }, [])
+
+  const onTabKeyPressed = (e) => {
+    handleTabKeyNavigation({
+      e,
+      activeCellRef,
+      columns,
+      hiddenFields,
+      rows: processedFlatRows, // Use processed flat rows for correct grouped sequence
+      setRows,
+      setEdit,
+      extractAllColumns,
+    })
+  }
 
   const excelExport = () => {
     if (_export.current !== null) {
@@ -286,6 +353,22 @@ const NestedKendoTable = ({
         inEdit: r.id === e.dataItem.id,
       })),
     )
+  }
+
+  // Required for nested fields (e.g. 'april.shutdownHrs') — tells Kendo which specific field to edit
+  const handleCellClick = (e) => {
+    // Guard against group header rows (they have an 'items' array, not a data id)
+    if (e.dataItem?.items !== undefined) return
+
+    if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) return
+
+    const allColumns = extractAllColumns(columns)
+    const clickedColumn = allColumns.find((col) => col.field === e.field)
+    if (clickedColumn?.editable) {
+      const rowId = e.dataItem?.id
+      setEdit({ [rowId]: [e.field] })
+      activeCellRef.current = { rowId: String(rowId), field: e.field }
+    }
   }
 
   // Utility: Get nested property value by path (supports any depth)
@@ -759,15 +842,16 @@ const NestedKendoTable = ({
   }
 
   const RemarkCell = (props) => {
-    const { dataItem, field, onRemarkClick, ...tdProps } = props
+    const { dataItem, field, onRemarkClick, alwaysEditable, ...tdProps } = props
     const rawValue = dataItem[field]
     const displayText = String(rawValue ?? '')
     const rowId = dataItem.id
 
-    // Check if row is editable
-    const isRowEditable = !(
-      !dataItem.isEditable && dataItem?.isEditable !== undefined
-    )
+    // Check if row is editable (standard check) OR if column has alwaysEditable flag
+    const isRowEditable =
+      alwaysEditable ||
+      (!(!dataItem.isEditable && dataItem?.isEditable !== undefined) &&
+        typeof onRemarkClick === 'function')
 
     // Check if this remark field was edited
     const isEdited = Object.prototype.hasOwnProperty.call(
@@ -778,6 +862,7 @@ const NestedKendoTable = ({
     return (
       <td
         {...tdProps}
+        {...(alwaysEditable ? { 'data-always-editable': 'true' } : {})}
         title={displayText}
         style={{
           cursor: isRowEditable ? 'pointer' : 'not-allowed',
@@ -888,7 +973,7 @@ const NestedKendoTable = ({
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               edit: hasMinMaxConstraints
@@ -919,6 +1004,44 @@ const NestedKendoTable = ({
         )
       }
 
+      if (col.type === 'numberWithCheckbox') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            editable={!READ_ONLY} // Always editable, ignore row-level isEditable
+            className={`${READ_ONLY ? 'non-editable-cell' : 'k-number-right'}`}
+            headerClassName={isActive ? 'active-column' : ''}
+            cells={{
+              edit: {
+                text: (cellProps) => (
+                  <NumberWithCheckboxCellEditor
+                    {...cellProps}
+                    isNumberEditable={col.isNumberEditable}
+                    alwaysEditable={col.alwaysEditable && !READ_ONLY}
+                  />
+                ),
+              },
+              data: (props) => (
+                <NumberWithCheckboxDisplayCell
+                  {...props}
+                  customModifiedCells={customModifiedCells}
+                  format={col.format}
+                  alwaysEditable={col.alwaysEditable && !READ_ONLY}
+                />
+              ),
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={setWidth(col?.minWidth || col?.widthT)}
+          />
+        )
+      }
+
       if (col.type === 'wholeNumber') {
         return (
           <GridColumn
@@ -926,7 +1049,7 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
+            editable={isEditable}
             className={
               !isEditable ? 'k-number-right-disabled' : 'k-number-right'
             }
@@ -977,8 +1100,8 @@ const NestedKendoTable = ({
             field={col.field}
             title={col.title || col.headerName}
             hidden={col.hidden}
-            editable={col?.editable ? true : false}
-            className={!col?.editable ? 'k-right-disabled' : undefined}
+            editable={isEditable}
+            className={!isEditable ? 'k-right-disabled' : undefined}
             headerClassName={isActive ? 'active-column' : ''}
             cells={{
               data: toolTipRenderer,
@@ -992,6 +1115,9 @@ const NestedKendoTable = ({
       }
       // Textarea type handler (for dialog-based editing)
       if (col.type === 'textarea') {
+        const isTextareaEditable =
+          col.alwaysEditable && !READ_ONLY ? true : isEditable
+
         return (
           <GridColumn
             key={col.field}
@@ -1002,11 +1128,15 @@ const NestedKendoTable = ({
               data: (cellProps) => (
                 <RemarkCell
                   {...cellProps}
-                  onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
+                  onRemarkClick={
+                    isTextareaEditable ? handleRemarkCellClick : () => {}
+                  }
+                  alwaysEditable={col.alwaysEditable && !READ_ONLY}
                 />
               ),
             }}
-            className={!isEditable ? 'non-editable-cell' : undefined}
+            className={!isTextareaEditable ? 'non-editable-cell' : undefined}
+            editable={isTextareaEditable}
             columnMenu={ColumnMenuCheckboxFilter}
             headerClassName={isActive ? 'active-column' : ''}
           />
@@ -1019,7 +1149,7 @@ const NestedKendoTable = ({
           key={col.field}
           field={col.field}
           title={col.title || col.headerName}
-          editable={col.editable || false}
+          editable={isEditable}
           format={col.format || '{0:0.000}'}
           cells={{
             edit: { text: NoSpinnerNumericEditor },
@@ -1230,6 +1360,8 @@ const NestedKendoTable = ({
                   : false
               }
               onRowClick={handleRowClick}
+              onCellClick={handleCellClick}
+              onKeyDown={onTabKeyPressed}
             >
               {renderColumns(
                 columns.filter((col) => !hiddenFields.includes(col.field)),

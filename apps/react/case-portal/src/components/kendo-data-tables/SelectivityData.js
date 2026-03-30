@@ -51,8 +51,10 @@ const SelectivityData = (props) => {
   const SiteName = siteObject?.name
   const lowerSiteName = SiteName?.toLowerCase()
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [loading, setLoading] = useState(false)
   const apiRef = useGridApiRef()
@@ -502,7 +504,10 @@ const SelectivityData = (props) => {
   } else {
     FORMATE_VALUE = ValueFormatterProduction()
   }
-  if (props?.configType == 'PIO Impact' && lowerVertName == 'pta') {
+  if (
+    props?.configType == 'PIO Impact' &&
+    (lowerVertName == 'pta' || lowerVertName == 'chemical')
+  ) {
     FORMATE_VALUE = '{0:0.000}'
   }
   if (
@@ -510,9 +515,18 @@ const SelectivityData = (props) => {
       props?.configType == 'PIO Impact' ||
       props?.configType == 'Configuration' ||
       props?.configType == 'Report Manual Entry') &&
-    lowerVertName == 'vcm' 
+    lowerVertName == 'vcm'
   ) {
     FORMATE_VALUE = '{0:0.000}'
+  }
+  if (
+    (props?.configType == 'Constant' ||
+      props?.configType == 'PIO Impact' ||
+      props?.configType == 'Configuration') &&
+    lowerVertName == 'aromatics' &&
+    lowerSiteName == 'sez'
+  ) {
+    FORMATE_VALUE = '{0:0.00000}'
   }
 
   const productionColumns = getEnhancedAOPColDefs({
@@ -622,7 +636,8 @@ const SelectivityData = (props) => {
           lowerVertName == 'pta' ||
           lowerVertName == 'aromatics' ||
           lowerVertName == 'vcm' ||
-          lowerVertName == 'elastomer'
+          lowerVertName == 'elastomer' ||
+          lowerVertName == 'chemical'
         ) {
           await DataService.getConfigurationExcelType(
             keycloak,

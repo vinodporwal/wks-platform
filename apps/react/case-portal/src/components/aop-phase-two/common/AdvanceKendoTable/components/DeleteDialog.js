@@ -9,9 +9,11 @@ import {
 } from '@mui/material'
 
 const DeleteDialog = ({
+  message = null,
   openDeleteDialogeBox,
   setOpenDeleteDialogeBox,
   deleteTheRecord,
+  confirmButtonText,
 }) => {
   return (
     <div>
@@ -21,16 +23,18 @@ const DeleteDialog = ({
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
       >
-        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
+        <DialogTitle id='alert-dialog-title'>
+          {`${confirmButtonText} ?` || 'Delete ?'}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText id='alert-dialog-description'>
-            Are you sure you want to delete this row?
+            {message || 'Are you sure you want to delete this row?'}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
           <Button onClick={deleteTheRecord} autoFocus>
-            Delete
+            {confirmButtonText || 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

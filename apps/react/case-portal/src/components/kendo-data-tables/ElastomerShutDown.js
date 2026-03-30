@@ -62,6 +62,10 @@ const ElastomerShutDown = ({ permissions }) => {
   const lowerVertName = vertName?.toLowerCase()
   const lowerSiteName = SITE_NAME?.toLowerCase()
   const lowerPlantName = PLANT_NAME?.toLowerCase()
+  const IS_ELASTOMER_HMD_PBR3 =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'hmd' &&
+    lowerPlantName === 'pbr3'
   const plantName = plantObject?.name
   const siteName = siteObject?.name
   const isOldYear = false
@@ -108,10 +112,12 @@ const ElastomerShutDown = ({ permissions }) => {
   const defaultTabs = [
     'Shutdown/TA Activities',
     'Shutdown History Config',
-    'Finishing Shutdown Config',
+    ...(IS_ELASTOMER_HMD_PBR3 ? ['Finishing Shutdown Config'] : []),
   ]
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const headerMap = generateHeaderNames(AOP_YEAR)
   const IS_PE_PP_VERTICAL = lowerVertName === 'pe' || lowerVertName === 'pp'
   const handleRemarkCellClick1 = (row) => {
@@ -154,7 +160,7 @@ const ElastomerShutDown = ({ permissions }) => {
         id: row.id,
         year: row.year,
         month: row.monthly,
-        shutdownHours: row.shutdownHours,
+        shutdownHours: row.durationInHrs,
         shutdownDate: row.shutdownDate,
         category: row.category,
         remarks: row.remarks,
@@ -163,7 +169,7 @@ const ElastomerShutDown = ({ permissions }) => {
       }))
 
       const res = await MaintenanceDetailsApiService.saveFinishingShutdown(
-        SITE_ID,
+        PLANT_ID,
         AOP_YEAR,
         dataList,
         keycloak,
@@ -675,8 +681,8 @@ const ElastomerShutDown = ({ permissions }) => {
         idFromApi: item.id,
         year: item.year,
         monthly: item.month,
-        shutdownHours: item.shutdownHours,
-        shutdownDate: item.shutdownDate,
+        durationInHrs: item.shutdownHours,
+        shutdownDate: new Date(item?.shutdownDate),
         category: item.category,
         remarks: item.remarks,
         originalRemark: item.remarks,
@@ -1031,13 +1037,14 @@ const ElastomerShutDown = ({ permissions }) => {
       width: 200,
     },
     {
-      field: 'shutdownHours',
-      title: 'Shutdown Hour',
+      field: 'durationInHrs',
+      title: 'Shutdown Hours',
       editable: true,
     },
     {
       field: 'shutdownDate',
       title: 'Shutdown Date',
+      type: 'date',
       editable: true,
     },
     {
@@ -1470,7 +1477,7 @@ const ElastomerShutDown = ({ permissions }) => {
           sdDaysValues={sdDaysValues}
         />
       )}
-      {tabIndex === 2 && (
+      {IS_ELASTOMER_HMD_PBR3 && tabIndex === 2 && (
         <KendoDataTables
           columns={finishingShutdownColumns}
           rows={finishingShutdownRows}

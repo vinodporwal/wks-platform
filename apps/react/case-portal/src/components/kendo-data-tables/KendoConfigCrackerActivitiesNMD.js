@@ -30,7 +30,6 @@ import MaintenanceProcessTableNMD from './processTableNMD.js'
 import SDTAActivitiesGridNMD from './SDTAActivitiesGridNMD.js'
 const DecokingConfigNMD = () => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const tabs = ['IBR Plan']
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -51,7 +50,9 @@ const DecokingConfigNMD = () => {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const PLANT_NAME = plantObject?.name?.toUpperCase()
   const SITE_NAME = siteObject?.name?.toUpperCase()
@@ -255,7 +256,6 @@ const DecokingConfigNMD = () => {
           // Screen 3 (sample/static)
           if (!screen || screen === 3) {
             if (siteName != 'nmd') return
-
             const data3 = await DataService.getIbrScreen3NMD(
               keycloak,
               PLANT_ID,

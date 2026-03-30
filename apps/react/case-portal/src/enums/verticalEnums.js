@@ -10,4 +10,5 @@ export const verticalEnums = {
   VCM: 'vcm',
   PVC: 'pvc',
   PET: 'pet',
+  CHEMICAL: 'chemical',
 }

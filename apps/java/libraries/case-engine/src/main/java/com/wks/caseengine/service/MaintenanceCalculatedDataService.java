@@ -13,6 +13,8 @@ import com.wks.caseengine.message.vm.AOPMessageVM;
 public interface MaintenanceCalculatedDataService {
 	
 	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedData(String plantId, String year);
+	public List<MaintenanceDetailsDTO> getMaintenanceDetails(String plantId, String year);
+	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedLineData(String plantId, String year,String lineId);
 	public AOPMessageVM getMaintenanceReportURLs(String plantId, String year,String type);
 	public AOPMessageVM getOtherPlants( String plantId,  String year);
 	public AOPMessageVM getMaintenanceDataForCracker( String plantId,  String year);

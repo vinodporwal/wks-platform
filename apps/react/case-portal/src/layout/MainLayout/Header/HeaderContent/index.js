@@ -16,6 +16,7 @@ import { DataService } from 'services/DataService'
 import {
   setAopYear,
   setCurrentYear,
+  setIsReleased,
   setOldYear,
   setPlantID,
   setPlantObject,
@@ -28,6 +29,7 @@ import {
 } from 'store/reducers/dataGridStore'
 import MobileSection from './MobileSection'
 import Profile from './Profile/index'
+import { HIDE_VERTICAL_PATHS, HIDE_SITE_PATHS, HIDE_PLANT_PATHS } from './utils'
 
 import Logo from 'assets/images/ril-logo2.png'
 import DropdownSkeleton from 'utils/DropdownSkeleton'
@@ -94,6 +96,17 @@ export default function HeaderContent({ keycloak }) {
     '/user-form',
   ].includes(location.pathname)
 
+  // Individual dropdown visibility ? extends HIDE_DASHBOARD_DROPDOWN with utils.js config
+  const hideVertical =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_VERTICAL_PATHS.some((s) => location.pathname.includes(s))
+  const hideSite =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_SITE_PATHS.some((s) => location.pathname.includes(s))
+  const hidePlant =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_PLANT_PATHS.some((s) => location.pathname.includes(s))
+
   if (['/dashboard'].includes(location.pathname))
     dispatch(openDrawer({ drawerOpen: false }))
 
@@ -106,6 +119,35 @@ export default function HeaderContent({ keycloak }) {
     }
     setAllowedMap(parseAllowed(parsed))
   }, [keycloak])
+
+  const getIsReleased = async () => {
+    if (!selectedPlant || !selectedYear) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        selectedPlant,
+        selectedYear,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        // setIsReleaseDisabled(true)
+
+        let isReleased = 1
+        dispatch(setIsReleased({ isReleased }))
+      } else {
+        // setIsReleaseDisabled(false)
+        let isReleased = 0
+        dispatch(setIsReleased({ isReleased }))
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
+  // 2?? fetch full details once
 
   const fetchAllSites = async () => {
     setHeaderLoading(true)
@@ -122,7 +164,13 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     fetchAllSites()
+    getIsReleased()
+    // }, [keycloak, verticalFromDashboard])
   }, [keycloak])
+
+  useEffect(() => {
+    getIsReleased()
+  }, [keycloak, selectedYear, selectedPlant])
 
   useEffect(() => {
     if (!fullDetails.length || !Object.keys(allowedMap).length) return
@@ -271,6 +319,8 @@ export default function HeaderContent({ keycloak }) {
         }
       } catch (err) {
         console.error('Error fetching data', err)
+      } finally {
+        // setHeaderLoading(false)
       }
     }
     fetchYears()
@@ -398,12 +448,14 @@ export default function HeaderContent({ keycloak }) {
   }
 
   useEffect(() => {
-    if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) return
+    console.log(1)
 
-    if (verticalFromDashboard?.vid === selectedVertical) return
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) return
 
-    setSelectedVertical(verticalFromDashboard?.vid)
-  }, [verticalFromDashboard?.vid])
+    if (verticalFromDashboard?.v_id === selectedVertical) return
+
+    setSelectedVertical(verticalFromDashboard?.v_id)
+  }, [verticalFromDashboard?.v_id])
 
   useEffect(() => {
     if (!verticalFromDashboard?.sid || !sites.length) return
@@ -428,7 +480,9 @@ export default function HeaderContent({ keycloak }) {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) {
+    console.log(2)
+
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
       return
     }
     setTimeout(() => {

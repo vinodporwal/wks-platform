@@ -13,7 +13,7 @@ import SparklesIcon from '@mui/icons-material/AutoAwesome'
 const TOTAL_STEPS = 11 // fixed as requested
 
 export default function UtilityDetails({ navigation }) {
-  const [expanded, setExpanded] = useState(true) // default expanded
+  const [expanded, setExpanded] = useState(false) // default expanded
   const dispatch = useDispatch()
   const location = useLocation()
   const currentTitle = useSelector((s) => s.dataGridStore.screenTitle?.title)

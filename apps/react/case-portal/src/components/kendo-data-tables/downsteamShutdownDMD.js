@@ -8,13 +8,9 @@ import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-s
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { validateFields } from 'utils/validationUtils'
-import crackercolumns from '../../assets/CrackerMaintenanceColumn.json'
-import crackercolumnsDMD from '../../assets/CrackerMaintenanceColumn_DMD.json'
 import KendoDataTables from './index'
-import MaintenanceProcessTableNMD from './processTableNMD'
 const DownsteamShutdownDMD = ({ viewOnly }) => {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -44,7 +40,9 @@ const DownsteamShutdownDMD = ({ viewOnly }) => {
 
   const IS_OLD_YEAR = oldYear?.oldYear
   const isOldYear = false
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const dataConfig = useMemo(
     () => ({

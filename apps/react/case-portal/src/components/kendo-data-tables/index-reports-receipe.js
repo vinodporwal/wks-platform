@@ -11,7 +11,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { ColumnMenu } from 'components/@extended/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { truncateRemarks } from 'utils/remarksUtils'
 import {
   Backdrop,
@@ -49,7 +49,6 @@ import { RemarkCell } from './Utilities-Kendo/RemarkCell'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
-import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export const particulars = [
   'normParameterId',
@@ -136,6 +135,10 @@ const KendoDataTablesReciepe = ({
   downloadExcelForConfiguration,
   summaryEdited,
 }) => {
+  const NumericEditorWithLimit = useCallback(
+    (props) => <NoSpinnerNumericEditor {...props} maxLength={10} />,
+    [],
+  )
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
@@ -157,7 +160,9 @@ const KendoDataTablesReciepe = ({
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const [editedCells, setEditedCells] = useState({}) // ADD THIS LINE after other useState declarations
   const shouldShowExportImportButtons = () => {
     const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -179,7 +184,9 @@ const KendoDataTablesReciepe = ({
     const AOP_YEAR = year?.selectedYear
     const isOldYear = false
     const IS_OLD_YEAR = oldYear?.oldYear
-    const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+    const { isReleased } = dataGridStore
+    const IS_RELEASED = isReleased
+    const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
     const vertName = verticalChange?.selectedVertical
     const lowerVertName = vertName?.toLowerCase()
@@ -203,6 +210,18 @@ const KendoDataTablesReciepe = ({
     setEdit(e.edit)
     // }
   }, [])
+
+  const rowHeightVH = 5 // each row ~4vh
+  const headerVH = 10 // grid’s own header/filter area
+  const pageHeaderVH = 20 // top app bar + stepper + controls
+  const maxVH = 60 // cap grid height
+
+  const calculatedVH = React.useMemo(() => {
+    if (!rows || rows?.length === 0) return 20
+    const needed = rows?.length * rowHeightVH + headerVH
+    const available = 100 - pageHeaderVH
+    return Math.round(Math.min(needed, maxVH, available))
+  }, [rows?.length])
 
   const handleRowClick = (e) => {
     // console.log(e.dataItem)
@@ -412,10 +431,7 @@ const KendoDataTablesReciepe = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{
-          fontFamily:
-            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
-        }}
+        style={{ padding: '0px', borderRight: '1px solid #878787' }}
       >
         <Tooltip
           position='top'
@@ -452,7 +468,7 @@ const KendoDataTablesReciepe = ({
             format={FORMATE_DECIMAL}
             width='65px'
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
+              edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
@@ -472,7 +488,7 @@ const KendoDataTablesReciepe = ({
             className={'k-number-right'}
             width='150px'
             cells={{
-              edit: { text: NoSpinnerNumericEditor },
+              edit: { text: NumericEditorWithLimit },
               data: toolTipRenderer,
               headerCell: SimpleHeaderWithTooltip,
             }}
@@ -490,7 +506,7 @@ const KendoDataTablesReciepe = ({
           format={FORMATE_DECIMAL}
           width='150px'
           cells={{
-            edit: { text: NoSpinnerNumericEditor },
+            edit: { text: NumericEditorWithLimit },
             data: toolTipRenderer,
             headerCell: SimpleHeaderWithTooltip,
           }}
@@ -533,7 +549,14 @@ const KendoDataTablesReciepe = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && <LoaderBackdrop open={!!loading} />}
+      {loading && (
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={!!loading}
+        >
+          <CircularProgress color='inherit' />
+        </Backdrop>
+      )}
 
       {(permissions?.allAction ?? true) && (
         <Box
@@ -704,6 +727,19 @@ const KendoDataTablesReciepe = ({
       <div className='kendo-data-grid'>
         <Tooltip openDelay={50} position='auto' anchorElement='target'>
           <Grid
+            style={{
+              flex: 1,
+              overflow: 'auto',
+              // height: 'auto',
+              // height: permissions?.isHeight ? '60vh' : '60vh',
+              // height: '60vh',
+              // height: `${gridHeight}px`,
+
+              height: rows?.length > 10 ? `${calculatedVH}vh` : undefined,
+
+              // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
+              // height: `${calculatedVH}vh`,
+            }}
             modifiedCells={modifiedCells}
             data={rows}
             rows={{ data: CustomRow }}

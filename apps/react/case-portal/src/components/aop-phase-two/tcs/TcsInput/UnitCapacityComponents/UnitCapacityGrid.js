@@ -6,7 +6,11 @@ import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiServi
 import { useSession } from 'SessionStoreContext'
 import { convertFromKBPSD, convertToKBPSD } from './uomConversionUtils'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
-import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import {
+  generateCalendarYearHeaders,
+  generateHeaderNames,
+  extractYear,
+} from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const UnitCapacityGrid = ({
   capacityType,
@@ -22,7 +26,8 @@ const UnitCapacityGrid = ({
 }) => {
   const keycloak = useSession()
   const valueFormat = ValueFormatterPhaseTwo()
-  const headerMap = generateHeaderNames(AOP_YEAR)
+  // const headerMap = generateHeaderNames(AOP_YEAR)
+  const headerMap = generateCalendarYearHeaders(AOP_YEAR)
 
   // State management for this capacity type only
   const [loading, setLoading] = useState(false)
@@ -33,6 +38,8 @@ const UnitCapacityGrid = ({
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
   const [apiMetadata, setApiMetadata] = useState({ headers: [], keys: [] })
+
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
 
   // Custom itemChange handler to auto-convert between KBPSD and KTPD for monthly fields
   const handleCustomItemChange = useCallback((event, setRowsFunc) => {
@@ -101,7 +108,7 @@ const UnitCapacityGrid = ({
         await TcsApiService.carryForwardTcsUnitCapacity(
           keycloak,
           PLANT_ID,
-          AOP_YEAR,
+          apiYear,
           capacityType,
         )
 
@@ -124,7 +131,7 @@ const UnitCapacityGrid = ({
   }, [
     keycloak,
     PLANT_ID,
-    AOP_YEAR,
+    apiYear,
     capacityType,
     setSnackbarData,
     setSnackbarOpen,
@@ -136,11 +143,10 @@ const UnitCapacityGrid = ({
       if (!PLANT_ID || !AOP_YEAR) return
       try {
         setLoading(true)
-
         const response = await TcsApiService.getTcsUnitCapacityData(
           keycloak,
           PLANT_ID,
-          AOP_YEAR,
+          apiYear,
           capacityType,
           'KBPSD',
         )
@@ -150,6 +156,9 @@ const UnitCapacityGrid = ({
           transformedData = response.results.map((item, index) => {
             // Backend data is in KBPSD, create nested structure for each month with both KBPSD and KTPD
             const months = [
+              'jan',
+              'feb',
+              'mar',
               'apr',
               'may',
               'jun',
@@ -159,9 +168,6 @@ const UnitCapacityGrid = ({
               'oct',
               'nov',
               'dec',
-              'jan',
-              'feb',
-              'mar',
             ]
             const monthData = {}
 
@@ -218,7 +224,7 @@ const UnitCapacityGrid = ({
     [
       keycloak,
       PLANT_ID,
-      AOP_YEAR,
+      apiYear,
       capacityType,
       handleCarryForward,
       setSnackbarData,
@@ -233,7 +239,7 @@ const UnitCapacityGrid = ({
       setModifiedCells({})
       fetchUnitCapacityData()
     }
-  }, [PLANT_ID, AOP_YEAR, fetchUnitCapacityData])
+  }, [PLANT_ID, apiYear, fetchUnitCapacityData])
 
   // Column configuration for Unit Capacity with monthly nested KBPSD and KTPD
   const columnConfig = useMemo(() => {
@@ -255,6 +261,9 @@ const UnitCapacityGrid = ({
 
     // Add monthly columns with KBPSD and KTPD sub-columns
     const months = [
+      'jan',
+      'feb',
+      'mar',
       'apr',
       'may',
       'jun',
@@ -264,9 +273,6 @@ const UnitCapacityGrid = ({
       'oct',
       'nov',
       'dec',
-      'jan',
-      'feb',
-      'mar',
     ]
     months.forEach((month) => {
       config[`${month}.kbpsd`] = {
@@ -320,6 +326,9 @@ const UnitCapacityGrid = ({
 
     // Group monthly columns with KBPSD and KTPD sub-columns
     const months = [
+      { key: 'jan', headerKey: 1 },
+      { key: 'feb', headerKey: 2 },
+      { key: 'mar', headerKey: 3 },
       { key: 'apr', headerKey: 4 },
       { key: 'may', headerKey: 5 },
       { key: 'jun', headerKey: 6 },
@@ -329,9 +338,6 @@ const UnitCapacityGrid = ({
       { key: 'oct', headerKey: 10 },
       { key: 'nov', headerKey: 11 },
       { key: 'dec', headerKey: 12 },
-      { key: 'jan', headerKey: 1 },
-      { key: 'feb', headerKey: 2 },
-      { key: 'mar', headerKey: 3 },
     ]
 
     const otherCols = cols.filter(
@@ -402,6 +408,12 @@ const UnitCapacityGrid = ({
 
       // Custom validation: If any row data is updated, remarks must be filled and different from original
       const fieldsToCheck = [
+        'jan.kbpsd',
+        'jan.ktpd',
+        'feb.kbpsd',
+        'feb.ktpd',
+        'mar.kbpsd',
+        'mar.ktpd',
         'apr.kbpsd',
         'apr.ktpd',
         'may.kbpsd',
@@ -420,12 +432,6 @@ const UnitCapacityGrid = ({
         'nov.ktpd',
         'dec.kbpsd',
         'dec.ktpd',
-        'jan.kbpsd',
-        'jan.ktpd',
-        'feb.kbpsd',
-        'feb.ktpd',
-        'mar.kbpsd',
-        'mar.ktpd',
       ]
       const validationError = validateRowDataWithRemarks(
         data,
@@ -450,6 +456,9 @@ const UnitCapacityGrid = ({
         return {
           id: row.isNew ? null : row.id,
           particulates: row.particulates,
+          jan: row.jan?.kbpsd,
+          feb: row.feb?.kbpsd,
+          mar: row.mar?.kbpsd,
           apr: row.apr?.kbpsd,
           may: row.may?.kbpsd,
           jun: row.jun?.kbpsd,
@@ -459,9 +468,6 @@ const UnitCapacityGrid = ({
           oct: row.oct?.kbpsd,
           nov: row.nov?.kbpsd,
           dec: row.dec?.kbpsd,
-          jan: row.jan?.kbpsd,
-          feb: row.feb?.kbpsd,
-          mar: row.mar?.kbpsd,
           remark: row.remark,
           insertedDateTime: row.insertedDateTime,
         }
@@ -470,7 +476,7 @@ const UnitCapacityGrid = ({
       const response = await TcsApiService.saveUnitCapacityData(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
         capacityType,
         'KBPSD',
         dataInKBPSD,
@@ -495,7 +501,7 @@ const UnitCapacityGrid = ({
     originalRows,
     keycloak,
     PLANT_ID,
-    AOP_YEAR,
+    apiYear,
     capacityType,
     setSnackbarData,
     setSnackbarOpen,
@@ -515,7 +521,7 @@ const UnitCapacityGrid = ({
         PLANT_ID,
         SITE_ID,
         VERTICAL_ID,
-        AOP_YEAR,
+        apiYear,
         capacityType,
       )
 
@@ -541,7 +547,7 @@ const UnitCapacityGrid = ({
       const response = await TcsApiService.importUnitCapacityExcel(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
         capacityType,
         file,
       )

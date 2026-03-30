@@ -240,7 +240,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			List<Map<String, Object>> summaryData = new ArrayList<>();
-
+			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			List<Object[]> obj = getMonthWiseConsumptionData(plantId, year, reportType);
 			for (Object[] row : obj) {
 				Map<String, Object> map = new HashMap<>();
@@ -281,6 +281,9 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 					map.put("total", row[16]);
 					map.put("id", row[17]);
 					map.put("Remark", row[18]);
+					if(verticalName.equalsIgnoreCase("MEG")) {
+						map.put("price", row[19]);
+					}
 					summaryData.add(map);
 
 				}

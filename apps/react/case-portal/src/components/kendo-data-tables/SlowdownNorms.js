@@ -61,6 +61,7 @@ const SlowdownNorms = () => {
   const VERTICAL_NAME_LOWERCASE = verticalObject?.name?.toLowerCase()
 
   const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
   const IS_PE_PP_VERTICAL_NMD_LLDPE =
     ['pe'].includes(VERTICAL_NAME_LOWERCASE) &&
     ['nmd'].includes(SITE_NAME_LOWERCASE) &&
@@ -97,11 +98,18 @@ const SlowdownNorms = () => {
   })
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
   const IS_PE_PP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const IS_PTA = lowerVertName === 'pta'
+  const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_EDC_PLANT = lowerVertName === 'vcm' && plantName === 'edc'
+  const IS_ELASTOMER_JMD_HIIR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'jmd' &&
+    PLANT_NAME_LOWERCASE === 'hiir'
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -137,14 +145,14 @@ const SlowdownNorms = () => {
     const loadData = async () => {
       if (!PLANT_ID || !AOP_YEAR) return
       try {
-        if (['pe', 'pp'].includes(lowerVertName)) {
+        if (['pe', 'pp'].includes(lowerVertName) || IS_ELASTOMER_JMD_HIIR) {
           if (!gradeId) return
           await fetchData(gradeId)
         } else {
           await fetchData()
         }
         let data
-        if (['pe', 'pp'].includes(lowerVertName)) {
+        if (['pe', 'pp'].includes(lowerVertName) || IS_ELASTOMER_JMD_HIIR) {
           if (!gradeId) return
           data = await DataService.getSlowdownMonths(
             keycloak,
@@ -304,7 +312,7 @@ const SlowdownNorms = () => {
       const isPEorPP = ['pe', 'pp'].includes(lowerVertName)
       const isElastomer = ['elastomer'].includes(lowerVertName)
 
-      if (isPEorPP && !gradeId) {
+      if ((isPEorPP || IS_ELASTOMER_JMD_HIIR) && !gradeId) {
         setLoading(false)
         return
       }
@@ -358,7 +366,7 @@ const SlowdownNorms = () => {
 
   const loadGradesAfterCalculation = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if (['pe', 'pp'].includes(lowerVertName)) {
+    if (['pe', 'pp'].includes(lowerVertName) || IS_ELASTOMER_JMD_HIIR) {
       try {
         const response =
           await NormalOperationNormsApiService.getGradesForSlowdownNorms(
@@ -482,7 +490,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA) {
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
@@ -493,6 +501,12 @@ const SlowdownNorms = () => {
       } else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
         // Use slowdownconsumptionExport for PE/PP
         response = await DataService.slowdownconsumptionExport(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_ELASTOMER_JMD_HIIR) {
+        response = await DataService.slowdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
@@ -514,7 +528,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA) {
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
         // Use saveShutdownNormsExcelNonGrade for VCM
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
@@ -522,6 +536,13 @@ const SlowdownNorms = () => {
           PLANT_ID,
           AOP_YEAR,
           gradeId,
+        )
+      } else if (IS_ELASTOMER_JMD_HIIR) {
+        response = await DataService.ImportSlowdownElastomerDetails(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
         )
       }
 
@@ -609,7 +630,9 @@ const SlowdownNorms = () => {
         lowerVertName == 'elastomer' ||
         lowerVertName == 'aromatics' ||
         lowerVertName == 'pta' ||
+        IS_CHEMICAL ||
         IS_PE_PP ||
+        IS_ELASTOMER_JMD_HIIR ||
         IS_EDC_PLANT
           ? false
           : true,
@@ -617,12 +640,25 @@ const SlowdownNorms = () => {
       allAction: true,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
-        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA ? false : true,
-      uploadExcelBtn: lowerVertName === 'vcm' || IS_PTA ? true : false,
+        IS_PE_PP ||
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_CHEMICAL ||
+        IS_ELASTOMER_JMD_HIIR
+          ? false
+          : true,
+      uploadExcelBtn:
+        lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL ? true : false,
       downloadExcelBtn:
-        IS_PE_PP || lowerVertName === 'vcm' || IS_PTA ? true : false,
-      showG: IS_PE_PP ? true : false,
-      marginBottom: IS_PE_PP ? true : false,
+        IS_PE_PP ||
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_CHEMICAL ||
+        IS_ELASTOMER_JMD_HIIR
+          ? true
+          : false,
+      showG: IS_PE_PP || IS_ELASTOMER_JMD_HIIR ? true : false,
+      marginBottom: IS_PE_PP || IS_ELASTOMER_JMD_HIIR ? true : false,
 
       ExcelName: `${EXCEL_EXPORT_TITLE}-Slowdown Consumption`,
       showCalculateVisibility:
@@ -642,7 +678,7 @@ const SlowdownNorms = () => {
   // 1) Load grades list if vertical requires it
   useEffect(() => {
     const loadGrades = async () => {
-      if (IS_PE_PP) {
+      if (IS_PE_PP || IS_ELASTOMER_JMD_HIIR) {
         try {
           const response =
             await NormalOperationNormsApiService.getGradesForSlowdownNorms(
@@ -674,6 +710,7 @@ const SlowdownNorms = () => {
   if (lowerVertName === 'pp' && siteName === 'nmd' && plantName === 'pp') {
     return null // Or: return <div>Screen hidden for this configuration.</div>
   }
+
   return (
     <div>
       <LoaderBackdrop open={!!loading} />

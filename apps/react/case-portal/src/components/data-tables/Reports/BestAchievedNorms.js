@@ -204,12 +204,16 @@ export default function BestAchievedNorms() {
 
   const PLANT_ID = plantObject?.id
   const SITE_ID = siteObject?.id
+  const SITE_NAME = siteObject?.name
   const VERTICAL_ID = verticalObject?.id
 
   const AOP_YEAR = year?.selectedYear
 
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
@@ -625,14 +629,16 @@ export default function BestAchievedNorms() {
     <div>
       <LoaderBackdrop open={!!loading} />
 
-      <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
-        <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> - Propane
-        (1Z)&nbsp;&nbsp;
-        <span style={{ color: 'green', fontWeight: 'bold' }}>Green</span> -
-        Propane (2Z)&nbsp;&nbsp;
-        <span style={{ color: 'purple', fontWeight: 'bold' }}>Purple</span> -
-        Copied From Other Season&nbsp;&nbsp;
-      </Typography>
+      {SITE_NAME !== 'VMD' && (
+        <Typography component='div' className='grid-title' sx={{ mb: 0 }}>
+          <span style={{ color: 'red', fontWeight: 'bold' }}>Red</span> -
+          Propane (1Z)&nbsp;&nbsp;
+          <span style={{ color: 'green', fontWeight: 'bold' }}>Green</span> -
+          Propane (2Z)&nbsp;&nbsp;
+          <span style={{ color: 'purple', fontWeight: 'bold' }}>Purple</span> -
+          Copied From Other Season&nbsp;&nbsp;
+        </Typography>
+      )}
 
       {/* transient ExcelExport: only mounted during actual export */}
       {isExporting && (

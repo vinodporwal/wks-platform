@@ -15,13 +15,13 @@ export const transformApprovalStatusToSteps = (
     {
       id: 1,
       label: 'Step 1',
-      role: 'Plant Manager',
+      role: 'CTS Engineer',
       key: 'plant_manager_approved', // Not in API response, always completed
     },
     {
       id: 2,
       label: 'Step 2',
-      role: 'EPS Engineer',
+      role: 'AOM',
       key: 'ebs_approved',
     },
     {
@@ -40,16 +40,16 @@ export const transformApprovalStatusToSteps = (
 
   // Check if Step 1 (Plant Manager) is completed
   // If selectedPlant is provided, check that specific plant
-  // Otherwise, check if ALL plants are submitted
+  // Otherwise, check if ANY plant is submitted (EPS Engineer can start working)
   let isStep1Completed = false
   if (selectedPlant && submissionStatusJson) {
     isStep1Completed = submissionStatusJson[selectedPlant] === true
   } else if (submissionStatusJson) {
-    // Check if all plants are submitted
+    // Check if any plant is submitted
     const allPlants = Object.keys(submissionStatusJson)
     isStep1Completed =
       allPlants.length > 0 &&
-      allPlants.every((plant) => submissionStatusJson[plant] === true)
+      allPlants.some((plant) => submissionStatusJson[plant] === true)
   }
 
   // Find the first false status in sequence (only if Step 1 is completed)
@@ -115,7 +115,7 @@ export const parseApprovalStatusResponse = (apiResponse, selectedPlant) => {
     )
 
     if (!approvalStatusItem) {
-      console.error('approvalStatus not found in response')
+      // approvalStatus not present yet (e.g., during initial load)
       return []
     }
 

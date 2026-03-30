@@ -18,6 +18,10 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
 			+ "WHERE p.Id = :plantId", nativeQuery = true)
 	String findVerticalNameByPlantId(@Param("plantId") UUID plantId);
 
+	@Query(value = "SELECT p.Name + '_' + v.Name FROM Plants p " + "JOIN Verticals v ON p.Vertical_FK_Id = v.Id "
+			+ "WHERE p.Id = :plantId", nativeQuery = true)
+	String findPlantNameAndVerticalNameByPlantId(@Param("plantId") UUID plantId);
+
 	@Query(value = "SELECT  DISTINCT MaintForMonth  FROM vwGetShutdownMonths WHERE PlantId = :plantId AND MaintenanceName = :maintenanceName AND AuditYear = :AuditYear", nativeQuery = true)
 	List getShutdownMonths(@Param("plantId") UUID plantId, @Param("maintenanceName") String maintenanceName,
 			@Param("AuditYear") String AuditYear);
@@ -38,13 +42,30 @@ public interface PlantsRepository extends JpaRepository<Plants, UUID> {
       List<PlantConsumpProjection> findPlantConsumptionByMaterial(@Param("plantId") UUID plantId, @Param("year") String year);
 	
       //get all the plants for given vertical and site
-      @Query(
-         value = "SELECT * FROM Plants p " +
-                 "WHERE p.Vertical_FK_Id = :verticalId " +
-                 "AND p.Site_FK_Id = :siteId ",
+    //   @Query(
+    //      value = "SELECT p.* FROM Plants p " +
+	// 			 "JOIN UserScreenMapping usm ON usm.PlantFKId = p.Id " + 
+	// 			 "WHERE usm.ScreenCode = :screenCode " +
+	// 			 "AND p.Vertical_FK_Id = :verticalId " +
+	// 			 "AND p.Site_FK_Id = :siteId",
+				 
+    //      nativeQuery = true
+    //    )
+       
+    //   List<Plants> findUniqueNamesPlantsByVerticalAndSite1(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId, @Param("screenCode") String screenCode);
+
+
+
+	  @Query(
+  
+		value = "SELECT p.* FROM Plants p " +
+				 "where p.Vertical_FK_Id = :verticalId " +
+				 "AND p.Site_FK_Id = :siteId",
+				 
          nativeQuery = true
        )
        
       List<Plants> findUniqueNamesPlantsByVerticalAndSite(@Param("verticalId") UUID verticalId, @Param("siteId") UUID siteId);
+
 
 }

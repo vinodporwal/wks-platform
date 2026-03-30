@@ -39,6 +39,8 @@ const RemarkDialog = ({
 }) => {
   const [remark, setRemark] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isApproving, setIsApproving] = useState(false)
+  const [isRejecting, setIsRejecting] = useState(false)
   const [previousLevelData, setPreviousLevelData] = useState(null)
   const [loadingPreviousData, setLoadingPreviousData] = useState(false)
 
@@ -69,7 +71,7 @@ const RemarkDialog = ({
 
   const handleApprove = async () => {
     if (remark.trim()) {
-      setIsSubmitting(true)
+      setIsApproving(true)
       try {
         if (onApprove) {
           await onApprove(remark)
@@ -79,14 +81,14 @@ const RemarkDialog = ({
       } catch (err) {
         console.error('Error during approval:', err)
       } finally {
-        setIsSubmitting(false)
+        setIsApproving(false)
       }
     }
   }
 
   const handleReject = async () => {
     if (remark.trim()) {
-      setIsSubmitting(true)
+      setIsRejecting(true)
       try {
         if (onReject) {
           await onReject(remark)
@@ -96,7 +98,7 @@ const RemarkDialog = ({
       } catch (err) {
         console.error('Error during rejection:', err)
       } finally {
-        setIsSubmitting(false)
+        setIsRejecting(false)
       }
     }
   }
@@ -104,9 +106,10 @@ const RemarkDialog = ({
   const getTitle = () => {
     switch (role) {
       case ROLES.PLANT_MANAGER:
-        return 'Plant Manager Remark Submission'
+        // return 'Plant Manager Remark Submission'
+        return 'CTS Engineer Remark Submission'
       case ROLES.EPS_ENGINEER:
-        return 'EPS Engineer Remark Submission'
+        return 'AOM Remark Submission'
       case ROLES.CTS_HEAD:
         return 'CTS Head Remark Submission'
       case ROLES.EPS_HEAD:
@@ -142,7 +145,7 @@ const RemarkDialog = ({
       try {
         let response
         if (role === ROLES.CTS_HEAD || role === ROLES.EPS_HEAD) {
-          // CTS/EPS Head gets EPS Engineer approve/reject remark
+          // CTS/EPS Head gets AOM approve/reject remark
           response =
             await TcsWorkflowApiService.getCtsHeadApproveRejectAuditTrail(
               keycloak,
@@ -248,7 +251,7 @@ const RemarkDialog = ({
                   sx={{ mb: 1.5, color: '#1976d2' }}
                 >
                   {role === ROLES.CTS_HEAD || role === ROLES.EPS_HEAD
-                    ? 'EPS Engineer Submission'
+                    ? 'AOM Submission'
                     : 'CTS/EPS Head Submission'}
                 </Typography>
                 {loadingPreviousData ? (
@@ -366,41 +369,45 @@ const RemarkDialog = ({
                   variant='contained'
                   size='small'
                   startIcon={
-                    isSubmitting ? (
+                    isApproving ? (
                       <CircularProgress size={16} color='inherit' />
                     ) : (
                       <CheckCircleIcon />
                     )
                   }
                   onClick={handleApprove}
-                  disabled={disabled || !remark.trim() || isSubmitting}
+                  disabled={
+                    disabled || !remark.trim() || isApproving || isRejecting
+                  }
                   sx={{
                     bgcolor: '#2e7d32',
                     '&:hover': { bgcolor: '#1b5e20' },
                     textTransform: 'none',
                   }}
                 >
-                  {isSubmitting ? 'Approving...' : 'Approve'}
+                  {isApproving ? 'Approving...' : 'Approve'}
                 </Button>
                 <Button
                   variant='contained'
                   size='small'
                   startIcon={
-                    isSubmitting ? (
+                    isRejecting ? (
                       <CircularProgress size={16} color='inherit' />
                     ) : (
                       <CancelIcon />
                     )
                   }
                   onClick={handleReject}
-                  disabled={disabled || !remark.trim() || isSubmitting}
+                  disabled={
+                    disabled || !remark.trim() || isApproving || isRejecting
+                  }
                   sx={{
                     bgcolor: '#d32f2f',
                     '&:hover': { bgcolor: '#c62828' },
                     textTransform: 'none',
                   }}
                 >
-                  {isSubmitting ? 'Rejecting...' : 'Reject'}
+                  {isRejecting ? 'Rejecting...' : 'Reject'}
                 </Button>
               </>
             ) : (

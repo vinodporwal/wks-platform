@@ -115,6 +115,11 @@ public class BasisReportServiceImpl implements BasisReportService {
 	    Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
 	                .orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
 	    String storedProcedure=null;
+
+       if(type.equalsIgnoreCase("PlantWiseNormsHistorian")){
+		storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() + "_NormsBasisReport";
+	   }  else 
+	
 	    if(type.equalsIgnoreCase("NormsHistorian")) {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_NormsBasisReport";
 	    }else if(type.equalsIgnoreCase("ProductionTarget")) {
@@ -123,7 +128,11 @@ public class BasisReportServiceImpl implements BasisReportService {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionBasisReport";
 	    }else if(type.equalsIgnoreCase("ProductionTargetBasis")) {
 	        storedProcedure = vertical.getName() + "_" + site.getName() + "_ProductionTargetBasis";
-	    }
+	    }else if(type.equalsIgnoreCase("SapBasedRefNorms")) {
+	        storedProcedure = vertical.getName() + "_" + site.getName() + "_SAP_Based_Ref_Norms";
+		} else if (type.equalsIgnoreCase("AnnualAOPCost")) {
+			storedProcedure = vertical.getName() + "_Dataset_AnnualCostAOPReport";
+		}
 	    
 	    try {
 	        // 1. Fetch ALL column metadata (List of Lists of Maps) - NEW
@@ -1096,6 +1105,8 @@ public class BasisReportServiceImpl implements BasisReportService {
 	                }
 	                gridDataMap.add(rowMap);
 	            }
+
+	            
 	            Map<String, Object> part = new LinkedHashMap<>();
 	            part.put("gridName", gridName);
 	            part.put("data", gridDataMap);

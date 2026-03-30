@@ -74,6 +74,7 @@ import Norms from 'components/aop-phase-two/cpp/Norms'
 import TcsOutput from 'components/aop-phase-two/tcs/TcsOutput/index'
 import PimsOutput from 'components/aop-phase-two/tcs/PimsOutput/PimsOutput'
 import TcsInput from 'components/aop-phase-two/tcs/TcsInput/index'
+import WorkflowDiagram from 'components/aop-phase-two/tcs/workflow-diagram/index'
 import AopDashboard from 'components/kendo-data-tables/AopDashboard'
 import ProposedConsumptionNorms from 'components/kendo-data-tables/ProposedConsumptionNorms'
 import Summary from 'components/aop-phase-two/cpp/Summary/index'
@@ -112,6 +113,18 @@ import SteadyStateConsumptionFCC from 'components/aop-phase-two/fcc/steady-state
 import MonthwiseProductionPlanFCC from 'components/aop-phase-two/fcc/monthwise-production-plan/index'
 import NetProductionHoursFCC from 'components/aop-phase-two/fcc/net-production-hours/index'
 
+//coker
+import ProductionNormsBasisCoker from 'components/aop-phase-two/coker/production-norms-basis/index'
+import OverallAopConsumptionCoker from 'components/aop-phase-two/coker/overall-aop-consumption/index'
+import SteadyStateConsumptionCoker from 'components/aop-phase-two/coker/steady-state-consumption/index'
+import MonthwiseProductionPlanCoker from 'components/aop-phase-two/coker/monthwise-production-plan/index'
+import NetProductionHoursCoker from 'components/aop-phase-two/coker/net-production-hours/index'
+
+import OtherProduction from 'components/kendo-data-tables/other-production/index'
+import SapBasedRefNorms from 'components/data-tables/Reports-kendo/SapBasedRefNorms'
+import SpecificConsumptionCalculation from 'components/kendo-data-tables/SpecificConsumptionCalculation'
+import ProductionOptimizer from 'components/kendo-data-tables/ProductionOptimizer'
+
 const ManagamentDefault = Loadable(lazy(() => import('../views/management')))
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')))
 
@@ -127,7 +140,7 @@ export const MainRoutes = (
     children: [
       {
         path: '/',
-        element: <Navigate to='/production-norms-plan/configuration' />,
+        element: <Navigate to='/dashboard' />,
       },
 
       {
@@ -261,6 +274,14 @@ export const MainRoutes = (
             ),
           },
           {
+            path: 'workflow-design',
+            element: (
+              <PrivateRoute routeId='workflow-design'>
+                <WorkflowDiagram />
+              </PrivateRoute>
+            ),
+          },
+          {
             path: 'pims-output',
             element: (
               <PrivateRoute routeId='pims-output'>
@@ -280,6 +301,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='business-demand'>
                 <BusinessDemand />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'production-optimizer',
+            element: (
+              <PrivateRoute routeId='production-optimizer'>
+                <ProductionOptimizer />
               </PrivateRoute>
             ),
           },
@@ -345,6 +374,22 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='maintenance-details'>
                 <MaintenanceTable />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'combined-production-norms',
+            element: (
+              <PrivateRoute routeId='combined-production-norms'>
+                <OtherProduction />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'specific-consumption-c3',
+            element: (
+              <PrivateRoute routeId='specific-consumption-c3'>
+                <SpecificConsumptionCalculation />
               </PrivateRoute>
             ),
           },
@@ -660,6 +705,50 @@ export const MainRoutes = (
             ),
           },
           //Vertical FCC Ended ****************************
+
+          //Vertical Coker Start******************************************************************
+          {
+            path: 'production-norms-basis-coker',
+            element: (
+              <PrivateRoute routeId='production-norms-basis-coker'>
+                <ProductionNormsBasisCoker />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'net-production-hrs-coker',
+            element: (
+              <PrivateRoute routeId='net-production-hrs-coker'>
+                <NetProductionHoursCoker />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'monthwise-production-plan-coker',
+            element: (
+              <PrivateRoute routeId='monthwise-production-plan-coker'>
+                <MonthwiseProductionPlanCoker />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'steady-state-consumption-coker',
+            element: (
+              <PrivateRoute routeId='steady-state-consumption-coker'>
+                <SteadyStateConsumptionCoker />
+              </PrivateRoute>
+            ),
+          },
+
+          {
+            path: 'overall-aop-consumption-coker',
+            element: (
+              <PrivateRoute routeId='overall-aop-consumption-coker'>
+                <OverallAopConsumptionCoker />
+              </PrivateRoute>
+            ),
+          },
+          //Vertical Coker Ended ****************************
         ],
       },
 
@@ -695,6 +784,14 @@ export const MainRoutes = (
             element: (
               <PrivateRoute routeId='production-volume-basis'>
                 <ProductionVolumeDataBasis />
+              </PrivateRoute>
+            ),
+          },
+          {
+            path: 'sap-based-ref-norms',
+            element: (
+              <PrivateRoute routeId='sap-based-ref-norms'>
+                <SapBasedRefNorms />
               </PrivateRoute>
             ),
           },
@@ -1027,6 +1124,10 @@ export const MainRoutes = (
             <AssessmentForm />
           </PrivateRoute>
         ),
+      },
+      {
+        path: '*',
+        element: <Navigate to='/dashboard' replace />,
       },
     ],
   }

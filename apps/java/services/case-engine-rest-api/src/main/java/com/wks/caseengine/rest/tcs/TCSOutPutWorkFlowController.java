@@ -134,12 +134,7 @@ public class TCSOutPutWorkFlowController {
 		throw new RestResourceNotFoundException("Financial Year is required to check if process exists");
 	   }
 
-	   VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
-	   if(vertical == null) {
-		throw new RestResourceNotFoundException("Vertical not found");
-	   }
-
-	   String businessKey =  vertical.getDisplayName() + "-" + siteId + "-" + finacialYear;
+	   String businessKey =  tcsWorkFlowService.generateBusinessKey(verticalId, siteId, finacialYear);
 
 	   if(tcsOutputWorkflowProcessDefinitionKey == null || tcsOutputWorkflowProcessDefinitionKey.isEmpty()) {
 		throw new RestResourceNotFoundException("TCS Output Workflow Process Definition Key is not set");
@@ -174,12 +169,7 @@ public class TCSOutPutWorkFlowController {
 			throw new RestResourceNotFoundException("Financial Year is required to get variables");
 		}
 
-		VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
-		if(vertical == null) {
-			throw new RestResourceNotFoundException("Vertical not found");
-		}
-
-		String businessKey =   vertical.getDisplayName() + "-" + siteId + "-" + finacialYear;
+		String businessKey =   tcsWorkFlowService.generateBusinessKey(verticalId, siteId, finacialYear);
 
 		
 		if(tcsOutputWorkflowProcessDefinitionKey == null || tcsOutputWorkflowProcessDefinitionKey.isEmpty()) {
@@ -229,27 +219,41 @@ public class TCSOutPutWorkFlowController {
 		if(finacialYear == null || finacialYear.isEmpty()) {
 			throw new RestResourceNotFoundException("Financial Year is required to find process");
 		}
-		VerticalsDTO vertical = verticalsService.getVerticalById(verticalId);
-		if(vertical == null) {
-			throw new RestResourceNotFoundException("Vertical not found");
-		}
-		String businessKey = vertical.getDisplayName() + "-" + siteId + "-" + finacialYear;
+		
+		String businessKey = tcsWorkFlowService.generateBusinessKey(verticalId, siteId, finacialYear);
 		
 		return ResponseEntity.ok(processEngineClientFacade.findProcessInstances(Optional.ofNullable(tcsOutputWorkflowProcessDefinitionKey), Optional.ofNullable(businessKey), Optional.empty()));
 	}
 
+	@GetMapping(value = "/find-process/{processDefinitionKey}")
+	public ResponseEntity<ProcessInstance[]> findAllProcess(@PathVariable final String processDefinitionKey) {
+		return ResponseEntity.ok(processEngineClientFacade.findProcessInstances(Optional.ofNullable(processDefinitionKey), Optional.ofNullable(null), Optional.empty()));
+	}
+
 	//delete process instance by business key
-	@DeleteMapping(value = "/delete-process-instance/{businessKey}/{processDefinitionKey}")
-	public ResponseEntity<Void> deleteProcessInstanceByBusinessKey(@PathVariable final String businessKey, @PathVariable final String processDefinitionKey) {
+	@DeleteMapping(value = "/delete-process-instance/{verticalId}/{siteId}/{finacialYear}")
+	public ResponseEntity<String> deleteProcessInstanceByBusinessKey(@PathVariable final String verticalId, @PathVariable final String siteId, @PathVariable final String finacialYear) {
 
-		ProcessInstance[] processInstances = processEngineClientFacade.findProcessInstances(Optional.ofNullable(processDefinitionKey), Optional.ofNullable(businessKey), Optional.empty());
-
-		if(processInstances.length == 0) {
-			throw new RestResourceNotFoundException("No process instance found for business key: " + businessKey + " and process definition key: " + processDefinitionKey);
+		if(verticalId == null || verticalId.isEmpty()) {
+			throw new RestResourceNotFoundException("Vertical ID is required to delete process");
+		}
+		if(siteId == null || siteId.isEmpty()) {
+			throw new RestResourceNotFoundException("Site ID is required to delete process");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to delete process");
 		}
 
-		processEngineClientFacade.deleteProcessInstance(processInstances[0].getId());
-		return ResponseEntity.noContent().build();
+
+		String result = tcsWorkFlowService.deleteProcess(verticalId, siteId, finacialYear);
+
+		String businessKey = tcsWorkFlowService.generateBusinessKey(verticalId, siteId, finacialYear);
+
+		String message = tcsWorkFlowService.resetAuditTrail(businessKey);
+
+    
+
+		return ResponseEntity.ok("process reset successfully");
 	}
 
 	@PostMapping(value = "/complete-plant-submission-task/{plantName}/{siteId}/{finacialYear}")
@@ -383,6 +387,23 @@ public class TCSOutPutWorkFlowController {
 			tcsWorkFlowService.ebsApproveReject(plantSubmissionAuditTrailDTO.getPlantName(), siteId, approvalStatus, plantSubmissionAuditTrailDTO, finacialYear);
 		  }
 		return ResponseEntity.ok("Bulk EBS approval completed successfully");
+	}
+
+
+	@GetMapping(value = "audit-trail/{verticalId}/{siteId}/{finacialYear}")
+	public ResponseEntity<List<PlantSubmissionAuditTrailDTO>> auditTrail(@PathVariable final String verticalId, @PathVariable final String siteId, @PathVariable final String finacialYear) {
+		if(verticalId == null || verticalId.isEmpty()) {
+			throw new RestResourceNotFoundException("Vertical ID is required to create audit trail");
+		}
+		if(siteId == null || siteId.isEmpty()) {
+			throw new RestResourceNotFoundException("Site ID is required to create audit trail");
+		}
+		if(finacialYear == null || finacialYear.isEmpty()) {
+			throw new RestResourceNotFoundException("Financial Year is required to create audit trail");
+		}
+
+		List<PlantSubmissionAuditTrailDTO> auditTrails = tcsWorkFlowService.getAuditTrail(verticalId, siteId, finacialYear);
+		return ResponseEntity.ok(auditTrails);
 	}
 
 	@GetMapping(value = "plant-submission-audit-trail/{plantName}/{siteId}/{verticalId}/{finacialYear}")
@@ -574,6 +595,12 @@ public class TCSOutPutWorkFlowController {
 		List<PlantSubmissionAuditTrailDTO> auditTrails = tcsWorkFlowService.getEbsSubmissionAuditTrailByVerfiedDate(siteId, verticalId, "CLUSTER_HEAD", finacialYear);
 		return ResponseEntity.ok(auditTrails);
 
+	}
+
+	@GetMapping(value = "notify-plant-managers")
+	public ResponseEntity<String> notifyPlantManagers() {
+		tcsWorkFlowService.notifyPlantManagers();
+		return ResponseEntity.ok("Plant managers notified successfully");
 	}
 
 	

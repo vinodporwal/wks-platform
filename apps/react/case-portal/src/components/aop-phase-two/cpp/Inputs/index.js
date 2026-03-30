@@ -14,12 +14,13 @@ import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatt
 import ImportPower from './ImportPower'
 import AssetAvailability from './AssetAvailability'
 import AssetCapacity from './AssetCapacity'
-import ShutdownAndOperational from './ShutdownAndOperational'
+import ShutdownAndOperational from './ShutdownAndOperational/index'
 import { generateMockData, getColumnsForTab } from './InputUtility'
 import ExportAvailability from './ExportAvailability'
-import HeatRate from './HeatRate'
+import HeatRate from './HeatRate/index'
 import FixedNorms from './FixedNorms'
-import FuelAvailability from './FuelAvailability'
+import Fuel from './Fuel/index'
+import AopDesignBasis from './AopDesignBasis'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -45,6 +46,12 @@ const Inputs = () => {
   // Initialize tabs
   useEffect(() => {
     const tabs = [
+      {
+        id: 'aop-design-basis',
+        name: 'aopDesignBasis',
+        displayName: 'AOP Design Basis',
+        displaySequence: 0,
+      },
       {
         id: 'purchase-power',
         name: 'purchasePowerInput',
@@ -143,6 +150,8 @@ const Inputs = () => {
   // Render tab content based on tab ID
   const renderTabContent = () => {
     switch (currentTab.id) {
+      case 'aop-design-basis':
+        return <AopDesignBasis />
       case 'purchase-power':
         return <ImportPower />
       case 'asset-priority':
@@ -162,7 +171,7 @@ const Inputs = () => {
       case 'fixed-norms':
         return <FixedNorms />
       case 'fuel-availability':
-        return <FuelAvailability />
+        return <Fuel />
       default:
         return null
     }

@@ -63,6 +63,40 @@ export const ShutDownAllColumns = [
     editable: true,
   },
 ]
+export const ShutDown_Elastomer_JMD_Columns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD - From',
+  //   editable: true,
+  // },
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD - To',
+  //   editable: true,
+  // },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+  },
+]
 
 export const SlowdownConfigColumns = [
   {
@@ -82,10 +116,9 @@ export const SlowdownConfigColumns = [
     editable: true,
   },
   {
-    field: 'durationInMins',
-    title: 'Duration (Mins)',
+    field: 'durationInHrs',
+    title: 'Duration (Hrs)',
     editable: true,
-    type: 'number',
   },
 
   {
@@ -268,7 +301,7 @@ export const ShutDownPpDtaColumns = [
 
 export const ShutDownPTAColumns = [
   {
-    field: 'discriptionDrpdwn',
+    field: 'discription',
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
@@ -304,10 +337,52 @@ export const ShutDownPTAColumns = [
 
 export const ShutDownPTADMDColumns = [
   {
-    field: 'discriptionDrpdwn',
+    field: 'discription',
     title: 'Shutdown Desc',
     editable: true,
     type: 'discriptionDrpdwn',
+  },
+
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  // {
+  //   field: 'maintStartDateTime',
+  //   title: 'SD - From',
+  //   editable: true,
+  // },
+  // {
+  //   field: 'maintEndDateTime',
+  //   title: 'SD - To',
+  //   editable: true,
+  // },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Shutdown Basis',
+    editable: true,
+  },
+]
+export const ShutDownChemicalColumns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
   },
 
   {

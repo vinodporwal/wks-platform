@@ -1,4 +1,7 @@
-import { DataService } from 'services/DataService'
+import Config from 'consts/index'
+
+import { ImportExportApiService } from '../common/importExportApiService'
+import { json } from 'services/request'
 
 export const ProductionNormsApiService = {
   // Configuration APIs
@@ -13,13 +16,12 @@ export const ProductionNormsApiService = {
   importConstantsExcel,
   exportConstantsExcel,
 
-  // AOP Summary APIs
-  getAopSummary,
-  saveSummary,
+  // Norm Calculation API
+  loadButtonNormCalculation,
 
-  // Configuration Execution APIs
-  getConfigurationExecutionDetails,
-  executeConfiguration,
+  // Generic Import/Export helpers
+  saveExcelData,
+  exportExcelData,
 }
 
 // ========================|| Configuration APIs ||=====================================//
@@ -31,16 +33,21 @@ export const ProductionNormsApiService = {
  * @returns {Promise} Configuration data
  */
 async function getConfigurationData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
   try {
-    const response = await DataService.getProductionNormsConfiguration(
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error fetching configuration data:', error)
-    return Promise.reject(error)
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 
@@ -49,22 +56,35 @@ async function getConfigurationData(keycloak, plantId, year) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} year - AOP Year
  * @param {Array} payload - Data to save
+ * @param {string} plantId - Plant ID
  * @returns {Promise} Save response
  */
-async function saveConfigurationData(keycloak, year, payload) {
+async function saveConfigurationData(keycloak, year, payload, plantId) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
   try {
-    const response = await DataService.saveProductionNormsConfiguration(
-      keycloak,
-      year,
-      payload,
-    )
-    return response
-  } catch (error) {
-    console.error('Error saving configuration data:', error)
-    return Promise.reject(error)
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 
+// ======================= IMPORT AND EXPORT
 /**
  * Import Configuration Excel file
  * @param {File} file - Excel file
@@ -74,18 +94,13 @@ async function saveConfigurationData(keycloak, year, payload) {
  * @returns {Promise} Import response
  */
 async function importConfigurationExcel(file, keycloak, plantId, year) {
-  try {
-    const response = await DataService.importProductionNormsConfiguration(
-      file,
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error importing configuration Excel:', error)
-    return Promise.reject(error)
-  }
+  return ImportExportApiService.saveExcelData(
+    file,
+    keycloak,
+    'vgoht/production-norms/configuration/import',
+    plantId,
+    year,
+  )
 }
 
 /**
@@ -96,16 +111,111 @@ async function importConfigurationExcel(file, keycloak, plantId, year) {
  * @returns {Promise} Export response
  */
 async function exportConfigurationExcel(keycloak, plantId, year) {
+  return ImportExportApiService.exportExcelData(keycloak, {
+    endpoint: `vgoht/production-norms/configuration/export/${plantId}/${year}`,
+    queryParams: {},
+    fileName: `VGOHT_Production_Norms_Configuration_${year}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// ===================== || GENERIC EXCEL IMPORT FUNCTION || ===================== //
+/**
+ * Generic function to upload Excel file to any Production Norms endpoint
+ * @param {File} file - The Excel file to upload
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} endpoint - The API endpoint base path (e.g., 'vgoht/norms-basis/constant/import')
+ * @param {Object} queryParams - Query parameters (plantFKId, year, etc.) - will be sent as form fields
+ * @returns {Promise} API response
+ */
+async function saveExcelData(file, keycloak, endpoint, queryParams = {}) {
+  const url = `${Config.CaseEngineUrl}/task/${endpoint}`
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  // Append all query parameters as form fields
+  Object.keys(queryParams).forEach((key) => {
+    formData.append(key, queryParams[key])
+  })
+
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
   try {
-    const response = await DataService.exportProductionNormsConfiguration(
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error exporting configuration Excel:', error)
-    return Promise.reject(error)
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.error(`Error importing Excel data to ${endpoint}:`, e)
+    return Promise.reject(e)
+  }
+}
+
+// ===================== || GENERIC EXCEL EXPORT FUNCTION || ===================== //
+/**
+ * Generic function to export Excel file from backend
+ * @param {Object} keycloak - Keycloak session object
+ * @param {string} endpoint - The API endpoint base path (e.g., 'vgoht/norms-basis/constant/export')
+ * @param {Object} queryParams - Query parameters (plantFKId, year, etc.)
+ * @param {string} fileName - Downloaded file name
+ * @returns {Promise} Success/error response
+ */
+async function exportExcelData(keycloak, endpoint, queryParams = {}, fileName) {
+  const queryString = new URLSearchParams(queryParams).toString()
+  const url = queryString
+    ? `${Config.CaseEngineUrl}/task/${endpoint}?${queryString}`
+    : `${Config.CaseEngineUrl}/task/${endpoint}`
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to export Excel: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+
+    // Extract filename from Content-Disposition header if available
+    const contentDisposition = resp.headers.get('content-disposition')
+    let downloadFileName = fileName
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/i)
+      if (filenameMatch && filenameMatch[1]) {
+        downloadFileName = filenameMatch[1]
+      }
+    }
+
+    a.download = downloadFileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+
+    return { success: true, message: 'Excel exported successfully' }
+  } catch (e) {
+    console.error(`Error exporting Excel from ${endpoint}:`, e)
+    return Promise.reject(e)
   }
 }
 
@@ -118,16 +228,21 @@ async function exportConfigurationExcel(keycloak, plantId, year) {
  * @returns {Promise} Constants data
  */
 async function getConstantsData(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
   try {
-    const response = await DataService.getProductionNormsConstants(
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error fetching constants data:', error)
-    return Promise.reject(error)
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 
@@ -135,20 +250,43 @@ async function getConstantsData(keycloak, plantId, year) {
  * Save Production Norms Constants data
  * @param {Object} keycloak - Keycloak session
  * @param {string} year - AOP Year
+ * @param {string} plantId - Plant ID
+ * @param {string} siteId - Site ID
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
  * @param {Array} payload - Data to save
  * @returns {Promise} Save response
  */
-async function saveConstantsData(keycloak, year, payload) {
+async function saveConstantsData(
+  keycloak,
+  year,
+  plantId,
+  siteId,
+  periodFrom,
+  periodTo,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/constant?year=${year}&plantFKId=${plantId}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
   try {
-    const response = await DataService.saveProductionNormsConstants(
-      keycloak,
-      year,
-      payload,
-    )
-    return response
-  } catch (error) {
-    console.error('Error saving constants data:', error)
-    return Promise.reject(error)
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 
@@ -158,21 +296,24 @@ async function saveConstantsData(keycloak, year, payload) {
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
  * @returns {Promise} Import response
  */
-async function importConstantsExcel(file, keycloak, plantId, year) {
-  try {
-    const response = await DataService.importProductionNormsConstants(
-      file,
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error importing constants Excel:', error)
-    return Promise.reject(error)
-  }
+async function importConstantsExcel(
+  file,
+  keycloak,
+  plantId,
+  year,
+  periodFrom,
+  periodTo,
+) {
+  return saveExcelData(file, keycloak, 'vgoht/norms-basis/constant/import', {
+    year: year,
+    plantFKId: plantId,
+    periodFrom: periodFrom,
+    periodTo: periodTo,
+  })
 }
 
 /**
@@ -183,104 +324,51 @@ async function importConstantsExcel(file, keycloak, plantId, year) {
  * @returns {Promise} Export response
  */
 async function exportConstantsExcel(keycloak, plantId, year) {
-  try {
-    const response = await DataService.exportProductionNormsConstants(
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error exporting constants Excel:', error)
-    return Promise.reject(error)
-  }
+  return exportExcelData(
+    keycloak,
+    'vgoht/norms-basis/constant/export',
+    { year: year, plantFKId: plantId },
+    `VGOHT_Production_Norms_Constants_${year}.xlsx`,
+  )
 }
 
-// ========================|| AOP Summary APIs ||=====================================//
+// ========================|| Norm Calculation API ||=====================================//
 /**
- * Get AOP Summary
+ * Load Button Norm Calculation
  * @param {Object} keycloak - Keycloak session
  * @param {string} plantId - Plant ID
- * @param {string} year - AOP Year
- * @returns {Promise} Summary text
+ * @param {string} aopYear - AOP Year
+ * @param {string} siteId - Site ID
+ * @param {string} periodFrom - Period start date
+ * @param {string} periodTo - Period end date
+ * @returns {Promise} Norm calculation response
  */
-async function getAopSummary(keycloak, plantId, year) {
+async function loadButtonNormCalculation(
+  keycloak,
+  plantId,
+  aopYear,
+  siteId,
+  periodFrom,
+  periodTo,
+) {
+  const url = `${Config.CaseEngineUrl}/task/vgoht/load-button-norm-calculation?plantId=${plantId}&aopYear=${aopYear}&siteId=${siteId}&periodFrom=${periodFrom}&periodTo=${periodTo}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
   try {
-    const response = await DataService.getAopSummary(keycloak, plantId, year)
-    if (response?.code === 200) {
-      return response?.data?.summary || ''
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
     }
-    return ''
-  } catch (error) {
-    console.error('Error fetching AOP summary:', error)
-    return ''
-  }
-}
-
-/**
- * Save AOP Summary
- * @param {string} plantId - Plant ID
- * @param {string} year - AOP Year
- * @param {string} summary - Summary text
- * @param {Object} keycloak - Keycloak session
- * @returns {Promise} Save response
- */
-async function saveSummary(plantId, year, summary, keycloak) {
-  try {
-    const response = await DataService.saveSummaryAOPConsumptionNorm(
-      plantId,
-      year,
-      summary,
-      keycloak,
-    )
-    return response
-  } catch (error) {
-    console.error('Error saving summary:', error)
-    return Promise.reject(error)
-  }
-}
-
-// ========================|| Configuration Execution APIs ||=====================================//
-/**
- * Get Configuration Execution Details
- * @param {Object} keycloak - Keycloak session
- * @param {string} plantId - Plant ID
- * @param {string} year - AOP Year
- * @returns {Promise} Execution details array
- */
-async function getConfigurationExecutionDetails(keycloak, plantId, year) {
-  try {
-    const response = await DataService.getConfigurationExecutionDetails(
-      keycloak,
-      plantId,
-      year,
-    )
-    const details = response?.data || []
-    if (details.length === 0) {
-      console.warn(
-        'getConfigurationExecutionDetails returned an empty array:',
-        response,
-      )
-    }
-    return details
-  } catch (error) {
-    console.error('Error fetching configuration execution details:', error)
-    return []
-  }
-}
-
-/**
- * Execute Configuration
- * @param {Array} payload - Configuration payload
- * @param {Object} keycloak - Keycloak session
- * @returns {Promise} Execution response
- */
-async function executeConfiguration(payload, keycloak) {
-  try {
-    const response = await DataService.executeConfiguration(payload, keycloak)
-    return response
-  } catch (error) {
-    console.error('Error executing configuration:', error)
-    return Promise.reject(error)
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }

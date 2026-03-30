@@ -1,4 +1,7 @@
-import { BusinessDemandElastomerColumns } from 'components/colums/ElastomerColums'
+import {
+  BusinessDemandElastomerColumns,
+  BusinessDemandElastomerJmdColumns,
+} from 'components/colums/ElastomerColums'
 import { BusinessDemandMegColumns } from 'components/colums/MegColums'
 import { BusinessDemandPetColumns } from 'components/colums/PetColums'
 import { BusinessDemandPeColumns } from 'components/colums/PeColums'
@@ -23,14 +26,23 @@ const kendoBusinessDemColDef = ({ headerMap }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const vertName = dataGridStore.verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || verticalEnums.MEG
+  const siteName = dataGridStore.siteObject?.name?.toLowerCase() // get site
+  const IS_ELASTOMER_JMD = lowerVertName === 'elastomer' && siteName === 'jmd'
   const FORMATE_DECIMAL = ValueFormatterProduction()
 
-  const cacheKey = `${lowerVertName}_${headerMap ? JSON.stringify(headerMap) : 'no_map'}`
+  const cacheKey = `${lowerVertName}_${siteName}_${headerMap ? JSON.stringify(headerMap) : 'no_map'}`
 
   if (colDefsCache.has(cacheKey)) {
     return colDefsCache.get(cacheKey)
   }
-  const cols = VERTICAL_COLDEFS_MAP[lowerVertName] || BusinessDemandMegColumns
+
+  // Pick the right column definition
+  let cols
+  if (IS_ELASTOMER_JMD) {
+    cols = BusinessDemandElastomerJmdColumns
+  } else {
+    cols = VERTICAL_COLDEFS_MAP[lowerVertName] || BusinessDemandMegColumns
+  }
 
   const enhancedColDefs = cols.map((col) => {
     if (!headerMap || headerMap[col.title] === undefined) {

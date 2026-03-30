@@ -11,6 +11,7 @@ import {
   SlowdownConfigColumns,
 } from 'components/colums/ShutdownColumn'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
+import { DataService } from 'services/DataService'
 import { getRoleName } from 'services/role-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import KendoDataTables from './index'
@@ -63,7 +64,11 @@ const ElastomerSlowdown = ({ permissions }) => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const keycloak = useSession()
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
 
   const SHOW_EXCEL_UPLOAD_BUTTON = true
 
@@ -75,6 +80,12 @@ const ElastomerSlowdown = ({ permissions }) => {
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
   const [currentRowId, setCurrentRowId] = useState(null)
+  function formatHHMMFromMinutes(minutes) {
+    if (!minutes) return '00:00'
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours.toString().padStart(2, '0')}.${mins.toString().padStart(2, '0')}`
+  }
 
   const fetchData = async () => {
     if (!PLANT_ID || !AOP_YEAR) return
@@ -99,6 +110,7 @@ const ElastomerSlowdown = ({ permissions }) => {
         rate: item.rate,
         maintStartDateTime: new Date(item?.maintStartDateTime),
         maintEndDateTime: new Date(item?.maintEndDateTime),
+        durationInHrs: formatHHMMFromMinutes(item.durationInMins),
       }))
 
       const tableData = formattedDataShutDown || []
@@ -221,7 +233,44 @@ const ElastomerSlowdown = ({ permissions }) => {
       // setLoading(false)
     }
   }
+  const isValidDate = (d) => d instanceof Date && !isNaN(d)
+  useEffect(() => {
+    const fetchConfigDates = async () => {
+      try {
+        const data = await DataService.getConfigurationExecutionDetails(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+        const data1 = data?.data
+        const startObj = data1?.find((item) => item.Name === 'StartDate')
+        const endObj = data1?.find((item) => item.Name === 'EndDate')
+        const start = startObj ? new Date(startObj.AttributeValue) : null
+        const end = endObj ? new Date(endObj.AttributeValue) : null
+        setStartDate(isValidDate(start) ? start : null)
+        setEndDate(isValidDate(end) ? end : null)
+      } catch (e) {
+        setStartDate(null)
+        setEndDate(null)
+      }
+    }
+    if (PLANT_ID && AOP_YEAR) fetchConfigDates()
+  }, [PLANT_ID, AOP_YEAR, keycloak])
 
+  function parseHHMMtoMinutes(hhmm) {
+    if (!hhmm) return 0
+    const [h, m = '0'] = String(hhmm).split('.')
+    const hours = parseInt(h, 10) || 0
+    const mins = parseInt(m.padEnd(2, '0'), 10) || 0
+    return hours * 60 + mins
+  }
+  function formatDateDDMMYYYY(date) {
+    if (!(date instanceof Date) || isNaN(date)) return ''
+    const d = date.getDate().toString().padStart(2, '0')
+    const m = (date.getMonth() + 1).toString().padStart(2, '0')
+    const y = date.getFullYear()
+    return `${d}/${m}/${y}`
+  }
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
@@ -252,56 +301,53 @@ const ElastomerSlowdown = ({ permissions }) => {
         }
       }
 
-      // Helper to format date as dd/mm/yyyy
-      // eslint-disable-next-line
-      function formatDateDDMMYYYY(date) {
-        if (!(date instanceof Date) || isNaN(date)) return ''
-        const d = date.getDate().toString().padStart(2, '0')
-        const m = (date.getMonth() + 1).toString().padStart(2, '0')
-        const y = date.getFullYear()
-        return `${d}/${m}/${y}`
-      }
+      let hasDateError = false
 
       for (const record of data) {
-        const startDate =
+        const sDate =
           record.maintStartDateTime instanceof Date
             ? record.maintStartDateTime
             : new Date(record.maintStartDateTime)
-        const endDate =
+        const eDate =
           record.maintEndDateTime instanceof Date
             ? record.maintEndDateTime
             : new Date(record.maintEndDateTime)
 
-        // Validate date format: dd/mm/yyyy (by parsing and checking)
         if (
-          startLimit &&
-          endLimit &&
-          (!startDate ||
-            !endDate ||
-            isNaN(startDate) ||
-            isNaN(endDate) ||
-            startDate < startLimit ||
-            startDate > endLimit ||
-            endDate < startLimit ||
-            endDate > endLimit)
+          startDate &&
+          endDate &&
+          (!sDate ||
+            !eDate ||
+            isNaN(sDate) ||
+            isNaN(eDate) ||
+            sDate < startDate ||
+            sDate > endDate ||
+            eDate < startDate ||
+            eDate > endDate)
         ) {
-          record.isError = true
-          setSnackbarOpen(true)
-          setSnackbarData({
-            message: `Dates must be between ${formatDateDDMMYYYY(startLimit)} and ${formatDateDDMMYYYY(endLimit)} for selected year. `,
-            severity: 'error',
+          console.log('Date validation failed:', {
+            record,
+            sDate,
+            eDate,
+            startDate,
+            endDate,
           })
-          return
+          record.isError = true
+          hasDateError = true
         }
       }
 
+      if (hasDateError) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: `Dates must be between ${formatDateDDMMYYYY(startDate)} and ${formatDateDDMMYYYY(endDate)} for selected year.`,
+          severity: 'error',
+        })
+        return
+      }
+
       // Select required fields based on vertical
-      const requiredFields = [
-        'description',
-        'durationInMins',
-        'remarks',
-        'rate',
-      ]
+      const requiredFields = ['description', 'durationInHrs', 'remarks', 'rate']
 
       // Missing required fields
       for (const record of data) {
@@ -394,7 +440,7 @@ const ElastomerSlowdown = ({ permissions }) => {
         maintEndDateTime: row.maintEndDateTime
           ? new Date(row.maintEndDateTime).toLocaleDateString('en-CA')
           : null,
-        durationInMins: row.durationInMins || 0,
+        durationInMins: parseHHMMtoMinutes(row.durationInHrs),
       }))
 
       saveSlowDownConfigurationData(payload)
@@ -477,6 +523,9 @@ const ElastomerSlowdown = ({ permissions }) => {
         setCurrentRemark={setCurrentRemark}
         handleRemarkCellClick={handleRemarkCellClick}
         deleteRowData={handleDeleteSlowdownConfig}
+        screenType='ElastomerSlowdown'
+        startDate={startDate}
+        endDate={endDate}
         permissions={{
           addButton: true,
           deleteButton: true,

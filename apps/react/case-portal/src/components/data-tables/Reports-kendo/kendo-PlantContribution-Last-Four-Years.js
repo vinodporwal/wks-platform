@@ -1,4 +1,14 @@
-import { Backdrop, Box } from '@mui/material'
+import {
+  Backdrop,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material'
+import { setIsReleased } from 'store/reducers/dataGridStore'
 import { useSession } from 'SessionStoreContext'
 import Notification from 'components/Utilities/Notification'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
@@ -7,7 +17,7 @@ import { DataService } from 'services/DataService'
 import { MockPlantContributionAPILastFourYears } from './mockPlantContributionAPILastFourYears'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import ValueFormatterProductionProductionNormBasis from 'utils/ValueFormatterProduction_ProductionNormBasis'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { getRoleName } from 'services/role-service'
 import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const categories = () => {
@@ -27,7 +37,8 @@ const categories = () => {
 
 export default function PlantContributionLastFourYears() {
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+  const dispatch = useDispatch()
+
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
     verticalChange,
@@ -47,7 +58,9 @@ export default function PlantContributionLastFourYears() {
   const AOP_YEAR = year?.selectedYear
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -64,6 +77,8 @@ export default function PlantContributionLastFourYears() {
   const [currentRowId, setCurrentRowId] = useState(null)
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [otherVariableRows, setOtherVariableRows] = useState([])
+  const [openReleaseDialogBox, setOpenReleaseDialogBox] = useState(false)
+  const [isReleaseDisabled, setIsReleaseDisabled] = useState(true)
 
   const IS_CRACKER = lowerVertName === 'cracker'
 
@@ -212,8 +227,31 @@ export default function PlantContributionLastFourYears() {
     setLoading(false)
   }
 
+  const getIsReleased = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    try {
+      const response = await DataService.getReleaseAOPStatus(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      // If response has data, disable the button (already released)
+      // If no data, enable the button (not yet released)
+      if (response?.data && Object.keys(response.data).length > 0) {
+        setIsReleaseDisabled(true)
+      } else {
+        setIsReleaseDisabled(false)
+      }
+    } catch (error) {
+      console.error('Error fetching release status:', error)
+    }
+  }
+
   useEffect(() => {
     loadAll()
+    getIsReleased()
   }, [keycloak, AOP_YEAR, PLANT_ID])
 
   const handleCalculate = () => {
@@ -275,6 +313,45 @@ export default function PlantContributionLastFourYears() {
       setLoading(false)
     }
   }
+
+  const handleRelease = () => {
+    setOpenReleaseDialogBox(true)
+  }
+
+  const closeReleaseDialogBox = () => {
+    setOpenReleaseDialogBox(false)
+  }
+
+  const submitConfirmation = async () => {
+    setOpenReleaseDialogBox(false)
+    setLoading(true)
+    try {
+      const response = await DataService.releaseAOPReport(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Released Successfully!',
+        severity: 'success',
+      })
+      setIsReleaseDisabled(true)
+      let isReleased = 1
+      dispatch(setIsReleased({ isReleased }))
+    } catch (error) {
+      console.error('Error releasing report:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Release Failed!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Box sx={{ width: '100%' }}>
       <LoaderBackdrop open={!!loading} />
@@ -291,6 +368,7 @@ export default function PlantContributionLastFourYears() {
           return (
             <Box key={key} sx={{ mt: 0 }}>
               <KendoDataTablesReports
+                key={IS_RELEASED}
                 columns={rpt.columns || []}
                 rows={rpt.rows || []}
                 title={title}
@@ -301,6 +379,8 @@ export default function PlantContributionLastFourYears() {
                   showFinalSubmit: idx === 0,
                   showTitle: true,
                 }}
+                handleRelease={handleRelease}
+                isReleaseDisabled={isReleaseDisabled}
               />
             </Box>
           )
@@ -313,6 +393,7 @@ export default function PlantContributionLastFourYears() {
         return (
           <Box key={key} sx={{ mt: 1 }}>
             <KendoDataTablesReports
+              key={IS_RELEASED}
               modifiedCells={modifiedCells}
               setRows={setOtherVariableRows}
               columns={rpt.columns || []}
@@ -348,6 +429,7 @@ export default function PlantContributionLastFourYears() {
         return (
           <Box key={key} sx={{ mt: 0 }}>
             <KendoDataTablesReports
+              key={IS_RELEASED}
               columns={rpt.columns || []}
               rows={rpt.rows || []}
               title={rpt.title || 'Cost & Contribution Summary'}
@@ -369,6 +451,36 @@ export default function PlantContributionLastFourYears() {
         severity={snackbarData.severity}
         onClose={() => setSnackbarOpen(false)}
       />
+
+      <Dialog
+        open={openReleaseDialogBox}
+        onClose={closeReleaseDialogBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle id='alert-dialog-title'>
+          {'Confirm AOP Release? '}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            Warning: User will not be able to edit Production or Norms values
+            after this action is completed.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReleaseDialogBox}>Cancel</Button>
+          <Button onClick={submitConfirmation} autoFocus>
+            Submit
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

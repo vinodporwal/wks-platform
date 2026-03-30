@@ -26,11 +26,14 @@ const NavCollapse = ({ menu, level }) => {
   const [selected, setSelected] = useState(null)
 
   const { drawerOpen } = useSelector((state) => state.menu)
-  const { plantID, verticalChange } = useSelector(
+  const { plantID, verticalChange, siteObject } = useSelector(
     (state) => state.dataGridStore,
   )
 
   const plantName = plantID?.plantName
+
+  const SITE_NAME = siteObject?.name?.toLowerCase()
+
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
@@ -57,15 +60,32 @@ const NavCollapse = ({ menu, level }) => {
           )
       }
     }
-
     const shouldFilterSlowdown =
-      lowerVertName === verticalEnums.PE && plantName === 'LDPE'
-    const menuItems = shouldFilterSlowdown
-      ? menu.children.filter((item) => item.id !== 'slowdown-norms')
-      : menu.children
+      // Condition 1: PE vertical AND LDPE plant
+      (lowerVertName === verticalEnums.PE && plantName === 'LDPE') ||
+      // Condition 2: PE vertical AND DMD site
+      (lowerVertName === verticalEnums.PE && SITE_NAME === 'dmd')
 
+    // Filter combined-production-norms for PP vertical when site is NOT sez/hmd/dta
+    const shouldFilterCombinedProduction =
+      lowerVertName === verticalEnums.PP &&
+      !['sez', 'hmd', 'dta'].includes(SITE_NAME?.toLowerCase())
+
+    let menuItems = menu.children
+
+    // Filter slowdown-norms if needed
+    if (shouldFilterSlowdown) {
+      menuItems = menuItems.filter((item) => item.id !== 'slowdown-norms')
+    }
+
+    // Filter combined-production-norms for PP vertical when NOT sez/hmd/dta
+    if (shouldFilterCombinedProduction) {
+      menuItems = menuItems.filter(
+        (item) => item.id !== 'combined-production-norms',
+      )
+    }
     return menuItems.map(renderMenuItem)
-  }, [menu?.children, lowerVertName, plantName, level])
+  }, [menu?.children, lowerVertName, plantName, level, SITE_NAME])
 
   const collapseButton = (
     <ListItemButton

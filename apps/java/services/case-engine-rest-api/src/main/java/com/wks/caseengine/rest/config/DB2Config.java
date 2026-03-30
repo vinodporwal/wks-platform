@@ -34,7 +34,10 @@ import jakarta.persistence.EntityManagerFactory;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-    basePackages = "com.wks.caseengine.rest.db2.repository", // Repository package for DB2
+    basePackages = {
+        "com.wks.caseengine.rest.db2.repository",
+        "com.wks.caseengine.db2.repository"
+    },
     entityManagerFactoryRef = "db2EntityManagerFactory",
     transactionManagerRef = "db2TransactionManager"
 )
@@ -75,7 +78,10 @@ public class DB2Config {
         EntityManagerFactoryBuilder builder) {
         return builder
             .dataSource(db2DataSource())
-            .packages("com.wks.caseengine.rest.db2.entity") // Change to your model package
+            .packages(
+                "com.wks.caseengine.rest.db2.entity",
+                "com.wks.caseengine.db2.entity"
+            )
             .persistenceUnit("db2")
             .properties(hibernatePropertiesForDb2())
             .build();

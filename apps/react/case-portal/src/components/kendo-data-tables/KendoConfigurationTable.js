@@ -32,6 +32,11 @@ import {
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import SelectivityData from './SelectivityData'
 import { TextArea } from '../../../node_modules/@progress/kendo-react-inputs/index'
+import RawMaterialNormsBasis from './tab-components/RawMaterialNormsBasis'
+import ProductionRange from './tab-components/ProductionRange'
+import PtaConfiguration from './tab-components/PtaConfiguration'
+import NSRAndMaterialPrices from './tab-components/NSRAndMaterialPrices/index'
+import CatChemNormsBasis from './tab-components/CatChemNormsBasis'
 import { getRoleName } from 'services/role-service'
 import { ButtonGroup } from '../../../node_modules/@progress/kendo-react-buttons/index'
 import QualityParameters from './QualityParameters'
@@ -322,11 +327,18 @@ const ConfigurationTable = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
-
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const IS_PVC_HMD = lowerVertName === 'pvc' && lowerSiteName === 'hmd'
+  const IS_AROMATICS_HMD =
+    lowerVertName === 'aromatics' && lowerSiteName === 'hmd'
   const [tabIndex, setTabIndex] = useState(0)
   const [loadBtnClicked, setLoadBtnClicked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -390,7 +402,7 @@ const ConfigurationTable = () => {
   const handleOpenDialog = () => {
     const isPEorPP = lowerVertName === 'pe' || lowerVertName === 'pp'
 
-    if (isPEorPP) {
+    if (isPEorPP || IS_PVC_DMD || IS_PVC_HMD) {
       if (!summaryEdited && !summary) {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -785,7 +797,10 @@ const ConfigurationTable = () => {
     try {
       var response = await DataService.getConfigurationAvailableTabs(keycloak)
       if (response?.code == 200) {
-        setAvailableTabs(response?.data?.configurationTypeList)
+        const originalTabs = response?.data?.configurationTypeList || []
+
+        setAvailableTabs(originalTabs)
+
         setLoading(false)
       } else {
         setAvailableTabs([])
@@ -1525,6 +1540,8 @@ const ConfigurationTable = () => {
                     reportTypes={reportTypes}
                   />
                 )
+              case 'nsr & material prices':
+                return <NSRAndMaterialPrices />
               case 'pio impact':
                 return (
                   <SelectivityData
@@ -1576,9 +1593,6 @@ const ConfigurationTable = () => {
       </div>
     )
   }
-
-  // HERE LOADING1
-  //loading1
 
   return (
     <div>
@@ -1896,6 +1910,41 @@ const ConfigurationTable = () => {
               case getTheId('LineConfiguration'):
                 return (
                   <LineConfiguration
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+              case getTheId('raw-material-norms-basis'):
+                return (
+                  <RawMaterialNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('cat-chem-norms-basis'):
+                return (
+                  <CatChemNormsBasis
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('ProductionRange'):
+                return (
+                  <ProductionRange
+                    summary={debouncedSummary}
+                    summaryEdited={summaryEdited}
+                    setSummaryEdited={setSummaryEdited}
+                  />
+                )
+
+              case getTheId('pta-configuration'):
+                return (
+                  <PtaConfiguration
                     summary={debouncedSummary}
                     summaryEdited={summaryEdited}
                     setSummaryEdited={setSummaryEdited}

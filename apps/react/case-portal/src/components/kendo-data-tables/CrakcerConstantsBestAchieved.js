@@ -33,7 +33,6 @@ import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrakcerConstantsBestAchieved = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -49,7 +48,9 @@ const CrakcerConstantsBestAchieved = () => {
   } = dataGridStore
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const PLANT_ID = plantObject?.id
@@ -491,7 +492,10 @@ const CrakcerConstantsBestAchieved = () => {
       >
         <DialogTitle id='alert-dialog-title'>{'Load?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             {`Are you sure you want to load data for the period from ${formatDateForText(startDate)} to ${formatDateForText(endDate)}?`}
           </DialogContentText>
         </DialogContent>
@@ -826,9 +830,6 @@ const CrakcerConstantsBestAchieved = () => {
     },
     isOldYear,
   )
-
-  //HERE LOADING1
-  //loading1
 
   return (
     <div>

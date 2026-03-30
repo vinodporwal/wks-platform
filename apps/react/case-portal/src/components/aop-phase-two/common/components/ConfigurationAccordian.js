@@ -19,21 +19,31 @@ import {
   Backdrop,
   CircularProgress,
 } from '../../../../../node_modules/@mui/material/index'
+import dataGridStore from 'store/reducers/dataGridStore'
+import { getRoleName } from 'services/role-service'
 
 const ConfigurationAccordian = ({
   PLANT_ID,
   AOP_YEAR,
-  READ_ONLY,
   isOldYear,
   isSummaryRequired = false,
+  yearGap = 1,
+  onDatesChange,
+  onLoadNormCalculation = () => {},
+  normCalculationLoading = false,
 }) => {
   const keycloak = useSession()
   const hasExecutedRef = useRef(false)
+  const { isReleased, oldYear } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   // State management
   const [startDate, setStartDate] = useState()
   const [endDate, setEndDate] = useState()
   const [summary, setSummary] = useState('')
+  const [lastModifiedBy, setLastModifiedBy] = useState('')
   const [dateEdited, setDateEdited] = useState(false)
   const [summaryEdited, setSummaryEdited] = useState(false)
   const [configurationExecutionDetails, setConfigurationExecutionDetails] =
@@ -99,17 +109,25 @@ const ConfigurationAccordian = ({
         await onLoadTest(startDateObj, endDateObj)
       } else {
         setConfigurationExecutionDetails(details)
+        // Capture who last modified the data
+        if (details[0]?.User) {
+          setLastModifiedBy(details[0].User)
+        }
       }
     } catch (error) {
       console.error('Error fetching getConfigurationExecutionDetails:', error)
     }
   }
 
-  // Initial load with 5-year period
+  // Initial load with configurable year period
   const onLoadTest = async (startDateObj, endDateObj) => {
     const today = new Date()
     const endDate = new Date(today.getFullYear(), today.getMonth(), 0)
-    const startDate = new Date(today.getFullYear() - 5, today.getMonth(), 1)
+    const startDate = new Date(
+      today.getFullYear() - yearGap,
+      today.getMonth(),
+      1,
+    )
 
     const createPayloadItem = (obj, date) => ({
       apr: date,
@@ -187,7 +205,7 @@ const ConfigurationAccordian = ({
       const today = new Date()
       const fallbackEndDate = new Date(today.getFullYear(), today.getMonth(), 0)
       const fallbackStartDate = new Date(
-        today.getFullYear() - 5,
+        today.getFullYear() - yearGap,
         today.getMonth(),
         1,
       )
@@ -286,6 +304,11 @@ const ConfigurationAccordian = ({
         })
         await fetchConfigurationDetails()
         await fetchSummary()
+
+        // Trigger norm calculation after successful configuration load
+        if (onLoadNormCalculation) {
+          onLoadNormCalculation()
+        }
       } else {
         setSnackbarOpen(true)
         setSnackbarData({
@@ -339,6 +362,13 @@ const ConfigurationAccordian = ({
   useEffect(() => {
     computeAndSetDates()
   }, [computeAndSetDates])
+
+  // Notify parent component when dates change
+  useEffect(() => {
+    if (onDatesChange && startDate && endDate) {
+      onDatesChange(startDate, endDate)
+    }
+  }, [startDate, endDate, onDatesChange])
 
   const startDateConfig = configurationExecutionDetails.find(
     (item) => item.Name === 'StartDate',
@@ -457,7 +487,7 @@ const ConfigurationAccordian = ({
                       alignSelf: 'flex-end',
                     }}
                   >
-                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
+                    {`(Last refreshed data on: ${formatDateForText(configurationExecutionDetails[0]?.ModifiedOn, true)}${lastModifiedBy ? ` by ${lastModifiedBy}` : ''} for the period from ${formatDateForText(startDateFromConfig)} to ${formatDateForText(endDateDateFromConfig)})`}
                   </Typography>
                 )}
               </Box>

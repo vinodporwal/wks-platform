@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOutputApiService'
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const CPPUnitsSdPlan = ({
   PLANT_ID,
@@ -54,6 +55,8 @@ const CPPUnitsSdPlan = ({
     ],
   })
 
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
+
   // Fetch data
   const fetchData = useCallback(async () => {
     if (!AOP_YEAR || !SITE_ID) {
@@ -69,7 +72,7 @@ const CPPUnitsSdPlan = ({
 
       const response = await TcsOutputApiService.getCPPUnitsSdPlanData(
         keycloak,
-        AOP_YEAR,
+        apiYear,
         SITE_ID,
       )
 
@@ -182,7 +185,7 @@ const CPPUnitsSdPlan = ({
       await TcsOutputApiService.exportCPPUnitsSdPlanExcel(
         keycloak,
         SITE_ID,
-        AOP_YEAR,
+        apiYear,
       )
 
       setSnackbarData({

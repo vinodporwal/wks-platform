@@ -51,6 +51,7 @@ export const InputApiService = {
   saveHRSGHeatRateData,
   saveHRSGHeatRateExcel,
   exportHRSGHeatRateExcel,
+  getHRSGHeatRateDropdown,
 
   getNormBasedUtilityBudget,
   saveNormsData,
@@ -61,6 +62,11 @@ export const InputApiService = {
   saveFuelAvailabilityData,
   saveFuelAvailabilityExcel,
   exportFuelAvailabilityExcel,
+
+  getFuelAvailabilityDataJCB,
+  saveFuelAvailabilityDataJCB,
+  saveFuelAvailabilityExcelJCB,
+  exportFuelAvailabilityExcelJCB,
 
   // Generic Excel Import/Export
   saveExcelData,
@@ -87,10 +93,16 @@ async function getOperationHoursData(keycloak, plantId, year) {
   }
 }
 
-async function exportCPPNormsExcel(keycloak, PLANT_ID, financialYear) {
+async function exportCPPNormsExcel(
+  keycloak,
+  PLANT_ID,
+  financialYear,
+  startDate,
+  endDate,
+) {
   return exportExcelData(keycloak, {
     endpoint: `cpp-norms/export`,
-    queryParams: { cppPlantId: PLANT_ID, financialYear },
+    queryParams: { cppPlantId: PLANT_ID, financialYear, startDate, endDate },
     fileName: `CPPNorms_${financialYear}.xlsx`,
     method: 'GET',
   })
@@ -586,8 +598,19 @@ async function saveSTGHeatRateData(keycloak, PLANT_ID, AOP_YEAR, payload) {
 }
 
 // ========================|| HRSG Heat Rate APIs ||=====================================//
-async function getHRSGHeatRateData(keycloak, plantId) {
-  const url = `${Config.CaseEngineUrl}/task/hrsg-heat-rate-lookup`
+async function getHRSGHeatRateData(
+  keycloak,
+  assetId,
+  financialYear,
+  startDate,
+  endDate,
+) {
+  let url = `${Config.CaseEngineUrl}/task/hrsg-heat-rate/${assetId}/${financialYear}`
+
+  if (startDate && endDate) {
+    url += `/${startDate}/${endDate}`
+  }
+
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -606,7 +629,7 @@ async function getHRSGHeatRateData(keycloak, plantId) {
 }
 
 async function saveHRSGHeatRateData(keycloak, PLANT_ID, AOP_YEAR, payload) {
-  const url = `${Config.CaseEngineUrl}/task/hrsg-heat-rate-lookup/${AOP_YEAR}`
+  const url = `${Config.CaseEngineUrl}/task/hrsg-heat-rate/${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -630,9 +653,37 @@ async function saveHRSGHeatRateData(keycloak, PLANT_ID, AOP_YEAR, payload) {
   }
 }
 
+async function getHRSGHeatRateDropdown(keycloak, cppId) {
+  const url = `${Config.CaseEngineUrl}/task/hrsg-heat-rate/drop-down/${cppId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
 //====================|| NORM BASED UTILITY BUDGET APIs ||====================//
-async function getNormBasedUtilityBudget(keycloak, PLANT_ID, financialYear) {
-  const url = `${Config.CaseEngineUrl}/task/cpp-norms?cppPlantId=${PLANT_ID}&financialYear=${financialYear}`
+async function getNormBasedUtilityBudget(
+  keycloak,
+  PLANT_ID,
+  financialYear,
+  startDate,
+  endDate,
+) {
+  let url = `${Config.CaseEngineUrl}/task/cpp-norms?cppPlantId=${PLANT_ID}&financialYear=${financialYear}`
+  if (startDate && endDate) {
+    url += `&startDate=${startDate}&endDate=${endDate}`
+  }
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -977,7 +1028,7 @@ async function exportSTGHeatRateExcel(keycloak) {
 
 // HRSG Heat Rate Excel Import
 async function saveHRSGHeatRateExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
-  const url = `${Config.CaseEngineUrl}/task/hrsg-heat-rate-lookup/import`
+  const url = `${Config.CaseEngineUrl}/task/hrsg-heat-rate/import`
   const formData = new FormData()
   formData.append('file', file)
   const headers = {
@@ -993,7 +1044,7 @@ async function saveHRSGHeatRateExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
 
     if (!resp.ok) {
       throw new Error(
-        `Failed to import data: ${resp.status} ${resp.statusText}`,
+        `Failed to import HRSG heat rate data: ${resp.status} ${resp.statusText}`,
       )
     }
 
@@ -1005,11 +1056,25 @@ async function saveHRSGHeatRateExcel(file, keycloak, PLANT_ID, AOP_YEAR) {
 }
 
 // HRSG Heat Rate Excel Export
-async function exportHRSGHeatRateExcel(keycloak) {
+async function exportHRSGHeatRateExcel(
+  keycloak,
+  assetId,
+  financialYear,
+  startDate = null,
+  endDate = null,
+) {
+  // Construct endpoint with optional date range
+  let endpoint = `hrsg-heat-rate/export/${assetId}/${financialYear}`
+
+  // If both dates are provided, add them as path variables
+  if (startDate && endDate) {
+    endpoint = `hrsg-heat-rate/export/${assetId}/${financialYear}/${startDate}/${endDate}`
+  }
+
   return exportExcelData(keycloak, {
-    endpoint: `hrsg-heat-rate-lookup/export`,
+    endpoint: endpoint,
     queryParams: {},
-    fileName: `HRSG_Heat_Rate_Lookup.xlsx`,
+    fileName: `HRSG_Heat_Rate_${financialYear}.xlsx`,
     method: 'GET',
   })
 }
@@ -1074,6 +1139,119 @@ async function exportFuelAvailabilityExcel(keycloak, PLANT_ID, AOP_YEAR) {
     endpoint: `fuel-availability/export/${PLANT_ID}/${AOP_YEAR}`,
     queryParams: {},
     fileName: `Fuel_Availability_${AOP_YEAR}.xlsx`,
+    method: 'GET',
+  })
+}
+
+// ========================|| JCB Fuel Availability APIs ||=====================================//
+async function getFuelAvailabilityDataJCB(
+  keycloak,
+  cppId,
+  financialYear,
+  fuelType = null,
+) {
+  let url = `${Config.CaseEngineUrl}/task/fuel-availability/${cppId}/${financialYear}`
+
+  if (fuelType) {
+    url += `?fuelType=${encodeURIComponent(fuelType)}`
+  }
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveFuelAvailabilityDataJCB(
+  keycloak,
+  cppId,
+  financialYear,
+  payload,
+) {
+  const url = `${Config.CaseEngineUrl}/task/fuel-availability/${cppId}/${financialYear}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  const body = JSON.stringify(payload)
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
+  }
+}
+
+async function saveFuelAvailabilityExcelJCB(file, keycloak) {
+  const url = `${Config.CaseEngineUrl}/task/fuel-availability/import`
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+
+    const responseData = await json(keycloak, resp)
+
+    if (resp.status === 400 || resp.status === 200) {
+      return responseData
+    }
+
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to import JCB fuel availability data: ${resp.status} ${resp.statusText}`,
+      )
+    }
+
+    return responseData
+  } catch (e) {
+    console.error(`Error importing JCB Fuel Availability Excel:`, e)
+    return Promise.reject(e)
+  }
+}
+
+async function exportFuelAvailabilityExcelJCB(
+  keycloak,
+  cppId,
+  financialYear,
+  fuelType = null,
+) {
+  const queryParams = {}
+  if (fuelType) {
+    queryParams.fuelType = fuelType
+  }
+
+  return exportExcelData(keycloak, {
+    endpoint: `fuel-availability/export/${cppId}/${financialYear}`,
+    queryParams: queryParams,
+    fileName: `JCB_Fuel_Availability_${financialYear}.xlsx`,
     method: 'GET',
   })
 }

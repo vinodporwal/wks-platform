@@ -9,7 +9,7 @@ import '@progress/kendo-theme-default/dist/all.css'
 import { ColumnMenu } from 'components/@extended/columnMenu'
 import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
 import Notification from 'components/Utilities/Notification'
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import {
   Backdrop,
   Box,
@@ -133,9 +133,12 @@ const KendoDataTablesReports = ({
   handleUnitChange = () => {},
   handleRemarkCellClick = () => {},
   handleExport = () => {},
+  handleExcelUpload = () => {},
   groupBy = null,
   grades = [],
   handleGradeChange = () => {},
+  handleRelease = () => {},
+  isReleaseDisabled = true,
 }) => {
   const [filter, setFilter] = useState({ logic: 'and', filters: [] })
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
@@ -152,7 +155,9 @@ const KendoDataTablesReports = ({
   const { verticalChange, plantObject, oldYear } = dataGridStore
   const IS_OLD_YEAR = oldYear?.oldYear
   const plantID = plantObject?.id
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const TextCellEditor = (props) => (
     <td>
@@ -280,7 +285,20 @@ const KendoDataTablesReports = ({
 
     setRemarkDialogOpen(false)
   }
+  const fileInputRef = useRef(null)
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
 
+  const onFileChange = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    handleExcelUpload(file)
+    event.target.value = ''
+  }
   const handleAddRow = () => {
     if (isButtonDisabled) return
     setIsButtonDisabled(true)
@@ -502,7 +520,7 @@ const KendoDataTablesReports = ({
           />
         )
       }
-      if (col.field === 'particular') {
+      if (col.field === 'particular' || col.type === 'text') {
         return (
           <GridColumn
             key={col.field}
@@ -829,16 +847,36 @@ const KendoDataTablesReports = ({
                 Import
               </Button>
             )}
+            {permissions?.uploadExcelBtn && (
+              <>
+                <Button
+                  variant='contained'
+                  onClick={triggerFileUpload}
+                  disabled={isButtonDisabled || READ_ONLY}
+                  className='btn-save'
+                >
+                  Import
+                </Button>
+
+                <input
+                  type='file'
+                  accept='.xlsx,.xls'
+                  onChange={onFileChange}
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+              </>
+            )}
 
             {permissions?.showFinalSubmit && (
               <Button
                 variant='contained'
-                // onClick={handleExport}
-                // disabled={isButtonDisabled|| READ_ONLY}
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
                 className='btn-save'
-                disabled={READ_ONLY}
               >
-                Submit
+                {/* Submit */}
+                Release
               </Button>
             )}
 
@@ -938,7 +976,10 @@ const KendoDataTablesReports = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             Are you sure you want to delete this row?
           </DialogContentText>
         </DialogContent>
@@ -962,7 +1003,10 @@ const KendoDataTablesReports = ({
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             Are you sure you want to save these changes?
           </DialogContentText>
         </DialogContent>

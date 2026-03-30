@@ -6,6 +6,7 @@ import { TcsApiService } from 'components/aop-phase-two/services/tcs/tcsApiServi
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import AddRowDialog from './AddRowDialog'
+import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
 
 const CrudBlendWindowGrid = ({
   tableKey,
@@ -34,6 +35,7 @@ const CrudBlendWindowGrid = ({
   const [selectedGroupType, setSelectedGroupType] = useState('')
   const [addRowDialogOpen, setAddRowDialogOpen] = useState(false)
 
+  const apiYear = useMemo(() => extractYear(AOP_YEAR), [AOP_YEAR])
   // Process table data when it's provided
   useEffect(() => {
     if (tableData && tableData.headers && tableData.keys) {
@@ -120,7 +122,9 @@ const CrudBlendWindowGrid = ({
           'value_345',
         ].includes(key)
           ? 'number1'
-          : 'text',
+          : ['remarks', 'reasons'].includes(key)
+            ? 'textarea'
+            : 'text',
         minWidth: isRemarkField ? 350 : 150,
         widthT: isRemarkField ? 450 : 250,
         hidden: ['id'].includes(key),
@@ -251,7 +255,7 @@ const CrudBlendWindowGrid = ({
       const response = await TcsApiService.saveCrudBlendWindowData(
         keycloak,
         PLANT_ID,
-        AOP_YEAR,
+        apiYear,
         SITE_ID,
         payload,
       )
@@ -418,7 +422,7 @@ const CrudBlendWindowGrid = ({
         keycloak,
         PLANT_ID,
         SITE_ID,
-        AOP_YEAR,
+        apiYear,
         tableKey,
       )
 
@@ -444,7 +448,7 @@ const CrudBlendWindowGrid = ({
         keycloak,
         PLANT_ID,
         SITE_ID,
-        AOP_YEAR,
+        apiYear,
         tableKey,
         file,
       )

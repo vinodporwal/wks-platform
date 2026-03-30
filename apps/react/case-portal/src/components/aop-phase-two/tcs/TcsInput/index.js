@@ -13,10 +13,10 @@ import ROGC from './ROGC'
 import PCGOutlook from './PCGOutlook'
 import NetUnitCapacity from './NetUnitCapacity'
 import RemarkDialog from './workflow/RemarkDialog'
-import HistoryDialog from './workflow/HistoryDialog'
 import SubmitSection from './workflow/SubmitSection'
 import { getUserRole } from '../utils/roleUtils'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
+import AuditTrail from './workflow/AuditTrail'
 
 // Handler to render tab component based on displayName
 const renderTabComponent = (tabDisplayName, props) => {
@@ -66,7 +66,7 @@ const TcsInput = () => {
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false)
-  const [isSubmitEligible, setIsSubmitEligible] = useState(true)
+  const [isSubmitEligible, setIsSubmitEligible] = useState(false)
   const [isCheckingEligibility, setIsCheckingEligibility] = useState(false)
   const [isWorkflowTriggered, setIsWorkflowTriggered] = useState(false)
   const [isSubmittingRemark, setIsSubmittingRemark] = useState(false)
@@ -76,7 +76,7 @@ const TcsInput = () => {
     if (!isSubmitEligible) {
       return 'Plant submission already done'
     }
-    return 'Submit plant data to EPS Engineer for approval'
+    return 'Submit plant data to AOM for approval'
   }, [isSubmitEligible])
 
   // Check workflow status on mount
@@ -195,14 +195,14 @@ const TcsInput = () => {
   // Get current tab object (has id, displayName, displaySequence)
   const currentTab = tabObj[tabIndex] || {}
 
-  // Console user roles
-  console.log('User Roles:', keycloak?.realmAccess?.roles)
-
   const userRole = useMemo(() => {
     let allUsers = keycloak?.realmAccess?.roles
-    console.log('allUsers', allUsers)
     return getUserRole(allUsers)
   }, [keycloak?.realmAccess?.roles])
+
+  const userName = useMemo(() => {
+    return keycloak.tokenParsed.name
+  }, [keycloak])
 
   // Fetch all tabs and visible tab IDs from backend
   useEffect(() => {
@@ -225,7 +225,6 @@ const TcsInput = () => {
         SITE_ID,
         PLANT_ID,
       )
-      console.log('visibleTabsResponse', visibleTabsResponse)
 
       let visibleTabIds = []
       if (visibleTabsResponse?.data) {
@@ -301,9 +300,6 @@ const TcsInput = () => {
 
   // Handle remark submission
   const handleRemarkSubmit = async (remark) => {
-    console.log('Remark submitted by:', userRole)
-    console.log('Remark:', remark)
-
     // Validation: Check for missing required parameters
     if (
       !keycloak ||
@@ -342,6 +338,7 @@ const TcsInput = () => {
         SITE_ID,
         VERTICAL_ID,
         userRole,
+        userName,
         remark,
         AOP_YEAR,
       )
@@ -434,7 +431,7 @@ const TcsInput = () => {
           onSubmitClick={() => setRemarkDialogOpen(true)}
           onViewHistory={handleViewHistory}
           isEligible={isSubmitEligible}
-          isLoading={isCheckingEligibility}
+          isLoading={isSubmittingRemark}
           isWorkflowTriggered={isWorkflowTriggered}
           submitTooltip={submitTooltip}
         />
@@ -471,7 +468,7 @@ const TcsInput = () => {
       />
 
       {/* History Dialog */}
-      <HistoryDialog
+      <AuditTrail
         open={historyDialogOpen}
         onClose={handleCloseHistory}
         title='Audit Trail'

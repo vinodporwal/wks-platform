@@ -40,6 +40,16 @@ public class MaintenanceCalculatedDataController {
 		return maintenanceCalculatedDataService.getMaintenanceCalculatedData(plantId,year);		
 	}
 	
+	@GetMapping(value="/maintenance-details-avg")
+	public List<MaintenanceDetailsDTO> getMaintenanceDetails(@RequestParam String plantId, @RequestParam String year){
+		return maintenanceCalculatedDataService.getMaintenanceDetails(plantId,year);		
+	}
+	
+	@GetMapping(value="/maintenance-details-line")
+	public List<MaintenanceDetailsDTO> getMaintenanceCalculatedLineData(@RequestParam String plantId, @RequestParam String year,@RequestParam(required=false) String lineId){
+		return maintenanceCalculatedDataService.getMaintenanceCalculatedLineData(plantId,year, lineId);		
+	}
+	
 	@GetMapping(value="/maintenance-report-urls")
 	public AOPMessageVM getMaintenanceReportURLs(@RequestParam String plantId, @RequestParam String year, @RequestParam String type){
 		return maintenanceCalculatedDataService.getMaintenanceReportURLs(plantId,year,type);		

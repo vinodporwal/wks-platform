@@ -72,8 +72,10 @@ const PropaneBusiness = ({ permissions }) => {
   const SCREEN_NAME = screenTitle?.title
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [rows, setRows] = useState([])
   const [modifiedCells, setModifiedCells] = useState({})
@@ -264,7 +266,7 @@ const PropaneBusiness = ({ permissions }) => {
       ...permissions,
       downloadExcelBtn: false,
       uploadExcelBtn: false,
-      titleName: '',
+      titleName: 'Zone Selection',
     },
     isOldYear,
   )

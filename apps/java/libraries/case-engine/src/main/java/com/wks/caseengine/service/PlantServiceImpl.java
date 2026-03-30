@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.rest.entity.Plant;
@@ -57,10 +58,13 @@ public class PlantServiceImpl implements PlantService {
 	@Transactional
      public List getShutdownMonths(UUID plantId,String maintenanceName,String year,String gradeId){
 		String verticalName = plantsRepository.findVerticalNameByPlantId((plantId));
-		if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET")) {	
+		Plants plant = plantsRepository.findById(plantId).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc) {	
 			// return	plantsRepository.getShutdownMonthsWithGrades(plantId,maintenanceName,year,UUID.fromString(gradeId));
 			return	plantsRepository.getShutdownMonths(plantId,maintenanceName,year);
-		}else if(verticalName.equalsIgnoreCase("VCM") ) {	
+		}else if(verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")) {	
 			return	plantsRepository.getVCMShutdownMonths(plantId,maintenanceName,year);
 		}else if(verticalName.equalsIgnoreCase("PTA") ) {	
 			return	plantsRepository.getPTAShutdownMonths(plantId,maintenanceName,year);
@@ -71,7 +75,7 @@ public class PlantServiceImpl implements PlantService {
    }
 
 	@Override
-	public List<Plants> findUniqueNamesPlantsByVerticalAndSite(UUID verticalId, UUID siteId) {
+	public List<Plants> findUniqueNamesPlantsByVerticalAndSite(UUID verticalId, UUID siteId, String screenCode) {
 		return plantsRepository.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId);
 	}
 

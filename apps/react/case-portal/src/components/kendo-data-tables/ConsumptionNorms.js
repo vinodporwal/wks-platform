@@ -19,9 +19,10 @@ const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const [calculationObject, setCalculationObject] = useState([])
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
+
   const [open1, setOpen1] = useState(false)
   const valueFormat = ValueFormatterConsumption()
+
   const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
@@ -55,7 +56,9 @@ const ConsumptionNorms = () => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
 
-  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR)
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase()
@@ -82,7 +85,18 @@ const ConsumptionNorms = () => {
 
   const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
   const isPET = lowerVertName === 'pet'
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_ELASTOMER_HMD_SBR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'HMD' &&
+    PLANT_NAME_NO_CASE === 'SBR'
 
+  const IS_ELASTOMER_JMD_HIIR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'JMD' &&
+    PLANT_NAME_NO_CASE === 'HIIR'
+
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const unsavedChangesRef = React.useRef({
     unsavedRows: {},
     rowsBeforeChange: {},
@@ -196,8 +210,11 @@ const ConsumptionNorms = () => {
 
       if (
         lowerVertName == 'pe' ||
+        IS_ELASTOMER_JMD_HIIR ||
         lowerVertName == 'pp' ||
-        lowerVertName == 'pet'
+        lowerVertName == 'pet' ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
       ) {
         try {
           setLoading(true)
@@ -303,7 +320,16 @@ const ConsumptionNorms = () => {
 
   const fetchData = async (gradeId) => {
     if (!PLANT_ID || !AOP_YEAR) return
-    if ((isPEPP || isPET) && !gradeId) return
+    if (
+      (isPEPP ||
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD) &&
+      !gradeId
+    )
+      return
     setLoading(true)
     try {
       var response
@@ -311,7 +337,11 @@ const ConsumptionNorms = () => {
       if (
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
       ) {
         response = await ConsumptionNormsApiService.getConsumptionNormsData(
           keycloak,
@@ -392,7 +422,11 @@ const ConsumptionNorms = () => {
     if (
       lowerVertName === 'pe' ||
       lowerVertName === 'pp' ||
-      lowerVertName === 'pet'
+      lowerVertName === 'pet' ||
+      IS_ELASTOMER_HMD_SBR ||
+      IS_ELASTOMER_JMD_HIIR ||
+      IS_PVC_VMD ||
+      IS_PVC_DMD
     ) {
       fetchGradeDropdowns()
     } else {
@@ -436,7 +470,11 @@ const ConsumptionNorms = () => {
         if (
           lowerVertName === 'pe' ||
           lowerVertName === 'pp' ||
-          lowerVertName === 'pet'
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD
         ) {
           fetchGradeDropdownsAfterCalc()
         } else {
@@ -473,7 +511,11 @@ const ConsumptionNorms = () => {
       if (
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
       ) {
         response =
           await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
@@ -531,26 +573,42 @@ const ConsumptionNorms = () => {
       showG:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       marginBottom:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       dropdownLabel: 'Select Grade',
       downloadExcelBtnFromUI:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? false
           : true,
       downloadExcelBtn:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'pet'
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
           ? true
           : false,
       ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,

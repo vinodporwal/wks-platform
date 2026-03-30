@@ -109,15 +109,19 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		try {
 			List<Object[]> objList = null;
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
-			// Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			Boolean withGrade=false;
+			Boolean elastomer = vertical.getName().equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 			if(plant.getName().equalsIgnoreCase("SBR") && site.getName().equalsIgnoreCase("HMD") && vertical.getName().equalsIgnoreCase("ELASTOMER")) {
 				withGrade=true;
+			}if(elastomer) {
+				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnormsGrade";
+				objList = getShutdownConsumptionData( plantId,year, storedProcedure);
+				return getShutdownGradeData(objList, plantId, year,gradeId);
 			}
-			if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA")) && (!withGrade)) {
+			else if ((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical") || vertical.getName().equalsIgnoreCase("AROMATICS") || vertical.getName().equalsIgnoreCase("ELASTOMER") || vertical.getName().equalsIgnoreCase("MEG") || vertical.getName().equalsIgnoreCase("PTA")) && (!withGrade)) {
 				//objList = getShutdownNormsMEG(year, plant.getId(), "vwScrnShutdownNorms");
 				// view converted to sp
 				String storedProcedure = verticalName + "_" + site.getName() + "_GetShutdownnorms";
@@ -211,6 +215,16 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			CellStyle lockedStyle = Utility.createLockedStyle(workbook);
 			CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
 
+			// Gray out non-active month columns based on activeMonths
+			CellStyle lockedGrayStyle = workbook.createCellStyle();
+			lockedGrayStyle.setLocked(true);
+			lockedGrayStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+			lockedGrayStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+			lockedGrayStyle.setBorderBottom(BorderStyle.THIN);
+			lockedGrayStyle.setBorderTop(BorderStyle.THIN);
+			lockedGrayStyle.setBorderLeft(BorderStyle.THIN);
+			lockedGrayStyle.setBorderRight(BorderStyle.THIN);
+
 			if (allGrade) {
 				Map<String, String> allGradeInfo = gradeInfoList.stream()
 						.filter(g -> {
@@ -245,6 +259,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 
 					// If nothing to write, skip creation
 					if (!currentDtoList.isEmpty()) {
+						Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+
 						String sheetName = Utility.sanitizeSheetName("All Grade");
 						Sheet sheet = workbook.createSheet(sheetName);
 						int currentRow = 0;
@@ -326,11 +342,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 									cell.setCellValue("");
 								}
 
-								if (isRowEditable) {
-									cell.setCellStyle(unlockedStyle);
-								} else {
-									cell.setCellStyle(lockedStyle);
-								}
+								cell.setCellStyle(resolveCellStyleForExport(col, isRowEditable, activeMonths,
+										lockedStyle, unlockedStyle, lockedGrayStyle));
 							}
 						}
 
@@ -373,6 +386,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 					} else {
 						continue;
 					}
+
+					Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
 
 					Sheet sheet = workbook.createSheet(sheetName);
 					int currentRow = 0;
@@ -455,11 +470,8 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 								cell.setCellValue("");
 							}
 
-							if (isRowEditable) {
-								cell.setCellStyle(unlockedStyle);
-							} else {
-								cell.setCellStyle(lockedStyle);
-							}
+							cell.setCellStyle(resolveCellStyleForExport(col, isRowEditable, activeMonths,
+									lockedStyle, unlockedStyle, lockedGrayStyle));
 						}
 					}
 					sheet.setColumnHidden(16, true);
@@ -490,23 +502,23 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			Plants plant = plantsRepository.findById(plantFKId).get();
 			List<ShutdownNormsValueDTO> data=null;
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET")) {
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+			if(vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
 				 data= readShutdownConsumption(file.getInputStream(), plantFKId, year);
 			}
 			else {
 				data = readShutdownConsumption(file.getInputStream(), plantFKId, year);
 			}
-			
 			Map<String,Object> records = savePPShutdownNormsData(data);
 			@SuppressWarnings("unchecked")
 			List<ShutdownNormsValueDTO> failedRecords = (List<ShutdownNormsValueDTO>) records.get("data");
 			
-
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (failedRecords != null && failedRecords.size() > 0) {
 				byte[] fileByteArray = null;
 				if (vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PP")
-						|| vertical.getName().equalsIgnoreCase("PET")) {
+						|| vertical.getName().equalsIgnoreCase("PET") || pvc) {
 					fileByteArray = exportShutdownNorms(
 							year,
 							plantFKId,
@@ -524,7 +536,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 				aopMessageVM.setCode(200);
 				aopMessageVM.setMessage("All data has been saved");
 			}
-
 			return aopMessageVM;
 			// return ResponseEntity.ok(data);
 		} catch (Exception e) {
@@ -552,7 +563,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	            String gradeId = gradeMap.get(Utility.sanitizeSheetName(sheetName));
 	            List<Integer> shutdown = plantService.getShutdownMonths(plantFKId, "Shutdown",year,gradeId);
                 List<Integer> slowdown = slowdownNormsService.getSlowdownMonthsImport(plantFKId, "Slowdown",year);
-                
                 if (shutdown != null) activeMonths.addAll(shutdown);
                 if (slowdown != null) activeMonths.addAll(slowdown);
 	    	}
@@ -564,8 +574,6 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	            }
 	            String sheetName = sheet.getSheetName();
 	            String gradeId = gradeMap.get(Utility.sanitizeSheetName(sheetName));
-	           
-	            
 	            Iterator<Row> rowIterator = sheet.iterator();
 	            if (rowIterator.hasNext()) {
 	                rowIterator.next(); 
@@ -575,14 +583,11 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	                if (row.getPhysicalNumberOfCells() == 0) {
 	                    continue; 
 	                }
-	                
-	                
 	                ShutdownNormsValueDTO dto = new ShutdownNormsValueDTO();
 	                try {
 	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
 	                    dto.setProductName(getStringCellValue(row.getCell(1), dto));
 	                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
-
 	                    dto.setFinancialYear(year);
 	                    dto.setPlantFkId(plantFKId.toString());
 	                    if (activeMonths.contains(4)) dto.setApril(getNumericCellValue(row.getCell(3), dto));
@@ -718,9 +723,10 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 		
 		Map<String,Object> map=null;
-		// Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
-		if(vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PET")) {
+		boolean pvc = vertical.getName().equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		if(vertical.getName().equalsIgnoreCase("PP") || vertical.getName().equalsIgnoreCase("PE") || vertical.getName().equalsIgnoreCase("PET") || pvc) {
 			 map=	savePPShutdownNormsData(shutdownNormsValueDTOList);
 		}else {
 			 map= saveShutdownNormsData(shutdownNormsValueDTOList);
@@ -853,6 +859,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 		
 	
 	public Map<String,Object> savePPShutdownNormsData(List<ShutdownNormsValueDTO> shutdownNormsValueDTOList) {
+		
 		String year=null;
 		UUID plantId=null;
 		List<GradeShutdownNormsValue> gradeShutdownNormsValueList=new ArrayList<>();
@@ -1673,6 +1680,30 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 	    }
 	}
 
+	/** Active months for export = Shutdown + Slowdown. */
+	private Set<Integer> getActiveMonthsForExport(UUID plantFKId, String year, String gradeId) {
+	    Set<Integer> activeMonths = new HashSet<>();
+	    List<Integer> shutdown = plantService.getShutdownMonths(plantFKId, "Shutdown", year, gradeId);
+	    if (shutdown != null) activeMonths.addAll(shutdown);
+	    List slowdown = slowdownNormsService.getSlowdownMonthsImport(plantFKId, "Slowdown", year);
+	    if (slowdown != null) activeMonths.addAll(slowdown);
+	    return activeMonths;
+	}
+
+	/** Resolve cell style for export: gray out non-active month columns based on activeMonths. */
+	private CellStyle resolveCellStyleForExport(int col, boolean isRowEditable,
+			Set<Integer> activeMonths,
+			CellStyle lockedStyle, CellStyle unlockedStyle, CellStyle lockedGrayStyle) {
+	    if (!isRowEditable) {
+	        return lockedGrayStyle;
+	    }
+	    if (activeMonths != null && col >= 3 && col <= 14) {
+	        int monthNumber = getMonthNumberFromColumnIndex(col);
+	        return activeMonths.contains(monthNumber) ? unlockedStyle : lockedGrayStyle;
+	    }
+	    return unlockedStyle;
+	}
+
 	public static List<String> getAcademicYearMonths(String year) {
 		List<String> months = new ArrayList<>();
 		int startYear = Integer.parseInt(year.substring(0, 4));
@@ -1717,7 +1748,7 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
 			if (retrievedList != null && retrievedList.size() > 0) {
 				byte[] fileByteArray =null;
-				if(vertical.getName().equalsIgnoreCase("VCM") && site.getName().equalsIgnoreCase("DMD")) {
+				if((vertical.getName().equalsIgnoreCase("VCM") || vertical.getName().equalsIgnoreCase("Chemical")) && site.getName().equalsIgnoreCase("DMD")) {
 					 fileByteArray = exportDMDShutdownConsumption(year, plantFKId, true, retrievedList,gradeId);
 				}else {
 					 fileByteArray = exportShutdownConsumption(year, plantFKId, true, retrievedList,gradeId);
