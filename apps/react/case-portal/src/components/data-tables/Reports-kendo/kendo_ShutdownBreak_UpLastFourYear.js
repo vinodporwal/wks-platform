@@ -242,7 +242,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
           unplannedSlowdownHours: item.unplannedSlowdownHours,
           year: item.lastFourYears,
           remarks: item.remarks,
-          originalRemarks: item.remarks,
+          originalRemark: item.remarks,
         }),
       )
 

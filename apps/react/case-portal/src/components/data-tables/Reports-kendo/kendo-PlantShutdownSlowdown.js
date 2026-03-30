@@ -55,7 +55,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedSiteFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -63,7 +62,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedSiteDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -76,7 +74,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedGroupFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -84,7 +81,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedGroupDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -97,7 +93,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'actualPrevYearFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -105,7 +100,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'actualPrevYearDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -118,7 +112,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'budgetNextYearFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -126,7 +119,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'budgetNextYearDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -136,7 +128,6 @@ const PlantShutdownSlowdown = () => {
     {
       field: 'clubbedActivities',
       title: 'Activities that can be clubbed with the critical activity',
-      widthT: 150,
       type: 'text',
       editable: true,
     },
@@ -144,21 +135,18 @@ const PlantShutdownSlowdown = () => {
       field: 'explanationNotBest',
       title:
         'Explanation for not proposing the best achieved frequency / duration',
-      widthT: 150,
       type: 'text',
       editable: true,
     },
     {
       field: 'throughputReduction',
       title: 'Throughput reduction during the period',
-      widthT: 80,
       type: 'numberNonGrey',
       editable: true,
     },
     {
       field: 'lossRecoverable',
       title: 'Is the production Loss recoverable',
-      widthT: 80,
       type: 'text',
       editable: true,
     },
@@ -199,7 +187,7 @@ const PlantShutdownSlowdown = () => {
           throughputReduction: item.throughputReductionDuringPeriod,
           lossRecoverable: item.isProductionLossRecoverable,
           remarks: item.remarks,
-          originalRemarks: item.remarks,
+          originalRemark: item.remarks,
         }))
         setRows(formattedData || responseData)
       } else {
