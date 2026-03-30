@@ -7,6 +7,7 @@ import { SvgIcon } from '@progress/kendo-react-common'
 import { eyeIcon, downloadIcon } from '@progress/kendo-svg-icons'
 import { Tooltip } from '@progress/kendo-react-tooltip'
 import Config from 'consts/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CppExecutionList = ({ onViewClick }) => {
   const keycloak = useSession()
@@ -253,12 +254,7 @@ const CppExecutionList = ({ onViewClick }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

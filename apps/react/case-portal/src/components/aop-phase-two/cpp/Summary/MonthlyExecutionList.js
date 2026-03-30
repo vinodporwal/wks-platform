@@ -7,6 +7,7 @@ import { SvgIcon } from '@progress/kendo-react-common'
 import { eyeIcon, fileExcelIcon } from '@progress/kendo-svg-icons'
 import { Tooltip } from '@progress/kendo-react-tooltip'
 import Config from '../../../../config'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
   const keycloak = useSession()
@@ -250,12 +251,7 @@ const MonthlyExecutionList = ({ executionId, onViewClick, onBack }) => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <AdvanceKendoTable
         columns={columns}
         rows={rows}

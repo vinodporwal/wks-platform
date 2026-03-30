@@ -8,6 +8,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
 import { validateNestedRowDataWithRemarks } from 'components/aop-phase-two/common/commonUtilityFunctions'
 import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const STGGrid = ({ hoursRows = [] }) => {
   const keycloak = useSession()
@@ -575,12 +576,13 @@ const STGGrid = ({ hoursRows = [] }) => {
 
   return (
     <Box>
-      <Backdrop
+      {/* <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={!!loading}
       >
         <CircularProgress color='inherit' />
-      </Backdrop>
+      </Backdrop> */}
+      <LoaderBackdrop open={!!loading} />
       <Stack>
         <NestedKendoTable
           columns={nestedColumns}
