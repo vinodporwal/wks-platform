@@ -178,6 +178,18 @@ def update_parent_execution_summary(
         WHERE Id = ?
         """
         
+        # Log UPDATE parameters for debugging
+        print(f"\n{'='*70}")
+        print(f"EXECUTING UPDATE QUERY")
+        print(f"{'='*70}")
+        print(f"  Parent ID: {parent_id}")
+        print(f"  Status: {status}")
+        print(f"  Excel BLOB size: {len(excel_blob) if excel_blob else 0} bytes")
+        print(f"  Excel Filename: {excel_filename}")
+        print(f"  Excel Filesize: {excel_filesize}")
+        print(f"  Excel Generated DateTime: {excel_generated_dt}")
+        print(f"{'='*70}\n")
+        
         cursor.execute(update_query, (
             status,
             error_message,
@@ -190,6 +202,18 @@ def update_parent_execution_summary(
             excel_generated_dt,
             parent_id
         ))
+        
+        # Check how many rows were updated
+        rows_affected = cursor.rowcount
+        print(f"\n{'='*70}")
+        print(f"UPDATE QUERY RESULT")
+        print(f"{'='*70}")
+        print(f"  Rows affected: {rows_affected}")
+        if rows_affected == 0:
+            print(f"  WARNING: No rows were updated! Parent ID might not exist: {parent_id}")
+        else:
+            print(f"  SUCCESS: Parent execution log updated successfully")
+        print(f"{'='*70}\n")
         
         conn.commit()
         cursor.close()
