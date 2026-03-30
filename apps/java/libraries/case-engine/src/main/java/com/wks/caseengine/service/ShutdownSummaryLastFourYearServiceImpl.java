@@ -120,6 +120,33 @@ public class ShutdownSummaryLastFourYearServiceImpl implements ShutdownSummaryLa
         }
     }
 
+    @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
+    public AOPMessageVM deleteShutdownSummaryLastFourYear(String id) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            UUID uuid = UUID.fromString(id);
+            ShutdownSummaryLastFourYear entity = entityManager.find(ShutdownSummaryLastFourYear.class, uuid);
+            if (entity == null) {
+                throw new RestInvalidArgumentException("ShutdownSummaryLastFourYear id", new RuntimeException("not found"));
+            }
+            entityManager.remove(entity);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("deletedId", id);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data deleted successfully");
+            aopMessageVM.setData(data);
+            return aopMessageVM;
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for id", e);
+        } catch (RestInvalidArgumentException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to delete shutdown summary last four year", ex);
+        }
+    }
+
     private ShutdownSummaryLastFourYear upsertShutdownSummaryLastFourYear(
             ShutdownSummaryLastFourYearDTO dto,
             UUID plantUuid,
@@ -160,6 +187,8 @@ public class ShutdownSummaryLastFourYearServiceImpl implements ShutdownSummaryLa
         entity.setUnplannedSlowdownHours(dto.getUnplannedSlowdownHours());
         entity.setRemarks(dto.getRemarks());
         entity.setUpdatedBy(Utility.getUserName());
+        entity.setPlantFkId(plantUuid);
+        entity.setYear(year);
 
         if (isUpdate) {
             entity.setModifiedOn(now);

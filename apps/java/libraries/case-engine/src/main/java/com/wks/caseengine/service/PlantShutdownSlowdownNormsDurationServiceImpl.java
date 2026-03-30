@@ -179,7 +179,10 @@ public class PlantShutdownSlowdownNormsDurationServiceImpl implements PlantShutd
         entity.setThroughputReductionDuringPeriod(dto.getThroughputReductionDuringPeriod());
         entity.setIsProductionLossRecoverable(dto.getIsProductionLossRecoverable());
         entity.setRemarks(dto.getRemarks());
+        entity.setRemark(dto.getRemarks());       
         entity.setUpdatedBy(Utility.getUserName());
+        entity.setPlantId(plantUuid);
+        entity.setYear(year);
 
         if (isUpdate) {
             entity.setModifiedOn(now);

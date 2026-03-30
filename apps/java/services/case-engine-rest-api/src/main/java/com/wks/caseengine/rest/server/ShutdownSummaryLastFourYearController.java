@@ -3,6 +3,7 @@ package com.wks.caseengine.rest.server;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +27,11 @@ public class ShutdownSummaryLastFourYearController {
             @RequestParam String plantId,
             @RequestParam String year) {
         return shutdownSummaryLastFourYearService.getShutdownSummaryLastFourYear(plantId, year);
+    }
+
+    @DeleteMapping(value = "/shutdown-summary-last-four-year")
+    public AOPMessageVM deleteShutdownSummaryLastFourYear(@RequestParam String id) {
+        return shutdownSummaryLastFourYearService.deleteShutdownSummaryLastFourYear(id);
     }
     
     @PostMapping(value = "/shutdown-summary-last-four-year")

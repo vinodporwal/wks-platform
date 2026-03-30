@@ -88,6 +88,11 @@ public class PlantShutdownSlowdownNormsDuration {
     private String updatedBy;
     
     @Column(name = "Remark")
+    private String remark;
+    
+    @Column(name = "Remarks")
     private String remarks;
+    
+    
 }
 

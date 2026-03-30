@@ -57,6 +57,11 @@ public class ShutdownDetailsController {
     public AOPMessageVM deletePlannedShutdownDetails(@RequestParam String id) {
         return shutdownDetailsService.deletePlannedShutdownDetails(id);
     }
+    
+    @DeleteMapping(value = "/routine-shutdown")
+    public AOPMessageVM deleteRoutineShutdown(@RequestParam String id) {
+        return shutdownDetailsService.deleteRoutineShutdown(id);
+    }
 
     @DeleteMapping(value = "/routine-shutdown-previous-years")
     public AOPMessageVM deleteRoutineShutdownPreviousYears(@RequestParam String id) {
