@@ -8,8 +8,8 @@ import { drawerWidth, miniDrawerWidth } from 'config'
 // ==============================|| HEADER - APP BAR STYLED ||============================== //
 
 const AppBarStyled = styled(AppBar, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme, open }) => ({
+  shouldForwardProp: (prop) => prop !== 'open' && prop !== 'isDashboard',
+})(({ theme, open, isDashboard }) => ({
   zIndex: theme.zIndex.drawer + 1,
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
@@ -17,8 +17,8 @@ const AppBarStyled = styled(AppBar, {
   }),
 
   ...(!open && {
-    marginLeft: miniDrawerWidth,
-    width: `calc(100% - ${miniDrawerWidth}px)`,
+    marginLeft: isDashboard ? 0 : miniDrawerWidth,
+    width: isDashboard ? '100%' : `calc(100% - ${miniDrawerWidth}px)`,
   }),
 
   ...(open && {

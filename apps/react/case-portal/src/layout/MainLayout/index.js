@@ -16,6 +16,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
   const { items: menuItems } = useMenuContext()
   const menu = { items: [...menuItems] }
   const location = useLocation()
+  const isDashboard = location.pathname === '/dashboard'
 
   const BG_COLOR = '#ffff'
   const BG_COLOR_FULL = '#ffff'
@@ -29,7 +30,11 @@ const MainLayout = ({ keycloak, authenticated }) => {
   return (
     <Box sx={{ display: 'flex', width: '100%', height: '100vh' }}>
       {/* Sidebar LEFT */}
-      <Drawer open={open} handleDrawerToggle={handleDrawerToggle} />
+      <Drawer
+        open={open}
+        handleDrawerToggle={handleDrawerToggle}
+        isDashboard={isDashboard}
+      />
 
       {/* RIGHT SIDE CONTENT */}
       <Box
@@ -52,6 +57,7 @@ const MainLayout = ({ keycloak, authenticated }) => {
           open={open}
           handleDrawerToggle={handleDrawerToggle}
           keycloak={keycloak}
+          isDashboard={isDashboard}
         />
 
         {/* Push content below header */}
