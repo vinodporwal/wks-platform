@@ -641,7 +641,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 					+ "[NormParameterTypeDisplayName], [NormTypeDisplayOrder], [MaterialDisplayOrder], [UOM],[isEditable],[DisplayName] "
 					+ "FROM " + viewName + " "
 					+ "WHERE Plant_FK_Id = :plantId AND (FinancialYear = :year OR FinancialYear IS NULL) AND (:gradeId IS NULL OR Grade_FK_Id = :gradeId) "
-					+ "ORDER BY NormTypeDisplayOrder";
+					+ "ORDER BY NormTypeDisplayOrder ASC, MaterialDisplayOrder ASC";
 
 			Query query = entityManager.createNativeQuery(sql);
 			query.setParameter("plantId", plantId);
