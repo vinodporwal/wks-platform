@@ -53,9 +53,6 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
     @PersistenceContext
 	private EntityManager entityManager;
     
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
 	public AOPMessageVM getConfigurationData(String year, UUID plantFKId,String version) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(plantFKId);
@@ -222,9 +219,6 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			vgohtHelperService.saveConfigurationDataOnlyModified(year, plantFKId, version, vgohtNormConfigurationDTOList, periodFrom, periodTo);
 			String errorMessage = loadSP(year, plantFKId, version, vgohtNormConfigurationDTOList, periodFrom, periodTo);
 			if(errorMessage != null ) { 
-				// aopMessageVM.setCode(422);
-				// aopMessageVM.setMessage(errorMessage);
-				// return aopMessageVM;
 				throw new RuntimeException("Stored Procedure Error: " + errorMessage);
 			}
 			AOPMessageVM response = new AOPMessageVM();
@@ -232,8 +226,6 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			response.setMessage("Configuration saved successfully");
 			return response;
 		} catch (Exception e) {
-			System.out.println("print:::::::::::::" + e.getMessage());
-			e.printStackTrace();
 			throw new RuntimeException("Error saving configuration data", e);
 		}
 	}
@@ -241,17 +233,12 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 		
 	public String loadSP(String year, UUID plantFKId, String version,
 			List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOList, String periodFrom, String periodTo) {
-		// entityManager.flush();
-		// call the norm calculation procedure
 		Plants plant = plantsRepository.findById(plantFKId).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-
 		// VGOHT_DTA_VGOHT1_NormCalculation
 		String procedureName = vertical.getName()+"_"+site.getName()+"_"+  plant.getName() +"_"+"NormCalculation";
-
 		String errorMessage = vgohtHelperService.executeNormCalculationProcedure(plantFKId, year, site.getId(), periodFrom, periodTo, procedureName );
-
 		return errorMessage;
 	}
 

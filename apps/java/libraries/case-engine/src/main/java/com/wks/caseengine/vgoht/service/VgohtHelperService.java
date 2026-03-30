@@ -24,18 +24,13 @@ public class VgohtHelperService {
     @PersistenceContext
 	private EntityManager entityManager;
 
-    	@Transactional
+    @Transactional
 	public AOPMessageVM saveConfigurationDataOnlyModified(String year, UUID plantFKId, String version,
 			List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOList, String periodFrom, String periodTo) {
 
 		try {
-			System.out.println(":::::::::::::::::::::::::::::Saving parameter: " + plantFKId);
-			System.out.println(":::::::::::::::::::::::::::::Saving parameter: " + vgohtNormConfigurationDTOList);
-			System.out.println(":::::::::::::::::::::::::::::Saving parameter: " + vgohtNormConfigurationDTOList.size());
 			for (VgohtNormConfigurationDTO dto : vgohtNormConfigurationDTOList) {
-				System.out.println(":::::::::::::::::::::::::::Saving parameter");
 				if (dto.getNormParameterFKId() == null) {
-					System.out.println(":::::::::::::::::::::::::::Saving parameter: " );
 					throw new IllegalArgumentException("NormParameterFKId is missing");
 				}
 				saveMonthValue(dto.getNormParameterFKId(), year, "1", dto.getJan(), dto.getRemarks());
@@ -57,8 +52,6 @@ public class VgohtHelperService {
 			return response;
 
 		} catch (Exception e) {
-			System.out.println("print:::::::::::::" + e.getMessage());
-			e.printStackTrace();
 			throw new RuntimeException("Error saving configuration data", e);
 		}
 	}
