@@ -5,7 +5,7 @@ import DrawerHeader from './DrawerHeader'
 import DrawerContent from './DrawerContent'
 import MiniDrawerStyled from './MiniDrawerStyled'
 
-const MainDrawer = ({ open, handleDrawerToggle }) => {
+const MainDrawer = ({ open, handleDrawerToggle, isDashboard }) => {
   const drawerContent = useMemo(() => <DrawerContent />, [])
   const drawerHeader = useMemo(
     () => <DrawerHeader open={open} handleDrawerToggle={handleDrawerToggle} />,
@@ -13,7 +13,11 @@ const MainDrawer = ({ open, handleDrawerToggle }) => {
   )
 
   return (
-    <MiniDrawerStyled variant='permanent' open={open}>
+    <MiniDrawerStyled
+      variant='permanent'
+      open={open}
+      hide={isDashboard && !open}
+    >
       <Box
         role='presentation'
         sx={{
@@ -57,6 +61,7 @@ const MainDrawer = ({ open, handleDrawerToggle }) => {
 MainDrawer.propTypes = {
   open: PropTypes.bool.isRequired,
   handleDrawerToggle: PropTypes.func,
+  isDashboard: PropTypes.bool,
 }
 
 export default MainDrawer

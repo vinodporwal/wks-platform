@@ -28,8 +28,8 @@ const closedMixin = (theme) => ({
 })
 
 const MiniDrawerStyled = styled(Drawer, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme, open }) => ({
+  shouldForwardProp: (prop) => prop !== 'open' && prop !== 'hide',
+})(({ theme, open, hide }) => ({
   width: drawerWidth,
   flexShrink: 0,
   whiteSpace: 'nowrap',
@@ -41,6 +41,14 @@ const MiniDrawerStyled = styled(Drawer, {
   ...(!open && {
     ...closedMixin(theme),
     '& .MuiDrawer-paper': closedMixin(theme),
+  }),
+  ...(hide && {
+    width: 0,
+    '& .MuiDrawer-paper': {
+      ...closedMixin(theme),
+      width: 0,
+      borderRight: 'none',
+    },
   }),
 }))
 
