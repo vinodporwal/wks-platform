@@ -22,8 +22,8 @@ import NavItem from './NavItem'
 
 const NavCollapse = ({ menu, level }) => {
   const theme = useTheme()
-  const [open, setOpen] = useState(true)
-  const [selected, setSelected] = useState(menu.id)
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState(null)
 
   const { drawerOpen } = useSelector((state) => state.menu)
   const { plantID, verticalChange } = useSelector(
