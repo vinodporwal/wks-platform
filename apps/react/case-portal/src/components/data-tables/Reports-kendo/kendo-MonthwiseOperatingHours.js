@@ -9,6 +9,7 @@ import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { ReportDataService } from 'services/ReportDataService'
 import KendoDataTables from 'components/kendo-data-tables/index'
+import { validateFields } from 'utils/validationUtils'
 
 const MonthwiseOperatingHours = () => {
   const keycloak = useSession()
@@ -116,14 +117,16 @@ const MonthwiseOperatingHours = () => {
         AOP_YEAR,
       )
       if (res?.code === 200) {
-        setRows(
-          (res?.data.monthwiseOperatingHoursList || []).map((item, index) => ({
+        let formattedData
+        formattedData = (res?.data.monthwiseOperatingHoursList || []).map(
+          (item, index) => ({
             ...item,
-            id: item.id ?? index,
-            idFromApi: item.id || null,
-            _month: item?.month,
-          })),
+            id: item.id,
+            originalRemark: item.remarks,
+            _month: item.month,
+          }),
         )
+        setRows(formattedData)
       } else {
         setRows([])
       }
@@ -157,6 +160,18 @@ const MonthwiseOperatingHours = () => {
           severity: 'info',
         })
         setSnackbarOpen(true)
+        return
+      }
+      const requiredFields = ['remarks']
+
+      const validationMessage = validateFields(dataToSave, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
         return
       }
 
@@ -221,6 +236,10 @@ const MonthwiseOperatingHours = () => {
           showTitleNameBusiness: true,
           titleName: 'Monthwise Operating Hours (T-20)',
         }}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

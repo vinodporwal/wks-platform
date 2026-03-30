@@ -111,7 +111,7 @@ export default function ShutdownReport() {
     {
       field: 'Activities',
       title: 'Activities',
-      editable: false,
+      editable: true,
       widthT: 200,
     },
     {
@@ -316,7 +316,7 @@ export default function ShutdownReport() {
       const mappedRows = shutdownList.map((item, idx) => ({
         ...item,
         idFromApi: item?.id,
-        id: item.id || idx + 1,
+        id: idx,
         Activities: item.activities,
         April: item.april,
         May: item.may,
@@ -389,7 +389,13 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
-      const requiredFields = ['remarks']
+      const requiredFields = [
+        'remarks',
+        'Activities',
+        'taSD',
+        'taED',
+        'durationInHrs',
+      ]
 
       const validationMessage = validateFields(data, requiredFields)
 
@@ -452,15 +458,28 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
+      const requiredFields = ['Activities']
+
+      const validationMessage = validateFields(data, requiredFields)
+
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
 
       const payload = data.map((row) => ({
         id: row?.idFromApi || null,
 
-        activities: row.Activities,
-        prevYear1: row.PrevYear1,
-        prevYear2: row.PrevYear2,
-        prevYear3: row.PrevYear3,
-        prevYear4: row.PrevYear4,
+        activities: row.Activities || null,
+        prevYear1: row.PrevYear1 || null,
+        prevYear2: row.PrevYear2 || null,
+        prevYear3: row.PrevYear3 || null,
+        prevYear4: row.PrevYear4 || null,
       }))
 
       setLoading(true)
@@ -500,27 +519,27 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
-      const validationMessage = validateFields(data, ['remarks'])
+      const validationMessage = validateFields(data, ['remarks', 'Activities'])
       if (validationMessage) {
         showSnackbar(validationMessage, 'error')
         return
       }
 
       const payload = data.map((row) => ({
-        id: row?.idFromApi || row?.id || null,
-        activities: row.Activities,
-        april: row.April,
-        may: row.May,
-        june: row.June,
-        july: row.July,
-        august: row.August,
-        september: row.September,
-        october: row.October,
-        november: row.November,
-        december: row.December,
-        january: row.January,
-        february: row.February,
-        march: row.March,
+        id: row?.idFromApi || null,
+        activities: row.Activities || null,
+        april: row.April || null,
+        may: row.May || null,
+        june: row.June || null,
+        july: row.July || null,
+        august: row.August || null,
+        september: row.September || null,
+        october: row.October || null,
+        november: row.November || null,
+        december: row.December || null,
+        january: row.January || null,
+        february: row.February || null,
+        march: row.March || null,
         remarks: row.remarks || '',
         originalRemark: row.remarks || '',
       }))
@@ -621,6 +640,41 @@ export default function ShutdownReport() {
           severity: 'success',
         })
         fetchPlannedShutdown()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
+  const deleteRowDataRoutineShutdownMonthwise = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRowsRoutine((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deleteRoutineShutdownsMonthwiseData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRowsRoutine((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchRoutineShutdown()
       } else {
         setLoading(false)
       }
@@ -784,7 +838,7 @@ export default function ShutdownReport() {
           currentRemark={currentRemarkRoutine}
           setCurrentRemark={setCurrentRemarkRoutine}
           currentRowId={currentRowIdRoutine}
-          deleteRowData={deleteRowDataRoutineShutdown}
+          deleteRowData={deleteRowDataRoutineShutdownMonthwise}
           setCurrentRowId={setCurrentRowIdRoutine}
           handleRemarkCellClick={handleRemarkCellClickRoutine}
           saveChanges={saveRoutineChanges}

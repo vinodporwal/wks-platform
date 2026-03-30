@@ -75,13 +75,13 @@ const ShutdownSummaryReport = ({ permissions }) => {
     {
       field: 'year',
       title: 'Year',
-      editable: false,
+      editable: true,
       widthT: 100,
     },
     {
       field: 'totalAvailableHours',
       title: 'Total Available Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
@@ -219,8 +219,9 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
       const formattedData = res?.data?.shutdownSummaryLastFourYearList?.map(
         (item, index) => ({
-          id: item.id,
+          ...item,
           idFromApi: item?.id,
+          id: index,
           aopYears: item.lastFourYears,
           totalAvailableHours: item.totalAvailableHours,
           budgetedShutdownHours: item.budgetedShutdownHours,
@@ -273,32 +274,32 @@ const ShutdownSummaryReport = ({ permissions }) => {
         return
       }
 
-      const validationMessage = validateFields(data, ['remarks'])
+      const validationMessage = validateFields(data, ['remarks', 'year'])
       if (validationMessage) {
         showSnackbar(validationMessage, 'error')
         return
       }
 
       const payload = data.map((row) => ({
-        id: row?.idFromApi || row?.id || null,
-        lastFourYears: row.aopYears, // or row.lastFourYears if you use that key in your UI
-        totalAvailableHours: row.totalAvailableHours,
-        budgetedShutdownHours: row.budgetedShutdownHours,
-        actualNoOfTurnaroundHrs: row.actualNoOfTurnaroundHrs,
-        actualNoOfPlannedSD: row.actualNoOfPlannedSD,
-        actualNoOfRoutineSDHrs: row.actualNoOfRoutineSDHrs,
-        totalActualPlannedSDHrs: row.totalActualPlannedSDHrs,
-        process: row.process,
-        mech: row.mech,
-        inst: row.inst,
-        elect: row.elect,
-        utility: row.utility,
-        upStreamDownStream: row.upStreamDownStream,
-        extFeedStock: row.extFeedStock,
-        business: row.business,
-        others: row.others,
-        totalUnplannedSD: row.totalUnplannedSD,
-        unplannedSlowdownHours: row.unplannedSlowdownHours,
+        id: row?.idFromApi || null,
+        lastFourYears: row.year, // or row.lastFourYears if you use that key in your UI
+        totalAvailableHours: row.totalAvailableHours || null,
+        budgetedShutdownHours: row.budgetedShutdownHours || null,
+        actualNoOfTurnaroundHrs: row.actualNoOfTurnaroundHrs || null,
+        actualNoOfPlannedSD: row.actualNoOfPlannedSD || null,
+        actualNoOfRoutineSDHrs: row.actualNoOfRoutineSDHrs || null,
+        totalActualPlannedSDHrs: row.totalActualPlannedSDHrs || null,
+        process: row.process || null,
+        mech: row.mech || null,
+        inst: row.inst || null,
+        elect: row.elect || null,
+        utility: row.utility || null,
+        upStreamDownStream: row.upStreamDownStream || null,
+        extFeedStock: row.extFeedStock || null,
+        business: row.business || null,
+        others: row.others || null,
+        totalUnplannedSD: row.totalUnplannedSD || null,
+        unplannedSlowdownHours: row.unplannedSlowdownHours || null,
         remarks: row.remarks || '',
       }))
 
@@ -325,6 +326,30 @@ const ShutdownSummaryReport = ({ permissions }) => {
     }
   }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, showSnackbar])
 
+  const deleteRowData = async (paramsForDelete) => {
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deleteShutdownLastFourYears(idFromApi, keycloak)
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error deleting Record!', error)
+    }
+  }
+
   const getAdjustedPermissions = (permissions, isOldYear) => {
     if (isOldYear != 1) return permissions
     return {
@@ -343,7 +368,6 @@ const ShutdownSummaryReport = ({ permissions }) => {
   const adjustedPermissions = getAdjustedPermissions(
     {
       showAction: true,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
       saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
@@ -354,6 +378,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
       downloadExcelBtnFromUI: false,
       addButton: true,
       deleteButton: true,
+      saveWithRemark: true,
     },
     isOldYear,
   )
@@ -393,6 +418,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
         saveChanges={saveChanges}
+        deleteRowData={deleteRowData}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 import { Box } from '@mui/material/index'
 import Notification from 'components/Utilities/Notification'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { Backdrop, CircularProgress } from '@mui/material/index'
 
@@ -9,6 +9,7 @@ import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { ReportDataService } from 'services/ReportDataService'
+import { validateFields } from 'utils/validationUtils'
 
 const PlantShutdownSlowdown = () => {
   const keycloak = useSession()
@@ -28,6 +29,10 @@ const PlantShutdownSlowdown = () => {
     message: '',
     severity: 'info',
   })
+  const showSnackbar = useCallback((message, severity = 'info') => {
+    setSnackbarData({ message, severity })
+    setSnackbarOpen(true)
+  }, [])
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -38,18 +43,10 @@ const PlantShutdownSlowdown = () => {
 
   const columns = [
     {
-      field: 'sno',
-      title: 'Sl no',
-      widthT: 58,
-      editable: false,
-      align: 'right',
-      type: 'number',
-      format: '{0:0}',
-    },
-    {
       field: 'criticalActivity',
       title: 'Critical Routine Activity',
       widthT: 200,
+      type: 'text',
       editable: true,
     },
     {
@@ -140,6 +137,7 @@ const PlantShutdownSlowdown = () => {
       field: 'clubbedActivities',
       title: 'Activities that can be clubbed with the critical activity',
       widthT: 150,
+      type: 'text',
       editable: true,
     },
     {
@@ -147,6 +145,7 @@ const PlantShutdownSlowdown = () => {
       title:
         'Explanation for not proposing the best achieved frequency / duration',
       widthT: 150,
+      type: 'text',
       editable: true,
     },
     {
@@ -160,7 +159,7 @@ const PlantShutdownSlowdown = () => {
       field: 'lossRecoverable',
       title: 'Is the production Loss recoverable',
       widthT: 80,
-      type: 'numberNonGrey',
+      type: 'text',
       editable: true,
     },
     {
@@ -184,9 +183,8 @@ const PlantShutdownSlowdown = () => {
           res.data.plantShutdownSlowdownNormsDurationList || []
 
         const formattedData = responseData.map((item, index) => ({
-          id: item.id,
-          idFromApi: item.id || null,
-          sno: index + 1,
+          idFromApi: item.id,
+          id: index,
           criticalActivity: item.criticalRoutineActivity,
           bestAchievedSiteFreq: item.bestAchievedLastYearFrequency,
           bestAchievedSiteDur: item.bestAchievedLastYearDuration,
@@ -201,10 +199,9 @@ const PlantShutdownSlowdown = () => {
           throughputReduction: item.throughputReductionDuringPeriod,
           lossRecoverable: item.isProductionLossRecoverable,
           remarks: item.remarks,
+          originalRemarks: item.remarks,
         }))
-        setRows(formattedData || data)
-
-        setRows(data || [])
+        setRows(formattedData || responseData)
       } else {
         setRows([])
       }
@@ -237,22 +234,34 @@ const PlantShutdownSlowdown = () => {
         setLoading(false)
         return
       }
+      const requiredFields = ['criticalActivity', 'remarks']
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
 
       const rowsToUpdate = data.map((item) => ({
-        id: item.Id,
-        criticalRoutineActivity: item.criticalActivity,
-        bestAchievedLastYearFrequency: item.bestAchievedSiteFreq,
-        bestAchievedLastYearDuration: item.bestAchievedSiteDur,
-        bestAchievedGroupFrequency: item.bestAchievedGroupFreq,
-        bestAchievedGroupDuration: item.bestAchievedGroupDur,
-        actualFrequency: item.actualPrevYearFreq,
-        prevYearDuration: item.actualPrevYearDur,
-        budgetFrequency: item.budgetNextYearFreq,
-        currentYearDuration: item.budgetNextYearDur,
-        activitiesClubbed: item.clubbedActivities,
-        explanationNotProposing: item.explanationNotBest,
-        throughputReductionDuringPeriod: item.throughputReduction,
-        isProductionLossRecoverable: item.lossRecoverable,
+        id: item.idFromApi || null,
+        criticalRoutineActivity: item.criticalActivity || null,
+        bestAchievedLastYearFrequency: item.bestAchievedSiteFreq || null,
+        bestAchievedLastYearDuration: item.bestAchievedSiteDur || null,
+        bestAchievedGroupFrequency: item.bestAchievedGroupFreq || null,
+        bestAchievedGroupDuration: item.bestAchievedGroupDur || null,
+        actualFrequency: item.actualPrevYearFreq || null,
+        prevYearDuration: item.actualPrevYearDur || null,
+        budgetFrequency: item.budgetNextYearFreq || null,
+        currentYearDuration: item.budgetNextYearDur || null,
+        activitiesClubbed: item.clubbedActivities || null,
+        explanationNotProposing: item.explanationNotBest || null,
+        throughputReductionDuringPeriod: item.throughputReduction || null,
+        isProductionLossRecoverable: item.lossRecoverable || null,
         remarks: item.remarks,
         updatedBy: keycloak?.userName || 'system',
       }))
@@ -266,26 +275,18 @@ const PlantShutdownSlowdown = () => {
 
       // console.log(res)
 
-      if (res?.code == 200) {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Saved Successfully!',
-          severity: 'success',
-        })
+      if (res?.code === 200) {
+        showSnackbar('Data Saved Successfully!', 'success')
         setModifiedCells({})
+        fetchData()
       } else {
-        setSnackbarOpen(true)
-        setSnackbarData({
-          message: 'Data Saved Failed!',
-          severity: 'error',
-        })
+        showSnackbar('Data Save Failed!', 'error')
       }
     } catch (err) {
-      console.error('Error while save', err)
-      setSnackbarOpen(true)
-      setSnackbarData({ message: err.message, severity: 'error' })
+      console.error('Error saving data:', err)
+      showSnackbar(err.message || 'An error occurred', 'error')
     } finally {
-      setSnackbarOpen(true)
+      setLoading(false)
     }
   }
 
@@ -342,6 +343,9 @@ const PlantShutdownSlowdown = () => {
           deleteButton: true,
           showWorkFlowBtns: true,
           showTitle: true,
+          saveWithRemark: true,
+          showFinalSubmit: false,
+          editButton: true,
         }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}

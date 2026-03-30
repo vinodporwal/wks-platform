@@ -661,17 +661,16 @@ const WorkFlowMerge = () => {
   const customMegTabs = [
     'Annual AOP Cost', // Index 0
     'Plant Production Summary (T-14)', // Index 1
-    'Month Wise Production Plan (T-16)', // Index 2
-    'Month Wise Raw Data (T-18)', // Index 3
-    'Turnaround Report (T-19A)', // Index 4
-    'Shutdown Report (T-19B)', // Index 5 (Moved Up)
-    'Shutdown Break-up Last Four Year (T-19C)', // Index 6 (Moved Up)
-    'Norms for Shutdown & Slowdown (T-19D)', // Index 7 (Moved Up)
-    'Annual Production Plan (T-15)', // Index 8
-
-    'Plant Contribution (T-21)', // Index 9
+    'Annual Production Plan (T-15)', // Index 2 (Moved from 8)
+    'Month Wise Production Plan (T-16)', // Index 3 (Moved from 2)
+    'Specific Consumption Norms (T-17)', // Index 4 (Moved from 11)
+    'Month Wise Raw Data (T-18)', // Index 5 (Moved from 3)
+    'Turnaround Report (T-19A)', // Index 6 (Moved from 4)
+    'Shutdown Report (T-19B)', // Index 7 (Moved from 5)
+    'Shutdown Break-up Last Four Year (T-19C)', // Index 8 (Moved from 6)
+    'Norms for Shutdown & Slowdown (T-19D)', // Index 9 (Moved from 7)
     'MonthWise Operating Hours (T-20)', // Index 10
-    'Specific Consumption Norms (T-17)', // Index 11
+    'Plant Contribution (T-21)', // Index 11 (Moved from 9)
     'Plant Contribution Summary (T-22)', // Index 12
   ]
   const customPETTabs = [
@@ -1076,24 +1075,22 @@ const WorkFlowMerge = () => {
                 )}
               </>
             )}
-            {tabIndex === 1 && <PlantsProductionSummary />}
-            {tabIndex === 2 && <MonthwiseProduction />}
-            {tabIndex === 3 && <MonthwiseRawMaterial />}
-
+            {/* Sorted T-Series Components */}
+            {tabIndex === 1 && <PlantsProductionSummary />} {/* T-14 */}
+            {tabIndex === 2 && <AnnualProductionPlan />} {/* T-15 */}
+            {tabIndex === 3 && <MonthwiseProduction />} {/* T-16 */}
+            {tabIndex === 4 && <SpecificConsumptionnormForMeg />} {/* T-17 */}
+            {tabIndex === 5 && <MonthwiseRawMaterial />} {/* T-18 */}
             {/* T-19 Group */}
-            {tabIndex === 4 && <TurnaroundReport />}
-            {tabIndex === 5 && <ShutdownReport />}
-            {tabIndex === 6 && <ShutdownSummaryReport />}
-            {tabIndex === 7 && <PlantShutdownSlowdown />}
-
-            {/* Remaining MEG Reports */}
-            {tabIndex === 8 && <AnnualProductionPlan />}
-            {tabIndex === 9 && <PlantContribution />}
-
-            {tabIndex === 10 && <MonthwiseOperatingHours />}
-            {tabIndex === 11 && <SpecificConsumptionNormsII />}
-
+            {tabIndex === 6 && <TurnaroundReport />} {/* T-19A */}
+            {tabIndex === 7 && <ShutdownReport />} {/* T-19B */}
+            {tabIndex === 8 && <ShutdownSummaryReport />} {/* T-19C */}
+            {tabIndex === 9 && <PlantShutdownSlowdown />} {/* T-19D */}
+            {/* Remaining Reports */}
+            {tabIndex === 10 && <MonthwiseOperatingHours />} {/* T-20 */}
+            {tabIndex === 11 && <PlantContribution />} {/* T-21 */}
             {tabIndex === 12 && <PlantContributionLastFourYears />}
+            {/* T-22 */}
           </>
         )}
 
