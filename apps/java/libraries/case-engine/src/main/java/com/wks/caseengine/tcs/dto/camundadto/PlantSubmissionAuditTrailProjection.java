@@ -12,6 +12,7 @@ public interface PlantSubmissionAuditTrailProjection {
     String getSite_Id();
     String getVertical_Id();
     String getSubmittedBy();
+    String getUserName();
     Date getSubmissionDate();
     String getSubmissionRemark();
     Date getVerifiedDate();
@@ -20,4 +21,5 @@ public interface PlantSubmissionAuditTrailProjection {
    // String getTab();
     String getStatus();
     String getType();
+    String getPlantStatus();
 }

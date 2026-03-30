@@ -5,8 +5,10 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
+import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
 import { SteadyStateConsumptionApiService } from '../../services/vgoht/steadyStateConsumptionApiService'
 import { steadyStateConsumptionResponse } from '../dummyData'
+import useConfigurationDates from '../../common/hooks/useConfigurationDates'
 
 const SteadyStateConsumption = () => {
   const keycloak = useSession()
@@ -15,6 +17,13 @@ const SteadyStateConsumption = () => {
 
   const PLANT_ID = plantObject?.id
   const AOP_YEAR = year?.selectedYear
+
+  const {
+    startDate,
+    endDate,
+    loading: datesLoading,
+    error: datesError,
+  } = useConfigurationDates()
 
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -28,6 +37,17 @@ const SteadyStateConsumption = () => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+
+  // Show error notification if configuration is not set up
+  useEffect(() => {
+    if (datesError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: datesError,
+        severity: 'warning',
+      })
+    }
+  }, [datesError])
 
   const valueFormat = ValueFormatterPhaseTwo()
   const headerMap = generateHeaderNames(AOP_YEAR)
@@ -53,7 +73,7 @@ const SteadyStateConsumption = () => {
       locked: true,
     },
     {
-      field: 'normParameterTypeDisplayName',
+      field: 'TypeDisplayName',
       title: 'Type',
       widthT: 250,
       minWidth: 200,
@@ -70,7 +90,7 @@ const SteadyStateConsumption = () => {
       editable: false,
     },
     {
-      field: 'april',
+      field: 'apr',
       title: headerMap[4],
       widthT: 100,
       minWidth: 80,
@@ -88,7 +108,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'june',
+      field: 'jun',
       title: headerMap[6],
       widthT: 100,
       minWidth: 80,
@@ -97,7 +117,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'july',
+      field: 'jul',
       title: headerMap[7],
       widthT: 100,
       minWidth: 80,
@@ -106,7 +126,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'august',
+      field: 'aug',
       title: headerMap[8],
       widthT: 100,
       minWidth: 80,
@@ -115,7 +135,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'september',
+      field: 'sep',
       title: headerMap[9],
       widthT: 100,
       minWidth: 80,
@@ -124,7 +144,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'october',
+      field: 'oct',
       title: headerMap[10],
       widthT: 100,
       minWidth: 80,
@@ -133,7 +153,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'november',
+      field: 'nov',
       title: headerMap[11],
       widthT: 100,
       minWidth: 80,
@@ -142,7 +162,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'december',
+      field: 'dec',
       title: headerMap[12],
       widthT: 100,
       minWidth: 80,
@@ -151,7 +171,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'january',
+      field: 'jan',
       title: headerMap[1],
       widthT: 100,
       minWidth: 80,
@@ -160,7 +180,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'february',
+      field: 'feb',
       title: headerMap[2],
       widthT: 100,
       minWidth: 80,
@@ -169,7 +189,7 @@ const SteadyStateConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'march',
+      field: 'mar',
       title: headerMap[3],
       widthT: 100,
       minWidth: 80,
@@ -196,16 +216,15 @@ const SteadyStateConsumption = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      // const response =
-      //   await SteadyStateConsumptionApiService.getSteadyStateConsumption(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
+      const response1 =
+        await SteadyStateConsumptionApiService.getSteadyStateConsumption(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
 
-      const response = steadyStateConsumptionResponse
-      setRows(response.data.mcuNormsValueDTOList)
-      setOriginalRows(response.data.mcuNormsValueDTOList)
+      setRows(response1.data || [])
+      setOriginalRows(response1.data || [])
     } catch (error) {
       console.error('Error fetching steady state consumption data:', error)
       setSnackbarOpen(true)
@@ -232,21 +251,79 @@ const SteadyStateConsumption = () => {
       return
     }
 
+    const data = modifiedData.filter((row) => row.inEdit)
+    if (data.length === 0) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'No Records to Save!',
+        severity: 'info',
+      })
+      setLoading(false)
+      return
+    }
+
+    const fieldsToCheck = [
+      'apr',
+      'may',
+      'jun',
+      'jul',
+      'aug',
+      'sep',
+      'oct',
+      'nov',
+      'dec',
+      'jan',
+      'feb',
+      'mar',
+    ]
+    const validationError = validateRowDataWithRemarks(
+      data,
+      originalRows,
+      fieldsToCheck,
+      'productName',
+    )
+
+    if (validationError) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: validationError,
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
+    // Validate that configuration dates are available
+    if (!startDate || !endDate) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message:
+          'Configuration dates not available. Please set up AOP Design Basis.',
+        severity: 'error',
+      })
+      setLoading(false)
+      return
+    }
+
     try {
       await SteadyStateConsumptionApiService.saveSteadyStateConsumption(
         keycloak,
         PLANT_ID,
         AOP_YEAR,
-        modifiedData,
+        startDate,
+        endDate,
+        data,
       )
 
+      // If we reach here, save was successful
       setSnackbarOpen(true)
       setSnackbarData({
         message: 'Data saved successfully!',
         severity: 'success',
       })
       setModifiedCells({})
-      setOriginalRows(rows)
+      setOriginalRows([])
+      await fetchData()
     } catch (error) {
       console.error('Error saving steady state consumption data:', error)
       setSnackbarOpen(true)
@@ -361,7 +438,7 @@ const SteadyStateConsumption = () => {
   }
 
   const handleRemarkCellClick = (row) => {
-    setCurrentRemark(row.remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
@@ -416,7 +493,7 @@ const SteadyStateConsumption = () => {
         snackbarOpen={snackbarOpen}
         setSnackbarOpen={setSnackbarOpen}
         setSnackbarData={setSnackbarData}
-        groupBy={['normParameterTypeDisplayName']}
+        groupBy={['TypeDisplayName']}
         customHeight={70}
         paginationConfig={{
           threshold: 100,
