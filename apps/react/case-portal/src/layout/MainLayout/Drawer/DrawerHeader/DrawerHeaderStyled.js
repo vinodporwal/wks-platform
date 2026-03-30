@@ -1,17 +1,13 @@
 import { styled } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 
-const DrawerHeaderStyled = styled(Box, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme, open }) => ({
-  ...theme.mixins.toolbar,
+const DrawerHeaderStyled = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  minHeight: '0px',
-  paddingTop: '0px',
-  paddingBottom: '0px',
-  justifyContent: open ? 'flex-start' : 'center',
-  paddingLeft: theme.spacing(open ? 3 : 0),
+  padding: '12px 14px',
+  background: '#ffffff', // ?? DARK LIKE MENU
+  borderBottom: '1px solid rgba(255,255,255,0.08)',
+  flexShrink: 0,
 }))
 
 export default DrawerHeaderStyled

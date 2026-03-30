@@ -21,8 +21,18 @@ import {
 import { Button } from '@mui/material'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
-import NormsHistorianBasisPe from './NormsHistorianBasisPe'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import AnnualAOPCostDynamic from './AnnualAOPCostDynamic'
+import NormsHistorianBasisPe from './NormsHistorianBasisPe'
+
 const CustomAccordion = styled((props) => (
   <MuiAccordion disableGutters elevation={0} square {...props} />
 ))(() => ({
@@ -246,12 +256,7 @@ const AnnualAopCost = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <div style={{ display: 'none' }}>
         {[rowsProduction, rowsPrice, rowsNorm, rowsQuantity, rowsNormCost].map(
@@ -287,8 +292,10 @@ const AnnualAopCost = () => {
           <Button
             variant='contained'
             onClick={exportAllGrids}
-            className='btn-save'
+            className='btn-export'
+            //ANY ONE CAN EXPORT
             // disabled={READ_ONLY}
+            startIcon={<DownloadIcon fontSize='small' />}
           >
             Export
           </Button>

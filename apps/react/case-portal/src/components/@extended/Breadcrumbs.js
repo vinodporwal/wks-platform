@@ -44,6 +44,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
   const VERTICAL_NAME = verticalObject?.name
   const SITE_NAME = siteObject?.name
 
+  const location = useLocation()
+  const [main, setMain] = useState()
+  const [item, setItem] = useState()
+
   const [notification, setNotification] = useState({
     open: false,
     message: '',
@@ -178,6 +182,17 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     }
   }
 
+  const infoIconSx = {
+    fontSize: 14,
+    color: '#023985ff', // slate-500 (subtle)
+  }
+
+  const infoButtonSx = {
+    p: '1px',
+    width: 0,
+    height: 0,
+  }
+
   async function handleOpenPdfTempSSRS(title) {
     try {
       let baseurl = ''
@@ -198,10 +213,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       return Promise.reject(e)
     }
   }
-
-  const location = useLocation()
-  const [main, setMain] = useState()
-  const [item, setItem] = useState()
 
   useEffect(() => {
     let title = item?.title
@@ -245,24 +256,9 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
     location.pathname = '/dashboard/analytics'
   }
 
-  let mainContent
   let itemContent
   let breadcrumbContent = <Typography />
   let itemTitle = ''
-
-  // collapse item
-  // if (main && main.type === 'collapse') {
-  //   mainContent = (
-  //     // <Typography component={Link} to={document.location.pathname} variant="h6" sx={{ textDecoration: 'none' }} color="textSecondary">
-  //     <Typography
-  //       variant='h6'
-  //       sx={{ textDecoration: 'none' }}
-  //       color='textSecondary'
-  //     >
-  //       {main.title}
-  //     </Typography>
-  //   )
-  // }
 
   // items
   if (item && item.type === 'item') {
@@ -281,9 +277,6 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
 
     const normalizedTitle = itemTitle?.toLowerCase().replace(/\s/g, '')
 
-    // console.log('normalizedTitle', normalizedTitle)
-
-    // if (['productionaop', 'consumptionaop'].includes(normalizedTitle)) {
     if (
       normalizedTitle === 'production&normsbasis' &&
       (VERTICAL_NAME?.toLowerCase() === 'meg' ||
@@ -306,16 +299,10 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             <IconButton
               size='small'
               disableRipple
-              sx={{
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                },
-                padding: '6px',
-              }}
+              sx={infoButtonSx}
               onClick={() => handleOpenPdfTemp(item?.id)}
             >
-              <InfoIcon fontSize='small' sx={{ color: '#0100cb' }} />
+              <InfoIcon sx={infoIconSx} />
             </IconButton>
           </Tooltip>
         </Typography>
@@ -335,18 +322,11 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
           {/* {title1} */}
           <Tooltip title={`Report`}>
             <IconButton
-              size='medium'
-              sx={{
-                ml: 1,
-                backgroundColor: 'transparent',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
-                },
-                padding: '6px',
-              }}
+              size='small'
+              sx={infoButtonSx}
               onClick={() => handleOpenPdfTempSSRS(item?.id)}
             >
-              <InfoIcon fontSize='medium' sx={{ color: '#0100cb' }} />
+              <InfoIcon sx={infoIconSx} /> {/* ?? was fontSize="medium" */}
             </IconButton>
           </Tooltip>
         </Typography>
@@ -365,102 +345,81 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
       location?.pathname !== '/dashboard'
     ) {
       breadcrumbContent = (
-        <MainCard
+        <Box
           border={false}
           sx={{ bgcolor: 'transparent' }}
           {...others}
           content={false}
         >
           {location?.pathname.startsWith('/production-norms-plan') && (
-            <Box>
-              <StepperNav />
-            </Box>
+            <Box>{/* <StepperNav /> */}</Box>
           )}
           <Grid
             container
             direction='column'
             justifyContent='flex-start'
             alignItems='flex-start'
-            spacing={1}
-            // sx={{ marginTop: '-18px' }}
           >
-            {/* <Grid item sx={{ ml: 1.5, display: none }}> */}
-            {/* <MuiBreadcrumbs aria-label='breadcrumb'> */}
-            {/* HIDE HOME OPTION FROM Navigators MENU */}
-            {/* <Typography
-                  component={Link}
-                  to='/home'
-                  color='textSecondary'
-                  variant='h6'
-                  sx={{ textDecoration: 'none' }}
-                >
-                  Home
-                </Typography> */}
-
-            {/* {mainContent} */}
-
-            {/* <Typography
-                  component='div'
-                  sx={{
-                    textDecoration: 'none',
-                    fontWeight: 800,
-                    color: 'black',
-                    // fontStyle: 'italic',
-                    fontSize: '1rem',
-                  }}
-                >
-                  {verticalName} / {siteName} / {plantName}
-                </Typography>
-                {itemContent}
-              </MuiBreadcrumbs>
-            </Grid> */}
-
             <Grid
               container
-              sx={{ mt: 1, ml: 1 }}
+              sx={{
+                m: 0.5,
+                width: '100%',
+                transition: 'none',
+                '&:hover': {
+                  boxShadow: 'none',
+                  transform: 'none',
+                },
+              }}
               justifyContent='space-between'
               alignItems='center'
             >
               <Grid item>
                 {loading ? (
-                  <Skeleton
-                    variant='text'
-                    width={100}
-                    height={30}
-                    animation='wave'
-                    sx={{ mt: 0.5 }}
-                  />
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <Skeleton variant='circular' width={16} height={16} />
+                    <Skeleton
+                      variant='text'
+                      width={180}
+                      height={20}
+                      animation='wave'
+                    />
+                  </Stack>
                 ) : (
-                  <Typography
-                    component='div'
-                    sx={{
-                      textDecoration: 'none',
-                      fontWeight: 800,
-                      color: 'black',
-                      fontSize: '0.7rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {VERTICAL_NAME} / {SITE_NAME} / {PLANT_NAME}{' '}
-                    {/* {getRoleName(verticalId, item?.id)} */}
-                    {/* {keycloak?.realmAccess?.roles[0]} */}
-                    {itemContent}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* Hierarchy Path */}
+                    <Typography
+                      component='div'
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        color: '#64748b', // Slate 500 for secondary text
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        fontFamily:
+                          "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+                      }}
+                    >
+                      {VERTICAL_NAME}
+                      <Box component='span' sx={{ mx: 0.7 }}>
+                        |
+                      </Box>
+                      {SITE_NAME}
+                      <Box component='span' sx={{ mx: 0.7 }}>
+                        |
+                      </Box>
+                      <Box component='span' sx={{ mx: 0.7 }}>
+                        {PLANT_NAME}
+                      </Box>
+                    </Typography>
+
+                    {/* Status/Item Pill */}
+                    {itemContent && <Box>{itemContent}</Box>}
+                  </Box>
                 )}
               </Grid>
-
-              {/* <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
-                <Grid item>
-                  <Chip
-                    color='primary'
-                    variant='outlined'
-                    // label={getRoleName(verticalId, item?.id)}
-                    className='role-name'
-                    sx={{ border: 'none' }} // Remove the border
-                  />
-                </Grid>
-              </Stack> */}
             </Grid>
 
             {/* HIDE THE TITLE NAME */}
@@ -477,7 +436,7 @@ const Breadcrumbs = ({ navigation, title, ...others }) => {
             severity={notification.severity}
             onClose={() => setNotification({ ...notification, open: false })}
           />
-        </MainCard>
+        </Box>
       )
     }
   }

@@ -68,6 +68,11 @@ export default function ShutdownReport() {
   const [currentRemarkPrevYears, setCurrentRemarkPrevYears] = useState('')
   const [currentRowIdPrevYears, setCurrentRowIdPrevYears] = useState(null)
 
+  const [modifiedCellsRoutine, setModifiedCellsRoutine] = useState({})
+  const [remarkDialogOpenRoutine, setRemarkDialogOpenRoutine] = useState(false)
+  const [currentRemarkRoutine, setCurrentRemarkRoutine] = useState('')
+  const [currentRowIdRoutine, setCurrentRowIdRoutine] = useState(null)
+
   // ── Column definition — RoutineShutdownPreviousYears ──
   const prevYearTitles = getPrevYearTitles(AOP_YEAR)
 
@@ -106,92 +111,98 @@ export default function ShutdownReport() {
     {
       field: 'Activities',
       title: 'Activities',
-      editable: false,
+      editable: true,
       widthT: 200,
     },
     {
       field: 'April',
       title: headerMap[4] || 'Apr',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'May',
       title: headerMap[5] || 'May',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'June',
       title: headerMap[6] || 'Jun',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'July',
       title: headerMap[7] || 'Jul',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'August',
       title: headerMap[8] || 'Aug',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'September',
       title: headerMap[9] || 'Sep',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'October',
       title: headerMap[10] || 'Oct',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'November',
       title: headerMap[11] || 'Nov',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'December',
       title: headerMap[12] || 'Dec',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'January',
       title: headerMap[1] || 'Jan',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'February',
       title: headerMap[2] || 'Feb',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
     },
     {
       field: 'March',
       title: headerMap[3] || 'Mar',
-      editable: false,
+      editable: true,
       width: 120,
       type: 'number',
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      editable: true,
+      widthT: 200,
     },
   ]
   const columnsPrevYears = [
@@ -242,6 +253,12 @@ export default function ShutdownReport() {
     setCurrentRemarkPrevYears(row.remark || '')
     setCurrentRowIdPrevYears(row.id)
     setRemarkDialogOpenPrevYears(true)
+  }
+  const handleRemarkCellClickRoutine = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemarkRoutine(row.remarks || '')
+    setCurrentRowIdRoutine(row.id)
+    setRemarkDialogOpenRoutine(true)
   }
   const fetchPlannedShutdown = useCallback(async () => {
     if (!PLANT_ID || !AOP_YEAR) {
@@ -297,7 +314,9 @@ export default function ShutdownReport() {
       )
       const shutdownList = res?.data?.shutdownDetailsList || []
       const mappedRows = shutdownList.map((item, idx) => ({
-        id: item.id || idx + 1,
+        ...item,
+        idFromApi: item?.id,
+        id: idx,
         Activities: item.activities,
         April: item.april,
         May: item.may,
@@ -311,7 +330,8 @@ export default function ShutdownReport() {
         January: item.january,
         February: item.february,
         March: item.march,
-        isEditable: false,
+        remarks: item.remarks || '',
+        originalRemark: item.remarks || '',
         inEdit: false,
 
         // add other fields if needed
@@ -369,9 +389,23 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
-      const validationMessage = validateFields(data, ['remarks'])
+      const requiredFields = [
+        'remarks',
+        'Activities',
+        'taSD',
+        'taED',
+        'durationInHrs',
+      ]
+
+      const validationMessage = validateFields(data, requiredFields)
+
       if (validationMessage) {
-        showSnackbar(validationMessage, 'error')
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
         return
       }
 
@@ -424,15 +458,28 @@ export default function ShutdownReport() {
         showSnackbar('No Records to Save!', 'info')
         return
       }
+      const requiredFields = ['Activities']
+
+      const validationMessage = validateFields(data, requiredFields)
+
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
 
       const payload = data.map((row) => ({
         id: row?.idFromApi || null,
 
-        activities: row.Activities,
-        prevYear1: row.PrevYear1,
-        prevYear2: row.PrevYear2,
-        prevYear3: row.PrevYear3,
-        prevYear4: row.PrevYear4,
+        activities: row.Activities || null,
+        prevYear1: row.PrevYear1 || null,
+        prevYear2: row.PrevYear2 || null,
+        prevYear3: row.PrevYear3 || null,
+        prevYear4: row.PrevYear4 || null,
       }))
 
       setLoading(true)
@@ -463,6 +510,68 @@ export default function ShutdownReport() {
     PLANT_ID,
     AOP_YEAR,
     fetchRoutineShutdownPreviousYears,
+    showSnackbar,
+  ])
+  const saveRoutineChanges = useCallback(async () => {
+    try {
+      const data = Object.values(modifiedCellsRoutine)
+      if (data.length === 0) {
+        showSnackbar('No Records to Save!', 'info')
+        return
+      }
+      const validationMessage = validateFields(data, ['remarks', 'Activities'])
+      if (validationMessage) {
+        showSnackbar(validationMessage, 'error')
+        return
+      }
+
+      const payload = data.map((row) => ({
+        id: row?.idFromApi || null,
+        activities: row.Activities || null,
+        april: row.April || null,
+        may: row.May || null,
+        june: row.June || null,
+        july: row.July || null,
+        august: row.August || null,
+        september: row.September || null,
+        october: row.October || null,
+        november: row.November || null,
+        december: row.December || null,
+        january: row.January || null,
+        february: row.February || null,
+        march: row.March || null,
+        remarks: row.remarks || '',
+        originalRemark: row.remarks || '',
+      }))
+
+      setLoading(true)
+      const res = await ReportDataService.saveShutdownRoutineData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        'RoutineShutdown',
+        payload,
+      )
+
+      if (res?.code === 200) {
+        showSnackbar('Data Saved Successfully!', 'success')
+        setModifiedCellsRoutine({})
+        fetchRoutineShutdown()
+      } else {
+        showSnackbar('Data Save Failed!', 'error')
+      }
+    } catch (err) {
+      console.error('Error saving RoutineShutdown:', err)
+      showSnackbar(err.message || 'An error occurred', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [
+    modifiedCellsRoutine,
+    keycloak,
+    PLANT_ID,
+    AOP_YEAR,
+    fetchRoutineShutdown,
     showSnackbar,
   ])
 
@@ -538,6 +647,41 @@ export default function ShutdownReport() {
       console.error('Error deleting Record', error)
     }
   }
+  const deleteRowDataRoutineShutdownMonthwise = async (paramsForDelete) => {
+    setLoading(true)
+
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRowsRoutine((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deleteRoutineShutdownsMonthwiseData(
+          idFromApi,
+          keycloak,
+          PLANT_ID,
+        )
+        setRowsRoutine((prevRows) =>
+          prevRows.filter((row) => row.id !== deleteId),
+        )
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchRoutineShutdown()
+      } else {
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error('Error deleting Record', error)
+    }
+  }
 
   const getAdjustedPermissionsPrevYears = (permissions, isOldYear) => {
     if (isOldYear !== 1) return permissions
@@ -589,7 +733,7 @@ export default function ShutdownReport() {
   const permissionsRoutineShutdown = getAdjustedPermissionsRoutine(
     {
       allAction: true,
-      saveBtn: false,
+      saveBtn: true,
       showTitle: true,
       showTitleNameBusiness: true,
       titleName: 'Details of Routine Shutdowns (Monthwise)',
@@ -598,8 +742,8 @@ export default function ShutdownReport() {
       downloadExcelBtnFromUI: false,
       uploadExcelBtn: false,
       ExcelName: `${PLANT_NAME}_Routine_Shutdown`,
-      addButton: false,
-      deleteButton: false,
+      addButton: true,
+      deleteButton: true,
       showCalculate: false,
       showFinalSubmit: false,
     },
@@ -686,6 +830,19 @@ export default function ShutdownReport() {
           rows={rowsRoutine}
           setRows={setRowsRoutine}
           title='Details of Routine Shutdowns (Monthwise)'
+          //----------
+          modifiedCells={modifiedCellsRoutine}
+          setModifiedCells={setModifiedCellsRoutine}
+          remarkDialogOpen={remarkDialogOpenRoutine}
+          setRemarkDialogOpen={setRemarkDialogOpenRoutine}
+          currentRemark={currentRemarkRoutine}
+          setCurrentRemark={setCurrentRemarkRoutine}
+          currentRowId={currentRowIdRoutine}
+          deleteRowData={deleteRowDataRoutineShutdownMonthwise}
+          setCurrentRowId={setCurrentRowIdRoutine}
+          handleRemarkCellClick={handleRemarkCellClickRoutine}
+          saveChanges={saveRoutineChanges}
+          //----------
           permissions={permissionsRoutineShutdown}
         />
 

@@ -1,52 +1,68 @@
 import PropTypes from 'prop-types'
-import { useTheme } from '@mui/material/styles'
-import Stack from '@mui/material/Stack'
+import { Box, Typography, IconButton } from '@mui/material'
 import DrawerHeaderStyled from './DrawerHeaderStyled'
+import logo from 'assets/images/ril-logo2.png'
+import MenuOpenIcon from '@mui/icons-material/MenuOpen'
+import MenuIcon from '@mui/icons-material/Menu'
 
-const DrawerHeader = ({ open = false }) => {
-  //  default here
-  const theme = useTheme()
-
+const DrawerHeader = ({ open, handleDrawerToggle }) => {
   return (
-    <DrawerHeaderStyled theme={theme} open={open}>
-      <Stack direction='row' spacing={1} alignItems='center'>
-        {/* <Logo /> */}
-      </Stack>
+    <DrawerHeaderStyled open={open}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          justifyContent: open ? 'space-between' : 'center',
+          flexDirection: open ? 'row' : 'column',
+          gap: open ? 0 : 1.5,
+        }}
+      >
+        {/* LEFT LOGO + TEXT */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            component='img'
+            src={logo}
+            alt='Logo'
+            sx={{ width: 28, height: 28 }}
+          />
+
+          {open && (
+            <Box>
+              <Typography
+                sx={{ fontWeight: 700, fontSize: 17, color: '#04140f' }}
+              >
+                Reliance
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: '#6a7b92' }}>
+                Monitoring Dashboard
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* RIGHT COLLAPSE BUTTON */}
+        {open && (
+          <IconButton
+            onClick={handleDrawerToggle}
+            size='small'
+            sx={{
+              color: '#6a7b92',
+              ml: open ? 0 : 0,
+              '&:hover': { color: '#6a7b92' },
+            }}
+          >
+            {open ? <MenuOpenIcon /> : <MenuIcon />}
+          </IconButton>
+        )}
+      </Box>
     </DrawerHeaderStyled>
   )
 }
 
 DrawerHeader.propTypes = {
   open: PropTypes.bool,
+  handleDrawerToggle: PropTypes.func,
 }
 
-// Removed DrawerHeader.defaultProps block
-
 export default DrawerHeader
-
-// import PropTypes from 'prop-types'
-// import { useTheme } from '@mui/material/styles'
-// import Stack from '@mui/material/Stack'
-// import DrawerHeaderStyled from './DrawerHeaderStyled'
-// // import Logo from 'components/Logo'
-
-// const DrawerHeader = ({ open }) => {
-//   const theme = useTheme()
-
-//   return (
-//     <DrawerHeaderStyled theme={theme} open={open}>
-//       <Stack direction='row' spacing={1} alignItems='center'>
-//         {/* <Logo /> */}
-//       </Stack>
-//     </DrawerHeaderStyled>
-//   )
-// }
-
-// DrawerHeader.propTypes = {
-//   open: PropTypes.bool,
-// }
-
-// DrawerHeader.defaultProps = {
-//   open: false,
-// }
-// export default DrawerHeader

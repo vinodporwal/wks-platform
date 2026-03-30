@@ -1,3 +1,4 @@
+// HeaderContent.jsx
 import {
   Box,
   FormControl,
@@ -6,7 +7,9 @@ import {
   Stack,
   Typography,
   useMediaQuery,
+  SvgIcon,
 } from '@mui/material'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
@@ -26,16 +29,18 @@ import {
 } from 'store/reducers/dataGridStore'
 import MobileSection from './MobileSection'
 import Profile from './Profile/index'
+import { HIDE_VERTICAL_PATHS, HIDE_SITE_PATHS, HIDE_PLANT_PATHS } from './utils'
 
-// import Logo from '../../../assets/images/ril-logo2.png'
 import Logo from 'assets/images/ril-logo2.png'
 import DropdownSkeleton from 'utils/DropdownSkeleton'
-import { useNavigate } from '../../../../../node_modules/react-router-dom/dist/index'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { openDrawer } from 'store/reducers/menu'
+import CalendarToday from '@mui/icons-material/CalendarToday'
+import Business from '@mui/icons-material/Business'
+import Domain from '@mui/icons-material/Domain'
+import Factory from '@mui/icons-material/Factory'
+import CorporateFare from '@mui/icons-material/CorporateFare'
 
-// import { Skeleton } from '../../../../../node_modules/@progress/kendo-react-indicators/index'
-
-// Utility to parse the Keycloak ?allowed? JSON
 function parseAllowed(raw) {
   const map = {}
   raw.forEach((vObj) => {
@@ -56,6 +61,8 @@ export default function HeaderContent({ keycloak }) {
     : null
   const dispatch = useDispatch()
   const matchesXs = useMediaQuery((theme) => theme.breakpoints.down('md'))
+
+  const location = useLocation()
 
   const [aopYears, setAopYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
@@ -82,7 +89,6 @@ export default function HeaderContent({ keycloak }) {
 
   const HIDE_VERTICAL_DROPDOWN =
     keycloak?.realmAccess?.roles?.includes('maintenance_users')
-  // const roles = keycloak?.realmAccess?.roles || []
 
   const HIDE_DASHBOARD_DROPDOWN = [
     '/dashboard',
@@ -90,10 +96,19 @@ export default function HeaderContent({ keycloak }) {
     '/user-form',
   ].includes(location.pathname)
 
+  // Individual dropdown visibility � extends HIDE_DASHBOARD_DROPDOWN with utils.js config
+  const hideVertical =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_VERTICAL_PATHS.some((s) => location.pathname.includes(s))
+  const hideSite =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_SITE_PATHS.some((s) => location.pathname.includes(s))
+  const hidePlant =
+    HIDE_DASHBOARD_DROPDOWN ||
+    HIDE_PLANT_PATHS.some((s) => location.pathname.includes(s))
+
   if (['/dashboard'].includes(location.pathname))
     dispatch(openDrawer({ drawerOpen: false }))
-
-  // const HIDE_DASHBOARD_DROPDOWN = false
 
   useEffect(() => {
     let parsed = []
@@ -166,8 +181,6 @@ export default function HeaderContent({ keycloak }) {
 
     setVerticals(avail)
 
-    // --- Startt snippet ---
-    /* first available vertical so dropdown won't be empty */
     if (
       selectedVertical &&
       avail.length &&
@@ -192,7 +205,6 @@ export default function HeaderContent({ keycloak }) {
 
       dispatch(setVerticalObject({ id: defV.id, name: defV.name }))
     }
-    // --- end snippet ---
 
     if (!selectedVertical && avail.length) {
       const defV = avail[0]
@@ -289,7 +301,6 @@ export default function HeaderContent({ keycloak }) {
 
   useEffect(() => {
     async function fetchYears() {
-      // setHeaderLoading(true)
       try {
         var resp = await DataService.getAopyears(keycloak)
         if (resp?.length) {
@@ -435,52 +446,17 @@ export default function HeaderContent({ keycloak }) {
       )
     }
   }
-  // THIS IS A WORKING PART
-  // useEffect(() => {
-  //   if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) return
 
-  //   if (
-  //     verticalFromDashboard?.vid === selectedVertical &&
-  //     verticalFromDashboard?.sid === selectedSite
-  //   )
-  //     return
-
-  //   setSelectedVertical(verticalFromDashboard?.vid)
-
-  //   setTimeout(() => {
-  //     const site = sites.find((s) => s?.id === verticalFromDashboard?.sid)
-
-  //     if (!site) {
-  //       console.log('site nahi mili ', site)
-  //     }
-  //     if (!site) return
-
-  //     setSelectedSite(site?.id)
-
-  //     dispatch(
-  //       setSiteObject({
-  //         id: site?.id,
-  //         name: site?.displayName ?? site?.name ?? '',
-  //       }),
-  //     )
-  //   }, 1000)
-  // }, [
-  //   verticalFromDashboard?.vid,
-  //   verticalFromDashboard?.sid,
-  //   selectedVertical,
-  // ])
-
-  // Option 1: Split into two separate effects
-  // Effect 1: Update vertical when dashboard passes data
   useEffect(() => {
-    if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) return
+    console.log(1)
 
-    if (verticalFromDashboard?.vid === selectedVertical) return
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) return
 
-    setSelectedVertical(verticalFromDashboard?.vid)
-  }, [verticalFromDashboard?.vid])
+    if (verticalFromDashboard?.v_id === selectedVertical) return
 
-  // Effect 2: Update site AFTER vertical is set and sites are populated
+    setSelectedVertical(verticalFromDashboard?.v_id)
+  }, [verticalFromDashboard?.v_id])
+
   useEffect(() => {
     if (!verticalFromDashboard?.sid || !sites.length) return
 
@@ -503,19 +479,10 @@ export default function HeaderContent({ keycloak }) {
 
   const navigate = useNavigate()
 
-  // useEffect(() => {
-  //   if (!selectedVertical) return
-
-  //   // Route only when vertical came from dashboard
-  //   if (selectedVertical === verticalFromDashboard?.vid) {
-  //     navigate('/production-norms-plan/configuration', { replace: true })
-  //   }
-  // }, [selectedVertical])
-
-  // const { drawerOpen: open } = useSelector((state) => state.menu)
-
   useEffect(() => {
-    if (!verticalFromDashboard?.vid || !verticalFromDashboard?.sid) {
+    console.log(2)
+
+    if (!verticalFromDashboard?.v_id || !verticalFromDashboard?.sid) {
       return
     }
     setTimeout(() => {
@@ -524,60 +491,194 @@ export default function HeaderContent({ keycloak }) {
     navigate('/production-norms-plan/configuration', { replace: true })
   }, [verticalFromDashboard?.trigger])
 
+  // -------------------------
+  // Visual styles (pills & menus)
+  // -------------------------
+  // menuPropsStyle (replace your existing)
+  const menuPropsStyle = {
+    PaperProps: {
+      style: {
+        maxHeight: 240,
+        borderRadius: 8, // menu panel radius
+        marginTop: 6,
+        background: '#f2f2f2',
+
+        boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
+        border: '1px solid rgba(15,23,42,0.06)',
+        color: '#0f172a',
+        padding: '4px',
+      },
+      sx: {
+        // also add sx for runtime override (some MUI versions prefer sx)
+        borderRadius: 8,
+      },
+    },
+    disableScrollLock: true,
+  }
+  const menuItemStyle = {
+    transition: 'all 0.12s ease',
+    borderRadius: 6, //  smaller
+    mx: 0.5,
+    my: 0.25,
+    color: '#0f172a',
+    fontWeight: 600,
+    fontSize: '0.85rem',
+    '&:hover': {
+      background: 'rgba(59,130,246,0.06)',
+    },
+    '&.Mui-selected': {
+      background: 'rgba(59,130,246,0.12)',
+      fontWeight: 700,
+    },
+  }
+
+  const dropdownContainerStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    background: '#e7eaee',
+  }
+
+  const selectStyle = {
+    height: 34,
+    minWidth: 150,
+
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '6px !important', // ?? THIS is the real border
+      background: '#eef3f8',
+      height: 34,
+    },
+
+    '& .MuiOutlinedInput-notchedOutline': {
+      border: '1px solid rgba(15,23,42,0.06)',
+      borderRadius: '6px !important', // ?? must repeat here
+    },
+
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'rgba(15,23,42,0.1)',
+    },
+
+    '& .MuiSelect-select': {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '6px 10px !important',
+      fontSize: '0.85rem',
+      fontWeight: 600,
+    },
+
+    '& .MuiSvgIcon-root': {
+      fontSize: 18,
+      color: '#6b7786',
+    },
+  }
+
   return (
     <>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr auto',
           alignItems: 'center',
           width: '100%',
-          // py: 0, // 4px top/bottom
+          position: 'relative',
+          pr: 2,
+          py: 0.75,
+          background: '#fff',
+          borderBottom: '1px solid rgba(15,23,42,0.04)',
         }}
       >
-        {/* LEFT SIDE: Logo + Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ ml: 0 }}>
-            <img src={Logo} alt='RIL Logo' style={{ height: 32 }} />
-          </Box>
-
+        {/* LEFT SIDE: Title */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            minWidth: 0,
+            overflow: 'hidden',
+          }}
+        >
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Box sx={{ ml: 1 }}>
-              <Typography
-                variant='body2'
-                color='white'
-                className='custom-title-font'
-              >
-                {screenTitleName}
-              </Typography>
-            </Box>
+            <Typography
+              variant='h6'
+              sx={{
+                fontWeight: 700,
+                fontSize: '1.05rem',
+                color: '#0f172a',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {screenTitleName}
+            </Typography>
           )}
         </Box>
 
-        {/* RIGHT SIDE: Dropdowns */}
-        <Stack direction='row' spacing={1} alignItems='center'>
+        {/* CENTER: Dropdown Pills */}
+        <Stack
+          direction='row'
+          spacing={2}
+          alignItems='center'
+          sx={{
+            justifySelf: 'end',
+            width: '100%',
+            justifyContent: 'flex-end',
+            mr: 1,
+          }}
+        >
           {/* Year */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body2' className='custom-title-dropdown'>
-              Year:
-            </Typography>
+          <Box sx={dropdownContainerStyle}>
             {headerLoading ? (
               <DropdownSkeleton />
             ) : (
-              <FormControl sx={{ width: 80 }}>
+              <FormControl size='small' variant='outlined'>
+                {' '}
                 <Select
+                  IconComponent={ArrowDropDownIcon}
                   value={selectedYear}
                   onChange={handleYearChange}
-                  className='custom-title-dropdown-content'
-                  MenuProps={
-                    ({
-                      PaperProps: { style: { maxHeight: 200 } },
-                    },
-                    { disableScrollLock: true })
-                  }
+                  sx={selectStyle}
+                  MenuProps={menuPropsStyle}
+                  renderValue={(value) => {
+                    const yearObj = aopYears.find((y) => y.AOPYear === value)
+                    return (
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <CalendarToday
+                          sx={{ fontSize: 16, color: '#97751d !important' }}
+                        />
+
+                        <Box
+                          component='span'
+                          sx={{
+                            color: '#6b7c93',
+                            fontWeight: 600,
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          Year:
+                        </Box>
+                        <Box
+                          component='strong'
+                          sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                        >
+                          {yearObj?.AOPDisplayYear}
+                        </Box>
+                      </Box>
+                    )
+                  }}
                 >
                   {aopYears.map((y) => (
-                    <MenuItem key={y.AOPYear} value={y.AOPYear}>
+                    <MenuItem
+                      key={y.AOPYear}
+                      value={y.AOPYear}
+                      sx={menuItemStyle}
+                    >
                       {y.AOPDisplayYear}
                     </MenuItem>
                   ))}
@@ -588,26 +689,53 @@ export default function HeaderContent({ keycloak }) {
 
           {/* Vertical */}
           {!(HIDE_VERTICAL_DROPDOWN || HIDE_DASHBOARD_DROPDOWN) && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant='body2' className='custom-title-dropdown'>
-                Vertical:
-              </Typography>
-
+            <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl sx={{ width: 100 }}>
+                <FormControl size='small' variant='outlined'>
+                  {' '}
                   <Select
+                    IconComponent={ArrowDropDownIcon}
                     value={selectedVertical}
                     onChange={handleVertChange}
-                    className='custom-title-dropdown-content'
-                    MenuProps={{
-                      PaperProps: { style: { maxHeight: 200 } },
-                      disableScrollLock: true,
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const vert = verticals.find((v) => v.id === value)
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Business
+                            sx={{ fontSize: 16, color: '#d539d3 !important' }}
+                          />
+                          <Box
+                            component='span'
+                            sx={{
+                              color: '#6b7c93',
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            Vertical:
+                          </Box>
+                          <Box
+                            component='strong'
+                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                          >
+                            {vert?.name}
+                          </Box>
+                        </Box>
+                      )
                     }}
                   >
                     {verticals.map((v) => (
-                      <MenuItem key={v.id} value={v.id}>
+                      <MenuItem key={v.id} value={v.id} sx={menuItemStyle}>
                         {v.name}
                       </MenuItem>
                     ))}
@@ -619,28 +747,54 @@ export default function HeaderContent({ keycloak }) {
 
           {/* Site */}
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant='body2' className='custom-title-dropdown'>
-                Site:
-              </Typography>
+            <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl sx={{ width: 80 }}>
+                <FormControl size='small' variant='outlined'>
+                  {' '}
                   <Select
+                    IconComponent={ArrowDropDownIcon}
                     value={selectedSite}
                     onChange={handleSiteChange}
                     disabled={!sites.length}
-                    className='custom-title-dropdown-content'
-                    MenuProps={
-                      ({
-                        PaperProps: { style: { maxHeight: 200 } },
-                      },
-                      { disableScrollLock: true })
-                    }
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const site = sites.find((s) => s.id === value)
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <CorporateFare
+                            sx={{ fontSize: 16, color: '#005bdb !important' }}
+                          />
+                          <Box
+                            component='span'
+                            sx={{
+                              color: '#6b7c93',
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            Site:
+                          </Box>
+                          <Box
+                            component='strong'
+                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                          >
+                            {site?.name}
+                          </Box>
+                        </Box>
+                      )
+                    }}
                   >
                     {sites.map((s) => (
-                      <MenuItem key={s.id} value={s.id}>
+                      <MenuItem key={s.id} value={s.id} sx={menuItemStyle}>
                         {s.name}
                       </MenuItem>
                     ))}
@@ -652,28 +806,53 @@ export default function HeaderContent({ keycloak }) {
 
           {/* Plant */}
           {!HIDE_DASHBOARD_DROPDOWN && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant='body2' className='custom-title-dropdown'>
-                Plant:
-              </Typography>
+            <Box sx={dropdownContainerStyle}>
               {headerLoading ? (
                 <DropdownSkeleton />
               ) : (
-                <FormControl sx={{ width: 110 }}>
+                <FormControl size='small'>
                   <Select
+                    IconComponent={ArrowDropDownIcon}
                     value={selectedPlant}
                     onChange={handlePlantChange}
                     disabled={!plants.length}
-                    className='custom-title-dropdown-content'
-                    MenuProps={
-                      ({
-                        PaperProps: { style: { maxHeight: 200 } },
-                      },
-                      { disableScrollLock: true })
-                    }
+                    sx={selectStyle}
+                    MenuProps={menuPropsStyle}
+                    renderValue={(value) => {
+                      const plant = plants.find((p) => p.id === value)
+                      return (
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                          }}
+                        >
+                          <Factory
+                            sx={{ fontSize: 16, color: '#638f11 !important' }}
+                          />
+                          <Box
+                            component='span'
+                            sx={{
+                              color: '#6b7c93',
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                            }}
+                          >
+                            Plant:
+                          </Box>
+                          <Box
+                            component='strong'
+                            sx={{ fontWeight: 800, color: '#0f172a', ml: 0.5 }}
+                          >
+                            {plant?.name}
+                          </Box>
+                        </Box>
+                      )
+                    }}
                   >
                     {plants.map((p) => (
-                      <MenuItem key={p.id} value={p.id}>
+                      <MenuItem key={p.id} value={p.id} sx={menuItemStyle}>
                         {p.name}
                       </MenuItem>
                     ))}
@@ -683,9 +862,12 @@ export default function HeaderContent({ keycloak }) {
             </Box>
           )}
         </Stack>
-      </Box>
 
-      {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        {/* RIGHT: Profile */}
+        <Box sx={{ justifySelf: 'end' }}>
+          {!matchesXs ? <Profile keycloak={keycloak} /> : <MobileSection />}
+        </Box>
+      </Box>
     </>
   )
 }

@@ -3,12 +3,13 @@ import Backdrop from '@mui/material/Backdrop'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useGridApiRef } from '@mui/x-data-grid'
 import { generateHeaderNames } from 'components/Utilities/generateHeaders'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import { getRoleName } from 'services/role-service'
 import { ReportDataService } from 'services/ReportDataService'
 import KendoDataTables from 'components/kendo-data-tables/index'
+import { validateFields } from 'utils/validationUtils'
 
 const ShutdownSummaryReport = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -61,6 +62,10 @@ const ShutdownSummaryReport = ({ permissions }) => {
     severity: 'info',
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const showSnackbar = useCallback((message, severity = 'info') => {
+    setSnackbarData({ message, severity })
+    setSnackbarOpen(true)
+  }, [])
   const [loading, setLoading] = useState(false)
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -70,127 +75,133 @@ const ShutdownSummaryReport = ({ permissions }) => {
     {
       field: 'year',
       title: 'Year',
-      editable: false,
+      editable: true,
       widthT: 100,
     },
     {
       field: 'totalAvailableHours',
       title: 'Total Available Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'budgetedShutdownHours',
       title: 'Budgeted Shutdown Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'actualNoOfTurnaroundHrs',
       title: 'Actual No. of Turnaround Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'actualNoOfPlannedSD',
       title: 'Actual No of Planned Shutdowns other than TA',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'actualNoOfRoutineSDHrs',
       title: 'Actual No of Routine SD Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'totalActualPlannedSDHrs',
       title: 'Total (Actual) Planned Shutdown Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'process',
       title: 'Process',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'mech',
       title: 'Mech',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'inst',
       title: 'Inst',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'elect',
       title: 'Elect',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'utility',
       title: 'Utility',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'upStreamDownStream',
       title: 'Up Stream / Down Stream',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'extFeedStock',
       title: 'Ext Feed Stock',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'business',
       title: 'Business',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'others',
       title: 'Others',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'totalUnplannedSD',
       title: 'TOTAL Un-planned SD',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
     },
     {
       field: 'unplannedSlowdownHours',
       title: 'Unplanned Slowdown Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       widthT: 100,
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      editable: true,
+      widthT: 200,
     },
   ]
 
@@ -208,6 +219,8 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
       const formattedData = res?.data?.shutdownSummaryLastFourYearList?.map(
         (item, index) => ({
+          ...item,
+          idFromApi: item?.id,
           id: index,
           aopYears: item.lastFourYears,
           totalAvailableHours: item.totalAvailableHours,
@@ -227,8 +240,9 @@ const ShutdownSummaryReport = ({ permissions }) => {
           others: item.others,
           totalUnplannedSD: item.totalUnplannedSD,
           unplannedSlowdownHours: item.unplannedSlowdownHours,
-          year: item.year,
-          isEditable: false,
+          year: item.lastFourYears,
+          remarks: item.remarks,
+          originalRemarks: item.remarks,
         }),
       )
 
@@ -248,9 +262,92 @@ const ShutdownSummaryReport = ({ permissions }) => {
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return
     if (READ_ONLY) return
-    setCurrentRemark(dataItem.remark || '')
+    setCurrentRemark(dataItem.remarks || '')
     setCurrentRowId(dataItem.id)
     setRemarkDialogOpen(true)
+  }
+  const saveChanges = useCallback(async () => {
+    try {
+      const data = Object.values(modifiedCells)
+      if (data.length === 0) {
+        showSnackbar('No Records to Save!', 'info')
+        return
+      }
+
+      const validationMessage = validateFields(data, ['remarks', 'year'])
+      if (validationMessage) {
+        showSnackbar(validationMessage, 'error')
+        return
+      }
+
+      const payload = data.map((row) => ({
+        id: row?.idFromApi || null,
+        lastFourYears: row.year, // or row.lastFourYears if you use that key in your UI
+        totalAvailableHours: row.totalAvailableHours || null,
+        budgetedShutdownHours: row.budgetedShutdownHours || null,
+        actualNoOfTurnaroundHrs: row.actualNoOfTurnaroundHrs || null,
+        actualNoOfPlannedSD: row.actualNoOfPlannedSD || null,
+        actualNoOfRoutineSDHrs: row.actualNoOfRoutineSDHrs || null,
+        totalActualPlannedSDHrs: row.totalActualPlannedSDHrs || null,
+        process: row.process || null,
+        mech: row.mech || null,
+        inst: row.inst || null,
+        elect: row.elect || null,
+        utility: row.utility || null,
+        upStreamDownStream: row.upStreamDownStream || null,
+        extFeedStock: row.extFeedStock || null,
+        business: row.business || null,
+        others: row.others || null,
+        totalUnplannedSD: row.totalUnplannedSD || null,
+        unplannedSlowdownHours: row.unplannedSlowdownHours || null,
+        remarks: row.remarks || '',
+      }))
+
+      setLoading(true)
+      const res = await ReportDataService.saveShutdownSummaryLastFourYearData(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        payload,
+      )
+
+      if (res?.code === 200) {
+        showSnackbar('Data Saved Successfully!', 'success')
+        setModifiedCells({})
+        fetchData()
+      } else {
+        showSnackbar('Data Save Failed!', 'error')
+      }
+    } catch (err) {
+      console.error('Error saving data:', err)
+      showSnackbar(err.message || 'An error occurred', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [modifiedCells, keycloak, PLANT_ID, AOP_YEAR, fetchData, showSnackbar])
+
+  const deleteRowData = async (paramsForDelete) => {
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deleteShutdownLastFourYears(idFromApi, keycloak)
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error deleting Record!', error)
+    }
   }
 
   const getAdjustedPermissions = (permissions, isOldYear) => {
@@ -270,9 +367,8 @@ const ShutdownSummaryReport = ({ permissions }) => {
 
   const adjustedPermissions = getAdjustedPermissions(
     {
-      showAction: permissions?.showAction ?? false,
-      saveWithRemark: permissions?.saveWithRemark ?? true,
-      saveBtn: false,
+      showAction: true,
+      saveBtn: true,
       allAction: true,
       showTitleNameBusiness: true,
       titleName: 'Shutdown Breakup For Last 4 Years (19-C)',
@@ -280,6 +376,9 @@ const ShutdownSummaryReport = ({ permissions }) => {
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       downloadExcelBtnFromUI: false,
+      addButton: true,
+      deleteButton: true,
+      saveWithRemark: true,
     },
     isOldYear,
   )
@@ -318,6 +417,8 @@ const ShutdownSummaryReport = ({ permissions }) => {
         setCurrentRowId={setCurrentRowId}
         handleRemarkCellClick={handleRemarkCellClick}
         permissions={adjustedPermissions}
+        saveChanges={saveChanges}
+        deleteRowData={deleteRowData}
       />
     </div>
   )

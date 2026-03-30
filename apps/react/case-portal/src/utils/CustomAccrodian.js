@@ -33,5 +33,5 @@ export const CustomAccordionSummary = styled((props) => (
 // Custom Accordion Details
 export const CustomAccordionDetails = styled(MuiAccordionDetails)(() => ({
   padding: '0px 0px 12px',
-  backgroundColor: '#F2F3F8',
+  backgroundColor: '#ffffff',
 }))

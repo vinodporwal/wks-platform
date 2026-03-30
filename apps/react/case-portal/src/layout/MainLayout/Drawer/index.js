@@ -1,63 +1,62 @@
 import PropTypes from 'prop-types'
 import { useMemo } from 'react'
-import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
-import Drawer from '@mui/material/Drawer'
 import DrawerHeader from './DrawerHeader'
 import DrawerContent from './DrawerContent'
-import { drawerWidth } from 'config'
+import MiniDrawerStyled from './MiniDrawerStyled'
 
-const MainDrawer = ({ open }) => {
-  const theme = useTheme()
-
+const MainDrawer = ({ open, handleDrawerToggle }) => {
   const drawerContent = useMemo(() => <DrawerContent />, [])
-  const drawerHeader = useMemo(() => <DrawerHeader open={open} />, [open])
+  const drawerHeader = useMemo(
+    () => <DrawerHeader open={open} handleDrawerToggle={handleDrawerToggle} />,
+    [open, handleDrawerToggle],
+  )
 
   return (
-    <Drawer
-      variant='persistent'
-      open={open}
-      sx={{
-        width: open ? drawerWidth : 0,
-        flexShrink: 0,
-        whiteSpace: 'nowrap',
-        transition: theme.transitions.create('width', {
-          easing: theme.transitions.easing.easeOut, // Using easeOut for smoother deceleration
-          duration: theme.transitions.duration.standard,
-        }),
-        '& .MuiDrawer-paper': {
-          width: open ? drawerWidth : 0,
-          transition: theme.transitions.create('width', {
-            easing: theme.transitions.easing.easeOut, // Consistent easing for the paper
-            duration: theme.transitions.duration.standard,
-          }),
-          boxSizing: 'border-box',
-          borderRight: `1px solid ${theme.palette.divider}`,
-          backgroundImage: 'none',
-          boxShadow: theme.shadows[6],
-          overflowX: 'hidden',
-        },
-      }}
-    >
-      {open && (
+    <MiniDrawerStyled variant='permanent' open={open}>
+      <Box
+        role='presentation'
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* HEADER FIXED */}
+        {drawerHeader}
+
+        {/* MENU SCROLL AREA */}
         <Box
           sx={{
-            height: '100vh',
+            flex: 1, // TAKE REMAINING HEIGHT
             overflowY: 'auto',
             overflowX: 'hidden',
+
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(100,116,139,0.35)',
+              borderRadius: '10px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: 'rgba(100,116,139,0.55)',
+            },
           }}
-          role='presentation'
         >
-          {drawerHeader}
           {drawerContent}
         </Box>
-      )}
-    </Drawer>
+      </Box>
+    </MiniDrawerStyled>
   )
 }
 
 MainDrawer.propTypes = {
   open: PropTypes.bool.isRequired,
+  handleDrawerToggle: PropTypes.func,
 }
 
 export default MainDrawer

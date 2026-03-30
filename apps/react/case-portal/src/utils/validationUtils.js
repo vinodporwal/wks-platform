@@ -34,6 +34,9 @@ export const validateFields = (data, requiredFields) => {
     reason: 'Reason',
     year: 'Year',
     typeOfSD: 'Type of SD (Days)',
+    taSD: 'SD - From',
+    taED: 'SD - To',
+    criticalActivity: 'Critical Routine Activity',
   }
 
   const invalidRows = data.filter((row) => {

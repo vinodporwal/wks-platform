@@ -1,313 +1,371 @@
-/* .kendo-data-grid {
-  border-radius: 0;
-  border: 1px solid #d0d0d0;
-  background-color: #ffffff;
-  font-size: 0.8rem;
-} */
-/* .k-grid-pager {
-  display: none;
-} */
-/* Header Styling */
+/* =========================================================
+   KENDO DATA GRID – CLEAN BOXED CELL UI (FINAL)
+   ========================================================= */
+
+/* ===============================
+   BASE FONT & TRANSITIONS
+   =============================== */
+
+.kendo-data-grid,
+.kendo-data-grid * {
+  font-family:
+    'Inter',
+    'Open Sans',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+/* ===============================
+   HEADER: Left aligned + less left padding
+   =============================== */
+
+/* Force all header cells left aligned */
+.kendo-data-grid .k-grid-header th,
+.kendo-data-grid .k-grid-header .k-header,
+.kendo-data-grid .k-grid-header .k-link {
+  text-align: left !important;
+  justify-content: flex-start !important; /* for flex header content */
+}
+
+/* Reduce header padding */
+.kendo-data-grid .k-grid-header th,
+.kendo-data-grid .k-grid-header .k-header {
+  padding-left: 6px !important; /* ? reduce left padding */
+  padding-right: 6px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+/* Reduce padding inside the header title itself */
+.kendo-data-grid .k-grid-header .k-column-title {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+.kendo-data-grid .k-grid-header th {
+  border-right: 1px solid #d1d5db;
+}
+
+/* ===============================
+   GRID HEADER
+   =============================== */
+
 .kendo-data-grid .k-grid-header {
-  background-color: #fafafc;
-  border-bottom: 2px solid #dae0ef;
-  font-family: 'Roboto', sans-serif;
-}
-/* kendo-data-grid.css */
-.kendo-data-grid .k-grid-table tr {
-  height: 10px;
+  background: linear-gradient(180deg, #f8fafc, #eef2f7);
+  border-bottom: 2px solid #c7d2fe;
 }
 
-/* .kendo-data-grid .k-grid-header .k-header {
-  font-weight: bold;
-  font-size: 0.8rem;
-  color: #000000;
-  text-align: left;
-  padding: 0 6px;
-  min-height: 45px;
-  line-height: 45px;
-} */
-/* .kendo-data-grid .k-grid-header .k-header:last-child {
-  border-right: none;
-} */
-
-/* Column Group Header (if using grouping) */
 .kendo-data-grid .k-grid-header .k-column-headers {
-  justify-content: center;
-  border: 1px solid #ccc;
-  display: flex;
-  align-items: center;
-  background-color: #f0f2f5;
-}
-.kendo-data-grid .k-grid-header .k-column-headers.filled {
-  background-color: #e6e6e6;
+  background: linear-gradient(180deg, #f1f5f9, #e2e8f0);
+  border: 1px solid #cbd5e1;
 }
 
-/* Toolbar */
-/* .kendo-data-grid .k-grid-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding-right: 16px;
-  display: none;
-} */
+.k-column-title {
+  font-size: 12px;
+  /* letter-spacing: -0.3px; */
+  line-height: 1.3;
+}
 
-/* Footer */
-/* .kendo-data-grid .k-grid-footer {
-  display: none;
-} */
+/* ===============================
+   TABLE LAYOUT (IMPORTANT)
+   =============================== */
 
-/* Rows and Cells */
+.kendo-data-grid .k-grid-content .k-grid-table {
+  border-collapse: collapse; /* ONE line only */
+}
+
+/* ===============================
+   ROWS
+   =============================== */
+
 .kendo-data-grid .k-grid-content .k-grid-table tr {
-  border-bottom: 2px solid #bbbbbb;
-}
-.kendo-data-grid .k-grid-content .k-grid-table tr.even-row {
+  height: 32px;
   background-color: #ffffff;
 }
-/* .kendo-data-grid .k-grid-content .k-grid-table tr.k-alt, */
-/* .kendo-data-grid .k-grid-content .k-grid-table tr.odd-row {
-  background-color: #ebebeb;
-  color: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  border-bottom: 1px solid #bbbbbb;
-} */
-.kendo-data-grid .k-grid-content .k-grid-table tr.no-border-row {
-  background-color: #e9e9e9;
+
+/* Remove Kendo zebra rows */
+.kendo-data-grid .k-grid-content tr.k-alt {
+  background-color: #ffffff !important;
 }
-.kendo-data-grid .k-grid-content .k-grid-table tr.no-border-row:hover {
-  background-color: #e9e9e9 !important;
-}
+
+/* ===============================
+   CELLS – BOXED LOOK
+   =============================== */
 
 .kendo-data-grid .k-grid-content .k-grid-table td {
   position: relative;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #000000;
-  cursor: pointer;
-  padding: 3px 4px;
-  border-bottom: 1px solid #d6d6d6;
+
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb; /* thin light-grey line */
+  padding: 3px 6px;
+
   font-size: 0.8rem;
-}
-/* .kendo-data-grid .k-grid-content .k-grid-table td:last-child:after,
-.kendo-data-grid .k-grid-content .k-grid-table th:last-child:after {
-  border-right: none;
-} */
-
-.kendo-data-grid .k-grid-content .k-grid-table td:after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 60%;
-  border-right: 1px solid #878787;
+  color: #000;
+  cursor: pointer;
 }
 
-/* Disabled cells */
-.kendo-data-grid .disabled-cell {
-  background-color: rgba(233, 233, 233, 0.3);
-  border: 1px solid #878787;
-  border-radius: 0;
-}
+/* ===============================
+   FULL ROW HOVER (RESTORED)
+   =============================== */
 
-/* Selection Overrides */
+/* ===============================
+   SELECTION
+   =============================== */
+
 .kendo-data-grid .k-state-selected {
   background-color: transparent !important;
-  color: inherit !important;
-}
-.kendo-data-grid .k-grid-content .k-grid-table tr.k-alt.k-state-selected {
-  background-color: #ebebeb !important;
-}
-.kendo-data-grid .k-grid-content .k-grid-table tr.k-state-selected:not(.k-alt) {
-  background-color: #ffffff !important;
 }
 
-/* Only apply background color to body rows, not header
-.kendo-data-grid .k-grid-content .k-grid-table tbody tr {
-  background-color: #fff !important;
-} */
-.kendo-data-grid .k-grid .k-grid-content .k-grid-table tbody tr.k-disabled {
-  background-color: #ebebeb !important;
+.kendo-data-grid .k-grid-content tr.k-state-selected td {
+  background-color: #e0e7ff !important;
+  border-color: #939393;
 }
 
-.k-grid .k-table-row {
-  background-color: #fafafc !important;
+/* ===============================
+   GROUP HEADER ROWS
+   =============================== */
+
+.kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row {
+  font-weight: 600;
+  color: #0f172a;
+  height: 30px;
 }
 
-/* 1. Input box styling */
-.k-custom-dtp .k-picker-wrap {
-  /* Mimic MUI?s readOnly input: disable typing, just open calendar on click */
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 6px 8px;
-}
-/* Increase the font-size inside the input */
-.k-custom-dtp .k-input {
-  font-size: 1rem;
-  /* If you want it truly read-only (no caret), you could also do pointer-events: none; but usually you just suppress typing via onKeyDown in props. */
+.kendo-data-grid .k-grid-content .k-grid-table tr.k-grouping-row td {
+  background: transparent !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  font-size: 0.65rem !important;
 }
 
-/* 2. Popup (calendar) container */
-.k-custom-dtp-popup .k-calendar {
-  /* Scale the calendar dropdown to 70% */
-  transform: scale(0.7);
-  transform-origin: top left;
+/* Remove left bar for group rows */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr.k-grouping-row
+  td:first-child::before {
+  display: none !important;
 }
 
-/* 3. Adjust typography inside the popup to match your MUI sizes */
-.k-custom-dtp-popup .k-calendar th, /* Weekday labels */
-.k-custom-dtp-popup .k-calendar .k-header, /* Month header */
-.k-custom-dtp-popup .k-calendar .k-content td, /* Day cells */
-.k-custom-dtp-popup .k-time-list .k-item /* Time dropdown items */ {
-  font-size: 1rem;
+/* ===============================
+   LEFT INDICATOR BAR (UNCHANGED)
+   =============================== */
+
+.kendo-data-grid .k-grid-content .k-grid-table td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(11, 18, 32, 0.12);
 }
 
-/* 4. If you need to style the ?Now? / ?Today? / ?Time? buttons at the bottom */
-.k-custom-dtp-popup .k-footer .k-button {
-  font-size: 1rem;
-}
-.k-grid .k-grid-content td.k-number-right {
-  text-align: right !important;
-}
-.k-grid .k-grid-content td.k-number-right-disabled {
-  text-align: right !important;
-  background-color: #e7e7e7;
-}
+/* ===============================
+   DISABLED / NON-EDITABLE
+   =============================== */
 
-.k-grid .k-grid-content td.k-right-disabled {
-  background-color: #e7e7e7;
+.disabled-cell,
+.non-editable-cell,
+.k-right-disabled,
+.k-number-right-disabled {
+  background-color: #e3e3e3 !important;
+  border-right: 1px solid rgb(169, 169, 169) !important;
+  border-bottom: 1px solid rgb(169, 169, 169) !important;
 }
 
-.non-editable-cell {
-  background-color: #e7e7e7;
-}
+/* ===============================
+   ERROR ROWS
+   =============================== */
 
-.k-grid td span {
-  pointer-events: auto; /* ensure mouse events reach the span */
-}
-
-.custom-disabled-row {
-  background-color: #e7e7e7 !important;
-}
-.date-picker {
-  margin-right: 10;
-  width: 200px;
-}
-
-/* .k-column-title {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  word-break: break-word;
-  font-size: 12px;
-  margin-left: -8px;
-  margin-right: 4px;
-}
-
-a.k-grid-header-menu.k-grid-column-menu {
-  margin-right: -10px;
-}
-
-.k-grid-header .k-header {
-  border-right: 1px solid #ccc;
-} */
-
-/* .k-grid-header .k-header {
-  overflow: visible !important;
-  white-space: normal !important;
-  color: rgba(0, 225, 41, 0.645);
-  word-break: break-word;
-} */
-
-/* .k-column-title {
-  overflow: visible !important;
-  letter-spacing: -0.2px !important;
-  font-size: 11px;
-  margin-left: -8px;
-  margin-right: 4px;
-} */
-
-.k-column-title {
-  overflow: visible !important;
-  font-size: 11px;
-  letter-spacing: -0.3px;
-  margin-left: -8px;
-  margin-right: 4px;
-  line-height: 1.3;
-}
-/* Add these styles to your ../../kendo-data-grid.css file */
-
-/* Error row highlighting */
-.error-row {
-  background-color: #ffebee !important;
-  border-left: 4px solid #f44336 !important;
-  position: relative;
-}
-
-.error-row:hover {
-  background-color: #ffcdd2 !important;
-}
-
-/* Make sure error highlighting works with existing disabled rows */
-.error-row.custom-disabled-row {
-  background-color: #ffebee !important;
-  opacity: 0.8;
-}
-
-/* Optional: Add animation for better user attention */
-.error-row-animated {
-  background-color: #ffebee !important;
-  border-left: 4px solid #f44336 !important;
-  animation: highlight-error 0.8s ease-in-out;
-}
-
-@keyframes highlight-error {
-  0% {
-    background-color: #ffffff;
-    transform: scale(1);
-  }
-  50% {
-    background-color: #ffcdd2;
-    transform: scale(1.01);
-  }
-  100% {
-    background-color: #ffebee;
-    transform: scale(1);
-  }
-}
-
-/* Ensure error styling takes precedence over Kendo default styles */
-.k-grid tbody .error-row td {
-  background-color: inherit !important;
-  border-color: inherit !important;
-}
-
-/* Style for error row cells to maintain consistency */
 .error-row td {
-  background-color: #ffebee !important;
+  background-color: #fee2e2 !important;
+  border-color: #fca5a5 !important;
 }
 
 .error-row:hover td {
-  background-color: #ffcdd2 !important;
+  background-color: #fecaca !important;
 }
 
-.k-grid-sm .k-table-td {
-  font-size: 12px !important; /* smaller text when size="small" */
+/* ===============================
+   NUMERIC ALIGNMENT
+   =============================== */
+
+.k-grid .k-grid-content td.k-number-right {
+  text-align: left !important;
 }
+
+/* ===============================
+   FONT SIZES
+   =============================== */
+
+.k-grid-sm .k-table-td,
 .k-grid-md .k-table-td {
-  font-size: 12px !important; /* default */
+  font-size: 12px !important;
 }
+
+/* ===============================
+   EDIT CELL
+   =============================== */
 
 .k-grid-edit-cell .k-input {
-  font-size: 8px !important; /* control font */
-  padding: 4px 6px; /* control spacing */
-  border-radius: 4px; /* round corners */
-  border: 1px solid #ccc; /* custom border */
+  font-size: 12px !important;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
+
+/* ===============================
+   CUSTOM
+   =============================== */
+
 .custom-bold-row td {
   font-weight: bold !important;
+}
+
+/* ===============================
+   FIX: remove extra border causing horizontal scroll
+   =============================== */
+
+/* remove RIGHT border from last column */
+.kendo-data-grid .k-grid-content .k-grid-table td:last-child {
+  border-right: none;
+}
+
+/* remove LEFT border from first column (optional but cleaner) */
+.kendo-data-grid .k-grid-content .k-grid-table td:first-child {
+  border-left: none;
+}
+
+/* remove BOTTOM border from last row */
+.kendo-data-grid .k-grid-content .k-grid-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* remove TOP border from first row */
+.kendo-data-grid .k-grid-content .k-grid-table tr:first-child td {
+  border-top: none;
+}
+
+/* Disabled row – grey background + black borders */
+.custom-disabled-row td {
+  background-color: #e3e3e3 !important;
+  border-color: rgb(169, 169, 169) !important; /* black grid lines */
+}
+
+.custom-disabled-row:hover td {
+  background-color: #e3e3e3 !important;
+}
+
+/* ? Remove indent/group spacer columns completely */
+.k-grid td.k-group-cell,
+.k-grid th.k-group-cell {
+  width: 0px !important;
+  min-width: 0px !important;
+  padding: 0px !important;
+  border: none !important;
+}
+
+/* ? Remove the indent space that pushes content right */
+.k-grid .k-grouping-row td {
+  padding-left: 0px !important;
+}
+
+/* ? Real first column after group indent */
+.k-grid td[role='gridcell']:not(.k-group-cell):first-of-type {
+  padding-left: 6px !important; /* keep small padding */
+}
+
+/* =========================================================
+   FIX: REMOVE LEFT GROUP INDENT SPACE (KENDO GROUPING)
+   ========================================================= */
+
+/* Kendo adds invisible indent columns using <col> */
+.kendo-data-grid .k-grid col.k-group-col,
+.kendo-data-grid .k-grid col.k-hierarchy-col {
+  width: 0px !important;
+}
+
+/* remove those indent cells completely */
+.kendo-data-grid .k-grid td.k-group-cell,
+.kendo-data-grid .k-grid th.k-group-cell,
+.kendo-data-grid .k-grid td.k-hierarchy-cell,
+.kendo-data-grid .k-grid th.k-hierarchy-cell {
+  width: 0px !important;
+  min-width: 0px !important;
+  padding: 0px !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+/* ensure the first visible real column starts normally */
+.kendo-data-grid
+  .k-grid-content
+  .k-grid-table
+  tr
+  > td:not(.k-group-cell):not(.k-hierarchy-cell) {
+  padding-left: 6px !important;
+}
+/* NEW */
+
+.k-grid .k-grid-header .k-header {
+  padding: 0px 0px 4px 5px !important;
+  height: 24px;
+}
+.k-grid .k-grid-header .k-cell-inner,
+.k-grid .k-grid-header .k-link {
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.k-grid .k-grid-header th.show-menu-on-hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover .k-header-column-menu {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-header-column-menu {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+/* Make header inner relative */
+.k-grid .k-grid-header th.show-menu-on-hover .k-cell-inner {
+  position: relative !important;
+  padding-right: 0 !important; /* no extra space */
+}
+
+/* Column menu icon: take no layout space */
+.k-grid .k-grid-header th.show-menu-on-hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover .k-header-column-menu {
+  position: absolute !important;
+  right: 2px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease-in-out;
+}
+
+/* Show on hover */
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-grid-header-menu,
+.k-grid .k-grid-header th.show-menu-on-hover:hover .k-header-column-menu {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.kendo-data-grid .k-grid-header th {
+  font-weight: 500 !important; /* Semi-bold/Medium */
+  color: #334155; /* Slate color to match your buttons */
 }

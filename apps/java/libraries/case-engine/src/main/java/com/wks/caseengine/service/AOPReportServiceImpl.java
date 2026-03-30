@@ -791,7 +791,12 @@ public class AOPReportServiceImpl implements AOPReportService {
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
 			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
-			String storedProcedure = verticalName + "_" + site.getName() + "_GetSpecificConsumptionNormsReport";
+			String storedProcedure=null;
+			if(!verticalName.equalsIgnoreCase("MEG")) {
+				 storedProcedure = verticalName + "_" + site.getName() + "_GetSpecificConsumptionNormsReport";
+			}else {
+				storedProcedure = "GetSpecificConsumptionNormsReport";
+			}
 			
 			String sql = "EXEC " + storedProcedure
 					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";

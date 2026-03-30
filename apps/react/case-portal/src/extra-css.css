@@ -1,113 +1,119 @@
-.btn-save {
-  background-color: #0100cb;
-  color: #ffffff;
-  border-radius: 4px;
-  padding: 4px 20px;
-  text-transform: none;
-  font-size: 0.7rem;
-  font-weight: 500;
-  min-width: 80px;
-  border: none;
+/* =========================================================
+   MODERN OUTLINE BUTTON SYSTEM (MATCHING IMAGE)
+   ========================================================= */
+.btn-load,
+.btn-save,
+.btn-export,
+.btn-add,
+.btn-import,
+.btn-calculate {
+  appearance: none;
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.85rem; /* Slightly larger for better readability */
+  font-weight: 600;
+  line-height: 1;
   cursor: pointer;
-  margin-bottom: 2px;
-}
-.btn-load {
-  background-color: #0100cb;
-  color: #ffffff;
-  border-radius: 4px;
-  padding: 4px 20px;
-  text-transform: none;
-  font-size: 0.7rem;
-  font-weight: 500;
-  min-width: 80px;
-  border: none;
-  cursor: pointer;
-  margin-bottom: 0px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* Balanced gap */
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  /* Text Color from Image */
+  color: #334155;
+  border: 1px solid rgba(37, 99, 235, 0.15); /* Subtle border */
 }
 
-.btn-save:hover {
-  background-color: #143b6f;
-  box-shadow: none;
+/* Base Icon Styling */
+.MuiButton-startIcon svg {
+  font-size: 18px !important;
+  transition: transform 0.2s ease;
 }
 
-.btn-save:disabled {
-  background-color: #8d8dec;
+/* Hover State - General */
+.btn-load:hover,
+.btn-save:hover,
+.btn-export:hover,
+.btn-add:hover,
+.btn-import:hover,
+.btn-calculate:hover {
+  background: #f8fafc; /* Very light gray flash */
+  border-color: rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ===============================
+   SPECIFIC ICON COLORS (FROM IMAGE)
+================================ */
+
+/* SAVE - Purple/Blue Icon */
+.btn-save .MuiButton-startIcon svg {
+  color: #6366f1;
+}
+
+/* EXPORT - Royal Blue Icon */
+.btn-export .MuiButton-startIcon svg {
+  color: #4f46e5;
+}
+
+/* ADD - Green Icon */
+.btn-add .MuiButton-startIcon svg {
+  color: #16a34a;
+}
+
+/* IMPORT - Amber Icon */
+.btn-import .MuiButton-startIcon svg {
+  color: #f59e0b;
+}
+
+/* CALCULATE - Violet Icon */
+.btn-calculate .MuiButton-startIcon svg {
+  color: #7c3aed;
+}
+
+/* LOAD - Indigo Icon */
+.btn-load .MuiButton-startIcon svg {
+  color: #4f46e5;
+}
+
+/* ===============================
+   YES / NO & UTILITY
+================================ */
+.btn-yes {
   color: #ffffff;
-  opacity: 0.7;
+  background: #16a34a;
+  border: 1px solid #16a34a;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.btn-no {
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* Disabled State */
+button:disabled {
+  color: #94a3b8 !important;
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
   cursor: not-allowed;
 }
-/* Float the button to the right */
-.btn-approve {
-  background-color: #0100cb;
-  color: #ffffff;
-  border-radius: 5px;
-  padding: 6px 22px;
-  text-transform: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  min-width: 100px;
-  border: none;
-  cursor: pointer;
-  float: right; /* Align button to the right */
-}
 
-.btn-approve:hover {
-  background-color: #143b6f;
-  box-shadow: none;
-}
-
-.btn-approve:disabled {
-  background-color: #8d8dec;
-  color: #ffffff;
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.action-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0px;
-  margin-bottom: 0px;
-}
-.action-box2 {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding: 0px;
-}
-
-.action-inner {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-}
-
-.unit-chip {
-  border-radius: 4px;
-  padding: 8px 24px;
-  text-transform: none;
-  font-size: 0.875rem;
-  font-weight: 500;
-  height: 40px;
-}
-
-.btn-dashboard {
-  background-color: #0100cb;
-  color: #ffffff;
-  border-radius: 4px;
-  padding: 4px 20px;
-  /* text-transform: none; */
-  font-size: 0.7rem;
-  /* font-weight: 500; */
-  /* min-width: 80px; */
-  /* border: none; */
-  /* cursor: pointer; */
-  margin-bottom: 10px;
-}
-.btn-dashboard:hover {
-  background-color: #143b6f;
-  box-shadow: none;
+button:disabled svg {
+  color: #cbd5e1 !important;
 }

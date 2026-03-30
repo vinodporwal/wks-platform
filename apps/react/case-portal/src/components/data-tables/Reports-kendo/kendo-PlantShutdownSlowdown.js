@@ -1,6 +1,6 @@
 import { Box } from '@mui/material/index'
 import Notification from 'components/Utilities/Notification'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
 import { Backdrop, CircularProgress } from '@mui/material/index'
 
@@ -8,7 +8,8 @@ import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
-import { MockPlantShutdownSlowdownAPI } from './MockPlantShutdownSlowdownAPI'
+import { ReportDataService } from 'services/ReportDataService'
+import { validateFields } from 'utils/validationUtils'
 
 const PlantShutdownSlowdown = () => {
   const keycloak = useSession()
@@ -22,13 +23,16 @@ const PlantShutdownSlowdown = () => {
   const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
 
   const [rows, setRows] = useState([])
-  const [columns, setColumns] = useState([])
   const [loading, setLoading] = useState(false)
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
     severity: 'info',
   })
+  const showSnackbar = useCallback((message, severity = 'info') => {
+    setSnackbarData({ message, severity })
+    setSnackbarOpen(true)
+  }, [])
 
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
   const [currentRemark, setCurrentRemark] = useState('')
@@ -37,22 +41,172 @@ const PlantShutdownSlowdown = () => {
 
   const valueFormatter = ValueFormatterProduction()
 
+  const columns = [
+    {
+      field: 'criticalActivity',
+      title: 'Critical Routine Activity',
+      widthT: 200,
+      type: 'text',
+      editable: true,
+    },
+    {
+      title: 'Best achieved at site in the last 4 years',
+      children: [
+        {
+          field: 'bestAchievedSiteFreq',
+          title: 'Frequency',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+        {
+          field: 'bestAchievedSiteDur',
+          title: 'Duration',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      title: 'Best achieved in the group',
+      children: [
+        {
+          field: 'bestAchievedGroupFreq',
+          title: 'Frequency',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+        {
+          field: 'bestAchievedGroupDur',
+          title: 'Duration',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      title: 'Actual 2024-25',
+      children: [
+        {
+          field: 'actualPrevYearFreq',
+          title: 'Frequency',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+        {
+          field: 'actualPrevYearDur',
+          title: 'Duration',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      title: 'Budget 2025-26',
+      children: [
+        {
+          field: 'budgetNextYearFreq',
+          title: 'Frequency',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+        {
+          field: 'budgetNextYearDur',
+          title: 'Duration',
+          widthT: 80,
+          editable: true,
+          type: 'numberNonGrey',
+          format: valueFormatter,
+        },
+      ],
+    },
+    {
+      field: 'clubbedActivities',
+      title: 'Activities that can be clubbed with the critical activity',
+      widthT: 150,
+      type: 'text',
+      editable: true,
+    },
+    {
+      field: 'explanationNotBest',
+      title:
+        'Explanation for not proposing the best achieved frequency / duration',
+      widthT: 150,
+      type: 'text',
+      editable: true,
+    },
+    {
+      field: 'throughputReduction',
+      title: 'Throughput reduction during the period',
+      widthT: 80,
+      type: 'numberNonGrey',
+      editable: true,
+    },
+    {
+      field: 'lossRecoverable',
+      title: 'Is the production Loss recoverable',
+      widthT: 80,
+      type: 'text',
+      editable: true,
+    },
+    {
+      field: 'remarks',
+      title: 'Remarks',
+      widthT: 200,
+      editable: true,
+    },
+  ]
+
   const fetchData = async () => {
     try {
       setLoading(true)
-      const { columns: cols, data } =
-        await MockPlantShutdownSlowdownAPI.getReport({
-          valueFormat: valueFormatter,
-        })
-      setColumns(cols)
-      setRows(data)
+      const res = await ReportDataService.getPlantShutdownSlowdownNormsDuration(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      if (res?.code === 200) {
+        const responseData =
+          res.data.plantShutdownSlowdownNormsDurationList || []
+
+        const formattedData = responseData.map((item, index) => ({
+          idFromApi: item.id,
+          id: index,
+          criticalActivity: item.criticalRoutineActivity,
+          bestAchievedSiteFreq: item.bestAchievedLastYearFrequency,
+          bestAchievedSiteDur: item.bestAchievedLastYearDuration,
+          bestAchievedGroupFreq: item.bestAchievedGroupFrequency,
+          bestAchievedGroupDur: item.bestAchievedGroupDuration,
+          actualPrevYearFreq: item.actualFrequency,
+          actualPrevYearDur: item.prevYearDuration,
+          budgetNextYearFreq: item.budgetFrequency,
+          budgetNextYearDur: item.currentYearDuration,
+          clubbedActivities: item.activitiesClubbed,
+          explanationNotBest: item.explanationNotProposing,
+          throughputReduction: item.throughputReductionDuringPeriod,
+          lossRecoverable: item.isProductionLossRecoverable,
+          remarks: item.remarks,
+          originalRemarks: item.remarks,
+        }))
+        setRows(formattedData || responseData)
+      } else {
+        setRows([])
+      }
     } catch (err) {
       console.error('Error fetching plant shutdown slowdown data:', err)
-      setSnackbarData({
-        message: 'Failed to fetch data',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }
@@ -63,18 +217,104 @@ const PlantShutdownSlowdown = () => {
   }, [AOP_YEAR, PLANT_ID])
 
   const handleRemarkCellClick = (row) => {
-    if (READ_ONLY) return
-    setCurrentRemark(row.Remark || '')
+    setCurrentRemark(row.remarks || '')
     setCurrentRowId(row.id)
     setRemarkDialogOpen(true)
   }
 
   const saveChanges = async () => {
-    setSnackbarData({
-      message: 'Data Saved Successfully (Mock)!',
-      severity: 'success',
-    })
-    setSnackbarOpen(true)
+    try {
+      const data = Object.values(modifiedCells)
+      if (data.length == 0) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'No Records to Save!',
+          severity: 'info',
+        })
+        setLoading(false)
+        return
+      }
+      const requiredFields = ['criticalActivity', 'remarks']
+
+      const validationMessage = validateFields(data, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
+
+      const rowsToUpdate = data.map((item) => ({
+        id: item.idFromApi || null,
+        criticalRoutineActivity: item.criticalActivity || null,
+        bestAchievedLastYearFrequency: item.bestAchievedSiteFreq || null,
+        bestAchievedLastYearDuration: item.bestAchievedSiteDur || null,
+        bestAchievedGroupFrequency: item.bestAchievedGroupFreq || null,
+        bestAchievedGroupDuration: item.bestAchievedGroupDur || null,
+        actualFrequency: item.actualPrevYearFreq || null,
+        prevYearDuration: item.actualPrevYearDur || null,
+        budgetFrequency: item.budgetNextYearFreq || null,
+        currentYearDuration: item.budgetNextYearDur || null,
+        activitiesClubbed: item.clubbedActivities || null,
+        explanationNotProposing: item.explanationNotBest || null,
+        throughputReductionDuringPeriod: item.throughputReduction || null,
+        isProductionLossRecoverable: item.lossRecoverable || null,
+        remarks: item.remarks,
+        updatedBy: keycloak?.userName || 'system',
+      }))
+      const res =
+        await ReportDataService.savePlantShutdownSlowdownNormsDuration(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          rowsToUpdate,
+        )
+
+      // console.log(res)
+
+      if (res?.code === 200) {
+        showSnackbar('Data Saved Successfully!', 'success')
+        setModifiedCells({})
+        fetchData()
+      } else {
+        showSnackbar('Data Save Failed!', 'error')
+      }
+    } catch (err) {
+      console.error('Error saving data:', err)
+      showSnackbar(err.message || 'An error occurred', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteRowData = async (paramsForDelete) => {
+    try {
+      const { idFromApi, id } = paramsForDelete
+      const deleteId = id
+
+      if (!idFromApi) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+      }
+
+      if (idFromApi) {
+        await ReportDataService.deletePlantShutdownSlowdownNormsDuration(
+          idFromApi,
+          keycloak,
+        )
+        setRows((prevRows) => prevRows.filter((row) => row.id !== deleteId))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Record Deleted successfully!',
+          severity: 'success',
+        })
+        fetchPreviousYear()
+      }
+    } catch (error) {
+      console.error('Error deleting Record!', error)
+    }
   }
 
   return (
@@ -94,12 +334,18 @@ const PlantShutdownSlowdown = () => {
         setModifiedCells={setModifiedCells}
         columns={columns}
         permissions={{
+          allAction: true,
           textAlignment: 'center',
-          remarksEditable: false,
+          remarksEditable: true,
           showCalculate: false,
-          saveBtn: false,
-          showWorkFlowBtns: false,
+          saveBtn: true,
+          addButton: true,
+          deleteButton: true,
+          showWorkFlowBtns: true,
           showTitle: true,
+          saveWithRemark: true,
+          showFinalSubmit: false,
+          editButton: true,
         }}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
@@ -109,6 +355,7 @@ const PlantShutdownSlowdown = () => {
         setCurrentRowId={setCurrentRowId}
         saveChanges={saveChanges}
         handleRemarkCellClick={handleRemarkCellClick}
+        deleteRowData={deleteRowData}
       />
 
       <Notification

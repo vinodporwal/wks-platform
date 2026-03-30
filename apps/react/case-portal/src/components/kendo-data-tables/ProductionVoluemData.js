@@ -1115,12 +1115,7 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
     if (IS_PP_SEZ && unitDesignCapacity === 'TPD') {
       return false
     }
-    if (
-      IS_PE_PP ||
-      IS_PET ||
-      IS_PVC_VMD ||
-      IS_PP_SEZ
-    ) {
+    if (IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ) {
       return true
     }
     return false
@@ -1140,7 +1135,8 @@ const ProductionvolumeData = ({ isBusinessDemand, permissions }) => {
       units: ['TPH', 'TPD'],
 
       // downloadExcelBtn: permissions?.hideDownloadExcel ? false : true,
-      downloadExcelBtnFromUI: IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ ? false : true,
+      downloadExcelBtnFromUI:
+        IS_PE_PP || IS_PET || IS_PVC_VMD || IS_PP_SEZ ? false : true,
       downloadExcelBtn: excelBtnGrid2,
       uploadExcelBtn: excelBtnGrid2,
       ExcelName: `${EXCEL_EXPORT_TITLE}_Design Capacity`,

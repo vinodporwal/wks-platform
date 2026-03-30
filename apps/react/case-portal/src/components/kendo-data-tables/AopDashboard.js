@@ -140,9 +140,9 @@ export default function AopDashboardCompact() {
   // ------------------ event handlers ------------------
 
   const handlePlantClick = useCallback(
-    (event, vid, sid) => {
+    (event, vid, sid, v_id) => {
       setLoading(true)
-      const vertical = verticals.find((v) => v.vid === vid)
+      const vertical = verticals.find((v) => v.vid === v_id)
       if (!vertical) {
         showSnackbar('Access Denied!', 'error')
         setLoading(false)
@@ -156,7 +156,7 @@ export default function AopDashboardCompact() {
       }
 
       dispatch(
-        setVerticalChangeFromDashboard({ vid, trigger: Date.now(), sid }),
+        setVerticalChangeFromDashboard({ v_id, trigger: Date.now(), sid }),
       )
     },
     [dispatch, verticals, showSnackbar],
@@ -228,6 +228,7 @@ export default function AopDashboardCompact() {
             status_text_color: item.status_text_color,
             business_category: item.business_category || 'Other',
             display_order: item.display_order,
+            v_id: item.v_id,
           })
 
           if (item.business_category) {
@@ -447,9 +448,14 @@ export default function AopDashboardCompact() {
                                 <Box
                                   key={`${catName}-${plant.idx}`}
                                   className='plant-item-card'
-                                  // onClick={(e) =>
-                                  //   handlePlantClick(e, plant.id, plant.sId)
-                                  // }
+                                  onClick={(e) =>
+                                    handlePlantClick(
+                                      e,
+                                      plant.id,
+                                      plant.sId,
+                                      plant.v_id,
+                                    )
+                                  }
                                 >
                                   <Box className='plant-card-left'>
                                     <IconBuildingFactory

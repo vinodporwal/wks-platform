@@ -1,31 +1,42 @@
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord'
+import { useState, useMemo } from 'react'
+import { useSelector } from 'react-redux'
+import PropTypes from 'prop-types'
+
+// Material UI Imports
 import Collapse from '@mui/material/Collapse'
 import List from '@mui/material/List'
 import ListItemButton from '@mui/material/ListItemButton'
-import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
+import Tooltip from '@mui/material/Tooltip' // Added Tooltip
 import { useTheme } from '@mui/material/styles'
-import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
+
+// Icons
+import AddIcon from '@mui/icons-material/Add'
+import RemoveIcon from '@mui/icons-material/Remove'
+import AppsIcon from '@mui/icons-material/Apps'
+
+// Internal Imports
 import { verticalEnums } from 'enums/verticalEnums'
-import PropTypes from 'prop-types'
-import { useMemo, useState } from 'react'
-import { useSelector } from 'react-redux'
 import NavItem from './NavItem'
 
 const NavCollapse = ({ menu, level }) => {
   const theme = useTheme()
   const [open, setOpen] = useState(true)
   const [selected, setSelected] = useState(menu.id)
+
+  const { drawerOpen } = useSelector((state) => state.menu)
   const { plantID, verticalChange, siteObject } = useSelector(
     (state) => state.dataGridStore,
   )
+
   const plantName = plantID?.plantName
 
   const SITE_NAME = siteObject?.name?.toLowerCase()
 
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
+
   const handleClick = () => {
     setOpen(!open)
     setSelected(!selected ? menu.id : null)
@@ -36,7 +47,6 @@ const NavCollapse = ({ menu, level }) => {
 
     const renderMenuItem = (item) => {
       const props = { key: item.id, level: level + 1 }
-
       switch (item.type) {
         case 'collapse':
           return <NavCollapse menu={item} {...props} />
@@ -77,94 +87,115 @@ const NavCollapse = ({ menu, level }) => {
     return menuItems.map(renderMenuItem)
   }, [menu?.children, lowerVertName, plantName, level, SITE_NAME])
 
-  const Icon = menu.icon
-  const menuIcon = menu.icon ? (
-    <Icon
-      strokeWidth={1.5}
-      size='1.2rem'
-      style={{ marginTop: 'auto', marginBottom: 'auto' }}
-    />
-  ) : (
-    <FiberManualRecordIcon
+  const collapseButton = (
+    <ListItemButton
+      onClick={handleClick}
+      selected={selected === menu.id}
       sx={{
-        width: selected === menu.id ? 6 : 5,
-        height: selected === menu.id ? 6 : 5,
+        minHeight: 36,
+        px: 1,
+        py: 0.4,
+        borderRadius: 1,
+        alignItems: 'center',
+        justifyContent: drawerOpen ? 'initial' : 'center',
+        backgroundColor: 'transparent',
+
+        '&:hover': {
+          backgroundColor: 'rgba(255,255,255,0.05)',
+        },
+
+        // SELECTED STATE (?? IMPORTANT)
+        '&.Mui-selected': {
+          background: '#575bee',
+          color: '#fff',
+          borderRadius: '6px',
+
+          '&:hover': {
+            background: '#575bee',
+          },
+
+          '& .MuiTypography-root': {
+            color: '#fff',
+          },
+
+          '& svg': {
+            color: '#fff !important',
+          },
+        },
       }}
-      fontSize={level > 0 ? 'inherit' : 'medium'}
-    />
+    >
+      {drawerOpen && (
+        <ListItemText
+          primary={
+            <Tooltip
+              title={menu.title}
+              placement='right'
+              arrow
+              disableInteractive
+            >
+              <Typography
+                noWrap
+                sx={{
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: '#9ca3af',
+                }}
+              >
+                {menu.title}
+              </Typography>
+            </Tooltip>
+          }
+          sx={{ my: 0, overflow: 'hidden' }}
+        />
+      )}
+
+      {drawerOpen &&
+        (open ? (
+          <RemoveIcon
+            sx={{
+              fontSize: 13,
+              color: '#1d4ed8',
+              flexShrink: 0,
+              transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
+            }}
+          />
+        ) : (
+          <AddIcon
+            sx={{
+              fontSize: 13,
+              color: '#1d4ed8',
+              flexShrink: 0,
+              transform: 'rotate(90deg)',
+              transition: 'all 200ms cubic-bezier(.4,0,.2,1)',
+            }}
+          />
+        ))}
+
+      {!drawerOpen && (
+        <AppsIcon
+          sx={{
+            fontSize: 18,
+            color: selected === menu.id ? '#fff' : '#6a7b92',
+          }}
+        />
+      )}
+    </ListItemButton>
   )
 
   return (
     <>
-      <ListItemButton
-        sx={{
-          mb: 0.1,
-          alignItems: 'flex-start',
-          backgroundColor: level > 1 ? 'transparent !important' : 'inherit',
-          py: level > 1 ? 1 : 1.25,
-          pl: 1,
-        }}
-        selected={selected === menu.id}
-        onClick={handleClick}
-      >
-        <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 8 : 26 }}>
-          {menuIcon}
-        </ListItemIcon>
-        <ListItemText
-          primary={
-            <Typography
-              variant={selected === menu.id ? 'h6' : 'body1'}
-              color='inherit'
-              className='side-menu'
-            >
-              {menu.title}
-            </Typography>
-          }
-          secondary={
-            menu.caption && (
-              <Typography
-                variant='caption'
-                sx={{ ...theme.typography.subMenuCaption }}
-                display='block'
-                gutterBottom
-              >
-                {menu.caption}
-              </Typography>
-            )
-          }
-        />
-        {open ? (
-          <IconChevronUp
-            stroke={1.5}
-            size='1rem'
-            style={{ marginTop: 'auto', marginBottom: 'auto' }}
-          />
-        ) : (
-          <IconChevronDown
-            stroke={1.5}
-            size='1rem'
-            style={{ marginTop: 'auto', marginBottom: 'auto' }}
-          />
-        )}
-      </ListItemButton>
+      {drawerOpen ? (
+        collapseButton
+      ) : (
+        <Tooltip title={menu.title} placement='right' arrow>
+          {collapseButton}
+        </Tooltip>
+      )}
+
       <Collapse in={open} timeout='auto' unmountOnExit>
-        <List
-          component='div'
-          disablePadding
-          sx={{
-            position: 'relative',
-            '&:after': {
-              content: "''",
-              position: 'absolute',
-              left: '10px',
-              top: 0,
-              height: '100%',
-              width: '1px',
-              opacity: 1,
-              background: theme.palette.primary.light,
-            },
-          }}
-        >
+        <List component='div' disablePadding sx={{ pl: 0 }}>
           {menus}
         </List>
       </Collapse>

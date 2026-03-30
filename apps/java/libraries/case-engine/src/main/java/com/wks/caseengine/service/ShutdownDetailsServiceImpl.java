@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.dto.ShutdownDetailsDTO;
 import com.wks.caseengine.db2.entity.PlannedShutdownDetails;
+import com.wks.caseengine.db2.entity.RoutineShutdownDetails;
 import com.wks.caseengine.db2.entity.RoutineShutdownPreviousYears;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
@@ -53,22 +54,17 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
 
                 if ("PlannedShutdown".equalsIgnoreCase(type)) {
                     // Id, Activities, ShutdownFrom, ShutdownTo, DurationHrs, Remarks, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
-                    dto.setId(row[0] != null ? row[0].toString() : null);
-                    dto.setActivities(row[1] != null ? row[1].toString() : null);
+                    dto.setId(row[0] != null ? row[0].toString() : "");
+                    dto.setActivities(row[1] != null ? row[1].toString() : "");
                     dto.setShutdownFrom(toTimestampAsDate(row, 2));
                     dto.setShutdownTo(toTimestampAsDate(row, 3));
                     dto.setDurationHrs(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
-                    dto.setRemarks(row[5] != null ? row[5].toString() : null);
-                    dto.setYear(row[6] != null ? row[6].toString() : null);
-                    dto.setPlantFkId(row[7] != null ? row[7].toString() : null);
-                    dto.setCreatedOn(toTimestampAsDate(row, 8));
-                    dto.setModifiedOn(toTimestampAsDate(row, 9));
-                    dto.setUpdatedBy(row[10] != null ? row[10].toString() : null);
+                    dto.setRemarks(row[5] != null ? row[5].toString() : "");
 
                 } else if ("RoutineShutdown".equalsIgnoreCase(type)) {
                     // Id, Activities, April..March, Year, Plant_FK_Id, CreatedOn, ModifiedOn, UpdatedBy
-                    dto.setId(row[0] != null ? row[0].toString() : null);
-                    dto.setActivities(row[1] != null ? row[1].toString() : null);
+                    dto.setId(row[0] != null ? row[0].toString() : "");
+                    dto.setActivities(row[1] != null ? row[1].toString() : "");
                     dto.setApril(row[2] != null ? Double.parseDouble(row[2].toString()) : 0.0);
                     dto.setMay(row[3] != null ? Double.parseDouble(row[3].toString()) : 0.0);
                     dto.setJune(row[4] != null ? Double.parseDouble(row[4].toString()) : 0.0);
@@ -81,11 +77,7 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
                     dto.setJanuary(row[11] != null ? Double.parseDouble(row[11].toString()) : 0.0);
                     dto.setFebruary(row[12] != null ? Double.parseDouble(row[12].toString()) : 0.0);
                     dto.setMarch(row[13] != null ? Double.parseDouble(row[13].toString()) : 0.0);
-                    dto.setYear(row[14] != null ? row[14].toString() : null);
-                    dto.setPlantFkId(row[15] != null ? row[15].toString() : null);
-                    dto.setCreatedOn(toTimestampAsDate(row, 16));
-                    dto.setModifiedOn(toTimestampAsDate(row, 17));
-                    dto.setUpdatedBy(row[18] != null ? row[18].toString() : null);
+                    dto.setRemarks(row[19] != null ? row[19].toString() : "");
 
                 } else {
                     // RoutineShutdownPreviousYears
@@ -160,6 +152,48 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
             throw new RuntimeException("Failed to save shutdown details", ex);
         }
     }
+    
+    @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
+    public AOPMessageVM saveRoutineShutdwn(String plantId, String year, List<ShutdownDetailsDTO> shutdownDetailsDTOs) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            UUID plantUuid = UUID.fromString(plantId);
+            Date now = new Date();
+
+            if (shutdownDetailsDTOs == null) {
+                shutdownDetailsDTOs = new ArrayList<>();
+            }
+
+            int savedCount = 0;
+            for (ShutdownDetailsDTO dto : shutdownDetailsDTOs) {
+                if (dto == null) {
+                    continue;
+                }
+
+                updateRoutineShutdwnDetails(dto, plantUuid, year, now);
+                savedCount++;
+            }
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("savedCount", savedCount);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data saved successfully");
+            aopMessageVM.setData(data);
+            return aopMessageVM;
+
+        } catch (IllegalArgumentException e) {
+        	e.printStackTrace();
+            throw new RestInvalidArgumentException("Invalid UUID format for Plant ID", e);
+        } catch (RestInvalidArgumentException e) {
+        	e.printStackTrace();
+            throw e;
+        } catch (Exception ex) {
+        	ex.printStackTrace();
+            throw new RuntimeException("Failed to save shutdown details", ex);
+        }
+    }
+
 
     @Override
     @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
@@ -229,6 +263,40 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         }
 
         return entity;
+    }
+
+    
+    
+    @Override
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = false)
+    public AOPMessageVM deleteRoutineShutdown(String id) {
+        AOPMessageVM aopMessageVM = new AOPMessageVM();
+        try {
+            UUID uuid = parseUuidOrNull(id);
+            if (uuid == null) {
+                throw new RestInvalidArgumentException("id", new IllegalArgumentException("empty or invalid id"));
+            }
+
+            RoutineShutdownDetails entity = entityManager.find(RoutineShutdownDetails.class, uuid);
+            if (entity == null) {
+                throw new RestInvalidArgumentException("RoutineShutdownDetails id", new RuntimeException("not found"));
+            }
+
+            entityManager.remove(entity);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("deletedCount", 1);
+            aopMessageVM.setCode(200);
+            aopMessageVM.setMessage("Data deleted successfully");
+            aopMessageVM.setData(data);
+            return aopMessageVM;
+        } catch (IllegalArgumentException e) {
+            throw new RestInvalidArgumentException("Invalid UUID format for id", e);
+        } catch (RestInvalidArgumentException e) {
+            throw e;
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to delete routine shutdown details", ex);
+        }
     }
 
     @Override
@@ -337,6 +405,56 @@ public class ShutdownDetailsServiceImpl implements ShutdownDetailsService {
         return entity;
     }
 
+    private RoutineShutdownDetails updateRoutineShutdwnDetails(
+            ShutdownDetailsDTO dto,
+            UUID plantUuid,
+            String year,
+            Date now) {
+
+    	RoutineShutdownDetails entity = null;
+        boolean isUpdate = false;
+
+        UUID id = parseUuidOrNull(dto.getId());
+        if (id != null) {
+            entity = entityManager.find(RoutineShutdownDetails.class, id);
+            isUpdate = entity != null;
+
+            
+            if (entity == null) {
+                entity = new RoutineShutdownDetails();
+                entity.setId(id);
+            }
+        } else {
+            entity = new RoutineShutdownDetails();
+        }
+
+        entity.setActivities(dto.getActivities());
+        entity.setApril(dto.getApril());
+        entity.setMay(dto.getMay());
+        entity.setJune(dto.getJune());
+        entity.setJuly(dto.getJuly());
+        entity.setAugust(dto.getAugust());
+        entity.setSeptember(dto.getSeptember());
+        entity.setOctober(dto.getOctober());
+        entity.setNovember(dto.getNovember());
+        entity.setDecember(dto.getDecember());
+        entity.setJanuary(dto.getJanuary());
+        entity.setFebruary(dto.getFebruary());
+        entity.setMarch(dto.getMarch());
+        entity.setRemarks(dto.getRemarks());
+        entity.setUpdatedBy(Utility.getUserName());
+        entity.setPlantFkId(plantUuid);
+        entity.setYear(year);
+
+        if (isUpdate) {
+            entity.setModifiedOn(now);
+        } else {
+            entity.setCreatedOn(now);
+            entityManager.persist(entity);
+        }
+
+        return entity;
+    }
 
     private static UUID parseUuidOrNull(String id) {
         if (id == null) {

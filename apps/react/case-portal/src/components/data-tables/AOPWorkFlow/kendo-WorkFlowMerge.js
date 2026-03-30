@@ -52,6 +52,7 @@ import PlantShutdownSlowdown from '../Reports-kendo/kendo-PlantShutdownSlowdown'
 import { getRoleName } from 'services/role-service'
 import ShutdownReport from '../Reports-kendo/kendo_DetailsPlannedShutdown'
 import ShutdownSummaryReport from '../Reports-kendo/kendo_ShutdownBreak_UpLastFourYear'
+import SpecificConsumptionnormForMeg from '../Reports-kendo/SpecificConsumptionnormForMeg'
 const WorkFlowMerge = () => {
   const keycloak = useSession()
   // const READ_ONLY = getRoleName(keycloak)
@@ -660,16 +661,17 @@ const WorkFlowMerge = () => {
   const customMegTabs = [
     'Annual AOP Cost', // Index 0
     'Plant Production Summary (T-14)', // Index 1
-    'Month Wise Production Plan (T-16)', // Index 2
-    'Month Wise Raw Data (T-18)', // Index 3
-    'Turnaround Report (T-19A)', // Index 4
-    'Shutdown Report (T-19B)', // Index 5 (Moved Up)
-    'Shutdown Break-up Last Four Year (T-19C)', // Index 6 (Moved Up)
-    'Norms for Shutdown & Slowdown (T-19D)', // Index 7 (Moved Up)
-    'Annual Production Plan (T-15)', // Index 8
-    'Plant Contribution (T-21)', // Index 9
+    'Annual Production Plan (T-15)', // Index 2 (Moved from 8)
+    'Month Wise Production Plan (T-16)', // Index 3 (Moved from 2)
+    'Specific Consumption Norms (T-17)', // Index 4 (Moved from 11)
+    'Month Wise Raw Data (T-18)', // Index 5 (Moved from 3)
+    'Turnaround Report (T-19A)', // Index 6 (Moved from 4)
+    'Shutdown Report (T-19B)', // Index 7 (Moved from 5)
+    'Shutdown Break-up Last Four Year (T-19C)', // Index 8 (Moved from 6)
+    'Norms for Shutdown & Slowdown (T-19D)', // Index 9 (Moved from 7)
     'MonthWise Operating Hours (T-20)', // Index 10
-    'Plant Contribution Summary (T-22)', // Index 11
+    'Plant Contribution (T-21)', // Index 11 (Moved from 9)
+    'Plant Contribution Summary (T-22)', // Index 12
   ]
   const customPETTabs = [
     'Annual AOP Cost',
@@ -785,7 +787,7 @@ const WorkFlowMerge = () => {
         display: 'flex',
         flexDirection: 'column',
         gap: '5px',
-        marginTop: '-20px',
+        // marginTop: '-40px',
       }}
     >
       <Box>
@@ -832,36 +834,24 @@ const WorkFlowMerge = () => {
           ))}
         </Stepper>
 
-        <Typography
-          component='div'
-          className='text-note'
-          style={{ marginTop: 24 }}
-        >
-          * Prices - MIIS BPC (Last Budget Year), Actual Values - MIIS
-          Contribution (YTD).
+        <Typography component='div' className='info-note' sx={{ mb: 1 }}>
+          <span className='info-note__asterisk'>*</span>
+          Prices -MIIS BPC (Last Budget Year), Actual Values -MIIS Contribution
+          (YTD).
         </Typography>
 
         <Stack
           direction='row'
           alignItems='center'
           justifyContent='space-between' // push children to extremes
-          sx={{ mt: 0, mb: '-5px' }}
+          sx={{ mt: 0, mb: 1 }}
         >
           {/* LEFT: Tabs */}
 
-          <Tabs
-            value={tabIndex}
-            onChange={(e, newIndex) => setTabIndex(newIndex)}
-            variant='scrollable'
-            scrollButtons='auto'
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 10px 0px',
-              minHeight: '28px',
-            }}
-            textColor='primary'
-            indicatorColor='primary'
+          <AopTabs
+            tabIndex={tabIndex}
+            setTabIndex={setTabIndex}
+            tabs={activeTabs}
           >
             {activeTabs.map((label, idx) => (
               <Tab
@@ -876,7 +866,7 @@ const WorkFlowMerge = () => {
                 }}
               />
             ))}
-          </Tabs>
+          </AopTabs>
 
           {/* RIGHT: Buttons */}
           <Stack direction='row' spacing={1} alignItems='center'>
@@ -1073,22 +1063,22 @@ const WorkFlowMerge = () => {
                 )}
               </>
             )}
-            {tabIndex === 1 && <PlantsProductionSummary />}
-            {tabIndex === 2 && <MonthwiseProduction />}
-            {tabIndex === 3 && <MonthwiseRawMaterial />}
-
+            {/* Sorted T-Series Components */}
+            {tabIndex === 1 && <PlantsProductionSummary />} {/* T-14 */}
+            {tabIndex === 2 && <AnnualProductionPlan />} {/* T-15 */}
+            {tabIndex === 3 && <MonthwiseProduction />} {/* T-16 */}
+            {tabIndex === 4 && <SpecificConsumptionnormForMeg />} {/* T-17 */}
+            {tabIndex === 5 && <MonthwiseRawMaterial />} {/* T-18 */}
             {/* T-19 Group */}
-            {tabIndex === 4 && <TurnaroundReport />}
-            {tabIndex === 5 && <ShutdownReport />}
-            {tabIndex === 6 && <ShutdownSummaryReport />}
-            {tabIndex === 7 && <PlantShutdownSlowdown />}
-
-            {/* Remaining MEG Reports */}
-            {tabIndex === 8 && <AnnualProductionPlan />}
-            {tabIndex === 9 && <PlantContribution />}
-
-            {tabIndex === 10 && <MonthwiseOperatingHours />}
-            {tabIndex === 11 && <PlantContributionLastFourYears />}
+            {tabIndex === 6 && <TurnaroundReport />} {/* T-19A */}
+            {tabIndex === 7 && <ShutdownReport />} {/* T-19B */}
+            {tabIndex === 8 && <ShutdownSummaryReport />} {/* T-19C */}
+            {tabIndex === 9 && <PlantShutdownSlowdown />} {/* T-19D */}
+            {/* Remaining Reports */}
+            {tabIndex === 10 && <MonthwiseOperatingHours />} {/* T-20 */}
+            {tabIndex === 11 && <PlantContribution />} {/* T-21 */}
+            {tabIndex === 12 && <PlantContributionLastFourYears />}
+            {/* T-22 */}
           </>
         )}
 

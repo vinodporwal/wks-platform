@@ -9,6 +9,7 @@ import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { ReportDataService } from 'services/ReportDataService'
 import KendoDataTables from 'components/kendo-data-tables/index'
+import { validateFields } from 'utils/validationUtils'
 
 const MonthwiseOperatingHours = () => {
   const keycloak = useSession()
@@ -53,51 +54,51 @@ const MonthwiseOperatingHours = () => {
     {
       field: 'totalAvailableHrs',
       title: 'Total available Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
 
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'plannedTurnaroundHrs',
       title: 'Planned Turnaround Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'plannedShutdownOtherThanTurnaroundHrs',
       title: 'Planned shutdown other than Turnaround Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'routineShutdownHrs',
       title: 'Routine shutdown Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'slowdownHrs',
       title: 'Slowdown Hrs',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'netOperatingHours',
       title: 'Net operating Hours',
-      editable: false,
+      editable: true,
       type: 'number',
       format: valueFormatter,
-      isDisabled: true,
+      isDisabled: false,
     },
     {
       field: 'remarks',
@@ -116,29 +117,21 @@ const MonthwiseOperatingHours = () => {
         AOP_YEAR,
       )
       if (res?.code === 200) {
-        setRows(
-          (res?.data.monthwiseOperatingHoursList || []).map((item, index) => ({
+        let formattedData
+        formattedData = (res?.data.monthwiseOperatingHoursList || []).map(
+          (item, index) => ({
             ...item,
-            id: item.id ?? index,
-            idFromApi: item.id || null,
-            _month: item?.month,
-          })),
+            id: item.id,
+            originalRemark: item.remarks,
+            _month: item.month,
+          }),
         )
+        setRows(formattedData)
       } else {
         setRows([])
-        setSnackbarData({
-          message: res?.message || 'Failed to fetch data',
-          severity: 'error',
-        })
-        setSnackbarOpen(true)
       }
     } catch (err) {
       console.error('Error fetching operating hours data:', err)
-      setSnackbarData({
-        message: 'Failed to fetch data',
-        severity: 'error',
-      })
-      setSnackbarOpen(true)
     } finally {
       setLoading(false)
     }
@@ -167,6 +160,18 @@ const MonthwiseOperatingHours = () => {
           severity: 'info',
         })
         setSnackbarOpen(true)
+        return
+      }
+      const requiredFields = ['remarks']
+
+      const validationMessage = validateFields(dataToSave, requiredFields)
+      if (validationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: validationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
         return
       }
 
@@ -231,6 +236,10 @@ const MonthwiseOperatingHours = () => {
           showTitleNameBusiness: true,
           titleName: 'Monthwise Operating Hours (T-20)',
         }}
+        snackbarData={snackbarData}
+        snackbarOpen={snackbarOpen}
+        setSnackbarOpen={setSnackbarOpen}
+        setSnackbarData={setSnackbarData}
         remarkDialogOpen={remarkDialogOpen}
         setRemarkDialogOpen={setRemarkDialogOpen}
         currentRemark={currentRemark}

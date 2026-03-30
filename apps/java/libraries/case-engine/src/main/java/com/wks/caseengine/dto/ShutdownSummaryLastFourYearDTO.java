@@ -36,5 +36,6 @@ public class ShutdownSummaryLastFourYearDTO {
     private Date createdOn;
     private Date modifiedOn;
     private String updatedBy;
+    private String remarks;
 }
 
