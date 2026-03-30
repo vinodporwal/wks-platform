@@ -123,6 +123,7 @@ const NSRAndMaterialPrices = () => {
         remarks: row.remarks || '',
         originalRemark: row.remarks || '',
         inEdit: false,
+        isEditable: false,
       }))
       setRows(formattedData || [])
     } catch (error) {
@@ -246,7 +247,7 @@ const NSRAndMaterialPrices = () => {
     {
       showAction: true,
       saveWithRemark: true,
-      saveBtn: true,
+      saveBtn: false,
       allAction: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,

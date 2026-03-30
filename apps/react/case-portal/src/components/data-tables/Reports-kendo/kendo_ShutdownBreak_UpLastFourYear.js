@@ -242,7 +242,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
           unplannedSlowdownHours: item.unplannedSlowdownHours,
           year: item.lastFourYears,
           remarks: item.remarks,
-          originalRemarks: item.remarks,
+          originalRemark: item.remarks,
         }),
       )
 
@@ -376,8 +376,8 @@ const ShutdownSummaryReport = ({ permissions }) => {
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       downloadExcelBtnFromUI: false,
-      addButton: true,
-      deleteButton: true,
+      addButton: false,
+      deleteButton: false,
       saveWithRemark: true,
     },
     isOldYear,

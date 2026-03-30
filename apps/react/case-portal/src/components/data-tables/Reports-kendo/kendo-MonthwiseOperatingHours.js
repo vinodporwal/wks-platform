@@ -124,6 +124,7 @@ const MonthwiseOperatingHours = () => {
             id: item.id,
             originalRemark: item.remarks,
             _month: item.month,
+            isEditable:false,
           }),
         )
         setRows(formattedData)
@@ -230,7 +231,7 @@ const MonthwiseOperatingHours = () => {
           textAlignment: 'center',
           remarksEditable: true,
           showCalculate: false,
-          saveBtn: true,
+          saveBtn: false,
           showWorkFlowBtns: true,
           showTitle: true,
           showTitleNameBusiness: true,
