@@ -20,10 +20,10 @@ export const getUserRole = (keycloakRoles = []) => {
   }
 
   const rolePriority = [
-    ROLES.PLANT_MANAGER,
-    ROLES.EPS_ENGINEER,
-    ROLES.EPS_HEAD,
     ROLES.CLUSTER_HEAD,
+    ROLES.EPS_HEAD,
+    ROLES.EPS_ENGINEER,
+    ROLES.PLANT_MANAGER,
   ]
 
   for (const role of rolePriority) {
@@ -33,4 +33,24 @@ export const getUserRole = (keycloakRoles = []) => {
   }
 
   return null
+}
+
+/**
+ * Get user-friendly label for a role
+ * @param {string} role - Role constant from ROLES
+ * @returns {string} - User-friendly role label
+ */
+export const getRoleLabel = (role) => {
+  switch (role) {
+    case ROLES.PLANT_MANAGER:
+      return 'CTS Engineer'
+    case ROLES.EPS_ENGINEER:
+      return 'AOM'
+    case ROLES.EPS_HEAD:
+      return 'EPS Head'
+    case ROLES.CLUSTER_HEAD:
+      return 'R&M Cluster Head'
+    default:
+      return 'Unknown Role'
+  }
 }

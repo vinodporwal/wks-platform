@@ -14,10 +14,10 @@ import CrudBlendWindow from './CrudBlendWindow'
 import ROGC from './ROGC'
 import PCGOutlook from './PCGOutlook'
 import RemarkDialog from '../TcsInput/workflow/RemarkDialog'
-import HistoryDialog from '../TcsInput/workflow/HistoryDialog'
 import ApproveDialog from '../TcsInput/workflow/ApproveDialog'
 import SubmitSection from '../TcsInput/workflow/SubmitSection'
 import { getUserRole, ROLES } from '../utils/roleUtils'
+import AuditTrail from '../TcsInput/workflow/AuditTrail'
 
 // Handler to render tab component based on displayName
 const renderTabComponent = (tabDisplayName, props) => {
@@ -92,10 +92,13 @@ const TcsOutput = () => {
 
   const userRole = useMemo(() => {
     let allUsers = keycloak?.realmAccess?.roles
-    console.log('allUsers', allUsers)
     return getUserRole(allUsers)
   }, [keycloak?.realmAccess?.roles])
-  console.log('userRole', userRole)
+
+  const userName = useMemo(() => {
+    return keycloak.tokenParsed.name
+  }, [keycloak])
+
   // Get current tab object (has id, displayName, displaySequence)
   const currentTab = tabObj[tabIndex] || {}
 
@@ -130,7 +133,7 @@ const TcsOutput = () => {
         if (approvalStatus?.ebs_approved === false) {
           return 'Waiting for AOM submission'
         }
-        return 'Submission is pending from the AOM, or you have already submitted.'
+        return 'Waiting for AOM submission, or you have already submitted.'
       } else if (userRole === ROLES.CLUSTER_HEAD) {
         // Check if already submitted
         if (approvalStatus?.cluster_head_approved === true) {
@@ -140,7 +143,7 @@ const TcsOutput = () => {
         if (approvalStatus?.cts_approved === false) {
           return 'Waiting for CTS Head/EPS Head submission'
         }
-        return 'Submission is pending from the CTS/EPS Head, or you have already submitted.'
+        return 'Waiting for CTS/EPS Head submission, or you have already submitted.'
       }
 
       return 'Submission not available'
@@ -179,7 +182,6 @@ const TcsOutput = () => {
         AOP_YEAR,
       )
 
-      console.log('Workflow Variables:', variables)
       setTimelineData(variables)
 
       if (variables.length === 0) {
@@ -196,7 +198,6 @@ const TcsOutput = () => {
         try {
           // Parse the JSON value
           const approvalStatus = JSON.parse(approvalStatusVar.value)
-          console.log('Approval Status:', approvalStatus)
 
           // For EPS Engineer: Check if all plants have been approved and EBS not yet submitted
           if (userRole === ROLES.EPS_ENGINEER) {
@@ -283,7 +284,6 @@ const TcsOutput = () => {
         SITE_ID,
         PLANT_ID,
       )
-      console.log('visibleTabsResponse', visibleTabsResponse)
 
       let visibleTabIds = []
       if (visibleTabsResponse?.data) {
@@ -312,7 +312,6 @@ const TcsOutput = () => {
         console.warn('No visible tabs configured')
         setTabObj([])
       }
-      console.log('tabObj', tabObj)
     } catch (err) {
       console.error('Error fetching tabs:', err)
       setSnackbarData({
@@ -355,6 +354,7 @@ const TcsOutput = () => {
           AOP_YEAR,
           remark,
           userRole, // submittedBy
+          userName,
         )
       }
 
@@ -407,6 +407,7 @@ const TcsOutput = () => {
           AOP_YEAR,
           remark,
           userRole, // verifiedBy
+          userName,
           VERTICAL_ID,
         )
 
@@ -417,6 +418,7 @@ const TcsOutput = () => {
           AOP_YEAR,
           remark,
           userRole, // verifiedBy
+          userName,
           VERTICAL_ID,
         )
       } else {
@@ -429,6 +431,7 @@ const TcsOutput = () => {
           AOP_YEAR,
           remark,
           userRole, // submittedBy
+          userName,
           VERTICAL_ID,
         )
 
@@ -439,6 +442,7 @@ const TcsOutput = () => {
           AOP_YEAR,
           remark,
           userRole, // submittedBy
+          userName,
           VERTICAL_ID,
         )
       }
@@ -492,6 +496,7 @@ const TcsOutput = () => {
           AOP_YEAR,
           remark,
           userRole, // verifiedBy
+          userName,
           VERTICAL_ID,
         )
       } else {
@@ -503,6 +508,7 @@ const TcsOutput = () => {
           AOP_YEAR,
           remark,
           userRole, // verifiedBy
+          userName,
           VERTICAL_ID,
         )
       }
@@ -523,6 +529,51 @@ const TcsOutput = () => {
 
       setSnackbarData({
         message: 'Failed to reject. Please try again.',
+        severity: 'error',
+      })
+      setSnackbarOpen(true)
+      throw err
+    } finally {
+      setIsSubmittingRemark(false)
+    }
+  }
+
+  const handleResetWorkflow = async () => {
+    try {
+      // Validate required parameters
+      if (!keycloak || !SITE_ID || !VERTICAL_ID || !userRole || !AOP_YEAR) {
+        setSnackbarData({
+          message: 'Missing required parameters. Please refresh and try again.',
+          severity: 'error',
+        })
+        setSnackbarOpen(true)
+        return
+      }
+
+      setIsSubmittingRemark(true)
+
+      // Call reset workflow API
+      await TcsWorkflowApiService.resetWorkflow(
+        keycloak,
+        SITE_ID,
+        AOP_YEAR,
+        userRole,
+        VERTICAL_ID,
+      )
+
+      setSnackbarData({
+        message: 'Workflow reset successfully!',
+        severity: 'success',
+      })
+      setSnackbarOpen(true)
+
+      // Refresh eligibility after reset
+      await checkSubmitEligibility()
+    } catch (err) {
+      console.error('Error resetting workflow:', err)
+
+      setSnackbarData({
+        message: 'Failed to reset workflow. Please try again.',
         severity: 'error',
       })
       setSnackbarOpen(true)
@@ -597,10 +648,15 @@ const TcsOutput = () => {
           onViewHistory={handleViewHistory}
           onReviewClick={handleReviewClick}
           isEligible={isSubmitEligible}
-          isLoading={isCheckingEligibility || isSubmittingRemark}
+          isLoading={isSubmittingRemark}
           submitTooltip={submitTooltip}
           showReviewBtn={userRole === ROLES.EPS_ENGINEER}
           reviewTooltip='Review and approve/reject plants'
+          onResetWorkflow={handleResetWorkflow}
+          showResetBtn={
+            keycloak?.realmAccess?.roles?.includes('reset_workflow') &&
+            timelineData?.length > 0
+          }
         />
       </Box>
 
@@ -633,7 +689,7 @@ const TcsOutput = () => {
       />
 
       {/* History Dialog */}
-      <HistoryDialog
+      <AuditTrail
         open={historyDialogOpen}
         onClose={() => setHistoryDialogOpen(false)}
         title='Audit Trail'
@@ -651,6 +707,7 @@ const TcsOutput = () => {
         tab={currentTab.displayName}
         year={AOP_YEAR}
         userRole={userRole}
+        userName={userName}
         timelineData={timelineData}
       />
 

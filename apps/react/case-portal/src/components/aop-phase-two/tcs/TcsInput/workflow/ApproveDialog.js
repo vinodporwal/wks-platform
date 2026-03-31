@@ -29,8 +29,16 @@ import HistoryDialog from './HistoryDialog'
 import { TcsWorkflowApiService } from 'components/aop-phase-two/services/tcs/tcsWorkflowApiService'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
+import { getRoleLabel } from '../../utils/roleUtils'
 
-const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
+const ApproveDialog = ({
+  open,
+  onClose,
+  year,
+  userRole,
+  userName,
+  timelineData,
+}) => {
   const keycloak = useSession()
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { siteObject, verticalObject } = dataGridStore
@@ -49,7 +57,8 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
   // Bulk action states
   const [selectedPlants, setSelectedPlants] = useState([])
   const [bulkRemark, setBulkRemark] = useState('')
-  const [bulkActionLoading, setBulkActionLoading] = useState(false)
+  const [bulkApproveLoading, setBulkApproveLoading] = useState(false)
+  const [bulkRejectLoading, setBulkRejectLoading] = useState(false)
 
   // Individual action loading states
   const [individualLoading, setIndividualLoading] = useState({})
@@ -96,7 +105,8 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
       submittedBy: entry.submittedBy || '',
       submissionDateTime: entry.submissionDateTime || '',
       type: entry.type,
-      status: entry.status || 'PENDING',
+      status: entry.status || 'SUBMITTED',
+      plantStatus: entry.plantStatus || 'PENDING',
       verifiedBy: entry.verifiedBy || '',
       verifiedRemark: entry.verifiedRemark || '',
       verifiedDateTime: entry.verifiedDateTime || '',
@@ -151,6 +161,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
         remark,
         AOP_YEAR,
         userRole,
+        userName,
         plantName,
       )
 
@@ -192,6 +203,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
         remark,
         AOP_YEAR,
         userRole,
+        userName,
         plantName,
       )
 
@@ -227,8 +239,10 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
 
   const handleSelectAll = (event) => {
     if (event.target.checked) {
-      // Only select plants with PENDING status
-      const pendingPlants = uniquePlants.filter((p) => p.status === 'PENDING')
+      // Only select plants with PENDING plantStatus
+      const pendingPlants = uniquePlants.filter(
+        (p) => p.plantStatus === 'PENDING',
+      )
       setSelectedPlants(pendingPlants.map((p) => p.plantId))
     } else {
       setSelectedPlants([])
@@ -240,7 +254,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
       return
     }
 
-    setBulkActionLoading(true)
+    setBulkApproveLoading(true)
     setError(null)
 
     try {
@@ -252,8 +266,9 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
           plantName: plant?.plantName || '',
           siteId: SITE_ID,
           verticalId: VERTICAL_ID,
-          verifiedRemark: bulkRemark,
-          verifiedBy: userRole,
+          submissionRemark: bulkRemark,
+          submittedBy: getRoleLabel(userRole),
+          userName,
         }
       })
 
@@ -286,7 +301,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
       console.error('Error in bulk approve:', err)
       setError('Failed to approve plants. Please try again.')
     } finally {
-      setBulkActionLoading(false)
+      setBulkApproveLoading(false)
     }
   }
 
@@ -295,7 +310,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
       return
     }
 
-    setBulkActionLoading(true)
+    setBulkRejectLoading(true)
     setError(null)
 
     try {
@@ -307,8 +322,9 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
           plantName: plant?.plantName || '',
           siteId: SITE_ID,
           verticalId: VERTICAL_ID,
-          verifiedRemark: bulkRemark,
-          verifiedBy: userRole,
+          submissionRemark: bulkRemark,
+          submittedBy: getRoleLabel(userRole),
+          userName,
         }
       })
 
@@ -341,7 +357,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
       console.error('Error in bulk reject:', err)
       setError('Failed to reject plants. Please try again.')
     } finally {
-      setBulkActionLoading(false)
+      setBulkRejectLoading(false)
     }
   }
 
@@ -498,21 +514,25 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                   variant='contained'
                   size='small'
                   startIcon={
-                    bulkActionLoading ? (
+                    bulkApproveLoading ? (
                       <CircularProgress size={16} color='inherit' />
                     ) : (
                       <CheckCircleIcon />
                     )
                   }
                   onClick={handleBulkApprove}
-                  disabled={!bulkRemark.trim() || bulkActionLoading}
+                  disabled={
+                    !bulkRemark.trim() ||
+                    bulkApproveLoading ||
+                    bulkRejectLoading
+                  }
                   sx={{
                     bgcolor: '#2e7d32',
                     '&:hover': { bgcolor: '#1b5e20' },
                     textTransform: 'none',
                   }}
                 >
-                  {bulkActionLoading
+                  {bulkApproveLoading
                     ? 'Approving...'
                     : `Approve ${selectedPlants.length} Plant(s)`}
                 </Button>
@@ -520,21 +540,25 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                   variant='contained'
                   size='small'
                   startIcon={
-                    bulkActionLoading ? (
+                    bulkRejectLoading ? (
                       <CircularProgress size={16} color='inherit' />
                     ) : (
                       <CancelIcon />
                     )
                   }
                   onClick={handleBulkReject}
-                  disabled={!bulkRemark.trim() || bulkActionLoading}
+                  disabled={
+                    !bulkRemark.trim() ||
+                    bulkApproveLoading ||
+                    bulkRejectLoading
+                  }
                   sx={{
                     bgcolor: '#d32f2f',
                     '&:hover': { bgcolor: '#c62828' },
                     textTransform: 'none',
                   }}
                 >
-                  {bulkActionLoading
+                  {bulkRejectLoading
                     ? 'Rejecting...'
                     : `Reject ${selectedPlants.length} Plant(s)`}
                 </Button>
@@ -607,19 +631,22 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                       <Checkbox
                         checked={
                           selectedPlants.length ===
-                            uniquePlants.filter((p) => p.status === 'PENDING')
-                              .length &&
-                          uniquePlants.filter((p) => p.status === 'PENDING')
-                            .length > 0
+                            uniquePlants.filter(
+                              (p) => p.plantStatus === 'PENDING',
+                            ).length &&
+                          uniquePlants.filter(
+                            (p) => p.plantStatus === 'PENDING',
+                          ).length > 0
                         }
                         indeterminate={
                           selectedPlants.length > 0 &&
                           selectedPlants.length <
-                            uniquePlants.filter((p) => p.status === 'PENDING')
-                              .length
+                            uniquePlants.filter(
+                              (p) => p.plantStatus === 'PENDING',
+                            ).length
                         }
                         onChange={handleSelectAll}
-                        disabled={bulkActionLoading}
+                        disabled={bulkApproveLoading || bulkRejectLoading}
                       />
                     </TableCell>
                     <TableCell
@@ -693,9 +720,10 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                           checked={selectedPlants.includes(plant.plantId)}
                           onChange={() => handleSelectPlant(plant.plantId)}
                           disabled={
-                            bulkActionLoading ||
+                            bulkApproveLoading ||
+                            bulkRejectLoading ||
                             isAnyIndividualActionLoading ||
-                            plant.status !== 'PENDING'
+                            plant.plantStatus !== 'PENDING'
                           }
                         />
                       </TableCell>
@@ -718,20 +746,20 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                             fontSize: '0.75rem',
                             fontWeight: 600,
                             bgcolor:
-                              plant.status === 'APPROVED'
+                              plant.plantStatus === 'APPROVED'
                                 ? '#e8f5e9'
-                                : plant.status === 'REJECTED'
+                                : plant.plantStatus === 'REJECTED'
                                   ? '#ffebee'
                                   : '#fff3e0',
                             color:
-                              plant.status === 'APPROVED'
+                              plant.plantStatus === 'APPROVED'
                                 ? '#2e7d32'
-                                : plant.status === 'REJECTED'
+                                : plant.plantStatus === 'REJECTED'
                                   ? '#d32f2f'
                                   : '#f57c00',
                           }}
                         >
-                          {plant.status}
+                          {plant.plantStatus}
                         </Box>
                       </TableCell>
                       <TableCell>
@@ -768,7 +796,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                           multiline
                           maxRows={3}
                           value={
-                            plant.status !== 'PENDING'
+                            plant.plantStatus !== 'PENDING'
                               ? plant.verifiedRemark
                               : remarks[plant.plantId] || ''
                           }
@@ -778,7 +806,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                           placeholder={
                             selectedPlants.length > 1
                               ? 'Use bulk remark above'
-                              : plant.status !== 'PENDING'
+                              : plant.plantStatus !== 'PENDING'
                                 ? 'Already processed'
                                 : 'Enter remark...'
                           }
@@ -786,7 +814,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                           disabled={
                             selectedPlants.length > 1 ||
                             isAnyIndividualActionLoading ||
-                            plant.status !== 'PENDING'
+                            plant.plantStatus !== 'PENDING'
                           }
                           sx={{
                             '& .MuiOutlinedInput-root': {
@@ -808,7 +836,9 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                               <IconButton
                                 size='small'
                                 onClick={() => handleViewHistory(plant)}
-                                disabled={bulkActionLoading}
+                                disabled={
+                                  bulkApproveLoading || bulkRejectLoading
+                                }
                                 sx={{
                                   color: '#1976d2',
                                   '&:hover': {
@@ -823,8 +853,8 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                             <>
                               <Tooltip
                                 title={
-                                  plant.status !== 'PENDING'
-                                    ? `Already ${plant.status.toLowerCase()}`
+                                  plant.plantStatus !== 'PENDING'
+                                    ? `Already ${plant.plantStatus.toLowerCase()}`
                                     : individualLoading[plant.plantId] ===
                                         'approve'
                                       ? 'Approving...'
@@ -840,9 +870,10 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                                     }
                                     disabled={
                                       remarks[plant.plantId] === '' ||
-                                      bulkActionLoading ||
+                                      bulkApproveLoading ||
+                                      bulkRejectLoading ||
                                       isAnyIndividualActionLoading ||
-                                      plant.status !== 'PENDING'
+                                      plant.plantStatus !== 'PENDING'
                                     }
                                     sx={{
                                       color: '#2e7d32',
@@ -869,8 +900,8 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
 
                               <Tooltip
                                 title={
-                                  plant.status !== 'PENDING'
-                                    ? `Already ${plant.status.toLowerCase()}`
+                                  plant.plantStatus !== 'PENDING'
+                                    ? `Already ${plant.plantStatus.toLowerCase()}`
                                     : individualLoading[plant.plantId] ===
                                         'reject'
                                       ? 'Rejecting...'
@@ -886,9 +917,10 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                                     }
                                     disabled={
                                       remarks[plant.plantId] === '' ||
-                                      bulkActionLoading ||
+                                      bulkApproveLoading ||
+                                      bulkRejectLoading ||
                                       isAnyIndividualActionLoading ||
-                                      plant.status !== 'PENDING'
+                                      plant.plantStatus !== 'PENDING'
                                     }
                                     sx={{
                                       color: '#d32f2f',
@@ -913,12 +945,13 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                                 </span>
                               </Tooltip>
 
-                              <Tooltip title='View History' arrow>
+                              {/* <Tooltip title='View History' arrow>
                                 <IconButton
                                   size='small'
                                   onClick={() => handleViewHistory(plant)}
                                   disabled={
-                                    bulkActionLoading ||
+                                    bulkApproveLoading ||
+                                    bulkRejectLoading ||
                                     isAnyIndividualActionLoading
                                   }
                                   sx={{
@@ -930,7 +963,7 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
                                 >
                                   <HistoryIcon fontSize='small' />
                                 </IconButton>
-                              </Tooltip>
+                              </Tooltip> */}
                             </>
                           )}
                         </Box>
@@ -963,7 +996,11 @@ const ApproveDialog = ({ open, onClose, year, userRole, timelineData }) => {
             onClick={handleCancel}
             variant='outlined'
             color='error'
-            disabled={bulkActionLoading || isAnyIndividualActionLoading}
+            disabled={
+              bulkApproveLoading ||
+              bulkRejectLoading ||
+              isAnyIndividualActionLoading
+            }
           >
             Close
           </Button>
