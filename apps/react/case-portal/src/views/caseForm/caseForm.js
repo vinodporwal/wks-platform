@@ -43,7 +43,6 @@ import Config from '../../consts'
 import { buildCreateUrl } from 'utils/util'
 import { Formio } from 'formiojs'
 import { Form } from '@formio/react'
-import { use } from 'react';
 
 Formio.options = {
   vm: {
@@ -386,8 +385,6 @@ console.log('*****  taskId:  ', taskId);
         } else {
           console.error('Form structure or components are undefined.')
         }
-        setIsFormData(true)
-
         // Prefer fetching by businessKey (exact match). If not available, fall back to getCaseById.
         let caseData = null;
         try {
@@ -396,15 +393,21 @@ console.log('*****  taskId:  ', taskId);
             // console.log(" ****processExists : ", processExists)
             // setProcessExistsForBusinessKey(processExists)
 
+            console.log('[DEBUG] Fetching case by businessKey:', aCase.businessKey, '| caseDefinitionId:', aCase.caseDefinitionId)
             const resp = await CaseService.getCaseByBusinessKey(
               keycloak,
               aCase.caseDefinitionId,
               aCase.businessKey,
             );
+            console.log('[DEBUG] getCaseByBusinessKey raw response:', resp)
             if (resp && resp.data && resp.data.length > 0) {
               console.log("in caseForm : caseData.........", resp.data[0]);
+              console.log('[DEBUG] attributes from API:', resp.data[0]?.attributes)
+              console.log('[DEBUG] textField1 in attributes:', resp.data[0]?.attributes?.find(a => a.name === 'textField1'))
               // API returns an array in the same mapped format
               caseData = resp.data[0];
+            } else {
+              console.warn('[DEBUG] getCaseByBusinessKey returned no data. resp:', resp)
             }
           }
         } catch (err) {
@@ -413,14 +416,18 @@ console.log('*****  taskId:  ', taskId);
 
         if (!caseData) {
           console.log("in caseForm : caseData not found.........", caseData);
+          console.log('[DEBUG] Falling back to getCaseById with businessKey:', aCase.businessKey)
           caseData = await CaseService.getCaseById(
             keycloak,
             aCase.businessKey,
           )
+          console.log('[DEBUG] getCaseById result:', caseData)
         }
 
         aCase.documents = caseData?.documents || []
         aCase.comments = caseData?.comments || []
+        console.log('[DEBUG] caseData before return:', caseData)
+        console.log('[DEBUG] caseData.attributes:', caseData?.attributes)
         // aCase.stage = caseData?.stage || "Stage 0";
         return { caseData: aCase, updatedFormStructure }
       })
@@ -589,21 +596,29 @@ console.log('*****  taskId:  ', taskId);
         setDocuments(caseData?.documents)
         
         if(caseData && caseData.attributes) {
-         
+          console.log('[DEBUG] Building formData from attributes. Count:', caseData.attributes.length)
+          console.log('[DEBUG] Raw attributes array:', JSON.stringify(caseData.attributes))
+          const mappedData = caseData.attributes.reduce(
+            (obj, item) =>
+              Object.assign(obj, {
+                [item.name]: tryParseJSONObject(item.value)
+                  ? JSON.parse(item.value)
+                  : item.value,
+              }),
+            {},
+          )
+          console.log('[DEBUG] Mapped formData.data:', mappedData)
+          console.log('[DEBUG] textField1 in mapped data:', mappedData?.textField1)
+          console.log('[DEBUG] mainAsset / assetName in mapped data:', mappedData?.mainAsset ?? mappedData?.assetName ?? 'NOT FOUND')
 		  setFormData({
-            data: caseData.attributes.reduce(
-              (obj, item) =>
-                Object.assign(obj, {
-                  [item.name]: tryParseJSONObject(item.value)
-                    ? JSON.parse(item.value)
-                    : item.value,
-                }),
-              {},
-            ),
+            data: mappedData,
             metadata: {},
             isValid: true,
           });
-		}
+		} else {
+          console.warn('[DEBUG] caseData.attributes is missing or empty. caseData:', caseData)
+        }
+        setIsFormData(true)
         setActiveStage(caseData.stage)
         console.log('CaseForm : Active Stage : ', caseData.stage)
       })
