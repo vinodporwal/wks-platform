@@ -9,6 +9,7 @@ import NestedKendoTable from 'components/aop-phase-two/common/NestedKendoTable/i
 import { InputApiService } from 'components/aop-phase-two/services/cpp/inputApiService'
 import useConfigurationDates from 'components/aop-phase-two/common/hooks/useConfigurationDates'
 import Notification from 'components/aop-phase-two/common/utilities/Notification'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const FixedNorms = () => {
   const keycloak = useSession()
@@ -707,12 +708,7 @@ const FixedNorms = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading || !!dateLoading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <NestedKendoTable
         columns={nestedColumns}

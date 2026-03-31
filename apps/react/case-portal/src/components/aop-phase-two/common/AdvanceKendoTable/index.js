@@ -54,6 +54,7 @@ import { getColumnMenuDateFilter } from '../utilities/ColumnMenuDateFilter'
 import { getColumnMenuCheckboxFilter } from '../utilities/ColumnMenu1'
 import DateTimePickerEditor from '../utilities/DatePickeronSelectedYr'
 import dataGridStore from 'store/reducers/dataGridStore'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 // Helper function to get nested value from object
 const getNestedValue = (obj, path) => {
@@ -1926,14 +1927,7 @@ const AdvanceKendoTable = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      {loading && <LoaderBackdrop open={!!loading} />}
 
       {(permissions?.allAction ?? true) && (
         <Box

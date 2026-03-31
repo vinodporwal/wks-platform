@@ -1,12 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import {
-  Box,
-  Tabs,
-  Tab,
-  Backdrop,
-  CircularProgress,
-  Stack,
-} from '@mui/material'
+import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
+import AopTabs from '../../common/components/AopTabs'
 import { generateHeaderNames } from 'components/aop-phase-two/common/utilities/generateHeaders'
 import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
@@ -21,6 +15,7 @@ import HeatRate from './HeatRate/index'
 import FixedNorms from './FixedNorms'
 import Fuel from './Fuel/index'
 import AopDesignBasis from './AopDesignBasis'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Inputs = () => {
   const keycloak = useSession()
@@ -179,45 +174,15 @@ const Inputs = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs
-          sx={{
-            borderBottom: '0px solid #ccc',
-            '.MuiTabs-indicator': { display: 'none' },
-            margin: '0px 0px 0px 0px',
-            minHeight: '28px',
-          }}
-          textColor='primary'
-          indicatorColor='primary'
-          value={tabIndex}
-          onChange={(e, newIndex) => {
-            if (newIndex >= 0 && newIndex < tabObj.length) {
-              setTabIndex(newIndex)
-            }
-          }}
-        >
-          {tabObj.map((tab) => (
-            <Tab
-              key={tab.id}
-              sx={{
-                border: '1px solid #ADD8E6',
-                borderBottom: '1px solid #ADD8E6',
-                fontSize: '0.75rem',
-                padding: '9px',
-                minHeight: '12px',
-              }}
-              label={tab.displayName || tab.name}
-            />
-          ))}
-        </Tabs>
+        <AopTabs
+          tabIndex={tabIndex}
+          setTabIndex={setTabIndex}
+          tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
+        />
       </Box>
 
       {/* Tab Content */}
