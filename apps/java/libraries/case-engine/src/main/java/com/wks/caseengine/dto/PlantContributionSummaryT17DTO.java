@@ -35,4 +35,5 @@ public class PlantContributionSummaryT17DTO {
     private String plantFkId;
     private String aopYear;
     private String remarks;
+    private String type;
 }
