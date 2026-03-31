@@ -194,7 +194,7 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 					+ "    LEFT JOIN NormAttributeTransactions NAT ON NAT.NormParameter_FK_Id = NP.Id "
 					+ "    AND NAT.AuditYear = :year " 
 					// + "WHERE (NPT.Name = 'Configuration'  OR NPT.Name = 'Constant') "
-					+ "  WHERE NP.Plant_FK_Id = :plantFKId " + "GROUP BY " + "   NP.Id,  NP.NormParameterType_FK_Id, "
+					+ "  WHERE NP.Plant_FK_Id = :plantFKId AND (NPT.Name = 'UtilityConsumption'  OR NPT.Name = 'CatChem') " + "GROUP BY " + "   NP.Id,  NP.NormParameterType_FK_Id, "
 					+ "    NP.DisplayName, " + "    NP.DisplayOrder, " + "    CP.DisplayName, "
 					+ "    NPT.DisplayName, " + "    NPT.DisplayOrder "
 					+ "ORDER BY NPT.DisplayOrder, NP.DisplayOrder";
