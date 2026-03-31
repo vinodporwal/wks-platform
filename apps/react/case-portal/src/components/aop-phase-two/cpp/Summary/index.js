@@ -5,6 +5,7 @@ import { useSession } from 'SessionStoreContext'
 import CppExecutionList from './CppExecutionList'
 import MonthlyExecutionList from './MonthlyExecutionList'
 import AssetStatusList from './AssetStatusList'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Summary = () => {
   const keycloak = useSession()
@@ -35,12 +36,7 @@ const Summary = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Grid 1: CPP Execution List - Always visible */}
       <Box sx={{ mb: 3 }}>

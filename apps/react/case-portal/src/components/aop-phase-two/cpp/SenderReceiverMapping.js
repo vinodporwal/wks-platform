@@ -4,6 +4,7 @@ import { useSession } from 'SessionStoreContext'
 import { UtilityPlantApiServiceV2 } from 'components/aop-phase-two/services/cpp/utilityPlantApiServiceV2'
 import { Box, Backdrop, CircularProgress, Stack } from '@mui/material'
 import AdvanceKendoTable from '../common/AdvanceKendoTable/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const SenderReceiverMapping = () => {
   const [modifiedCells, setModifiedCells] = useState({})
   const [loading, setLoading] = useState(false)
@@ -352,12 +353,7 @@ const SenderReceiverMapping = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           columns={columns}
