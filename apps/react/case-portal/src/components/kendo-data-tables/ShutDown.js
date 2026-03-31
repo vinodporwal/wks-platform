@@ -1,5 +1,6 @@
 import { useGridApiRef } from '@mui/x-data-grid'
 import React, { useEffect, useState, useMemo } from 'react'
+import { Typography } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -1202,7 +1203,16 @@ const ShutDown = ({ permissions }) => {
       >
         <CircularProgress color='inherit' />
       </Backdrop>
-
+      {lowerVertName === 'meg' && (
+        <Typography
+          component='div'
+          className='text-note'
+          style={{ marginTop: 24 }}
+        >
+          * for the case of turnaround planning kindly specify turnaround text
+          in the shutdown desc column
+        </Typography>
+      )}
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
