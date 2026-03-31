@@ -350,10 +350,19 @@ def distribute_by_priority(
     fym_id = row[0]
 
     # Fetch heat rate data early to avoid connection timeout
+    # Calculate financial year string
+    if month >= 4:
+        fy_string = f"{year}-{str(year + 1)[-2:]}"
+    else:
+        fy_string = f"{year - 1}-{str(year)[-2:]}"
+    
+    # Fetch heat rate data for the financial year
+    # Use GT-1 as the common heat rate curve for all GTs to ensure consistency
     cur.execute("""
         SELECT AssetName AS EquipType, UtilityId AS CPPUtility, GTLoad, FinalHeatRate AS HeatRate, FreeSteamFactor
         FROM CPP_GTHeatRate
-    """)
+        WHERE FinancialYear = ? AND AssetName = 'GT-1'
+    """, (fy_string,))
     heat_rows = cur.fetchall()
 
     heat_df = None

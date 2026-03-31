@@ -474,7 +474,8 @@ def extract_raw_water_balance_data(month: int, year: int, calculation_result: di
             'total': total_demand
         },
         'supply': {
-            'plant_production': total_demand
+            'plant_production': total_demand,
+            'label': 'Raw Water Intake (External Source)'
         },
         'balance': 0.0,
         'unit': 'M3'

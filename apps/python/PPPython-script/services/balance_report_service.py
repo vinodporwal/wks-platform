@@ -19,6 +19,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from database.connection import get_connection
+from database.power_asset_queries import get_month_hours
 
 
 # ============================================================
@@ -224,19 +225,19 @@ def get_ncv_from_fuel_availability(month: int, year: int, fuel_name: str = 'NATU
         conn.close()
 
 
-def get_gt_heat_rate(month: int, year: int, asset_name: str, gt_load_mw: float) -> float:
+def get_gt_heat_rate_and_free_steam(month: int, year: int, asset_name: str, gt_load_mw: float) -> tuple:
     """
-    Fetch GT Heat Rate from CPP_GTHeatRate table based on allocated load.
+    Fetch GT Heat Rate and Free Steam Factor from CPP_GTHeatRate table based on allocated load.
     Uses the heat rate for the load point closest to (but not exceeding) the actual load.
     
     Args:
         month: Month number (1-12)
         year: Year
-        asset_name: Asset name (e.g., 'GT-2', 'GT-3')
+        asset_name: Asset name (e.g., 'GT-1', 'GT-2', 'GT-3')
         gt_load_mw: GT allocated load in MW
     
     Returns:
-        Final Heat Rate value or 0 if not found
+        Tuple of (heat_rate, free_steam_factor) or (0.0, 0.0) if not found
     """
     conn = get_connection()
     cursor = conn.cursor()
@@ -249,36 +250,40 @@ def get_gt_heat_rate(month: int, year: int, asset_name: str, gt_load_mw: float) 
             fy_string = f"{year - 1}-{str(year)[-2:]}"
         
         # Query heat rate table - get all load points for this asset, ordered by load
+        # Use GT-1 as common curve for consistency
         query = """
-            SELECT GTLoad, FinalHeatRate
+            SELECT GTLoad, FinalHeatRate, FreeSteamFactor
             FROM dbo.CPP_GTHeatRate
-            WHERE FinancialYear = ? AND AssetName = ?
+            WHERE FinancialYear = ? AND AssetName = 'GT-1'
             ORDER BY GTLoad
         """
         
-        cursor.execute(query, (fy_string, asset_name))
+        cursor.execute(query, (fy_string,))
         rows = cursor.fetchall()
         
         if not rows:
-            return 0.0
+            return 0.0, 0.0
         
         # Find the appropriate heat rate based on load
         # Use the heat rate for the highest load point that doesn't exceed actual load
         selected_heat_rate = 0.0
+        selected_free_steam = 0.0
         for row in rows:
             load_point = float(row[0])
             heat_rate = float(row[1])
+            free_steam = float(row[2])
             
             if load_point <= gt_load_mw:
                 selected_heat_rate = heat_rate
+                selected_free_steam = free_steam
             else:
                 break  # Stop when we exceed the actual load
         
-        return selected_heat_rate
+        return selected_heat_rate, selected_free_steam
         
     except Exception as e:
-        print(f"Error fetching GT Heat Rate: {e}")
-        return 0.0
+        print(f"Error fetching GT Heat Rate and Free Steam: {e}")
+        return 0.0, 0.0
     finally:
         cursor.close()
         conn.close()
@@ -317,7 +322,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
         
         if gt_data:
             gross_mwh = gt_data.get('GrossMWh', 0)
-            hours = gt_data.get('OperatingHours', 720)
+            hours = gt_data.get('OperatingHours', get_month_hours(month, year))
             load_mw = gt_data.get('LoadMW', 0)
             
             # If no LoadMW, calculate from GrossMWh and Hours
@@ -351,7 +356,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
     
     if stg_data:
         gross_mwh = stg_data.get('GrossMWh', 0)
-        hours = stg_data.get('OperatingHours', 720)
+        hours = stg_data.get('OperatingHours', get_month_hours(month, year))
         load_mw = stg_data.get('LoadMW', 0)
         
         if load_mw == 0 and hours > 0:
@@ -375,7 +380,7 @@ def extract_asset_availability_data(month: int, year: int, calculation_result: d
     
     # Process Import Power
     import_mwh = power_result.get('importUnits', 0)
-    import_hours = 720  # Assume full month availability
+    import_hours = get_month_hours(month, year)  # Use actual month hours
     # Import allocation should be same as max since we use all import power
     import_allocation = 25 if import_mwh > 0 else 0
     
@@ -477,8 +482,9 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
     # Fetch NCV from database for this month
     ncv_gbt = get_ncv_from_fuel_availability(month, year, 'NATURAL GAS')
     
-    # Get operating hours for the month (default 720 for 30-day month)
-    operating_hours = 720  # Will be updated from dispatch data if available
+    # Get actual operating hours for the month based on days in month
+    # May 2025 = 31 days = 744 hours, April 2025 = 30 days = 720 hours, etc.
+    default_operating_hours = get_month_hours(month, year)
     
     # Extract GT data - Create map from dispatch data
     gt_dispatch_map = {}
@@ -486,7 +492,7 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
         asset_name = asset.get('AssetName', '')
         if 'GT' in asset_name or 'Power Plant' in asset_name:
             gross_mwh = asset.get('GrossMWh', 0)
-            operating_hours = asset.get('OperatingHours', 720)
+            operating_hours = asset.get('OperatingHours', default_operating_hours)
             
             if 'Plant-1' in asset_name or 'Plant 1' in asset_name:
                 gt_dispatch_map['GT1'] = {'gross_mwh': gross_mwh, 'hours': operating_hours}
@@ -497,14 +503,14 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
     
     # Build GT assets list - ALWAYS show all 3 GTs
     gt_configs = [
-        ('GT1', 'GT-1', natural_gas.get('gt1_ng_norm', 0.0094715)),
-        ('GT2', 'GT-2', natural_gas.get('gt2_ng_norm', 0.0101463)),
-        ('GT3', 'GT-3', natural_gas.get('gt3_ng_norm', 0.0094715))
+        ('GT1', 'GT-1', 'gt1_ng_details'),
+        ('GT2', 'GT-2', 'gt2_ng_details'),
+        ('GT3', 'GT-3', 'gt3_ng_details')
     ]
     
     gt_assets = []
-    for gt_name, gt_db_name, ng_norm in gt_configs:
-        dispatch_data = gt_dispatch_map.get(gt_name, {'gross_mwh': 0, 'hours': 720})
+    for gt_name, gt_db_name, ng_details_key in gt_configs:
+        dispatch_data = gt_dispatch_map.get(gt_name, {'gross_mwh': 0, 'hours': default_operating_hours})
         gross_mwh = dispatch_data['gross_mwh']
         gross_kwh = gross_mwh * 1000
         operating_hours = dispatch_data['hours']
@@ -521,14 +527,45 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
                 'heat_rate_kcal_kwh': 0
             })
         else:
-            # Fetch heat rate from database based on actual load
-            heat_rate_kcal_kwh = get_gt_heat_rate(month, year, gt_db_name, avg_load_mw)
+            # Calculate Net MMBTU from heat rate and free steam factor
+            # Get heat rate and free steam factor from database based on actual load
+            heat_rate_kcal_kwh, free_steam_factor = get_gt_heat_rate_and_free_steam(month, year, gt_db_name, avg_load_mw)
             
-            # If heat rate not found in DB, fall back to calculated value
-            if heat_rate_kcal_kwh == 0:
-                heat_rate_kcal_kwh = ng_norm * 251995.76
+            print(f"[FUEL DEMAND DEBUG] {gt_name}: Load={avg_load_mw:.2f} MW, Heat Rate={heat_rate_kcal_kwh:.2f}, FreeSteam={free_steam_factor:.4f}")
             
-            quantity_mmbtu = gross_kwh * ng_norm
+            if heat_rate_kcal_kwh > 0:
+                # Constants for calculation
+                GT_NG_KCAL_TO_BTU = 3.96567
+                GT_NG_BTU_TO_MMBTU = 1000000
+                GT_NG_FREE_STEAM_ENERGY_KCAL_KG = 760.87
+                
+                # Calculate Gross MMBTU = KWH × Heat Rate × 3.96567 / 1,000,000
+                gross_mmbtu = gross_kwh * heat_rate_kcal_kwh * GT_NG_KCAL_TO_BTU / GT_NG_BTU_TO_MMBTU
+                
+                # Calculate Free Steam MMBTU = KWH × FreeSteamFactor × 760.87 × 3.96567 / 1,000,000
+                free_steam_mmbtu = gross_kwh * free_steam_factor * GT_NG_FREE_STEAM_ENERGY_KCAL_KG * GT_NG_KCAL_TO_BTU / GT_NG_BTU_TO_MMBTU
+                
+                # Calculate Net MMBTU = Gross - Free Steam
+                quantity_mmbtu = gross_mmbtu - free_steam_mmbtu
+                
+                print(f"[FUEL DEMAND DEBUG] {gt_name}: Gross={gross_mmbtu:.2f}, FreeSteam={free_steam_mmbtu:.2f}, Net={quantity_mmbtu:.2f} MMBTU")
+            else:
+                # Fallback: Try to get from ng_details if available
+                ng_details = natural_gas.get(ng_details_key)
+                if ng_details and isinstance(ng_details, dict) and 'gross_mmbtu' in ng_details:
+                    quantity_mmbtu = ng_details.get('gross_mmbtu', 0)
+                    heat_rate_kcal_kwh = ng_details.get('heat_rate', 0)
+                    print(f"[FUEL DEMAND DEBUG] {gt_name}: Using ng_details gross_mmbtu={quantity_mmbtu:.2f}")
+                else:
+                    # Last resort: use absolute value of net MMBTU
+                    gt_mmbtu_key = f'{gt_name.lower()}_mmbtu'
+                    net_mmbtu = natural_gas.get(gt_mmbtu_key, 0)
+                    quantity_mmbtu = abs(net_mmbtu)
+                    print(f"[FUEL DEMAND DEBUG] {gt_name}: FALLBACK - Using abs(net_mmbtu)={quantity_mmbtu:.2f}")
+                    
+                    # Calculate heat rate from norm
+                    ng_norm = natural_gas.get(f'{gt_name.lower()}_ng_norm', 0.0095)
+                    heat_rate_kcal_kwh = abs(ng_norm) * 251995.76
             
             gt_assets.append({
                 'asset_name': gt_name,
@@ -552,7 +589,7 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
         asset_name = asset.get('AssetName', '')
         if 'STG' in asset_name:
             gross_mwh = asset.get('GrossMWh', 0)
-            operating_hours = asset.get('OperatingHours', 720)
+            operating_hours = asset.get('OperatingHours', default_operating_hours)
             avg_load_mw = gross_mwh / operating_hours if operating_hours > 0 else 0
             
             # STG consumes SHP steam
@@ -957,12 +994,13 @@ def create_annual_balance_report_excel(financial_year: int, monthly_results: dic
         current_row = 1
         
         # Title
+        for col in range(1, 6):
+            ws.cell(row=current_row, column=col).fill = SECTION_FILL
         ws.merge_cells(f'A{current_row}:E{current_row}')
         title_cell = ws[f'A{current_row}']
         title_cell.value = f"Power & Utility Loop Balance Summary - {MONTH_NAMES[month]} {year}"
         title_cell.font = SECTION_FONT
         title_cell.alignment = Alignment(horizontal='center', vertical='center')
-        title_cell.fill = SECTION_FILL
         current_row += 2
         
         # SECTION I: FUEL DEMAND
@@ -982,7 +1020,11 @@ def create_annual_balance_report_excel(financial_year: int, monthly_results: dic
         current_row = write_other_utilities_balance_section(ws, current_row, month, year, calculation_result)
         current_row += 2
         
-        # SECTION V: ASSET AVAILABILITY AND LOADING
+        # SECTION V: CHEMICAL BALANCE
+        current_row = write_chemical_balance_section(ws, current_row, month, year, calculation_result)
+        current_row += 2
+        
+        # SECTION VI: ASSET AVAILABILITY AND LOADING
         current_row = write_asset_availability_section(ws, current_row, month, year, calculation_result)
         
         # Auto-fit column widths for this sheet
@@ -1068,12 +1110,13 @@ def create_balance_report_excel(month: int, year: int, calculation_result: dict,
     current_row = 1
     
     # Title
+    for col in range(1, 6):
+        ws.cell(row=current_row, column=col).fill = SECTION_FILL
     ws.merge_cells(f'A{current_row}:E{current_row}')
     title_cell = ws[f'A{current_row}']
     title_cell.value = f"Power & Utility Loop Balance Summary - {MONTH_NAMES[month]} {year}"
     title_cell.font = SECTION_FONT
     title_cell.alignment = Alignment(horizontal='center', vertical='center')
-    title_cell.fill = SECTION_FILL
     current_row += 2
     
     # SECTION I: FUEL DEMAND
@@ -1145,11 +1188,12 @@ def write_fuel_demand_section(ws, start_row: int, month: int, year: int, calcula
     row = start_row
     
     # Section header
+    for col in range(1, 7):
+        ws.cell(row=row, column=col).fill = SECTION_FILL
     ws.merge_cells(f'A{row}:F{row}')
     header_cell = ws[f'A{row}']
     header_cell.value = "SECTION I: FUEL DEMAND"
     header_cell.font = SECTION_FONT
-    header_cell.fill = SECTION_FILL
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
@@ -1177,27 +1221,11 @@ def write_fuel_demand_section(ws, start_row: int, month: int, year: int, calcula
     for gt in fuel_data['gt_assets']:
         ws[f'A{row}'] = gt['asset_name']
         ws[f'B{row}'] = 'Gas Turbine'
-        ws[f'C{row}'] = f"{round(gt['ncv_kcal_kwh'], 2)} Kcal/kWh"
+        ws[f'C{row}'] = f"{round(gt['ncv_kcal_kwh'], 2)} Kcal/kg"
         ws[f'D{row}'] = round(gt['quantity_mmbtu'], 2)
-        # GT allocated load is total monthly generation in MWh, not average MW
-        gross_mwh = gt.get('gross_mwh', gt['allocated_load_mw'] * 720)  # Fallback calculation
-        ws[f'E{row}'] = f"{round(gross_mwh, 2)} MWh"
+        # GT allocated load shows average MW per hour
+        ws[f'E{row}'] = f"{round(gt['allocated_load_mw'], 2)} MW"
         ws[f'F{row}'] = f"{round(gt['heat_rate_kcal_kwh'], 2)} Kcal/kWh"
-        
-        for col in range(1, 7):
-            ws.cell(row=row, column=col).border = THIN_BORDER
-        row += 1
-    
-    # STG Asset
-    if fuel_data['stg_asset']:
-        stg = fuel_data['stg_asset']
-        ws[f'A{row}'] = stg['asset_name']
-        ws[f'B{row}'] = 'Steam Turbine'
-        ws[f'C{row}'] = f"{round(stg['ncv_gbt'], 2)} Kcal/kWh"  # Use NCV from database
-        ws[f'D{row}'] = '-'
-        # STG allocated load is total monthly generation in MWh
-        ws[f'E{row}'] = f"{round(stg['gross_mwh'], 2)} MWh"
-        ws[f'F{row}'] = f"{round(stg['shp_consumed_mt'], 2)} MT SHP"  # Move SHP to Heat Rate column
         
         for col in range(1, 7):
             ws.cell(row=row, column=col).border = THIN_BORDER
@@ -1242,11 +1270,12 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     row = start_row
     
     # Section header
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SECTION_FILL
     ws.merge_cells(f'A{row}:E{row}')
     header_cell = ws[f'A{row}']
     header_cell.value = "SECTION II: POWER BALANCE"
     header_cell.font = SECTION_FONT
-    header_cell.fill = SECTION_FILL
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
@@ -1267,6 +1296,8 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     # Plant Requirement
     ws[f'A{row}'] = "Plant Requirement (Power)"
     ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
     
     plant_req_total = 0
@@ -1275,13 +1306,15 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
         demand_mw = plant_data['demand_value'] / 1000  # Convert KWH to MWH
         ws[f'C{row}'] = round(demand_mw, 2)
         plant_req_total += demand_mw
-        for col in [1, 2, 3]:
+        for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
     
     # Fixed Requirement
     ws[f'A{row}'] = "Fixed Requirement (Power)"
     ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
     
     fixed_req_total = 0
@@ -1290,13 +1323,15 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
         demand_mw = fixed_data['consumption_value'] / 1000  # Convert KWH to MWH
         ws[f'C{row}'] = round(demand_mw, 2)
         fixed_req_total += demand_mw
-        for col in [1, 2, 3]:
+        for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
     
     # Other Utility Requirement (Auxiliary Power for GTs)
     ws[f'A{row}'] = "Other Utility Requirement"
     ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
     
     aux_power_total = 0
@@ -1324,7 +1359,7 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
         aux_mw = gt_generation[gt_name] * NORM_GT_AUX
         ws[f'C{row}'] = round(aux_mw, 2)
         aux_power_total += aux_mw
-        for col in [1, 2, 3]:
+        for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
     
@@ -1334,7 +1369,7 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     stg_aux_mw = stg_generation * NORM_STG_AUX
     ws[f'C{row}'] = round(stg_aux_mw, 2)
     aux_power_total += stg_aux_mw
-    for col in [1, 2, 3]:
+    for col in range(1, 6):
         ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
     
@@ -1364,7 +1399,7 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
             ws[f'B{row}'] = norm_value  # Add norm value
             ws[f'C{row}'] = round(power_mwh, 2)
             aux_power_total += power_mwh
-            for col in [1, 2, 3]:
+            for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
     
@@ -1407,12 +1442,12 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
         ws[f'D{gen_row}'] = asset_name
         ws[f'E{gen_row}'] = round(gen_mwh, 2)
         generation_total += gen_mwh
-        for col in [4, 5]:
+        for col in range(1, 6):
             ws.cell(row=gen_row, column=col).border = THIN_BORDER
         gen_row += 1
     
-    # Summary rows at bottom
-    row = max(row, gen_row) + 1
+    # Summary rows at bottom (no blank row - keep totals adjacent to data)
+    row = max(row, gen_row)
     
     # Use actual total from calculation result
     total_demand = total_demand_actual
@@ -1432,7 +1467,7 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     imbalance = generation_total - total_demand
     ws[f'A{row}'] = "Power Imbalance"
     ws[f'C{row}'] = round(imbalance, 2)
-    for col in [1, 2, 3]:
+    for col in range(1, 6):
         ws.cell(row=row, column=col).font = BOLD_FONT
         ws.cell(row=row, column=col).fill = TOTAL_FILL
         ws.cell(row=row, column=col).border = THIN_BORDER
@@ -1446,11 +1481,12 @@ def write_steam_balance_section(ws, start_row: int, month: int, year: int, calcu
     row = start_row
     
     # Section header
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SECTION_FILL
     ws.merge_cells(f'A{row}:E{row}')
     header_cell = ws[f'A{row}']
     header_cell.value = "SECTION III: STEAM BALANCE"
     header_cell.font = SECTION_FONT
-    header_cell.fill = SECTION_FILL
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
@@ -1484,11 +1520,12 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     row = start_row
     
     # Subsection header
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SUBSECTION_FILL
     ws.merge_cells(f'A{row}:E{row}')
     header_cell = ws[f'A{row}']
     header_cell.value = f"{steam_type} STEAM BALANCE"
     header_cell.font = Font(bold=True, size=11)
-    header_cell.fill = SUBSECTION_FILL
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
@@ -1509,6 +1546,8 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     # Plant Requirement
     ws[f'A{row}'] = f"Plant Requirement ({steam_type} Steam)"
     ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
     
     plant_req_total = 0
@@ -1520,13 +1559,15 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         demand_mt = plant_data['demand_value']
         ws[f'C{row}'] = round(demand_mt, 2)
         plant_req_total += demand_mt
-        for col in [1, 2, 3]:
+        for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
     
     # Fixed Requirement
     ws[f'A{row}'] = f"Fixed Requirement ({steam_type} Steam)"
     ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
     
     fixed_req_total = 0
@@ -1537,13 +1578,15 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         consumption_mt = fixed_data['consumption_value']
         ws[f'C{row}'] = round(consumption_mt, 2)
         fixed_req_total += consumption_mt
-        for col in [1, 2, 3]:
+        for col in range(1, 6):
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
     
     # Other Utility Requirement (U4U for steam)
     ws[f'A{row}'] = "Other Utility Requirement"
     ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
     
     u4u_total = 0
@@ -1557,7 +1600,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'A{row}'] = "  STG Power Generation"
             ws[f'C{row}'] = round(stg_shp_power, 2)
             u4u_total += stg_shp_power
-            for col in [1, 2, 3]:
+            for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
         
@@ -1567,7 +1610,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'A{row}'] = "  LP Steam (via STG)"
             ws[f'C{row}'] = round(shp_for_lp_stg, 2)
             u4u_total += shp_for_lp_stg
-            for col in [1, 2, 3]:
+            for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
         
@@ -1580,7 +1623,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'A{row}'] = "  MP Steam (via STG)"
             ws[f'C{row}'] = round(shp_for_mp_stg, 2)
             u4u_total += shp_for_mp_stg
-            for col in [1, 2, 3]:
+            for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
         
@@ -1590,7 +1633,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'A{row}'] = "  MP Steam (via PRDS)"
             ws[f'C{row}'] = round(shp_for_mp_prds, 2)
             u4u_total += shp_for_mp_prds
-            for col in [1, 2, 3]:
+            for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
         
@@ -1600,7 +1643,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'A{row}'] = "  HP Steam (via PRDS)"
             ws[f'C{row}'] = round(shp_for_hp_prds, 2)
             u4u_total += shp_for_hp_prds
-            for col in [1, 2, 3]:
+            for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
     
@@ -1611,7 +1654,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'A{row}'] = "  LP Steam (via PRDS)"
             ws[f'C{row}'] = round(mp_for_lp, 2)
             u4u_total += mp_for_lp
-            for col in [1, 2, 3]:
+            for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
     
@@ -1654,7 +1697,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
                 ws[f'D{gen_row}'] = hrsg_name
                 ws[f'E{gen_row}'] = round(total_shp_mt, 2)
                 generation_total += total_shp_mt
-                for col in [4, 5]:
+                for col in range(1, 6):
                     ws.cell(row=gen_row, column=col).border = THIN_BORDER
                 gen_row += 1
     
@@ -1665,7 +1708,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'D{gen_row}'] = "HP PRDS (from SHP)"
             ws[f'E{gen_row}'] = round(hp_from_prds, 2)
             generation_total += hp_from_prds
-            for col in [4, 5]:
+            for col in range(1, 6):
                 ws.cell(row=gen_row, column=col).border = THIN_BORDER
             gen_row += 1
     
@@ -1676,7 +1719,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'D{gen_row}'] = "MP PRDS (from SHP)"
             ws[f'E{gen_row}'] = round(mp_from_prds, 2)
             generation_total += mp_from_prds
-            for col in [4, 5]:
+            for col in range(1, 6):
                 ws.cell(row=gen_row, column=col).border = THIN_BORDER
             gen_row += 1
         
@@ -1686,7 +1729,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'D{gen_row}'] = "STG Extraction"
             ws[f'E{gen_row}'] = round(mp_from_stg, 2)
             generation_total += mp_from_stg
-            for col in [4, 5]:
+            for col in range(1, 6):
                 ws.cell(row=gen_row, column=col).border = THIN_BORDER
             gen_row += 1
     
@@ -1697,7 +1740,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'D{gen_row}'] = "LP PRDS (from MP)"
             ws[f'E{gen_row}'] = round(lp_from_prds, 2)
             generation_total += lp_from_prds
-            for col in [4, 5]:
+            for col in range(1, 6):
                 ws.cell(row=gen_row, column=col).border = THIN_BORDER
             gen_row += 1
         
@@ -1707,12 +1750,12 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws[f'D{gen_row}'] = "STG Extraction"
             ws[f'E{gen_row}'] = round(lp_from_stg, 2)
             generation_total += lp_from_stg
-            for col in [4, 5]:
+            for col in range(1, 6):
                 ws.cell(row=gen_row, column=col).border = THIN_BORDER
             gen_row += 1
     
-    # Summary rows at bottom
-    row = max(row, gen_row) + 1
+    # Summary rows at bottom (no blank row - keep totals adjacent to data)
+    row = max(row, gen_row)
     
     # Use actual total from calculation result
     total_demand = total_demand_actual
@@ -1732,7 +1775,7 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     imbalance = generation_total - total_demand
     ws[f'A{row}'] = f"{steam_type} Steam Imbalance"
     ws[f'C{row}'] = round(imbalance, 2)
-    for col in [1, 2, 3]:
+    for col in range(1, 6):
         ws.cell(row=row, column=col).font = BOLD_FONT
         ws.cell(row=row, column=col).fill = TOTAL_FILL
         ws.cell(row=row, column=col).border = THIN_BORDER
@@ -1748,20 +1791,22 @@ def write_asset_availability_section(ws, start_row: int, month: int, year: int, 
     row = start_row
     
     # Section header
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SECTION_FILL
     ws.merge_cells(f'A{row}:E{row}')
     header_cell = ws[f'A{row}']
     header_cell.value = "SECTION V: ASSET AVAILABILITY AND LOADING"
     header_cell.font = SECTION_FONT
-    header_cell.fill = SECTION_FILL
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
     # Generation Assets subsection
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SUBSECTION_FILL
     ws.merge_cells(f'A{row}:E{row}')
     subheader_cell = ws[f'A{row}']
     subheader_cell.value = "Generation Assets"
     subheader_cell.font = Font(bold=True, size=11)
-    subheader_cell.fill = SUBSECTION_FILL
     subheader_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
@@ -1794,11 +1839,12 @@ def write_asset_availability_section(ws, start_row: int, month: int, year: int, 
     row += 1
     
     # Steam Assets subsection
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SUBSECTION_FILL
     ws.merge_cells(f'A{row}:E{row}')
     subheader_cell = ws[f'A{row}']
     subheader_cell.value = "Steam Assets"
     subheader_cell.font = Font(bold=True, size=11)
-    subheader_cell.fill = SUBSECTION_FILL
     subheader_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
@@ -1835,11 +1881,12 @@ def write_other_utilities_section(ws, start_row: int, month: int, year: int, cal
     row = start_row
     
     # Section header
+    for col in range(1, 4):
+        ws.cell(row=row, column=col).fill = SECTION_FILL
     ws.merge_cells(f'A{row}:C{row}')
     header_cell = ws[f'A{row}']
     header_cell.value = "SECTION IV+: OTHER UTILITIES BALANCE"
     header_cell.font = SECTION_FONT
-    header_cell.fill = SECTION_FILL
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
     
@@ -1933,3 +1980,226 @@ def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_nam
         return 0.0
     finally:
         conn.close()
+
+
+# ============================================================
+# SECTION V: CHEMICAL BALANCE
+# ============================================================
+
+def write_chemical_balance_section(ws, start_row: int, month: int, year: int, calculation_result: dict) -> int:
+    """Write Section V: Chemical Balance with individual balance for each chemical."""
+    row = start_row
+    
+    # Section header
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SECTION_FILL
+    ws.merge_cells(f'A{row}:E{row}')
+    header_cell = ws[f'A{row}']
+    header_cell.value = "SECTION V: CHEMICAL BALANCE"
+    header_cell.font = SECTION_FONT
+    header_cell.alignment = Alignment(horizontal='left', vertical='center')
+    row += 1
+    
+    # List of all chemicals to create balances for
+    # Format: (chemical_name, uom, parent_utility, parent_utility_name, consumer_name)
+    # Norms will be fetched from database
+    chemicals = [
+        # BFW Chemicals
+        ('CHEM CYCLO HEXY', 'KG', 'bfw', 'Boiler Feed Water', 'BFW Plant'),
+        ('CHEM MORPHOLENE', 'MT', 'bfw', 'Boiler Feed Water', 'BFW Plant'),
+        ('KEM WATREAT B 70M', 'KG', 'bfw', 'Boiler Feed Water', 'BFW Plant'),
+        
+        # DM Water Chemicals
+        ('CAUSTIC SODA LYE', 'MT', 'dm', 'DM Water', 'DM Water Plant'),
+        ('CHEM ALUM.SULFATE', 'KG', 'dm', 'DM Water', 'DM Water Plant'),
+        ('CHEM SODIUM SULPHITE', 'KG', 'dm', 'DM Water', 'DM Water Plant'),
+        ('POLYELECTROLYTE', 'KG', 'dm', 'DM Water', 'DM Water Plant'),
+        ('SODIUM CHLORIDE', 'MT', 'dm', 'DM Water', 'DM Water Plant'),
+        
+        # HRSG Chemicals (will handle separately due to multiple HRSGs)
+        ('CHEM TRISODIUM PHOSPHATE', 'KG', 'hrsg', 'HRSG1_SHP STEAM', 'HRSG Plants'),
+    ]
+    
+    # Write balance for each chemical
+    for chemical_name, uom, parent_utility, parent_utility_name, consumer_name in chemicals:
+        row = write_single_chemical_balance(ws, row, month, year, calculation_result, 
+                                           chemical_name, uom, parent_utility, parent_utility_name, consumer_name)
+        row += 1  # Add spacing between chemicals
+    
+    return row
+
+
+def write_single_chemical_balance(ws, start_row: int, month: int, year: int, calculation_result: dict,
+                                  chemical_name: str, uom: str, parent_utility: str, parent_utility_name: str, 
+                                  consumer_name: str) -> int:
+    """
+    Write a single chemical balance with 5-column layout (Demand, Norm, Quantity, Supply Source, Quantity).
+    
+    Args:
+        chemical_name: Name of the chemical (e.g., 'CHEM CYCLO HEXY')
+        uom: Unit of measurement (e.g., 'KG', 'MT')
+        parent_utility: Parent utility that consumes this chemical ('bfw', 'dm', 'hrsg')
+        parent_utility_name: Utility name for database lookup (e.g., 'Boiler Feed Water')
+        consumer_name: Name of the consumer (e.g., 'BFW Plant')
+    """
+    utility_consumption = calculation_result.get('utility_consumption', {})
+    
+    # Fetch norm from database
+    plant_name = 'NMD - Utility Plant'
+    norm = get_utility_norm_from_db(month, year, plant_name, parent_utility_name, chemical_name)
+    
+    row = start_row
+    
+    # Subsection header
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).fill = SUBSECTION_FILL
+    ws.merge_cells(f'A{row}:E{row}')
+    header_cell = ws[f'A{row}']
+    header_cell.value = f"{chemical_name} BALANCE"
+    header_cell.font = Font(bold=True, size=11)
+    header_cell.alignment = Alignment(horizontal='left', vertical='center')
+    row += 1
+    
+    # Column headers
+    headers = ['Demand', 'Norm', f'Quantity {uom}', 'Supply Source', f'Quantity {uom}']
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws.cell(row=row, column=col_idx)
+        cell.value = header
+        cell.font = BOLD_FONT
+        cell.fill = SUBSECTION_FILL
+        cell.border = THIN_BORDER
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    row += 1
+    
+    start_data_row = row
+    
+    # Calculate chemical quantity based on parent utility consumption
+    chemical_quantity = 0.0
+    parent_utility_quantity = 0.0
+    parent_utility_uom = ''
+    
+    if parent_utility == 'bfw':
+        # BFW chemicals - based on total BFW consumption
+        # BFW data structure: {'for_hrsg_m3': X, 'for_hp_prds_m3': X, ..., 'total_m3': X}
+        bfw_data = utility_consumption.get('bfw', {})
+        parent_utility_quantity = bfw_data.get('total_m3', 0.0)
+        parent_utility_uom = 'M3'
+        chemical_quantity = parent_utility_quantity * norm
+        
+    elif parent_utility == 'dm':
+        # DM Water chemicals - based on total DM consumption
+        # DM data structure: {'for_bfw_m3': X, 'process_m3': X, ..., 'total_m3': X}
+        dm_data = utility_consumption.get('dm_water', {})
+        parent_utility_quantity = dm_data.get('total_m3', 0.0)
+        parent_utility_uom = 'M3'
+        chemical_quantity = parent_utility_quantity * norm
+        
+    elif parent_utility == 'hrsg':
+        # HRSG chemicals - based on total HRSG SHP consumption
+        # Sum all HRSG SHP generation (free + supplementary)
+        hrsg1_shp = utility_consumption.get('shp_from_hrsg1', 0.0)
+        hrsg2_shp = utility_consumption.get('shp_from_hrsg2', 0.0)
+        hrsg3_shp = utility_consumption.get('shp_from_hrsg3', 0.0)
+        parent_utility_quantity = hrsg1_shp + hrsg2_shp + hrsg3_shp
+        parent_utility_uom = 'MT'
+        chemical_quantity = parent_utility_quantity * norm
+    
+    # LEFT SIDE: DEMAND
+    # Other Utility Requirement (U4U)
+    ws[f'A{row}'] = "Other Utility Requirement"
+    ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
+    row += 1
+    
+    ws[f'A{row}'] = f"  {consumer_name}"
+    ws[f'B{row}'] = norm
+    ws[f'C{row}'] = round(chemical_quantity, 2)
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
+    
+    # Total Demand
+    ws[f'A{row}'] = "Total Demand"
+    ws[f'C{row}'] = round(chemical_quantity, 2)
+    ws[f'A{row}'].font = BOLD_FONT
+    for col in range(1, 6):
+        ws.cell(row=row, column=col).border = THIN_BORDER
+        ws.cell(row=row, column=col).fill = TOTAL_FILL
+    row += 1
+    
+    # Only show supply and balance if there's actual demand/supply (chemical_quantity > 0)
+    if chemical_quantity > 0:
+        # RIGHT SIDE: SUPPLY
+        supply_row = start_data_row
+        
+        # If HRSG chemical, show breakdown by HRSG
+        if parent_utility == 'hrsg':
+            ws[f'D{supply_row}'] = "Supply by HRSG"
+            ws[f'D{supply_row}'].font = BOLD_FONT
+            for col in range(1, 6):
+                ws.cell(row=supply_row, column=col).border = THIN_BORDER
+            supply_row += 1
+            
+            # HRSG1
+            hrsg1_shp = utility_consumption.get('shp_from_hrsg1', 0.0)
+            hrsg1_chemical = hrsg1_shp * norm
+            ws[f'D{supply_row}'] = "  HRSG-1"
+            ws[f'E{supply_row}'] = round(hrsg1_chemical, 2)
+            for col in range(1, 6):
+                ws.cell(row=supply_row, column=col).border = THIN_BORDER
+            supply_row += 1
+            
+            # HRSG2
+            hrsg2_shp = utility_consumption.get('shp_from_hrsg2', 0.0)
+            hrsg2_chemical = hrsg2_shp * norm
+            ws[f'D{supply_row}'] = "  HRSG-2"
+            ws[f'E{supply_row}'] = round(hrsg2_chemical, 2)
+            for col in range(1, 6):
+                ws.cell(row=supply_row, column=col).border = THIN_BORDER
+            supply_row += 1
+            
+            # HRSG3
+            hrsg3_shp = utility_consumption.get('shp_from_hrsg3', 0.0)
+            hrsg3_chemical = hrsg3_shp * norm
+            ws[f'D{supply_row}'] = "  HRSG-3"
+            ws[f'E{supply_row}'] = round(hrsg3_chemical, 2)
+            for col in range(1, 6):
+                ws.cell(row=supply_row, column=col).border = THIN_BORDER
+            supply_row += 1
+        else:
+            # For BFW and DM chemicals, show single supply source
+            ws[f'D{supply_row}'] = "Chemical Supply"
+            ws[f'D{supply_row}'].font = BOLD_FONT
+            for col in range(1, 6):
+                ws.cell(row=supply_row, column=col).border = THIN_BORDER
+            supply_row += 1
+            
+            ws[f'D{supply_row}'] = "  Purchased/Supplied"
+            ws[f'E{supply_row}'] = round(chemical_quantity, 2)
+            for col in range(1, 6):
+                ws.cell(row=supply_row, column=col).border = THIN_BORDER
+            supply_row += 1
+        
+        # Total Supply (align with Total Demand row)
+        ws[f'D{row}'] = "Total Supply"
+        ws[f'E{row}'] = round(chemical_quantity, 2)
+        ws[f'D{row}'].font = BOLD_FONT
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+            ws.cell(row=row, column=col).fill = TOTAL_FILL
+        
+        row += 1
+        
+        # Balance check
+        balance = 0.0  # Should always be 0 for chemicals (demand = supply)
+        ws[f'A{row}'] = "Balance (Supply - Demand)"
+        ws[f'C{row}'] = round(balance, 2)
+        ws[f'A{row}'].font = Font(bold=True, color="FF0000" if abs(balance) > 0.01 else "000000")
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
+    else:
+        # No supply case - just move to next row after Total Demand
+        row += 1
+    
+    return row
