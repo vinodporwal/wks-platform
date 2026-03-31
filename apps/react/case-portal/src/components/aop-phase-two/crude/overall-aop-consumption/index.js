@@ -5,8 +5,8 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
-import { OverallAopConsumptionApiService } from '../../services/vgoht/overallAopConsumptionApiService'
 import { steadyStateConsumptionResponse } from '../dummyData'
+import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/crude/overallAopConsumptionApiService'
 
 const OverallAopConsumption = () => {
   const keycloak = useSession()
@@ -45,7 +45,7 @@ const OverallAopConsumption = () => {
       type: 'text',
       editable: false,
       locked: true,
-      hidden: false,
+      hidden: true,
     },
     {
       field: 'UOM',
@@ -176,12 +176,12 @@ const OverallAopConsumption = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      // const response =
-      //   await OverallAopConsumptionApiService.getOverallAopConsumption(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
+      const response =
+        await OverallAopConsumptionApiService.getOverallAopConsumption(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
       const data =
         steadyStateConsumptionResponse.data?.mcuNormsValueDTOList?.map(
           (item) => {
@@ -224,6 +224,7 @@ const OverallAopConsumption = () => {
         message: 'Calculation completed successfully!',
         severity: 'success',
       })
+      await fetchData()
     } catch (error) {
       console.error('Error calculating overall AOP consumption:', error)
       setSnackbarData({
@@ -235,50 +236,15 @@ const OverallAopConsumption = () => {
     }
   }
 
-  const handleExport = async () => {
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Excel export started!',
-      severity: 'info',
-    })
-
-    try {
-      const blob =
-        await OverallAopConsumptionApiService.exportOverallAopConsumption(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `Overall_AOP_Consumption_${AOP_YEAR}.xlsx`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      setSnackbarData({
-        message: 'Excel download completed successfully!',
-        severity: 'success',
-      })
-    } catch (error) {
-      console.error('Error exporting overall AOP consumption data:', error)
-      setSnackbarData({
-        message: 'Excel download failed. Please try again.',
-        severity: 'error',
-      })
-    }
-  }
-
   const permissions = {
     showAction: false,
     addButton: false,
     deleteButton: false,
     editButton: false,
     saveBtn: false,
-    allAction: false,
-    showExport: true,
+    allAction: true,
+    // showExport: true,
+    downloadExcelBtnFromUI: true,
     showCalculate: true,
     ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
     showImport: false,
@@ -303,7 +269,6 @@ const OverallAopConsumption = () => {
         setRows={setRows}
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
-        handleExport={handleExport}
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
