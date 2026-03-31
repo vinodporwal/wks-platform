@@ -936,8 +936,9 @@ async function saveTurnaroundReportWhole(
   dataList,
   PLANT_ID,
   AOP_YEAR,
+  type,
 ) {
-  const url = `${Config.CaseEngineUrl}/task/report/turn-around?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=previousYear`
+  const url = `${Config.CaseEngineUrl}/task/report/turn-around?plantId=${PLANT_ID}&year=${AOP_YEAR}&reportType=${type}`
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',

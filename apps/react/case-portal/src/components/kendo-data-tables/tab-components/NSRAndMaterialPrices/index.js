@@ -98,13 +98,6 @@ const NSRAndMaterialPrices = () => {
       widthT: 120,
       format: FORMATE_VALUE,
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      editable: true,
-      type: 'string',
-      // widthT: 200,
-    },
   ]
 
   const fetchData = async () => {
@@ -123,6 +116,7 @@ const NSRAndMaterialPrices = () => {
         remarks: row.remarks || '',
         originalRemark: row.remarks || '',
         inEdit: false,
+        isEditable: false,
       }))
       setRows(formattedData || [])
     } catch (error) {
@@ -246,7 +240,7 @@ const NSRAndMaterialPrices = () => {
     {
       showAction: true,
       saveWithRemark: true,
-      saveBtn: true,
+      saveBtn: false,
       allAction: true,
       downloadExcelBtn: false,
       uploadExcelBtn: false,

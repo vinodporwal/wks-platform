@@ -1647,7 +1647,9 @@ const ConfigurationTable = () => {
           })}
         />
 
-        {lowerVertName === 'aromatics' && tabs?.length > 0 && (
+          {lowerVertName === 'aromatics' &&
+            !IS_AROMATICS_HMD &&
+            tabs?.length > 0 && (
           <Box
             mt={1}
             sx={{
