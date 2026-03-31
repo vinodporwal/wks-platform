@@ -256,7 +256,7 @@ const ProductionNormsBasis = () => {
           PLANT_ID={PLANT_ID}
           AOP_YEAR={AOP_YEAR}
           isOldYear={isOldYear}
-          isSummaryRequired={true}
+          isSummaryRequired={false}
           onDatesChange={handleDatesChange}
           onLoadNormCalculation={handleLoadNormCalculation}
           normCalculationLoading={normCalculationLoading}

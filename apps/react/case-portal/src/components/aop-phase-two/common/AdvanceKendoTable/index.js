@@ -804,6 +804,7 @@ const AdvanceKendoTable = ({
       isSorted,
       tdProps,
       selectionChange,
+      showPlaceholder = true,
       ...restProps
     } = props
     const rawValue = dataItem[field]
@@ -849,7 +850,7 @@ const AdvanceKendoTable = ({
           setEdit?.({})
         }}
       >
-        {displayText || 'Add remark'}
+        {displayText || (showPlaceholder ? 'Add remark' : '')}
       </td>
     )
   }
@@ -1208,6 +1209,7 @@ const AdvanceKendoTable = ({
               data: (cellProps) => (
                 <RemarkCell
                   {...cellProps}
+                  showPlaceholder={col.showPlaceholder}
                   onRemarkClick={isEditable ? handleRemarkCellClick : () => {}}
                 />
               ),

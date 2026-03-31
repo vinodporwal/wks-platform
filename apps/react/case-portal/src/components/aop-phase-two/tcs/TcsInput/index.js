@@ -123,13 +123,13 @@ const TcsInput = () => {
               // Plant already submitted - disable submit button
               setIsSubmitEligible(false)
               // Only show message if showMessage is true (on page load, not after submission)
-              if (showMessage) {
-                setSnackbarData({
-                  message: `${PLANT_NAME} has already been submitted`,
-                  severity: 'info',
-                })
-                setSnackbarOpen(true)
-              }
+              // if (showMessage) {
+              //   setSnackbarData({
+              //     message: `${PLANT_NAME} has already been submitted`,
+              //     severity: 'info',
+              //   })
+              //   setSnackbarOpen(true)
+              // }
               return
             } else {
               // Plant not yet submitted - enable submit button
@@ -344,7 +344,7 @@ const TcsInput = () => {
       )
 
       setSnackbarData({
-        message: 'Plant submission completed successfully',
+        message: `${PLANT_NAME} TCS data submission completed successfully`,
         severity: 'success',
       })
       setSnackbarOpen(true)
