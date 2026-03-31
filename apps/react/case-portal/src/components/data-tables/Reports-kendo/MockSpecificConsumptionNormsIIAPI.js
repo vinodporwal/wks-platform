@@ -490,7 +490,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     type: 'number',
                   },
                   {
-                    field: 'actualPrevYearRsMT',
+                    field: 'budgetPrevYearRsMT',
                     title: 'Rs/MT',
                     editable: false,
                     align: 'right',
@@ -662,7 +662,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     type: 'number',
                   },
                   {
-                    field: 'actualPrevYearRsMT',
+                    field: 'budgetPrevYearRsMT',
                     title: 'Rs/MT',
                     editable: false,
                     align: 'right',
@@ -1737,7 +1737,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     type: 'number',
                   },
                   {
-                    field: 'actualPrevYearRsMT',
+                    field: 'budgetPrevYearRsMT',
                     title: 'Rs/MT',
                     editable: false,
                     align: 'right',
@@ -1909,7 +1909,7 @@ export const MockSpecificConsumptionNormsIIAPI = {
                     type: 'number',
                   },
                   {
-                    field: 'actualPrevYearRsMT',
+                    field: 'budgetPrevYearRsMT',
                     title: 'Rs/MT',
                     editable: false,
                     align: 'right',
