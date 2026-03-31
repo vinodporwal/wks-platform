@@ -1036,7 +1036,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-     if (IS_ELASTOMER_JMD) {
+      if (IS_ELASTOMER_JMD) {
         response = await DtaDataService.ImportShutdownElastomerjmd(
           rawFile,
           keycloak,

@@ -157,12 +157,12 @@ const PlantShutdownSlowdown = () => {
       type: 'text',
       editable: true,
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      widthT: 200,
-      editable: true,
-    },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   widthT: 200,
+    //   editable: true,
+    // },
   ]
 
   const fetchData = async () => {
@@ -229,7 +229,7 @@ const PlantShutdownSlowdown = () => {
         setLoading(false)
         return
       }
-      const requiredFields = ['criticalActivity', 'remarks']
+      const requiredFields = ['criticalActivity']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {

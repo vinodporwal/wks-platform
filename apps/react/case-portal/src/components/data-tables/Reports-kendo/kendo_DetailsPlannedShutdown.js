@@ -198,12 +198,12 @@ export default function ShutdownReport() {
       width: 120,
       type: 'number',
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      editable: true,
-      widthT: 200,
-    },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   editable: true,
+    //   widthT: 200,
+    // },
   ]
   const columnsPrevYears = [
     {
