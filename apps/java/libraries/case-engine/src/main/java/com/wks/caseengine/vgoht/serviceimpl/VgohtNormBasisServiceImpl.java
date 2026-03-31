@@ -217,10 +217,6 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOList, String periodFrom, String periodTo) {
 		try {	
 			vgohtHelperService.saveConfigurationDataOnlyModified(year, plantFKId, version, vgohtNormConfigurationDTOList, periodFrom, periodTo);
-			String errorMessage = loadSP(year, plantFKId, version, vgohtNormConfigurationDTOList, periodFrom, periodTo);
-			if(errorMessage != null ) { 
-				throw new RuntimeException("Stored Procedure Error: " + errorMessage);
-			}
 			AOPMessageVM response = new AOPMessageVM();
 			response.setCode(200);
 			response.setMessage("Configuration saved successfully");
@@ -229,10 +225,24 @@ public class VgohtNormBasisServiceImpl implements VgohtNormBasisService {
 			throw new RuntimeException("Error saving configuration data", e);
 		}
 	}
+
+	public AOPMessageVM calculateNorms(String year, UUID plantFKId, String version, String periodFrom, String periodTo) {
+		try {	
+			String errorMessage = loadSP(year, plantFKId, version, periodFrom, periodTo);
+			if(errorMessage != null ) { 
+				throw new RuntimeException("Stored Procedure Error: " + errorMessage);
+			}
+			AOPMessageVM response = new AOPMessageVM();
+			response.setCode(200);
+			response.setMessage("Calculate Norms Successfully");
+			return response;
+		} catch (Exception e) {
+			throw new RuntimeException("Error saving configuration data", e);
+		}
+	}
 	
 		
-	public String loadSP(String year, UUID plantFKId, String version,
-			List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOList, String periodFrom, String periodTo) {
+	public String loadSP(String year, UUID plantFKId, String version, String periodFrom, String periodTo) {
 		Plants plant = plantsRepository.findById(plantFKId).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
