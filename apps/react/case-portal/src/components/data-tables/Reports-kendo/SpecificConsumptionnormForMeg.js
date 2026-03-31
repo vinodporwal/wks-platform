@@ -29,6 +29,10 @@ const specificConsumptionCategories = () => [
     key: 'Utilities',
     title: 'Utilities',
   },
+  {
+    key: 'MaterialBalanceProposedNorms',
+    title: 'Material Balance Proposed Norms',
+  },
 ]
 
 export default function SpecificConsumptionnormForMeg() {
@@ -235,6 +239,7 @@ export default function SpecificConsumptionnormForMeg() {
                 category: key,
                 AOP_YEAR,
                 valueFormat,
+                lowerVertName,
               })
             const apiResp =
               await SpecificConsumptionService.getSpecificConsumptionII(
@@ -333,6 +338,9 @@ export default function SpecificConsumptionnormForMeg() {
                 showWorkFlowBtns: true,
                 showTitle: true,
               }}
+              groupBy={
+                key === 'MaterialBalanceProposedNorms' ? 'type' : undefined
+              }
             />
           </Box>
         )
