@@ -1,10 +1,10 @@
-import { Tab, Tabs } from '@mui/material'
 import PropTypes from 'prop-types'
+import AopTabs from '../components/AopTabs'
 
 const TabSection = ({ tabIndex, setTabIndex, tabs }) => {
   return (
     <>
-      <Tabs
+      {/* <Tabs
         value={tabIndex}
         onChange={(e, newIndex) => setTabIndex(newIndex)}
         sx={{
@@ -29,7 +29,13 @@ const TabSection = ({ tabIndex, setTabIndex, tabs }) => {
             }}
           />
         ))}
-      </Tabs>
+      </Tabs> */}
+
+      <AopTabs
+        tabIndex={tabIndex}
+        setTabIndex={setTabIndex}
+        tabs={tabs || []}
+      />
     </>
   )
 }
