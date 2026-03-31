@@ -111,6 +111,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
       type: 'textarea',
       editable: true,
       minWidth: 250,
+      showPlaceholder: false,
     },
   ]
 

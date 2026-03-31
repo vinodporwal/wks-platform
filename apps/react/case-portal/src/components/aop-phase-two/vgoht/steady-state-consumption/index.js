@@ -80,6 +80,7 @@ const SteadyStateConsumption = () => {
       type: 'text',
       editable: false,
       locked: true,
+      hidden: true,
     },
     {
       field: 'UOM',
@@ -350,13 +351,16 @@ const SteadyStateConsumption = () => {
           keycloak,
           PLANT_ID,
           AOP_YEAR,
+          startDate,
+          endDate,
         )
-      setRows(calculatedData)
-      setOriginalRows(calculatedData)
+      setRows([])
+      setOriginalRows([])
       setSnackbarData({
         message: 'Calculation completed successfully!',
         severity: 'success',
       })
+      await fetchData()
     } catch (error) {
       console.error('Error calculating steady state consumption:', error)
       setSnackbarData({

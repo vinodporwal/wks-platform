@@ -61,6 +61,7 @@ const SteadyStateConsumption = () => {
       type: 'text',
       editable: false,
       locked: true,
+      hidden: true,
     },
     {
       field: 'UOM',

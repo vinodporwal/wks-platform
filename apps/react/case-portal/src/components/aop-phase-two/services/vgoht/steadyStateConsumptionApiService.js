@@ -164,15 +164,38 @@ async function importSteadyStateConsumption(keycloak, plantId, year, file) {
 /**
  * Calculate Steady State Consumption
  * @param {Object} keycloak - Keycloak session object
- * @param {Number} plantId - Plant ID
- * @param {Number} year - AOP Year
+ * @param {String} plantId - Plant ID (UUID)
+ * @param {String} year - AOP Year (e.g., "2026-27")
+ * @param {Date} startDate - Period start date
+ * @param {Date} endDate - Period end date
  * @returns {Promise<Array>} Calculated data
  */
-async function calculateSteadyStateConsumption(keycloak, plantId, year) {
-  const baseUrl = `${Config.CaseEngineUrl}/task/vgoht/calculate-steady-state-norms`
+async function calculateSteadyStateConsumption(
+  keycloak,
+  plantId,
+  year,
+  startDate,
+  endDate,
+) {
+  // Format dates to YYYY-MM-DD
+  const formatDate = (date) => {
+    if (!date) return null
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const periodFrom = formatDate(startDate)
+  const periodTo = formatDate(endDate)
+
+  const baseUrl = `${Config.CaseEngineUrl}/task/vgoht/norms-basis/calculate`
   const queryParams = new URLSearchParams({
     year,
-    plantId,
+    plantFKId: plantId,
+    periodFrom,
+    periodTo,
   })
 
   const url = `${baseUrl}?${queryParams.toString()}`
@@ -183,6 +206,9 @@ async function calculateSteadyStateConsumption(keycloak, plantId, year) {
   }
   try {
     const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
     return json(keycloak, resp)
   } catch (e) {
     console.log(e)
