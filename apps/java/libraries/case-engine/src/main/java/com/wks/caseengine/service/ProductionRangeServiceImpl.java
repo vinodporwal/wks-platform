@@ -1,23 +1,32 @@
 package com.wks.caseengine.service;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wks.caseengine.dto.NormConfigurationDTO;
+
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.entity.Verticals;
 import com.wks.caseengine.exception.RestInvalidArgumentException;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
+import com.wks.caseengine.utility.Utility;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -102,6 +111,156 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
             throw new RuntimeException("Failed to fetch production range", ex);
         }
     }
+    
+    public byte[] exportProductionRange(String year, String plantId, boolean isAfterSave, List<NormConfigurationDTO> dtoList) {
+	    try {   
+	        if (!isAfterSave) {
+	        	AOPMessageVM aopMessageVM = getProductionRange(plantId,year);
+	        	Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
+
+		        if (innerMap != null) {
+		             dtoList = (List<NormConfigurationDTO>) innerMap.get("productionRangeList");
+		        }
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Particulars");
+	        innerHeaders.add("UOM");
+	        innerHeaders.add("Min");
+	        innerHeaders.add("Max");
+	        innerHeaders.add("Remarks");
+	        innerHeaders.add("Material Id");
+	        if (isAfterSave) {
+	            innerHeaders.add("Status");
+	            innerHeaders.add("Error Description");
+	        }
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        int dataRowCount = dtoList.size();
+	        for (int i = 0; i < dataRowCount; i++) {
+	        	NormConfigurationDTO dto = dtoList.get(i);
+	            Row row = sheet.createRow(currentRow++);
+	            List<Object> rowData = new ArrayList<>();
+	            //rowData.add(normParametersRepository.findById(UUID.fromString(dto.getNormParameterFkId())).get().getDisplayName());
+	            rowData.add(dto.getDisplayName());
+	            rowData.add(dto.getUom());
+	            rowData.add(dto.getApr());
+	            rowData.add(dto.getMay());
+	            rowData.add(dto.getRemarks());
+	            rowData.add(dto.getNormParameterFkId());
+	            if (isAfterSave) {
+	                rowData.add(dto.getSaveStatus());
+	                rowData.add(dto.getErrDescription());
+	            }
+
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                if (value instanceof Number) {
+	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }  
+	            }
+	        }
+	        sheet.setColumnHidden(5, true);
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
+
+    public byte[] exportProductionRangeLimit(String year, String plantId, boolean isAfterSave, List<NormConfigurationDTO> dtoList) {
+	    try {   
+	        if (!isAfterSave) {
+	        	AOPMessageVM aopMessageVM = getProductionRangeLimit(plantId,year);
+	        	Map<String, Object> innerMap = (Map<String, Object>) aopMessageVM.getData();
+
+		        if (innerMap != null) {
+		             dtoList = (List<NormConfigurationDTO>) innerMap.get("productionRangeLimitList");
+		        }
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        Sheet sheet = workbook.createSheet("Sheet1");
+	        int currentRow = 0;
+
+	        List<String> innerHeaders = new ArrayList<>();
+	        innerHeaders.add("Particulars");
+	        innerHeaders.add("UOM");
+	        innerHeaders.add("Limit");
+	        innerHeaders.add("Value");
+	        innerHeaders.add("Remarks");
+	        innerHeaders.add("Material Id");
+	        if (isAfterSave) {
+	            innerHeaders.add("Status");
+	            innerHeaders.add("Error Description");
+	        }
+	        Row headerRow = sheet.createRow(currentRow++);
+	        for (int col = 0; col < innerHeaders.size(); col++) {
+	            Cell cell = headerRow.createCell(col);
+	            cell.setCellValue(innerHeaders.get(col));
+	            cell.setCellStyle(Utility.createBoldBorderedStyle(workbook));
+	        }
+
+	        int dataRowCount = dtoList.size();
+	        for (int i = 0; i < dataRowCount; i++) {
+	        	NormConfigurationDTO dto = dtoList.get(i);
+	            Row row = sheet.createRow(currentRow++);
+	            List<Object> rowData = new ArrayList<>();
+	            //rowData.add(normParametersRepository.findById(UUID.fromString(dto.getNormParameterFkId())).get().getDisplayName());
+	            rowData.add(dto.getDisplayName());
+	            rowData.add(dto.getUom());
+	            rowData.add(">=");
+	            rowData.add(dto.getApr());
+	            rowData.add(dto.getRemarks());
+	            rowData.add(dto.getNormParameterFkId());
+	            if (isAfterSave) {
+	                rowData.add(dto.getSaveStatus());
+	                rowData.add(dto.getErrDescription());
+	            }
+
+	            for (int col = 0; col < rowData.size(); col++) {
+	                Cell cell = row.createCell(col);
+	                Object value = rowData.get(col);
+	                if (value instanceof Number) {
+	                    cell.setCellValue(((Number) value).doubleValue());
+	                } else if (value instanceof Boolean) {
+	                    cell.setCellValue((Boolean) value);
+	                } else if (value != null) {
+	                    cell.setCellValue(value.toString());
+	                } else {
+	                    cell.setCellValue("");
+	                }  
+	            }
+	        }
+	        sheet.setColumnHidden(5, true);
+	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+	        workbook.write(outputStream);
+	        workbook.close();
+	        return outputStream.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
 
     @Override
     public AOPMessageVM getProductionRangeLimit(String plantId, String aopYear) {
