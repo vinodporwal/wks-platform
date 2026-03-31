@@ -33,7 +33,7 @@ private AnnualConfigPrizeRepository annualConfigPrizeRepository;
 
         String viewName = "vwScrnGetAnnualPrice";
 
-        String sql = "SELECT * FROM " + viewName + " where PlantId = :plantId and AopYear = :aopYear";
+        String sql = "SELECT * FROM " + viewName + " where PlantId = :plantId and AopYear = :aopYear ORDER BY ROWNO";
 
         Query query = entityManager.createNativeQuery(sql);
 
