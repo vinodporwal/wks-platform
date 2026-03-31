@@ -98,13 +98,6 @@ const NSRAndMaterialPrices = () => {
       widthT: 120,
       format: FORMATE_VALUE,
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      editable: true,
-      type: 'string',
-      // widthT: 200,
-    },
   ]
 
   const fetchData = async () => {

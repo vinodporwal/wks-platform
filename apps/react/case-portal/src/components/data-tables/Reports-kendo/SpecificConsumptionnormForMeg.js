@@ -70,7 +70,7 @@ export default function SpecificConsumptionnormForMeg() {
   const [gridStates, setGridStates] = useState({})
 
   const valueFormat = ValueFormatterConsumption()
-  const FORMAT_VALUES_PRICE = '{0:0}'
+  const FORMAT_VALUES_PRICE = '{0:0.0}'
 
   // Initialize grid states
   useEffect(() => {
