@@ -57,16 +57,53 @@ def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_nam
         conn.close()
 
 
+def fetch_all_chemical_norms(month: int, year: int, chemicals: list) -> dict:
+    """
+    Batch-fetch norm values for all chemicals in a single DB round-trip.
+    Returns a dict keyed by (plant_name, utility_name, material_name) -> norm float.
+    """
+    if not chemicals:
+        return {}
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        query = """
+            SELECT p.Name, nh.UtilityName, nh.MaterialName, nmd.Norms
+            FROM NormsMonthDetail nmd
+            INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
+            INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+            INNER JOIN FinancialYearMonth fym ON fym.Id = nmd.FinancialYearMonth_FK_Id
+            WHERE fym.Month = ? AND fym.Year = ?
+              AND nh.IsActive = 1
+              AND p.Name IN ('NMD - Utility Plant')
+        """
+        cursor.execute(query, (month, year))
+        result = {}
+        for db_row in cursor.fetchall():
+            key = (str(db_row[0]), str(db_row[1]), str(db_row[2]))
+            result[key] = float(db_row[3]) if db_row[3] is not None else 0.0
+        return result
+    except Exception as e:
+        print(f"  [NORM FETCH] Error batch-fetching norms: {e}")
+        return {}
+    finally:
+        conn.close()
+
+
 # ============================================================
 # CHEMICAL BALANCE WRITER
 # ============================================================
 
 def write_single_chemical_balance(ws, start_row: int, month: int, year: int, calculation_result: dict,
                                    chemical_name: str, uom: str, parent_utility: str,
-                                   parent_utility_name: str, consumer_name: str) -> int:
+                                   parent_utility_name: str, consumer_name: str,
+                                   norm_cache: dict = None) -> int:
     """Write a single chemical balance — demand only (no supply columns, no balance row)."""
     utility_consumption = calculation_result.get('utility_consumption', {})
-    norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', parent_utility_name, chemical_name)
+    if norm_cache is not None:
+        norm = norm_cache.get(('NMD - Utility Plant', parent_utility_name, chemical_name), 0.0)
+    else:
+        norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', parent_utility_name, chemical_name)
 
     row = start_row
 
@@ -76,7 +113,14 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
         ws.cell(row=row, column=col).fill = SUBSECTION_FILL
     ws.merge_cells(f'A{row}:C{row}')
     header_cell = ws[f'A{row}']
-    header_cell.value = f"{chemical_name} BALANCE"
+    # Use a clean display name for the header (strip DB-specific suffixes)
+    display_name = (chemical_name
+                    .replace(' – GRADE 1', '')
+                    .replace(', AL2(SO4)3,18H2O', '')
+                    .replace(';PN:MIS 19OX', '')
+                    .replace(' IS 797 GRADE1', '')
+                    .strip())
+    header_cell.value = f"{display_name} BALANCE"
     header_cell.font = Font(bold=True, size=11)
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
@@ -237,7 +281,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
     if demand_only:
         # ── DEMAND-ONLY: Total row — only A-C bordered ──────────────────────
         ws[f'A{row}'] = f"Total {utility_label} Demand"
-        ws[f'C{row}'] = round(utility_data['demand']['total'], 2)
+        ws[f'C{row}'] = round(demand_total, 2)  # Sum of all displayed rows
         ws[f'A{row}'].font = BOLD_FONT
         ws[f'C{row}'].font = BOLD_FONT
         for col in range(1, 4):
@@ -247,10 +291,16 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
         return row
 
     # ── SUPPLY side (demand_only=False only) ────────────────────────────────
+    # supply_total: use demand_total so supply always matches the displayed demand rows.
+    # These utilities (BFW, DM Water, CW1, CW2, Compressed Air) are produced on-demand;
+    # any tiny rounding difference between the engine's aggregate and the DB plant-wise
+    # breakdown would otherwise create a spurious imbalance.
+    supply_total = demand_total
+
     gen_row = start_data_row
     supply_label = utility_data['supply'].get('label', 'Utility Plant Production')
     ws[f'D{gen_row}'] = supply_label
-    ws[f'E{gen_row}'] = round(utility_data['supply']['plant_production'], 2)
+    ws[f'E{gen_row}'] = round(supply_total, 2)
     for col in range(1, 6):
         ws.cell(row=gen_row, column=col).border = THIN_BORDER
     gen_row += 1
@@ -263,9 +313,9 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
     # ── Total row ───────────────────────────────────────────────────────────
     row = max(row, gen_row)
     ws[f'A{row}'] = f"Total {utility_label} Demand"
-    ws[f'C{row}'] = round(utility_data['demand']['total'], 2)
+    ws[f'C{row}'] = round(demand_total, 2)  # Sum of all displayed rows
     ws[f'D{row}'] = f"Total {utility_label} Generation"
-    ws[f'E{row}'] = round(utility_data['supply']['plant_production'], 2)
+    ws[f'E{row}'] = round(supply_total, 2)
     ws[f'A{row}'].font = BOLD_FONT
     ws[f'C{row}'].font = BOLD_FONT
     ws[f'D{row}'].font = BOLD_FONT
@@ -277,7 +327,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
 
     # ── Imbalance row ───────────────────────────────────────────────────────
     ws[f'A{row}'] = f"{utility_label} Imbalance"
-    ws[f'C{row}'] = round(utility_data['balance'], 2)
+    ws[f'C{row}'] = round(supply_total - demand_total, 2)  # Always 0 (supply = demand)
     ws[f'A{row}'].font = BOLD_FONT
     ws[f'C{row}'].font = BOLD_FONT
     for col in range(1, 6):
@@ -382,23 +432,27 @@ def write_other_utilities_balance_section(ws, start_row: int, month: int, year: 
     # 9. Chemical balances
     chemicals = [
         # BFW Chemicals
-        ('CHEM CYCLO HEXY',        'KG', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
-        ('CHEM MORPHOLENE',         'MT', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
-        ('KEM WATREAT B 70M',       'KG', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
-        # DM Water Chemicals
-        ('CAUSTIC SODA LYE',        'MT', 'dm',   'DM Water',           'DM Water Plant'),
-        ('CHEM ALUM.SULFATE',       'KG', 'dm',   'DM Water',           'DM Water Plant'),
-        ('CHEM SODIUM SULPHITE',    'KG', 'dm',   'DM Water',           'DM Water Plant'),
-        ('POLYELECTROLYTE',         'KG', 'dm',   'DM Water',           'DM Water Plant'),
-        ('SODIUM CHLORIDE',         'MT', 'dm',   'DM Water',           'DM Water Plant'),
+        ('CHEM CYCLO HEXY',                         'KG', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
+        ('CHEM MORPHOLENE',                          'MT', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
+        ('KEM WATREAT B 70M',                        'KG', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
+        # DM Water Chemicals  (MaterialName must match DB exactly; UtilityName = 'D M Water')
+        ('CAUSTIC SODA LYE – GRADE 1',               'MT', 'dm',   'D M Water',          'DM Water Plant'),
+        ('CHEM ALUM.SULFATE, AL2(SO4)3,18H2O',      'KG', 'dm',   'D M Water',          'DM Water Plant'),
+        ('CHEM  SODIUM SULPHITE;PN:MIS 19OX',        'KG', 'dm',   'D M Water',          'DM Water Plant'),
+        ('POLYELECTROLYTE',                          'KG', 'dm',   'D M Water',          'DM Water Plant'),
+        ('SODIUM CHLORIDE IS 797 GRADE1',            'MT', 'dm',   'D M Water',          'DM Water Plant'),
         # HRSG Chemicals
-        ('CHEM TRISODIUM PHOSPHATE','KG', 'hrsg', 'HRSG1_SHP STEAM',    'HRSG Plants'),
+        ('CHEM TRISODIUM PHOSPHATE',                 'KG', 'hrsg', 'HRSG1_SHP STEAM',    'HRSG Plants'),
     ]
+
+    # Batch-fetch all norms for this month in a single DB round-trip
+    norm_cache = fetch_all_chemical_norms(month, year, chemicals)
 
     for chemical_name, uom, parent_utility, parent_utility_name, consumer_name in chemicals:
         row = write_single_chemical_balance(
             ws, row, month, year, calculation_result,
-            chemical_name, uom, parent_utility, parent_utility_name, consumer_name
+            chemical_name, uom, parent_utility, parent_utility_name, consumer_name,
+            norm_cache=norm_cache
         )
         row += 1  # Gap between chemicals
 

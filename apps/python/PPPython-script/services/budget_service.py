@@ -530,6 +530,8 @@ def calculate_budget_with_iteration(
         shp_fixed=shp_fixed,
         bfw_ufu=bfw_ufu,
         export_available=export_available,
+        dm_process=dm_process,
+        dm_fixed=dm_fixed,
     )
     
     # Print summary if verbose

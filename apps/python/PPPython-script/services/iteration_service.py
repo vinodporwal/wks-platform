@@ -547,6 +547,8 @@ def usd_iterate(
     shp_fixed: float,
     bfw_ufu: float = 0.0,
     export_available: bool = False,
+    dm_process: float = 54779.0,       # DM Water process consumption (M3)
+    dm_fixed: float = 0.0,             # DM Water fixed consumption (M3)
 ) -> dict:
     """
     Execute USD iteration loop to balance power and steam.
@@ -744,7 +746,7 @@ def usd_iterate(
     
     # Other utilities (process values from defaults)
     bfw_process = 0.0
-    dm_process = 54779.0
+    dm_process_display = dm_process + dm_fixed
     cw1_process = 15194.0
     cw2_process = 9016.0
     air_process = 6095102.0
@@ -752,7 +754,7 @@ def usd_iterate(
     effluent_process = 243000.0
     
     print(f"  | BFW                  | M3     | {0:>13,.2f} | {bfw_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
-    print(f"  | DM Water             | M3     | {0:>13,.2f} | {dm_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
+    print(f"  | DM Water             | M3     | {dm_fixed:>13,.2f} | {dm_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
     print(f"  | Cooling Water 1      | KM3    | {0:>13,.2f} | {cw1_process:>13,.2f} | {0:>13,.2f} | {cw1_process:>13,.2f} |")
     print(f"  | Cooling Water 2      | KM3    | {0:>13,.2f} | {cw2_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
     print(f"  | Compressed Air       | NM3    | {0:>13,.2f} | {air_process:>13,.2f} | {'(calc)':>13} | {'(calc)':>13} |")
@@ -1318,10 +1320,9 @@ def usd_iterate(
         bfw_fixed = 300.0  # Fixed BFW consumption
         bfw_total_estimate = bfw_hrsg + bfw_hp_prds + bfw_mp_prds + bfw_lp_prds + bfw_fixed
         
-        # DM = 0.86 * BFW + Process DM (54,779 M3)
+        # DM = 0.86 * BFW + Process DM + Fixed DM
         dm_for_bfw = bfw_total_estimate * NORM_DM_PER_M3_BFW
-        dm_process = 54779.0  # Process DM consumption
-        dm_total_estimate = dm_for_bfw + dm_process
+        dm_total_estimate = dm_for_bfw + dm_process + dm_fixed
         
         # CW1 = Process (fixed)
         cw1_total_estimate = 15194.0  # Process demand
