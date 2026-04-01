@@ -1786,7 +1786,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 	      String existingRemark = entity.getRemarks() != null ? entity.getRemarks().trim() : "";
 	
 	      boolean isValueChanged = !existingValue.equalsIgnoreCase(newValue);
-	      boolean isRemarkChanged = !existingRemark.equalsIgnoreCase(newRemark);
+	      boolean isRemarkChanged = !(existingRemark.equalsIgnoreCase(newRemark));
 	
 	      if (isRemarkEmpty) {
 	          setError(configurationDTO, "Remark is mandatory to update an existing record.");
