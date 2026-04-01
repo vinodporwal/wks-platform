@@ -238,6 +238,7 @@ public class AOPMCCalculatedDataServiceImpl implements AOPMCCalculatedDataServic
 
 	            dto.setFinancialYear(row[16] != null ? row[16].toString() : null);
 	            dto.setRemarks(row[17] != null ? row[17].toString() : " ");
+	            dto.setMaterialDisplayName(row[24] != null ? row[24].toString() : " ");
 	            
 	            aOPMCCalculatedDataDTOList.add(dto);
 	        }
