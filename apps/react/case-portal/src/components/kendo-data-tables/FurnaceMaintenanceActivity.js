@@ -41,9 +41,9 @@ const FurnaceMaintenanceActivity = () => {
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const [rows, setRows] = useState();
-  const [furnaceDropdownData, setFurnaceDropdownData] = useState([]);
-  const [maintenanceActivityData, setMaintenanceActivityData] = useState([]);
+  const [rows, setRows] = useState()
+  const [furnaceDropdownData, setFurnaceDropdownData] = useState([])
+  const [maintenanceActivityData, setMaintenanceActivityData] = useState([])
 
   const [loading, setLoading] = useState(false)
   const keycloak = useSession()
@@ -121,7 +121,13 @@ const FurnaceMaintenanceActivity = () => {
       // if (response?.code === 200) {
       //   setFurnaceDropdownData(response?.data)
       // }
-      const furnaceOptions = [{value: 'H101-SF', name: 'H101-SF'}, {value: 'H102-SF', name: 'H102-SF'}, {value: 'H103-SF', name: 'H103-SF'}, {value: 'H104-SF', name: 'H104-SF'}, {value: 'H105-SF', name: 'H105-SF'}]
+      const furnaceOptions = [
+        { value: 'H101-SF', name: 'H101-SF' },
+        { value: 'H102-SF', name: 'H102-SF' },
+        { value: 'H103-SF', name: 'H103-SF' },
+        { value: 'H104-SF', name: 'H104-SF' },
+        { value: 'H105-SF', name: 'H105-SF' },
+      ]
       setFurnaceDropdownData(furnaceOptions)
     } catch (e) {
       console.error('Error loading dropdown data:', e)
@@ -134,7 +140,12 @@ const FurnaceMaintenanceActivity = () => {
       // if (response?.code === 200) {
       //   setMaintenanceActivityData(response?.data)
       // }
-      const maintenanceActivityOptions = [{value: 'TLE', name: 'TLE'}, {value: 'Coile Replacement', name: 'Coile Replacement'}, {value: 'IBR', name: 'IBR'}, {value: 'Plan Shutdown', name: 'Plan Shutdown'}]
+      const maintenanceActivityOptions = [
+        { value: 'TLE', name: 'TLE' },
+        { value: 'Coile Replacement', name: 'Coile Replacement' },
+        { value: 'IBR', name: 'IBR' },
+        { value: 'Plan Shutdown', name: 'Plan Shutdown' },
+      ]
       setMaintenanceActivityData(maintenanceActivityOptions)
     } catch (e) {
       console.error('Error loading dropdown data:', e)
@@ -161,7 +172,7 @@ const FurnaceMaintenanceActivity = () => {
               maintStartDateTime: new Date('2024-04-01').toISOString(),
               maintEndDateTime: new Date('2024-04-05').toISOString(),
               duration: 5,
-              remarks: 'Mock data 1'
+              remarks: 'Mock data 1',
             },
             {
               Id: 2,
@@ -170,14 +181,14 @@ const FurnaceMaintenanceActivity = () => {
               maintStartDateTime: new Date('2024-05-10').toISOString(),
               maintEndDateTime: new Date('2024-05-20').toISOString(),
               duration: 11,
-              remarks: 'Mock data 2'
-            }
-          ]
-        }
+              remarks: 'Mock data 2',
+            },
+          ],
+        },
       }
 
       await new Promise((resolve) => setTimeout(resolve, 800)) // delay to simulate network
-      
+
       if (mockResult?.code === 200) {
         setRows(mapData(mockResult, 'VMD'))
       } else {
@@ -198,7 +209,6 @@ const FurnaceMaintenanceActivity = () => {
   useEffect(() => {
     fetchData()
   }, [keycloak, AOP_YEAR, PLANT_ID])
-
 
   const saveChanges = async () => {
     try {
@@ -245,14 +255,22 @@ const FurnaceMaintenanceActivity = () => {
         setLoading(false)
         return
       }
-      
+
       // Date Validation for Save Action
-      const invalidDateRow = rowsToUpdate.find(r => r.startDate && r.endDate && moment(r.endDate).isBefore(moment(r.startDate), 'day'))
+      const invalidDateRow = rowsToUpdate.find(
+        (r) =>
+          r.startDate &&
+          r.endDate &&
+          moment(r.endDate).isBefore(moment(r.startDate), 'day'),
+      )
       if (invalidDateRow) {
-         setSnackbarOpen(true)
-         setSnackbarData({ message: 'End Date cannot be before Start Date for some records', severity: 'error' })
-         setLoading(false)
-         return
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'End Date cannot be before Start Date for some records',
+          severity: 'error',
+        })
+        setLoading(false)
+        return
       }
 
       // const response = await DataService.saveFurnaceMaintenanceActivity(
@@ -289,7 +307,6 @@ const FurnaceMaintenanceActivity = () => {
     }
   }
 
- 
   const deleteRowData = async (paramsForDelete) => {
     try {
       const { idFromApi, id } = paramsForDelete

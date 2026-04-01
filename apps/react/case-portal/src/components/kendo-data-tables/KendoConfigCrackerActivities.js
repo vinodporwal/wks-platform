@@ -1632,21 +1632,23 @@ const DecokingConfig = () => {
         </CustomAccordionDetails>
       </CustomAccordion>
 
-      {IS_CRACKER_VMD && (<CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
-        <CustomAccordionSummary
-          aria-controls='meg-grid-content'
-          id='meg-grid-header'
-        >
-          <Typography component='span' className='grid-title'>
-           Furnace Maintenance Activity
-          </Typography>
-        </CustomAccordionSummary>
-        <CustomAccordionDetails>
-          <Box sx={{ width: '100%', margin: 0 }}>
-            <FurnaceMaintenanceActivity />
-          </Box>
-        </CustomAccordionDetails>
-      </CustomAccordion>)}
+      {IS_CRACKER_VMD && (
+        <CustomAccordion defaultExpanded disableGutters sx={{ mt: 1.5 }}>
+          <CustomAccordionSummary
+            aria-controls='meg-grid-content'
+            id='meg-grid-header'
+          >
+            <Typography component='span' className='grid-title'>
+              Furnace Maintenance Activity
+            </Typography>
+          </CustomAccordionSummary>
+          <CustomAccordionDetails>
+            <Box sx={{ width: '100%', margin: 0 }}>
+              <FurnaceMaintenanceActivity />
+            </Box>
+          </CustomAccordionDetails>
+        </CustomAccordion>
+      )}
     </Box>
   )
 }

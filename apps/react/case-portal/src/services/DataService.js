@@ -187,7 +187,7 @@ export const DataService = {
   saveFurnaceMaintenanceActivity,
   deleteFurnaceMaintenanceActivity,
   getFurnaceDropdownData,
-  getMaintenanceActivityData
+  getMaintenanceActivityData,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4284,7 +4284,11 @@ export async function saveFurnaceMaintenanceActivity(
     Authorization: `Bearer ${keycloak.token}`,
   }
   try {
-    const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(data) })
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data),
+    })
     return json(keycloak, resp)
   } catch (e) {
     console.error(e)
@@ -4292,10 +4296,7 @@ export async function saveFurnaceMaintenanceActivity(
   }
 }
 
-export async function deleteFurnaceMaintenanceActivity(
-  id,
-  keycloak,
-) {
+export async function deleteFurnaceMaintenanceActivity(id, keycloak) {
   const url = `${Config.CaseEngineUrl}/task/furnace-maintenance-activity?id=${id}`
   const headers = {
     Accept: 'application/json',
