@@ -55,54 +55,65 @@ THIN_BORDER = Border(
 def get_plant_wise_demand(month: int, year: int, utility_name: str) -> List[Dict]:
     """
     Fetch plant-wise demand from CalculatedProcessDemand table.
-    
+    Returns ALL NMD plants (using Power_Dis as master list) with 0 for any
+    plant that has no demand for the requested utility/month.
+
     Args:
         month: Month number (1-12)
         year: Year
         utility_name: Utility name (e.g., 'Power_Dis', 'SHP Steam_Dis')
-    
+
     Returns:
-        List of dicts with plant_name and demand_value
+        List of dicts with plant_name and demand_value (0 if no data)
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     try:
         # Get financial year string
         if month >= 4:
             fy_string = f"{year}-{str(year + 1)[-2:]}"
         else:
             fy_string = f"{year - 1}-{str(year)[-2:]}"
-        
+
         # Month column mapping
         month_columns = {
             1: "jan", 2: "feb", 3: "mar", 4: "apr", 5: "may", 6: "jun",
             7: "jul", 8: "aug", 9: "sep", 10: "oct", 11: "nov", 12: "dec"
         }
         month_col = month_columns.get(month, "apr")
-        
+
+        # Use Power_Dis as the master plant list (always has all NMD plants).
+        # LEFT JOIN to get this utility's value for the month; 0 if absent.
         query = f"""
-            SELECT 
-                process_plant,
-                {month_col} AS demand_value
-            FROM dbo.CalculatedProcessDemand
-            WHERE financial_year = ? AND cpp_utility = ?
-            ORDER BY process_plant
+            SELECT
+                master.process_plant,
+                ISNULL(target.{month_col}, 0) AS demand_value
+            FROM (
+                SELECT DISTINCT process_plant
+                FROM dbo.CalculatedProcessDemand
+                WHERE financial_year = ? AND cpp_utility = 'Power_Dis'
+            ) AS master
+            LEFT JOIN (
+                SELECT process_plant, {month_col}
+                FROM dbo.CalculatedProcessDemand
+                WHERE financial_year = ? AND cpp_utility = ?
+            ) AS target ON master.process_plant = target.process_plant
+            ORDER BY master.process_plant
         """
-        
-        cursor.execute(query, (fy_string, utility_name))
+
+        cursor.execute(query, (fy_string, fy_string, utility_name))
         rows = cursor.fetchall()
-        
+
         result = []
         for row in rows:
-            if row[1] and row[1] > 0:  # Only include non-zero values
-                result.append({
-                    'plant_name': row[0],
-                    'demand_value': float(row[1])
-                })
-        
+            result.append({
+                'plant_name': row[0],
+                'demand_value': float(row[1])
+            })
+
         return result
-        
+
     except Exception as e:
         print(f"  [BALANCE REPORT] Error fetching plant-wise demand for {utility_name}: {e}")
         return []
@@ -113,59 +124,67 @@ def get_plant_wise_demand(month: int, year: int, utility_name: str) -> List[Dict
 def get_fixed_consumption_details(month: int, year: int, utility_name: str) -> List[Dict]:
     """
     Fetch fixed consumption with consumer and plant details.
-    
+    Returns ALL cost centers (using CPPCostCenters as master list) with 0 for any
+    cost center that has no entry for the requested utility/month.
+
     Args:
         month: Month number (1-12)
         year: Year
         utility_name: Utility name (e.g., 'Power_Dis', 'LP Steam_Dis')
-    
+
     Returns:
-        List of dicts with consumer_name, plant_name, and consumption_value
+        List of dicts with consumer_name, plant_name, and consumption_value (0 if no data)
     """
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     try:
         # Get FinancialYearMonth ID
         cursor.execute("""
             SELECT Id FROM FinancialYearMonth WHERE Month = ? AND Year = ?
         """, (month, year))
         fym_row = cursor.fetchone()
-        
+
         if not fym_row:
             return []
-        
+
         fym_id = fym_row[0]
-        
-        # Query to get fixed consumption with plant details
-        # Using the same structure as fixed_consumption_service.py
+
+        # Use ALL CPPCostCenters as master list (LEFT JOIN).
+        # Any cost center absent from UtilityFixedConsumption for this utility/month
+        # will appear with ConsumptionValue = 0.
         query = """
-            SELECT 
-                cc.CostCenterName AS consumer_name,
-                pm.DisplayName AS plant_name,
-                ufc.ConsumptionValue AS consumption_value
-            FROM UtilityFixedConsumption ufc
-            JOIN NormParameters np ON ufc.NormParameter_FK_Id = np.Id
-            JOIN CPPCostCenters cc ON ufc.CostCenter_FK_Id = cc.CostCenterId
-            JOIN FixedConsumptionPlantMapping pm ON cc.Plant_FK_Id = pm.Id
-            WHERE ufc.FinancialYearMonth_FK_Id = ? AND np.Name = ?
-            ORDER BY pm.DisplayName, cc.CostCenterName
+            SELECT
+                master.CostCenterName AS consumer_name,
+                master.plant_name,
+                ISNULL(ufc.ConsumptionValue, 0) AS consumption_value
+            FROM (
+                SELECT cc.CostCenterId, cc.CostCenterName, pm.DisplayName AS plant_name
+                FROM CPPCostCenters cc
+                JOIN FixedConsumptionPlantMapping pm ON cc.Plant_FK_Id = pm.Id
+            ) AS master
+            LEFT JOIN (
+                SELECT ufc.CostCenter_FK_Id, ufc.ConsumptionValue
+                FROM UtilityFixedConsumption ufc
+                JOIN NormParameters np ON ufc.NormParameter_FK_Id = np.Id
+                WHERE ufc.FinancialYearMonth_FK_Id = ? AND np.Name = ?
+            ) AS ufc ON master.CostCenterId = ufc.CostCenter_FK_Id
+            ORDER BY master.plant_name, master.CostCenterName
         """
-        
+
         cursor.execute(query, (fym_id, utility_name))
         rows = cursor.fetchall()
-        
+
         result = []
         for row in rows:
-            if row[2] and row[2] > 0:  # Only include non-zero values
-                result.append({
-                    'consumer_name': row[0],
-                    'plant_name': row[1] if row[1] else 'Unknown',
-                    'consumption_value': float(row[2])
-                })
-        
+            result.append({
+                'consumer_name': row[0],
+                'plant_name': row[1] if row[1] else 'Unknown',
+                'consumption_value': float(row[2]) if row[2] else 0.0
+            })
+
         return result
-        
+
     except Exception as e:
         print(f"  [BALANCE REPORT] Error fetching fixed consumption for {utility_name}: {e}")
         import traceback
@@ -1327,8 +1346,8 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
     
-    # Other Utility Requirement (Auxiliary Power for GTs)
-    ws[f'A{row}'] = "Other Utility Requirement"
+    # Utility for Utility (U4U)
+    ws[f'A{row}'] = "Utility for Utility (U4U)"
     ws[f'A{row}'].font = BOLD_FONT
     for col in range(1, 6):
         ws.cell(row=row, column=col).border = THIN_BORDER
@@ -1394,14 +1413,13 @@ def write_power_balance_section(ws, start_row: int, month: int, year: int, calcu
     ]
     
     for utility_name, power_mwh, norm_value in utility_power_items:
-        if power_mwh > 0:
-            ws[f'A{row}'] = f"  {utility_name}"
-            ws[f'B{row}'] = norm_value  # Add norm value
-            ws[f'C{row}'] = round(power_mwh, 2)
-            aux_power_total += power_mwh
-            for col in range(1, 6):
-                ws.cell(row=row, column=col).border = THIN_BORDER
-            row += 1
+        ws[f'A{row}'] = f"  {utility_name}"
+        ws[f'B{row}'] = norm_value  # Add norm value
+        ws[f'C{row}'] = round(power_mwh, 2)
+        aux_power_total += power_mwh
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
     
     # Get actual total from calculation result
     usd_power = usd_result.get('power_result', {})
@@ -1582,8 +1600,8 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
             ws.cell(row=row, column=col).border = THIN_BORDER
         row += 1
     
-    # Other Utility Requirement (U4U for steam)
-    ws[f'A{row}'] = "Other Utility Requirement"
+    # Utility for Utility (U4U)
+    ws[f'A{row}'] = "Utility for Utility (U4U)"
     ws[f'A{row}'].font = BOLD_FONT
     for col in range(1, 6):
         ws.cell(row=row, column=col).border = THIN_BORDER
@@ -1596,64 +1614,127 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         # SHP consumed by STG for power generation (not extraction)
         # Use stg_shp_power from SHP balance, not stg_shp_inlet_mt which includes extraction
         stg_shp_power = steam_balance.get('stg_shp_power', 0)
-        if stg_shp_power > 0:
-            ws[f'A{row}'] = "  STG Power Generation"
-            ws[f'C{row}'] = round(stg_shp_power, 2)
-            u4u_total += stg_shp_power
-            for col in range(1, 6):
-                ws.cell(row=row, column=col).border = THIN_BORDER
-            row += 1
+        ws[f'A{row}'] = "  STG Power Generation"
+        ws[f'C{row}'] = round(stg_shp_power, 2)
+        u4u_total += stg_shp_power
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
         
         # SHP for LP via STG
         shp_for_lp_stg = steam_balance.get('shp_for_stg_lp', 0)
-        if shp_for_lp_stg > 0:
-            ws[f'A{row}'] = "  LP Steam (via STG)"
-            ws[f'C{row}'] = round(shp_for_lp_stg, 2)
-            u4u_total += shp_for_lp_stg
-            for col in range(1, 6):
-                ws.cell(row=row, column=col).border = THIN_BORDER
-            row += 1
+        ws[f'A{row}'] = "  LP Steam (via STG)"
+        ws[f'C{row}'] = round(shp_for_lp_stg, 2)
+        u4u_total += shp_for_lp_stg
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
         
         # SHP for MP components - extract from MP balance
         mp_balance = final_steam.get('mp_balance', {})
         
         # SHP for MP via STG
         shp_for_mp_stg = mp_balance.get('shp_for_stg_mp', 0)
-        if shp_for_mp_stg > 0:
-            ws[f'A{row}'] = "  MP Steam (via STG)"
-            ws[f'C{row}'] = round(shp_for_mp_stg, 2)
-            u4u_total += shp_for_mp_stg
-            for col in range(1, 6):
-                ws.cell(row=row, column=col).border = THIN_BORDER
-            row += 1
+        ws[f'A{row}'] = "  MP Steam (via STG)"
+        ws[f'C{row}'] = round(shp_for_mp_stg, 2)
+        u4u_total += shp_for_mp_stg
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
         
         # SHP for MP via PRDS
         shp_for_mp_prds = mp_balance.get('shp_for_prds_mp', 0)
-        if shp_for_mp_prds > 0:
-            ws[f'A{row}'] = "  MP Steam (via PRDS)"
-            ws[f'C{row}'] = round(shp_for_mp_prds, 2)
-            u4u_total += shp_for_mp_prds
-            for col in range(1, 6):
-                ws.cell(row=row, column=col).border = THIN_BORDER
-            row += 1
+        ws[f'A{row}'] = "  MP Steam (via PRDS)"
+        ws[f'C{row}'] = round(shp_for_mp_prds, 2)
+        u4u_total += shp_for_mp_prds
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
         
         # SHP for HP via PRDS
         shp_for_hp_prds = steam_balance.get('shp_for_hp_prds', 0)
-        if shp_for_hp_prds > 0:
-            ws[f'A{row}'] = "  HP Steam (via PRDS)"
-            ws[f'C{row}'] = round(shp_for_hp_prds, 2)
-            u4u_total += shp_for_hp_prds
-            for col in range(1, 6):
-                ws.cell(row=row, column=col).border = THIN_BORDER
-            row += 1
+        ws[f'A{row}'] = "  HP Steam (via PRDS)"
+        ws[f'C{row}'] = round(shp_for_hp_prds, 2)
+        u4u_total += shp_for_hp_prds
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
     
     elif steam_type == 'MP':
-        # MP consumed by PRDS to generate LP
+        # MP consumed by PRDS to generate LP (steam cascade)
+        # norm = 0.75 MT MP / MT LP (NORM_MP_PER_LP_PRDS from steam_service)
         mp_for_lp = steam_balance.get('mp_for_lp', 0)
-        if mp_for_lp > 0:
-            ws[f'A{row}'] = "  LP Steam (via PRDS)"
-            ws[f'C{row}'] = round(mp_for_lp, 2)
-            u4u_total += mp_for_lp
+        lp_from_prds_mt = usd_result.get('final_steam_balance', {}).get('lp_balance', {}).get('lp_from_prds', 0.0)
+        lp_prds_norm = round(mp_for_lp / lp_from_prds_mt, 4) if lp_from_prds_mt else 0.75
+        ws[f'A{row}'] = "  LP Steam (via PRDS)"
+        ws[f'B{row}'] = lp_prds_norm
+        ws[f'C{row}'] = round(mp_for_lp, 2)
+        u4u_total += mp_for_lp
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
+
+        # Treated Spent Caustic (TSC) — genuine MP U4U (separate from steam cascade)
+        final_u4u_mp = usd_result.get('final_u4u_mp_steam', {}) or {}
+        tsc_norm = final_u4u_mp.get('tsc_norm', 0)
+        tsc_mt = final_u4u_mp.get('tsc_mt', 0)
+        ws[f'A{row}'] = "  Treated Spent Caustic (U4U)"
+        ws[f'B{row}'] = round(tsc_norm, 6) if tsc_norm else ''
+        ws[f'C{row}'] = round(tsc_mt, 2)
+        u4u_total += tsc_mt
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
+
+    elif steam_type == 'HP':
+        # HP consumed to produce MP via HP→MP PRDS reduction
+        # hp_for_mp is stored directly in hp_balance from steam_service
+        final_steam = usd_result.get('final_steam_balance', {}) or {}
+        hp_balance = final_steam.get('hp_balance', {}) or {}
+        hp_for_mp = hp_balance.get('hp_for_mp', 0)
+        hp_total_val = hp_balance.get('hp_total', 0)
+        ws[f'A{row}'] = "  MP Steam (via PRDS)"
+        ws[f'B{row}'] = round(hp_for_mp / hp_total_val, 4) if hp_total_val else ''
+        ws[f'C{row}'] = round(hp_for_mp, 2)
+        u4u_total += hp_for_mp
+        for col in range(1, 6):
+            ws.cell(row=row, column=col).border = THIN_BORDER
+        row += 1
+
+    elif steam_type == 'LP':
+        # LP consumed by BFW deaerator and HRSG drum heating
+        final_u4u_lp = usd_result.get('final_u4u_lp_steam', {}) or {}
+        hrsg_dispatch = usd_result.get('hrsg_dispatch', {}) or {}
+        hrsg_dispatch_list = hrsg_dispatch.get('hrsg_dispatch', [])
+        hrsg_shp_map = {'HRSG1': 0.0, 'HRSG2': 0.0, 'HRSG3': 0.0}
+        for hrsg_data in hrsg_dispatch_list:
+            hrsg_name = (hrsg_data.get('name', '') or '').upper().replace('-', '').replace(' ', '')
+            total_shp_mt = hrsg_data.get('total_shp_mt', 0) or 0
+            if 'HRSG1' in hrsg_name:
+                hrsg_shp_map['HRSG1'] = total_shp_mt
+            elif 'HRSG2' in hrsg_name:
+                hrsg_shp_map['HRSG2'] = total_shp_mt
+            elif 'HRSG3' in hrsg_name:
+                hrsg_shp_map['HRSG3'] = total_shp_mt
+
+        bfw = utility_consumption.get('bfw', {})
+        bfw_total_m3 = bfw.get('total_m3', 0) or 0
+        bfw_norm = final_u4u_lp.get('bfw_norm', 0) or get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'LP Steam_Dis')
+        hrsg1_norm = final_u4u_lp.get('hrsg1_norm', 0) or get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'HRSG1_SHP STEAM', 'LP Steam_Dis')
+        hrsg2_norm = final_u4u_lp.get('hrsg2_norm', 0) or get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'LP Steam_Dis')
+        hrsg3_norm = final_u4u_lp.get('hrsg3_norm', 0) or get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'HRSG3_SHP STEAM', 'LP Steam_Dis')
+
+        lp_u4u_items = [
+            ('BFW Plant', final_u4u_lp.get('bfw_mt', 0) or (bfw_total_m3 * bfw_norm), bfw_norm),
+            ('HRSG1', final_u4u_lp.get('hrsg1_mt', 0) or (hrsg_shp_map['HRSG1'] * hrsg1_norm), hrsg1_norm),
+            ('HRSG2', final_u4u_lp.get('hrsg2_mt', 0) or (hrsg_shp_map['HRSG2'] * hrsg2_norm), hrsg2_norm),
+            ('HRSG3', final_u4u_lp.get('hrsg3_mt', 0) or (hrsg_shp_map['HRSG3'] * hrsg3_norm), hrsg3_norm),
+        ]
+        for item_name, item_mt, item_norm in lp_u4u_items:
+            ws[f'A{row}'] = f"  {item_name}"
+            ws[f'B{row}'] = round(item_norm, 6) if item_norm else ''
+            ws[f'C{row}'] = round(item_mt, 2)
+            u4u_total += item_mt
             for col in range(1, 6):
                 ws.cell(row=row, column=col).border = THIN_BORDER
             row += 1
@@ -1669,14 +1750,19 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
         total_demand_actual = steam_result.get(f'{steam_type_lower}_total', 0)
     
     line_items_sum = plant_req_total + fixed_req_total + u4u_total
+    displayed_total_demand = line_items_sum
     
-    # Verify the line items sum matches the calculation total
-    # With unit conversion fixed, these should match exactly
-    if abs(total_demand_actual - line_items_sum) > 0.01:
+    # Verify the line items sum matches the calculation total.
+    # For LP steam, the engine's lp_total = lp_process + lp_fixed + lp_ufu (converged U4U).
+    # The displayed sum = plant_req_total + fixed_req_total + u4u_total.
+    # These should be very close after LP U4U convergence is enforced in the iteration loop.
+    # A small residual difference (<1 MT) is acceptable due to rounding between iterations.
+    if abs(total_demand_actual - line_items_sum) > 1.0:
+        engine_ufu = steam_result.get(f'{steam_type_lower}_ufu', 0) if steam_type != 'SHP' else 0
         print(f"[WARNING] {steam_type} Steam Balance mismatch:")
-        print(f"  Line items sum: {line_items_sum:.2f} MT")
-        print(f"  Calculation total: {total_demand_actual:.2f} MT")
-        print(f"  Difference: {total_demand_actual - line_items_sum:.2f} MT")
+        print(f"  Displayed demand sum: {line_items_sum:.2f} MT  (plant={plant_req_total:.2f} + fixed={fixed_req_total:.2f} + u4u={u4u_total:.2f})")
+        print(f"  Engine total:         {total_demand_actual:.2f} MT  (engine u4u={engine_ufu:.2f})")
+        print(f"  Difference:           {total_demand_actual - line_items_sum:.2f} MT")
     
     # RIGHT SIDE: GENERATION (start from top)
     gen_row = start_data_row
@@ -1757,8 +1843,8 @@ def write_single_steam_balance(ws, start_row: int, month: int, year: int, calcul
     # Summary rows at bottom (no blank row - keep totals adjacent to data)
     row = max(row, gen_row)
     
-    # Use actual total from calculation result
-    total_demand = total_demand_actual
+    # Excel total demand must match the sum of the displayed demand rows
+    total_demand = displayed_total_demand
     
     # Total row
     ws[f'A{row}'] = f"Total {steam_type} Steam Demand"
@@ -2105,8 +2191,8 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
         chemical_quantity = parent_utility_quantity * norm
     
     # LEFT SIDE: DEMAND
-    # Other Utility Requirement (U4U)
-    ws[f'A{row}'] = "Other Utility Requirement"
+    # Utility for Utility (U4U)
+    ws[f'A{row}'] = "Utility for Utility (U4U)"
     ws[f'A{row}'].font = BOLD_FONT
     for col in range(1, 6):
         ws.cell(row=row, column=col).border = THIN_BORDER

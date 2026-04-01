@@ -695,6 +695,8 @@ def calculate_budget_with_iteration(
     
     # Calculate utilities
     utilities = calculate_utilities_from_dispatch(
+        month=month,
+        year=year,
         gt1_gross_mwh=gt1_gross,
         gt2_gross_mwh=gt2_gross,
         gt3_gross_mwh=gt3_gross,

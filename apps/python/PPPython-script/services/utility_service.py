@@ -35,6 +35,8 @@ THE CIRCULAR DEPENDENCY:
 7. Hence we need to ITERATE!
 """
 
+from database.connection import get_connection
+
 # ============================================================
 # UTILITY NORMS - FROM NORMS SHEET (April 2025)
 # ============================================================
@@ -163,6 +165,45 @@ NORM_CW2_PER_COMPRESSED_AIR_NM3 = 175.0 / 7000000  # KM³ per NM³
 NORM_AIR_PER_GT_NM3_PER_KWH = 31000.0 / 8000000  # NM³ per KWH GT
 NORM_AIR_PER_STG_NM3_PER_KWH = 41040.0 / 10231200  # NM³ per KWH STG
 NORM_AIR_PER_HRSG_NM3_PER_MT = 468720.0 / 48000  # NM³ per MT SHP from HRSG
+
+
+# ============================================================
+# DATABASE NORM FETCH HELPERS
+# ============================================================
+def get_utility_norm_from_db(month: int, year: int, plant_name: str, utility_name: str, material_name: str) -> float:
+    """Fetch norm value from NormsMonthDetail for a specific plant, utility, and material."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        query = """
+            SELECT nmd.Norms
+            FROM NormsMonthDetail nmd
+            INNER JOIN NormsHeader nh ON nh.Id = nmd.NormsHeader_FK_Id
+            INNER JOIN Plants p ON p.Id = nh.Plant_FK_Id
+            INNER JOIN FinancialYearMonth fym ON fym.Id = nmd.FinancialYearMonth_FK_Id
+            WHERE fym.Month = ? AND fym.Year = ?
+              AND p.Name = ?
+              AND nh.UtilityName = ?
+              AND nh.MaterialName = ?
+              AND nh.IsActive = 1
+        """
+        cursor.execute(query, (month, year, plant_name, utility_name, material_name))
+        row = cursor.fetchone()
+        return float(row[0]) if row and row[0] is not None else 0.0
+    except Exception as e:
+        print(f"  [NORM FETCH] Error fetching norm for {plant_name}/{utility_name}/{material_name}: {e}")
+        return 0.0
+    finally:
+        conn.close()
+
+
+def _resolve_norm(month: float, year: float, plant_name: str, utility_name: str, material_name: str, fallback: float) -> float:
+    """Fetch a month-wise norm from DB when month/year are provided, else fall back to legacy constants."""
+    if month and year:
+        norm = get_utility_norm_from_db(int(month), int(year), plant_name, utility_name, material_name)
+        if norm:
+            return norm
+    return fallback
 
 
 # ============================================================
@@ -584,6 +625,8 @@ def calculate_all_utilities(
 # ============================================================
 
 def calculate_utilities_from_dispatch(
+    month: int = None,
+    year: int = None,
     # Power dispatch results (MWh)
     gt1_gross_mwh: float = 0.0,
     gt2_gross_mwh: float = 0.0,
@@ -649,6 +692,23 @@ def calculate_utilities_from_dispatch(
     Returns:
         dict with detailed utility breakdown
     """
+    hrsg_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'Boiler Feed Water', NORM_HRSG_BFW_M3_PER_MT)
+    hp_prds_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HP Steam PRDS', 'Boiler Feed Water', NORM_HP_PRDS_BFW_M3_PER_MT)
+    mp_prds_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'MP Steam PRDS SHP', 'Boiler Feed Water', NORM_MP_PRDS_BFW_M3_PER_MT)
+    lp_prds_bfw_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'LP Steam PRDS', 'Boiler Feed Water', NORM_LP_PRDS_BFW_M3_PER_MT)
+    bfw_dm_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'D M Water', NORM_BFW_DM_WATER_M3_PER_M3)
+    bfw_lp_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'LP Steam_Dis', NORM_BFW_LP_STEAM_MT_PER_M3)
+    bfw_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'Power_Dis', NORM_BFW_POWER_KWH_PER_M3)
+    dm_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'D M Water', 'Power_Dis', NORM_DM_POWER_KWH_PER_M3)
+    dm_water_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'D M Water', 'Water', NORM_DM_WATER_M3_PER_M3)
+    cw1_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'Power_Dis', NORM_CW1_POWER_KWH_PER_KM3)
+    cw2_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Cooling Water 2', 'Power_Dis', NORM_CW2_POWER_KWH_PER_KM3)
+    air_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'COMPRESSED AIR', 'Power_Dis', NORM_AIR_POWER_KWH_PER_NM3)
+    oxygen_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Oxygen', 'Power_Dis', NORM_OXYGEN_POWER_KWH_PER_MT)
+    effluent_power_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'Effluent Treated', 'Power_Dis', NORM_EFFLUENT_POWER_KWH_PER_M3)
+    hrsg_lp_credit_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'LP Steam_Dis', abs(NORM_HRSG_LP_STEAM_CREDIT_MT_PER_MT))
+    hrsg_water_norm = _resolve_norm(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'Water', NORM_HRSG_WATER_M3_PER_MT)
+
     # Convert MWh to KWh for calculations
     gt1_kwh = gt1_gross_mwh * 1000
     gt2_kwh = gt2_gross_mwh * 1000
@@ -796,21 +856,21 @@ def calculate_utilities_from_dispatch(
     # 4. BFW CONSUMPTION (M³)
     # =========================================================
     # HRSG BFW
-    bfw_hrsg1 = shp_from_hrsg1 * NORM_HRSG_BFW_M3_PER_MT if hrsg1_available else 0
-    bfw_hrsg2 = shp_from_hrsg2 * NORM_HRSG_BFW_M3_PER_MT if hrsg2_available else 0
-    bfw_hrsg3 = shp_from_hrsg3 * NORM_HRSG_BFW_M3_PER_MT if hrsg3_available else 0
+    bfw_hrsg1 = shp_from_hrsg1 * hrsg_bfw_norm if hrsg1_available else 0
+    bfw_hrsg2 = shp_from_hrsg2 * hrsg_bfw_norm if hrsg2_available else 0
+    bfw_hrsg3 = shp_from_hrsg3 * hrsg_bfw_norm if hrsg3_available else 0
     
     # PRDS BFW
-    bfw_hp_prds = hp_from_prds * NORM_HP_PRDS_BFW_M3_PER_MT
-    bfw_mp_prds = mp_from_prds * NORM_MP_PRDS_BFW_M3_PER_MT
-    bfw_lp_prds = lp_from_prds * NORM_LP_PRDS_BFW_M3_PER_MT
+    bfw_hp_prds = hp_from_prds * hp_prds_bfw_norm
+    bfw_mp_prds = mp_from_prds * mp_prds_bfw_norm
+    bfw_lp_prds = lp_from_prds * lp_prds_bfw_norm
     
     total_bfw = bfw_hrsg1 + bfw_hrsg2 + bfw_hrsg3 + bfw_hp_prds + bfw_mp_prds + bfw_lp_prds
     
     # =========================================================
     # 5. DM WATER CONSUMPTION (M³)
     # =========================================================
-    dm_for_bfw = total_bfw * NORM_BFW_DM_WATER_M3_PER_M3
+    dm_for_bfw = total_bfw * bfw_dm_norm
     
     # Total DM water = BFW requirement + Process consumption + Fixed consumption
     total_dm_water = dm_for_bfw + dm_process_m3 + dm_fixed_m3
@@ -825,11 +885,11 @@ def calculate_utilities_from_dispatch(
     water_cw2 = total_cooling_water * NORM_CW2_WATER_M3_PER_KM3 * CW2_RATIO
     
     # DM Water Plant
-    water_dm = total_dm_water * NORM_DM_WATER_M3_PER_M3
+    water_dm = total_dm_water * dm_water_norm
     
     # HRSG
-    water_hrsg2 = shp_from_hrsg2 * NORM_HRSG_WATER_M3_PER_MT if hrsg2_available else 0
-    water_hrsg3 = shp_from_hrsg3 * NORM_HRSG_WATER_M3_PER_MT if hrsg3_available else 0
+    water_hrsg2 = shp_from_hrsg2 * hrsg_water_norm if hrsg2_available else 0
+    water_hrsg3 = shp_from_hrsg3 * hrsg_water_norm if hrsg3_available else 0
     
     # Effluent
     water_effluent = effluent_m3 * NORM_EFFLUENT_WATER_M3_PER_M3
@@ -840,22 +900,22 @@ def calculate_utilities_from_dispatch(
     # =========================================================
     # 7. LP STEAM CONSUMPTION (MT) - for BFW heating
     # =========================================================
-    lp_for_bfw = total_bfw * NORM_BFW_LP_STEAM_MT_PER_M3
+    lp_for_bfw = total_bfw * bfw_lp_norm
     
     # LP Steam credit from HRSG
-    lp_credit_hrsg2 = shp_from_hrsg2 * abs(NORM_HRSG_LP_STEAM_CREDIT_MT_PER_MT) if hrsg2_available else 0
-    lp_credit_hrsg3 = shp_from_hrsg3 * abs(NORM_HRSG_LP_STEAM_CREDIT_MT_PER_MT) if hrsg3_available else 0
+    lp_credit_hrsg2 = shp_from_hrsg2 * hrsg_lp_credit_norm if hrsg2_available else 0
+    lp_credit_hrsg3 = shp_from_hrsg3 * hrsg_lp_credit_norm if hrsg3_available else 0
     
     # =========================================================
     # 8. POWER CONSUMPTION BY UTILITY PLANTS (KWH)
     # =========================================================
-    power_bfw = total_bfw * NORM_BFW_POWER_KWH_PER_M3
-    power_dm = total_dm_water * NORM_DM_POWER_KWH_PER_M3
-    power_cw1 = total_cooling_water * CW1_RATIO * NORM_CW1_POWER_KWH_PER_KM3  # 53.12% CW1
-    power_cw2 = total_cooling_water * CW2_RATIO * NORM_CW2_POWER_KWH_PER_KM3  # 46.88% CW2
-    power_air = total_compressed_air * NORM_AIR_POWER_KWH_PER_NM3
-    power_oxygen = oxygen_mt * NORM_OXYGEN_POWER_KWH_PER_MT
-    power_effluent = effluent_m3 * NORM_EFFLUENT_POWER_KWH_PER_M3
+    power_bfw = total_bfw * bfw_power_norm
+    power_dm = total_dm_water * dm_power_norm
+    power_cw1 = total_cooling_water * CW1_RATIO * cw1_power_norm  # 53.12% CW1
+    power_cw2 = total_cooling_water * CW2_RATIO * cw2_power_norm  # 46.88% CW2
+    power_air = total_compressed_air * air_power_norm
+    power_oxygen = oxygen_mt * oxygen_power_norm
+    power_effluent = effluent_m3 * effluent_power_norm
     
     total_utility_power_kwh = power_bfw + power_dm + power_cw1 + power_cw2 + power_air + power_oxygen + power_effluent
     total_utility_power_mwh = total_utility_power_kwh / 1000

@@ -107,7 +107,7 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
         chemical_quantity = total_shp * norm
 
     # Demand subheading
-    ws[f'A{row}'] = "Other Utility Requirement"
+    ws[f'A{row}'] = "Utility for Utility (U4U)"
     ws[f'A{row}'].font = BOLD_FONT
     for col in range(1, 4):
         ws.cell(row=row, column=col).border = THIN_BORDER
