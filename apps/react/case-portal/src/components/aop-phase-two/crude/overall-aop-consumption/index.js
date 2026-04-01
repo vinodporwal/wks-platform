@@ -5,7 +5,6 @@ import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
 import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
-import { steadyStateConsumptionResponse } from '../dummyData'
 import { OverallAopConsumptionApiService } from 'components/aop-phase-two/services/crude/overallAopConsumptionApiService'
 
 const OverallAopConsumption = () => {
@@ -92,7 +91,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'august',
+      field: 'aug',
       title: headerMap[8],
       widthT: 100,
       minWidth: 80,
@@ -101,7 +100,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'september',
+      field: 'sep',
       title: headerMap[9],
       widthT: 100,
       minWidth: 80,
@@ -110,7 +109,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'october',
+      field: 'oct',
       title: headerMap[10],
       widthT: 100,
       minWidth: 80,
@@ -119,7 +118,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'november',
+      field: 'nov',
       title: headerMap[11],
       widthT: 100,
       minWidth: 80,
@@ -128,7 +127,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'december',
+      field: 'dec',
       title: headerMap[12],
       widthT: 100,
       minWidth: 80,
@@ -137,7 +136,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'january',
+      field: 'jan',
       title: headerMap[1],
       widthT: 100,
       minWidth: 80,
@@ -146,7 +145,7 @@ const OverallAopConsumption = () => {
       format: valueFormat,
     },
     {
-      field: 'february',
+      field: 'feb',
       title: headerMap[2],
       widthT: 100,
       minWidth: 80,
@@ -165,8 +164,6 @@ const OverallAopConsumption = () => {
     },
   ]
 
-  const dummyRows = []
-
   useEffect(() => {
     if (PLANT_ID && AOP_YEAR) {
       fetchData()
@@ -183,14 +180,12 @@ const OverallAopConsumption = () => {
           AOP_YEAR,
         )
       const data =
-        steadyStateConsumptionResponse.data?.mcuNormsValueDTOList?.map(
-          (item) => {
-            return {
-              ...item,
-              isEditaable: false,
-            }
-          },
-        )
+        response?.data?.aopConsumptionNormDTOList?.map((item) => {
+          return {
+            ...item,
+            isEditable: false,
+          }
+        }) || []
       setRows(data)
     } catch (error) {
       console.error('Error fetching overall AOP consumption data:', error)
@@ -219,7 +214,6 @@ const OverallAopConsumption = () => {
           PLANT_ID,
           AOP_YEAR,
         )
-      setRows(calculatedData)
       setSnackbarData({
         message: 'Calculation completed successfully!',
         severity: 'success',
