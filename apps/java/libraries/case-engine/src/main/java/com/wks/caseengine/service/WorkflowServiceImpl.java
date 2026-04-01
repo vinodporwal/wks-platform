@@ -349,7 +349,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getProductionWorkflowData(String plantId, String aopYear) {
 		try {
 			// Stored procedure name
@@ -434,6 +434,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 		return headers;
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<String> getProductionWorkflowHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
 

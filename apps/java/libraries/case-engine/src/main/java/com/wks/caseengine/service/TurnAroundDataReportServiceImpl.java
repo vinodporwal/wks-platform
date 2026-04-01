@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -108,6 +108,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
         }
     }
 
+    @Transactional(transactionManager = "db2TransactionManager", readOnly = true)
     public List<Object[]> getPlantTurnAroundData(String plantId, String aopYear, String reportType) {
         try {
             String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -136,6 +137,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
     }
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updateReportForTurnAroundData(String plantId, String year,
 			String reportType,List<TurnAroundPlanReportDTO> dataList) {
 		try {
@@ -185,6 +187,7 @@ public class TurnAroundDataReportServiceImpl implements TurnAroundDataReportServ
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM deleteReportForTurnAroundData(String id) {
 		TurnAroundPlan turnAroundPlan=null;
 		Optional<TurnAroundPlan> turnAroundPlanOpt=turnAroundPlanReportRepository.findById(UUID.fromString(id));

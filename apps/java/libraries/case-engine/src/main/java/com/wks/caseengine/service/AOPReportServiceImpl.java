@@ -37,7 +37,7 @@ import com.wks.caseengine.repository.PlantContributionSummaryT22Repository;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
-
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -484,6 +484,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 	
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getPlantContributionFiveYearSummaryReport(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -793,6 +794,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 		}
 	}
 	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getSpecificConsumptionNormsT17Data(String plantId, String aopYear, String reportType) {
 		try {
    			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -825,6 +827,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updatePlantContributionFiveYearSummaryReport(
 			List<PlantContributionSummaryDTO> plantContributionSummaryDTOs) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -1382,6 +1385,7 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updateSpecificConsumptionNormsT17Report(
 			List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year) {
 		List<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisList = new ArrayList<>();

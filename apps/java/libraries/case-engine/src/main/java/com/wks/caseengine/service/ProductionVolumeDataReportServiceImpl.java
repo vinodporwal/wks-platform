@@ -120,6 +120,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		return aopMessageVM;
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getProductionVolumnDataReport(String plantId, String year) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -209,7 +210,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		}
 
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getMonthWiseProductionData(String plantId, String aopYear) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -304,7 +305,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		}
 
 	}
-
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getMonthWiseConsumptionData(String plantId, String year, String ReportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -414,6 +415,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 		}
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getPlantProductionData(String plantId, String aopYear, String reportType) {
 		try {
 			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
@@ -442,6 +444,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM getReportForPlantContributionYearWise(String plantId, String year, String reportType) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -591,7 +594,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
-	@Transactional
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updateReportForMonthWiseConsumptionSummaryData(String plantId, String year,
 			List<MonthWiseConsumptionSummaryDTO> dataList) {
 		for (MonthWiseConsumptionSummaryDTO dto : dataList) {
@@ -859,6 +862,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updateReportForPlantProductionPlanData(String plantId, String year,
 			List<AnnualProductionPlanReportDto> dataList, String reportType) {
 		try {
@@ -921,6 +925,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM updateReportForPlantContributionYearWise(String plantId, String year,
 			List<YearWiseContributionDataDTO> dataList) {
 
@@ -956,6 +961,7 @@ public class ProductionVolumeDataReportServiceImpl implements ProductionVolumeDa
 	}
 
 	@Override
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public AOPMessageVM deletePlantProductionPlanData(String id) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		try {
