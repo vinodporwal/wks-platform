@@ -1239,7 +1239,7 @@ def write_fuel_demand_section(ws, start_row: int, month: int, year: int, calcula
     for gt in fuel_data['gt_assets']:
         ws[f'A{row}'] = gt['asset_name']
         ws[f'B{row}'] = 'Gas Turbine'
-        ws[f'C{row}'] = f"{round(gt['ncv_kcal_kwh'], 2)} Kcal/kg"
+        ws[f'C{row}'] = f"{round(gt['ncv_kcal_kwh'], 2)} GBT/MT"
         ws[f'D{row}'] = round(gt['quantity_mmbtu'], 2)
         # GT allocated load shows average MW per hour
         ws[f'E{row}'] = f"{round(gt['allocated_load_mw'], 2)} MW"
@@ -1253,7 +1253,7 @@ def write_fuel_demand_section(ws, start_row: int, month: int, year: int, calcula
     for hrsg in fuel_data['hrsg_assets']:
         ws[f'A{row}'] = hrsg['asset_name']
         ws[f'B{row}'] = 'HRSG'
-        ws[f'C{row}'] = f"{round(hrsg['ncv_gbt'], 2)} Kcal/kg"  # Use NCV from database (Kcal/kg for steam generation)
+        ws[f'C{row}'] = f"{round(hrsg['ncv_gbt'], 2)} GBT/MT"  # Use NCV from database (GBT/MT)
         ws[f'D{row}'] = round(hrsg['quantity_mmbtu'], 2)
         ws[f'E{row}'] = f"{round(hrsg['allocated_load_mt_per_hr'], 2)} MT/h"  # Average hourly load
         ws[f'F{row}'] = f"{round(hrsg['heat_rate_kcal_kg'], 2)} Kcal/kg"

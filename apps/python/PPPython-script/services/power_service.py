@@ -249,34 +249,48 @@ def _dispatch_once(
                 asset_dispatch[idx]["gross"] += group_allocation
                 remaining -= group_allocation
             else:
-                # Multiple assets with same priority - distribute EQUALLY by loading %
-                # Each asset should reach the same loading percentage
-                
-                # Iteratively increase all assets equally until demand met or one hits MAX
-                temp_remaining = group_allocation
-                while temp_remaining > 0.1:  # Small threshold to avoid infinite loop
-                    # Find assets that can still increase
-                    can_increase = []
-                    for idx, _ in group_available:
-                        ad = asset_dispatch[idx]
-                        if ad["gross"] < ad["max_energy"]:
-                            can_increase.append(idx)
-                    
-                    if not can_increase:
+                # Multiple assets with same priority → all must run at SAME LoadMW
+                # Find a single target_load_mw so that sum(target_load_mw × hours_i)
+                # covers total_current_group_mwh + group_allocation.
+                # This ensures true parallel / equal-MW dispatch.
+
+                # Total MWh that must come from this group after allocation
+                current_group_total = sum(asset_dispatch[idx]["gross"] for idx, _ in group_available)
+                target_group_total = current_group_total + group_allocation
+
+                # Iterative capping: some assets may hit their max before others
+                remaining_assets = [(idx, asset_dispatch[idx]) for idx, _ in group_available]
+                remaining_mwh = target_group_total
+                allocated_from_capped = 0.0
+
+                while remaining_assets:
+                    total_hours = sum(float(ad["row"]["opHours"]) for _, ad in remaining_assets)
+                    if total_hours <= 0:
                         break
-                    
-                    # Calculate equal share for each
-                    equal_share = temp_remaining / len(can_increase)
-                    
-                    # Apply increase to each, respecting MAX limit
-                    for idx in can_increase:
-                        ad = asset_dispatch[idx]
-                        available = ad["max_energy"] - ad["gross"]
-                        actual_increase = min(equal_share, available)
-                        asset_dispatch[idx]["gross"] += actual_increase
-                        temp_remaining -= actual_increase
-                
-                remaining -= (group_allocation - temp_remaining)
+
+                    target_load_mw = remaining_mwh / total_hours
+
+                    # Check which assets hit their maximum at this target
+                    newly_capped = []
+                    for idx, ad in remaining_assets:
+                        hours = float(ad["row"]["opHours"])
+                        target_gross = target_load_mw * hours
+                        if target_gross >= ad["max_energy"] - 1e-6:
+                            asset_dispatch[idx]["gross"] = ad["max_energy"]
+                            remaining_mwh -= ad["max_energy"]
+                            allocated_from_capped += ad["max_energy"]
+                            newly_capped.append(idx)
+
+                    if newly_capped:
+                        remaining_assets = [(idx, ad) for idx, ad in remaining_assets if idx not in newly_capped]
+                    else:
+                        # No caps hit — set all remaining assets to the common target
+                        for idx, ad in remaining_assets:
+                            hours = float(ad["row"]["opHours"])
+                            asset_dispatch[idx]["gross"] = target_load_mw * hours
+                        break
+
+                remaining -= group_allocation
     
     # =========================================================
     # STEP 3: CREATE DISPATCH ENTRIES
