@@ -61,6 +61,7 @@ private AnnualConfigPrizeRepository annualConfigPrizeRepository;
             annualConfigPrizeDTO.setGrade(obj[11] != null ? obj[11].toString() : null);
             annualConfigPrizeDTO.setPrice(obj[12] != null ? obj[12].toString() : null);
             annualConfigPrizeDTO.setRemarks(obj[13] != null ? obj[13].toString() : null);
+            annualConfigPrizeDTO.setUOM(obj[15] != null ? obj[15].toString() : null);
             annualConfigPrizeDTOList.add(annualConfigPrizeDTO);
         }
       
