@@ -371,6 +371,143 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		}
 		return null;
 	}
+	
+	public byte[] exportSlowdownNormsAllGrades(
+	        String year, 
+	        UUID plantFKId, 
+	        boolean isAfterSave, 
+	        List<SlowdownNormsValueDTO> dtoList) {
+	    try {
+	        AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
+	        List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
+	        
+	        if (gradeInfoList == null || gradeInfoList.isEmpty()) {
+	            return null;
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        CellStyle lockedStyle = Utility.createLockedStyle(workbook);
+	        lockedStyle.setLocked(true); // Ensure locked style is explicitly set to locked
+
+	        CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+	        unlockedStyle.setLocked(false); // Ensure unlocked style is explicitly set to NOT locked
+
+	        for (Map<String, String> gradeInfo : gradeInfoList) {
+	            String currentGradeId = gradeInfo.get("gradeId");
+	            String displayName = gradeInfo.get("displayName");
+	            String sheetName = Utility.sanitizeSheetName(displayName != null ? displayName : "Grade_" + currentGradeId);
+	            
+	            List<SlowdownNormsValueDTO> currentDtoList = new ArrayList<>();
+
+	           
+	            if (!isAfterSave) {
+	                AOPMessageVM aopMessageVM = getSlowdownNormsData(year, plantFKId.toString(), currentGradeId);
+	                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+	                    Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+	                    currentDtoList = (List<SlowdownNormsValueDTO>) responseMap.get("slowdownNormsValueDTO");
+	                }
+	            } else if (dtoList != null) {
+	                currentDtoList = dtoList.stream()
+	                        .filter(dto -> currentGradeId.equals(dto.getGradeId()))
+	                        .collect(Collectors.toList());
+	            }
+
+	            if (currentDtoList == null || currentDtoList.isEmpty()) {
+	                continue; 
+	            }
+
+	            Sheet sheet = workbook.createSheet(sheetName);
+	            sheet.protectSheet("protection_password");
+
+	            int currentRow = 0;
+
+	            
+	            List<String> headers = new ArrayList<>(Arrays.asList("Type", "Particulars", "UOM"));
+	            headers.addAll(Utility.getAcademicYearMonths(year));
+	            headers.add("Remarks");
+	            headers.add("Id");
+	            if (isAfterSave) {
+	                headers.add("Status");
+	                headers.add("Error Description");
+	            }
+
+	            Row headerRow = sheet.createRow(currentRow++);
+	            CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+	            headerStyle.setLocked(true); 
+
+	            for (int col = 0; col < headers.size(); col++) {
+	                Cell cell = headerRow.createCell(col);
+	                cell.setCellValue(headers.get(col));
+	                cell.setCellStyle(headerStyle);
+	            }
+
+	            
+	            for (SlowdownNormsValueDTO dto : currentDtoList) {
+	                Row row = sheet.createRow(currentRow++);
+	                List<Object> rowValues = new ArrayList<>();
+	                rowValues.add(dto.getNormParameterTypeDisplayName());
+	                rowValues.add(dto.getProductName());
+	                rowValues.add(dto.getUOM());
+	                rowValues.add(dto.getApril());
+	                rowValues.add(dto.getMay());
+	                rowValues.add(dto.getJune());
+	                rowValues.add(dto.getJuly());
+	                rowValues.add(dto.getAugust());
+	                rowValues.add(dto.getSeptember());
+	                rowValues.add(dto.getOctober());
+	                rowValues.add(dto.getNovember());
+	                rowValues.add(dto.getDecember());
+	                rowValues.add(dto.getJanuary());
+	                rowValues.add(dto.getFebruary());
+	                rowValues.add(dto.getMarch());
+	                rowValues.add(dto.getRemarks());
+	                rowValues.add(dto.getId());
+
+	                if (isAfterSave) {
+	                    rowValues.add(dto.getSaveStatus());
+	                    rowValues.add(dto.getErrDescription());
+	                }
+
+	                
+	                boolean isRowEditable = (dto.getIsEditable() != null) ? dto.getIsEditable() : true;
+	                CellStyle rowStyle = isRowEditable ? unlockedStyle : lockedStyle;
+
+	                for (int col = 0; col < rowValues.size(); col++) {
+	                    Cell cell = row.createCell(col);
+	                    Object val = rowValues.get(col);
+
+	                    if (val instanceof Number) {
+	                        cell.setCellValue(((Number) val).doubleValue());
+	                    } else if (val instanceof Boolean) {
+	                        cell.setCellValue((Boolean) val);
+	                    } else {
+	                        cell.setCellValue(val != null ? val.toString() : "");
+	                    }
+
+	                    
+	                    cell.setCellStyle(rowStyle);
+	                }
+	            }
+
+	           
+	            sheet.setColumnHidden(16, true); 
+	            for (int i = 0; i < 3; i++) { 
+	                sheet.autoSizeColumn(i); 
+	            }
+	        }
+
+	        
+	        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+	            workbook.write(outputStream);
+	            workbook.close();
+	            return outputStream.toByteArray();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
+	}
 
 	public List<Map<String, String>> extractGradeInfo(AOPMessageVM grades) {
 	    List<Map<String, String>> gradeInfoList = new ArrayList<>();
