@@ -139,6 +139,7 @@ console.log('*****  taskId:  ', taskId);
   useEffect(() => {
    // do not execute the effect if the task does not exits
     if(taskId && isBlocked) return;
+    if(!aCase || !aCase.businessKey) return;
     console.log("useEffect isBlocked: ", isBlocked)
     localStorage.setItem('aCaseOwnerEmail', JSON.stringify(aCase.owner?.email))
 
@@ -262,10 +263,16 @@ console.log('*****  taskId:  ', taskId);
 
   const getCaseInfo = async (aCase) => {
     console.log('CaseForm : getCaseInfo')
+    if (!aCase || !aCase.businessKey) {
+      console.warn('getCaseInfo called with invalid aCase:', aCase)
+      return
+    }
+    // Capture a stable local reference so async callbacks always see the correct value
+    const currentCase = aCase;
     await loadOptions(keycloak);
-    console.log('Fetching case data of ', aCase)
+    console.log('Fetching case data of ', currentCase)
     // setLoading(true)
-    CaseService.getCaseDefinitionsById(keycloak, aCase.caseDefinitionId)
+    await CaseService.getCaseDefinitionsById(keycloak, currentCase.caseDefinitionId)
       .then(async (data) => {
         setCaseDef(data)
         setStages(
@@ -279,17 +286,17 @@ console.log('*****  taskId:  ', taskId);
        // unhide the caaseOwner field in case update form
              if(data.formKey === 'case-management-system'){
        
-          formData.structure.components[0].components[0].components[0].columns[0].components[1].hidden = false;
+          formData.structure.components[0].components[0].components[0].columns[0].components[0].hidden = false;
       
       }
        
        
-        const processExists = await ProcessDefService.processExistsForBusinessKey(keycloak, aCase.businessKey)
+        const processExists = await ProcessDefService.processExistsForBusinessKey(keycloak, currentCase.businessKey)
         console.log(" ****processExists : ", processExists)
         setProcessExistsForBusinessKey(processExists)
 
         // show task tabs if the process exists and the form is asset-train-create-case  or if the process has been completed
-        if(processExists || aCase.caseStatus === '3'){
+        if(processExists || currentCase.caseStatus === '3'){
          
 
             if(data.formKey === 'asset-train-create-case') {
@@ -388,16 +395,12 @@ console.log('*****  taskId:  ', taskId);
         // Prefer fetching by businessKey (exact match). If not available, fall back to getCaseById.
         let caseData = null;
         try {
-          if (aCase && aCase.businessKey) {
-            // const processExists = await ProcessDefService.processExistsForBusinessKey(keycloak, aCase.businessKey)
-            // console.log(" ****processExists : ", processExists)
-            // setProcessExistsForBusinessKey(processExists)
-
-            console.log('[DEBUG] Fetching case by businessKey:', aCase.businessKey, '| caseDefinitionId:', aCase.caseDefinitionId)
+          if (currentCase && currentCase.businessKey) {
+            console.log('[DEBUG] Fetching case by businessKey:', currentCase.businessKey, '| caseDefinitionId:', currentCase.caseDefinitionId)
             const resp = await CaseService.getCaseByBusinessKey(
               keycloak,
-              aCase.caseDefinitionId,
-              aCase.businessKey,
+              currentCase.caseDefinitionId,
+              currentCase.businessKey,
             );
             console.log('[DEBUG] getCaseByBusinessKey raw response:', resp)
             if (resp && resp.data && resp.data.length > 0) {
@@ -416,20 +419,19 @@ console.log('*****  taskId:  ', taskId);
 
         if (!caseData) {
           console.log("in caseForm : caseData not found.........", caseData);
-          console.log('[DEBUG] Falling back to getCaseById with businessKey:', aCase.businessKey)
+          console.log('[DEBUG] Falling back to getCaseById with businessKey:', currentCase.businessKey)
           caseData = await CaseService.getCaseById(
             keycloak,
-            aCase.businessKey,
+            currentCase.businessKey,
           )
           console.log('[DEBUG] getCaseById result:', caseData)
         }
 
-        aCase.documents = caseData?.documents || []
-        aCase.comments = caseData?.comments || []
+        currentCase.documents = caseData?.documents || []
+        currentCase.comments = caseData?.comments || []
         console.log('[DEBUG] caseData before return:', caseData)
         console.log('[DEBUG] caseData.attributes:', caseData?.attributes)
-        // aCase.stage = caseData?.stage || "Stage 0";
-        return { caseData: aCase, updatedFormStructure }
+        return { caseData: currentCase, updatedFormStructure }
       })
       .then(({ caseData, updatedFormStructure }) => {
         const isDraft = caseData?.isDraft === 'y'
@@ -494,7 +496,7 @@ console.log('*****  taskId:  ', taskId);
                   : null
 
               if (caseNo) {
-                caseNo.calculateValue = `value = ${aCase.businessKey}`
+                caseNo.calculateValue = `value = ${currentCase.businessKey}`
               }
 
               const caseTitleField =
