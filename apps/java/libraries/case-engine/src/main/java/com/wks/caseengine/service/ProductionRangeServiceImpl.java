@@ -474,7 +474,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 	                dto.setFeb(getNumericCellValue(row.getCell(2), dto));
 	                dto.setMar(getNumericCellValue(row.getCell(2), dto));
 	                dto.setRemarks(getStringCellValue(row.getCell(4), dto));
-	                dto.setNormParameterFKId(getStringCellValue(row.getCell(6), dto));
+	                dto.setNormParameterFKId(getStringCellValue(row.getCell(5), dto));
 	               dto.setUOM(getStringCellValue(row.getCell(1), dto));
 	              } 
 	              catch (Exception e) {
