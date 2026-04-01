@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
+import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import MenuItem from '@mui/material/MenuItem'
@@ -10,6 +11,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined'
 import avatar2 from 'assets/images/users/new-avatar.jpg'
+import logo from 'assets/images/ril-logo2.png'
 
 const Profile = ({ keycloak }) => {
   const anchorRef = useRef(null)
@@ -27,8 +29,12 @@ const Profile = ({ keycloak }) => {
   }
 
   return (
-    <Box sx={{ flexShrink: 0, ml: 1 }}>
+    <Box sx={{ flexShrink: 0, ml: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
       {/* ?? ICON ONLY */}
+      <Divider orientation='vertical' flexItem sx={{ border: '2px solid #dfdee3', mr: 1 }} />
+      <Typography fontSize='0.85rem' fontWeight={700} color='text.primary' textTransform='capitalize'>
+        {keycloak?.idTokenParsed?.name}
+      </Typography>
       <IconButton
         ref={anchorRef}
         onClick={handleToggle}
@@ -37,12 +43,11 @@ const Profile = ({ keycloak }) => {
           p: 0.5,
         }}
       >
-        <Avatar
-          src={avatar2}
-          sx={{
-            width: 32,
-            height: 32,
-          }}
+        <Box
+          component='img'
+          src={logo}
+          alt='Logo'
+          sx={{ width: 28, height: 28 }}
         />
       </IconButton>
 

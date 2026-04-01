@@ -12,6 +12,7 @@ import { TcsOutputApiService } from 'components/aop-phase-two/services/tcs/tcsOu
 import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CPPUnitsSdPlan = ({
   PLANT_ID,
@@ -217,12 +218,7 @@ const CPPUnitsSdPlan = ({
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Stack spacing={2}>
         <AdvanceKendoTable

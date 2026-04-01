@@ -28,22 +28,33 @@
    HEADER: Left aligned + less left padding
    =============================== */
 
-/* Force all header cells left aligned */
-.kendo-data-grid .k-grid-header th,
-.kendo-data-grid .k-grid-header .k-header,
-.kendo-data-grid .k-grid-header .k-link {
+/* Grid Header Alignment Classes */
+.kendo-data-grid .k-grid-header th.header-align-right,
+.kendo-data-grid .k-grid-header th.header-align-right .k-link {
+  text-align: right !important;
+  justify-content: flex-end !important;
+}
+
+.kendo-data-grid .k-grid-header th.header-align-left,
+.kendo-data-grid .k-grid-header th.header-align-left .k-link {
   text-align: left !important;
-  justify-content: flex-start !important; /* for flex header content */
+  justify-content: flex-start !important;
+}
+
+/* Force first column (Particulars) extra padding if left aligned */
+.kendo-data-grid .k-grid-header th:first-child.header-align-left {
+  padding-left: 12px !important;
 }
 
 /* Reduce header padding */
 .kendo-data-grid .k-grid-header th,
 .kendo-data-grid .k-grid-header .k-header {
-  padding-left: 6px !important; /* ? reduce left padding */
+  padding-left: 6px !important;
   padding-right: 6px !important;
   padding-top: 4px !important;
   padding-bottom: 4px !important;
 }
+
 
 /* Reduce padding inside the header title itself */
 .kendo-data-grid .k-grid-header .k-column-title {
@@ -52,28 +63,37 @@
 }
 
 .kendo-data-grid .k-grid-header th {
-  border-right: 1px solid #d1d5db;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 /* ===============================
    GRID HEADER
    =============================== */
 
+.k-grid .k-table-row {
+    border-color: inherit;
+    background: #f0f5f9;
+}
+
 .kendo-data-grid .k-grid-header {
-  background: linear-gradient(180deg, #f8fafc, #eef2f7);
-  border-bottom: 2px solid #c7d2fe;
+  background: #eff6ff !important; /* Solid light blue background */
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 
 .kendo-data-grid .k-grid-header .k-column-headers {
-  background: linear-gradient(180deg, #f1f5f9, #e2e8f0);
+  background: transparent !important;
   border: 1px solid #cbd5e1;
 }
 
 .k-column-title {
-  font-size: 12px;
-  /* letter-spacing: -0.3px; */
-  line-height: 1.3;
+  font-size: 13px;
+  font-weight: 700 !important;
+  color: #334155 !important; /* Dark slate color */
+  line-height: 1.5;
 }
+
+
 
 /* ===============================
    TABLE LAYOUT (IMPORTANT)
@@ -119,6 +139,12 @@
 /* ===============================
    FULL ROW HOVER (RESTORED)
    =============================== */
+
+/* .kendo-data-grid .k-grid-content .k-grid-table tr:hover td {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+} */
+
 
 /* ===============================
    SELECTION
@@ -204,7 +230,7 @@
    =============================== */
 
 .k-grid .k-grid-content td.k-number-right {
-  text-align: left !important;
+  text-align: right !important;
 }
 
 /* ===============================
@@ -321,7 +347,7 @@
 /* NEW */
 
 .k-grid .k-grid-header .k-header {
-  padding: 0px 0px 4px 5px !important;
+  padding: 0px 0px 4px 13px !important;
   height: 24px;
 }
 .k-grid .k-grid-header .k-cell-inner,

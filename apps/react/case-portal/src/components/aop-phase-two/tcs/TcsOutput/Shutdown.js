@@ -6,6 +6,7 @@ import { useSession } from 'SessionStoreContext'
 import ValueFormatterPhaseTwo from 'components/aop-phase-two/common/ValueFormatterPhaseTwo'
 import { Stack } from '../../../../../node_modules/@mui/material/index'
 import { extractYear } from 'components/aop-phase-two/common/utilities/generateHeaders'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const Shutdown = ({
   SITE_ID,
@@ -213,12 +214,7 @@ const Shutdown = ({
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       <Stack sx={{ mt: 2 }}>
         <AdvanceKendoTable
           rows={rows}

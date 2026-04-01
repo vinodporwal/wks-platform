@@ -13,6 +13,7 @@ import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import { validateFields } from 'utils/validationUtils'
 import useValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import { useSelector } from 'react-redux'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const MonthwiseRawMaterial = () => {
   const keycloak = useSession()
@@ -52,6 +53,7 @@ const MonthwiseRawMaterial = () => {
 
   const columnDefs = [
     { field: 'id', headerName: 'ID', editable: false },
+
     {
       field: 'material',
       headerName: 'Particulars',
@@ -210,7 +212,6 @@ const MonthwiseRawMaterial = () => {
       type: 'number',
     },
   ]
-
   const columns = [
     { field: 'id', headerName: 'ID' },
     {
@@ -603,12 +604,7 @@ const MonthwiseRawMaterial = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {lowerVertName !== 'pe' &&
         lowerVertName !== 'pp' &&

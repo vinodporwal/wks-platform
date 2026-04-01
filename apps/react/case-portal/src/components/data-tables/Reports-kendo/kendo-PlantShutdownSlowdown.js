@@ -40,6 +40,13 @@ const PlantShutdownSlowdown = () => {
   const [modifiedCells, setModifiedCells] = useState({})
 
   const valueFormatter = ValueFormatterProduction()
+  function getPrevYearString(AOP_YEAR) {
+    if (!AOP_YEAR) return ''
+    const [start] = AOP_YEAR.split('-').map(Number)
+    const prevStart = start - 1
+    const prevEnd = (prevStart + 1) % 100
+    return `${prevStart}-${prevEnd.toString().padStart(2, '0')}`
+  }
 
   const columns = [
     {
@@ -55,7 +62,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedSiteFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -63,7 +69,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedSiteDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -76,7 +81,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedGroupFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -84,7 +88,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'bestAchievedGroupDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -92,12 +95,11 @@ const PlantShutdownSlowdown = () => {
       ],
     },
     {
-      title: 'Actual 2024-25',
+      title: `Actual ${getPrevYearString(AOP_YEAR)}`,
       children: [
         {
           field: 'actualPrevYearFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -105,7 +107,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'actualPrevYearDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -113,12 +114,11 @@ const PlantShutdownSlowdown = () => {
       ],
     },
     {
-      title: 'Budget 2025-26',
+      title: `Budget ${AOP_YEAR}`,
       children: [
         {
           field: 'budgetNextYearFreq',
           title: 'Frequency',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -126,7 +126,6 @@ const PlantShutdownSlowdown = () => {
         {
           field: 'budgetNextYearDur',
           title: 'Duration',
-          widthT: 80,
           editable: true,
           type: 'numberNonGrey',
           format: valueFormatter,
@@ -136,7 +135,6 @@ const PlantShutdownSlowdown = () => {
     {
       field: 'clubbedActivities',
       title: 'Activities that can be clubbed with the critical activity',
-      widthT: 150,
       type: 'text',
       editable: true,
     },
@@ -144,30 +142,27 @@ const PlantShutdownSlowdown = () => {
       field: 'explanationNotBest',
       title:
         'Explanation for not proposing the best achieved frequency / duration',
-      widthT: 150,
       type: 'text',
       editable: true,
     },
     {
       field: 'throughputReduction',
       title: 'Throughput reduction during the period',
-      widthT: 80,
       type: 'numberNonGrey',
       editable: true,
     },
     {
       field: 'lossRecoverable',
       title: 'Is the production Loss recoverable',
-      widthT: 80,
       type: 'text',
       editable: true,
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      widthT: 200,
-      editable: true,
-    },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   widthT: 200,
+    //   editable: true,
+    // },
   ]
 
   const fetchData = async () => {
@@ -199,7 +194,7 @@ const PlantShutdownSlowdown = () => {
           throughputReduction: item.throughputReductionDuringPeriod,
           lossRecoverable: item.isProductionLossRecoverable,
           remarks: item.remarks,
-          originalRemarks: item.remarks,
+          originalRemark: item.remarks,
         }))
         setRows(formattedData || responseData)
       } else {
@@ -234,7 +229,7 @@ const PlantShutdownSlowdown = () => {
         setLoading(false)
         return
       }
-      const requiredFields = ['criticalActivity', 'remarks']
+      const requiredFields = ['criticalActivity']
 
       const validationMessage = validateFields(data, requiredFields)
       if (validationMessage) {

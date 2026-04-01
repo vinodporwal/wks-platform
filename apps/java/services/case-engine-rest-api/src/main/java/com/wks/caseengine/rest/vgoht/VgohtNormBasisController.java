@@ -45,11 +45,24 @@ public class VgohtNormBasisController {
             @RequestParam(required = false) String version,
             @RequestBody List<VgohtNormConfigurationDTO> vgohtNormConfigurationDTOList, @RequestParam String periodFrom, @RequestParam String periodTo) {
 
-        if (plantFKId == null || year == null || year.isEmpty()) {
-            throw new IllegalArgumentException("Plant ID and AOP Year are required");
+        if (plantFKId == null || year == null || year.isEmpty()||vgohtNormConfigurationDTOList == null || vgohtNormConfigurationDTOList.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID, AOP Year and Configuration Data are required");
         }
 
         return vgohtNormBasisServiceImpl.saveConfigurationData(year, plantFKId, version, vgohtNormConfigurationDTOList, periodFrom, periodTo);
+    }
+
+    @GetMapping(value = "/vgoht/norms-basis/calculate")
+    public AOPMessageVM calculateNorms(
+            @RequestParam String year,
+            @RequestParam UUID plantFKId,
+            @RequestParam(required = false) String version, @RequestParam String periodFrom, @RequestParam String periodTo) {
+
+        if (plantFKId == null || year == null || year.isEmpty()) {
+            throw new IllegalArgumentException("Plant ID, AOP Year are required");
+        }
+
+        return vgohtNormBasisServiceImpl.calculateNorms(year, plantFKId, version, periodFrom, periodTo);
     }
 
     @PostMapping(value = "/vgoht/norms-basis/constant")

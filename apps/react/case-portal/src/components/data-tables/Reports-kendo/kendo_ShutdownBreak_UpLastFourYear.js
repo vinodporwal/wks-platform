@@ -197,12 +197,12 @@ const ShutdownSummaryReport = ({ permissions }) => {
       type: 'number',
       widthT: 100,
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      editable: true,
-      widthT: 200,
-    },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   editable: true,
+    //   widthT: 200,
+    // },
   ]
 
   const fetchData = async () => {
@@ -242,7 +242,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
           unplannedSlowdownHours: item.unplannedSlowdownHours,
           year: item.lastFourYears,
           remarks: item.remarks,
-          originalRemarks: item.remarks,
+          originalRemark: item.remarks,
         }),
       )
 
@@ -274,7 +274,7 @@ const ShutdownSummaryReport = ({ permissions }) => {
         return
       }
 
-      const validationMessage = validateFields(data, ['remarks', 'year'])
+      const validationMessage = validateFields(data, ['year'])
       if (validationMessage) {
         showSnackbar(validationMessage, 'error')
         return
@@ -376,8 +376,8 @@ const ShutdownSummaryReport = ({ permissions }) => {
       downloadExcelBtn: false,
       uploadExcelBtn: false,
       downloadExcelBtnFromUI: false,
-      addButton: true,
-      deleteButton: true,
+      addButton: false,
+      deleteButton: false,
       saveWithRemark: true,
     },
     isOldYear,

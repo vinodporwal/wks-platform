@@ -18,6 +18,7 @@ import {
 } from '@progress/kendo-react-excel-export'
 import { CrackerReportsApiDataService } from 'services/cracker-reports-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const CALL_DELAY_MS = 20
 
@@ -243,12 +244,7 @@ const FurnaceRawData = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <div style={{ display: 'none' }}>
         {gridNames.map((name) => {

@@ -17,6 +17,7 @@ import { ShutDownAllColumns } from 'components/colums/ShutdownColumn'
 import { ShutDownPTAColumns } from 'components/colums/ShutdownColumn'
 import { getRoleName } from 'services/role-service'
 import { Box, Button, Tab, Tabs, Typography } from '@mui/material'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const ElastomerShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -1380,12 +1381,7 @@ const ElastomerShutDown = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
       {defaultTabs?.length > 1 && (
         <Tabs
           value={tabIndex}

@@ -29,6 +29,10 @@ const specificConsumptionCategories = () => [
     key: 'Utilities',
     title: 'Utilities',
   },
+  {
+    key: 'MaterialBalanceProposedNorms',
+    title: 'Material Balance Proposed Norms',
+  },
 ]
 
 export default function SpecificConsumptionnormForMeg() {
@@ -66,6 +70,7 @@ export default function SpecificConsumptionnormForMeg() {
   const [gridStates, setGridStates] = useState({})
 
   const valueFormat = ValueFormatterConsumption()
+  const FORMAT_VALUES_PRICE = '{0:0.0}'
 
   // Initialize grid states
   useEffect(() => {
@@ -235,6 +240,8 @@ export default function SpecificConsumptionnormForMeg() {
                 category: key,
                 AOP_YEAR,
                 valueFormat,
+                lowerVertName,
+                FORMAT_VALUES_PRICE,
               })
             const apiResp =
               await SpecificConsumptionService.getSpecificConsumptionII(
@@ -333,6 +340,9 @@ export default function SpecificConsumptionnormForMeg() {
                 showWorkFlowBtns: true,
                 showTitle: true,
               }}
+              groupBy={
+                key === 'MaterialBalanceProposedNorms' ? 'type' : undefined
+              }
             />
           </Box>
         )

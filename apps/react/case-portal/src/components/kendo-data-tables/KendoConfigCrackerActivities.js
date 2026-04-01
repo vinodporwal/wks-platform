@@ -29,6 +29,7 @@ import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
 import { getRoleName } from 'services/role-service.js'
 import DecokingConfigNMD from './KendoConfigCrackerActivitiesNMD.js'
 import DownsteamShutdownDMD from './downsteamShutdownDMD.js'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop.js'
 
 const DecokingConfig = () => {
   const keycloak = useSession()
@@ -1511,17 +1512,10 @@ const DecokingConfig = () => {
 
   return (
     <Box>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <LocalizationProvider dateAdapter={AdapterMoment}>
-        <Box
-          sx={{ display: 'flex', gap: 1, mb: 0, mt: 1, alignItems: 'center' }}
-        >
+        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography className='grid-title' sx={{ whiteSpace: 'nowrap' }}>
               TA Start Date

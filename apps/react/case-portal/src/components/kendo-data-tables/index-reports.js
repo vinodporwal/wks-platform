@@ -48,6 +48,15 @@ import { getRoleName } from 'services/role-service'
 import { useSession } from 'SessionStoreContext'
 import { useSelector } from 'react-redux'
 
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
+
 export const particulars = [
   'normParameterId',
   'normParametersFKId',
@@ -367,7 +376,7 @@ const KendoDataTablesReports = ({
         style={{
           cursor: 'pointer',
           color: rawValue ? 'inherit' : 'gray',
-          background: isDisabled ? '#e7e7e7' : undefined, // match column disabled bg
+          background: isDisabled ? '#f1f5f9' : undefined, // match column disabled bg
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
@@ -440,7 +449,10 @@ const KendoDataTablesReports = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          fontFamily:
+            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+        }}
       >
         <Tooltip
           position='top'
@@ -680,14 +692,7 @@ const KendoDataTablesReports = ({
 
   return (
     <div style={{ position: 'relative' }}>
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      <LoaderBackdrop open={!!loading} />
 
       {(permissions?.allAction ?? true) && (
         <Box
@@ -763,9 +768,10 @@ const KendoDataTablesReports = ({
             {permissions?.addButton && (
               <Button
                 variant='contained'
-                className='btn-save'
+                className='btn-add'
                 onClick={handleAddRow}
                 disabled={READ_ONLY}
+                startIcon={<AddIcon />}
               >
                 Add Item
               </Button>
@@ -776,6 +782,7 @@ const KendoDataTablesReports = ({
                 className='btn-save'
                 onClick={saveModalOpen}
                 disabled={isButtonDisabled || READ_ONLY}
+                startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
                 // loading={loading}
                 // loadingposition='start'
                 {...(loading ? {} : {})}
@@ -787,9 +794,10 @@ const KendoDataTablesReports = ({
             {permissions?.showCalculate && (
               <Button
                 variant='contained'
+                startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                 onClick={handleCalculateBtn}
                 // disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                className='btn-calculate'
                 disabled={
                   READ_ONLY ||
                   (rows?.length === 0
@@ -804,8 +812,10 @@ const KendoDataTablesReports = ({
               <Button
                 variant='contained'
                 onClick={handleExport}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                disabled={isButtonDisabled || rows?.length === 0}
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
               >
                 Export
               </Button>
@@ -815,8 +825,12 @@ const KendoDataTablesReports = ({
               <Button
                 variant='contained'
                 onClick={handleExport}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                // disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+
+                //ANY ONE CAN EXPORT
+                disabled={isButtonDisabled || rows?.length === 0}
+                className='btn-export'
+                startIcon={<DownloadIcon fontSize='small' />}
               >
                 Export
               </Button>
@@ -826,8 +840,9 @@ const KendoDataTablesReports = ({
               <Button
                 variant='contained'
                 onClick={handleExport}
-                disabled={isButtonDisabled || READ_ONLY}
-                className='btn-save'
+                startIcon={<UploadIcon sx={{ fontSize: 16 }} />}
+                disabled={isButtonDisabled || READ_ONLY || rows?.length === 0}
+                className='btn-import'
               >
                 Import
               </Button>

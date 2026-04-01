@@ -13,6 +13,7 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 export default function RelPerf() {
   // Reliability Performance Grid (already present)
   const keycloak = useSession()
@@ -1013,12 +1014,7 @@ export default function RelPerf() {
 
   return (
     <>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {/* Reliability Performance Grid */}
       <KendoDataTables

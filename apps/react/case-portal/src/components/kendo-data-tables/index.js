@@ -2021,6 +2021,7 @@ const KendoDataTables = ({
                 <Button
                   variant='contained'
                   onClick={handleCalculateBtn}
+                  startIcon={<CalculateIcon sx={{ fontSize: 16 }} />}
                   disabled={
                     READ_ONLY ||
                     (rows?.length === 0
@@ -2028,7 +2029,7 @@ const KendoDataTables = ({
                       : isButtonDisabled ||
                         !permissions?.showCalculateVisibility)
                   }
-                  className='btn-save'
+                  className='btn-calculate'
                 >
                   Calculate
                 </Button>
@@ -2059,9 +2060,12 @@ const KendoDataTables = ({
               {permissions?.downloadExcelBtnFromUI && (
                 <Button
                   variant='contained'
-                  className='btn-save'
+                  className='btn-export'
+                  startIcon={<DownloadIcon fontSize='small' />}
                   onClick={excelExport}
+                  // disabled={READ_ONLY || rows?.length === 0}
                   disabled={rows?.length === 0}
+                  //ANY ONE CAN EXPORT
                 >
                   Export
                 </Button>
@@ -2196,140 +2200,103 @@ const KendoDataTables = ({
       )}
 
       <Collapse in={gridExpanded}>
-      <div className='kendo-data-grid'>
-        <Tooltip openDelay={50} position='auto' anchorElement='target'>
-          <ExcelExport
-            data={rows}
-            ref={_export}
-            fileName={`${permissions?.ExcelName}.xlsx`}
-          >
-            <Grid
-              style={{
-                flex: 1,
-                overflow: 'auto',
-                // height: 'auto',
-                // height: permissions?.isHeight ? '60vh' : '60vh',
-                // height: '60vh',
-                // height: `${gridHeight}px`,
-
-                height:
-                  lowerVertName === 'meg' || supressGridHeight == true
-                    ? undefined
-                    : rows?.length > 10
-                      ? `${calculatedVH}vh`
-                      : undefined,
-
-                // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
-                // height: `${calculatedVH}vh`,
-              }}
-              key={groupBy}
-              modifiedCells={modifiedCells}
-              autoProcessData={true}
-              defaultGroup={initialGroup}
+        <div className='kendo-data-grid'>
+          <Tooltip openDelay={50} position='auto' anchorElement='target'>
+            <ExcelExport
               data={rows}
-              rows={{ data: CustomRow }}
-              dataItemKey='id'
-              editField='inEdit'
-              editable={{ mode: 'incell' }}
-              onEditChange={handleEditChange}
-              edit={edit}
-              filter={filter}
-              onFilterChange={(e) => setFilter(e.filter)}
-              onItemChange={itemChange}
-              resizable={true}
-              defaultSkip={0}
-              defaultTake={50}
-              contextMenu={true}
-              grade={grades}
-              onRowClick={handleRowClick}
-              sortable={{
-                mode: 'multiple',
-              }}
-              groupable={
-                permissions?.isTotalFooterActive
-                  ? {
-                      enabled: false,
-                      footer: 'visible',
-                      showGroupPanel: false,
-                    }
-                  : {
-                      enabled: false,
-                      footer: 'none',
-                      showGroupPanel: false,
-                    }
-              }
-              cells={
-                permissions?.isTotalFooterActive
-                  ? {
-                      groupFooter: MyFooterCustomCell,
-                    }
-                  : undefined
-              }
-              allRedCell={allRedCell}
-              allRedCell2={allRedCell2}
-              size='small'
-              pageable={
-                permissions?.makePagable === false
-                  ? false
-                  : rows?.length > 100
-                    ? {
-                        buttonCount: 4,
-                        pageSizes: [10, 50, 100],
-                      }
-                    : false
-              }
+              ref={_export}
+              fileName={`${permissions?.ExcelName}.xlsx`}
             >
-              {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
+              <Grid
+                style={{
+                  flex: 1,
+                  overflow: 'auto',
+                  // height: 'auto',
+                  // height: permissions?.isHeight ? '60vh' : '60vh',
+                  // height: '60vh',
+                  // height: `${gridHeight}px`,
 
-              {columns?.map((col) => {
-                {
-                  permissions?.unitForExcelToadd && (
-                    <ExcelExportColumn field={selectedUOM} title='UOM' />
-                  )
-                }
-                const isActive = isColumnActive(col?.field, filter, sort)
-                if (
-                  IS_VCM_VERTICAL &&
-                  (col.field === 'maintStartDateTime' ||
-                    col.field === 'maintEndDateTime')
-                ) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      cells={{
-                        edit: {
-                          date: DateTimePickerEditor24HourFormat,
-                        },
-                        data: (props) => (
-                          <SimpleHighlightCell
-                            {...props}
-                            customModifiedCells={customModifiedCells}
-                            highlight={permissions?.highlightDate || false}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      format={'{0:dd-MM-yyyy HH:mm}'}
-                      editor='date'
-                      hidden={col.hidden}
-                      filter='date'
-                      columnMenu={ColumnMenuCheckboxFilterDate}
-                      width={col?.widthT}
-                      headerClassName={
-                        isDateFilterActive.includes(col.field)
-                          ? 'active-column'
-                          : ''
+                  height:
+                    // lowerVertName === 'meg' ||
+                    supressGridHeight == true
+                      ? undefined
+                      : rows?.length > 10
+                        ? `${calculatedVH}vh`
+                        : undefined,
+
+                  // height: rows?.length > 10 ? '60vh' : `${calculatedVH}vh`,
+                  // height: `${calculatedVH}vh`,
+                }}
+                key={groupBy}
+                modifiedCells={modifiedCells}
+                autoProcessData={true}
+                defaultGroup={initialGroup}
+                data={rows}
+                rows={{ data: CustomRow }}
+                dataItemKey='id'
+                editField='inEdit'
+                editable={{ mode: 'incell' }}
+                onEditChange={handleEditChange}
+                edit={edit}
+                filter={filter}
+                onFilterChange={(e) => setFilter(e.filter)}
+                onItemChange={itemChange}
+                resizable={true}
+                defaultSkip={0}
+                defaultTake={50}
+                contextMenu={true}
+                grade={grades}
+                onRowClick={handleRowClick}
+                sortable={{
+                  mode: 'multiple',
+                }}
+                groupable={
+                  permissions?.isTotalFooterActive
+                    ? {
+                        enabled: false,
+                        footer: 'visible',
+                        showGroupPanel: false,
                       }
-                    />
-                  )
+                    : {
+                        enabled: false,
+                        footer: 'none',
+                        showGroupPanel: false,
+                      }
                 }
+                cells={
+                  permissions?.isTotalFooterActive
+                    ? {
+                        groupFooter: MyFooterCustomCell,
+                      }
+                    : undefined
+                }
+                allRedCell={allRedCell}
+                allRedCell2={allRedCell2}
+                size='small'
+                pageable={
+                  permissions?.makePagable === false
+                    ? false
+                    : rows?.length > 100
+                      ? {
+                          buttonCount: 4,
+                          pageSizes: [10, 50, 100],
+                        }
+                      : false
+                }
+              >
+                {groupBy && <ExcelExportColumn field={groupBy} title='Type' />}
 
-                if (dateFields.includes(col.field)) {
+                {columns?.map((col) => {
+                  {
+                    permissions?.unitForExcelToadd && (
+                      <ExcelExportColumn field={selectedUOM} title='UOM' />
+                    )
+                  }
+                  const isActive = isColumnActive(col?.field, filter, sort)
                   if (
-                    screenType === 'ElastomerSlowdown' &&
-                    lowerVertName === 'elastomer'
+                    IS_VCM_VERTICAL &&
+                    (col.field === 'maintStartDateTime' ||
+                      col.field === 'maintEndDateTime')
                   ) {
                     return (
                       <GridColumn
@@ -2338,13 +2305,104 @@ const KendoDataTables = ({
                         title={col.title || col.headerName}
                         cells={{
                           edit: {
-                            date: (props) => (
-                              <DatePickerNoLimit
+                            date: DateTimePickerEditor24HourFormat,
+                          },
+                          data: (props) => (
+                            <SimpleHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              highlight={permissions?.highlightDate || false}
+                            />
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        format={'{0:dd-MM-yyyy HH:mm}'}
+                        editor='date'
+                        hidden={col.hidden}
+                        filter='date'
+                        // columnMenu={ColumnMenuCheckboxFilterDate}
+                        width={col?.widthT}
+                        headerClassName={
+                          isDateFilterActive.includes(col.field)
+                            ? 'active-column'
+                            : ''
+                        }
+                      />
+                    )
+                  }
+
+                  if (dateFields.includes(col.field)) {
+                    if (
+                      screenType === 'ElastomerSlowdown' &&
+                      lowerVertName === 'elastomer'
+                    ) {
+                      return (
+                        <GridColumn
+                          key={col.field}
+                          field={col.field}
+                          title={col.title || col.headerName}
+                          cells={{
+                            edit: {
+                              date: (props) => (
+                                <DatePickerNoLimit
+                                  {...props}
+                                  min={startDate}
+                                  max={endDate}
+                                />
+                              ),
+                            },
+                            data: (props) => (
+                              <SimpleHighlightCell
                                 {...props}
-                                min={startDate}
-                                max={endDate}
+                                customModifiedCells={customModifiedCells}
+                                highlight={permissions?.highlightDate || false} // Add this permission
                               />
                             ),
+                            headerCell: SimpleHeaderWithTooltip,
+                          }}
+                          format={
+                            [
+                              'fromDate',
+                              'toDate',
+                              'periodFrom',
+                              'periodTo',
+                              'toDateReport',
+                              'fromDateReport',
+                            ].includes(col.field)
+                              ? '{0:dd-MM-yyyy}'
+                              : '{0:dd-MM-yyyy hh:mm a}'
+                          }
+                          editor='date'
+                          hidden={col.hidden}
+                          // columnMenu={DateColumnMenu}
+                          filter='date'
+                          columnMenu={ColumnMenuCheckboxFilterDate}
+                          width={col?.widthT}
+                          headerClassName={
+                            isDateFilterActive.includes(col.field)
+                              ? 'active-column'
+                              : ''
+                          }
+                        />
+                      )
+                    }
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        cells={{
+                          edit: {
+                            date: [
+                              'fromDate',
+                              'toDate',
+                              'periodTo',
+                              'periodFrom',
+                              'toDateReport',
+                              'fromDateReport',
+                            ].includes(col.field)
+                              ? DateOnlyPicker
+                              : DateTimePickerEditor,
                           },
                           data: (props) => (
                             <SimpleHighlightCell
@@ -2381,70 +2439,40 @@ const KendoDataTables = ({
                       />
                     )
                   }
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      cells={{
-                        edit: {
-                          date: [
-                            'fromDate',
-                            'toDate',
-                            'periodTo',
-                            'periodFrom',
-                            'toDateReport',
-                            'fromDateReport',
-                          ].includes(col.field)
-                            ? DateOnlyPicker
-                            : DateTimePickerEditor,
-                        },
-                        data: (props) => (
-                          <SimpleHighlightCell
-                            {...props}
-                            customModifiedCells={customModifiedCells}
-                            highlight={permissions?.highlightDate || false} // Add this permission
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      format={
-                        [
-                          'fromDate',
-                          'toDate',
-                          'periodFrom',
-                          'periodTo',
-                          'toDateReport',
-                          'fromDateReport',
-                        ].includes(col.field)
-                          ? '{0:dd-MM-yyyy}'
-                          : '{0:dd-MM-yyyy hh:mm a}'
-                      }
-                      editor='date'
-                      hidden={col.hidden}
-                      // columnMenu={DateColumnMenu}
-                      filter='date'
-                      columnMenu={ColumnMenuCheckboxFilterDate}
-                      width={col?.widthT}
-                      headerClassName={
-                        isDateFilterActive.includes(col.field)
-                          ? 'active-column'
-                          : ''
-                      }
-                    />
-                  )
-                }
 
-                if (dateFields1.includes(col.field)) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.fixedWidth || undefined}
-                      cells={{
-                        edit: {
-                          date: [
+                  if (dateFields1.includes(col.field)) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.fixedWidth || undefined}
+                        cells={{
+                          edit: {
+                            date: [
+                              'ibrSD',
+                              'ibrED',
+                              'taSD',
+                              'taED',
+                              'sdED',
+                              'sdSD',
+                              'targetDate',
+                            ].includes(col.field)
+                              ? DateOnlyPicker
+                              : DateOnlyPicker,
+                          },
+                          data: (props) => (
+                            <RedHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              allRedCell={allRedCell}
+                              disableRedHighlight={disableRedHighlight}
+                            />
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        format={
+                          [
                             'ibrSD',
                             'ibrED',
                             'taSD',
@@ -2453,969 +2481,605 @@ const KendoDataTables = ({
                             'sdSD',
                             'targetDate',
                           ].includes(col.field)
-                            ? DateOnlyPicker
-                            : DateOnlyPicker,
-                        },
-                        data: (props) => (
-                          <RedHighlightCell
-                            {...props}
-                            customModifiedCells={customModifiedCells}
-                            allRedCell={allRedCell}
-                            disableRedHighlight={disableRedHighlight}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      format={
-                        [
-                          'ibrSD',
-                          'ibrED',
-                          'taSD',
-                          'taED',
-                          'sdED',
-                          'sdSD',
-                          'targetDate',
-                        ].includes(col.field)
-                          ? '{0:dd-MM-yyyy}'
-                          : '{0:dd-MM-yyyy}'
-                      }
-                      editor='date'
-                      hidden={col.hidden}
-                      filter='date'
-                      // columnMenu={DateColumnMenu}
-                      columnMenu={ColumnMenuCheckboxFilterDate}
-                    />
-                  )
-                }
-                if (
-                  lowerVertName === 'vcm' &&
-                  monthFields.includes(col.field) &&
-                  permissions?.highlightShutdownConsumption
-                ) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditor }, // <-- Add this line for editing
-                        data: (props) => (
-                          <VcmDmdMonthHighlightCell
-                            {...props}
-                            shutdownMonths={shutdownMonths}
-                            slowdownMonths={slowdownMonths}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
-                    />
-                  )
-                }
-                if (col?.field === 'symbol') {
-                  return (
-                    <GridColumn
-                      key='symbol'
-                      field='symbol'
-                      width={80}
-                      title={col.title}
-                      editable={col.editable || true}
-                      cells={{
-                        data: (cellProps) => (
-                          <BudgetConstrainsCellEditor {...cellProps} />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      headerClassName={isActive ? 'active-column' : ''}
-                    />
-                  )
-                }
-                if (col?.field === 'limit') {
-                  return (
-                    <GridColumn
-                      key='limit'
-                      field='limit'
-                      width={80}
-                      title={col.title}
-                      editable={col.editable || true}
-                      cells={{
-                        data: (cellProps) => (
-                          <LimitCellEditor
-                            {...cellProps}
-                            READ_ONLY={READ_ONLY}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      headerClassName={isActive ? 'active-column' : ''}
-                    />
-                  )
-                }
-
-                if (col?.field === 'discriptionDrpdwn') {
-                  return (
-                    <GridColumn
-                      key='discriptionDrpdwn'
-                      field='discriptionDrpdwn'
-                      title={col.title || col.headerName || 'Particulars'}
-                      editable={col.editable || true}
-                      hidden={col.hidden}
-                      cells={{
-                        data: (cellProps) => (
-                          <ProductCell
-                            {...cellProps}
-                            allProducts={allDescriptionDrpdwn}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                if (
-                  col?.field === 'discription' &&
-                  col?.type === 'discriptionDrpdwn'
-                ) {
-                  return (
-                    <GridColumn
-                      key='discription'
-                      field='discription'
-                      title={col.title || col.headerName || 'Particulars'}
-                      editable={col.editable || true}
-                      hidden={col.hidden}
-                      cells={{
-                        data: (cellProps) => (
-                          <ProductCell
-                            {...cellProps}
-                            allProducts={allDescriptionDrpdwn}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-
-                if (col?.field === 'productName1') {
-                  return (
-                    <GridColumn
-                      key='productName1'
-                      field='productName1'
-                      title={col.title || col.headerName || 'Particulars'}
-                      // width={210}
-                      editable={col.editable || true}
-                      hidden={col.hidden}
-                      cells={{
-                        data: (cellProps) => (
-                          <ProductCell
-                            {...cellProps}
-                            customModifiedCells={customModifiedCells}
-                            highlightField='productName1'
-                            rowId={cellProps.dataItem.id}
-                            allProducts={allProducts}
-                            highlight={!!permissions?.highlightProductName1}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-
-                if (col?.field === 'month') {
-                  return (
-                    <GridColumn
-                      key='month'
-                      field='month'
-                      title={col.title || col.headerName || 'month'}
-                      editable={col.editable || true}
-                      hidden={col.hidden}
-                      width={col.widthT}
-                      cells={{
-                        data: (cellProps) => (
-                          <MonthCell {...cellProps} allMonths={allMonths} />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-
-                if (['discription', 'Name'].includes(col?.field)) {
-                  return (
-                    <GridColumn
-                      key={col?.field}
-                      field={col?.field}
-                      title={col.title || col.headerName || 'Description'}
-                      width={col.widthT}
-                      editable={true}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      hidden={col.hidden}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: TextCellEditor },
-                        data: (props) =>
-                          permissions?.highlightDiscription ? (
-                            <SimpleHighlightCell
+                            ? '{0:dd-MM-yyyy}'
+                            : '{0:dd-MM-yyyy}'
+                        }
+                        editor='date'
+                        hidden={col.hidden}
+                        filter='date'
+                        // columnMenu={DateColumnMenu}
+                        columnMenu={ColumnMenuCheckboxFilterDate}
+                      />
+                    )
+                  }
+                  if (
+                    lowerVertName === 'vcm' &&
+                    monthFields.includes(col.field) &&
+                    permissions?.highlightShutdownConsumption
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor }, // <-- Add this line for editing
+                          data: (props) => (
+                            <VcmDmdMonthHighlightCell
                               {...props}
-                              customModifiedCells={customModifiedCells}
-                              highlight={true}
-                            />
-                          ) : (
-                            toolTipRenderer(props)
-                          ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                    />
-                  )
-                }
-
-                if (col.type === 'descLimit') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: descLimit },
-                        data: toolTipRendererdescLimit,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                if (col?.field === 'UOM') {
-                  return (
-                    <GridColumn
-                      key='UOM'
-                      field='UOM'
-                      title={col.title || col.headerName || 'UOM'}
-                      width={col?.widthT}
-                      editable={false}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      hidden={col.hidden}
-                      cells={{
-                        data: toolTipRenderer,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                    />
-                  )
-                }
-                if (col?.field === 'ReceipeName') {
-                  return (
-                    <GridColumn
-                      key='ReceipeName'
-                      field='ReceipeName'
-                      title={col.title || col.headerName}
-                      width={col.width1}
-                      editable={false}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      hidden={col.hidden}
-                      cells={{
-                        data: toolTipRenderer,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                    />
-                  )
-                }
-                if (col.type === 'Receipe') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width1}
-                      hidden={col.hidden}
-                      className={
-                        col?.isDisabled
-                          ? 'k-number-right-disabled'
-                          : 'k-number-right'
-                      }
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditor },
-                        data: toolTipRenderer,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
-                    />
-                  )
-                }
-
-                if (col.field === 'sapMaterialCode' && col.useMethodColors) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        data: MaterialDisplayNameCell,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                // ...existing code...
-                if (col.type === 'monthDropdownPEPP') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: MonthDropdownPEPP },
-                        data: (props) =>
-                          permissions?.MonthDropdownPEPPHighlight ? (
-                            <SimpleHighlightCell
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              highlight={true}
-                            />
-                          ) : (
-                            MonthDropdownPEPPDisplayCell(props)
-                          ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-
-                if (col.type === 'monthDropdown') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: MonthDropdownEditor },
-                        data: ElastomerMonthDisplayCell,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                if (col.type === 'Categorydropdown') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width}
-                      editable={!!col?.editable}
-                      cells={{
-                        edit: { text: CategoryDropdownEditor },
-                        data: (props) => {
-                          // Show the value as text in display mode
-                          const options = [
-                            { id: 0, value: '0' },
-                            { id: 1, value: '1' },
-                            { id: 2, value: '2' },
-                          ]
-                          const valueObj = options.find(
-                            (opt) => opt.id === props.dataItem[props.field],
-                          )
-                          return (
-                            <td {...props.tdProps}>
-                              {valueObj ? valueObj.value : ''}
-                            </td>
-                          )
-                        },
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                const YearDropdownEditorWrapper = (props) => (
-                  <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
-                )
-                if (col.type === 'yeardropdown') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width}
-                      hidden={col.hidden}
-                      editable={!!col?.editable}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: YearDropdownEditorWrapper }, // ✅ REQUIRED
-                        data: ElastomerYearDisplayCell,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                if (col.type === 'typesdDropdown') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width}
-                      hidden={col.hidden}
-                      editable={!!col?.editable}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: {
-                          text: (props) => (
-                            <SDDaysDropdownEditorWrapper
-                              {...props}
-                              sdDaysValues={sdDaysValues}
+                              shutdownMonths={shutdownMonths}
+                              slowdownMonths={slowdownMonths}
                             />
                           ),
-                        },
-                        data: ElastomerSDDaysDisplayCell,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                const LineDropdownEditorWrapper = (props) => (
-                  <LineDropdownEditor
-                    {...props}
-                    allLines={allLines}
-                    customModifiedCells={customModifiedCells}
-                    highlightField={props.field}
-                    highlight={!!permissions?.highlightLine}
-                    rowId={props.dataItem?.id}
-                  />
-                )
-                if (col.type === 'lineDropdown') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title}
-                      width={col.width}
-                      editable={col.editable}
-                      cells={{
-                        edit: { text: LineDropdownEditorWrapper },
-                        data: (props) => (
-                          <LineDisplayCell
-                            {...props}
-                            allLines={allLines}
-                            customModifiedCells={customModifiedCells}
-                            highlightField={col.field}
-                            highlight={!!permissions?.highlightLine}
-                            rowId={props.dataItem?.id}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                if (col?.field === 'DisplayName') {
-                  return (
-                    <GridColumn
-                      key='DisplayName'
-                      field={col?.field}
-                      title={col.title || col.headerName}
-                      width={col?.widthT}
-                      editable={false}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      hidden={col.hidden}
-                      cells={{
-                        data: toolTipRenderer,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                    />
-                  )
-                }
-
-                // const isColumnActive = (field, filter, sort) => {
-                //   return (
-                //     isColumnMenuFilterActive(field, filter) ||
-                //     isColumnMenuSortActive(field, sort)
-                //   )
-                // }
-
-                if (
-                  ['aopRemarks', 'remarks', 'remark', 'Remarks'].includes(
-                    col.field,
-                  )
-                ) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      // editor={true}
-                      // editable={{ mode: 'popup' }}
-                      cells={{
-                        data: (cellProps, allRedCell) => (
-                          <RemarkCell
-                            {...cellProps}
-                            allRedCell={allRedCell}
-                            onRemarkClick={handleRemarkCellClick}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      hidden={col.hidden}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      width={col.widthT || ''}
-                    />
-                  )
-                }
-                if (col.field === 'durationInHrs') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      editable={true}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      hidden={col.hidden}
-                      format={'{0:n2}'}
-                      className={
-                        col?.isDisabled
-                          ? 'k-number-right-disabled'
-                          : 'k-number-right'
-                      }
-                      cells={{
-                        edit: { text: DurationEditor },
-                        data: (props) =>
-                          permissions?.highlightDuration ? (
-                            <DurationHighlightCell
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                            />
-                          ) : (
-                            DurationDisplayWithTooltipCell(props)
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+                  if (col?.field === 'symbol') {
+                    return (
+                      <GridColumn
+                        key='symbol'
+                        field='symbol'
+                        width={80}
+                        title={col.title}
+                        editable={col.editable || true}
+                        cells={{
+                          data: (cellProps) => (
+                            <BudgetConstrainsCellEditor {...cellProps} />
                           ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      headerClassName={isActive ? 'active-column' : ''}
-                    />
-                  )
-                }
-
-                if (col.field === 'rpfDownTime') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      editable={true}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      hidden={col.hidden}
-                      format={'{0:n2}'}
-                      className='k-number-right'
-                      cells={{
-                        edit: { text: DurationEditor },
-                        data: (props) => DurationDisplayWithTooltipCell(props),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      headerClassName={isActive ? 'active-column' : ''}
-                    />
-                  )
-                }
-
-                if (col.hideFilter && col.hideSort) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      hidden={col.hidden}
-                      className={
-                        col?.isDisabled
-                          ? 'k-number-right-disabled'
-                          : 'k-number-right'
-                      }
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditor },
-                        data: (props) => (
-                          <RedHighlightCell
-                            {...props}
-                            customModifiedCells={customModifiedCells}
-                            allRedCell={allRedCell}
-                            disableRedHighlight={disableRedHighlight}
-                          />
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      format={col.format}
-                      sortable={false}
-                      width={col?.widthT}
-                    />
-                  )
-                }
-
-                if (col.type === 'propaneDropdown') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: PropaneDropdown }, // <-- Use your custom editor here
-                        data: MonthDisplayCell,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-                if (col.type === 'dynamicDropdown') {
-                  const dropdownOptions =
-                    permissions?.dynamicDropdownOptions || []
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.width}
-                      hidden={col.hidden}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: {
-                          text: (props) => (
-                            <DynamicDropdown
-                              {...props}
-                              options={dropdownOptions}
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        //columnMenu={ColumnMenuCheckboxFilter}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      />
+                    )
+                  }
+                  if (col?.field === 'limit') {
+                    return (
+                      <GridColumn
+                        key='limit'
+                        field='limit'
+                        width={80}
+                        title={col.title}
+                        editable={col.editable || true}
+                        cells={{
+                          data: (cellProps) => (
+                            <LimitCellEditor
+                              {...cellProps}
+                              READ_ONLY={READ_ONLY}
                             />
                           ),
-                        },
-                        data: MonthDisplayCell,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        //columnMenu={ColumnMenuCheckboxFilter}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      />
+                    )
+                  }
 
-                if (col.type === 'percentChange') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      className={'k-number-right'}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditorNegative },
-                        data: toolTipRenderer,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
-                    />
-                  )
-                }
-
-                if (col.type === 'negativeNumber') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      className={`
-                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-                  ${col?.isBold ? 'bold-text' : ''}
-                `}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditorNegative },
-                        data: (props) =>
-                          showThreeColors ? (
-                            <RedHighlightCell2
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              allRedCell2={allRedCell2}
-                              disableRedHighlight={disableRedHighlight}
-                            />
-                          ) : (
-                            <RedHighlightCell
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              disableRedHighlight={disableRedHighlight}
+                  if (col?.field === 'discriptionDrpdwn') {
+                    return (
+                      <GridColumn
+                        key='discriptionDrpdwn'
+                        field='discriptionDrpdwn'
+                        title={col.title || col.headerName || 'Particulars'}
+                        editable={col.editable || true}
+                        hidden={col.hidden}
+                        cells={{
+                          data: (cellProps) => (
+                            <ProductCell
+                              {...cellProps}
+                              allProducts={allDescriptionDrpdwn}
                             />
                           ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
-                    />
-                  )
-                }
-
-                if (col.type === 'numberWithUOMValidation') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      className={`
-                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-                  ${col?.isBold ? 'bold-text' : ''}
-                `}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditorWithUOMValidation },
-                        data: (props) =>
-                          showThreeColors ? (
-                            <RedHighlightCell2
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              allRedCell2={allRedCell2}
-                              disableRedHighlight={disableRedHighlight}
-                            />
-                          ) : (
-                            <RedHighlightCell
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              disableRedHighlight={disableRedHighlight}
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  if (
+                    col?.field === 'discription' &&
+                    col?.type === 'discriptionDrpdwn'
+                  ) {
+                    return (
+                      <GridColumn
+                        key='discription'
+                        field='discription'
+                        title={col.title || col.headerName || 'Particulars'}
+                        editable={col.editable || true}
+                        hidden={col.hidden}
+                        cells={{
+                          data: (cellProps) => (
+                            <ProductCell
+                              {...cellProps}
+                              allProducts={allDescriptionDrpdwn}
                             />
                           ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
-                    />
-                  )
-                }
-                if (col.field === 'rate') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={
-                        col.title || col.headerName || 'Rate Reduced (TPH)'
-                      }
-                      width={col.widthT}
-                      editable={true}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      hidden={col.hidden}
-                      format={'{0:n2}'}
-                      className={`
-        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-        ${col?.isBold ? 'bold-text' : ''}
-      `}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditor },
-                        data: (props) => (
-                          <SimpleHighlightCell
-                            {...props}
-                            customModifiedCells={customModifiedCells}
-                            highlight={!!permissions?.highlightRate}
-                          >
-                            {props.dataItem[props.field]}
-                          </SimpleHighlightCell>
-                        ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      headerClassName={isActive ? 'active-column' : ''}
-                    />
-                  )
-                }
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
 
-                if (col.crackerValidation) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      className={`
-                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-                  ${col?.isBold ? 'bold-text' : ''}
-                `}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditorCrackerValidation },
-                        data: (props) =>
-                          showThreeColors ? (
-                            <RedHighlightCell2
-                              {...props}
+                  if (col?.field === 'productName1') {
+                    return (
+                      <GridColumn
+                        key='productName1'
+                        field='productName1'
+                        title={col.title || col.headerName || 'Particulars'}
+                        // width={210}
+                        editable={col.editable || true}
+                        hidden={col.hidden}
+                        cells={{
+                          data: (cellProps) => (
+                            <ProductCell
+                              {...cellProps}
                               customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              allRedCell2={allRedCell2}
-                              disableRedHighlight={disableRedHighlight}
-                            />
-                          ) : (
-                            <RedHighlightCell
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              disableRedHighlight={disableRedHighlight}
+                              highlightField='productName1'
+                              rowId={cellProps.dataItem.id}
+                              allProducts={allProducts}
+                              highlight={!!permissions?.highlightProductName1}
                             />
                           ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
-                    />
-                  )
-                }
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
 
-                if (
-                  col.type === 'number' &&
-                  permissions?.showRedCellsForOroductionTarget
-                ) {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      className={`
-        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-        ${col?.isBold ? 'bold-text' : ''}
-      `}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditor },
-                        data: (props) => {
-                          const productName =
-                            props.dataItem?.productName ||
-                            props.dataItem?.displayName ||
-                            props.dataItem?.materialDisplayName ||
-                            ''
-                          const isMcuRed = isMcuMaxCapRedCell(
-                            productName,
-                            props.field,
-                          )
-                          if (isMcuRed) {
+                  if (col?.field === 'month') {
+                    return (
+                      <GridColumn
+                        key='month'
+                        field='month'
+                        title={col.title || col.headerName || 'month'}
+                        editable={col.editable || true}
+                        hidden={col.hidden}
+                        width={col.widthT}
+                        cells={{
+                          data: (cellProps) => (
+                            <MonthCell {...cellProps} allMonths={allMonths} />
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
+                  if (['discription', 'Name'].includes(col?.field)) {
+                    return (
+                      <GridColumn
+                        key={col?.field}
+                        field={col?.field}
+                        title={col.title || col.headerName || 'Description'}
+                        width={col.widthT}
+                        editable={true}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        hidden={col.hidden}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: TextCellEditor },
+                          data: (props) =>
+                            permissions?.highlightDiscription ? (
+                              <SimpleHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                highlight={true}
+                              />
+                            ) : (
+                              toolTipRenderer(props)
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                      />
+                    )
+                  }
+
+                  if (col.type === 'descLimit') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: descLimit },
+                          data: toolTipRendererdescLimit,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  if (col?.field === 'UOM') {
+                    return (
+                      <GridColumn
+                        key='UOM'
+                        field='UOM'
+                        title={col.title || col.headerName || 'UOM'}
+                        width={col?.widthT}
+                        editable={false}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        hidden={col.hidden}
+                        cells={{
+                          data: toolTipRenderer,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                      />
+                    )
+                  }
+                  if (col?.field === 'ReceipeName') {
+                    return (
+                      <GridColumn
+                        key='ReceipeName'
+                        field='ReceipeName'
+                        title={col.title || col.headerName}
+                        width={col.width1}
+                        editable={false}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        hidden={col.hidden}
+                        cells={{
+                          data: toolTipRenderer,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                      />
+                    )
+                  }
+                  if (col.type === 'Receipe') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width1}
+                        hidden={col.hidden}
+                        className={
+                          col?.isDisabled
+                            ? 'k-number-right-disabled'
+                            : 'k-number-right'
+                        }
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor },
+                          data: toolTipRenderer,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+
+                  if (col.field === 'sapMaterialCode' && col.useMethodColors) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          data: MaterialDisplayNameCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  // ...existing code...
+                  if (col.type === 'monthDropdownPEPP') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: MonthDropdownPEPP },
+                          data: (props) =>
+                            permissions?.MonthDropdownPEPPHighlight ? (
+                              <SimpleHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                highlight={true}
+                              />
+                            ) : (
+                              MonthDropdownPEPPDisplayCell(props)
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
+                  if (col.type === 'monthDropdown') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: MonthDropdownEditor },
+                          data: ElastomerMonthDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  if (col.type === 'Categorydropdown') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        editable={!!col?.editable}
+                        cells={{
+                          edit: { text: CategoryDropdownEditor },
+                          data: (props) => {
+                            // Show the value as text in display mode
+                            const options = [
+                              { id: 0, value: '0' },
+                              { id: 1, value: '1' },
+                              { id: 2, value: '2' },
+                            ]
+                            const valueObj = options.find(
+                              (opt) => opt.id === props.dataItem[props.field],
+                            )
                             return (
-                              <td
-                                {...props.tdProps}
-                                title={String(
-                                  props.dataItem[props.field] ?? '',
-                                )}
-                                style={{ color: 'red', fontWeight: 'bold' }}
-                              >
-                                {props.children}
+                              <td {...props.tdProps}>
+                                {valueObj ? valueObj.value : ''}
                               </td>
                             )
-                          }
-
-                          return showThreeColors ? (
-                            <RedHighlightCell2
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              allRedCell2={allRedCell2}
-                              disableRedHighlight={disableRedHighlight}
-                            />
-                          ) : (
-                            <RedHighlightCell
-                              {...props}
-                              customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              disableRedHighlight={disableRedHighlight}
-                            />
-                          )
-                        },
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
+                          },
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  const YearDropdownEditorWrapper = (props) => (
+                    <YearDropdownEditor {...props} AOP_YEAR={AOP_YEAR} />
+                  )
+                  if (col.type === 'yeardropdown') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={!!col?.editable}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: YearDropdownEditorWrapper },
+                          data: ElastomerYearDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  if (col.type === 'typesdDropdown') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={!!col?.editable}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: {
+                            text: (props) => (
+                              <SDDaysDropdownEditorWrapper
+                                {...props}
+                                sdDaysValues={sdDaysValues}
+                              />
+                            ),
+                          },
+                          data: ElastomerSDDaysDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  const LineDropdownEditorWrapper = (props) => (
+                    <LineDropdownEditor
+                      {...props}
+                      allLines={allLines}
+                      customModifiedCells={customModifiedCells}
+                      highlightField={props.field}
+                      highlight={!!permissions?.highlightLine}
+                      rowId={props.dataItem?.id}
                     />
                   )
-                }
-
-                if (col.type === 'number') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      className={`
-        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
-        ${col?.isBold ? 'bold-text' : ''}
-      `}
-                      editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditor },
-                        data: (props) =>
-                          showThreeColors ? (
-                            <RedHighlightCell2
+                  if (col.type === 'lineDropdown') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title}
+                        width={col.width}
+                        editable={col.editable}
+                        cells={{
+                          edit: { text: LineDropdownEditorWrapper },
+                          data: (props) => (
+                            <LineDisplayCell
                               {...props}
+                              allLines={allLines}
                               customModifiedCells={customModifiedCells}
-                              allRedCell={allRedCell}
-                              allRedCell2={allRedCell2}
-                              disableRedHighlight={disableRedHighlight}
+                              highlightField={col.field}
+                              highlight={!!permissions?.highlightLine}
+                              rowId={props.dataItem?.id}
                             />
-                          ) : (
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  if (col?.field === 'DisplayName') {
+                    return (
+                      <GridColumn
+                        key='DisplayName'
+                        field={col?.field}
+                        title={col.title || col.headerName}
+                        width={col?.widthT}
+                        editable={false}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        hidden={col.hidden}
+                        cells={{
+                          data: toolTipRenderer,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                      />
+                    )
+                  }
+
+                  // const isColumnActive = (field, filter, sort) => {
+                  //   return (
+                  //     isColumnMenuFilterActive(field, filter) ||
+                  //     isColumnMenuSortActive(field, sort)
+                  //   )
+                  // }
+
+                  if (
+                    ['aopRemarks', 'remarks', 'remark', 'Remarks'].includes(
+                      col.field,
+                    )
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        // editor={true}
+                        // editable={{ mode: 'popup' }}
+                        cells={{
+                          data: (cellProps, allRedCell) => (
+                            <RemarkCell
+                              {...cellProps}
+                              allRedCell={allRedCell}
+                              onRemarkClick={handleRemarkCellClick}
+                            />
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        hidden={col.hidden}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        width={col.widthT || ''}
+                      />
+                    )
+                  }
+                  if (col.field === 'durationInHrs') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        editable={true}
+                        //columnMenu={ColumnMenuCheckboxFilter}
+                        hidden={col.hidden}
+                        format={'{0:n2}'}
+                        className={
+                          col?.isDisabled
+                            ? 'k-number-right-disabled'
+                            : 'k-number-right'
+                        }
+                        cells={{
+                          edit: { text: DurationEditor },
+                          data: (props) =>
+                            permissions?.highlightDuration ? (
+                              <DurationHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                              />
+                            ) : (
+                              DurationDisplayWithTooltipCell(props)
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      />
+                    )
+                  }
+
+                  if (col.field === 'rpfDownTime') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        editable={true}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        hidden={col.hidden}
+                        format={'{0:n2}'}
+                        className='k-number-right'
+                        cells={{
+                          edit: { text: DurationEditor },
+                          data: (props) =>
+                            DurationDisplayWithTooltipCell(props),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      />
+                    )
+                  }
+
+                  if (col.hideFilter && col.hideSort) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        hidden={col.hidden}
+                        className={
+                          col?.isDisabled
+                            ? 'k-number-right-disabled'
+                            : 'k-number-right'
+                        }
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor },
+                          data: (props) => (
                             <RedHighlightCell
                               {...props}
                               customModifiedCells={customModifiedCells}
@@ -3423,219 +3087,565 @@ const KendoDataTables = ({
                               disableRedHighlight={disableRedHighlight}
                             />
                           ),
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
-                    />
-                  )
-                }
-
-                if (col.type === 'switch') {
-                  const handleCheckboxChange = (props, value) => {
-                    const { dataItem, field } = props
-                    const { materialName, id } = dataItem
-
-                    onGlobalCheckboxChange(
-                      gridName,
-                      id,
-                      materialName,
-                      field,
-                      value,
-                      dataItem,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        format={col.format}
+                        sortable={false}
+                        width={col?.widthT}
+                      />
                     )
                   }
 
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title='.'
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      editable={true}
-                      cells={{
-                        data: (props) => {
-                          const dataItem = props.dataItem || {}
-                          const normType = (dataItem.Particulars || '')
-                            .toString()
-                            .toLowerCase()
-
-                          if (
-                            showCatChemUtilityCheckbox &&
-                            !CHECK_TYPES.includes(normType)
-                          ) {
-                            return <td />
-                          }
-
-                          if (
-                            showCatChemUtilityCheckbox2 &&
-                            !CHECK_TYPES2.includes(normType)
-                          ) {
-                            return <td />
-                          }
-
-                          return (
-                            <td style={{ textAlign: 'center' }}>
-                              <Checkbox
-                                checked={!!props.dataItem[props.field]}
-                                onChange={(e) => {
-                                  const checked =
-                                    e?.value ?? e?.target?.checked ?? false
-                                  handleCheckboxChange(props, checked)
-                                }}
+                  if (col.type === 'propaneDropdown') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: PropaneDropdown }, // <-- Use your custom editor here
+                          data: MonthDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+                  if (col.type === 'dynamicDropdown') {
+                    const dropdownOptions =
+                      permissions?.dynamicDropdownOptions || []
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: {
+                            text: (props) => (
+                              <DynamicDropdown
+                                {...props}
+                                options={dropdownOptions}
                               />
-                            </td>
-                          )
-                        },
-                        headerCell: BlankHeader,
-                      }}
-                    />
-                  )
-                }
-
-                if (col.type === 'switch2') {
-                  const handleCheckboxChange = (props, value) => {
-                    const { dataItem, field } = props
-                    const { materialName, id } = dataItem
-
-                    onGlobalCheckboxChange(
-                      gridName,
-                      id,
-                      materialName,
-                      field,
-                      value,
-                      dataItem,
+                            ),
+                          },
+                          data: MonthDisplayCell,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                      />
                     )
                   }
 
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title='.'
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      editable={true}
-                      cells={{
-                        data: (props) => {
-                          const dataItem = props.dataItem || {}
-                          const normType = (dataItem.Particulars || '')
-                            .toString()
-                            .toLowerCase()
+                  if (col.type === 'percentChange') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        className={'k-number-right'}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditorNegative },
+                          data: toolTipRenderer,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        //columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
 
-                          if (
-                            showCatChemUtilityCheckbox2 &&
-                            CHECK_TYPES2.includes(normType)
-                          ) {
-                            return <td />
-                          }
-
-                          return (
-                            <td style={{ textAlign: 'center' }}>
-                              <Checkbox
-                                checked={!!props.dataItem[props.field]}
-                                onChange={(e) => {
-                                  const checked =
-                                    e?.value ?? e?.target?.checked ?? false
-                                  handleCheckboxChange(props, checked)
-                                }}
+                  if (col.type === 'negativeNumber') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        className={`
+                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                  ${col?.isBold ? 'bold-text' : ''}
+                `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditorNegative },
+                          data: (props) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
                               />
-                            </td>
-                          )
-                        },
-                        headerCell: BlankHeader,
-                      }}
-                    />
-                  )
-                }
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        //columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
 
-                if (col.type === 'numberWidth') {
+                  if (col.type === 'numberWithUOMValidation') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        className={`
+                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                  ${col?.isBold ? 'bold-text' : ''}
+                `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: {
+                            text: NoSpinnerNumericEditorWithUOMValidation,
+                          },
+                          data: (props) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+                  if (col.field === 'rate') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={
+                          col.title || col.headerName || 'Rate Reduced (TPH)'
+                        }
+                        width={col.widthT}
+                        editable={true}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        hidden={col.hidden}
+                        format={'{0:n2}'}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor },
+                          data: (props) => (
+                            <SimpleHighlightCell
+                              {...props}
+                              customModifiedCells={customModifiedCells}
+                              highlight={!!permissions?.highlightRate}
+                            >
+                              {props.dataItem[props.field]}
+                            </SimpleHighlightCell>
+                          ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                      />
+                    )
+                  }
+
+                  if (col.crackerValidation) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        className={`
+                  ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+                  ${col?.isBold ? 'bold-text' : ''}
+                `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: {
+                            text: NoSpinnerNumericEditorCrackerValidation,
+                          },
+                          data: (props) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+
+                  if (
+                    col.type === 'number' &&
+                    permissions?.showRedCellsForOroductionTarget
+                  ) {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor },
+                          data: (props) => {
+                            const productName =
+                              props.dataItem?.productName ||
+                              props.dataItem?.displayName ||
+                              props.dataItem?.materialDisplayName ||
+                              ''
+                            const isMcuRed = isMcuMaxCapRedCell(
+                              productName,
+                              props.field,
+                            )
+                            if (isMcuRed) {
+                              return (
+                                <td
+                                  {...props.tdProps}
+                                  title={String(
+                                    props.dataItem[props.field] ?? '',
+                                  )}
+                                  style={{ color: 'red', fontWeight: 'bold' }}
+                                >
+                                  {props.children}
+                                </td>
+                              )
+                            }
+
+                            return showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            )
+                          },
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+
+                  if (col.type === 'number') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        className={`
+        ${col?.isDisabled ? 'k-number-right-disabled' : 'k-number-right'}
+        ${col?.isBold ? 'bold-text' : ''}
+      `}
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor },
+                          data: (props) =>
+                            showThreeColors ? (
+                              <RedHighlightCell2
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                allRedCell2={allRedCell2}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ) : (
+                              <RedHighlightCell
+                                {...props}
+                                customModifiedCells={customModifiedCells}
+                                allRedCell={allRedCell}
+                                disableRedHighlight={disableRedHighlight}
+                              />
+                            ),
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        // columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+
+                  if (col.type === 'switch') {
+                    const handleCheckboxChange = (props, value) => {
+                      const { dataItem, field } = props
+                      const { materialName, id } = dataItem
+
+                      onGlobalCheckboxChange(
+                        gridName,
+                        id,
+                        materialName,
+                        field,
+                        value,
+                        dataItem,
+                      )
+                    }
+
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title='.'
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        editable={true}
+                        cells={{
+                          data: (props) => {
+                            const dataItem = props.dataItem || {}
+                            const normType = (dataItem.Particulars || '')
+                              .toString()
+                              .toLowerCase()
+
+                            if (
+                              showCatChemUtilityCheckbox &&
+                              !CHECK_TYPES.includes(normType)
+                            ) {
+                              return <td />
+                            }
+
+                            if (
+                              showCatChemUtilityCheckbox2 &&
+                              !CHECK_TYPES2.includes(normType)
+                            ) {
+                              return <td />
+                            }
+
+                            return (
+                              <td style={{ textAlign: 'center' }}>
+                                <Checkbox
+                                  checked={!!props.dataItem[props.field]}
+                                  onChange={(e) => {
+                                    const checked =
+                                      e?.value ?? e?.target?.checked ?? false
+                                    handleCheckboxChange(props, checked)
+                                  }}
+                                />
+                              </td>
+                            )
+                          },
+                          headerCell: BlankHeader,
+                        }}
+                      />
+                    )
+                  }
+
+                  if (col.type === 'switch2') {
+                    const handleCheckboxChange = (props, value) => {
+                      const { dataItem, field } = props
+                      const { materialName, id } = dataItem
+
+                      onGlobalCheckboxChange(
+                        gridName,
+                        id,
+                        materialName,
+                        field,
+                        value,
+                        dataItem,
+                      )
+                    }
+
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title='.'
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        editable={true}
+                        cells={{
+                          data: (props) => {
+                            const dataItem = props.dataItem || {}
+                            const normType = (dataItem.Particulars || '')
+                              .toString()
+                              .toLowerCase()
+
+                            if (
+                              showCatChemUtilityCheckbox2 &&
+                              CHECK_TYPES2.includes(normType)
+                            ) {
+                              return <td />
+                            }
+
+                            return (
+                              <td style={{ textAlign: 'center' }}>
+                                <Checkbox
+                                  checked={!!props.dataItem[props.field]}
+                                  onChange={(e) => {
+                                    const checked =
+                                      e?.value ?? e?.target?.checked ?? false
+                                    handleCheckboxChange(props, checked)
+                                  }}
+                                />
+                              </td>
+                            )
+                          },
+                          headerCell: BlankHeader,
+                        }}
+                      />
+                    )
+                  }
+
+                  if (col.type === 'numberWidth') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.width}
+                        hidden={col.hidden}
+                        className={
+                          col?.isDisabled
+                            ? 'k-number-right-disabled'
+                            : 'k-number-right'
+                        }
+                        editable={col?.editable ? true : false}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor },
+                          data: toolTipRenderer,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        //columnMenu={ColumnMenuCheckboxFilter}
+                        filter='numeric'
+                        format={col.format}
+                      />
+                    )
+                  }
+
+                  if (col.field === 'ConstantValue') {
+                    return (
+                      <GridColumn
+                        key={col.field}
+                        field={col.field}
+                        title={col.title || col.headerName}
+                        width={col.widthT}
+                        hidden={col.hidden}
+                        editable={!!col?.editable}
+                        headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
+                        cells={{
+                          edit: { text: NoSpinnerNumericEditor },
+                          data: toolTipRenderer,
+                          headerCell: SimpleHeaderWithTooltip,
+                        }}
+                        //columnMenu={ColumnMenuCheckboxFilter}
+                      />
+                    )
+                  }
+
                   return (
                     <GridColumn
                       key={col.field}
                       field={col.field}
                       title={col.title || col.headerName}
-                      width={col.width}
+                      width={col.widthT}
                       hidden={col.hidden}
-                      className={
-                        col?.isDisabled
-                          ? 'k-number-right-disabled'
-                          : 'k-number-right'
-                      }
                       editable={col?.editable ? true : false}
-                      headerClassName={isActive ? 'active-column' : ''}
+                      headerClassName={`${isActive ? 'active-column' : ''} show-menu-on-hover`}
                       cells={{
-                        edit: { text: NoSpinnerNumericEditor },
+                        edit: { text: TextCellEditor },
                         data: toolTipRenderer,
                         headerCell: SimpleHeaderWithTooltip,
                       }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                      filter='numeric'
-                      format={col.format}
+                      // columnMenu={ColumnMenuCheckboxFilter}
                     />
                   )
-                }
+                })}
 
-                if (col.field === 'ConstantValue') {
-                  return (
-                    <GridColumn
-                      key={col.field}
-                      field={col.field}
-                      title={col.title || col.headerName}
-                      width={col.widthT}
-                      hidden={col.hidden}
-                      editable={!!col?.editable}
-                      headerClassName={isActive ? 'active-column' : ''}
-                      cells={{
-                        edit: { text: NoSpinnerNumericEditor },
-                        data: toolTipRenderer,
-                        headerCell: SimpleHeaderWithTooltip,
-                      }}
-                      columnMenu={ColumnMenuCheckboxFilter}
-                    />
-                  )
-                }
-
-                return (
+                {permissions?.deleteButton && (
                   <GridColumn
-                    key={col.field}
-                    field={col.field}
-                    title={col.title || col.headerName}
-                    width={col.widthT}
-                    hidden={col.hidden}
-                    editable={col?.editable ? true : false}
-                    headerClassName={isActive ? 'active-column' : ''}
+                    key='actions'
+                    field='actions'
+                    title='Action'
+                    width={80}
+                    className='k-text-center'
+                    filterable={false}
+                    editable={false}
                     cells={{
-                      edit: { text: TextCellEditor },
-                      data: toolTipRenderer,
+                      data: ActionsCell,
                       headerCell: SimpleHeaderWithTooltip,
                     }}
-                    columnMenu={ColumnMenuCheckboxFilter}
                   />
-                )
-              })}
-
-              {permissions?.deleteButton && (
-                <GridColumn
-                  key='actions'
-                  field='actions'
-                  title='Action'
-                  width={80}
-                  className='k-text-center'
-                  filterable={false}
-                  editable={false}
-                  cells={{
-                    data: ActionsCell,
-                    headerCell: SimpleHeaderWithTooltip,
-                  }}
-                />
-              )}
-            </Grid>
-          </ExcelExport>
-        </Tooltip>
-      </div>
+                )}
+              </Grid>
+            </ExcelExport>
+          </Tooltip>
+        </div>
       </Collapse>
 
       {/* {(permissions?.allActionOfBottomBtns ?? true) && ( */}

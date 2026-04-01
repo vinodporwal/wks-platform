@@ -13,6 +13,7 @@ import { Box } from '@mui/material'
 import KendoDataTables from './index'
 import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -625,12 +626,7 @@ const ConsumptionNorms = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <div>
         {

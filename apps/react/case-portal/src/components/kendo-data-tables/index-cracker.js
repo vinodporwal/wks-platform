@@ -207,7 +207,6 @@ const KendoDataTablesCracker = ({
         ...r,
         originalIsCr: originalIsCrRef.current[r.id],
         inEdit: r.id === e.dataItem.id, // only that row goes into edit mode
-        // inEdit: r.Id === e.dataItem.Id, // only that row goes into edit mode
       })),
     )
   }
@@ -359,7 +358,10 @@ const KendoDataTablesCracker = ({
         {...restThProps}
         aria-sort={ariaSort}
         title={props.title}
-        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+        style={{
+          fontFamily:
+            "'Segoe UI', system-ui, -apple-system, 'Open Sans', Arial, sans-serif",
+        }}
       >
         <Tooltip
           position='top'
@@ -850,7 +852,7 @@ const KendoDataTablesCracker = ({
                       : isButtonDisabled ||
                         !permissions?.showCalculateVisibility
                   }
-                  className='btn-save'
+                  className='btn-calculate'
                 >
                   Calculate
                 </Button>

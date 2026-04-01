@@ -6,8 +6,6 @@ import { useMediaQuery } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
 import AppBarStyled from './AppBarStyled'
 import HeaderContent from './HeaderContent/index'
-import logo from 'assets/images/ril-logo2.png'
-import { Box } from '@mui/material'
 
 const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
   const theme = useTheme()
@@ -22,15 +20,6 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
     >
       {/* Show icon ONLY when drawer is closed */}
       {!open && (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {isDashboard && (
-            <Box
-              component='img'
-              src={logo}
-              alt='Logo'
-              sx={{ width: 28, height: 28, mr: 3 }}
-            />
-          )}
           <IconButton
             disableRipple
             aria-label='open drawer'
@@ -54,8 +43,6 @@ const Header = ({ open, handleDrawerToggle, keycloak, isDashboard }) => {
               }}
             />
           </IconButton>
-          
-        </Box>
       )}
       {/* {open && (<IconButton
           onClick={handleDrawerToggle}

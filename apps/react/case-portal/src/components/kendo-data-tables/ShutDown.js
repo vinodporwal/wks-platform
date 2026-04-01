@@ -1,5 +1,6 @@
 import { useGridApiRef } from '@mui/x-data-grid'
 import React, { useEffect, useState, useMemo } from 'react'
+import { Typography } from '@mui/material'
 import { useSelector } from 'react-redux'
 import { DataService } from 'services/DataService'
 import { useSession } from 'SessionStoreContext'
@@ -27,6 +28,7 @@ import {
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import { getRoleName } from 'services/role-service'
 import ElastomerShutDown from './ElastomerShutDown'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 import PtaShutDown from './PtaShutdown'
 const ShutDown = ({ permissions }) => {
   const [_plantID, set_PlantID] = useState('')
@@ -1182,13 +1184,17 @@ const ShutDown = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
+      {lowerVertName === 'meg' && (
+        <Typography
+          component='div'
+          className='text-note'
+        >
+          * for the case of turnaround planning kindly specify turnaround text
+          in the shutdown desc column
+        </Typography>
+      )}
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}

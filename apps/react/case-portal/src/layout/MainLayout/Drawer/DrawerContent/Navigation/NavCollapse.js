@@ -9,21 +9,26 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip' // Added Tooltip
+import Popover from '@mui/material/Popover' // Added Popover
 import { useTheme } from '@mui/material/styles'
 
 // Icons
 import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
 import AppsIcon from '@mui/icons-material/Apps'
+import IconChevronRight from '@mui/icons-material/ChevronRight'
+import Box from '@mui/material/Box'
 
 // Internal Imports
 import { verticalEnums } from 'enums/verticalEnums'
 import NavItem from './NavItem'
+import Divider from '@mui/material/Divider'
 
-const NavCollapse = ({ menu, level }) => {
+const NavCollapse = ({ menu, level, onItemClick, isPopover }) => {
   const theme = useTheme()
-  const [open, setOpen] = useState(true)
-  const [selected, setSelected] = useState(menu.id)
+  const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState(null)
+  const [anchorEl, setAnchorEl] = useState(null)
 
   const { drawerOpen } = useSelector((state) => state.menu)
   const { plantID, verticalChange, siteObject } = useSelector(
@@ -37,16 +42,30 @@ const NavCollapse = ({ menu, level }) => {
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
-  const handleClick = () => {
-    setOpen(!open)
-    setSelected(!selected ? menu.id : null)
+  const handleClick = (event) => {
+    if (drawerOpen) {
+      setOpen(!open)
+      setSelected(!selected ? menu.id : null)
+    } else {
+      setAnchorEl(event.currentTarget)
+      if (onItemClick) onItemClick()
+    }
+  }
+
+  const handleClose = () => {
+    setAnchorEl(null)
   }
 
   const menus = useMemo(() => {
     if (!menu?.children) return []
 
     const renderMenuItem = (item) => {
-      const props = { key: item.id, level: level + 1 }
+      const props = {
+        key: item.id,
+        level: level + 1,
+        onItemClick: !drawerOpen || isPopover ? handleClose : undefined,
+        isPopover: !drawerOpen || isPopover,
+      }
       switch (item.type) {
         case 'collapse':
           return <NavCollapse menu={item} {...props} />
@@ -85,7 +104,7 @@ const NavCollapse = ({ menu, level }) => {
       )
     }
     return menuItems.map(renderMenuItem)
-  }, [menu?.children, lowerVertName, plantName, level, SITE_NAME])
+  }, [menu?.children, lowerVertName, plantName, level, SITE_NAME, isPopover, drawerOpen])
 
   const collapseButton = (
     <ListItemButton
@@ -93,11 +112,11 @@ const NavCollapse = ({ menu, level }) => {
       selected={selected === menu.id}
       sx={{
         minHeight: 36,
-        px: 1,
+        pr: drawerOpen ? 1 : 0,
         py: 0.4,
         borderRadius: 1,
         alignItems: 'center',
-        justifyContent: drawerOpen ? 'initial' : 'center',
+        justifyContent: drawerOpen || isPopover ? 'initial' : 'center',
         backgroundColor: 'transparent',
 
         '&:hover': {
@@ -124,7 +143,7 @@ const NavCollapse = ({ menu, level }) => {
         },
       }}
     >
-      {drawerOpen && (
+      {(drawerOpen || isPopover) && (
         <ListItemText
           primary={
             <Tooltip
@@ -151,7 +170,7 @@ const NavCollapse = ({ menu, level }) => {
         />
       )}
 
-      {drawerOpen &&
+      {(drawerOpen || isPopover) &&
         (open ? (
           <RemoveIcon
             sx={{
@@ -174,12 +193,20 @@ const NavCollapse = ({ menu, level }) => {
         ))}
 
       {!drawerOpen && (
-        <AppsIcon
-          sx={{
-            fontSize: 18,
-            color: selected === menu.id ? '#fff' : '#6a7b92',
-          }}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <AppsIcon
+            sx={{
+              fontSize: 18,
+              color: selected === menu.id ? '#fff' : '#6a7b92',
+            }}
+          />
+          <IconChevronRight
+            sx={{
+              fontSize: 18,
+              color: selected === menu.id ? '#fff' : '#6a7b92',
+            }}
+          />
+        </Box>
       )}
     </ListItemButton>
   )
@@ -194,11 +221,76 @@ const NavCollapse = ({ menu, level }) => {
         </Tooltip>
       )}
 
-      <Collapse in={open} timeout='auto' unmountOnExit>
+      <Collapse in={open && drawerOpen} timeout='auto' unmountOnExit>
         <List component='div' disablePadding sx={{ pl: 0 }}>
           {menus}
         </List>
       </Collapse>
+
+      <Popover
+        id={`popover-${menu.id}`}
+        open={Boolean(anchorEl) && !drawerOpen}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left',
+        }}
+        PaperProps={{
+          sx: {
+            mt: 0,
+            ml: 0.75,
+            minWidth: 250,
+            background: '#ffffff',
+            boxShadow:
+              '0 12px 28px 0 rgba(0, 0, 0, 0.12), 0 2px 4px 0 rgba(0, 0, 0, 0.08)',
+            borderRadius: '10px',
+            border: '1px solid rgba(226, 232, 240, 0.8)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <List
+          component='div'
+          disablePadding
+          sx={{
+            py: 0,
+            bgcolor: '#ffffff',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              py: 1.25,
+              px: 2,
+              borderBottom: '1px solid #f1f5f9',
+              background: '#f8fafc', // Very subtle light gray/blue
+              gap: 1,
+            }}
+          >
+              <AppsIcon sx={{ fontSize: 16,color:"#4f46e5" }} />
+            <Typography
+              sx={{
+                fontWeight: 700,
+                fontSize: '0.72rem',
+                color: '#4f46e5', // Brand color header
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}
+            >
+              {menu.title}
+            </Typography>
+          </Box>
+          <Divider />
+          {/* ITEM LIST */}
+          <Box sx={{ paddingLeft: 1 }}>{menus}</Box>
+        </List>
+      </Popover>
     </>
   )
 }
@@ -206,6 +298,8 @@ const NavCollapse = ({ menu, level }) => {
 NavCollapse.propTypes = {
   menu: PropTypes.object,
   level: PropTypes.number,
+  onItemClick: PropTypes.func,
+  isPopover: PropTypes.bool,
 }
 
 export default NavCollapse

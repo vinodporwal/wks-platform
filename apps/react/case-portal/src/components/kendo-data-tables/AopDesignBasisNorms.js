@@ -24,10 +24,12 @@ import {
 import { DatePicker } from '../../../node_modules/@progress/kendo-react-dateinputs/index'
 import { NormalOperationNormsApiService } from 'services/normal-operation-norms-api-service'
 import { getRoleName } from 'services/role-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const AopDesignBasisNorms = () => {
   const hasExecutedRef = useRef(false)
   const keycloak = useSession()
+  // const READ_ONLY = getRoleName(keycloak)
 
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const {
@@ -551,12 +553,7 @@ const AopDesignBasisNorms = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading1}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading1} />
       {ConfigurationAccordian}
       <Notification
         open={snackbarOpen}

@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs } from '@mui/material'
+import { Box } from '@mui/material'
 import Notification from 'components/Utilities/Notification'
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -18,6 +18,7 @@ import ApproveDialog from '../TcsInput/workflow/ApproveDialog'
 import SubmitSection from '../TcsInput/workflow/SubmitSection'
 import { getUserRole, ROLES } from '../utils/roleUtils'
 import AuditTrail from '../TcsInput/workflow/AuditTrail'
+import AopTabs from '../../common/components/AopTabs'
 
 // Handler to render tab component based on displayName
 const renderTabComponent = (tabDisplayName, props) => {
@@ -598,48 +599,11 @@ const TcsOutput = () => {
       >
         {/* Tabs Section - Flex grow to fill available space */}
         <Box sx={{ flex: 1, overflowX: 'auto' }}>
-          <Tabs
-            // sx={{
-            //   '& .MuiTabs-indicator': {
-            //     background: `linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%)`,
-            //   },
-            //   '& .MuiTab-root.Mui-selected': {
-            //     background: `linear-gradient(90deg, #1e3a8a 0%, #1e40af 100%)`,
-            //     backgroundClip: 'text',
-            //     WebkitBackgroundClip: 'text',
-            //     WebkitTextFillColor: 'transparent',
-            //   },
-            // }}
-            sx={{
-              borderBottom: '0px solid #ccc',
-              '.MuiTabs-indicator': { display: 'none' },
-              margin: '0px 0px 0px 0px',
-              minHeight: '28px',
-            }}
-            textColor='primary'
-            indicatorColor='primary'
-            value={tabIndex}
-            onChange={(e, newIndex) => {
-              if (newIndex >= 0 && newIndex < tabObj.length) {
-                setTabIndex(newIndex)
-              }
-            }}
-          >
-            {tabObj &&
-              tabObj?.map((tab) => (
-                <Tab
-                  key={tab.id}
-                  sx={{
-                    border: '1px solid #ADD8E6',
-                    borderBottom: '1px solid #ADD8E6',
-                    fontSize: '0.75rem',
-                    padding: '9px',
-                    minHeight: '12px',
-                  }}
-                  label={tab.displayName || tab.name}
-                />
-              ))}
-          </Tabs>
+          <AopTabs
+            tabIndex={tabIndex}
+            setTabIndex={setTabIndex}
+            tabs={tabObj?.map((tab) => tab.displayName || tab.name) || []}
+          />
         </Box>
 
         {/* Submit button and History icon - Fixed on right */}

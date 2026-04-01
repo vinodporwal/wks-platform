@@ -14,6 +14,7 @@ import {
 } from '../../../node_modules/@mui/material/index'
 import KendoDataTables from './index'
 import { validateFields } from 'utils/validationUtils'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CrackerConfiguration = (props) => {
   const keycloak = useSession()
 
@@ -524,13 +525,7 @@ const CrackerConfiguration = (props) => {
   //  console.log('productionRows', productionRows)
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
-
+      <LoaderBackdrop open={!!loading} />
       <Box>
         <KendoDataTables
           modifiedCells={modifiedCellsConfiguration}

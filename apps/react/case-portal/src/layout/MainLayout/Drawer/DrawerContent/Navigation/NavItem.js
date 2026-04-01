@@ -17,7 +17,8 @@ import { useSafeNavigate } from './useSafeNavigate'
 import { useLocation } from 'react-router-dom'
 import { Tooltip } from '@mui/material'
 
-const NavItem = ({ item, level }) => {
+const NavItem = ({ item, level, onItemClick, isPopover }) => {
+  
   const isDashboard = item.id === 'dashboard'
 
   const dispatch = useDispatch()
@@ -30,6 +31,7 @@ const NavItem = ({ item, level }) => {
   const Icon = item.icon
 
   const handleClick = () => {
+    if (onItemClick) onItemClick()
     if (item.requiresConfirmation) {
       setDialogOpen(true)
     } else {
@@ -56,7 +58,7 @@ const NavItem = ({ item, level }) => {
         py: 0.8,
         mx: 0,
         mb: 0,
-        justifyContent: drawerOpen ? 'initial' : 'center',
+        justifyContent: drawerOpen || isPopover ? 'flex-start' : 'center',
 
         borderRadius: 0, // ? REMOVE PILL
         backgroundColor: 'transparent', // default sidebar
@@ -85,7 +87,7 @@ const NavItem = ({ item, level }) => {
           },
         },
 
-        /* ? SELECTED LEFT BORDER INDICATOR */
+        /* ? SELECTED LEFT BORDER INDICATOR - HIDDEN IN POPOVER */
         '&.Mui-selected::before': {
           content: '""',
           position: 'absolute',
@@ -93,7 +95,7 @@ const NavItem = ({ item, level }) => {
           top: 0,
           bottom: 0,
           width: '3px',
-          backgroundColor: '#575bee',
+          backgroundColor: isPopover ? 'transparent' : '#575bee',
         },
       }}
     >
@@ -101,7 +103,7 @@ const NavItem = ({ item, level }) => {
       {Icon && (
         <ListItemIcon
           sx={{
-            minWidth: drawerOpen ? 30 : 0,
+            minWidth: drawerOpen || isPopover ? 30 : 0,
             color: isSelected || isDashboard ? '#575bee' : '#6a7b92',
             justifyContent: 'center',
 
@@ -116,7 +118,7 @@ const NavItem = ({ item, level }) => {
       )}
 
       {/* TEXT - HIDDEN IN MINI MODE FOR ALL LEVELS */}
-      {drawerOpen && (
+      {(drawerOpen || isPopover) && (
         <ListItemText
           sx={{
             my: 0,
@@ -125,15 +127,16 @@ const NavItem = ({ item, level }) => {
           primary={
             <Typography
               sx={{
-                fontSize: '0.82rem',
+                display: 'block',
+                visibility: 'visible',
+                fontSize: isPopover ? '0.78rem' : '0.82rem',
                 fontWeight: isSelected ? 600 : 500,
-                color: isSelected || isDashboard ? '#575bee' : '#6a7b92',
-                letterSpacing: '0.01em',
+                color: isSelected ? '#575bee' : '#475569',
+                letterSpacing: isPopover ? '0.012em' : '0.01em',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                maxWidth: '160px',
-                cursor: 'default',
+                maxWidth: '180px',
               }}
             >
               {item.title}
@@ -164,7 +167,7 @@ const NavItem = ({ item, level }) => {
 
   return (
     <>
-      {drawerOpen ? (
+      {drawerOpen || isPopover ? (
         itemContent
       ) : (
         <Tooltip title={item.title} placement='right' arrow>
@@ -194,6 +197,8 @@ const NavItem = ({ item, level }) => {
 NavItem.propTypes = {
   item: PropTypes.object,
   level: PropTypes.number,
+  onItemClick: PropTypes.func,
+  isPopover: PropTypes.bool,
 }
 
 export default NavItem

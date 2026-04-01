@@ -15,14 +15,24 @@ import {
   CustomAccordionDetails,
   CustomAccordionSummary,
 } from 'utils/CustomAccrodian'
+
+import AddIcon from '@mui/icons-material/Add'
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd'
+import DownloadIcon from '@mui/icons-material/Download'
+import UploadIcon from '@mui/icons-material/Upload'
+import CalculateIcon from '@mui/icons-material/Calculate'
+import SaveIcon from '@mui/icons-material/Save'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+
 import { getRoleName } from 'services/role-service.js'
 import { OptimizerDataApiService } from 'services/optimizer-api-service'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 const CALL_DELAY_MS = 20
 const MONTH_GRID_NAME = 'Month wise Quantity, Tonnes / Month'
 
 const OptimizerReport = () => {
   const keycloak = useSession()
-
+  // const READ_ONLY = getRoleName(keycloak)
   const [dataMap, setDataMap] = useState({})
   const [gridNames, setGridNames] = useState([])
   const [loading, setLoading] = useState(false)
@@ -477,20 +487,16 @@ const OptimizerReport = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <Box display='flex' justifyContent='flex-end' mb='2px' gap={1}>
         {isCracker && (
           <Button
             variant='contained'
             onClick={calculateMonthWiseData}
-            disabled={READ_ONLY || calculating || loading}
-            className='btn-save'
+            // disabled={READ_ONLY || calculating || loading}
+            disabled={calculating || loading}
+            className='btn-calculate'
             color='primary'
           >
             {calculating ? 'Calculating...' : 'Calculate'}
@@ -499,8 +505,9 @@ const OptimizerReport = () => {
         <Button
           variant='contained'
           onClick={exportAllGrids}
-          className='btn-save'
-          //disabled={READ_ONLY}
+          className='btn-export'
+          // disabled={READ_ONLY}
+          startIcon={<DownloadIcon fontSize='small' />}
         >
           Export
         </Button>

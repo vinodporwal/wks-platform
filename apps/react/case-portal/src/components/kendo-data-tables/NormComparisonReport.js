@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux'
 import { BusinessDemandDataApiService } from 'services/business-demand-data-api-service'
 import { useSession } from 'SessionStoreContext'
 import { Backdrop } from '../../../node_modules/@mui/material/index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 export default function NormComparisonReport() {
   const keycloak = useSession()
@@ -97,14 +98,7 @@ export default function NormComparisonReport() {
         }}
       />
 
-      {loading && (
-        <Backdrop
-          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={!!loading}
-        >
-          <CircularProgress color='inherit' />
-        </Backdrop>
-      )}
+      {loading && <LoaderBackdrop open={!!loading} />}
     </Box>
   )
 }

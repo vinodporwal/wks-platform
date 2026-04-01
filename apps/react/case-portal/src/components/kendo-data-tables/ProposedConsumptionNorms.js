@@ -15,6 +15,7 @@ import { getRoleName } from 'services/role-service'
 import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
 import KendoDataTablesReports from 'components/kendo-data-tables/index-reports'
 import KendoDataTables from './index'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 const ProposedConsumptionNorms = () => {
   const [modifiedCells, setModifiedCells] = React.useState({})
@@ -530,12 +531,7 @@ const ProposedConsumptionNorms = () => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       <div>
         {

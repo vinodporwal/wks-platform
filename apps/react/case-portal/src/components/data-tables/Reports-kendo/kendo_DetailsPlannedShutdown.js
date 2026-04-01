@@ -19,7 +19,7 @@ function getPrevYearTitles(aopYear, count = 4) {
   if (!aopYear) return []
   const [start] = aopYear.split('-').map(Number)
   const years = []
-  for (let i = 0; i < count; i++) {
+  for (let i = 1; i <= count; i++) {
     const y1 = start - i
     const y2 = (y1 + 1) % 100
     years.push(`${y1}-${y2.toString().padStart(2, '0')}`)
@@ -198,12 +198,12 @@ export default function ShutdownReport() {
       width: 120,
       type: 'number',
     },
-    {
-      field: 'remarks',
-      title: 'Remarks',
-      editable: true,
-      widthT: 200,
-    },
+    // {
+    //   field: 'remarks',
+    //   title: 'Remarks',
+    //   editable: true,
+    //   widthT: 200,
+    // },
   ]
   const columnsPrevYears = [
     {
@@ -333,6 +333,7 @@ export default function ShutdownReport() {
         remarks: item.remarks || '',
         originalRemark: item.remarks || '',
         inEdit: false,
+        isEditable: false,
 
         // add other fields if needed
       }))
@@ -733,7 +734,7 @@ export default function ShutdownReport() {
   const permissionsRoutineShutdown = getAdjustedPermissionsRoutine(
     {
       allAction: true,
-      saveBtn: true,
+      saveBtn: false,
       showTitle: true,
       showTitleNameBusiness: true,
       titleName: 'Details of Routine Shutdowns (Monthwise)',
@@ -742,8 +743,8 @@ export default function ShutdownReport() {
       downloadExcelBtnFromUI: false,
       uploadExcelBtn: false,
       ExcelName: `${PLANT_NAME}_Routine_Shutdown`,
-      addButton: true,
-      deleteButton: true,
+      addButton: false,
+      deleteButton: false,
       showCalculate: false,
       showFinalSubmit: false,
     },

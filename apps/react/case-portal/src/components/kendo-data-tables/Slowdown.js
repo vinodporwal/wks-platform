@@ -36,6 +36,8 @@ import KendoDataTables from './index'
 import { MaintenanceDetailsApiService } from 'services/maintenance-details-api-service'
 import ValueFormatterProduction from 'utils/ValueFormatterProduction'
 import { getRoleName } from 'services/role-service'
+import AopTabs from 'components/AopTabs'
+import LoaderBackdrop from 'components/Utilities/LoaderBackdrop'
 
 import ElastomerSlowdown from './ElastomerSlowdown'
 const SlowDown = ({ permissions }) => {
@@ -1564,12 +1566,7 @@ const SlowDown = ({ permissions }) => {
 
   return (
     <div>
-      <Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading}
-      >
-        <CircularProgress color='inherit' />
-      </Backdrop>
+      <LoaderBackdrop open={!!loading} />
 
       {(lowerVertName === 'meg' ||
         (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD)) && (
