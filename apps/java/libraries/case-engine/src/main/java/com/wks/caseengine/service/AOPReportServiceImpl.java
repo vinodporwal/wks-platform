@@ -685,9 +685,18 @@ public class AOPReportServiceImpl implements AOPReportService {
 	public AOPMessageVM getSpecificConsumptionNormsT17Report(String reportType, String plantId, String year) {
 		try {
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
-			
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId))
+					.orElseThrow(() -> new IllegalArgumentException("Invalid plant ID"));
 
-			List<Object[]> obj = getSpecificConsumptionNormsT17Data(plantId, year, reportType);
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId())
+					.orElseThrow(() -> new IllegalArgumentException("Invalid vertical ID"));
+			List<Object[]> obj=null;
+			if(vertical.getName().equalsIgnoreCase("MEG")) {
+				 obj = getSpecificConsumptionNormsT17DataDB2(plantId, year, reportType);
+			}else {
+				 obj = getSpecificConsumptionNormsT17Data(plantId, year, reportType);
+			}
+
 			
 			List<PlantContributionSummaryT17DTO> plantProductionData = new ArrayList<>();
 
@@ -794,8 +803,38 @@ public class AOPReportServiceImpl implements AOPReportService {
 		}
 	}
 	
-	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<Object[]> getSpecificConsumptionNormsT17Data(String plantId, String aopYear, String reportType) {
+		try {
+   			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			String storedProcedure=null;
+			if(!verticalName.equalsIgnoreCase("MEG")) {
+				 storedProcedure = verticalName + "_" + site.getName() + "_GetSpecificConsumptionNormsReport";
+			}else {
+				storedProcedure = "GetSpecificConsumptionNormsReport";
+			}
+			
+			String sql = "EXEC " + storedProcedure
+					+ " @plantId = :plantId, @aopYear = :aopYear, @reportType = :reportType";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+			query.setParameter("reportType", reportType);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public List<Object[]> getSpecificConsumptionNormsT17DataDB2(String plantId, String aopYear, String reportType) {
 		try {
    			String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
 			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -1385,7 +1424,33 @@ public class AOPReportServiceImpl implements AOPReportService {
 	}
 
 	@Override
-	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	@Transactional(transactionManager = "db2TransactionManager")
+	public AOPMessageVM updateSpecificConsumptionNormsT17ReportDB2(
+			List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year) {
+		List<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisList = new ArrayList<>();
+		try {
+			
+			for(PlantContributionSummaryT17DTO plantContributionSummaryT17DTO:plantContributionSummaryT17DTOs) {
+				if(plantContributionSummaryT17DTO.getId()!=null) {
+					Optional<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisOpt=	plantContributionSummaryBusinessDemandBasisRepository.findById(UUID.fromString(plantContributionSummaryT17DTO.getId()));
+					if(plantContributionSummaryBusinessDemandBasisOpt.isPresent()) {
+						PlantContributionSummaryBusinessDemandBasis plantContributionSummaryBusinessDemandBasis=plantContributionSummaryBusinessDemandBasisOpt.get();
+						plantContributionSummaryBusinessDemandBasis.setRemarks(plantContributionSummaryT17DTO.getRemarks());
+						plantContributionSummaryBusinessDemandBasisList.add(plantContributionSummaryBusinessDemandBasisRepository.save(plantContributionSummaryBusinessDemandBasis));
+					}
+				}
+			}
+		}catch (Exception ex) {
+			throw new RuntimeException("Failed to update data", ex);
+		}
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		aopMessageVM.setCode(200);
+		aopMessageVM.setData(plantContributionSummaryBusinessDemandBasisList);
+		aopMessageVM.setMessage("Data updated successfully");
+		return aopMessageVM;
+	}
+
+	@Override
 	public AOPMessageVM updateSpecificConsumptionNormsT17Report(
 			List<PlantContributionSummaryT17DTO> plantContributionSummaryT17DTOs, String plantId, String year) {
 		List<PlantContributionSummaryBusinessDemandBasis> plantContributionSummaryBusinessDemandBasisList = new ArrayList<>();

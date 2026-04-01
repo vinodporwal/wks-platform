@@ -10,6 +10,7 @@ public interface TurnAroundDataReportService {
     public AOPMessageVM getReportForTurnAroundPlanData(String plantId,String year,String reportType);
     
     public AOPMessageVM updateReportForTurnAroundData( String plantId,String year,String reportType, List<TurnAroundPlanReportDTO> dataList);
+    public AOPMessageVM updateReportForTurnAroundDataDB2( String plantId,String year,String reportType, List<TurnAroundPlanReportDTO> dataList);
 			 
     public AOPMessageVM deleteReportForTurnAroundData( String id);
 }
