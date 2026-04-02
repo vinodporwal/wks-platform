@@ -32,6 +32,7 @@ export const NormalOperationNormsApiService = {
   getNormTransactionsForFinalNormsModeWise,
   shutdownNormsExport,
   shutdownNormsExportNonGrade,
+  shutdownNormsExportAllGarde,
 }
 
 async function BestAchivedColorCodes(keycloak, plantId, year, mode) {
@@ -796,6 +797,46 @@ export async function shutdownNormsExportNonGrade(
     const a = document.createElement('a')
     a.href = urlBlob
     a.download = `Shutdown_Consumption_${year}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown_Consumption Excel:', e)
+    return Promise.reject(e)
+  }
+}
+export async function shutdownNormsExportAllGarde(
+  keycloak,
+  plantId,
+  year,
+  PLANT_NAME,
+  SITE_NAME,
+  VERTICAL_NAME,
+  ALL_GRADE_FLAG,
+) {
+  const url =
+    `${Config.CaseEngineUrl}/task/shutdown-consumption-export-all-grades` +
+    `?year=${encodeURIComponent(year)}` +
+    `&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = `${VERTICAL_NAME}_${SITE_NAME}_${PLANT_NAME}_Shutdown_Consumption.xlsx`
     document.body.appendChild(a)
     a.click()
     a.remove()

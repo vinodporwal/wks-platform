@@ -85,6 +85,8 @@ const ShutdownNorms = () => {
     lowerVertName === 'pe' && ['vmd'].includes(SITE_NAME_LOWERCASE)
   const IS_PE_DMD =
     lowerVertName === 'pe' && ['dmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_PE_HMD =
+    lowerVertName === 'pe' && ['hmd'].includes(SITE_NAME_LOWERCASE)
   const IS_ELASTOMER_HMD_SBR =
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'hmd' &&
@@ -629,8 +631,19 @@ const ShutdownNorms = () => {
             AOP_YEAR,
             gradeId,
           )
+      } else if (IS_PE_PP_VERTICAL) {
+        // Use shutdownNormsExport for PE/PP/Elastomer
+        response =
+          await NormalOperationNormsApiService.shutdownNormsExportAllGarde(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            PLANT_NAME,
+            SITE_NAME,
+            VERTICAL_NAME,
+            gradeName == 'All Grade',
+          )
       } else if (
-        IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
         IS_ELASTOMER_JMD_HIIR ||
@@ -828,6 +841,7 @@ const ShutdownNorms = () => {
       dropdownLabel: 'Select Grade',
       allAction: true,
       downloadExcelBtnFromUI:
+        !IS_PE_HMD ||
         IS_PE_PP_VERTICAL ||
         IS_PET_VERTICAL ||
         IS_ELASTOMER_HMD_SBR ||
@@ -846,6 +860,7 @@ const ShutdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR ||
         IS_PVC_VMD ||
         IS_PVC_DMD ||
+        IS_PE_HMD ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         IS_CHEMICAL
@@ -859,6 +874,7 @@ const ShutdownNorms = () => {
         IS_CHEMICAL ||
         IS_PE_VMD ||
         IS_PE_DMD ||
+        IS_PE_HMD ||
         IS_PET_VERTICAL ||
         IS_PVC_VMD ||
         IS_ELASTOMER_JMD_HIIR ||

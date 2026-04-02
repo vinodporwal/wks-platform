@@ -22,6 +22,7 @@ import { getRoleName } from 'services/role-service'
 import ProductionTarget from './ProductionTarget'
 import ManualEntryForFeedStreams from './ManualEntryForFeedStreams'
 import ModeSelection from './ModeSelection'
+import { ProductionVolumeDataApiService } from 'services/production-volume-data-api-service'
 const BusinessDemand = ({ permissions }) => {
   const [modifiedCells, setModifiedCells] = React.useState({})
   const keycloak = useSession()
@@ -85,6 +86,9 @@ const BusinessDemand = ({ permissions }) => {
 
   const apiRef = useGridApiRef()
   const [rows, setRows] = useState()
+  const [rowRate, setRowRate] = useState()
+  const [selectedUnit, setSelectedUnit] = useState('TPH')
+  const [editResetKey, setEditResetKey] = useState(0)
   const headerMap = generateHeaderNames(AOP_YEAR)
   const [snackbarData, setSnackbarData] = useState({
     message: '',
@@ -99,7 +103,50 @@ const BusinessDemand = ({ permissions }) => {
     unsavedRows: {},
     rowsBeforeChange: {},
   })
+  const columnsProductionRate = [
+    {
+      field: 'idFromApi',
+      title: 'ID',
+      hidden: true,
+    },
+    {
+      field: 'aopCaseId',
+      title: 'Case ID',
+      width: 120,
+      editable: false,
+      hidden: true,
+    },
+    {
+      field: 'normParametersFKId',
+      title: 'Particulars',
+      editable: false,
+      widthT: 100,
+      hidden: true,
+    },
 
+    {
+      field: 'materialDisplayName',
+      title: 'Particulars',
+      editable: false,
+      widthT: 200,
+    },
+    {
+      field: 'april',
+      title: 'Value',
+      editable: false,
+      widthT: 200,
+      align: 'left',
+      headerAlign: 'left',
+      type: 'number',
+      format: '{0:n2}',
+    },
+
+    {
+      field: 'isEditable',
+      title: 'isEditable',
+      hidden: true,
+    },
+  ]
   const fetchData = async () => {
     if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
 
@@ -143,6 +190,57 @@ const BusinessDemand = ({ permissions }) => {
   useEffect(() => {
     fetchData()
   }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  const handleUnitChangeMain = (unit) => {
+    setSelectedUnit(unit)
+  }
+  const fetchProductionRateData = async () => {
+    if (!PLANT_ID || !SITE_ID || !VERTICAL_ID || !AOP_YEAR) return
+
+    setModifiedCells({})
+
+    setLoading(true)
+    try {
+      var response =
+        await ProductionVolumeDataApiService.getAOPMCCalculatedElastomerJmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      var formattedData = response?.data?.aopMCCalculatedDataDTOList.map(
+        (item, index) => {
+          const isTPH = selectedUnit == 'TPD'
+          return {
+            ...item,
+            idFromApi: item?.id || null,
+            normParametersFKId: item?.materialFKId.toLowerCase(),
+            remarks: item?.remarks?.trim() || null,
+            originalRemark: item?.remarks?.trim() || null,
+            isEditable: false,
+
+            id: index,
+
+            ...(isTPH && {
+              april: item.april
+                ? (item.april * 24).toFixed(2)
+                : item.april || null,
+            }),
+          }
+        },
+      )
+
+      setRowRate(formattedData)
+
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    fetchProductionRateData()
+  }, [selectedUnit, PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
 
   const handleRemarkCellClick = (dataItem) => {
     // if (!dataItem?.isEditable) return
@@ -443,6 +541,21 @@ const BusinessDemand = ({ permissions }) => {
     isOldYear,
   )
 
+  const adjustedPermissionsProductionRate = getAdjustedPermissions(
+    {
+      showAction: permissions?.showAction ?? false,
+      allAction: permissions?.allAction ?? true,
+      showUnit: true,
+      units: ['TPH', 'TPD'],
+      showTitleAndInformation: VERTICAL_NAME == 'cracker' ? true : false,
+      titleAndInformation: 'Operating capacity derived from Optimizer model.',
+
+      showTitleNameBusiness: true,
+      titleName: 'Average Hourly Production Rate',
+    },
+    isOldYear,
+  )
+
   const uploadBusinessDemand = async (rawFile) => {
     setLoading(true)
 
@@ -600,7 +713,23 @@ const BusinessDemand = ({ permissions }) => {
           </CustomAccordion>
         </>
       )}
+
       {IS_ELASTOMER_JMD && (
+        <KendoDataTables
+          setRows={setRowRate}
+          columns={columnsProductionRate}
+          rows={rowRate}
+          title='Average Hourly Production Rate'
+          fetchData={fetchProductionRateData}
+          handleUnitChange={handleUnitChangeMain}
+          selectedUnit={selectedUnit}
+          setSelectedUnit={setSelectedUnit}
+          permissions={adjustedPermissionsProductionRate}
+          setEditResetKey={setEditResetKey}
+          resetEditSignal={editResetKey}
+        />
+      )}
+      {/* {IS_ELASTOMER_JMD && (
         <>
           <CustomAccordion defaultExpanded disableGutters>
             <CustomAccordionSummary
@@ -633,8 +762,7 @@ const BusinessDemand = ({ permissions }) => {
             </CustomAccordionDetails>
           </CustomAccordion>
         </>
-      )}
-
+      )} */}
       <KendoDataTables
         modifiedCells={modifiedCells}
         setModifiedCells={setModifiedCells}
