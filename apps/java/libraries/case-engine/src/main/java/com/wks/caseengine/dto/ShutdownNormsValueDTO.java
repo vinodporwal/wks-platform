@@ -21,18 +21,18 @@ public class ShutdownNormsValueDTO {
     private String verticalFkId;
     private String materialFkId;
     private String normParameterTypeFkId;
-    private Float april;
-    private Float may;
-    private Float june;
-    private Float july;
-    private Float august;
-    private Float september;
-    private Float october;
-    private Float november;
-    private Float december;
-    private Float january;
-    private Float february;
-    private Float march;
+    private Double april;
+    private Double may;
+    private Double june;
+    private Double july;
+    private Double august;
+    private Double september;
+    private Double october;
+    private Double november;
+    private Double december;
+    private Double january;
+    private Double february;
+    private Double march;
     private String financialYear;
     private String remarks;
     private Date createdOn;
@@ -43,5 +43,14 @@ public class ShutdownNormsValueDTO {
     private String normParameterTypeName;
     private String normParameterTypeDisplayName;
     private String UOM;
+    private String aOPCaseId;
+    private String aOPStatus;
+    private Boolean isEditable;
+    private String productName;
+    private String gradeFkId;
+    private String sapCode;
+    private Integer materialDisplayOrder;
+    private String saveStatus;
+	private String errDescription;
 }
 

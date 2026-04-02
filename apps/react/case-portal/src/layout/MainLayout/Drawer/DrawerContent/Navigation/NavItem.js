@@ -6,147 +6,202 @@ import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
 import { useTheme } from '@mui/material/styles'
 import PropTypes from 'prop-types'
-import { forwardRef, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import { activeItem } from 'store/reducers/menu'
-
+// import useSafeNavigate from ''
+import Dialog from '@mui/material/Dialog'
+import DialogTitle from '@mui/material/DialogTitle'
+import DialogContent from '@mui/material/DialogContent'
+import DialogActions from '@mui/material/DialogActions'
+import Button from '@mui/material/Button'
+import { useSafeNavigate } from './useSafeNavigate'
+// import { Tooltip } from '../../../../../../node_modules/@mui/material/index'
+// import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { useLocation } from 'react-router-dom'
 const NavItem = ({ item, level }) => {
   const theme = useTheme()
   const dispatch = useDispatch()
   const menu = useSelector((state) => state.menu)
   const { drawerOpen, openItem } = menu
+  const { safeNavigate, confirmLeave, setDialogOpen, dialogOpen, itemHandler } =
+    useSafeNavigate()
+  const location = useLocation()
 
-  let itemTarget = '_self'
-  if (item.target) {
-    itemTarget = '_blank'
+  // const [openDialog, setOpenDialog] = useState(false)
+
+  const handleClick = (id) => {
+    // console.log(item)
+    if (item.requiresConfirmation) {
+      setDialogOpen(true)
+    } else {
+      dispatch(activeItem({ openItem: [id] }))
+      itemHandler(id)
+      safeNavigate(item.url)
+    }
   }
 
-  function CustomLink(props, ref) {
-    return <Link ref={ref} {...props} to={item.url} target={itemTarget} />
+  const stayOnPage = () => {
+    // dispatch(setIsBlocked(false))
+    setDialogOpen(false)
+    // dispatch(activeItem({ openItem: [item.id] }))
+    // safeNavigate(item.url)
+
+    // console.log(item)
   }
 
-  const ForwardedCustomLink = forwardRef(CustomLink)
-
-  let listItemProps = {
-    component: ForwardedCustomLink,
-  }
-  if (item?.external) {
-    listItemProps = { component: 'a', href: item.url, target: itemTarget }
-  }
-
-  const itemHandler = (id) => {
-    dispatch(activeItem({ openItem: [id] }))
-  }
+  // const cancelNavigation = () => {
+  //   setDialogOpen(false)
+  // }
 
   const Icon = item.icon
-  const itemIcon = item.icon ? (
-    <Icon style={{ fontSize: drawerOpen ? '1rem' : '1.25rem' }} />
-  ) : (
-    false
-  )
+  const itemIcon = Icon ? <Icon fontSize='small' /> : null
 
   const isSelected = openItem.findIndex((id) => id === item.id) > -1
 
   useEffect(() => {
-    const currentIndex = document.location.pathname
+    const currentIndex = location.pathname
       .toString()
       .split('/')
       .findIndex((id) => id === item.id)
+
     if (currentIndex > -1) {
       dispatch(activeItem({ openItem: [item.id] }))
     }
   }, [])
 
+  useEffect(() => {
+    // runs on every URL change
+
+    if (location.pathname.split('/').includes(item.id)) {
+      dispatch(activeItem({ openItem: [item.id] }))
+    }
+  }, [location.pathname, item.id, dispatch])
+
   const textColor = 'text.primary'
-  const iconSelectedColor = 'primary.main'
 
   return (
-    <ListItemButton
-      {...listItemProps}
-      disabled={item.disabled}
-      onClick={() => itemHandler(item.id)}
-      selected={isSelected}
-      sx={{
-        zIndex: 1201,
-        pl: drawerOpen ? `${level * 28}px` : 1.5,
-        py: !drawerOpen && level === 1 ? 1.25 : 1,
-        ...(drawerOpen && {
-          '&:hover': {
-            bgcolor: 'primary.lighter',
-          },
-          '&.Mui-selected': {
-            bgcolor: 'primary.lighter',
-            borderRight: `2px solid ${theme.palette.primary.main}`,
-            color: iconSelectedColor,
+    <>
+      <ListItemButton
+        disabled={item.disabled}
+        // onClick={() => {
+        //   itemHandler(item.id)
+        //   handleClick()
+        // }}
+        onClick={() => handleClick(item.id)}
+        selected={isSelected}
+        sx={{
+          zIndex: 1201,
+          pl: drawerOpen ? `${level * 8}px` : 1.5,
+          // pl: 2.5,
+          py: !drawerOpen && level === 1 ? 1 : 1,
+          ...(drawerOpen && {
             '&:hover': {
-              color: iconSelectedColor,
-              bgcolor: 'primary.lighter',
+              bgcolor: '#0100cb',
+              color: 'white',
             },
-          },
-        }),
-        ...(!drawerOpen && {
-          '&:hover': {
-            bgcolor: 'transparent',
-          },
-          '&.Mui-selected': {
-            '&:hover': {
-              bgcolor: 'transparent',
-            },
-            bgcolor: 'transparent',
-          },
-        }),
-      }}
-    >
-      {itemIcon && (
-        <ListItemIcon
-          sx={{
-            minWidth: 28,
-            color: isSelected ? iconSelectedColor : textColor,
-            ...(!drawerOpen && {
-              borderRadius: 1.5,
-              width: 36,
-              height: 36,
-              alignItems: 'center',
-              justifyContent: 'center',
+            '&.Mui-selected': {
+              bgcolor: '#0100cb',
+              borderRight: `2px solid ${theme.palette.primary.main}`,
+              color: 'white',
+              borderRadius: 0,
               '&:hover': {
-                bgcolor: 'secondary.lighter',
+                bgcolor: '#0100cb',
+                color: 'white',
               },
-            }),
-            ...(!drawerOpen &&
-              isSelected && {
-                bgcolor: 'primary.lighter',
+            },
+          }),
+          ...(!drawerOpen && {
+            '&:hover': {
+              bgcolor: '#0100cb',
+            },
+            '&.Mui-selected': {
+              bgcolor: '#0100cb',
+              '&:hover': {
+                bgcolor: '#0100cb',
+              },
+            },
+          }),
+        }}
+      >
+        {itemIcon && (
+          <ListItemIcon
+            sx={{
+              minWidth: 20,
+              '& svg': {
+                fontSize: '18px',
+                width: '18px',
+                height: '18px',
+              },
+
+              color: isSelected ? 'white' : textColor,
+              ...(!drawerOpen && {
+                borderRadius: 1.5,
+                width: 36,
+                height: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
                 '&:hover': {
-                  bgcolor: 'primary.lighter',
+                  bgcolor: 'secondary.lighter',
                 },
               }),
-          }}
-        >
-          {itemIcon}
-        </ListItemIcon>
-      )}
-      {(drawerOpen || (!drawerOpen && level !== 1)) && (
-        <ListItemText
-          primary={
-            <Typography
-              variant='h6'
-              sx={{ color: isSelected ? iconSelectedColor : textColor }}
-            >
-              {item.title}
-            </Typography>
-          }
-        />
-      )}
-      {(drawerOpen || (!drawerOpen && level !== 1)) && item.chip && (
-        <Chip
-          color={item.chip.color}
-          variant={item.chip.variant}
-          size={item.chip.size}
-          label={item.chip.label}
-          avatar={item.chip.avatar && <Avatar>{item.chip.avatar}</Avatar>}
-        />
-      )}
-    </ListItemButton>
+              ...(!drawerOpen &&
+                isSelected && {
+                  bgcolor: '#0100cb',
+                  '&:hover': {
+                    bgcolor: '#0100cb',
+                  },
+                }),
+            }}
+          >
+            {itemIcon}
+          </ListItemIcon>
+        )}
+        {(drawerOpen || (!drawerOpen && level !== 1)) && (
+          <ListItemText
+            primary={
+              // <Tooltip title={item.title} arrow>
+              <Typography
+                variant='h6'
+                className={`sub-side-menu ${isSelected ? 'active' : ''}`}
+              >
+                {item.title}
+              </Typography>
+              // </Tooltip>
+            }
+          />
+        )}
+        {(drawerOpen || (!drawerOpen && level !== 1)) && item.chip && (
+          <Chip
+            color={item.chip.color}
+            variant={item.chip.variant}
+            size={item.chip.size}
+            label={item.chip.label}
+            avatar={item.chip.avatar && <Avatar>{item.chip.avatar}</Avatar>}
+          />
+        )}
+      </ListItemButton>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogTitle>Unsaved Changes</DialogTitle>
+        <DialogContent>
+          You have unsaved changes. Are you sure you want to leave this page?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={stayOnPage} color='error'>
+            Stay
+          </Button>
+          <Button
+            onClick={() => confirmLeave(item.id)}
+            color='primary'
+            autoFocus
+          >
+            Leave
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   )
 }
 

@@ -1,0 +1,56 @@
+package com.wks.caseengine.rest.server;
+
+import org.keycloak.representations.idm.UserRepresentation;
+import org.springframework.web.bind.annotation.*;
+import com.wks.caseengine.service.KeycloakUserService;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/task/users")
+public class UserController {
+
+	private final KeycloakUserService userService;
+
+	public UserController(KeycloakUserService userService) {
+		this.userService = userService;
+	}
+
+	@GetMapping
+	public Map<String, Object> getUsers() throws Exception {
+		return userService.getUsers();
+	}
+
+	@GetMapping("/role/{roleName}")
+	public List<UserRepresentation> getUsersWithRole(@PathVariable String roleName) throws Exception {
+
+		return userService.getUsersWithRole(roleName);
+	}
+
+	@PutMapping("/revoke-access/{userId}")
+	public Map<String, Object> revokeUserAccess(@PathVariable String userId, @RequestBody Map<String, Object> data) throws Exception {
+		return userService.revokeUserAccess(userId, data);
+	}
+
+	@PutMapping()
+	public Map<String, Object> updateUser(@RequestBody Map<String, Object> data) throws Exception {
+		return userService.updateUser(data);
+	}
+
+	@GetMapping("/roles")
+	public Map<String, Object> getRealmRoles() throws Exception {
+		return userService.getRealmRoles();
+	}
+	
+	@GetMapping("/groups")
+    public Map<String, Object> getUserGroups() throws Exception {
+        return userService.getAllGroups();
+    }
+	
+	@GetMapping("/search")
+	public Map<String, Object> getUsers(@RequestParam("search") String search) throws Exception {
+		return userService.searchUsers(search);
+	}
+}
+

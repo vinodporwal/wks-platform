@@ -14,7 +14,7 @@ public class PlantMaintenanceTransaction {
     @Column(name = "Id", columnDefinition = "uniqueidentifier")
     private UUID id;
 
-    @Column(name = "Name", nullable = false, length = 255)
+    @Column(name = "Name")
     private String name;
 
     @Column(name = "Discription", nullable = false, length = 500)
@@ -39,6 +39,18 @@ public class PlantMaintenanceTransaction {
 
     @Column(name = "Rate")
     private Double rate;
+    
+    @Column(name = "EO_OpsProdRate")
+    private Double rateEO;
+    
+    @Column(name = "EOE_OpsProdRate")
+    private Double rateEOE;
+    
+    @Column(name = "RPF_DownTime")
+    private Double rpfDownTime;
+    
+    @Column(name = "No_Of_RPF")
+    private Double noOfRPF;
 
     @Column(name = "Remarks", length = 500)
     private String remarks;
@@ -61,11 +73,11 @@ public class PlantMaintenanceTransaction {
     
     @Transient
     private Double durationInHrs;
+    
+    @Column(name = "Plant_FK_Id")
+    private UUID plantId;
+    
+    @Column(name = "Line_FK_Id")
+    private UUID lineFKId;
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdOn == null) {
-            createdOn = new Date();
-        }
-    }
 }

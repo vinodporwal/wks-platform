@@ -23,6 +23,7 @@ import {
   IconBarrierBlock,
   IconChartHistogram,
   IconPackages,
+  IconTrafficCone,
 } from '@tabler/icons-react'
 // import { useSelector } from 'react-redux'
 import i18n from '../i18n'
@@ -51,6 +52,7 @@ const icons = {
   IconBarrierBlock,
   IconChartHistogram,
   IconPackages,
+  IconTrafficCone,
 }
 
 const plan = {
@@ -62,24 +64,49 @@ const plan = {
       id: 'production-norms-plan',
       title: i18n.t('menu.productionNormsPlan'),
       type: 'collapse',
-      icon: icons.IconArchive, // You can choose an appropriate icon
+      icon: icons.IconArchive,
       children: [
         {
-          id: 'product-demand',
-          title: i18n.t('menu.productDemand'),
+          id: 'configuration',
+          title: i18n.t('menu.catalystSelectivity'),
           type: 'item',
-          url: '/production-norms-plan/business-demand',
-          icon: icons.IconChartBar,
+          url: '/production-norms-plan/configuration',
+          icon: icons.IconFilter,
           breadcrumbs: true,
         },
-        {
-          id: 'product-mcu-val',
-          title: i18n.t('menu.productMCUVal'),
-          type: 'item',
-          url: '/production-norms-plan/production-volume-data',
-          icon: icons.IconSettings,
-          breadcrumbs: true,
-        },
+        // {
+        //   id: 'spyro-menu',
+        //   title: i18n.t('menu.spyroMenu'),
+        //   type: 'collapse',
+        //   icon: icons.IconArchive,
+        //   children: [
+        //     {
+        //       id: 'spyro-input',
+        //       title: i18n.t('menu.spyroInput'),
+        //       type: 'item',
+        //       url: '/production-norms-plan/spyro-menu/spyro-input',
+        //       icon: icons.IconFilter,
+        //       breadcrumbs: true,
+        //     },
+        //     {
+        //       id: 'spyro-output',
+        //       title: i18n.t('menu.spyroOutput'),
+        //       type: 'item',
+        //       url: '/production-norms-plan/spyro-menu/spyro-output',
+        //       icon: icons.IconFilter,
+        //       breadcrumbs: true,
+        //     },
+        //     {
+        //       id: 'decoking-activities',
+        //       title: i18n.t('menu.decokingActivities'),
+        //       type: 'item',
+        //       url: '/production-norms-plan/spyro-menu/decoking-activities',
+        //       icon: icons.IconFilter,
+        //       breadcrumbs: true,
+        //     },
+        //   ],
+        // },
+
         {
           id: 'shutdown-plan',
           title: i18n.t('menu.shutdownPlan'),
@@ -97,13 +124,21 @@ const plan = {
           breadcrumbs: true,
         },
 
-        // verticalChange !== 'MEG' &&
         {
-          id: 'ta-plan',
-          title: i18n.t('menu.taPlan'),
+          id: 'production-volume-data',
+          title: i18n.t('menu.productMCUVal'),
           type: 'item',
-          url: '/production-norms-plan/turnaround-plan',
-          icon: icons.IconTools,
+          url: '/production-norms-plan/production-volume-data',
+          icon: icons.IconSettings,
+          breadcrumbs: true,
+        },
+
+        {
+          id: 'business-demand',
+          title: i18n.t('menu.productDemand'),
+          type: 'item',
+          url: '/production-norms-plan/business-demand',
+          icon: icons.IconChartBar,
           breadcrumbs: true,
         },
 
@@ -117,21 +152,14 @@ const plan = {
         },
 
         {
-          id: 'production-norms',
+          id: 'production-aop',
           title: i18n.t('menu.productionNorms'),
           type: 'item',
           url: '/production-norms-plan/production-aop',
           icon: icons.IconDatabase,
           breadcrumbs: true,
         },
-        {
-          id: 'catalyst-selectivity',
-          title: i18n.t('menu.catalystSelectivity'),
-          type: 'item',
-          url: '/production-norms-plan/configuration',
-          icon: icons.IconFilter,
-          breadcrumbs: true,
-        },
+
         {
           id: 'normal-op-norms',
           title: i18n.t('menu.normalOpNorms'),
@@ -148,23 +176,31 @@ const plan = {
           icon: icons.IconPower,
           breadcrumbs: true,
         },
+        {
+          id: 'slowdown-norms',
+          title: i18n.t('menu.slowdownNorms'),
+          type: 'item',
+          url: '/production-norms-plan/slowdown-norms',
+          icon: icons.IconTrafficCone,
+          breadcrumbs: true,
+        },
 
         {
-          id: 'consumption-norms',
+          id: 'consumption-aop',
           title: i18n.t('menu.consumptionNorms'),
           type: 'item',
           url: '/production-norms-plan/consumption-aop',
           icon: icons.IconChartHistogram,
           breadcrumbs: true,
         },
-        {
-          id: 'feed-stock',
-          title: i18n.t('menu.feedStock'),
-          type: 'item',
-          url: '/production-norms-plan/feed-stock-availability',
-          icon: icons.IconPackages,
-          breadcrumbs: true,
-        },
+        // {
+        //   id: 'packaging-consumables',
+        //   title: i18n.t('menu.packagingConsumables'),
+        //   type: 'item',
+        //   url: '/production-norms-plan/packaging-consumables',
+        //   icon: icons.IconChartHistogram,
+        //   breadcrumbs: true,
+        // },
       ],
     },
   ],

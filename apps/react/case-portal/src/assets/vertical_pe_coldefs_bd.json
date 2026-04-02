@@ -2,15 +2,15 @@
   {
     "field": "Particulars",
     "headerName": "Type",
-    "minWidth": 125,
+    "minWidth": 100,
     "groupable": true,
     "headerClass": "bold-header"
   },
   {
     "field": "normParameterId",
     "headerName": "Particulars",
-    "editable": true,
-    "minWidth": 100
+    "editable": false,
+    "minWidth": 125
   },
   {
     "field": "april",
@@ -111,8 +111,8 @@
   {
     "field": "remark",
     "headerName": "Remark",
-    "minWidth": 200,
-    "editable": true
+    "minWidth": 150,
+    "editable": false
   },
   {
     "field": "idFromApi",

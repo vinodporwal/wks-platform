@@ -30,11 +30,15 @@ const defs = {
     dataForm2: 'WKS Form2',
     // Menu items for "Production / Norms Plan"
     productionNormsPlan: 'Plano de Produção / Normas',
+    process: 'Process',
+
     productMCUVal: 'Valor MCU Produto',
     maintenanceDetails: 'Maintenance Details',
     productDemand: 'Demanda de Produto',
     shutdownPlan: 'Plano de Parada',
     shutdownNorms: 'Shutdown Norms',
+    slowdownNorms: 'Slowdown Norms',
+
     normalOpNorms: 'Normal Operation Norms',
     slowdownPlan: 'Plano de Redução',
     taPlan: 'Plano de TA',
@@ -46,10 +50,19 @@ const defs = {
     safety: 'Segurança', // New addition
     reliability: 'Confiabilidade', // New addition
     reports: 'Relatórios', // New addition
-    contributionReport: 'Relatório de Contribuição', // New addition
+    annualAopCostReport: 'Relatório de Contribuição', // New addition
     previousFYAOPResult: 'Resultado AOP do Ano Fiscal Anterior', // New addition
     matBalSheet: 'Balanço de MAT', // New addition
     workflow: 'Fluxo de Trabalho', // New addition
+    //FUNCTIONAL AOP
+    functionalAop: 'CES',
+
+    monthlyAop: 'Maintenance',
+    siteWiseAop: 'Consumption Summary (Sites)',
+    allSiteSummaryAop: 'Summary',
+    UtilityPlant: 'Utility Plant',
+    packagingConsumables: 'Consumíveis de Embalagem',
+    productionOptimizer: 'Production Optimizer',
   },
   pages: {
     dashboard: {
@@ -191,6 +204,7 @@ const defs = {
         productDemand: 'Demanda de Produto',
         shutdownPlan: 'Plano de Parada',
         shutdownNorms: 'Shutdown Norms',
+        slowdownNorms: 'Slowdown Norms',
         normalOpNorms: 'Normal Operation Norms',
         slowdownPlan: 'Plano de Redução',
         taPlan: 'Plano de TA',
@@ -200,10 +214,28 @@ const defs = {
         safety: 'Segurança', // New addition
         reliability: 'Confiabilidade', // New addition
         reports: 'Relatórios', // New addition
-        contributionReport: 'Relatório de Contribuição', // New addition
+        annualAopCostReport: 'Relatório de Contribuição', // New addition
         previousFYAOPResult: 'Resultado AOP do Ano Fiscal Anterior', // New addition
         matBalSheet: 'Balanço de MAT', // New addition
         workflow: 'Fluxo de Trabalho', // New addition
+        utilityPlant: 'Planta de Utilidade', // New addition
+        fixedConsumption: 'Consumo Fixo',
+        norms: 'Normas',
+        importPower: 'Importação de Energia',
+
+        //FUNCTIONAL AOP
+        functionalAop: 'CES',
+        process: 'Process',
+
+        monthlyAop: 'Maintenance',
+        siteWiseAop: 'Consumption Summary (Sites)',
+        allSiteSummaryAop: 'Summary',
+
+        manufacturingDivision: 'Manufacturing Division',
+        plantSafetyPerformanceTarget: 'S&OR',
+        plantTeam: 'People',
+        packagingConsumables: 'Consumíveis de Embalagem',
+        productionOptimizer: 'Production Optimizer',
       },
     },
   },

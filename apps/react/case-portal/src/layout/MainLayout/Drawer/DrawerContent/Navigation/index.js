@@ -1,25 +1,55 @@
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import NavGroup from './NavGroup'
-import { useMenu } from 'SessionStoreContext'
+
+import useFilteredMenu from 'hooks/useFilteredMenu'
 
 const Navigation = () => {
-  const menu = useMenu()
-
-  const navGroups = menu.items.map((item) => {
+  // const menu = useMenu()
+  const filteredMenu = useFilteredMenu()
+  const navGroups = filteredMenu?.items?.map((item, index) => {
     switch (item.type) {
       case 'group':
-        return <NavGroup key={item.id} item={item} />
+        return <NavGroup key={`${item.id}-${index}`} item={item} />
       default:
         return (
-          <Typography key={item.id} variant='h6' color='error' align='center'>
+          <Typography
+            key={`${item.id}-${index}`}
+            variant='h6'
+            color='error'
+            align='center'
+          >
             Fix - Navigation Group
           </Typography>
         )
     }
   })
 
-  return <Box sx={{ pt: 2 }}>{navGroups}</Box>
+  return (
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        overflow: 'hidden',
+      }}
+    >
+      <Box
+        sx={{
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          flex: 1,
+        }}
+      >
+        {navGroups}
+      </Box>
+
+      {/* <Box sx={{ p: 2, mb: 2.5 }}>
+        <LogoBottom />
+      </Box> */}
+    </Box>
+  )
 }
 
 export default Navigation

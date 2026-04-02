@@ -1,0 +1,38 @@
+package com.wks.caseengine.repository;
+
+import java.util.List;
+import java.util.UUID;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import com.wks.caseengine.entity.UserScreenMapping;
+
+@Repository
+public interface UserScreenMappingRepository extends JpaRepository<UserScreenMapping, UUID>{
+
+	@Query(value="SELECT Distinct ScreenCode"
+			+ "  FROM [dbo].[UserScreenMapping] where UserId=:userId and PlantFKId=:plantId and VerticalFKId=:verticalId GROUP BY ScreenCode", nativeQuery=true)
+	List<String> findByVerticalFKIdAndPlantFKIdandUserId(@Param("verticalId") String verticalId, @Param("plantId") String plantId, @Param("userId") String userId);
+
+	List<UserScreenMapping> findByUserIdAndPlantFKIdAndVerticalFKId(UUID userId, UUID plantId,
+			UUID verticalId);
+	
+	@Modifying
+	@Transactional
+	@Query(value="DELETE FROM [UserScreenMapping] where UserId=:userId and PlantFKId=:plantFKId", nativeQuery=true)
+	void deleteAllByUserId(@Param("userId") String userId,@Param("plantFKId") String plantFKId);
+	
+	@Query(value="SELECT Distinct permissions"
+			+ "  FROM [dbo].[UserScreenMapping] where UserId=:userId and PlantFKId=:plantId and VerticalFKId=:verticalId", nativeQuery=true)
+	List<String> findPermissionsByVerticalFKIdAndPlantFKIdandUserId(@Param("verticalId") String verticalId, @Param("plantId") String plantId, @Param("userId") String userId);
+
+
+
+	List<UserScreenMapping> findByUserIdIn(List<UUID> userIds);
+
+
+}

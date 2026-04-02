@@ -1,0 +1,35 @@
+[
+  {
+    "field": "TypeDisplayName",
+    "title": "Type",
+    "groupable": true,
+    "editable": false,
+    "hidden": true,
+    "widthT": 300
+  },
+
+  {
+    "field": "productName",
+    "title": "Particulars",
+    "editable": false,
+    "widthT": 300
+  },
+  {
+    "field": "UOM",
+    "title": "UOM",
+    "editable": false,
+    "widthT": 60
+  },
+  {
+    "field": "apr",
+    "title": "Value",
+    "editable": true,
+    "type": "number",
+    "widthT": 120
+  },
+  {
+    "field": "remarks",
+    "title": "Remark",
+    "editable": true
+  }
+]

@@ -21,9 +21,13 @@ import com.wks.caseengine.rest.entity.Product;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Verticals;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
+import com.wks.caseengine.repository.PlantsRepository;
+import com.wks.caseengine.repository.SiteRepository;
+import com.wks.caseengine.repository.VerticalsRepository;
 
 @Component
 public class ProductServiceImpl implements ProductService {
@@ -37,6 +41,15 @@ public class ProductServiceImpl implements ProductService {
 	
 	@Autowired
 	private ProductMonthWiseDataRepository productMonthWiseDataRepository;
+	
+	@Autowired
+	PlantsRepository plantsRepository;
+	
+	@Autowired
+	SiteRepository siteRepository;
+	
+	@Autowired
+	VerticalsRepository verticalRepository;
 
 	@Override
 	public List<Product> getAllProducts() {
@@ -103,6 +116,10 @@ public class ProductServiceImpl implements ProductService {
 	public List<Object[]> getAllProductsFromNormParameters(String normParameterTypeName, UUID plantId) {
 	    System.out.println("normParameterTypeName: " + normParameterTypeName);
 
+		if(normParameterTypeName.equalsIgnoreCase("BusinessDemandMEG")){
+			return getProductsFromDynamicView("vwScrnMEGBusinessDemandGetAllProducts" , plantId);
+		}
+
 	    // Convert "null" string to actual null (if needed)
 	    if ("null".equals(normParameterTypeName)) {
 	        normParameterTypeName = null;
@@ -139,11 +156,30 @@ public class ProductServiceImpl implements ProductService {
 	    return query.getResultList();
 	}
 
-
-
 	public List<Object[]> getMonthlyDataForYear(int year) {
         String query = "SELECT NormParameter_FK_Id, month, monthValue, Remarks FROM NormParameterMonthlyTransaction WHERE year = :year";
         return entityManager.createNativeQuery(query).setParameter("year", year).getResultList();
     }
+
+	
+	public List<Object[]> getProductsFromDynamicView(String viewName, UUID plantId) {
+        String sql = "SELECT Id, Name, DisplayName, Plant_FK_Id FROM " + viewName + " WHERE Plant_FK_Id = :plantId";
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("plantId", plantId);
+        return query.getResultList();
+	}
+	
+	public List<Object[]> getProductsFromDynamicViewForPE(String viewName, UUID plantFkId, String normParameterTypeName) {
+		String sql = "SELECT NP.Id, NP.Name, NP.DisplayName FROM " + viewName + " NP, NormParameterType npt "
+				+ "WHERE npt.Id = NP.NormParameterType_FK_Id " + "AND NP.NormParameterType_FK_Id IS NOT NULL "
+				+ "AND NP.Plant_FK_Id = :plantFkId " + "AND npt.Name = :normParameterTypeName";
+
+		Query query = entityManager.createNativeQuery(sql);
+		query.setParameter("plantFkId", plantFkId);
+		query.setParameter("normParameterTypeName", normParameterTypeName);
+
+		return query.getResultList();
+	}
+
 
 }

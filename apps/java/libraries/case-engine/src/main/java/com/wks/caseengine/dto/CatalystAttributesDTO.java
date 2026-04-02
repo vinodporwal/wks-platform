@@ -1,7 +1,5 @@
 package com.wks.caseengine.dto;
 
-import java.util.UUID;
-
 import org.springframework.context.annotation.Configuration;
 
 import lombok.AllArgsConstructor;
@@ -19,20 +17,20 @@ public class CatalystAttributesDTO {
     private String remarks;
     private String catalystAttributeFKId;
     private String attributeName;
-    private Float jan;
-    private Float feb;
-    private Float march;
-    private Float april;
-    private Float may;
-    private Float june;
-    private Float july;
-    private Float aug;
-    private Float sep;
-    private Float oct;
-    private Float nov;
-    private Float dec;
+    private Double jan;
+    private Double feb;
+    private Double march;
+    private Double april;
+    private Double may;
+    private Double june;
+    private Double july;
+    private Double aug;
+    private Double sep;
+    private Double oct;
+    private Double nov;
+    private Double dec;
     private String year;
-    private Float TPH;
-    private Float avgTPH;
+    private Double TPH;
+    private Double avgTPH;
     private String normParameterFKId;
 }

@@ -18,6 +18,8 @@ import {
   IconFile, // General file icon
   IconFileText, // For textual reports
   // IconFlow, // For workflow-related processes
+  IconSettingsAutomation,
+  IconUserCog,
 } from '@tabler/icons-react'
 
 import i18n from '../i18n'
@@ -29,6 +31,9 @@ const icons = {
   IconArchive,
   IconSquareAsterisk,
   IconList,
+  IconUserCog,
+
+  IconSettingsAutomation,
   IconDatabase,
   IconChartBar,
   IconSettings,
@@ -56,30 +61,30 @@ const workspace = {
     //   children: [],
     // },
 
-    {
-      id: 'functions',
-      title: i18n.t('menu.functions'),
-      type: 'collapse',
-      icon: icons.IconFunction, // You can choose an appropriate icon
-      children: [
-        {
-          id: 'safety',
-          title: i18n.t('menu.safety'),
-          type: 'item',
-          url: '/functions/safety',
-          icon: icons.IconShield,
-          breadcrumbs: true,
-        },
-        {
-          id: 'reliability',
-          title: i18n.t('menu.reliability'),
-          type: 'item',
-          url: '/functions/reliability',
-          icon: icons.IconSettings,
-          breadcrumbs: true,
-        },
-      ],
-    },
+    // {
+    //   id: 'functions',
+    //   title: i18n.t('menu.functions'),
+    //   type: 'collapse',
+    //   icon: icons.IconFunction, // You can choose an appropriate icon
+    //   children: [
+    //     {
+    //       id: 'safety',
+    //       title: i18n.t('menu.safety'),
+    //       type: 'item',
+    //       url: '/functions/safety',
+    //       icon: icons.IconShield,
+    //       breadcrumbs: true,
+    //     },
+    //     {
+    //       id: 'reliability',
+    //       title: i18n.t('menu.reliability'),
+    //       type: 'item',
+    //       url: '/functions/reliability',
+    //       icon: icons.IconSettings,
+    //       breadcrumbs: true,
+    //     },
+    //   ],
+    // },
 
     // {
     //   id: 'record-list',
@@ -103,38 +108,159 @@ const workspace = {
       icon: icons.IconReport, // You can choose an appropriate icon
       children: [
         {
-          id: 'contribution-report',
-          title: i18n.t('menu.contributionReport'),
+          id: 'aop-annual-cost-report',
+          title: i18n.t('menu.annualAopCostReport'),
           type: 'item',
-          url: '/reports/contribution-report',
+          url: '/reports/aop-annual-cost-report',
           icon: icons.IconFile,
           breadcrumbs: true,
         },
         {
-          id: 'previous-fy-aop-result',
-          title: i18n.t('menu.previousFYAOPResult'),
+          id: 'production-volume-basis',
+          title: i18n.t('menu.productionVolumeDataBasis'),
           type: 'item',
-          url: '/reports/previous-fy-aop-result',
+          url: '/reports/production-volume-basis',
           icon: icons.IconFileText,
           breadcrumbs: true,
         },
         {
-          id: 'mat-bal-sheet',
-          title: i18n.t('menu.matBalSheet'),
+          id: 'norms-historian-basis',
+          title: i18n.t('menu.normsHistorianBasis'),
           type: 'item',
-          url: '/reports/mat-bal-sheet',
-          icon: icons.IconFileCheck,
+          url: '/reports/norms-historian-basis',
+          icon: icons.IconReport,
           breadcrumbs: true,
         },
       ],
     },
+
+    // {
+    //   id: 'manufacturing-division',
+    //   title: i18n.t('menu.manufacturingDivision'),
+    //   type: 'collapse',
+    //   icon: icons.IconReport,
+    //   children: [
+    //     {
+    //       id: 'plant-team',
+    //       title: i18n.t('menu.plantTeam'),
+    //       type: 'item',
+    //       url: '/manufacturing-division/plant-team',
+    //       icon: icons.IconFile,
+    //       breadcrumbs: true,
+    //     },
+    //     {
+    //       id: 'plant-safety-performance-target',
+    //       title: i18n.t('menu.plantSafetyPerformanceTarget'),
+    //       type: 'item',
+    //       url: '/manufacturing-division/plant-safety-performance-target',
+    //       icon: icons.IconFile,
+    //       breadcrumbs: true,
+    //     },
+    //   ],
+    // },
+
     {
       id: 'workflow',
       title: i18n.t('menu.workflow'),
       type: 'item',
       url: '/workflow',
-      icon: icons?.IconList,
+      icon: icons?.IconSettingsAutomation,
       breadcrumbs: true,
+    },
+    {
+      id: 'user-management',
+      title: i18n.t('menu.userManage'),
+      type: 'item',
+      url: '/user-management',
+      icon: icons?.IconUserCog,
+      breadcrumbs: true,
+    },
+
+    {
+      id: 'plant-team',
+      title: i18n.t('menu.plantTeam'),
+      type: 'item',
+      url: '/plant-team',
+      icon: icons.IconUserCog,
+      breadcrumbs: true,
+    },
+
+    {
+      id: 'plant-safety-performance-target',
+      title: i18n.t('menu.plantSafetyPerformanceTarget'),
+      type: 'item',
+      url: '/plant-safety-performance-target',
+      icon: icons.IconFileText,
+      breadcrumbs: true,
+    },
+
+    // {
+    //   id: 'functional-aop',
+    //   title: i18n.t('menu.functionalAop'),
+    //   type: 'collapse',
+    //   icon: icons.IconReport,
+    //   children: [
+    //     {
+    //       id: 'aop-budget',
+    //       title: i18n.t('menu.monthlyAop'),
+    //       type: 'item',
+    //       url: '/functional-aop/aop-budget',
+    //       icon: icons.IconFile,
+    //       breadcrumbs: true,
+    //     },
+
+    //     {
+    //       id: 'reliability-performance',
+    //       title: i18n.t('menu.reliabilityPerformance'),
+    //       type: 'item',
+    //       url: '/functional-aop/reliability-performance',
+    //       icon: icons.IconFileText,
+    //       breadcrumbs: true,
+    //     },
+    //   ],
+    // },
+
+    {
+      id: 'functional-reports',
+      title: i18n.t('menu.functionalReports'),
+      type: 'collapse',
+      icon: icons.IconReport,
+      children: [
+        // {
+        //   id: 'maintenance-summary',
+        //   title: i18n.t('menu.maintenanceSummary'),
+        //   type: 'item',
+        //   url: '/functional-reports/maintenance-summary',
+        //   icon: icons.IconFile,
+        //   breadcrumbs: true,
+        // },
+
+        // {
+        //   id: 'site-maintenance-summary',
+        //   title: i18n.t('menu.siteMaintenanceSummary'),
+        //   type: 'item',
+        //   url: '/functional-reports/site-maintenance-summary',
+        //   icon: icons.IconFile,
+        //   breadcrumbs: true,
+        // },
+
+        {
+          id: 'site-aop-report',
+          title: i18n.t('menu.siteAOPReport'),
+          type: 'item',
+          url: '/functional-reports/site-aop-report',
+          icon: icons.IconFileText,
+          breadcrumbs: true,
+        },
+        {
+          id: 'plant-budget-summary',
+          title: i18n.t('menu.plantBudgetSummary'),
+          type: 'item',
+          url: '/functional-reports/plant-budget-summary',
+          icon: icons.IconFileText,
+          breadcrumbs: true,
+        },
+      ],
     },
   ],
 }

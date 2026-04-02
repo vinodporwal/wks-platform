@@ -1,20 +1,53 @@
+// import { useSelector } from 'react-redux'
 import { useSelector } from 'react-redux'
-import productionColDefs from '../../../assets/production_aop.json' // Adjust path as needed
+import productionColDefs from '../../../assets/production_aop_meg.json' // Adjust path as needed
+import productionColDefsPE from '../../../assets/production_aop_pe.json' // Adjust path as needed
 import Tooltip from '@mui/material/Tooltip'
 import { truncateRemarks } from 'utils/remarksUtils'
+import NumericInputOnly from 'utils/NumericInputOnly'
+
+// import Autocomplete from '@mui/material/Autocomplete'
+import TextField from '@mui/material/TextField'
 
 const getEnhancedColDefs = ({
   allProducts,
   headerMap,
   handleRemarkCellClick,
   findSum,
+  roundOffDecimals,
 }) => {
   const dataGridStore = useSelector((state) => state.dataGridStore)
   const { verticalChange } = dataGridStore
   const vertName = verticalChange?.selectedVertical
   const lowerVertName = vertName?.toLowerCase() || 'meg'
 
-  const enhancedColDefs = productionColDefs.map((col) => {
+  const getProductDisplayName = (id) => {
+    if (!id) return
+    const product = allProducts.find((p) => p.id === id)
+    return product ? product.displayName : ''
+  }
+
+  const formatValueToThreeDecimals = (params) =>
+    params ? parseFloat(params).toFixed(3) : ''
+
+  const formatValueToTwoDecimals = (params) =>
+    roundOffDecimals
+      ? params
+        ? parseFloat(params).toFixed(0)
+        : ''
+      : params
+        ? parseFloat(params).toFixed(2)
+        : ''
+
+  let cols
+
+  if (lowerVertName == 'pe' || lowerVertName == 'pp') {
+    cols = productionColDefsPE
+  } else {
+    cols = productionColDefs
+  }
+
+  const enhancedColDefs = cols.map((col) => {
     let updatedCol = { ...col }
 
     // For the normParametersFKId column, change the header based on vertical:
@@ -23,10 +56,57 @@ const getEnhancedColDefs = ({
         ...updatedCol,
         headerName: 'Particulars',
         valueGetter: (params) => params || '',
+        renderCell: (params) => {
+          // console.log(params?.row)
+          if (params?.row?.id === 'total') {
+            return params?.row?.Particulars
+          } else {
+            const product = allProducts.find(
+              (p) => p.id === params?.row?.normParametersFKId,
+            )
+            return product ? product.displayName : ''
+          }
+        },
         valueFormatter: (params) => {
           const product = allProducts.find((p) => p.id === params)
           return product ? product.displayName : ''
         },
+
+        filterOperators: [
+          {
+            label: 'contains',
+            value: 'contains',
+            getApplyFilterFn: (filterItem) => {
+              if (!filterItem?.value) {
+                return
+              }
+              return (rowId) => {
+                const filterValue = filterItem.value.toLowerCase()
+                if (filterValue) {
+                  const productName = getProductDisplayName(rowId)
+                  if (productName) {
+                    return productName.toLowerCase().includes(filterValue)
+                  }
+                }
+                return true
+              }
+            },
+            InputComponent: ({ item, applyValue, focusElementRef }) => (
+              <TextField
+                autoFocus
+                inputRef={focusElementRef}
+                size='small'
+                label='Contains'
+                value={item.value || ''}
+                onChange={(event) =>
+                  applyValue({ ...item, value: event.target.value })
+                }
+                style={{ marginTop: '8px' }}
+              />
+            ),
+          },
+        ],
+
         renderEditCell: (params) => {
           const { value, id, api } = params
           return (
@@ -78,11 +158,11 @@ const getEnhancedColDefs = ({
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  maxWidth: 140,
+                  width: ' 100%',
                 }}
-                onClick={() => handleRemarkCellClick(params.row)}
+                onDoubleClick={() => handleRemarkCellClick(params.row)}
               >
-                {displayText || (isEditable ? 'Click to add remark' : '')}
+                {displayText || (isEditable ? 'Add remark' : '')}
               </div>
             </Tooltip>
           )
@@ -100,6 +180,17 @@ const getEnhancedColDefs = ({
       updatedCol = {
         ...updatedCol,
         headerName: headerMap[col.headerName],
+        valueFormatter: formatValueToTwoDecimals,
+        renderEditCell: NumericInputOnly,
+        align: 'right',
+        renderCell: (params) => (
+          <Tooltip
+            title={params.value != null ? params.value.toString() : ''}
+            arrow
+          >
+            <span>{formatValueToTwoDecimals(params.value)}</span>
+          </Tooltip>
+        ),
       }
     }
 

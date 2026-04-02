@@ -2,15 +2,21 @@
   {
     "field": "Particulars",
     "headerName": "Type",
-    "minWidth": 125,
+    "minWidth": 100,
     "groupable": true,
-    "headerClass": "bold-header"
+    "headerClass": "bold-header",
+    "filterable": "false"
   },
   {
     "field": "normParameterId",
     "headerName": "Particulars",
-    "editable": true,
-    "minWidth": 100
+    "editable": false,
+    "minWidth": 125
+  },
+  {
+    "field": "UOM",
+    "headerName": "UOM",
+    "editable": false
   },
   {
     "field": "april",
@@ -60,6 +66,7 @@
     "align": "left",
     "headerAlign": "left"
   },
+
   {
     "field": "oct",
     "headerName": 10,
@@ -111,11 +118,12 @@
   {
     "field": "remark",
     "headerName": "Remark",
-    "editable": true,
-    "minWidth": 200
+    "editable": false,
+    "minWidth": 150
   },
   {
     "field": "idFromApi",
-    "headerName": "idFromApi"
+    "headerName": "idFromApi",
+    "filterable": "false"
   }
 ]

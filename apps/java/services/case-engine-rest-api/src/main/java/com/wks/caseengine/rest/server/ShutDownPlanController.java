@@ -3,6 +3,10 @@ package com.wks.caseengine.rest.server;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,10 +16,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.wks.caseengine.dto.MonthWiseDataDTO;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.service.ShutDownPlanService;
 
 
@@ -27,7 +33,7 @@ public class ShutDownPlanController {
 	@Autowired
 	private ShutDownPlanService shutDownPlanService;
 	
-	@GetMapping(value = "/getShutDownPlanData")
+	@GetMapping(value = "/shutdown")
     public ResponseEntity<List<ShutDownPlanDTO>> findMaintenanceDetailsByPlantIdAndType( @RequestParam String plantId, @RequestParam String maintenanceTypeName, @RequestParam String year){
             
 		List<ShutDownPlanDTO> shutDownPlanDTOList=null;
@@ -45,7 +51,98 @@ public class ShutDownPlanController {
         return ResponseEntity.ok(shutDownPlanDTOList);
     }
 	
-		  @PostMapping(value = "/saveShutdownData/{plantId}")
+	@GetMapping(value = "/shutdown-export")
+	public ResponseEntity<byte[]> shutdownExport(
+	         @RequestParam String year,@RequestParam String plantId,@RequestParam String maintenanceTypeName) {
+	    try {
+			
+	        byte[] excelBytes = shutDownPlanService.shutdownExport(year, plantId,maintenanceTypeName, false, null);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("shutdown.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+	
+	@GetMapping(value = "/shutdown-export-non-product")
+	public ResponseEntity<byte[]> shutdownNonProductExport(
+	         @RequestParam String year,@RequestParam String plantId,@RequestParam String maintenanceTypeName) {
+	    try {
+			
+	        byte[] excelBytes = shutDownPlanService.shutdownNonProductExport(year, plantId,maintenanceTypeName, false, null);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("shutdown.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
+	@GetMapping(value = "/shutdown-export-line")
+	public ResponseEntity<byte[]> shutdownNonProductLineExport(
+	         @RequestParam String year,@RequestParam String plantId,@RequestParam String maintenanceTypeName) {
+	    try {
+			
+	        byte[] excelBytes = shutDownPlanService.shutdownNonProductLineExport(year, plantId,maintenanceTypeName, false, null);
+
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.setContentType(MediaType.parseMediaType(
+	                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+	        headers.setContentDisposition(ContentDisposition.builder("attachment")
+	                .filename("shutdown.xlsx")
+	                .build());
+	        headers.setContentLength(excelBytes.length);
+
+	        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
+	@PostMapping(value = "/shutdown-import", consumes = "multipart/form-data")
+	public AOPMessageVM importShutdownExcel(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	shutDownPlanService.importShutdownExcel(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
+	
+	@PostMapping(value = "/shutdown-import-non-product", consumes = "multipart/form-data")
+	public AOPMessageVM importNonProductShutdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	shutDownPlanService.importNonProductShutdown(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
+
+	@PostMapping(value = "/shutdown-import-line", consumes = "multipart/form-data")
+	public AOPMessageVM importLineShutdown(
+	         @RequestParam("plantId") String plantId,
+            @RequestParam("year") String year,@RequestParam String maintenanceTypeName,
+			@RequestParam("file") MultipartFile file
+	        ) {
+			return	shutDownPlanService.importLineShutdown(year,UUID.fromString(plantId),  maintenanceTypeName, file); 
+	}
+
+	
+		  @PostMapping(value = "/shutdown/{plantId}")
             public ResponseEntity<List<ShutDownPlanDTO>> saveShutdownData(@PathVariable UUID plantId, @RequestBody List<ShutDownPlanDTO> shutDownPlanDTOList) {
                 shutDownPlanService.saveShutdownPlantData(plantId,shutDownPlanDTOList);
                 return ResponseEntity.ok(shutDownPlanDTOList);
@@ -57,9 +154,9 @@ public class ShutDownPlanController {
               return ResponseEntity.ok(shutDownPlanDTOList);
           }
 
-		  @DeleteMapping("/deleteShutdownData/{plantMaintenanceTransactionId}")
-		    public ResponseEntity<String> deletePlant(@PathVariable UUID plantMaintenanceTransactionId) {
-			  	shutDownPlanService.deletePlanData(plantMaintenanceTransactionId);
+		  @DeleteMapping("/shutdown/{plantMaintenanceTransactionId}/{plantId}")
+		    public ResponseEntity<String> deletePlant(@PathVariable UUID plantMaintenanceTransactionId,@PathVariable UUID plantId) {	
+			  shutDownPlanService.deleteShutPlanData(plantMaintenanceTransactionId,plantId);
 		        return ResponseEntity.ok("Plant with ID " + plantMaintenanceTransactionId + " deleted successfully");
 		    }
 		  
@@ -67,4 +164,17 @@ public class ShutDownPlanController {
 		  public List<MonthWiseDataDTO> getMonthlyShutdownHours(@RequestParam String auditYear,@RequestParam String plantId){
 			  return shutDownPlanService.getMonthlyShutdownHours(auditYear,UUID.fromString(plantId));
 		  }
+		  
+		  @GetMapping("/description-drpdwn")
+		  public AOPMessageVM getDescriptionDropdown(@RequestParam String plantId){
+			  return shutDownPlanService.getDescriptionDropdown(plantId);
+		  }
+		  
+		  @GetMapping("/shutdown-description")
+		  public AOPMessageVM getShutdownDescription(@RequestParam String plantId){
+			  return shutDownPlanService.getShutdownDescription(plantId);
+		  }
+		  
+		  
 }
+

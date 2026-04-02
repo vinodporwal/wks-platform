@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Outlet } from 'react-router-dom'
 import { Box, Toolbar } from '@mui/material'
@@ -6,18 +6,18 @@ import Breadcrumbs from 'components/@extended/Breadcrumbs'
 import Drawer from './Drawer'
 import Header from './Header'
 import { openDrawer } from 'store/reducers/menu'
-import { useMenu } from 'SessionStoreContext'
+import { useMenuContext } from 'menu/menuProvider'
 
 const MainLayout = ({ keycloak, authenticated }) => {
   const dispatch = useDispatch()
-  const { drawerOpen } = useSelector((state) => state.menu)
-  const [open, setOpen] = useState(drawerOpen)
-  const menu = useMenu()
+  const { drawerOpen: open } = useSelector((state) => state.menu)
+  // const menu = useMenu()
+  const { items: menuItems } = useMenuContext()
+  const menu = { items: [...menuItems] }
 
-  const handleDrawerToggle = () => {
-    setOpen(!open)
+  const handleDrawerToggle = useCallback(() => {
     dispatch(openDrawer({ drawerOpen: !open }))
-  }
+  }, [dispatch, open])
 
   return (
     keycloak &&
@@ -33,8 +33,9 @@ const MainLayout = ({ keycloak, authenticated }) => {
           component='main'
           sx={{ width: '100%', flexGrow: 1, p: { xs: 2, sm: 3 } }}
         >
-          <Toolbar />
-          <Breadcrumbs navigation={menu} divider={false} />
+          <Toolbar variant='dense' />
+
+          <Breadcrumbs variant='dense' navigation={menu} divider={false} />
           <Outlet />
         </Box>
       </Box>

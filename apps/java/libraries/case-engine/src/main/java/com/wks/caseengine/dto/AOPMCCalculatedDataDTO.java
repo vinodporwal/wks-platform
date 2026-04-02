@@ -16,18 +16,18 @@ import lombok.NoArgsConstructor;
 @Data
 public class AOPMCCalculatedDataDTO {
 	private String id;
-    private Float april;
-    private Float may;
-    private Float june;
-    private Float july;
-    private Float august;
-    private Float september;
-    private Float october;
-    private Float november;
-    private Float december;
-    private Float january;
-    private Float february;
-    private Float march;
+    private Double april;
+    private Double may;
+    private Double june;
+    private Double july;
+    private Double august;
+    private Double september;
+    private Double october;
+    private Double november;
+    private Double december;
+    private Double january;
+    private Double february;
+    private Double march;
     private Integer displayOrder;
     private String remarks;
     private String plantFKId;
@@ -39,5 +39,11 @@ public class AOPMCCalculatedDataDTO {
     private Date modifiedOn;
     private String mcuVersion;
     private String updatedBy;
-	
+    private String productName;
+    private String saveStatus;
+    private String errDescription;
+    private String materialDisplayName;
+    private String tableId;
+    private String lineId;
+    private String normType;
 }

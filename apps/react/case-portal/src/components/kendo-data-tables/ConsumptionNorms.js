@@ -1,0 +1,689 @@
+import Backdrop from '@mui/material/Backdrop'
+import CircularProgress from '@mui/material/CircularProgress'
+import { useGridApiRef } from '@mui/x-data-grid'
+import { generateHeaderNames } from 'components/Utilities/generateHeaders'
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useSession } from 'SessionStoreContext'
+import { setIsBlocked } from 'store/reducers/dataGridStore'
+import { validateFields } from 'utils/validationUtils'
+import getEnhancedColDefs from '../data-tables/CommonHeader/kendoconsumptionHeader'
+import ValueFormatterConsumption from 'utils/ValueFormatterConsumption'
+import { Box } from '@mui/material'
+import KendoDataTables from './index'
+import { ConsumptionNormsApiService } from 'services/consumption-norms-api-service'
+import { getRoleName } from 'services/role-service'
+
+const ConsumptionNorms = () => {
+  const [modifiedCells, setModifiedCells] = React.useState({})
+  const [calculationObject, setCalculationObject] = useState([])
+  const keycloak = useSession()
+
+  const [open1, setOpen1] = useState(false)
+  const valueFormat = ValueFormatterConsumption()
+
+  const defaultCustomHeight = { mainBox: '55vh', otherBox: '112%' }
+
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+
+  const {
+    verticalChange,
+    yearChanged,
+    oldYear,
+    plantID,
+    plantObject,
+    siteObject,
+    verticalObject,
+    year,
+    screenTitle,
+  } = dataGridStore
+
+  const PLANT_ID = plantObject?.id
+  const SITE_ID = siteObject?.id
+  const VERTICAL_ID = verticalObject?.id
+  const VERTICAL_NAME = verticalObject?.name
+  const AOP_YEAR = year?.selectedYear
+  const SCREEN_NAME = screenTitle?.title
+  const headerMap = generateHeaderNames(AOP_YEAR)
+
+  const PLANT_NAME_NO_CASE = plantObject?.name?.toUpperCase()
+  const SITE_NAME_NO_CASE = siteObject?.name?.toUpperCase()
+  const VERTICAL_NAME_NO_CASE = verticalObject?.name?.toUpperCase()
+
+  const EXCEL_EXPORT_TITLE = `${VERTICAL_NAME_NO_CASE}_${SITE_NAME_NO_CASE}_${PLANT_NAME_NO_CASE}`
+
+  const isOldYear = false
+  const IS_OLD_YEAR = oldYear?.oldYear
+
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  const vertName = verticalChange?.selectedVertical
+  const lowerVertName = vertName?.toLowerCase()
+  const lowerSiteName = siteObject?.name?.toLowerCase()
+  const lowerPlantName = plantObject?.name?.toLowerCase()
+
+  const [loading, setLoading] = useState(false)
+  const apiRef = useGridApiRef()
+  const [rows, setRows] = useState()
+  const [selectedUnit, setSelectedUnit] = useState('TPH')
+  const [snackbarData, setSnackbarData] = useState({
+    message: '',
+    severity: 'info',
+  })
+  const [calculatebtnClicked, setCalculatebtnClicked] = useState(false)
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)
+  const [currentRemark, setCurrentRemark] = useState('')
+  const [currentRowId, setCurrentRowId] = useState(null)
+  const [_plantID, set_PlantID] = useState('')
+  const dispatch = useDispatch()
+  const [gradeId, setGradeId] = useState(null)
+  const [grades, setGrades] = useState([])
+
+  const isPEPP = lowerVertName === 'pe' || lowerVertName === 'pp'
+  const isPET = lowerVertName === 'pet'
+  const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
+  const IS_ELASTOMER_HMD_SBR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'HMD' &&
+    PLANT_NAME_NO_CASE === 'SBR'
+
+  const IS_ELASTOMER_JMD_HIIR =
+    VERTICAL_NAME_NO_CASE === 'ELASTOMER' &&
+    SITE_NAME_NO_CASE === 'JMD' &&
+    PLANT_NAME_NO_CASE === 'HIIR'
+
+  const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
+  const unsavedChangesRef = React.useRef({
+    unsavedRows: {},
+    rowsBeforeChange: {},
+  })
+
+  const handleRemarkCellClick = (row) => {
+    if (READ_ONLY) return
+    setCurrentRemark(row.aopRemarks || '')
+    setCurrentRowId(row.id)
+    setRemarkDialogOpen(true)
+  }
+
+  const saveEditedData = async (newRows) => {
+    setLoading(true)
+    try {
+      let plantId = PLANT_ID
+      let siteID = SITE_ID
+      let verticalId = VERTICAL_ID
+      const businessData = newRows.map((row) => ({
+        april: row.april || null,
+        may: row.may || null,
+        june: row.june || null,
+        july: row.july || null,
+        aug: row.aug || null,
+        sep: row.sep || null,
+        oct: row.oct || null,
+        nov: row.nov || null,
+        dec: row.dec || null,
+        jan: row.jan || null,
+        feb: row.feb || null,
+        march: row.march || null,
+        aopRemarks: row.aopRemarks || null,
+        aopYear: AOP_YEAR,
+        plantFkId: plantId,
+        siteFkId: siteID,
+        verticalFkId: verticalId,
+        materialFkId: row.NormParametersId,
+        id: row.idFromApi || null,
+        aopCaseId: '2025-26-NormsAOP',
+        aopStatus: 'Saved',
+      }))
+      const response = await ConsumptionNormsApiService.saveAOPConsumptionNorm(
+        PLANT_ID,
+        businessData,
+        keycloak,
+      )
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Saved Successfully!',
+        severity: 'success',
+      })
+      //
+
+      setLoading(false)
+      setModifiedCells({})
+
+      unsavedChangesRef.current = {
+        unsavedRows: {},
+        rowsBeforeChange: {},
+      }
+      fetchData(gradeId)
+      dispatch(setIsBlocked(false))
+
+      return response
+    } catch (error) {
+      console.error('Error saving data!', error)
+    } finally {
+      //
+      setLoading(false)
+    }
+  }
+
+  const saveChanges = React.useCallback(async () => {
+    setLoading(true)
+
+    setTimeout(() => {
+      if (lowerVertName == 'meg') {
+        try {
+          var data = Object.values(modifiedCells)
+          if (data.length == 0) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: 'No Records to Save!',
+              severity: 'info',
+            })
+            //
+            setLoading(false)
+
+            return
+          }
+          const requiredFields = ['aopRemarks']
+          const validationMessage = validateFields(data, requiredFields)
+          if (validationMessage) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: validationMessage,
+              severity: 'error',
+            })
+            //
+            setLoading(false)
+            return
+          }
+
+          saveEditedData(data)
+        } catch (error) {
+          console.log('Error saving changes:', error)
+          //
+          setLoading(false)
+        }
+      }
+
+      if (
+        lowerVertName == 'pe' ||
+        IS_ELASTOMER_JMD_HIIR ||
+        lowerVertName == 'pp' ||
+        lowerVertName == 'pet' ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
+      ) {
+        try {
+          setLoading(true)
+
+          var editedData = Object.values(modifiedCells)
+
+          const requiredFields = ['aopRemarks']
+
+          const validationMessage = validateFields(editedData, requiredFields)
+          if (validationMessage) {
+            setSnackbarOpen(true)
+            setSnackbarData({
+              message: validationMessage,
+              severity: 'error',
+            })
+
+            setLoading(false)
+            return
+          }
+
+          if (calculatebtnClicked == false) {
+            // if (editedData.length === 0) {
+            //   setSnackbarOpen(true)
+            //   setSnackbarData({
+            //     message: 'No Records to Save!',
+            //     severity: 'info',
+            //   })
+            //   setLoading(false)
+
+            //   setCalculatebtnClicked(false)
+            //   return
+            // }
+            //UNCOMMNET THIS IF saveBtn IS SET TO --> TRUE
+            saveEditedData(editedData)
+
+            // setLoading(false)
+            setCalculatebtnClicked(false)
+            // saveEditedData(editedData)
+          } else {
+            saveEditedData(editedData)
+          }
+        } catch (error) {
+          setLoading(false)
+          console.log('Error saving changes:', error)
+          setCalculatebtnClicked(false)
+        }
+      }
+    }, 400)
+  }, [apiRef, selectedUnit, modifiedCells, calculatebtnClicked])
+
+  const fetchGradeDropdowns = async () => {
+    try {
+      const response =
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      if (response?.code == 200) {
+        setGrades(response?.data)
+      }
+
+      fetchData(response?.data[0]?.gradeId)
+    } catch (error) {
+      setGrades([])
+      console.error('Error fetching data:', error)
+    }
+  }
+
+  const fetchGradeDropdownsAfterCalc = async () => {
+    try {
+      setGrades([])
+      const response =
+        await ConsumptionNormsApiService.getConsumptionAOPNormsGrades(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+
+      if (response?.code == 200) {
+        setGrades(response?.data)
+      }
+
+      if (response?.data?.length === 0) {
+        setGradeId(null)
+        await fetchData(null)
+        return
+      }
+
+      const firstGrade = response?.data[0]
+      const firstId =
+        firstGrade?.id ?? firstGrade?.gradeId ?? firstGrade?.gradeFkId ?? null
+
+      setGradeId(firstId)
+
+      fetchData(firstId)
+    } catch (error) {
+      setGrades([])
+      console.error('Error fetching Business Demand data:', error)
+    }
+  }
+
+  const fetchData = async (gradeId) => {
+    if (!PLANT_ID || !AOP_YEAR) return
+    if (
+      (isPEPP ||
+        isPET ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD) &&
+      !gradeId
+    )
+      return
+    setLoading(true)
+    try {
+      var response
+      setRows([])
+      if (
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
+      ) {
+        response = await ConsumptionNormsApiService.getConsumptionNormsData(
+          keycloak,
+          gradeId,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else {
+        response = await ConsumptionNormsApiService.getConsumptionNormsData(
+          keycloak,
+          null,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      }
+
+      if (response?.code != 200) {
+        setRows([])
+        setLoading(false)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Error fetching data. Please try again.',
+          severity: 'error',
+        })
+
+        return
+      }
+      setCalculationObject(response?.data?.aopCalculation)
+
+      const monthFields = [
+        'april',
+        'may',
+        'june',
+        'july',
+        'aug',
+        'sep',
+        'oct',
+        'nov',
+        'dec',
+        'jan',
+        'feb',
+        'march',
+      ]
+
+      const formattedData = response?.data?.aopConsumptionNormDTOList?.map(
+        (item, index) => {
+          const total = monthFields.reduce((sum, month) => {
+            const value = parseFloat(item[month]) || 0
+            return sum + value
+          }, 0)
+          const avgOfAllMonths = total / monthFields.length
+          return {
+            ...item,
+            idFromApi: item.id,
+            NormParametersId: item.materialFkId?.toLowerCase(),
+            originalRemark: item.aopRemarks?.trim() || null,
+            id: index,
+            isEditable: false,
+            Particulars: item.normParameterTypeDisplayName || 'Type',
+            avgOfAllMonths,
+          }
+        },
+      )
+
+      setRows(formattedData)
+      setLoading(false)
+      setCalculatebtnClicked(false)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setLoading(false)
+      setCalculatebtnClicked(false)
+    }
+  }
+
+  useEffect(() => {
+    // fetchData(gradeId)
+    if (
+      lowerVertName === 'pe' ||
+      lowerVertName === 'pp' ||
+      lowerVertName === 'pet' ||
+      IS_ELASTOMER_HMD_SBR ||
+      IS_ELASTOMER_JMD_HIIR ||
+      IS_PVC_VMD ||
+      IS_PVC_DMD
+    ) {
+      fetchGradeDropdowns()
+    } else {
+      fetchData(null)
+    }
+  }, [PLANT_ID, AOP_YEAR, oldYear, yearChanged, keycloak])
+
+  const productionColumns = getEnhancedColDefs({
+    headerMap,
+    lowerVertName,
+    lowerSiteName,
+    lowerPlantName,
+    valueFormat,
+  })
+
+  const handleUnitChange = (unit) => {
+    setSelectedUnit(unit)
+  }
+
+  const handleCalculate = () => {
+    handleCalculateMeg()
+  }
+
+  const handleCalculateMeg = async () => {
+    try {
+      const data =
+        await ConsumptionNormsApiService.handleCalculateConsumptionNorms(
+          PLANT_ID,
+          AOP_YEAR,
+          keycloak,
+        )
+
+      if (data || data == 0) {
+        // dispatch(setIsBlocked(true))
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data refreshed successfully!',
+          severity: 'success',
+        })
+
+        if (
+          lowerVertName === 'pe' ||
+          lowerVertName === 'pp' ||
+          lowerVertName === 'pet' ||
+          IS_ELASTOMER_HMD_SBR ||
+          IS_ELASTOMER_JMD_HIIR ||
+          IS_PVC_VMD ||
+          IS_PVC_DMD
+        ) {
+          fetchGradeDropdownsAfterCalc()
+        } else {
+          fetchData(null)
+        }
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Data Refresh Falied!',
+          severity: 'error',
+        })
+      }
+
+      return data
+    } catch (error) {
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: error.message || 'An error occurred',
+        severity: 'error',
+      })
+      console.error('Error!', error)
+    }
+  }
+
+  const downloadExcelForConfiguration = async () => {
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      let response
+      if (
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
+      ) {
+        response =
+          await ConsumptionNormsApiService.OverallConsumptionPEPPExport(
+            keycloak,
+            PLANT_ID,
+            AOP_YEAR,
+            EXCEL_EXPORT_TITLE,
+            SCREEN_NAME,
+          )
+      }
+    } catch (error) {
+      console.error('Error downloading Excel:', error)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    } finally {
+      setSnackbarOpen(true)
+    }
+  }
+
+  const getAdjustedPermissions = (permissions, isOldYear) => {
+    if (isOldYear != 1) return permissions
+    return {
+      ...permissions,
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      saveWithRemark: false,
+      saveBtn: false,
+      isOldYear: isOldYear,
+      showCalculate: true,
+    }
+  }
+
+  const adjustedPermissions = getAdjustedPermissions(
+    {
+      showAction: false,
+      addButton: false,
+      deleteButton: false,
+      editButton: false,
+      showUnit: false,
+      units: ['TPH', 'TPD'],
+      saveWithRemark: true,
+      saveBtn: false,
+      showCalculate: true,
+      allAction: true,
+      showCalculateVisibility:
+        Object.keys(calculationObject || {}).length > 0 ? true : false,
+      showRefresh: false,
+      noColor: false,
+      customHeight: defaultCustomHeight,
+      showG:
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
+          ? true
+          : false,
+      marginBottom:
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
+          ? true
+          : false,
+      dropdownLabel: 'Select Grade',
+      downloadExcelBtnFromUI:
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
+          ? false
+          : true,
+      downloadExcelBtn:
+        lowerVertName === 'pe' ||
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pet' ||
+        IS_ELASTOMER_HMD_SBR ||
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_PVC_VMD ||
+        IS_PVC_DMD
+          ? true
+          : false,
+      ExcelName: `${EXCEL_EXPORT_TITLE}_${SCREEN_NAME}`,
+      isHeight: lowerVertName !== 'meg' && rows?.length > 10,
+      showTitleNameBusiness: true,
+      titleName: `${SCREEN_NAME}`,
+    },
+    isOldYear,
+  )
+
+  const handleGradeChange = (gradeId) => {
+    setGradeId(gradeId)
+    fetchData(gradeId)
+  }
+
+  return (
+    <div>
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={!!loading}
+      >
+        <CircularProgress color='inherit' />
+      </Backdrop>
+
+      <div>
+        {
+          <Box
+            sx={{
+              width: '100%',
+              padding: '0px ',
+              margin: '0px',
+              backgroundColor: '#F2F3F8',
+              borderRadius: 0,
+              borderBottom: 'none',
+            }}
+          >
+            <KendoDataTables
+              autoHeight={true}
+              modifiedCells={modifiedCells}
+              setModifiedCells={setModifiedCells}
+              columns={productionColumns}
+              rows={rows}
+              setRows={setRows}
+              getRowId={(row) => row.id}
+              title='Consumption AOP'
+              paginationOptions={[100, 200, 300]}
+              saveChanges={saveChanges}
+              snackbarData={snackbarData}
+              snackbarOpen={snackbarOpen}
+              apiRef={apiRef}
+              open1={open1}
+              setOpen1={setOpen1}
+              setSnackbarOpen={setSnackbarOpen}
+              setSnackbarData={setSnackbarData}
+              handleCalculate={handleCalculate}
+              handleRemarkCellClick={handleRemarkCellClick}
+              // fetchData={fetchData}
+              handleUnitChange={handleUnitChange}
+              remarkDialogOpen={remarkDialogOpen}
+              setRemarkDialogOpen={setRemarkDialogOpen}
+              currentRemark={currentRemark}
+              setCurrentRemark={setCurrentRemark}
+              currentRowId={currentRowId}
+              permissions={adjustedPermissions}
+              groupBy='Particulars'
+              grades={grades}
+              handleGradeChange={handleGradeChange}
+              calculatebtnClicked={calculatebtnClicked}
+              downloadExcelForConfiguration={downloadExcelForConfiguration}
+              plantID={PLANT_ID}
+            />
+          </Box>
+        }
+      </div>
+    </div>
+  )
+}
+
+export default ConsumptionNorms

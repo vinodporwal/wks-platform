@@ -3,9 +3,20 @@
  import java.util.List;
 
  import com.wks.caseengine.entity.NormParameters;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 
  public interface NormParametersService   {
 	
  	public List<NormParameters> findAllByType(String type);
+
+    public List<NormParameters> getAllGrades(String plantId);
+    
+    public AOPMessageVM getNormParameters(String plantId,String year,String type);
+    
+    public AOPMessageVM getAllProducts(String plantId,String year);
+
+    
+    public AOPMessageVM getAllLines(String plantId);
+
 
  }

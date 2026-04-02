@@ -18,7 +18,7 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
             "pm.DurationInMins, " +
             "pmt.MaintenanceText, " +
             "pm.Id, " +
-            "np.Id AS NormParameter_FK_Id, pm.Remarks, NPT.DisplayOrder " +
+            "np.Id AS NormParameter_FK_Id, pm.Remarks, NPT.DisplayOrder, pm.Line_FK_Id " +
             "FROM PlantMaintenanceTransaction pm " +
             "JOIN PlantMaintenance pmt ON pm.PlantMaintenance_FK_Id = pmt.Id " +
             "JOIN MaintenanceTypes mt ON pmt.MaintenanceType_FK_Id = mt.Id " +
@@ -26,12 +26,25 @@ public interface ShutDownPlanRepository extends JpaRepository<PlantMaintenanceTr
             "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
             "WHERE mt.Name = :maintenanceTypeName "  +
             "and pmt.Plant_FK_Id = :plantId " +
-			"and pm.AuditYear = :year order by NPT.DisplayOrder",
+			"and pm.AuditYear = :year order by pm.MaintStartDateTime",
             nativeQuery = true)
 	List<Object[]> findMaintenanceDetailsByPlantIdAndType( 
         @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year);
 
-    
+	@Query(value = "SELECT " +
+            "pm.Discription " +
+            "FROM PlantMaintenanceTransaction pm " +
+            "JOIN PlantMaintenance pmt ON pm.PlantMaintenance_FK_Id = pmt.Id " +
+            "JOIN MaintenanceTypes mt ON pmt.MaintenanceType_FK_Id = mt.Id " +
+            "LEFT JOIN NormParameters np ON pm.NormParameter_FK_Id = np.Id " +
+            "LEFT JOIN NormParameterType NPT ON NPT.Id=np.NormParameterType_FK_Id "+
+            "WHERE mt.Name = :maintenanceTypeName "  +
+            "and pmt.Plant_FK_Id = :plantId " +
+			"and pm.AuditYear = :year and pm.Discription = :discription order by pm.CreatedOn desc",
+            nativeQuery = true)
+	List<Object[]> findDiscriptionByPlantIdAndType( 
+        @Param("maintenanceTypeName") String maintenanceTypeName, @Param("plantId") String plantId,  @Param("year") String year, @Param("discription") String discription);
+	
     @Query(value = "SELECT " +
             "pm.Id " +
             "FROM PlantMaintenance pm " +

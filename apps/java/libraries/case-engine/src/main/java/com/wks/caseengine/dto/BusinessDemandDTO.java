@@ -1,9 +1,6 @@
 package com.wks.caseengine.dto;
 
-import java.util.UUID;
-
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.core.aggregation.ConditionalOperators.Switch;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,41 +13,41 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 public class BusinessDemandDTO {
-	
-	private String id;
+
+    private String id;
     private String remarks;
     private String normParameterId;
     private String catalystId;
     private String type;
-    private Float jan;
-    private Float feb;
-    private Float march;
-    private Float april;
-    private Float may;
-    private Float june;
-    private Float july;
-    private Float aug;
-    private Float sep;
-    private Float oct;
-    private Float nov;
-    private Float dec;
+    private Double jan;
+    private Double feb;
+    private Double march;
+    private Double april;
+    private Double may;
+    private Double june;
+    private Double july;
+    private Double aug;
+    private Double sep;
+    private Double oct;
+    private Double nov;
+    private Double dec;
     private String year;
     private String plantFkId;
-    private Float TPH;
-    private Float avgTPH;
+    private Double TPH;
+    private Double avgTPH;
+    private String UOM;
 
-
-   public  Float getMonthValue(Integer month){
-       Float value = 0.0F;
+    public Double getMonthValue(Integer month) {
+        Double value = 0.0;
         switch (month) {
             case 1:
                 value = getJan();
                 break; // Break out of the switch statement after a match
             case 2:
-            value = getFeb();
+                value = getFeb();
                 break;
             case 3:
-               value = getMarch();
+                value = getMarch();
                 break;
             case 4:
                 value = getApril();
@@ -64,24 +61,24 @@ public class BusinessDemandDTO {
             case 7:
                 value = getJuly();
                 break;
-                case 8:
+            case 8:
                 value = getAug();
                 break;
-                case 9:
+            case 9:
                 value = getSep();
                 break;
-                case 10:
+            case 10:
                 value = getOct();
                 break;
-                case 11:
+            case 11:
                 value = getNov();
                 break;
-                case 12:
+            case 12:
                 value = getDec();
                 break;
 
             default:
-                value = 0.0F; // Default case if no match is found
+                value = 0.0; // Default case if no match is found
         }
         return value;
     }

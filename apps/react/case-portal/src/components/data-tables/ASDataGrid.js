@@ -2,6 +2,7 @@ import CancelIcon from '@mui/icons-material/Close'
 // import DeleteIcon from '@mui/icons-material/Delete'
 import DeleteIcon from '@mui/icons-material/DeleteOutlined'
 import EditIcon from '@mui/icons-material/Edit'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import SaveIcon from '@mui/icons-material/Save'
 import { Box, Button, IconButton, TextField } from '@mui/material'
 import { DataGrid, GridToolbar } from '@mui/x-data-grid'
@@ -19,13 +20,19 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import { GridActionsCellItem, GridRowModes } from '@mui/x-data-grid'
 import Notification from 'components/Utilities/Notification'
-// import { useSession } from 'SessionStoreContext'
+//import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined'
+//import Tooltip from '@mui/material/Tooltip'
+
+//import './data-grid-css.css'
+//import './extra-css.css'
+
 import { MenuItem } from '../../../node_modules/@mui/material/index'
 
 import {
   FileDownload,
   FileUpload,
 } from '../../../node_modules/@mui/icons-material/index'
+import { useGridApiRef } from '../../../node_modules/@mui/x-data-grid/index'
 
 const jioColors = {
   primaryBlue: '#387ec3',
@@ -42,7 +49,6 @@ const jioColors = {
 
 const DataGridTable = ({
   columns: initialColumns = [],
-  // title = '',
   onAddRow = () => {},
   // onDeleteRow = () => {},
   permissions = {},
@@ -50,6 +56,10 @@ const DataGridTable = ({
   isCellEditable = () => true,
   saveChanges = () => {},
   apiRef = null,
+  rowModesModel: rowModesModel,
+  handleCancelClick: handleCancelClick,
+  focusFirstField: focusFirstField,
+  // setRowModesModel,
   snackbarData = { message: '', severity: 'info' },
   snackbarOpen = false,
   // setSnackbarData = () => {},
@@ -59,44 +69,50 @@ const DataGridTable = ({
   handleCalculate = () => {},
   setRows = () => {},
   rows = [],
+  enableSaveAddBtn = false,
+  allRedCell = [],
+  modifiedCells = [],
   loading = false,
   remarkDialogOpen = false,
+  onRowModesModelChange = () => {},
   setRemarkDialogOpen = () => {},
   currentRemark = '',
   setCurrentRemark = () => {},
   currentRowId = null,
   unsavedChangesRef = { current: { unsavedRows: {}, rowsBeforeChange: {} } },
   deleteRowData = () => {},
+  handleAddPlantSite = () => {},
+  selectedUsers = [],
+  // setSelectedUsers = () => {},
+  selectionModel = [],
+  setSelectionModel = () => {},
+  // onSelectionModelChange = () => {},
+  handleDeleteSelected = () => {},
+
+  // createCase = () => {},
+  // isCreatingCase = false,
+  // showCreateCasebutton = false,
+  // columnGroupingModel,
+  // saveWorkflowData = () => {},
 }) => {
-  // const [tempHide, setTempHide] = useState(true)
-  // const [isUpdating, setIsUpdating] = useState(false)
-  // const [isSaving, setIsSaving] = useState(false)
   const [resizedColumns, setResizedColumns] = useState({})
   const [isButtonDisabled, setIsButtonDisabled] = useState(false)
-
-  // const [open, setOpen] = useState(false)
-  // const [remark, setRemark] = useState('')
-  // const [product, setProduct] = useState('')
-  // const [openRemark, setOpenRemark] = useState(false)
-  // const keycloak = useSession()
-  // const [days, setDays] = useState([])
   const [searchText, setSearchText] = useState('')
   const isFilterActive = false
-  // const [selectedRowId, setSelectedRowId] = useState(null)
   const [selectedUnit, setSelectedUnit] = useState()
   const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
   const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
-  // const [deleteId, setDeleteId] = useState(false)
-  // const [deleteIdTemp, setDeleteIdTemp] = useState(false)
   const [paramsForDelete, setParamsForDelete] = useState([])
-  // const handleOpenRemark = () => setOpenRemark(true)
-  // const handleCloseRemark = () => setOpenRemark(false)
   const closeDeleteDialogeBox = () => setOpenDeleteDialogeBox(false)
   const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  const localApiRef = useGridApiRef()
+  const finalExternalApiRef = apiRef ?? localApiRef
   const handleSearchChange = (event) => {
     setSearchText(event.target.value)
   }
-  const [rowModesModel, setRowModesModel] = useState({})
+  // const navigate = useNavigate()
+
+  // const [rowModesModel, setRowModesModel] = useState({})
   // const [changedRowIds, setChangedRowIds] = useState([])
   // const [columnFilters, setColumnFilters] = useState({})
   const columnFilters = {}
@@ -107,33 +123,22 @@ const DataGridTable = ({
 
   // const handleCellEditCommit = (id, event) => {}
 
-  const handleEditClick = (id) => () => {
+  const handleEditClick = (row) => () => {
     // setIsUpdating(true)
-    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } })
+    // setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } })
+    handleAddPlantSite(row)
+    // setRowModesModel({
+    //   ...rowModesModel,
+    //   [row.id]: { mode: GridRowModes.Edit },
+    // })
   }
 
-  const handleSaveClick = (id) => {
+  const handleSaveClick = () => {
     // handleOpenRemark()
-    setRowModesModel((prev) => ({
-      ...prev,
-      [id]: { mode: GridRowModes.View },
-    }))
-  }
-
-  const handleCancelClick = (id) => () => {
-    setRowModesModel({
-      ...rowModesModel,
-      [id]: { mode: GridRowModes.View, ignoreModifications: true },
-    })
-
-    const editedRow = rows.find((row) => row.id === id)
-    if (editedRow.isNew) {
-      setRows(rows.filter((row) => row.id !== id))
-    }
-  }
-
-  const handleRowModesModelChange = (newRowModesModel) => {
-    setRowModesModel(newRowModesModel)
+    // setRowModesModel((prev) => ({
+    //   ...prev,
+    //   [id]: { mode: GridRowModes.View },
+    // }))
   }
 
   useEffect(() => {
@@ -191,10 +196,11 @@ const DataGridTable = ({
     setRows((prevRows) => [newRow, ...prevRows])
     onAddRow?.(newRow)
     // setProduct('')
-    setRowModesModel((oldModel) => ({
-      ...oldModel,
-      [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
-    }))
+    // setRowModesModel((oldModel) => ({
+    //   ...oldModel,
+    //   [newRowId]: { mode: GridRowModes.Edit, fieldToFocus: 'discription' },
+    // }))
+    focusFirstField()
     setTimeout(() => {
       setIsButtonDisabled(false)
     }, 500)
@@ -214,7 +220,7 @@ const DataGridTable = ({
 
   const columns = useMemo(() => [
     ...defaultColumns,
-    ...(permissions?.showAction && permissions?.deleteButton
+    ...(permissions?.showAction
       ? [
           {
             field: 'actions',
@@ -225,9 +231,9 @@ const DataGridTable = ({
 
             getActions: (params) => {
               const { id, row } = params
-
-              if (row.isGroupHeader) {
-                return []
+              // console.log(row)
+              if (row.isGroupHeader || row.isSubGroupHeader) {
+                return [] || null
               }
 
               const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit
@@ -252,36 +258,45 @@ const DataGridTable = ({
               }
 
               return [
+                permissions?.viewBtn && (
+                  <GridActionsCellItem
+                    key={`view-${id}`}
+                    icon={<VisibilityIcon />}
+                    label='View'
+                    className='textPrimary'
+                    onClick={handleEditClick(row)}
+                    color='inherit'
+                    // sx={{ display: 'none' }}
+                  />
+                ),
                 permissions?.editButton && (
                   <GridActionsCellItem
                     key={`edit-${id}`}
-                    // icon={<EditIcon sx={{ color: jioColors.primaryBlue }} />}
                     icon={<EditIcon />}
                     label='Edit'
                     className='textPrimary'
-                    onClick={handleEditClick(id, row)}
+                    onClick={handleEditClick(row)}
                     color='inherit'
-                    sx={{ display: 'none' }}
+                    // sx={{ display: 'none' }}
                   />
                 ),
                 permissions?.deleteButton && (
                   <GridActionsCellItem
                     key={`delete-${id}`}
-                    // icon={<DeleteIcon sx={{ color: jioColors.accentRed }} />}
                     icon={<DeleteIcon />}
                     label='Delete'
                     onClick={() => handleDeleteClick(id, params)}
                     color='inherit'
                   />
                 ),
-              ].filter(Boolean) // Remove `null` values if permission is false
+              ].filter(Boolean)
             },
             minWidth: 70,
             maxWidth: 100,
             headerClassName: 'last-column-header',
           },
         ]
-      : []), // If no permissions, hide the Actions column
+      : []),
   ])
 
   const handleRemarkSave = () => {
@@ -293,9 +308,9 @@ const DataGridTable = ({
           const keysToUpdate = ['aopRemarks', 'remarks', 'remark'].filter(
             (key) => key in row,
           )
-//          console.log(keysToUpdate)
+          //          console.log(keysToUpdate)
           const keyToUpdate = keysToUpdate[0] || 'remark'
-//          console.log([keyToUpdate])
+          //          console.log([keyToUpdate])
           updatedRow = { ...row, [keyToUpdate]: currentRemark }
           return updatedRow
         }
@@ -311,12 +326,6 @@ const DataGridTable = ({
 
     setRemarkDialogOpen(false)
   }
-
-  // const handleCellClick = (params) => {}
-
-  // const handleCloseSnackbar = () => {
-  //   setSnackbarOpen(false)
-  // }
 
   const filteredRows = useMemo(() => {
     if (!Array.isArray(rows)) return []
@@ -358,16 +367,55 @@ const DataGridTable = ({
       setIsButtonDisabled(false)
     }, 500)
   }
-  const boxHeight = permissions?.customHeight?.mainBox
+  // const boxHeight = permissions?.customHeight?.mainBox
   const otherHeight = permissions?.customHeight?.otherBox
   // console.log(boxHeight)
+  // const handleDeleteAll = () => {
+  //   setSelectedUsers([])
+  //   setRows([])
+  // }
+  // console.log(selectedUsers?.length)
+  const showDeleteAll = permissions?.deleteAllBtn && selectedUsers.length > 1
+  // console.log(showDeleteAll)
+
+  const lastColumnField = columns[columns.length - 1]?.field
+
+  const monthMap = {
+    1: 'january',
+    2: 'february',
+    3: 'march',
+    4: 'april',
+    5: 'may',
+    6: 'june',
+    7: 'july',
+    8: 'august',
+    9: 'september',
+    10: 'october',
+    11: 'november',
+    12: 'december',
+  }
+
+  // const isRedCellObject = [
+  //   {
+  //     normParameterFKId: '513104DB-94A5-4DCF-9B8F-FCB2CB897C9D',
+  //     month: 4,
+  //     value: 6.5,
+  //   },
+  //   {
+  //     normParameterFKId: '513104DB-94A5-4DCF-9B8F-FCB2CB897C9D',
+  //     month: 12,
+  //     value: 7.5,
+  //   },
+  // ]
+
   return (
     <Box
       sx={{
-        height: `${boxHeight ?? '80vh'}`,
+        // height: `${boxHeight ?? (permissions.customHeight2 ? '50vh' : '80vh')}`,
+        height: 'auto',
         width: '100%',
-        padding: '0px 5px',
-        margin: '0px 5px 0px',
+        padding: '0px 0px',
+        margin: '0px 0px 0px',
         backgroundColor: '#F2F3F8',
         // backgroundColor: '#fff',
         borderRadius: 0,
@@ -395,217 +443,214 @@ const DataGridTable = ({
         </Typography>
       </Box> */}
       {/* )} */}
-      {(permissions?.allAction ?? true) && (
+      {/* {(permissions?.allAction ?? true) && ( */}
+      <Box className='action-box'>
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: 2,
-            marginBottom: 1,
+            justifyContent: 'flex-end',
+            width: '100%', // make sure container is full width
+            p: 1,
+            gap: 1,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {permissions?.UnitToShow && (
-              <Chip
-                label={permissions.UnitToShow}
-                variant='outlined'
-                sx={{
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  height: '40px',
-                }}
-              />
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {permissions?.showCalculate && (
-              <Button
-                variant='contained'
-                onClick={handleCalculateBtn}
-                disabled={isButtonDisabled}
-                sx={{
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
+          {permissions?.UnitToShow && (
+            <Chip
+              label={permissions.UnitToShow}
+              variant='outlined'
+              className='unit-chip'
+            />
+          )}
+          {/* {permissions?.showCalculate && (
+              <Tooltip title='Calculate'>
+                <span>
+                  <Button
+                    variant='contained'
+                    onClick={handleCalculateBtn}
+                    disabled={isButtonDisabled}
+                    sx={{
+                      minWidth: '40px',
+                      padding: '8px',
+                      backgroundColor: '#0100cb',
+                      '&:hover': {
+                        backgroundColor: '#0100cb',
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    <CalculateOutlinedIcon sx={{ color: '#fff' }} />
+                  </Button>
+                </span>
+              </Tooltip>
+            )} */}
 
-                  '&:hover': {
-                    backgroundColor: '#143B6F',
-                    boxShadow: 'none',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: jioColors.primaryBlue,
-                    color: jioColors.background,
-                    opacity: 0.7,
-                  },
-                }}
-              >
-                Calculate
-              </Button>
-            )}
-            {permissions?.showRefresh && (
-              <Button
-                variant='contained'
-                onClick={handleCalculateBtn}
-                disabled={isButtonDisabled}
-                sx={{
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
+          {permissions?.addButton && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={handleAddRow}
+              disabled={isButtonDisabled}
+            >
+              Add Item
+            </Button>
+          )}
 
-                  '&:hover': {
-                    backgroundColor: '#143B6F',
-                    boxShadow: 'none',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: jioColors.primaryBlue,
-                    color: jioColors.background,
-                    opacity: 0.7,
-                  },
-                }}
-              >
-                Refresh
-              </Button>
-            )}
+          {permissions?.saveBtn && (
+            <Button
+              variant='contained'
+              className='btn-save'
+              onClick={saveModalOpen}
+              disabled={isButtonDisabled || !enableSaveAddBtn}
+              // loading={loading}
+              // loadingposition='start'
+              {...(loading ? {} : {})}
+            >
+              Save
+            </Button>
+          )}
 
-            {permissions?.showRefreshBtn && false && (
-              <Button
-                variant='contained'
-                onClick={handleRefresh}
-                sx={{
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  borderRadius: 1,
-                  padding: '8px 24px',
-                  textTransform: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  '&:hover': {
-                    backgroundColor: '#143B6F',
-                    boxShadow: 'none',
-                  },
-                }}
-              >
-                Refresh
-              </Button>
-            )}
+          {permissions?.showCalculate && (
+            <Button
+              variant='contained'
+              onClick={handleCalculateBtn}
+              disabled={
+                rows?.length === 0
+                  ? false
+                  : isButtonDisabled || !permissions?.showCalculateVisibility
+              }
+              className='btn-save'
+            >
+              Calculate
+            </Button>
+          )}
 
-            {permissions?.showUnit && (
-              <TextField
-                select
-                value={selectedUnit || permissions?.units?.[0]}
-                onChange={(e) => {
-                  setSelectedUnit(e.target.value)
-                  handleUnitChange(e.target.value)
-                }}
-                sx={{ width: '150px', backgroundColor: jioColors.background }}
-                variant='outlined'
-                label='Select UOM'
-              >
-                <MenuItem value='' disabled>
-                  Select UOM
+          {permissions?.showRefresh && (
+            <Button
+              variant='contained'
+              onClick={handleCalculateBtn}
+              disabled={isButtonDisabled}
+              className='btn-save'
+            >
+              Refresh
+            </Button>
+          )}
+
+          {permissions?.showRefreshBtn && false && (
+            <Button
+              variant='contained'
+              onClick={handleRefresh}
+              className='btn-save'
+            >
+              Refresh
+            </Button>
+          )}
+
+          {permissions?.showUnit && (
+            <TextField
+              select
+              value={selectedUnit || permissions?.units?.[0]}
+              onChange={(e) => {
+                setSelectedUnit(e.target.value)
+                handleUnitChange(e.target.value)
+              }}
+              sx={{ width: '150px', backgroundColor: jioColors.background }}
+              variant='outlined'
+              label='Select UOM'
+            >
+              <MenuItem value='' disabled>
+                Select UOM
+              </MenuItem>
+
+              {/* Render the correct unit options dynamically */}
+              {permissions?.units.map((unit) => (
+                <MenuItem key={unit} value={unit}>
+                  {unit}
                 </MenuItem>
+              ))}
+            </TextField>
+          )}
 
-                {/* Render the correct unit options dynamically */}
-                {permissions?.units.map((unit) => (
-                  <MenuItem key={unit} value={unit}>
-                    {unit}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
+          {false && (
+            <TextField
+              variant='outlined'
+              placeholder='Search...'
+              value={searchText}
+              onChange={handleSearchChange}
+              sx={{
+                width: '300px',
+                borderRadius: 1,
+                backgroundColor: jioColors.background,
+                color: '#8A9BC2',
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
 
-            {false && (
-              <TextField
-                variant='outlined'
-                placeholder='Search...'
-                value={searchText}
-                onChange={handleSearchChange}
-                sx={{
-                  width: '300px',
-                  borderRadius: 1,
-                  backgroundColor: jioColors.background,
-                  color: '#8A9BC2',
-                }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position='start'>
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            )}
-
-            {false && (
-              <IconButton
-                aria-label='import'
-                onClick={handleImportExport}
-                sx={{
-                  border: `1px solid ${jioColors.border}`,
-                  borderRadius: 1,
-                  padding: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
+          {false && (
+            <IconButton
+              aria-label='import'
+              onClick={handleImportExport}
+              sx={{
+                border: `1px solid ${jioColors.border}`,
+                borderRadius: 1,
+                padding: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                color: 'inherit',
+                width: '150px',
+                '&:hover': {
                   backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                  color: 'inherit',
-                  width: '150px',
-                  '&:hover': {
-                    backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                  },
-                }}
-              >
-                <FileDownload sx={{ color: '#2A3ACD' }} />
-                <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
-                  Import
-                </span>
-              </IconButton>
-            )}
+                },
+              }}
+            >
+              <FileDownload sx={{ color: '#2A3ACD' }} />
+              <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
+                Import
+              </span>
+            </IconButton>
+          )}
 
-            {false && (
-              <IconButton
-                aria-label='export'
-                onClick={handleImportExport}
-                sx={{
-                  border: `1px solid ${jioColors.border}`,
-                  borderRadius: 1,
-                  padding: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
+          {false && (
+            <IconButton
+              aria-label='export'
+              onClick={handleImportExport}
+              sx={{
+                border: `1px solid ${jioColors.border}`,
+                borderRadius: 1,
+                padding: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
+                color: 'inherit',
+                width: '150px',
+                '&:hover': {
                   backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                  color: 'inherit',
-                  width: '150px',
-                  '&:hover': {
-                    backgroundColor: isFilterActive ? '#F2F3F8' : '#FFF',
-                  },
-                }}
-              >
-                <FileUpload sx={{ color: '#2A3ACD' }} />
-                <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
-                  Export
-                </span>
-              </IconButton>
-            )}
-          </Box>
+                },
+              }}
+            >
+              <FileUpload sx={{ color: '#2A3ACD' }} />
+              <span style={{ fontSize: '0.875rem', color: '#2A3ACD' }}>
+                Export
+              </span>
+            </IconButton>
+          )}
+          {/* </Box> */}
         </Box>
-      )}
-
+      </Box>
+      {/* )} */}
       <Box
         sx={{
-          height: `calc( ${otherHeight ?? '102%'} - 120px)`,
+          height: `calc(${otherHeight ?? (permissions.customHeight2 ? '95%' : '95%')} - 120px)`,
           width: '100%',
           marginBottom: 0,
           padding: 0,
@@ -636,12 +681,59 @@ const DataGridTable = ({
         </Backdrop>
 
         <DataGrid
+          autoHeight={true}
           loading={loading}
-          apiRef={apiRef}
+          className='custom-data-grid'
+          apiRef={finalExternalApiRef}
           rows={filteredRows}
+          sortingOrder={[]}
+          disableSelectionOnClick
+          checkboxSelection={permissions?.showCheckBox}
+          selectionModel={selectionModel}
+          onSelectionModelChange={(newSelection) =>
+            setSelectionModel(newSelection)
+          }
+          // onSelectionModelChange={(itm) => console.log(itm)}
+          // onSelectionModelChange={(newModel) => setSelectionModel(newModel)}
           columns={columns.map((col) => ({
             ...col,
-            editable: col.field === 'product' ? true : col.editable,
+
+            cellClassName: (params) => {
+              const rowId = params.row.id
+              const field = params.field
+              if (modifiedCells[rowId]?.includes(field)) {
+                // return 'red-background-cell'
+                return 'red-cell'
+              }
+
+              const matchedEntry = allRedCell.find(
+                (entry) =>
+                  entry.normParameterFKId === params.row.materialFkId &&
+                  monthMap[entry.month] === field,
+              )
+
+              if (matchedEntry) {
+                return 'red-cell'
+              }
+              if (col.isDisabled) {
+                if (params.row.Particulars) {
+                  return undefined
+                } else {
+                  return 'disabled-cell'
+                }
+              }
+
+              if (
+                permissions?.remarksEditable &&
+                params.row.isEditable === false
+                // &&
+                // col.field !== lastColumnField
+              ) {
+                return 'odd-cell'
+              }
+              return undefined
+            },
+            headerClassName: col.isDisabled ? 'disabled-header' : undefined,
           }))}
           columnVisibilityModel={{
             maintenanceId: false,
@@ -654,8 +746,15 @@ const DataGridTable = ({
             NormParameterMonthlyTransactionId: false,
             aopStatus: false,
             idFromApi: false,
+            isEditable: false,
             period: false,
           }}
+          disableColumnSelector
+          paginationModel={{ pageSize: 100, page: 0 }}
+          pageSizeOptions={[]}
+          pagination
+          hideFooter={rows?.length <= 100}
+          disableColumnSorting
           rowHeight={35}
           processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={onProcessRowUpdateError}
@@ -664,235 +763,113 @@ const DataGridTable = ({
           experimentalFeatures={{ newEditingApi: true }}
           editMode='row'
           rowModesModel={rowModesModel}
-          onRowModesModelChange={handleRowModesModelChange}
+          handleCancelClick={handleCancelClick}
+          onRowModesModelChange={onRowModesModelChange}
           handleCalculate={handleCalculate}
           deleteRowData={deleteRowData}
+          focusFirstField={focusFirstField}
           slotProps={{
-            toolbar: { setRows, setRowModesModel, GridToolbar },
-            loadingOverlay: {
-              variant: 'linear-progress',
-              noRowsVariant: 'skeleton',
-            },
+            toolbar: { setRows, GridToolbar },
+            // loadingOverlay: {
+            //   variant: 'linear-progress',
+            //   norowsvariant: 'skeleton',
+            // },
           }}
           getRowClassName={(params) => {
-            return params.row.Particulars
-              ? 'no-border-row'
-              : params.indexRelativeToCurrentPage % 2 === 0
-                ? 'even-row'
-                : 'odd-row'
+            const classes = []
+
+            if (permissions?.isOldYear == 1) {
+              classes.push('odd-row-disabled')
+            }
+
+            if (params.row.Particulars || params.row.Particulars2) {
+              classes.push('no-border-row')
+            }
+
+            if (
+              params.row.isEditable === false &&
+              !permissions?.remarksEditable
+            ) {
+              return [
+                ...classes,
+                permissions?.noColor === true ? 'even-row' : 'odd-row',
+              ].join(' ')
+            }
+
+            return [...classes, 'even-row'].join(' ')
           }}
-          sx={{
-            borderRadius: '0px',
-            border: `1px solid ${jioColors.border}`,
-            backgroundColor: jioColors.background,
-            fontSize: '0.8rem',
-            ' & .MuiDataGrid-columnHeaderTitleContainer:last-child:after .MuiDataGrid-columnHeaderTitleContainer:after':
-              {
-                bordeRight: 'none !important',
-              },
-
-            '& .MuiDataGrid-cell:last-child:after': {
-              borderRight: 'none',
-            },
-            '& .MuiDataGrid-columnHeader:last-child:after': {
-              borderRight: 'none',
-            },
-            '& .MuiDataGrid-columnHeader:last-child .MuiDataGrid-columnHeaderTitleContainer:after':
-              {
-                borderRight: 'none',
-              },
-            // Added direct rule for the title container without the pseudo-element:
-            '& .MuiDataGrid-columnHeader:last-child .MuiDataGrid-columnHeaderTitleContainer':
-              {
-                borderRight: 'none',
-              },
-            '& .MuiDataGrid-cell.last-column, & .MuiDataGrid-columnHeaderTitleContainer.last-column & .MuiDataGrid-columnHeader.last-column':
-              {
-                borderRight: 'none',
-              },
-
-            // borderRight: `1px solid ${jioColors.border}`,
-            '& .MuiDataGrid-root .MuiDataGrid-cell': {
-              fontSize: '0.8rem',
-              color: '#A9A9A9',
-            },
-            '& .MuiDataGrid-root': {
-              borderRadius: '0px',
-            },
-            '& .MuiDataGrid-footerContainer': {
-              display: 'none',
-            },
-            // Remove the direct right border from cells and headers
-            '& .MuiDataGrid-cell, & .MuiDataGrid-columnHeaders & .MuiDataGrid-columnHeaderTitleContainer':
-              {
-                borderRight: 'none',
-                position: 'relative',
-              },
-            // Apply a pseudo-element for a short right border on cells
-            '& .MuiDataGrid-cell:after': {
-              content: '""',
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              height: '60%',
-              borderRight: `1px solid ${jioColors.border}`,
-            },
-            //Do not remove this prop (for Grouped row it can be usefull !!!!!)
-            '& .MuiDataGrid-row.no-border-row .MuiDataGrid-cell:after': {
-              borderRight: 'none !important',
-            },
-
-            // Apply a similar pseudo-element for header cells
-            '& .MuiDataGrid-columnHeaders:after': {
-              content: '""',
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              height: '60%', // Adjust as needed
-              borderRight: `1px solid ${jioColors.border}`,
-            },
-            '& .MuiDataGrid-columnHeaderTitleContainer:after': {
-              content: '""',
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              height: '60%', // Adjust as needed
-              borderRight: `1px solid ${jioColors.border}`,
-            },
-
-            '& .MuiDataGrid-columnHeaders': {
-              // borderRight: `1px solid ${jioColors.border}`,
-              // backgroundColor: jioColors.headerBg,
-              // color: '#FFFFFF',
-
-              backgroundColor: '#FAFAFC',
-              color: '#3E4E75',
-              fontSize: '0.8rem',
-              // fontWeight: 600,
-              fontWeight: 'bold',
-              borderBottom: `2px solid ${'#DAE0EF'}`,
-              borderTopLeftRadius: '0px',
-              borderTopRightRadius: '0px',
-            },
-            '& .MuiDataGrid-cell': {
-              // borderRight: `1px solid ${jioColors.border}`,
-              borderBottom: `1px solid ${'#DAE0EF'}`,
-              color: '#3E4E75',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-            },
-            '& .MuiDataGrid-row': {
-              borderBottom: `1px solid ${jioColors.border}`,
-            },
-            '& .even-row': {
-              backgroundColor: jioColors.rowEven,
-            },
-            '& .odd-row': {
-              backgroundColor: jioColors.rowOdd,
-            },
-            '& .MuiDataGrid-toolbarContainer': {
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 1,
-              paddingRight: 2,
-              alignSelf: 'flex-end',
-            },
-            // '& .MuiDataGrid-columnHeaders .last-column-header': {
-            //   paddingRight: '16px',
-            // },
-            // '& .MuiDataGrid-cell.last-column-cell': {
-            //   paddingRight: '16px',
-            // },
-            '& .MuiDataGrid-columnHeaderTitle': {
-              fontWeight: 'bold', // Ensure column titles are bold
-            },
-          }}
+          // columnGroupingModel={columnGroupingModel}
         />
       </Box>
-      {(permissions?.allAction ?? true) && (
-        <Box
-          sx={{
-            marginTop: 2,
-            display: 'flex',
-            gap: 2,
-          }}
-        >
-          {permissions.addButton && (
+      {/* {(permissions?.allActionOfBottomBtns ?? true) && ( */}
+      <Box
+        sx={{
+          marginTop: 2,
+          display: 'flex',
+          gap: 2,
+        }}
+      >
+        {/* {permissions?.showCreateCasebutton && (
             <Button
               variant='contained'
-              sx={{
-                // marginTop: 2,
-                backgroundColor: jioColors.primaryBlue,
-                color: jioColors.background,
-                borderRadius: 1,
-                padding: '8px 24px',
-                textTransform: 'none',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                minWidth: 120,
-                '&:hover': {
-                  backgroundColor: '#143B6F',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  opacity: 0.7,
-                },
-              }}
-              onClick={handleAddRow}
-              disabled={isButtonDisabled}
+              onClick={createCase}
+              disabled={isCreatingCase || !showCreateCasebutton}
+              className='btn-save'
             >
-              Add Item
+              {isCreatingCase ? 'Submitting…' : 'Submit'}
             </Button>
-          )}
+          )} */}
 
-          {permissions.saveBtn && (
-            <Button
-              variant='contained'
-              sx={{
-                backgroundColor: jioColors.primaryBlue,
-                color: jioColors.background,
-                borderRadius: 1,
-                padding: '8px 24px',
-                textTransform: 'none',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                minWidth: 120,
-                '&:hover': {
-                  backgroundColor: '#143B6F',
-                  boxShadow: 'none',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: jioColors.primaryBlue,
-                  color: jioColors.background,
-                  opacity: 0.7,
-                },
-              }}
-              onClick={saveModalOpen}
-              disabled={isButtonDisabled}
-              loading={loading} // Use the loading prop to trigger loading state
-              loadingposition='start' // Use loadingPosition to control where the spinner appears
-            >
-              Save
-            </Button>
-          )}
-        </Box>
-      )}
-      {(permissions?.allAction ?? true) && (
-        <Notification
-          open={snackbarOpen}
-          message={snackbarData?.message || ''}
-          severity={snackbarData?.severity || 'info'}
-          onClose={() => setSnackbarOpen(false)}
-        />
-      )}
+        {permissions?.approveBtn && (
+          <Button
+            variant='contained'
+            className='btn-save'
+            onClick={saveModalOpen}
+            disabled={isButtonDisabled}
+            // loading={loading}
+            // loadingposition='start'
+            {...(loading ? {} : {})}
+          >
+            Approve
+          </Button>
+        )}
+        {permissions?.nextBtn && (
+          <Button
+            variant='contained'
+            className='btn-save'
+            onClick={() => {
+              // Write any additional logic here before navigating.
+              // console.log('Navigating to dashboard')
+              // navigate('/user-form')
+              handleAddPlantSite()
+            }}
+            disabled={isButtonDisabled}
+            loading={loading} // Use the loading prop to trigger loading state
+            loadingposition='start' // Use loadingPosition to control where the spinner appears
+          >
+            Next
+          </Button>
+        )}
+        {showDeleteAll && (
+          <Button
+            variant='contained'
+            className='btn-save'
+            onClick={handleDeleteSelected}
+            disabled={isButtonDisabled}
+            loading={loading} // Use the loading prop to trigger loading state
+            loadingposition='start' // Use loadingPosition to control where the spinner appears
+          >
+            Delete
+          </Button>
+        )}
+      </Box>
+      {/* )} */}
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
       <Dialog
         open={openDeleteDialogeBox}
         onClose={closeDeleteDialogeBox}
@@ -912,16 +889,22 @@ const DataGridTable = ({
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={openSaveDialogeBox}
         onClose={closeSaveDialogeBox}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
       >
         <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
         <DialogContent>
-          <DialogContentText id='alert-dialog-description'>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
             Are you sure you want to save these changes?
           </DialogContentText>
         </DialogContent>
@@ -932,7 +915,6 @@ const DataGridTable = ({
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={!!remarkDialogOpen}
         onClose={() => setRemarkDialogOpen(false)}

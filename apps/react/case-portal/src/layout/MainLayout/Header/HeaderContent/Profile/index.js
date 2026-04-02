@@ -21,7 +21,7 @@ import ProfileTab from './ProfileTab'
 import LogoutOutlined from '@ant-design/icons/LogoutOutlined'
 // import SettingOutlined from '@ant-design/icons/SettingOutlined'
 import UserOutlined from '@ant-design/icons/UserOutlined'
-import avatar2 from 'assets/images/users/avatar-2.png'
+import avatar2 from 'assets/images/users/new-avatar.jpg'
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -83,7 +83,7 @@ const Profile = ({ keycloak }) => {
           p: 0.25,
           bgcolor: open ? iconBackColorOpen : 'transparent',
           borderRadius: 1,
-          '&:hover': { bgcolor: '#3f93dc' },
+          '&:hover': { bgcolor: '#0100cb' },
         }}
         aria-label='open profile'
         ref={anchorRef}

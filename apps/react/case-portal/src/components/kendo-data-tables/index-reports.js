@@ -1,0 +1,1045 @@
+import '@progress/kendo-font-icons/dist/index.css'
+import {
+  Grid,
+  GridColumn,
+  isColumnMenuFilterActive,
+  isColumnMenuSortActive,
+} from '@progress/kendo-react-grid'
+import '@progress/kendo-theme-default/dist/all.css'
+import { ColumnMenu } from 'components/@extended/columnMenu'
+import { getColumnMenuCheckboxFilter } from 'components/data-tables/Reports/ColumnMenu1'
+import Notification from 'components/Utilities/Notification'
+import { useCallback, useState, useEffect, useRef } from 'react'
+import {
+  Backdrop,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  MenuItem,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField,
+  Typography,
+} from '../../../node_modules/@mui/material/index'
+import { SvgIcon } from '../../../node_modules/@progress/kendo-react-common/index'
+
+import { trashIcon } from '../../../node_modules/@progress/kendo-svg-icons/dist/index'
+import '../../kendo-data-grid.css'
+// import { updateRowWithDuration } from './Utilities-Kendo/AutoDuration'
+// import FullValueEditor from './Utilities-Kendo/FullValueEditor'
+// import { TextCellEditor } from './Utilities-Kendo/TextCellEditor'
+import { NoSpinnerNumericEditor } from './Utilities-Kendo/numbericColumns'
+import { Tooltip } from '../../../node_modules/@progress/kendo-react-tooltip/index'
+import DateTimePickerEditor from './Utilities-Kendo/DatePickeronSelectedYr'
+import {
+  DurationDisplayWithTooltipCell,
+  DurationEditor,
+} from './Utilities-Kendo/numericViewCells'
+import {
+  recalcDuration,
+  recalcEndDate,
+} from './Utilities-Kendo/durationHelpers'
+import DateOnlyPicker from './Utilities-Kendo/DatePicker'
+import { RemarkCell } from './Utilities-Kendo/RemarkCell'
+import { getRoleName } from 'services/role-service'
+import { useSession } from 'SessionStoreContext'
+import { useSelector } from 'react-redux'
+
+export const particulars = [
+  'normParameterId',
+  'normParametersFKId',
+  'NormParameterFKId',
+  'materialFkId',
+  'normParameterFKId',
+]
+export const hiddenFields = [
+  'maintenanceId',
+  'id',
+  'plantFkId',
+  'aopCaseId',
+  'aopType',
+  'aopYear',
+  'avgTph',
+  'NormParameterMonthlyTransactionId',
+  'aopStatus',
+  'idFromApi',
+  'isEditable',
+  'period',
+]
+export const dateFields = [
+  'maintStartDateTime',
+  'maintEndDateTime',
+  'endDateTA',
+  'startDateTA',
+  'endDateSD',
+  'startDateSD',
+  'endDateIBR',
+  'startDateIBR',
+  'toDate',
+  'fromDate',
+  'tentativeMonth',
+  'ibrDueDate',
+  'shutdownDate',
+  'startupDate',
+]
+export const monthMap = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+}
+const KendoDataTablesReports = ({
+  allRedCell = [],
+  modifiedCells = [],
+  title = '',
+  rows = [],
+  setRows,
+  columns,
+  loading = false,
+  permissions = {},
+  setSnackbarOpen = () => {},
+  snackbarData = { message: '', severity: 'info' },
+  snackbarOpen = false,
+  setRemarkDialogOpen = () => {},
+  currentRemark = '',
+  setCurrentRemark = () => {},
+  currentRowId = null,
+  setModifiedCells = () => {},
+  remarkDialogOpen = false,
+  saveChanges = () => {},
+  fetchData = () => {},
+  deleteRowData = () => {},
+  handleCalculate = () => {},
+  handleUnitChange = () => {},
+  handleRemarkCellClick = () => {},
+  handleExport = () => {},
+  handleExcelUpload = () => {},
+  groupBy = null,
+  grades = [],
+  handleGradeChange = () => {},
+  handleRelease = () => {},
+  isReleaseDisabled = true,
+}) => {
+  const [filter, setFilter] = useState({ logic: 'and', filters: [] })
+  const [openDeleteDialogeBox, setOpenDeleteDialogeBox] = useState(false)
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+  const [openSaveDialogeBox, setOpenSaveDialogeBox] = useState(false)
+  const [paramsForDelete, setParamsForDelete] = useState([])
+  const closeSaveDialogeBox = () => setOpenSaveDialogeBox(false)
+  const [edit, setEdit] = useState({})
+  const [sort, setSort] = useState([])
+  const [issRowEdited, setIsRowEdited] = useState(false)
+  const dataGridStore = useSelector((state) => state.dataGridStore)
+  const [selectedGrade, setSelectedGrade] = useState()
+  const keycloak = useSession()
+  const { verticalChange, plantObject, oldYear } = dataGridStore
+  const IS_OLD_YEAR = oldYear?.oldYear
+  const plantID = plantObject?.id
+  const { isReleased } = dataGridStore
+  const IS_RELEASED = isReleased
+  const READ_ONLY = getRoleName(keycloak, IS_OLD_YEAR, IS_RELEASED)
+
+  const TextCellEditor = (props) => (
+    <td>
+      <input
+        type='text'
+        className='k-textbox'
+        value={props.dataItem[props.field] || ''}
+        onChange={(e) =>
+          props.onChange({
+            dataItem: props.dataItem,
+            field: props.field,
+            value: e.target.value,
+          })
+        }
+        style={{ width: '100%' }}
+        autoFocus
+      />
+    </td>
+  )
+  const initialGroup = groupBy
+    ? [
+        {
+          field: groupBy,
+          dir: undefined,
+        },
+      ]
+    : []
+
+  const handleEditChange = useCallback((e) => {
+    setEdit(e.edit)
+    // }
+  }, [])
+
+  const handleRowClick = (e) => {
+    if (!e.dataItem?.isEditable && e.dataItem?.isEditable !== undefined) {
+      setEdit({})
+      return
+    }
+
+    setRows(
+      rows.map((r) => ({
+        ...r,
+        inEdit: r.id === e.dataItem.id,
+      })),
+    )
+  }
+  const itemChange = useCallback(
+    (e) => {
+      setIsRowEdited(true)
+
+      const { dataItem, field, value } = e
+      const itemId = dataItem.id
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== itemId) return r
+          const updated = { ...r, [field]: value }
+
+          if (
+            'fromDate' in updated &&
+            'toDate' in updated &&
+            'durationInHrs' in updated
+          ) {
+            if (field === 'fromDate' || field === 'toDate') {
+              updated.durationInHrs = recalcDuration(
+                updated.fromDate,
+                updated.toDate,
+              )
+            } else if (field === 'durationInHrs') {
+              const newEnd = recalcEndDate(
+                updated.fromDate,
+                value, // string like “10.20”
+              )
+              if (newEnd) {
+                updated.toDate = newEnd
+              }
+            }
+          }
+          return updated
+        }),
+      )
+
+      setModifiedCells((prev) => {
+        const base = { ...dataItem, [field]: value }
+        if ('fromDate' in base && 'toDate' in base && 'durationInHrs' in base) {
+          if (field === 'fromDate' || field === 'toDate') {
+            base.durationInHrs = recalcDuration(base.fromDate, base.toDate)
+          } else if (field === 'durationInHrs') {
+            const newEnd = recalcEndDate(base.fromDate, value)
+            if (newEnd) base.toDate = newEnd.toISOString()
+          }
+        }
+        return { ...prev, [itemId]: base }
+      })
+    },
+    [setRows, setModifiedCells],
+  )
+
+  const handleRemarkSave = () => {
+    setRows((prevRows) => {
+      let updatedRow = null
+      let keyToUpdate = ''
+      const updatedRows = prevRows.map((row) => {
+        if (row.id === currentRowId) {
+          const keysToUpdate = [
+            'aopRemarks',
+            'remarks',
+            'remark',
+            'Remark',
+          ].filter((key) => key in row)
+          keyToUpdate = keysToUpdate[0] || 'remark'
+          updatedRow = { ...row, [keyToUpdate]: currentRemark, inEdit: true }
+          return updatedRow
+        }
+        return row
+      })
+      if (updatedRow) {
+        setModifiedCells((prev) => ({
+          ...prev,
+          [updatedRow.id]: updatedRow,
+        }))
+      }
+
+      return updatedRows
+    })
+
+    setRemarkDialogOpen(false)
+  }
+  const fileInputRef = useRef(null)
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const onFileChange = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    handleExcelUpload(file)
+    event.target.value = ''
+  }
+  const handleAddRow = () => {
+    if (isButtonDisabled) return
+    setIsButtonDisabled(true)
+    const newRowId = rows.length
+      ? Math.max(...rows.map((row) => row.id)) + 1
+      : 1
+    const newRow = {
+      id: newRowId,
+      isNew: true,
+      ...Object.fromEntries(columns.map((col) => [col.field, ''])),
+    }
+
+    setRows((prevRows) => [newRow, ...prevRows])
+
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+
+  const saveConfirmation = async () => {
+    saveChanges()
+    setOpenSaveDialogeBox(false)
+    setEdit({})
+  }
+  const handleDeleteClick = async (params) => {
+    setParamsForDelete(params)
+    setOpenDeleteDialogeBox(true)
+  }
+  const deleteTheRecord = async () => {
+    deleteRowData(paramsForDelete)
+    setOpenDeleteDialogeBox(false)
+  }
+  const ActionsCell = ({ dataItem }) => {
+    return (
+      <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+        <SvgIcon
+          onClick={() => handleDeleteClick(dataItem)}
+          icon={trashIcon}
+          themeColor='dark'
+        />
+      </td>
+    )
+  }
+  const saveModalOpen = async () => {
+    setIsButtonDisabled(true)
+    setOpenSaveDialogeBox(true)
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+  const handleCalculateBtn = async () => {
+    setIsButtonDisabled(true)
+    handleCalculate()
+    setTimeout(() => {
+      setIsButtonDisabled(false)
+    }, 500)
+  }
+  const handleRefresh = async () => {
+    try {
+      fetchData()
+    } catch (error) {
+      console.error('Error saving refresh data:', error)
+    }
+  }
+
+  const RemarkCell = (props) => {
+    const { dataItem, field, onRemarkClick, ...tdProps } = props
+    const rawValue = dataItem[field]
+    const displayText = String(rawValue ?? '')
+    const isDisabled = READ_ONLY
+
+    return (
+      <td
+        {...tdProps}
+        style={{
+          cursor: 'pointer',
+          color: rawValue ? 'inherit' : 'gray',
+          background: isDisabled ? '#e7e7e7' : undefined, // match column disabled bg
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (!isDisabled) {
+            onRemarkClick(dataItem)
+            setEdit?.({})
+          }
+        }}
+      >
+        {displayText || 'Add remark'}
+      </td>
+    )
+  }
+
+  const CustomRow = useCallback(
+    ({ dataItem, className, ...rest }) => {
+      const isDisabled =
+        READ_ONLY ||
+        (!dataItem.isEditable && dataItem?.isEditable !== undefined)
+
+      const rowClassName = [
+        className,
+        isDisabled ? 'custom-disabled-row' : '',
+        dataItem.isBold ? 'custom-bold-row' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+      return (
+        <tr {...rest?.trProps} className={rowClassName}>
+          {rest.children}
+        </tr>
+      )
+    },
+    [IS_OLD_YEAR],
+  )
+  useEffect(() => {
+    if (!permissions?.showG || !grades?.length) return
+    setSelectedGrade((prev) => {
+      if (prev) {
+        return prev
+      }
+      const firstGrade = grades[0]
+
+      handleGradeChange(
+        firstGrade.gradeId,
+        firstGrade?.displayName,
+        firstGrade?.name,
+      )
+      return firstGrade.gradeId
+    })
+  }, [grades, permissions?.showG])
+
+  useEffect(() => {
+    setSelectedGrade(null)
+  }, [plantID])
+
+  const SimpleHeaderWithTooltip = (props) => {
+    const { ariaSort, ...restThProps } = props.thProps || {}
+
+    return (
+      <th
+        {...restThProps}
+        aria-sort={ariaSort}
+        title={props.title}
+        style={{ padding: '0px', borderRight: '1px solid #878787' }}
+      >
+        <Tooltip
+          position='top'
+          anchorElement='target'
+          parentTitle={true}
+          className='test'
+        >
+          {props.children}
+        </Tooltip>
+      </th>
+    )
+  }
+
+  const ColumnMenuCheckboxFilter = getColumnMenuCheckboxFilter(rows)
+
+  const isColumnActive = (field, filter, sort) => {
+    return (
+      isColumnMenuFilterActive(field, filter) ||
+      isColumnMenuSortActive(field, sort)
+    )
+  }
+
+  const renderColumns = (cols, filter, sort) =>
+    cols.map((col, idx) => {
+      const isEditable = col.editable === true
+      const isActive = isColumnActive(col.field, filter, sort)
+
+      // console.log('col', col)
+
+      const headerColorClass = undefined
+
+      const budgetDividerClass =
+        col.parent === 'Procurment Budget' && idx === 0 ? 'budget-divider' : ''
+
+      if (col.children) {
+        return (
+          <GridColumn
+            key={col.title || idx}
+            title={col.title}
+            // headerClassName={`center-group-header ${isActive ? 'active-column' : ''} ${headerColorClass} ${budgetDividerClass}`}
+            headerClassName='center-group-header'
+          >
+            {renderColumns(col.children, filter, sort)}
+          </GridColumn>
+        )
+      }
+
+      if (['aopRemarks', 'remarks', 'remark', 'Remark'].includes(col.field)) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            width={col.fixedWidth || undefined}
+            cells={{
+              data: (cellProps) => (
+                <RemarkCell
+                  {...cellProps}
+                  onRemarkClick={handleRemarkCellClick}
+                />
+              ),
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            headerClassName={isActive ? 'active-column' : ''}
+          />
+        )
+      }
+      if (col.field === 'particular' || col.type === 'text') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            editable={col.editable || false}
+            cells={{
+              edit: { text: TextCellEditor }, // <-- Use text editor for particulars
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            columnMenu={ColumnMenuCheckboxFilter}
+            headerClassName={isActive ? 'active-column' : ''}
+            width={col?.widthT || col?.fixedWidth}
+          />
+        )
+      }
+      if (dateFields.includes(col.field)) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            cells={{
+              edit: { date: DateOnlyPicker },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            format='{0:dd-MM-yyyy}'
+            editor='date'
+            editable={col.editable || false}
+            hidden={col.hidden}
+            className={!isEditable ? 'non-editable-cell' : ''}
+          />
+        )
+      }
+      if (col.field.includes('durationInHrs')) {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            editable={col.editable || false}
+            columnMenu={ColumnMenuCheckboxFilter}
+            hidden={col.hidden}
+            format={'{0:n2}'}
+            className={!isEditable ? 'non-editable-cell' : ''}
+            cells={{
+              edit: { text: DurationEditor },
+              data: DurationDisplayWithTooltipCell,
+            }}
+          />
+        )
+      }
+      if (col.type === 'numberNonGrey') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            className={'k-number-right'}
+            editable={col?.editable ? true : false}
+            headerClassName={isActive ? 'active-column' : ''}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+            width={col?.widthT || col?.fixedWidth}
+          />
+        )
+      }
+
+      if (col.type === 'number') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            width={col?.fixedWidth || col?.width || undefined}
+            hidden={col.hidden}
+            className={'k-number-right-disabled'}
+            editable={col?.editable ? true : false}
+            headerClassName={isActive ? 'active-column' : ''}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+          />
+        )
+      }
+
+      if (col.type === 'number1') {
+        return (
+          <GridColumn
+            key={col.field}
+            field={col.field}
+            title={col.title || col.headerName}
+            hidden={col.hidden}
+            editable={col?.editable ? true : false}
+            className={!col?.editable ? 'k-right-disabled' : undefined}
+            headerClassName={`${isActive ? 'active-column' : ''} ${headerColorClass}`}
+            cells={{
+              edit: { text: NoSpinnerNumericEditor },
+              data: toolTipRenderer,
+              headerCell: SimpleHeaderWithTooltip,
+            }}
+            columnMenu={ColumnMenuCheckboxFilter}
+            filter='numeric'
+            format={col.format}
+          />
+        )
+      }
+
+      return (
+        <GridColumn
+          key={col.field}
+          field={col.field}
+          title={col.title || col.headerName}
+          editable={col.editable || false}
+          format={col.format}
+          cells={{
+            edit: { text: NoSpinnerNumericEditor },
+            data: toolTipRenderer,
+            headerCell: SimpleHeaderWithTooltip,
+          }}
+          className={!isEditable ? 'non-editable-cell' : ''}
+          columnMenu={ColumnMenuCheckboxFilter}
+          headerClassName={isActive ? 'active-column' : ''}
+          width={col?.widthT || col?.fixedWidth}
+        />
+      )
+    })
+
+  const toolTipRenderer = (props) => {
+    const value = props.dataItem[props.field]
+    const month = monthMap[props.field?.toLowerCase()]
+    const normId = props.dataItem.materialFkId
+
+    const isRedFromAllRedCell = allRedCell.some(
+      (cell) =>
+        cell.month === month &&
+        cell.normParameterFKId?.toLowerCase() === normId?.toLowerCase(),
+    )
+
+    const isRed = isRedFromAllRedCell
+
+    return (
+      <td
+        {...props.tdProps}
+        title={value}
+        style={{
+          color: isRed ? 'orange' : undefined,
+        }}
+      >
+        {props.children}
+      </td>
+    )
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {loading && (
+        <Backdrop
+          sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={!!loading}
+        >
+          <CircularProgress color='inherit' />
+        </Backdrop>
+      )}
+
+      {(permissions?.allAction ?? true) && (
+        <Box
+          className='action-box2'
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 1,
+              flexGrow: 1, // ? key to take up all left space
+              textAlign: 'left',
+            }}
+          >
+            {permissions?.showTitle && (
+              <Typography
+                component='div'
+                className='grid-title'
+                style={{ whiteSpace: 'pre-line' }}
+              >
+                {title}
+              </Typography>
+            )}
+            {permissions?.showG && (
+              <TextField
+                select
+                value={selectedGrade || ''}
+                onChange={(e) => {
+                  const selectedGradeId = e.target.value
+                  const selectedGradeObj = grades.find(
+                    (g) => g.gradeId === selectedGradeId,
+                  )
+                  setSelectedGrade(selectedGradeId)
+                  handleGradeChange(
+                    selectedGradeObj?.gradeId,
+                    selectedGradeObj?.displayName,
+                    selectedGradeObj?.name,
+                  )
+                }}
+                className='dropdown-select'
+                variant='outlined'
+                label={permissions?.dropdownLabel || 'Select Grade'}
+                InputLabelProps={{
+                  shrink: true,
+                  sx: { fontWeight: 'bold' },
+                }}
+                SelectProps={{
+                  MenuProps: { disableScrollLock: true },
+                }}
+                sx={{ width: 180, mb: 1 }} // Compact width, margin bottom for spacing
+              >
+                <MenuItem value='' disabled>
+                  {permissions?.dropdownLabel || 'Select Grade'}
+                </MenuItem>
+                {grades?.map((unit) => (
+                  <MenuItem key={unit.gradeId} value={unit.gradeId}>
+                    {unit.displayName}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          </Box>
+
+          {/* RIGHT: Buttons */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {permissions?.addButton && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={handleAddRow}
+                disabled={READ_ONLY}
+              >
+                Add Item
+              </Button>
+            )}
+            {permissions?.saveBtn && (
+              <Button
+                variant='contained'
+                className='btn-save'
+                onClick={saveModalOpen}
+                disabled={isButtonDisabled || READ_ONLY}
+                // loading={loading}
+                // loadingposition='start'
+                {...(loading ? {} : {})}
+              >
+                Save
+              </Button>
+            )}
+
+            {permissions?.showCalculate && (
+              <Button
+                variant='contained'
+                onClick={handleCalculateBtn}
+                // disabled={isButtonDisabled || READ_ONLY}
+                className='btn-save'
+                disabled={
+                  READ_ONLY ||
+                  (rows?.length === 0
+                    ? false
+                    : isButtonDisabled || !permissions?.showCalculateVisibility)
+                }
+              >
+                Calculate
+              </Button>
+            )}
+            {permissions?.showCalculate && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled || READ_ONLY}
+                className='btn-save'
+              >
+                Export
+              </Button>
+            )}
+
+            {permissions?.showExport && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled || READ_ONLY}
+                className='btn-save'
+              >
+                Export
+              </Button>
+            )}
+
+            {permissions?.showImport && (
+              <Button
+                variant='contained'
+                onClick={handleExport}
+                disabled={isButtonDisabled || READ_ONLY}
+                className='btn-save'
+              >
+                Import
+              </Button>
+            )}
+            {permissions?.uploadExcelBtn && (
+              <>
+                <Button
+                  variant='contained'
+                  onClick={triggerFileUpload}
+                  disabled={isButtonDisabled || READ_ONLY}
+                  className='btn-save'
+                >
+                  Import
+                </Button>
+
+                <input
+                  type='file'
+                  accept='.xlsx,.xls'
+                  onChange={onFileChange}
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                />
+              </>
+            )}
+
+            {permissions?.showFinalSubmit && (
+              <Button
+                variant='contained'
+                onClick={handleRelease}
+                disabled={isReleaseDisabled || READ_ONLY}
+                className='btn-save'
+              >
+                {/* Submit */}
+                Release
+              </Button>
+            )}
+
+            {/* {permissions?.showWorkFlowBtns && (
+                    <Stack direction='row' spacing={1} alignItems='center'>
+                      {taskId && (
+                        <Button
+                          variant='contained'
+                          onClick={handleRejectClick}
+                          disabled={isButtonDisabled|| READ_ONLY}
+                        >
+                          Accept
+                        </Button>
+                      )}
+                      <Button variant='outlined'                           
+                      disabled={isButtonDisabled|| READ_ONLY}
+                      onClick={handleAuditOpen}>
+                        Audit Trail
+                      </Button>
+                    </Stack>
+                  )} */}
+          </Box>
+        </Box>
+      )}
+
+      <div className='kendo-data-grid'>
+        <Tooltip openDelay={50} position='auto' anchorElement='target'>
+          <Grid
+            modifiedCells={modifiedCells}
+            data={rows}
+            rows={{ data: CustomRow }}
+            sortable={{
+              mode: 'multiple',
+            }}
+            autoProcessData={true}
+            {...(initialGroup.length > 0 ? { defaultGroup: initialGroup } : {})}
+            dataItemKey='id'
+            editField='inEdit'
+            editable={{ mode: 'incell' }}
+            onEditChange={handleEditChange}
+            edit={edit}
+            filter={filter}
+            onFilterChange={(e) => setFilter(e.filter)}
+            onItemChange={itemChange}
+            resizable={true}
+            defaultSkip={0}
+            defaultTake={100}
+            contextMenu={true}
+            filterable={columns.some((col) => dateFields.includes(col.field))}
+            size='small'
+            pageable={
+              rows?.length > 100
+                ? {
+                    buttonCount: 4,
+                    pageSizes: [10, 50, 100],
+                  }
+                : false
+            }
+            onRowClick={handleRowClick}
+          >
+            {renderColumns(
+              columns.filter((col) => !hiddenFields.includes(col.field)),
+              filter,
+              sort,
+            )}
+
+            {permissions?.deleteButton && (
+              <GridColumn
+                key='actions'
+                field='actions'
+                title='Action'
+                width={80}
+                className='k-text-center'
+                filterable={false}
+                editable={false}
+                cells={{
+                  data: ActionsCell,
+                }}
+              />
+            )}
+          </Grid>
+        </Tooltip>
+      </div>
+
+      <Notification
+        open={snackbarOpen}
+        message={snackbarData?.message || ''}
+        severity={snackbarData?.severity || 'info'}
+        onClose={() => setSnackbarOpen(false)}
+      />
+
+      <Dialog
+        open={openDeleteDialogeBox}
+        onClose={() => setOpenDeleteDialogeBox(false)}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+      >
+        <DialogTitle id='alert-dialog-title'>{'Delete ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            Are you sure you want to delete this row?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialogeBox(false)}>Cancel</Button>
+          <Button onClick={deleteTheRecord} autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openSaveDialogeBox}
+        onClose={closeSaveDialogeBox}
+        aria-labelledby='alert-dialog-title'
+        aria-describedby='alert-dialog-description'
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle id='alert-dialog-title'>{'Save ?'}</DialogTitle>
+        <DialogContent>
+          <DialogContentText
+            id='alert-dialog-description'
+            sx={{ color: 'text.primary' }}
+          >
+            Are you sure you want to save these changes?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeSaveDialogeBox}>Cancel</Button>
+          <Button onClick={saveConfirmation} autoFocus>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={!!remarkDialogOpen}
+        onClose={() => setRemarkDialogOpen(false)}
+        disableScrollLock
+        slotProps={{
+          backdrop: { disableScrollLock: true },
+        }}
+      >
+        <DialogTitle>Add Remark</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin='dense'
+            id='remark'
+            label='Remark'
+            type='text'
+            fullWidth
+            variant='outlined'
+            sx={{ width: '100%', minWidth: '600px' }}
+            value={currentRemark || ''}
+            // value={remark}
+            onChange={(e) => setCurrentRemark(e.target.value)}
+            multiline
+            rows={8}
+            disabled={READ_ONLY}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRemarkDialogOpen(false)}>Cancel</Button>
+          {/* <Button onClick={handleCloseRemark}>Cancel</Button> */}
+          <Button onClick={handleRemarkSave} disabled={READ_ONLY}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
+  )
+}
+
+export default KendoDataTablesReports

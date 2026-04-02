@@ -2,23 +2,32 @@ import { useEffect, useState, lazy, Suspense } from 'react'
 import { ThemeRoutes } from './routes'
 import ThemeCustomization from './themes'
 import { SessionStoreProvider } from './SessionStoreContext'
-// import { CaseService, RecordService } from 'services'
-import menuItemsDefs from './menu'
+// import {
+//   CaseService,
+//   //  RecordService
+// } from 'services'
 import { RegisterInjectUserSession, RegisteOptions } from './plugins'
 import { accountStore, sessionStore } from './store'
 import './App.css'
-import { useSelector } from 'react-redux'
+import './extra-css.css'
+import './data-grid-css.css'
+import './jio-grid-style.css'
+// import '@progress/kendo-theme-default/dist/all.css'
+// import '@progress/kendo-theme-bootstrap/dist/all.css'
+import '@progress/kendo-theme-fluent/dist/all.css'
+import '@progress/kendo-font-icons/dist/index.css'
+
+// import { useSelector } from 'react-redux'
+import Layout from 'layout/FooterLayout/index'
+import { MenuProvider } from 'menu/menuProvider'
 
 const ScrollTop = lazy(() => import('./components/ScrollTop'))
 
 const App = () => {
-  const dataGridStore = useSelector((state) => state.dataGridStore)
-  const { verticalChange, sitePlantChange } = dataGridStore
   const [keycloak, setKeycloak] = useState({})
   const [authenticated, setAuthenticated] = useState(null)
   // const [recordsTypes, setRecordsTypes] = useState([])
   // const [casesDefinitions, setCasesDefinitions] = useState([])
-  const [menu, setMenu] = useState({ items: [] })
 
   useEffect(() => {
     const { keycloak } = sessionStore.bootstrap()
@@ -26,7 +35,7 @@ const App = () => {
     keycloak.init({ onLoad: 'login-required' }).then((authenticated) => {
       setKeycloak(keycloak)
       setAuthenticated(authenticated)
-      buildMenuItems(keycloak)
+      // buildMenuItems(keycloak)
       RegisterInjectUserSession(keycloak)
       RegisteOptions(keycloak)
       forceLogoutIfUserNoMinimalRoleForSystem(keycloak)
@@ -50,7 +59,7 @@ const App = () => {
                 Math.round(
                   keycloak.tokenParsed.exp +
                     keycloak.timeSkew -
-                    new Date().getTime() / 1000,
+                    new Date()?.getTime() / 1000,
                 ) +
                 ' seconds',
             )
@@ -68,99 +77,29 @@ const App = () => {
     }
   }
 
-  useEffect(() => {
-    if (keycloak && verticalChange) {
-      buildMenuItems(keycloak)
-    }
-    // console.log(verticalChange)
-  }, [verticalChange, keycloak])
-
-  async function buildMenuItems(keycloak) {
-    let rawAllowedVerticals = []
-    const verticals = keycloak?.idTokenParsed?.verticals
-
-    if (verticals) {
-      try {
-        rawAllowedVerticals = JSON.parse(verticals)
-      } catch (error) {
-        console.error('Error parsing verticals JSON:', error)
-        rawAllowedVerticals = []
-      }
-    } else {
-      // console.log('No verticals found in idTokenParsed')
-    }
-
-    const allowedVerticalsMapping = rawAllowedVerticals.reduce((acc, obj) => {
-      return { ...acc, ...obj }
-    }, {})
-
-    // console.log(allowedVerticalsMapping)
-    // console.log(verticalChange)
-
-    const selectedVertical = verticalChange?.selectedVertical?.toLowerCase()
-    const allowedChildIds =
-      (selectedVertical && allowedVerticalsMapping[selectedVertical]) || []
-
-    // Build the menu based on allowed verticals
-    const menu = {
-      items: [...menuItemsDefs.items],
-    }
-
-    menu.items = menu.items.map((item) => {
-      if (item.id === 'utilities') {
-        return {
-          ...item,
-          children: item.children.map((group) => {
-            if (group.id === 'production-norms-plan') {
-              return {
-                ...group,
-                children: group.children.filter((child) =>
-                  allowedChildIds.length > 0
-                    ? allowedChildIds.includes(child.id)
-                    : true,
-                ),
-              }
-            }
-            return group
-          }),
-        }
-      }
-      return item
-    })
-
-    // Safely determine if the user is a manager.
-    // If keycloak.hasRealmRole is not a function, default to false.
-    const isManagerUser =
-      typeof keycloak.hasRealmRole === 'function'
-        ? keycloak.hasRealmRole('manager')
-        : false
-
-    if (!isManagerUser) {
-      delete menu.items[3]
-    }
-
-    return setMenu(menu)
-  }
-
   return (
     keycloak &&
     authenticated && (
       <ThemeCustomization>
+        {/* <Layout> */}
         <Suspense fallback={<div>Loading...</div>}>
           <ScrollTop>
-            <SessionStoreProvider value={{ keycloak, menu }}>
-              <ThemeRoutes
-                keycloak={keycloak}
-                authenticated={authenticated}
-                // recordsTypes={recordsTypes}
-                // casesDefinitions={casesDefinitions}
-              />
+            <SessionStoreProvider value={{ keycloak }}>
+              <MenuProvider>
+                <ThemeRoutes
+                  keycloak={keycloak}
+                  authenticated={authenticated}
+
+                  // recordsTypes={recordsTypes}
+                  // casesDefinitions={casesDefinitions}
+                />
+              </MenuProvider>
             </SessionStoreProvider>
           </ScrollTop>
         </Suspense>
+        {/* </Layout> */}
       </ThemeCustomization>
     )
   )
 }
-
 export default App

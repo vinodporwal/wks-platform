@@ -1,14 +1,24 @@
 package com.wks.caseengine.service;
 import java.util.List;
+import java.util.Map;
 
 import com.wks.caseengine.dto.AOPDTO;
+import com.wks.caseengine.message.vm.AOPMessageVM;
 
 public interface AOPService {
 	
 	public List<AOPDTO> getAOP();
 	public List<AOPDTO> updateAOP(List<AOPDTO> aOPDTOList);
-	public List<AOPDTO> getAOPData(String plantId, String year);
-    public List<AOPDTO> calculateData(String plantId, String year);
-	List<Object[]> executeDynamicMaintenanceCalculation(String verticalName, String plantId, String siteId, String verticalId, String aopYear);
+	public AOPMessageVM getAOPData(String plantId, String year,String type);
+	public AOPMessageVM getMonthlyProduction(String plantId, String year,String type,String lineId);
+	public byte[] exportAOPData(String plantId, String year,String type,boolean isAfterSave,List<AOPDTO> dtoList);
+    public AOPMessageVM calculateData(String plantId, String year);
+    public List<Map<String, String>> getAOPYears();
+    public AOPMessageVM getAOPYearStatus();
+	public List<Object[]> executeDynamicMaintenanceCalculationPE(String verticalName, String plantId, String siteId,
+			String verticalId, String aopYear);
+	public Integer executeDynamicMaintenanceCalculationMEG(String verticalName, String plantId, String siteId,
+			String verticalId, String aopYear);
+	public List<AOPDTO> calculateDataForPE(String plantId, String year);
 
 }

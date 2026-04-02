@@ -1,22 +1,20 @@
 package com.wks.caseengine.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.wks.caseengine.entity.Plants;
+import com.wks.caseengine.entity.Sites;
 import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.repository.SiteRepository;
 import com.wks.caseengine.rest.entity.Plant;
-import com.wks.caseengine.rest.entity.Site;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
 
 @Service
 public class PlantServiceImpl implements PlantService {
@@ -56,8 +54,30 @@ public class PlantServiceImpl implements PlantService {
 		 * searchResults = query.getResultList();
 		 */				return searchResults;
 	}
+	@Override
+	@Transactional
+     public List getShutdownMonths(UUID plantId,String maintenanceName,String year,String gradeId){
+		String verticalName = plantsRepository.findVerticalNameByPlantId((plantId));
+		Plants plant = plantsRepository.findById(plantId).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		boolean pvc = verticalName.equalsIgnoreCase("PVC") && (site.getName().equalsIgnoreCase("VMD") || site.getName().equalsIgnoreCase("DMD"));
+		if(verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("PET") || pvc) {	
+			// return	plantsRepository.getShutdownMonthsWithGrades(plantId,maintenanceName,year,UUID.fromString(gradeId));
+			return	plantsRepository.getShutdownMonths(plantId,maintenanceName,year);
+		}else if(verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical")) {	
+			return	plantsRepository.getVCMShutdownMonths(plantId,maintenanceName,year);
+		}else if(verticalName.equalsIgnoreCase("PTA") ) {	
+			return	plantsRepository.getPTAShutdownMonths(plantId,maintenanceName,year);
+		}else {
+			return	plantsRepository.getShutdownMonths(plantId,maintenanceName,year);
+		}
+	    	  	
+   }
 
-	
+	@Override
+	public List<Plants> findUniqueNamesPlantsByVerticalAndSite(UUID verticalId, UUID siteId, String screenCode) {
+		return plantsRepository.findUniqueNamesPlantsByVerticalAndSite(verticalId, siteId);
+	}
 
 }
 

@@ -1,8 +1,6 @@
 package com.wks.caseengine.rest.server;
 import com.wks.caseengine.dto.CatalystAttributesDTO;
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +29,6 @@ public class NormAttributeTransactionsController {
 	@GetMapping(value="/getCatalystSelectivityData")
 	public	String getCatalystSelectivityData(@RequestParam String year,@RequestParam UUID plantId,@RequestParam UUID siteId){
 		try {
-			System.out.println("result for configuration"+configurationService.getConfigurationData(year,plantId));
 			return normAttributeTransactionsService.getCatalystSelectivityData(year,plantId);
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -64,3 +61,4 @@ public class NormAttributeTransactionsController {
 	
 
 }
+

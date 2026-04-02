@@ -95,7 +95,7 @@ const useEnhancedSlowdownColDefs = ({ allProducts, handleRemarkCellClick }) => {
           const minutes = Math.floor(
             (durationMs % (1000 * 60 * 60)) / (1000 * 60),
           )
-          return `${hours}:${minutes < 10 ? '0' : ''}${minutes}`
+          return `${hours}.${minutes < 10 ? '0' : ''}${minutes}`
         }
         return ''
       }
@@ -120,11 +120,11 @@ const useEnhancedSlowdownColDefs = ({ allProducts, handleRemarkCellClick }) => {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                maxWidth: 140,
+                width: ' 100%',
               }}
-              onClick={() => handleRemarkCellClick(params.row)}
+              onDoubleClick={() => handleRemarkCellClick(params.row)}
             >
-              {displayText || (isEditable ? 'Click to add remark' : '')}
+              {displayText || (isEditable ? 'Add remark' : '')}
             </div>
           </Tooltip>
         )

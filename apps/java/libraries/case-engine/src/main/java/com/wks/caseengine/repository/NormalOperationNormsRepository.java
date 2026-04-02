@@ -12,24 +12,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.wks.caseengine.entity.MCUNormsValue;
 
+
 @Repository
-public interface NormalOperationNormsRepository extends JpaRepository<MCUNormsValue,UUID>{
-	
+public interface NormalOperationNormsRepository extends JpaRepository<MCUNormsValue, UUID> {
+
 	@Query(value = """
-		    SELECT MNV.Id, MNV.Site_FK_Id, MNV.Plant_FK_Id, MNV.Vertical_FK_Id, MNV.Material_FK_Id, MNV.April, MNV.May, MNV.June, MNV.July, MNV.August,  
-		           MNV.September, MNV.October, MNV.November, MNV.December, MNV.January, MNV.February, MNV.March, MNV.FinancialYear, MNV.Remarks, 
-		           MNV.CreatedOn, MNV.ModifiedOn, MNV.MCUVersion, MNV.UpdatedBy,NPT.Id AS NormParameterTypeId,
+			   SELECT MNV.Id, MNV.Site_FK_Id, MNV.Plant_FK_Id, MNV.Vertical_FK_Id, MNV.Material_FK_Id, MNV.April, MNV.May, MNV.June, MNV.July, MNV.August,
+			          MNV.September, MNV.October, MNV.November, MNV.December, MNV.January, MNV.February, MNV.March, MNV.FinancialYear, MNV.Remarks,
+			          MNV.CreatedOn, MNV.ModifiedOn, MNV.MCUVersion, MNV.UpdatedBy,NPT.Id AS NormParameterTypeId,
 			NPT.Name AS NormParameterTypeName,
-    NPT.DisplayName AS NormParameterTypeDisplayName, NP.UOM
-		    FROM MCUNormsValue MNV JOIN NormParameterType NPT ON MNV.NormParameterType_FK_Id = NPT.Id
-		    JOIN NormParameters NP ON NP.Id=MNV.Material_FK_Id
-		    WHERE MNV.FinancialYear = :year AND MNV.Plant_FK_Id = :plantId ORDER BY NPT.DisplayOrder
-		    """, nativeQuery = true)
-		List<Object[]> findByYearAndPlantFkId(@Param("year") String year, @Param("plantId") UUID plantId);
-		
-		@Modifying
-		@Transactional
-		@Query(value = "EXEC MEG_HMD_CalculateExpressionConsumptionNorms :finYear", nativeQuery = true)
-		int calculateExpressionConsumptionNorms(@Param("finYear") String finYear);
+			 NPT.DisplayName AS NormParameterTypeDisplayName, NP.UOM
+			   FROM MCUNormsValue MNV JOIN NormParameterType NPT ON MNV.NormParameterType_FK_Id = NPT.Id
+			   JOIN NormParameters NP ON NP.Id=MNV.Material_FK_Id
+			   WHERE MNV.FinancialYear = :year AND MNV.Plant_FK_Id = :plantId ORDER BY NPT.DisplayOrder
+			   """, nativeQuery = true)
+	List<Object[]> findByYearAndPlantFkId(@Param("year") String year, @Param("plantId") UUID plantId);
+
+	@Modifying
+	@Transactional
+	@Query(value = "EXEC MEG_HMD_CalculateShutdownNorms :finYear", nativeQuery = true)
+	int calculateExpressionConsumptionNorms(@Param("finYear") String finYear);
+
+	
 
 }

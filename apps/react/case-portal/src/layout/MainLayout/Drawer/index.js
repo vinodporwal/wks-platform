@@ -3,61 +3,61 @@ import { useMemo } from 'react'
 import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import Drawer from '@mui/material/Drawer'
-import useMediaQuery from '@mui/material/useMediaQuery'
 import DrawerHeader from './DrawerHeader'
 import DrawerContent from './DrawerContent'
-import MiniDrawerStyled from './MiniDrawerStyled'
 import { drawerWidth } from 'config'
 
-const MainDrawer = ({ open, handleDrawerToggle, window }) => {
+const MainDrawer = ({ open }) => {
   const theme = useTheme()
-  const matchDownMD = useMediaQuery(theme.breakpoints.down('lg'))
-  const container =
-    window !== undefined ? () => window().document.body : undefined
+
   const drawerContent = useMemo(() => <DrawerContent />, [])
   const drawerHeader = useMemo(() => <DrawerHeader open={open} />, [open])
 
   return (
-    <Box
-      component='nav'
-      sx={{ flexShrink: { md: 0 }, zIndex: 1300 }}
-      aria-label='mailbox folders'
+    <Drawer
+      variant='persistent'
+      open={open}
+      sx={{
+        width: open ? drawerWidth : 0,
+        flexShrink: 0,
+        whiteSpace: 'nowrap',
+        transition: theme.transitions.create('width', {
+          easing: theme.transitions.easing.easeOut, // Using easeOut for smoother deceleration
+          duration: theme.transitions.duration.standard,
+        }),
+        '& .MuiDrawer-paper': {
+          width: open ? drawerWidth : 0,
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.easeOut, // Consistent easing for the paper
+            duration: theme.transitions.duration.standard,
+          }),
+          boxSizing: 'border-box',
+          borderRight: `1px solid ${theme.palette.divider}`,
+          backgroundImage: 'none',
+          boxShadow: theme.shadows[6],
+          overflowX: 'hidden',
+        },
+      }}
     >
-      {!matchDownMD ? (
-        <MiniDrawerStyled variant='permanent' open={open}>
+      {open && (
+        <Box
+          sx={{
+            height: '100vh',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+          }}
+          role='presentation'
+        >
           {drawerHeader}
           {drawerContent}
-        </MiniDrawerStyled>
-      ) : (
-        <Drawer
-          container={container}
-          variant='temporary'
-          open={open}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', lg: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              borderRight: `1px solid ${theme.palette.divider}`,
-              backgroundImage: 'none',
-              boxShadow: 'inherit',
-            },
-          }}
-        >
-          {open && drawerHeader}
-          {open && drawerContent}
-        </Drawer>
+        </Box>
       )}
-    </Box>
+    </Drawer>
   )
 }
 
 MainDrawer.propTypes = {
-  open: PropTypes.bool,
-  handleDrawerToggle: PropTypes.func,
-  window: PropTypes.object,
+  open: PropTypes.bool.isRequired,
 }
 
 export default MainDrawer
