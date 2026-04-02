@@ -130,9 +130,124 @@ const ProductionNorms = ({ permissions }) => {
     { field: 'averageTPH', aggregate: 'sum' },
   ]
 
+  const checkTotalsMatch = (rowIIR, rowsWithTotal, iirUnit, totalUnit) => {
+    // Create a map of product -> value from rowIIR
+    const iirValueMap = new Map()
+    rowIIR.forEach((item) => {
+      iirValueMap.set(item.product, {
+        value: item.value,
+        particulars: item.Particulars,
+      })
+    })
+
+    const mismatches = []
+    const matches = []
+
+    rowsWithTotal.forEach((row) => {
+      const displayName = row.displayName
+      // Convert target total to match IIR unit
+      let calculatedTotal = parseFloat(row.total)
+
+      // If IIR is in KT, convert target total from MT to KT (divide by 1000)
+      if (iirUnit !== totalUnit) {
+        if (iirUnit === 'KT' && totalUnit === 'MT') {
+          calculatedTotal = calculatedTotal / 1000
+        } else if (iirUnit === 'MT' && totalUnit === 'KT') {
+          calculatedTotal = calculatedTotal * 1000
+        }
+      }
+      // If IIR is in MT, keep target total as is (both in MT)
+      const iirData = iirValueMap.get(displayName)
+
+      if (iirData) {
+        const iirValue = iirData.value
+
+        const isWithinTolerance = (actual, expected, tolerance = 0.01) => {
+          if (actual == null || expected == null) return false
+          return Math.abs(actual - expected) <= tolerance
+        }
+
+        const isMatch = isWithinTolerance(calculatedTotal, iirValue, 0.01) // Tolerance for floating point
+
+        const result = {
+          displayName,
+          calculatedTotal,
+          iirValue,
+          particulars: iirData.particulars,
+          match: isMatch,
+          difference: calculatedTotal - iirValue,
+          unit: iirUnit,
+        }
+
+        if (isMatch) {
+          matches.push(result)
+        } else {
+          mismatches.push(result)
+        }
+      } else {
+        // Display name not found in rowIIR
+        mismatches.push({
+          displayName,
+          calculatedTotal,
+          iirValue: null,
+          particulars: null,
+          match: false,
+          difference: null,
+          error: 'Display name not found in rowIIR',
+          unit: selectedUnitIIR,
+        })
+      }
+    })
+
+    return {
+      allMatch: mismatches.length === 0,
+      matches,
+      mismatches,
+    }
+  }
+
+  const validateTotal = (data, iirUnit, totalUnit) => {
+    // Calculate total for each row
+    const rowsWithTotal = data.map((row) => ({
+      ...row,
+      total: findSum('1', row),
+    }))
+
+    const result = checkTotalsMatch(rowsIIR, rowsWithTotal, iirUnit, totalUnit)
+
+    if (result.allMatch) {
+      return null // No error, validation passes
+    }
+    // Create validation message for mismatches
+    const mismatchMessages = result.mismatches.map((mismatch) => {
+      if (mismatch.error) {
+        return `${mismatch.displayName}: ${mismatch.error}`
+      }
+      return `${mismatch.displayName}: Expected ${mismatch.iirValue.toFixed(2)} but got ${mismatch.calculatedTotal.toFixed(2)}`
+    })
+
+    return `Total validation failed:\n${mismatchMessages.join('\n')}`
+  }
+
   const saveChanges = React.useCallback(async () => {
     try {
       var editedData = Object.values(modifiedCells)
+
+      const totalValidationMessage = validateTotal(
+        editedData,
+        selectedUnitIIR,
+        selectedUnit,
+      )
+
+      if (totalValidationMessage) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: totalValidationMessage,
+          severity: 'error',
+        })
+        setLoading(false)
+        return
+      }
       const requiredFields = ['remark']
 
       const validationMessage = validateFields(editedData, requiredFields)
