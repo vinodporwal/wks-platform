@@ -507,14 +507,16 @@ const SlowdownNorms = () => {
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
-        // Use slowdownconsumptionExport for PE/PP
-        response = await DataService.slowdownconsumptionExport(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      } else if (IS_ELASTOMER_JMD_HIIR) {
+      }
+      // else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
+      //   // Use slowdownconsumptionExport for PE/PP
+      //   response = await DataService.slowdownconsumptionExport(
+      //     keycloak,
+      //     PLANT_ID,
+      //     AOP_YEAR,
+      //   )
+      // }
+      else if (IS_ELASTOMER_JMD_HIIR) {
         response = await DataService.slowdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,
@@ -538,7 +540,6 @@ const SlowdownNorms = () => {
       let response
 
       if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
-        // Use saveShutdownNormsExcelNonGrade for VCM
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
           keycloak,
@@ -661,7 +662,7 @@ const SlowdownNorms = () => {
         IS_PTA ||
         IS_CHEMICAL ||
         // (IS_PE_PP && !IS_PE_NMD)
-          IS_PE_PP
+        IS_PE_PP
           ? true
           : false,
       downloadExcelBtn:
