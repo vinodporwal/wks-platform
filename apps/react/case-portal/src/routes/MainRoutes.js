@@ -140,7 +140,7 @@ export const MainRoutes = (
     children: [
       {
         path: '/',
-        element: <Navigate to='/dashboard' />,
+        element: <Navigate to='/production-norms-plan/configuration' />,
       },
 
       {
@@ -569,7 +569,6 @@ export const MainRoutes = (
               </PrivateRoute>
             ),
           },
-
           //Vertical VGOHT Ended
           {
             path: 'quality-packaging-norms',
@@ -1125,10 +1124,6 @@ export const MainRoutes = (
             <AssessmentForm />
           </PrivateRoute>
         ),
-      },
-      {
-        path: '*',
-        element: <Navigate to='/dashboard' replace />,
       },
     ],
   }

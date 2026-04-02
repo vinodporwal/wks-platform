@@ -56,10 +56,9 @@ const NavCollapse = ({ menu, level }) => {
       // Condition 2: PE vertical AND DMD site
       (lowerVertName === verticalEnums.PE && SITE_NAME === 'dmd')
 
-    // Filter combined-production-norms for PP vertical when site is NOT sez/hmd/dta
-    const shouldFilterCombinedProduction =
-      lowerVertName === verticalEnums.PP &&
-      !['sez', 'hmd', 'dta'].includes(SITE_NAME?.toLowerCase())
+    // New Condition: Cracker vertical AND VMD site
+    const shouldHideUtilitiesNorms =
+      lowerVertName === verticalEnums.CRACKER && SITE_NAME === 'vmd'
 
     let menuItems = menu.children
 
@@ -68,12 +67,13 @@ const NavCollapse = ({ menu, level }) => {
       menuItems = menuItems.filter((item) => item.id !== 'slowdown-norms')
     }
 
-    // Filter combined-production-norms for PP vertical when NOT sez/hmd/dta
-    if (shouldFilterCombinedProduction) {
+    // Filter utility-norm-basis for Cracker/VMD
+    if (shouldHideUtilitiesNorms) {
       menuItems = menuItems.filter(
-        (item) => item.id !== 'combined-production-norms',
+        (item) => item.id !== 'utilities-norms-basis',
       )
     }
+
     return menuItems.map(renderMenuItem)
   }, [menu?.children, lowerVertName, plantName, level, SITE_NAME])
 
