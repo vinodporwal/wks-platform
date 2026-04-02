@@ -205,7 +205,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				list.add(dto.getRemarks());
 
 				if(verticalName.equalsIgnoreCase("AROMATICS")) {
-					list.add(dto.getVersion());
+					list.add("Rev "+getVersion(year,plantFKId));
 				}
 				list.add(dto.getNormParameterFKId());
 				isEditable.add(dto.getIsEditable());
