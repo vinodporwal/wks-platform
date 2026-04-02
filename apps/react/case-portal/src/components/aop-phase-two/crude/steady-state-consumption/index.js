@@ -339,12 +339,18 @@ const SteadyStateConsumption = () => {
             autoHide: false,
           })
         }, 500)
-      } else {
-        await fetchData()
+      } else if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({
           message: 'Calculation completed successfully!',
           severity: 'success',
+        })
+        await fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Calculation failed. Please try again.',
+          severity: 'error',
         })
       }
     } catch (error) {
