@@ -12,7 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.math.RoundingMode;
-
+import java.time.ZoneId;
+import java.time.format.TextStyle;
+import java.util.Locale;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -23,7 +25,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import com.wks.caseengine.dto.ShutDownPlanDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
 import com.wks.caseengine.utility.Utility;
@@ -56,6 +62,7 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 
 	        List<String> innerHeaders = new ArrayList<>();
 	        innerHeaders.add("Shutdown Desc");
+	        innerHeaders.add("Month");
 	        innerHeaders.add("Duration (hrs)");
 	        innerHeaders.add("Remarks");
 	        innerHeaders.add("Id");
@@ -77,6 +84,11 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	            Row row = sheet.createRow(currentRow++);
 	            List<Object> rowData = new ArrayList<>();
 	            rowData.add(dto.getDiscription());
+	            String monthName = dto.getMaintStartDateTime().toInstant()
+	            	    .atZone(ZoneId.systemDefault())
+	            	    .getMonth()
+	            	    .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+	            rowData.add(monthName);
 	            rowData.add(dto.getDurationInHrs());
 	            rowData.add(dto.getRemark());
 	            rowData.add(dto.getId());
@@ -100,7 +112,7 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	            }
 	        }
 	        // Hide Id column in shutdown export.
-	        sheet.setColumnHidden(3, true);
+	        sheet.setColumnHidden(4, true);
 	        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 	        workbook.write(outputStream);
 	        workbook.close();
@@ -154,8 +166,6 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	    List<ShutDownPlanDTO> shutDownPlanDTOs = new ArrayList<>();
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-	    	// For updates (excel contains `Id`), we need `audityear` + `month` because `saveShutdownPlantData`
-	    	// uses them for audit/history logic.
 	    	Map<String, String> idToMonth = new HashMap<>();
 	    	try {
 	    		List<ShutDownPlanDTO> existing = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(plantFKId, "Shutdown", year);
@@ -171,7 +181,6 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	    			idToMonth.put(existingDto.getId(), monthName);
 	    		}
 	    	} catch (Exception ignored) {
-	    		// If mapping fails for any reason, we still try to import the numeric/text columns.
 	    	}
 
 	        Sheet sheet = workbook.getSheetAt(0);
@@ -186,15 +195,13 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	            ShutDownPlanDTO dto = new ShutDownPlanDTO();
 	            try {
 	            	dto.setDiscription(getStringCellValue(row.getCell(0), dto));
-	                dto.setDurationInHrs(getValidatedDurationInHrs(row.getCell(1), dto));
-	                dto.setRemark(getStringCellValue(row.getCell(2), dto));
-	                dto.setId(getStringCellValue(row.getCell(3), dto));
+	            	dto.setMonth(getStringCellValue(row.getCell(1), dto));
+	            	setMonthBoundaries(dto.getMonth(), dto);
+	                dto.setDurationInHrs(getValidatedDurationInHrs(row.getCell(2), dto));
+	                dto.setRemark(getStringCellValue(row.getCell(3), dto));
+	                dto.setId(getStringCellValue(row.getCell(4), dto));
 	                dto.setPlantId(plantFKId);
 	                dto.setAudityear(year);
-	                dto.setType("Shutdown");
-	                dto.setMaintStartDateTime(new Date());
-	                dto.setMaintEndDateTime(new Date());
-	                
 	              } 
 	              catch (Exception e) {
 	                e.printStackTrace();
@@ -202,7 +209,6 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	                dto.setSaveStatus("Failed");
 	            }
 
-	            // Populate month for update path (Id-based) when we can infer it from existing DB records.
 	            if (dto.getId() != null) {
 	            	String monthName = idToMonth.get(dto.getId());
 	            	dto.setMonth(monthName);
@@ -215,6 +221,38 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	    }
 
 	    return shutDownPlanDTOs;
+	}
+	public void setMonthBoundaries(String monthName, ShutDownPlanDTO dto) {
+	    if (monthName == null || monthName.isEmpty()) return;
+
+	    try {
+	        Date date = new SimpleDateFormat("MMMM", Locale.ENGLISH).parse(monthName);
+	        Calendar cal = Calendar.getInstance();
+	        cal.setTime(date);
+	        int monthIndex = cal.get(Calendar.MONTH);
+	        Calendar startCal = Calendar.getInstance();
+	        startCal.set(Calendar.YEAR, 2026); 
+	        startCal.set(Calendar.MONTH, monthIndex);
+	        startCal.set(Calendar.DAY_OF_MONTH, 1);
+	        startCal.set(Calendar.HOUR_OF_DAY, 0);
+	        startCal.set(Calendar.MINUTE, 0);
+	        startCal.set(Calendar.SECOND, 0);
+	        startCal.set(Calendar.MILLISECOND, 0);
+	        dto.setMaintStartDateTime(startCal.getTime());
+	        Calendar endCal = Calendar.getInstance();
+	        endCal.set(Calendar.YEAR, 2026);
+	        endCal.set(Calendar.MONTH, monthIndex);
+	        int lastDay = endCal.getActualMaximum(Calendar.DAY_OF_MONTH);
+	        endCal.set(Calendar.DAY_OF_MONTH, lastDay);
+	        endCal.set(Calendar.HOUR_OF_DAY, 23);
+	        endCal.set(Calendar.MINUTE, 59);
+	        endCal.set(Calendar.SECOND, 59);
+	        endCal.set(Calendar.MILLISECOND, 999);
+	        dto.setMaintEndDateTime(endCal.getTime());
+
+	    } catch (ParseException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	private static Double getValidatedDurationInHrs(Cell cell, ShutDownPlanDTO dto) {
