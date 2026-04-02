@@ -58,11 +58,6 @@ const QualityPackagingBasis = () => {
   const isMountedRef = useRef(true)
   const exportRefs = useRef({})
 
-  // ---------- ADDED refs for workbook / transient excel export (from reference)
-  const workbookRef = useRef(null)
-  const excelExportRef = useRef(null)
-  // -----------------------------------------------------------------------
-
   useEffect(() => {
     isMountedRef.current = true
 
@@ -369,128 +364,53 @@ const QualityPackagingBasis = () => {
     return v
   }
 
-  const [isExporting, setIsExporting] = useState(false)
-
-  // ---------------------------------------------------------------------------
-  // Modified export flow: build workbookOptions and set workbookRef + isExporting
-  // then a useEffect will call excelExportRef.current.toDataURL/save exactly like
-  // your BestAchievedNorms reference. No other logic touched.
-  // ---------------------------------------------------------------------------
   const exportAllGrids = useCallback(() => {
+    const keys = Object.keys(exportRefs.current || {})
+    const firstKey = keys.find((k) => exportRefs.current[k])
+    if (!firstKey) return
+    const baseRef = exportRefs.current[firstKey]
+    if (!baseRef || typeof baseRef.save !== 'function') return
+
+    const sheets = gridNames
+      .map((gridName, idx) => {
+        const d = dataMap[gridName] || { rows: [], columns: [] }
+        const cols = d.columns || []
+        const rows = d.rows || []
+        if (!cols.length && !rows.length) return null
+
+        const sheetColumns = cols.map((c) => ({
+          autoWidth: true,
+          title: c.title || c.field || '',
+        }))
+
+        const headerRow = {
+          cells: cols.map((c) => ({ value: c.title || c.field || '' })),
+        }
+
+        const dataRows = rows.map((r) => ({
+          cells: cols.map((c) => ({ value: normalizeCellValue(r?.[c.field]) })),
+        }))
+
+        const sheetRows = [headerRow, ...dataRows]
+
+        return {
+          title: sanitizeSheetName(gridName, `Sheet${idx + 1}`),
+          columns: sheetColumns,
+          rows: sheetRows,
+        }
+      })
+      .filter(Boolean)
+
+    if (!sheets.length) return
+
+    const workbookOptions = { sheets }
+
     try {
-      const sheets = gridNames
-        .map((gridName, idx) => {
-          const d = dataMap[gridName] || { rows: [], columns: [] }
-          const cols = d.columns || []
-          const rows = d.rows || []
-          if (!cols.length && !rows.length) return null
-
-          // filter out hidden columns (including Material_FK_Id / materialFkId)
-          let filteredCols = cols.filter(
-            (c) =>
-              !(
-                c &&
-                (c.field === 'Material_FK_Id' || c.field === 'materialFkId')
-              ) && !c.hidden,
-          )
-
-          const sheetColumns = filteredCols.map((c) => ({
-            autoWidth: true,
-            title: c.title || c.field || '',
-          }))
-
-          const headerRow = {
-            cells: filteredCols.map((c) => ({
-              value: c.title || c.field || '',
-            })),
-          }
-
-          // helper to find match for coloring (use lookup map for O(1))
-          // NOTE: redLookupRef isn't defined here; if you need coloring logic similar to other file,
-          // you can add a lookup ref. For now, keep as-is (no coloring) unless you want it.
-          const dataRows = rows.map((r) => ({
-            cells: filteredCols.map((c) => ({
-              value: normalizeCellValue(r?.[c.field]),
-            })),
-          }))
-
-          const sheetRows = [headerRow, ...dataRows]
-
-          return {
-            title: sanitizeSheetName(gridName, `Sheet${idx + 1}`),
-            columns: sheetColumns,
-            rows: sheetRows,
-          }
-        })
-        .filter(Boolean)
-
-      if (!sheets.length) return
-
-      const workbookOptions = { sheets }
-      // set workbook options and trigger transient ExcelExport to generate file
-      workbookRef.current = workbookOptions
-      setIsExporting(true)
+      baseRef.save(workbookOptions)
     } catch (err) {
-      console.error('Export prepare failed:', err)
+      console.error('Export save failed:', err)
     }
   }, [gridNames, dataMap])
-  // ---------------------------------------------------------------------------
-
-  // This effect runs when isExporting is set and actually generates & downloads file
-  useEffect(() => {
-    if (!isExporting) return
-
-    let cancelled = false
-
-    ;(async () => {
-      try {
-        if (excelExportRef.current && workbookRef.current) {
-          if (typeof excelExportRef.current.toDataURL === 'function') {
-            const dataUrl = await excelExportRef.current.toDataURL(
-              workbookRef.current,
-            )
-            if (cancelled) return
-
-            // Convert data URL to blob then trigger download programmatically.
-            const base64 = dataUrl.split(',')[1]
-            const byteString = atob(base64)
-            const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0]
-            const ab = new ArrayBuffer(byteString.length)
-            const ia = new Uint8Array(ab)
-            for (let i = 0; i < byteString.length; i++)
-              ia[i] = byteString.charCodeAt(i)
-            const blob = new Blob([ab], { type: mimeString })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `${EXCEL_NAME}.xlsx`
-            document.body.appendChild(a)
-            a.click()
-            a.remove()
-            URL.revokeObjectURL(url)
-          } else if (typeof excelExportRef.current.save === 'function') {
-            // Fallback to save() if toDataURL is not available in this kendo version
-            excelExportRef.current.save(workbookRef.current)
-          } else {
-            console.error(
-              'ExcelExport ref method missing: toDataURL or save not found',
-            )
-          }
-        } else {
-          console.error('ExcelExport ref or workbookOptions missing')
-        }
-      } catch (err) {
-        console.error('Export save failed:', err)
-      } finally {
-        workbookRef.current = null
-        if (!cancelled) setIsExporting(false)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [isExporting, EXCEL_NAME])
 
   const fileName = `${EXCEL_NAME}.xlsx`
 
@@ -503,12 +423,12 @@ const QualityPackagingBasis = () => {
     <div>
       <Backdrop
         sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={!!loading || !!isExporting}
+        open={!!loading}
       >
         <CircularProgress color='inherit' />
       </Backdrop>
 
-      {/* Hidden ExcelExport instances for each grid (unchanged) */}
+      {/* Hidden ExcelExport instances for each grid */}
       <div style={{ display: 'none' }}>
         {gridNames.map((name) => {
           const data = dataMap[name] || { rows: [], columns: [] }
@@ -539,16 +459,36 @@ const QualityPackagingBasis = () => {
         })}
       </div>
 
-      {/* TRANSIENT ExcelExport used for toDataURL/save when isExporting is true */}
-      {isExporting && (
-        <div style={{ display: 'none' }}>
-          <ExcelExport
-            data={[]}
-            ref={(r) => (excelExportRef.current = r)}
-            fileName={fileName}
-          />
-        </div>
-      )}
+      {/* {activeTabs?.length > 1 && (
+        <Tabs
+          value={tabIndex}
+          onChange={(e, newIndex) => setTabIndex(newIndex)}
+          variant='scrollable'
+          scrollButtons='auto'
+          sx={{
+            borderBottom: '0px solid #ccc',
+            '.MuiTabs-indicator': { display: 'none' },
+            margin: '0px 0px 10px 0px',
+            minHeight: '28px',
+          }}
+          textColor='primary'
+          indicatorColor='primary'
+        >
+          {activeTabs.map((label, idx) => (
+            <Tab
+              key={idx}
+              label={label}
+              sx={{
+                border: '1px solid #ADD8E6',
+                borderBottom: '1px solid #ADD8E6',
+                fontSize: '0.75rem',
+                padding: '9px',
+                minHeight: '12px',
+              }}
+            />
+          ))}
+        </Tabs>
+      )} */}
 
       {tabIndex === 0 && (
         <Box display='flex' justifyContent='flex-end' mb='2px'>

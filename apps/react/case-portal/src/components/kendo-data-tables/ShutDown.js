@@ -992,14 +992,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD) {
-        response = await DtaDataService.exportShutdownElastomerjmd(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-          EXCEL_EXPORT_TITLE,
-        )
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1037,14 +1030,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD) {
-        response = await DtaDataService.ImportShutdownElastomerjmd(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1155,7 +1141,7 @@ const ShutDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: true,
+      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
       showNoteWhileDeleting:
         IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD ? true : false,
 
@@ -1165,7 +1151,7 @@ const ShutDown = ({ permissions }) => {
       uploadExcelBtn:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        lowerVertName === 'elastomer' ||
+        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'chemical' ||
@@ -1204,11 +1190,7 @@ const ShutDown = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
       {lowerVertName === 'meg' && (
-        <Typography
-          component='div'
-          className='text-note'
-          style={{ marginTop: 24 }}
-        >
+        <Typography component='div' className='text-note'>
           * for the case of turnaround planning kindly specify turnaround text
           in the shutdown desc column
         </Typography>
