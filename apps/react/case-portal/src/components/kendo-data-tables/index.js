@@ -207,7 +207,6 @@ const KendoDataTables = ({
   const dataGridStore = useSelector((state) => state.dataGridStore)
 
   const keycloak = useSession()
-  // const READ_ONLY = getRoleName(keycloak)
 
   const { verticalChange, oldYear, year, plantObject, siteObject } =
     dataGridStore
@@ -822,6 +821,8 @@ const KendoDataTables = ({
 
     setRemarkDialogOpen(false)
   }
+
+  // console.log('columns', columns)
 
   const handleAddRow = () => {
     setEdit({})
@@ -2865,8 +2866,11 @@ const KendoDataTables = ({
                   )
                 }
                 if (col.type === 'dynamicDropdown') {
-                  const dropdownOptions =
-                    permissions?.dynamicDropdownOptions || []
+                  const optionsRaw = permissions?.dynamicDropdownOptions || []
+                  const dropdownOptions = Array.isArray(optionsRaw)
+                    ? optionsRaw
+                    : optionsRaw[col.field] || []
+
                   return (
                     <GridColumn
                       key={col.field}

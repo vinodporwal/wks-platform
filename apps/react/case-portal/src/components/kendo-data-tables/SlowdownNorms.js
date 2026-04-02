@@ -540,7 +540,6 @@ const SlowdownNorms = () => {
       let response
 
       if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
-        // Use saveShutdownNormsExcelNonGrade for VCM
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
           keycloak,
@@ -662,7 +661,8 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
-        (IS_PE_PP && !IS_PE_NMD)
+        // (IS_PE_PP && !IS_PE_NMD)
+        IS_PE_PP
           ? true
           : false,
       downloadExcelBtn:
