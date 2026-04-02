@@ -66,6 +66,9 @@ const SlowdownNorms = () => {
     ['pe'].includes(VERTICAL_NAME_LOWERCASE) &&
     ['nmd'].includes(SITE_NAME_LOWERCASE) &&
     ['lldpe1', 'lldpe2'].includes(PLANT_NAME_LOWERCASE)
+  const IS_PE_NMD =
+    ['pe'].includes(VERTICAL_NAME_LOWERCASE) &&
+    ['nmd'].includes(SITE_NAME_LOWERCASE)
 
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
@@ -500,12 +503,21 @@ const SlowdownNorms = () => {
         )
       } else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
         // Use slowdownconsumptionExport for PE/PP
-        response = await DataService.slowdownconsumptionExport(
+        response = await DataService.slowdownconsumptionExportAllGrade(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
         )
-      } else if (IS_ELASTOMER_JMD_HIIR) {
+      }
+      // else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
+      //   // Use slowdownconsumptionExport for PE/PP
+      //   response = await DataService.slowdownconsumptionExport(
+      //     keycloak,
+      //     PLANT_ID,
+      //     AOP_YEAR,
+      //   )
+      // }
+      else if (IS_ELASTOMER_JMD_HIIR) {
         response = await DataService.slowdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,
@@ -648,7 +660,12 @@ const SlowdownNorms = () => {
           ? false
           : true,
       uploadExcelBtn:
-        lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL ? true : false,
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_CHEMICAL ||
+        (IS_PE_PP && !IS_PE_NMD)
+          ? true
+          : false,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||
