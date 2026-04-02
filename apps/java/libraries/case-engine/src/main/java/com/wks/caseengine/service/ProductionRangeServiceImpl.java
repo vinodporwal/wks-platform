@@ -387,6 +387,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 				normConfigurationDTO.setMay(configurationDTO.getMay());
 				normConfigurationDTO.setSaveStatus(configurationDTO.getSaveStatus());
 				normConfigurationDTO.setErrDescription(configurationDTO.getErrDescription());
+				normConfigurationDTOs.add(normConfigurationDTO);
 			}
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray = exportProductionRange(year, plantId.toString(), true, normConfigurationDTOs);
@@ -426,6 +427,7 @@ public class ProductionRangeServiceImpl implements ProductionRangeService {
 				normConfigurationDTO.setMay(configurationDTO.getMay());
 				normConfigurationDTO.setSaveStatus(configurationDTO.getSaveStatus());
 				normConfigurationDTO.setErrDescription(configurationDTO.getErrDescription());
+				normConfigurationDTOs.add(normConfigurationDTO);
 			}
 			if (failedList != null && failedList.size() > 0) {
 				byte[] fileByteArray = exportProductionRangeLimit(year, plantId.toString(), true, normConfigurationDTOs);
