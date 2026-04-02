@@ -18,7 +18,8 @@ import {
 } from 'components/colums/ShutdownColumn'
 import {
   ShutDownAllColumns,
-  ShutDown_Elastomer_JMD_Columns,
+  ShutDown_Elastomer_JMD_HIIR_Columns,
+  ShutDown_Elastomer_JMD_IIR_Columns,
 } from 'components/colums/ShutdownColumn'
 import {
   ShutDownPTAColumns,
@@ -75,7 +76,14 @@ const ShutDown = ({ permissions }) => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
-
+  const IS_ELASTOMER_JMD_IIR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'jmd' &&
+    lowerPlantName === 'iir'
+  const IS_ELASTOMER_JMD_HIIR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'jmd' &&
+    lowerPlantName === 'hiir'
   const IS_NON_PRODUCT_VERTICAL =
     lowerVertName === 'elastomer' ||
     IS_PVC_VMD ||
@@ -86,7 +94,8 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'meg' ||
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
-    lowerVertName === 'chemical'
+    lowerVertName === 'chemical' ||
+    IS_ELASTOMER_JMD_IIR
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
@@ -512,13 +521,9 @@ const ShutDown = ({ permissions }) => {
           remark: row.remark || 'null',
           lineId: row.lineId,
         }))
-      } else if (IS_ELASTOMER_JMD) {
+      } else if (IS_ELASTOMER_JMD_IIR) {
         // For Elastomer JMD, set start date to previous day and end date to today
         shutdownDetails = newRow.map((row) => {
-          const today = new Date()
-          const prevDay = new Date()
-          prevDay.setDate(today.getDate() - 1)
-
           return {
             discription: row.discription || row.discriptionDrpdwn,
             durationInHrs: (() => {
@@ -527,13 +532,11 @@ const ShutDown = ({ permissions }) => {
               const [h = '00', m = '00'] = String(v).split('.')
               return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
             })(),
-            maintStartDateTime: prevDay,
-            maintEndDateTime: today,
+            maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+            maintStartDateTime: addTimeOffset(row.maintStartDateTime),
             audityear: AOP_YEAR,
             id: row.idFromApi || null,
             remark: row.remark || 'null',
-            lineId: row.lineId,
-            productId: row.productId,
           }
         })
       } else {
@@ -941,8 +944,14 @@ const ShutDown = ({ permissions }) => {
         return IS_CHEMICAL ? ShutDownChemicalColumns : ShutDownAllColumns
       case verticalEnums.PVC:
         return IS_PVC_DMD ? ShutDownPpDtaColumns : ShutDownPpColumns
+
       case verticalEnums.ELASTOMER:
-        return IS_ELASTOMER_JMD ? ShutDown_Elastomer_JMD_Columns : []
+        return IS_ELASTOMER_JMD_HIIR
+          ? ShutDown_Elastomer_JMD_HIIR_Columns
+          : IS_ELASTOMER_JMD_IIR
+            ? ShutDown_Elastomer_JMD_IIR_Columns
+            : []
+
       default:
         return ShutDownAllColumns
     }
@@ -992,7 +1001,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD) {
+      if (IS_ELASTOMER_JMD_HIIR) {
         response = await DtaDataService.exportShutdownElastomerjmd(
           keycloak,
           PLANT_ID,
@@ -1037,7 +1046,7 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_ELASTOMER_JMD) {
+      if (IS_ELASTOMER_JMD_HIIR) {
         response = await DtaDataService.ImportShutdownElastomerjmd(
           rawFile,
           keycloak,

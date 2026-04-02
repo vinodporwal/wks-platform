@@ -63,7 +63,7 @@ export const ShutDownAllColumns = [
     editable: true,
   },
 ]
-export const ShutDown_Elastomer_JMD_Columns = [
+export const ShutDown_Elastomer_JMD_IIR_Columns = [
   {
     field: 'discription',
     title: 'Shutdown Desc',
@@ -76,16 +76,16 @@ export const ShutDown_Elastomer_JMD_Columns = [
     editable: false,
     hidden: true,
   },
-  // {
-  //   field: 'maintStartDateTime',
-  //   title: 'SD - From',
-  //   editable: true,
-  // },
-  // {
-  //   field: 'maintEndDateTime',
-  //   title: 'SD - To',
-  //   editable: true,
-  // },
+  {
+    field: 'maintStartDateTime',
+    title: 'SD - From',
+    editable: true,
+  },
+  {
+    field: 'maintEndDateTime',
+    title: 'SD - To',
+    editable: true,
+  },
   {
     field: 'durationInHrs',
     title: 'Duration (hrs)',
@@ -97,7 +97,37 @@ export const ShutDown_Elastomer_JMD_Columns = [
     editable: true,
   },
 ]
-
+export const ShutDown_Elastomer_JMD_HIIR_Columns = [
+  {
+    field: 'discription',
+    title: 'Shutdown Desc',
+    editable: true,
+    type: 'descLimit',
+  },
+  {
+    field: 'maintenanceId',
+    title: 'Maintenance ID',
+    editable: false,
+    hidden: true,
+  },
+  {
+    field: 'monthly',
+    title: 'Month',
+    type: 'monthDropdownPEPP',
+    editable: true,
+    width: 150,
+  },
+  {
+    field: 'durationInHrs',
+    title: 'Duration (hrs)',
+    editable: true,
+  },
+  {
+    field: 'remark',
+    title: 'Remarks',
+    editable: true,
+  },
+]
 export const SlowdownConfigColumns = [
   {
     field: 'description',
