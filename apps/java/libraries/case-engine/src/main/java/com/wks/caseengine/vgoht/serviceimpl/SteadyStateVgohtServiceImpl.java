@@ -1,6 +1,6 @@
 package com.wks.caseengine.vgoht.serviceimpl;
 
-import com.wks.caseengine.vgoht.service.SteadyStateService;
+import com.wks.caseengine.vgoht.service.SteadyStateVgohtService;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
@@ -28,7 +28,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SteadyStateServiceImpl implements SteadyStateService {
+public class SteadyStateVgohtServiceImpl implements SteadyStateVgohtService {
 
     @PersistenceContext
 	private EntityManager entityManager;
