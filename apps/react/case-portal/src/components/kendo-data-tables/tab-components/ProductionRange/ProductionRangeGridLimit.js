@@ -411,7 +411,6 @@ const ProductionRangeGridLimit = ({
         PLANT_ID,
         AOP_YEAR,
       )
-       console.log('Upload response:', response);
       if (response?.code === 200) {
         setSnackbarOpen(true)
         setSnackbarData({

@@ -477,11 +477,7 @@ async function saveProductionVolDataLineExcel(
     return await Promise.reject(e)
   }
 }
-async function getAOPMCCalculatedElastomerJmd(
-  keycloak,
-  PLANT_ID,
-  AOP_YEAR,
-) {
+async function getAOPMCCalculatedElastomerJmd(keycloak, PLANT_ID, AOP_YEAR) {
   const url = `${Config.CaseEngineUrl}/task/average-mc-values?plantId=${PLANT_ID}&year=${AOP_YEAR}`
   const headers = {
     Accept: 'application/json',
