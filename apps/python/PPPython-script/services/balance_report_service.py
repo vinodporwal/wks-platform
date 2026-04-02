@@ -298,6 +298,27 @@ def get_gt_heat_rate_and_free_steam(month: int, year: int, asset_name: str, gt_l
             else:
                 break  # Stop when we exceed the actual load
         
+        # If selected heat rate is 0, find the nearest non-zero heat rate
+        if selected_heat_rate == 0.0:
+            # Look for the nearest load point with non-zero heat rate
+            min_diff = float('inf')
+            nearest_heat_rate = 0.0
+            nearest_free_steam = 0.0
+            for row in rows:
+                load_point = float(row[0])
+                heat_rate = float(row[1])
+                free_steam = float(row[2])
+                
+                if heat_rate != 0.0:
+                    diff = abs(load_point - gt_load_mw)
+                    if diff < min_diff:
+                        min_diff = diff
+                        nearest_heat_rate = heat_rate
+                        nearest_free_steam = free_steam
+            
+            selected_heat_rate = nearest_heat_rate
+            selected_free_steam = nearest_free_steam
+        
         return selected_heat_rate, selected_free_steam
         
     except Exception as e:
@@ -548,11 +569,11 @@ def extract_fuel_demand_data(month: int, year: int, calculation_result: dict) ->
         operating_hours = dispatch_data['hours']
         avg_load_mw = gross_mwh / operating_hours if operating_hours > 0 else 0
         
-        # If GT is off (gross_mwh = 0), all values should be 0
+        # If GT is off (gross_mwh = 0), show NCV from DB but zeroes for load/MMBTU/heat rate
         if gross_mwh == 0:
             gt_assets.append({
                 'asset_name': gt_name,
-                'ncv_kcal_kwh': 0,
+                'ncv_kcal_kwh': ncv_gbt,  # Always show actual NCV even when GT is off
                 'quantity_mmbtu': 0,
                 'allocated_load_mw': 0,
                 'gross_mwh': 0,

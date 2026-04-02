@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Other Utilities Balance Writer
 ================================
@@ -98,7 +99,7 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
                                    chemical_name: str, uom: str, parent_utility: str,
                                    parent_utility_name: str, consumer_name: str,
                                    norm_cache: dict = None) -> int:
-    """Write a single chemical balance — demand only (no supply columns, no balance row)."""
+    """Write a single chemical balance - demand only (no supply columns, no balance row)."""
     utility_consumption = calculation_result.get('utility_consumption', {})
     if norm_cache is not None:
         norm = norm_cache.get(('NMD - Utility Plant', parent_utility_name, chemical_name), 0.0)
@@ -107,7 +108,7 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
 
     row = start_row
 
-    # Subsection header — only A-C (demand-only, no supply columns)
+    # Subsection header -- only A-C (demand-only, no supply columns)
     # Apply fill BEFORE merging (openpyxl requirement)
     for col in range(1, 4):
         ws.cell(row=row, column=col).fill = SUBSECTION_FILL
@@ -115,7 +116,8 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
     header_cell = ws[f'A{row}']
     # Use a clean display name for the header (strip DB-specific suffixes)
     display_name = (chemical_name
-                    .replace(' – GRADE 1', '')
+                    .replace(' \u2013 GRADE 1', '')   # en dash (U+2013)
+                    .replace(' - GRADE 1', '')          # plain hyphen fallback
                     .replace(', AL2(SO4)3,18H2O', '')
                     .replace(';PN:MIS 19OX', '')
                     .replace(' IS 797 GRADE1', '')
@@ -125,7 +127,7 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
 
-    # Column headers — only A-C
+    # Column headers -- only A-C
     col_headers = ['Demand', 'Norm', f'Quantity {uom}']
     for col_idx, header in enumerate(col_headers, start=1):
         cell = ws.cell(row=row, column=col_idx)
@@ -165,7 +167,7 @@ def write_single_chemical_balance(ws, start_row: int, month: int, year: int, cal
         ws.cell(row=row, column=col).border = THIN_BORDER
     row += 1
 
-    # Total row — only A-C
+    # Total row -- only A-C
     ws[f'A{row}'] = "Total Demand"
     ws[f'C{row}'] = round(chemical_quantity, 2)
     ws[f'A{row}'].font = BOLD_FONT
@@ -197,7 +199,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
     unit = utility_data['unit']
     utility_label = utility_name.replace(" Balance", "").strip()
 
-    # ── Subsection header ───────────────────────────────────────────────────
+    # -- Subsection header ---------------------------------------------------
     fill_cols = range(1, 4) if demand_only else range(1, 6)
     merge_end = 'C' if demand_only else 'E'
     # Apply fill to every cell BEFORE merging (openpyxl requirement)
@@ -210,7 +212,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
 
-    # ── Column headers ──────────────────────────────────────────────────────
+    # -- Column headers ------------------------------------------------------
     if demand_only:
         # Only 3 meaningful headers; cols D-E left blank and unbordered
         col_headers = ['Demand', 'Norm', f'Quantity {unit}', '', '']
@@ -229,7 +231,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
 
     start_data_row = row
 
-    # ── DEMAND side (always written) ────────────────────────────────────────
+    # -- DEMAND side (always written) ----------------------------------------
     demand_total = 0
     border_cols = range(1, 4) if demand_only else range(1, 6)
 
@@ -279,7 +281,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
             row += 1
 
     if demand_only:
-        # ── DEMAND-ONLY: Total row — only A-C bordered ──────────────────────
+        # -- DEMAND-ONLY: Total row -- only A-C bordered ----------------------
         ws[f'A{row}'] = f"Total {utility_label} Demand"
         ws[f'C{row}'] = round(demand_total, 2)  # Sum of all displayed rows
         ws[f'A{row}'].font = BOLD_FONT
@@ -290,7 +292,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
         row += 1
         return row
 
-    # ── SUPPLY side (demand_only=False only) ────────────────────────────────
+    # -- SUPPLY side (demand_only=False only) --------------------------------
     # supply_total: use demand_total so supply always matches the displayed demand rows.
     # These utilities (BFW, DM Water, CW1, CW2, Compressed Air) are produced on-demand;
     # any tiny rounding difference between the engine's aggregate and the DB plant-wise
@@ -310,7 +312,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
             ws.cell(row=gen_row, column=col).border = THIN_BORDER
         gen_row += 1
 
-    # ── Total row ───────────────────────────────────────────────────────────
+    # -- Total row -----------------------------------------------------------
     row = max(row, gen_row)
     ws[f'A{row}'] = f"Total {utility_label} Demand"
     ws[f'C{row}'] = round(demand_total, 2)  # Sum of all displayed rows
@@ -325,7 +327,7 @@ def write_single_utility_balance(ws, start_row: int, utility_name: str, utility_
         ws.cell(row=row, column=col).fill = PatternFill(start_color='FFF2CC', end_color='FFF2CC', fill_type='solid')
     row += 1
 
-    # ── Imbalance row ───────────────────────────────────────────────────────
+    # -- Imbalance row -------------------------------------------------------
     ws[f'A{row}'] = f"{utility_label} Imbalance"
     ws[f'C{row}'] = round(supply_total - demand_total, 2)  # Always 0 (supply = demand)
     ws[f'A{row}'].font = BOLD_FONT
@@ -342,14 +344,14 @@ def write_other_utilities_balance_section(ws, start_row: int, month: int, year: 
     """
     Write Section IV: Other Utilities Balance.
 
-    Part A – Utilities in Balance:
+    Part A - Utilities in Balance:
     1. BFW Balance
     2. DM Water Balance
     3. Cooling Water 1 Balance
     4. Cooling Water 2 Balance
     5. Compressed Air Balance
 
-    Part B – Utilities Not Part of Balance:
+    Part B - Utilities Not Part of Balance:
     6. Raw Water Balance
     7. Oxygen Balance
     8. Effluent Treatment Balance
@@ -367,7 +369,7 @@ def write_other_utilities_balance_section(ws, start_row: int, month: int, year: 
     )
     row = start_row
 
-    # ── Section header ──────────────────────────────────────────────────────
+    # -- Section header ------------------------------------------------------
     for col in range(1, 6):
         ws.cell(row=row, column=col).fill = SECTION_FILL
     ws.merge_cells(f'A{row}:E{row}')
@@ -377,7 +379,7 @@ def write_other_utilities_balance_section(ws, start_row: int, month: int, year: 
     header_cell.alignment = Alignment(horizontal='left', vertical='center')
     row += 1
 
-    # ── Part A: utilities that are part of the balance ───────────────────────
+    # -- Part A: utilities that are part of the balance -----------------------
     # 1. BFW Balance
     bfw_data = extract_bfw_balance_data(month, year, calculation_result)
     row = write_single_utility_balance(ws, row, "BFW Balance", bfw_data)
@@ -403,7 +405,7 @@ def write_other_utilities_balance_section(ws, start_row: int, month: int, year: 
     row = write_single_utility_balance(ws, row, "Compressed Air Balance", air_data)
     row += 2  # Extra gap before the "Not Part of Balance" header
 
-    # ── Part B: Utilities Not Part of Balance ────────────────────────────────
+    # -- Part B: Utilities Not Part of Balance --------------------------------
     # Apply fill BEFORE merging (openpyxl requirement); only A-C since supply cols removed
     for col in range(1, 4):
         ws.cell(row=row, column=col).fill = SECTION_FILL
@@ -436,7 +438,7 @@ def write_other_utilities_balance_section(ws, start_row: int, month: int, year: 
         ('CHEM MORPHOLENE',                          'MT', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
         ('KEM WATREAT B 70M',                        'KG', 'bfw',  'Boiler Feed Water',  'BFW Plant'),
         # DM Water Chemicals  (MaterialName must match DB exactly; UtilityName = 'D M Water')
-        ('CAUSTIC SODA LYE – GRADE 1',               'MT', 'dm',   'D M Water',          'DM Water Plant'),
+        ('CAUSTIC SODA LYE \u2013 GRADE 1',           'MT', 'dm',   'D M Water',          'DM Water Plant'),
         ('CHEM ALUM.SULFATE, AL2(SO4)3,18H2O',      'KG', 'dm',   'D M Water',          'DM Water Plant'),
         ('CHEM  SODIUM SULPHITE;PN:MIS 19OX',        'KG', 'dm',   'D M Water',          'DM Water Plant'),
         ('POLYELECTROLYTE',                          'KG', 'dm',   'D M Water',          'DM Water Plant'),

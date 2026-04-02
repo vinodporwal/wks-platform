@@ -85,6 +85,23 @@ def get_heat_rate_for_load(heat_df: pd.DataFrame, load_mw: float):
     heat = hr1 + frac * (hr2 - hr1)
     steam = fs1 + frac * (fs2 - fs1)
 
+    # If interpolated heat rate is 0, find nearest non-zero heat rate
+    if heat == 0.0:
+        # Find nearest load point with non-zero heat rate
+        min_diff = float('inf')
+        nearest_heat = 0.0
+        nearest_steam = 0.0
+        for _, row in df.iterrows():
+            row_heat = float(row["HeatRate"])
+            if row_heat != 0.0:
+                diff = abs(float(row["GTLoad"]) - load_mw)
+                if diff < min_diff:
+                    min_diff = diff
+                    nearest_heat = row_heat
+                    nearest_steam = float(row["FreeSteamFactor"])
+        heat = nearest_heat
+        steam = nearest_steam
+
     return heat, steam
 
 
@@ -378,11 +395,30 @@ def distribute_by_priority(
         WHERE FinancialYear = ? AND AssetName = 'GT-1'
     """, (fy_string,))
     heat_rows = cur.fetchall()
+    
+    # Fallback: try previous year if no data for current fiscal year
+    if not heat_rows:
+        prev_fy = f"{year - 1}-{str(year)[-2:]}" if month >= 4 else f"{year - 2}-{str(year - 1)[-2:]}"
+        cur.execute("""
+            SELECT AssetName AS EquipType, UtilityId AS CPPUtility, GTLoad, FinalHeatRate AS HeatRate, FreeSteamFactor
+            FROM CPP_GTHeatRate
+            WHERE FinancialYear = ? AND AssetName = 'GT-1'
+        """, (prev_fy,))
+        heat_rows = cur.fetchall()
+        if heat_rows:
+            print(f"  [HEAT RATE] Using fallback data for FY {prev_fy} (no data for {fy_string})")
+        else:
+            print(f"  [HEAT RATE] No heat rate data found for {fy_string} or {prev_fy}")
 
     heat_df = None
     if heat_rows:
         heat_cols = ["EquipType", "CPPUtility", "GTLoad", "HeatRate", "FreeSteamFactor"]
         heat_df = pd.DataFrame.from_records(heat_rows, columns=heat_cols)
+        print(f"  [HEAT RATE] Loaded {len(heat_rows)} rows for FY {fy_string}")
+        # Show sample data
+        if not heat_df.empty:
+            sample = heat_df.iloc[0]
+            print(f"  [HEAT RATE] Sample: Load={sample['GTLoad']} MW, HeatRate={sample['HeatRate']} KCAL/KWH, FreeSteam={sample['FreeSteamFactor']}")
 
         # Ensure numeric and sorted
         heat_df["GTLoad"] = heat_df["GTLoad"].astype(float)
