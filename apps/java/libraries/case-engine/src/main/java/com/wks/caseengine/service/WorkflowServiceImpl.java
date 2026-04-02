@@ -283,10 +283,17 @@ public class WorkflowServiceImpl implements WorkflowService {
 		Map<String, Object> map = new HashMap<>();
 		Map<String, Object> finalMap = new HashMap<>();
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
-
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		String verticalName = vertical.getName();
 		try {
-			List<Object[]> results = getProductionWorkflowData(plantId, year);
-
+			List<Object[]> results =null;
+			if(verticalName.equalsIgnoreCase("MEG")){
+				results=getProductionWorkflowDataDB2(plantId, year);
+			}else {
+				results=getProductionWorkflowData(plantId, year);
+			}
+			
 			List<WorkflowYearDTO> workflowList = new ArrayList<>();
 			for (Object[] row : results) {
 				WorkflowYearDTO dto = new WorkflowYearDTO();
@@ -332,6 +339,39 @@ public class WorkflowServiceImpl implements WorkflowService {
 			String procedureName = "GetAnnualAOPCost";
 			if (!"MEG".equalsIgnoreCase(verticalName)) {
 				procedureName = verticalName + "_" + site.getName() + "_GetAnnualAOPCost";
+			}
+			// Prepare native SQL call with parameters
+			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
+
+			Query query = entityManager.createNativeQuery(sql);
+
+			// Set parameters
+			query.setParameter("plantId", plantId);
+			query.setParameter("aopYear", aopYear);
+
+			return query.getResultList();
+		} catch (IllegalArgumentException e) {
+			throw new RestInvalidArgumentException("Invalid UUID format ", e);
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to fetch data", ex);
+		}
+	}
+	
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
+	public List<Object[]> getProductionWorkflowDataDB2(String plantId, String aopYear) {
+		try {
+			// Stored procedure name
+			// Fetch plant and vertical to determine procedure name
+			Plants plant = plantsRepository.findById(UUID.fromString(plantId)).orElseThrow(
+					() -> new RuntimeException("Plant not found for ID: " + plantId));
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).orElseThrow(
+					() -> new RuntimeException("Vertical not found for ID: " + plant.getVerticalFKId()));
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			// Determine stored procedure name dynamically
+			String verticalName = vertical.getName();
+			String procedureName = "GetAnnualProductionCost";
+			if (!"MEG".equalsIgnoreCase(verticalName)) {
+				procedureName = verticalName + "_" + site.getName() + "_GetAnnualProductionCost";
 			}
 			// Prepare native SQL call with parameters
 			String sql = "EXEC " + procedureName + " @plantId = :plantId, @aopYear = :aopYear";
@@ -434,6 +474,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 		return headers;
 	}
 
+	@Transactional(transactionManager = "db2TransactionManager", readOnly = true)
 	public List<String> getProductionWorkflowHeaders(String plantId, String aopYear) {
 		List<String> headers = new ArrayList<>();
 

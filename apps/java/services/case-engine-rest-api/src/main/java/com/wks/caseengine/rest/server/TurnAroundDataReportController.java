@@ -1,6 +1,7 @@
 package com.wks.caseengine.rest.server;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.wks.caseengine.dto.TurnAroundPlanReportDTO;
 import com.wks.caseengine.message.vm.AOPMessageVM;
+import com.wks.caseengine.repository.PlantsRepository;
 import com.wks.caseengine.service.TurnAroundDataReportService;
 
 @RestController
@@ -23,6 +25,9 @@ public class TurnAroundDataReportController {
 	
 	@Autowired
 	private TurnAroundDataReportService turnAroundDataReportService;
+	
+	@Autowired
+	private PlantsRepository plantsRepository;
 	
 	@GetMapping(value="/report/turn-around")
 	public ResponseEntity<AOPMessageVM> getReportForTurnAroundData(@RequestParam String plantId,@RequestParam String year,@RequestParam String reportType){
@@ -33,7 +38,14 @@ public class TurnAroundDataReportController {
 	@PostMapping(value = "/report/turn-around")
 	public ResponseEntity<AOPMessageVM> updateReportForTurnAroundData(@RequestParam String plantId,
 			@RequestParam String year,@RequestParam String reportType,@RequestBody List<TurnAroundPlanReportDTO> dataList) {
-		AOPMessageVM response = turnAroundDataReportService.updateReportForTurnAroundData(plantId, year,reportType, dataList);
+		String verticalName = plantsRepository.findVerticalNameByPlantId(UUID.fromString(plantId));
+		AOPMessageVM response = null;
+		if(verticalName.equalsIgnoreCase("MEG")) {
+			 response = turnAroundDataReportService.updateReportForTurnAroundDataDB2(plantId, year,reportType, dataList);
+		}else {
+			 response = turnAroundDataReportService.updateReportForTurnAroundData(plantId, year,reportType, dataList);
+		}
+		
 		return ResponseEntity.status(response.getCode()).body(response);
 	}
 	
@@ -44,3 +56,4 @@ public class TurnAroundDataReportController {
 	}
 
 }
+
