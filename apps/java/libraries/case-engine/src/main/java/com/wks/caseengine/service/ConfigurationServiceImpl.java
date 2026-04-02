@@ -204,6 +204,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				list.add(dto.getMar());
 				list.add(dto.getRemarks());
 
+				if(verticalName.equalsIgnoreCase("AROMATICS")) {
+					list.add(dto.getVersion());
+				}
 				list.add(dto.getNormParameterFKId());
 				isEditable.add(dto.getIsEditable());
 				
@@ -228,9 +231,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 			List<String> monthsList = getAcademicYearMonths(year);
 			innerHeaders.addAll(monthsList);
 			innerHeaders.add("Remarks");
-
-			innerHeaders.add("NormParameterId");
+			if(verticalName.equalsIgnoreCase("AROMATICS")) {
+				innerHeaders.add("Revision");
+			}
 			
+			innerHeaders.add("NormParameterId");
 
 			if (isAfterSave) {
 				innerHeaders.add("Status");
@@ -278,9 +283,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 				}
 			}
 
-			if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("AROMATICS") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) {
+			if (verticalName.equalsIgnoreCase("PE") || verticalName.equalsIgnoreCase("PET") || verticalName.equalsIgnoreCase("PP") || verticalName.equalsIgnoreCase("VCM") || verticalName.equalsIgnoreCase("Chemical") || verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("ELASTOMER") || pvc) {
 				sheet.setColumnHidden(17, true);
-			} else {
+			}else if(verticalName.equalsIgnoreCase("AROMATICS")) {
+				sheet.setColumnHidden(18, true);
+			}else {
 				sheet.setColumnHidden(16, true);
 			}
 
@@ -2497,7 +2504,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 						dto.setFeb(getNumericCellValue(row.getCell(14), dto));
 						dto.setMar(getNumericCellValue(row.getCell(15), dto));
 						dto.setRemarks(getStringCellValue(row.getCell(16), dto));
-						dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
+						if(verticalName.equalsIgnoreCase("AROMATICS")) {
+							dto.setNormParameterFKId(getStringCellValue(row.getCell(18), dto));
+						}else {
+							dto.setNormParameterFKId(getStringCellValue(row.getCell(17), dto));
+						}
+						
 					} else {
 						dto.setNormType(getStringCellValue(row.getCell(0), dto));
 						dto.setProductName(getStringCellValue(row.getCell(1), dto));
