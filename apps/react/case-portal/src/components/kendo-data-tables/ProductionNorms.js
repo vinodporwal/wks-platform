@@ -252,7 +252,7 @@ const ProductionNorms = ({ permissions }) => {
     } catch (error) {
       console.error('Error in saveChanges:', error)
     }
-  }, [rowsIIR, selectedUnit, calculatebtnClicked, modifiedCells])
+  }, [selectedUnit, calculatebtnClicked, modifiedCells])
 
   const updateProductNormData = async (newRow) => {
     setLoading(true)
