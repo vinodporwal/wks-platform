@@ -1,6 +1,7 @@
 package com.wks.caseengine.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -200,6 +201,155 @@ public class ShutdownNormsServiceImpl implements ShutdownNormsService {
 			ex.printStackTrace();
 			throw new RuntimeException("Failed to fetch data", ex);
 		}
+	}
+	
+	public byte[] exportShutdownNormsAllGrades(
+	        String year,
+	        UUID plantFKId,
+	        boolean isAfterSave,
+	        List<ShutdownNormsValueDTO> dtoList) { 
+	    try {
+	        AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
+	        List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM);
+	        
+	        if (gradeInfoList == null || gradeInfoList.isEmpty()) {
+	            return null;
+	        }
+
+	        Workbook workbook = new XSSFWorkbook();
+	        
+	        // Styles
+	        CellStyle lockedStyle = Utility.createLockedStyle(workbook); // Assuming this has setLocked(true)
+	        CellStyle unlockedStyle = Utility.createUnlockedStyle(workbook);
+	        unlockedStyle.setLocked(false); // CRITICAL: Ensure active cells are explicitly unlocked
+
+	        CellStyle lockedGrayStyle = workbook.createCellStyle();
+	        lockedGrayStyle.setLocked(true); // CRITICAL: This disables input
+	        lockedGrayStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+	        lockedGrayStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+	        lockedGrayStyle.setBorderBottom(BorderStyle.THIN);
+	        lockedGrayStyle.setBorderTop(BorderStyle.THIN);
+	        lockedGrayStyle.setBorderLeft(BorderStyle.THIN);
+	        lockedGrayStyle.setBorderRight(BorderStyle.THIN);
+
+	        for (Map<String, String> gradeInfo : gradeInfoList) {
+	            String currentGradeId = gradeInfo.get("gradeId");
+	            String displayName = gradeInfo.get("displayName");
+	            
+	            String sheetName = Utility.sanitizeSheetName(displayName != null ? displayName : "Grade_" + currentGradeId);
+	            Sheet sheet = workbook.createSheet(sheetName);
+
+	            // ENABLE PROTECTION: This is required for 'Locked' cells to actually be uneditable
+	            sheet.protectSheet("secret_password"); 
+
+	            List<ShutdownNormsValueDTO> currentDtoList = new ArrayList<>();
+
+	            if (!isAfterSave) {
+	                AOPMessageVM aopMessageVM = getShutdownNormsData(year, plantFKId.toString(), currentGradeId);
+	                if (aopMessageVM != null && aopMessageVM.getData() != null) {
+	                    Map<String, Object> responseMap = (Map<String, Object>) aopMessageVM.getData();
+	                    List<ShutdownNormsValueDTO> fetched = (List<ShutdownNormsValueDTO>) responseMap.get("mcuNormsValueDTOList");
+	                    if (fetched != null) currentDtoList.addAll(fetched);
+	                }
+	            } else if (dtoList != null) {
+	                currentDtoList = dtoList.stream()
+	                        .filter(dto -> currentGradeId.equals(dto.getGradeFkId()))
+	                        .collect(Collectors.toList());
+	            }
+
+	            if (currentDtoList.isEmpty()) {
+	                continue; 
+	            }
+
+	            Set<Integer> activeMonths = getActiveMonthsForExport(plantFKId, year, currentGradeId);
+	            int currentRowIndex = 0;
+
+	            // Headers
+	            List<String> headers = new ArrayList<>(Arrays.asList("Type", "Particulars", "UOM"));
+	            headers.addAll(Utility.getAcademicYearMonths(year));
+	            headers.add("Remarks");
+	            headers.add("Id");
+	            headers.add("Material Id");
+	            if (isAfterSave) {
+	                headers.add("Status");
+	                headers.add("Error Description");
+	            }
+
+	            Row headerRow = sheet.createRow(currentRowIndex++);
+	            CellStyle headerStyle = Utility.createBoldBorderedStyle(workbook);
+	            headerStyle.setLocked(true); // Lock headers
+
+	            for (int col = 0; col < headers.size(); col++) {
+	                Cell cell = headerRow.createCell(col);
+	                cell.setCellValue(headers.get(col));
+	                cell.setCellStyle(headerStyle);
+	            }
+
+	            // Data Rows
+	            for (ShutdownNormsValueDTO dto : currentDtoList) {
+	                Row row = sheet.createRow(currentRowIndex++);
+	                List<Object> rowValues = new ArrayList<>();
+	                rowValues.add(dto.getNormParameterTypeDisplayName());
+	                rowValues.add(dto.getProductName());
+	                rowValues.add(dto.getUOM());
+	                rowValues.add(dto.getApril());
+	                rowValues.add(dto.getMay());
+	                rowValues.add(dto.getJune());
+	                rowValues.add(dto.getJuly());
+	                rowValues.add(dto.getAugust());
+	                rowValues.add(dto.getSeptember());
+	                rowValues.add(dto.getOctober());
+	                rowValues.add(dto.getNovember());
+	                rowValues.add(dto.getDecember());
+	                rowValues.add(dto.getJanuary());
+	                rowValues.add(dto.getFebruary());
+	                rowValues.add(dto.getMarch());
+	                rowValues.add(dto.getRemarks());
+	                rowValues.add(dto.getId());
+	                rowValues.add(dto.getMaterialFkId());
+	                
+	                if (isAfterSave) {
+	                    rowValues.add(dto.getSaveStatus());
+	                    rowValues.add(dto.getErrDescription());
+	                }
+
+	                boolean isRowEditable = (dto.getIsEditable() != null) ? dto.getIsEditable() : true;
+
+	                for (int col = 0; col < rowValues.size(); col++) {
+	                    Cell cell = row.createCell(col);
+	                    Object val = rowValues.get(col);
+
+	                    if (val instanceof Number) {
+	                        cell.setCellValue(((Number) val).doubleValue());
+	                    } else if (val instanceof Boolean) {
+	                        cell.setCellValue((Boolean) val);
+	                    } else {
+	                        cell.setCellValue(val != null ? val.toString() : "");
+	                    }
+
+	                    // Resolve style based on column and activeMonths
+	                    // resolveCellStyleForExport must return 'lockedGrayStyle' for non-active months
+	                    // and 'unlockedStyle' for active months
+	                    cell.setCellStyle(resolveCellStyleForExport(col, isRowEditable, activeMonths,
+	                            lockedStyle, unlockedStyle, lockedGrayStyle));
+	                }
+	            }
+
+	            sheet.setColumnHidden(16, true); 
+	            sheet.setColumnHidden(17, true); 
+	            for (int i = 0; i < 3; i++) { sheet.autoSizeColumn(i); } 
+	        }
+
+	        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+	            workbook.write(outputStream);
+	            workbook.close();
+	            return outputStream.toByteArray();
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return null;
 	}
 	
 	public byte[] exportShutdownNorms(
