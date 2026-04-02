@@ -1190,10 +1190,7 @@ const ShutDown = ({ permissions }) => {
         <CircularProgress color='inherit' />
       </Backdrop>
       {lowerVertName === 'meg' && (
-        <Typography
-          component='div'
-          className='text-note'
-        >
+        <Typography component='div' className='text-note'>
           * for the case of turnaround planning kindly specify turnaround text
           in the shutdown desc column
         </Typography>
