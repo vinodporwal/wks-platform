@@ -2478,6 +2478,8 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 		Plants plant = plantsRepository.findById(plantId).orElseThrow();
 		
 		Sites site = siteRepository.findById(plant.getSiteFkId()).orElseThrow();
+		
+		boolean elastomer =verticalName.equalsIgnoreCase("Elastomer") && site.getName().equalsIgnoreCase("JMD") && plant.getName().equalsIgnoreCase("HIIR");
 		List<ShutDownPlanDTO> failedList = new ArrayList<ShutDownPlanDTO>();
 		List<String> items = List.of(
 			    "Partial Preheater Cleaning",
@@ -2515,7 +2517,7 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 					PlantMaintenanceTransaction plantMaintenanceTransaction = new PlantMaintenanceTransaction();
 					plantMaintenanceTransaction.setId(UUID.randomUUID());
 					plantMaintenanceTransaction.setPlantId(plantId);
-					if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical")) {
+					if(verticalName.equalsIgnoreCase("PTA") || verticalName.equalsIgnoreCase("Chemical") || elastomer) {
 		            	if(shutDownPlanDTO.getMonth()!=null) {
 		            		shutDownPlanDTO.setMaintStartDateTime(getStartOfMonthDate(shutDownPlanDTO.getMonth(), year));
 		            		shutDownPlanDTO.setMaintEndDateTime(getEndOfMonthDate(shutDownPlanDTO.getMonth(), year));
