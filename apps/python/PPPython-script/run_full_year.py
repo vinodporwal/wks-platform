@@ -19,6 +19,9 @@ import argparse
 import json
 from datetime import datetime
 from io import StringIO
+import concurrent.futures
+import multiprocessing
+import threading
 
 from services.budget_service import calculate_budget_with_iteration
 from services.fixed_consumption_service import get_fixed_consumption_for_month, print_fixed_consumption
@@ -168,6 +171,11 @@ def get_demands_for_month(month: int, year: int,
     demands["mp_fixed"] = fixed_data.get("mp_fixed", DEFAULT_FIXED_DEMANDS["mp_fixed"])
     demands["hp_fixed"] = fixed_data.get("hp_fixed", DEFAULT_FIXED_DEMANDS["hp_fixed"])
     demands["shp_fixed"] = fixed_data.get("shp_fixed", DEFAULT_FIXED_DEMANDS["shp_fixed"])
+    demands["dm_fixed"] = fixed_data.get("dm_fixed", 0.0)
+    demands["air_fixed"] = fixed_data.get("air_fixed", 0.0)
+    demands["cw1_fixed"] = fixed_data.get("cw1_fixed", 0.0)
+    demands["cw2_fixed"] = fixed_data.get("cw2_fixed", 0.0)
+    demands["raw_water_fixed"] = fixed_data.get("raw_water_fixed", 0.0)
     
     return demands
 
@@ -280,6 +288,11 @@ def run_single_month(month, year, cpp_plant_id, demands, save_to_db=True, save_c
             cw1_process=demands["cw1_process"],
             cw2_process=demands["cw2_process"],
             dm_process=demands["dm_process"],
+            dm_fixed=demands.get("dm_fixed", 0.0),
+            air_fixed=demands.get("air_fixed", 0.0),
+            cw1_fixed=demands.get("cw1_fixed", 0.0),
+            cw2_fixed=demands.get("cw2_fixed", 0.0),
+            raw_water_fixed=demands.get("raw_water_fixed", 0.0),
             save_to_db=save_to_db
         )
         
@@ -458,159 +471,202 @@ def run_full_financial_year(financial_year: int, cpp_plant_id: str = None,
             "total_shp_mt": 0,
         }
     }
-    
-    # Run for each month
-    for month, year in fy_months:
+
+    # ── Parallel month calculation ──────────────────────────────────────────
+    # Use up to 4 workers (or CPU count), capped so DB connections don't exhaust.
+    max_workers = min(4, multiprocessing.cpu_count())
+    print_lock  = threading.Lock()    # For console progress lines
+    db_log_lock = threading.Lock()    # Serialise DB log saves to avoid prepared-stmt collisions
+
+    # Thread-local storage so each worker thread has its own stdout buffer
+    _tls = threading.local()
+
+    class _ThreadWriter:
+        """File-like object that routes writes to the current thread's StringIO buffer."""
+        def __init__(self, real_stdout):
+            self._real = real_stdout
+        def write(self, text):
+            buf = getattr(_tls, 'buf', None)
+            if buf is not None:
+                buf.write(text)
+            # Do NOT forward to real stdout here — progress line uses print_lock instead
+        def flush(self):
+            self._real.flush()
+
+    _real_stdout = sys.stdout
+    sys.stdout = _ThreadWriter(_real_stdout)  # Install once; threads share this writer
+
+    def _run_single_month_logged(month, year, cpp_plant_id, month_demands,
+                                  save_to_db, save_calculation_logs, is_single_month,
+                                  parent_execution_id, db_log_lock):
+        """Call run_single_month but serialise the DB log-save step."""
+        result = run_single_month.__wrapped__(  # call the plain calculation part
+            month, year, cpp_plant_id, month_demands, save_to_db,
+            save_calculation_log_enabled=False,   # We'll do it below under the lock
+            parent_execution_id=parent_execution_id
+        ) if hasattr(run_single_month, '__wrapped__') else run_single_month(
+            month, year, cpp_plant_id, month_demands, save_to_db,
+            save_calculation_log_enabled=False,
+            parent_execution_id=parent_execution_id
+        )
+        # Save calculation log serialised
+        if save_calculation_logs and not is_single_month:
+            from services.calculation_log_service import get_financial_year_month_id, save_calculation_log
+            fy_month_id = get_financial_year_month_id(month, year)
+            if fy_month_id:
+                with db_log_lock:
+                    log_result = save_calculation_log(
+                        month=month,
+                        year=year,
+                        financial_year_month_id=fy_month_id,
+                        calculation_result=result,
+                        execution_time_seconds=result.get("execution_time_seconds"),
+                        parent_execution_id=parent_execution_id,
+                        generate_excel=False
+                    )
+                result["calculation_log_saved"] = log_result.get("success", False)
+                if log_result.get("success"):
+                    print(f"[LOG] Calculation log saved: {log_result.get('log_id')}")
+                else:
+                    print(f"[LOG WARNING] Failed to save calculation log: {log_result.get('message')}")
+        return result
+
+    def _process_month(month_year_tuple):
+        """Worker: run one month and return its result dict (thread-safe)."""
+        month, year = month_year_tuple
         month_name = MONTH_NAMES[month]
-        print("=" * 80)
-        print(f"PROCESSING: {month_name} {year} (Month {month}/{year})")
-        print("=" * 80)
-        
-        # Capture output for this month
-        log_capture = LogCapture()
-        sys.stdout = log_capture
-        
+
+        # Give this thread its own StringIO buffer; the _ThreadWriter above will route here
+        _tls.buf = StringIO()
+
         try:
-            # Get demands for this month (both process and fixed from DB if enabled)
             month_demands = get_demands_for_month(
-                month, year, 
+                month, year,
                 process_demands=process_demands,
                 use_db_process=use_dynamic_process,
                 use_db_fixed=use_db_fixed
             )
-            
-            # Print process demands for this month (if dynamic)
-            if use_dynamic_process:
-                print(f"\nProcess Demands for {month_name} {year} (from DB):")
-                print(f"  LP Process:  {month_demands['lp_process']:.2f} MT")
-                print(f"  MP Process:  {month_demands['mp_process']:.2f} MT")
-                print(f"  HP Process:  {month_demands['hp_process']:.2f} MT")
-                print(f"  SHP Process: {month_demands['shp_process']:.2f} MT")
-                print(f"  Compressed Air: {month_demands['air_process']:,.0f} NM3")
-                print(f"  Cooling Water 1: {month_demands['cw1_process']:,.0f} KM3")
-                print(f"  Cooling Water 2: {month_demands['cw2_process']:,.0f} KM3")
-                print(f"  DM Water: {month_demands['dm_process']:,.0f} M3")
-            
-            # Print fixed demands for this month
-            print(f"\nFixed Demands for {month_name} {year}{' (from DB)' if use_db_fixed else ' (defaults)'}:")
-            print(f"  LP Fixed: {month_demands['lp_fixed']:.2f} MT")
-            print(f"  MP Fixed: {month_demands['mp_fixed']:.2f} MT")
-            print(f"  HP Fixed: {month_demands['hp_fixed']:.2f} MT")
-            print(f"  SHP Fixed: {month_demands['shp_fixed']:.2f} MT")
-            
-            # Run the model (pass parent_execution_id for logging)
-            result = run_single_month(
-                month, year, cpp_plant_id, month_demands, save_to_db, 
-                save_calculation_log_enabled=(save_calculation_logs and not is_single_month),
-                parent_execution_id=parent_execution_id
+
+            result = _run_single_month_logged(
+                month, year, cpp_plant_id, month_demands, save_to_db,
+                save_calculation_logs, is_single_month, parent_execution_id, db_log_lock
             )
-            
-            # Restore stdout
-            sys.stdout = log_capture.original_stdout
-            
-            # Extract key metrics
+
             success = result.get("overall_success", False)
             usd_result = result.get("usd_result", {})
-            
-            # Get iterations and converged from correct locations
             iterations_used = result.get("iterations_used", 0) or usd_result.get("iterations_used", 0)
-            converged = success  # overall_success is set from usd_result.converged
-            
+
             month_result = {
                 "month": month,
                 "year": year,
                 "month_name": month_name,
                 "success": success,
                 "iterations": iterations_used,
-                "converged": converged,
-                "calculation_result": result,  # Store full calculation result for Excel report
+                "converged": success,
+                "calculation_result": result,
             }
-            
-            # Track summary statistics
-            results["summary"]["total_iterations"] += iterations_used
-            
-            if success:
-                results["summary"]["successful"] += 1
-            else:
-                errors = result.get("errors", [])
-                if errors:
-                    results["summary"]["failed"] += 1
-                else:
-                    results["summary"]["warning"] += 1
-            
-            # Extract power generation (even if not converged)
+
             final_dispatch = usd_result.get("final_dispatch", [])
-            
             total_power = sum(asset.get("GrossMWh", 0) * 1000 for asset in final_dispatch)
             month_result["total_power_kwh"] = total_power
-            results["summary"]["total_power_kwh"] += total_power
-            
-            # Extract SHP steam - check multiple possible locations
+
             final_steam = usd_result.get("final_steam_balance", {}) or result.get("steam_result", {})
             shp_balance = final_steam.get("shp_balance", {})
-            
-            # Try different keys for total SHP
-            total_shp = shp_balance.get("total_shp_supply", 0)
-            if total_shp == 0:
-                # Try summary
-                summary = final_steam.get("summary", {})
-                total_shp = summary.get("total_shp_demand", 0)
-            if total_shp == 0:
-                # Try shp_total
-                total_shp = shp_balance.get("shp_total", 0)
-            
+            total_shp = (shp_balance.get("total_shp_supply", 0)
+                         or final_steam.get("summary", {}).get("total_shp_demand", 0)
+                         or shp_balance.get("shp_total", 0))
             month_result["total_shp_mt"] = total_shp
-            results["summary"]["total_shp_mt"] += total_shp
-            
-            # Check if data was saved to DB
+
             save_result = result.get("save_result", {})
-            records_saved = save_result.get("updated", 0) + save_result.get("unchanged", 0)
-            month_result["records_saved"] = records_saved
-            
-            if success:
-                print(f"\n[OK] {month_name} {year}: SUCCESS (Converged)")
-                print(f"  Iterations: {month_result['iterations']}")
-                print(f"  Total Power: {total_power:,.0f} KWH")
-                print(f"  Total SHP: {total_shp:,.2f} MT")
-                print(f"  Records Saved: {records_saved}")
-            else:
+            month_result["records_saved"] = (save_result.get("updated", 0)
+                                             + save_result.get("unchanged", 0))
+
+            if not success:
                 month_result["errors"] = result.get("errors", [])
-                converged = result.get("converged", False)
-                
-                # Still show results even if not converged
-                print(f"\n[WARN] {month_name} {year}: {'PARTIAL' if final_dispatch else 'FAILED'}")
-                print(f"  Converged: {converged}")
-                print(f"  Total Power: {total_power:,.0f} KWH")
-                print(f"  Records Saved: {records_saved}")
-                for error in month_result.get("errors", []):
-                    print(f"  Note: {error.get('message', 'Unknown')}")
-            
-            # Extract summary section from log output
-            log_output = log_capture.get_output()
-            month_summary = extract_summary_from_log(log_output)
-            month_result["detailed_summary"] = month_summary
-            
-            results["months"][f"{year}_{month:02d}"] = month_result
-            
-            # Save month log
-            if save_logs:
-                log_path = save_month_log(log_output, month, year, run_log_folder)
-                month_result["log_file"] = log_path
-        
+
+            log_text = _tls.buf.getvalue()
+            month_result["detailed_summary"] = extract_summary_from_log(log_text)
+            month_result["log_output"] = log_text
+
+            status = "[OK]" if success else "[WARN]"
+            with print_lock:
+                _real_stdout.write(
+                    f"  {status} {month_name} {year}: "
+                    f"{'SUCCESS' if success else 'PARTIAL'} | "
+                    f"Iter={iterations_used} | "
+                    f"Power={total_power:,.0f} KWH | "
+                    f"SHP={total_shp:,.2f} MT\n"
+                )
+                _real_stdout.flush()
+
+            return month_result
+
         except Exception as e:
-            sys.stdout = log_capture.original_stdout
-            results["summary"]["failed"] += 1
-            results["months"][f"{year}_{month:02d}"] = {
+            import traceback as _tb
+            err_msg = _tb.format_exc()
+            log_text = (_tls.buf.getvalue() if _tls.buf else '') + err_msg
+            with print_lock:
+                _real_stdout.write(f"  [ERR] {month_name} {year}: EXCEPTION - {e}\n")
+                _real_stdout.flush()
+            return {
                 "month": month,
                 "year": year,
                 "month_name": month_name,
                 "success": False,
-                "error": str(e)
+                "error": str(e),
+                "log_output": log_text,
             }
-            print(f"\n[ERR] {month_name} {year}: EXCEPTION - {str(e)}")
-        
-        print()
-    
+        finally:
+            _tls.buf = None   # Release buffer for this thread
+
+    _real_stdout.write(f"Running {len(fy_months)} months in parallel (max {max_workers} workers)...\n\n")
+    _real_stdout.flush()
+    run_start = time.time()
+
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_month = {executor.submit(_process_month, my): my for my in fy_months}
+            month_results_list = []
+            for future in concurrent.futures.as_completed(future_to_month):
+                month_results_list.append(future.result())
+    finally:
+        # Always restore real stdout
+        sys.stdout = _real_stdout
+
+    # Sort results back into FY order (April → March)
+    month_order = {(m, y): i for i, (m, y) in enumerate(fy_months)}
+    month_results_list.sort(key=lambda r: month_order.get((r["month"], r["year"]), 99))
+
+    # Aggregate into results dict
+    for month_result in month_results_list:
+        month = month_result["month"]
+        year  = month_result["year"]
+        month_name = month_result["month_name"]
+        key = f"{year}_{month:02d}"
+
+        results["months"][key] = month_result
+        results["summary"]["total_iterations"] += month_result.get("iterations", 0)
+        results["summary"]["total_power_kwh"]  += month_result.get("total_power_kwh", 0)
+        results["summary"]["total_shp_mt"]     += month_result.get("total_shp_mt", 0)
+
+        if month_result.get("success"):
+            results["summary"]["successful"] += 1
+        elif month_result.get("errors"):
+            results["summary"]["failed"] += 1
+        else:
+            results["summary"]["warning"] += 1
+
+        if save_logs:
+            log_output = month_result.pop("log_output", "")
+            log_path = save_month_log(log_output, month, year, run_log_folder)
+            month_result["log_file"] = log_path
+        else:
+            month_result.pop("log_output", None)
+
+    total_elapsed = time.time() - run_start
+    print(f"\nAll months computed in {total_elapsed:.1f}s "
+          f"({total_elapsed/60:.1f} min) using {max_workers} workers.\n")
+
     # Print final summary
     print("\n" + "=" * 80)
     print("FULL YEAR RUN COMPLETE - SUMMARY")
