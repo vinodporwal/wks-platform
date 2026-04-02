@@ -1,79 +1,40 @@
-import { DataService } from 'services/DataService'
+import Config from 'consts/index'
+import { json } from 'services/request'
 
 export const OverallAopConsumptionApiService = {
   getOverallAopConsumption,
-  saveOverallAopConsumption,
-  exportOverallAopConsumption,
   calculateOverallAopConsumption,
 }
 
 // ========================|| Overall AOP Consumption APIs ||=====================================//
 
 /**
- * API Service for Overall AOP Consumption
- * Handles GET and POST operations for overall AOP consumption data
- */
-
-/**
  * Get Overall AOP Consumption Data
  * @param {Object} keycloak - Keycloak session object
  * @param {string} plantId - Plant ID
  * @param {string} year - AOP Year
+ * @param {string} gradeId - Grade ID (optional)
  * @returns {Promise} Overall AOP consumption data
  */
-async function getOverallAopConsumption(keycloak, plantId, year) {
-  try {
-    const response = await DataService.getOverallAopConsumption(
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error fetching overall AOP consumption data:', error)
-    return Promise.reject(error)
+async function getOverallAopConsumption(keycloak, plantId, year, gradeId) {
+  let url = `${Config.CaseEngineUrl}/task/overall-consumption?plantId=${plantId}&year=${year}`
+  if (gradeId) {
+    url += `&gradeId=${gradeId}`
   }
-}
-
-/**
- * Save Overall AOP Consumption Data
- * @param {Object} keycloak - Keycloak session object
- * @param {string} year - AOP Year
- * @param {Array} payload - Overall AOP consumption data to save
- * @returns {Promise} Save response
- */
-async function saveOverallAopConsumption(keycloak, year, payload) {
-  try {
-    const response = await DataService.saveOverallAopConsumption(
-      keycloak,
-      year,
-      payload,
-    )
-    return response
-  } catch (error) {
-    console.error('Error saving overall AOP consumption data:', error)
-    return Promise.reject(error)
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
   }
-}
-
-/**
- * Export Overall AOP Consumption to Excel
- * @param {Object} keycloak - Keycloak session object
- * @param {string} plantId - Plant ID
- * @param {string} year - AOP Year
- * @returns {Promise} Excel file response
- */
-async function exportOverallAopConsumption(keycloak, plantId, year) {
   try {
-    const response = await DataService.exportOverallAopConsumption(
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error exporting overall AOP consumption data:', error)
-    return Promise.reject(error)
+    const resp = await fetch(url, { method: 'GET', headers })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
 
@@ -85,15 +46,24 @@ async function exportOverallAopConsumption(keycloak, plantId, year) {
  * @returns {Promise} Calculated data
  */
 async function calculateOverallAopConsumption(keycloak, plantId, year) {
+  const url = `${Config.CaseEngineUrl}/task/calculate-overall-consumption?year=${year}&plantId=${plantId}`
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
   try {
-    const response = await DataService.calculateOverallAopConsumption(
-      keycloak,
-      plantId,
-      year,
-    )
-    return response
-  } catch (error) {
-    console.error('Error calculating overall AOP consumption:', error)
-    return Promise.reject(error)
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`)
+    }
+    const result = await json(keycloak, resp)
+    return result || { success: true }
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
