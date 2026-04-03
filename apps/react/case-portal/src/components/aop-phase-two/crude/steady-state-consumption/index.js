@@ -8,7 +8,7 @@ import ValueFormatterPhaseTwo, {
   customValueFormatterPhaseTwo,
 } from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
-import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
+import { SteadyStateConsumptionApiService } from '../../services/vgoht/steadyStateConsumptionApiService'
 import { steadyStateConsumptionResponse } from '../dummyData'
 
 const SteadyStateConsumption = () => {
