@@ -112,6 +112,14 @@ const SlowdownNorms = () => {
     lowerVertName === 'elastomer' &&
     SITE_NAME_LOWERCASE === 'jmd' &&
     PLANT_NAME_LOWERCASE === 'hiir'
+  const IS_ELASTOMER_JMD_IIR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'jmd' &&
+    PLANT_NAME_LOWERCASE === 'iir'
+  const IS_ELASTOMER_HMD_SBR =
+    lowerVertName === 'elastomer' &&
+    SITE_NAME_LOWERCASE === 'hmd' &&
+    PLANT_NAME_LOWERCASE === 'sbr'
   const saveChanges = React.useCallback(async () => {
     try {
       var data = Object.values(modifiedCells)
