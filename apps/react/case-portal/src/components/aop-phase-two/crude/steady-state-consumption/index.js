@@ -4,9 +4,11 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from '../../common/ValueFormatterPhaseTwo'
 import { validateRowDataWithRemarks } from '../../common/commonUtilityFunctions'
-import { SteadyStateConsumptionApiService } from '../../services/crude/steadyStateConsumptionApiService'
+import { SteadyStateConsumptionApiService } from '../../services/vgoht/steadyStateConsumptionApiService'
 import { steadyStateConsumptionResponse } from '../dummyData'
 
 const SteadyStateConsumption = () => {
@@ -30,14 +32,14 @@ const SteadyStateConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
     {
       field: 'id',
       title: 'Id',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -47,7 +49,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -56,7 +58,7 @@ const SteadyStateConsumption = () => {
     {
       field: 'normParameterTypeDisplayName',
       title: 'Type',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -66,16 +68,16 @@ const SteadyStateConsumption = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
     {
       field: 'april',
       title: headerMap[4],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -83,8 +85,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'may',
       title: headerMap[5],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -92,8 +94,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'june',
       title: headerMap[6],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -101,8 +103,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'july',
       title: headerMap[7],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -110,8 +112,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'august',
       title: headerMap[8],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -119,8 +121,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'september',
       title: headerMap[9],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -128,8 +130,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'october',
       title: headerMap[10],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -137,8 +139,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'november',
       title: headerMap[11],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -146,8 +148,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'december',
       title: headerMap[12],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -155,8 +157,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'january',
       title: headerMap[1],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -164,8 +166,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'february',
       title: headerMap[2],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -173,8 +175,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'march',
       title: headerMap[3],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: true,
       format: valueFormat,
@@ -182,8 +184,8 @@ const SteadyStateConsumption = () => {
     {
       field: 'remarks',
       title: 'Remark',
-      widthT: 150,
-      minWidth: 120,
+      // widthT: 150,
+      minWidth: 220,
       type: 'textarea',
       editable: true,
     },

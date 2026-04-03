@@ -35,7 +35,7 @@ const Configuration = ({ startDate, endDate, refreshData }) => {
   const SITE_ID = siteObject?.id
   const AOP_YEAR = year?.selectedYear
   const headerMap = generateHeaderNames(AOP_YEAR)
-  const valueFormat = customValueFormatterPhaseTwo(3)
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const [rows, setRows] = useState([])
   const [originalRows, setOriginalRows] = useState([])
   const [remarkDialogOpen, setRemarkDialogOpen] = useState(false)

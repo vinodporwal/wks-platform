@@ -85,6 +85,23 @@ def get_heat_rate_for_load(heat_df: pd.DataFrame, load_mw: float):
     heat = hr1 + frac * (hr2 - hr1)
     steam = fs1 + frac * (fs2 - fs1)
 
+    # If interpolated heat rate is 0, find nearest non-zero heat rate
+    if heat == 0.0:
+        # Find nearest load point with non-zero heat rate
+        min_diff = float('inf')
+        nearest_heat = 0.0
+        nearest_steam = 0.0
+        for _, row in df.iterrows():
+            row_heat = float(row["HeatRate"])
+            if row_heat != 0.0:
+                diff = abs(float(row["GTLoad"]) - load_mw)
+                if diff < min_diff:
+                    min_diff = diff
+                    nearest_heat = row_heat
+                    nearest_steam = float(row["FreeSteamFactor"])
+        heat = nearest_heat
+        steam = nearest_steam
+
     return heat, steam
 
 
@@ -249,34 +266,48 @@ def _dispatch_once(
                 asset_dispatch[idx]["gross"] += group_allocation
                 remaining -= group_allocation
             else:
-                # Multiple assets with same priority - distribute EQUALLY by loading %
-                # Each asset should reach the same loading percentage
-                
-                # Iteratively increase all assets equally until demand met or one hits MAX
-                temp_remaining = group_allocation
-                while temp_remaining > 0.1:  # Small threshold to avoid infinite loop
-                    # Find assets that can still increase
-                    can_increase = []
-                    for idx, _ in group_available:
-                        ad = asset_dispatch[idx]
-                        if ad["gross"] < ad["max_energy"]:
-                            can_increase.append(idx)
-                    
-                    if not can_increase:
+                # Multiple assets with same priority → all must run at SAME LoadMW
+                # Find a single target_load_mw so that sum(target_load_mw × hours_i)
+                # covers total_current_group_mwh + group_allocation.
+                # This ensures true parallel / equal-MW dispatch.
+
+                # Total MWh that must come from this group after allocation
+                current_group_total = sum(asset_dispatch[idx]["gross"] for idx, _ in group_available)
+                target_group_total = current_group_total + group_allocation
+
+                # Iterative capping: some assets may hit their max before others
+                remaining_assets = [(idx, asset_dispatch[idx]) for idx, _ in group_available]
+                remaining_mwh = target_group_total
+                allocated_from_capped = 0.0
+
+                while remaining_assets:
+                    total_hours = sum(float(ad["row"]["opHours"]) for _, ad in remaining_assets)
+                    if total_hours <= 0:
                         break
-                    
-                    # Calculate equal share for each
-                    equal_share = temp_remaining / len(can_increase)
-                    
-                    # Apply increase to each, respecting MAX limit
-                    for idx in can_increase:
-                        ad = asset_dispatch[idx]
-                        available = ad["max_energy"] - ad["gross"]
-                        actual_increase = min(equal_share, available)
-                        asset_dispatch[idx]["gross"] += actual_increase
-                        temp_remaining -= actual_increase
-                
-                remaining -= (group_allocation - temp_remaining)
+
+                    target_load_mw = remaining_mwh / total_hours
+
+                    # Check which assets hit their maximum at this target
+                    newly_capped = []
+                    for idx, ad in remaining_assets:
+                        hours = float(ad["row"]["opHours"])
+                        target_gross = target_load_mw * hours
+                        if target_gross >= ad["max_energy"] - 1e-6:
+                            asset_dispatch[idx]["gross"] = ad["max_energy"]
+                            remaining_mwh -= ad["max_energy"]
+                            allocated_from_capped += ad["max_energy"]
+                            newly_capped.append(idx)
+
+                    if newly_capped:
+                        remaining_assets = [(idx, ad) for idx, ad in remaining_assets if idx not in newly_capped]
+                    else:
+                        # No caps hit — set all remaining assets to the common target
+                        for idx, ad in remaining_assets:
+                            hours = float(ad["row"]["opHours"])
+                            asset_dispatch[idx]["gross"] = target_load_mw * hours
+                        break
+
+                remaining -= group_allocation
     
     # =========================================================
     # STEP 3: CREATE DISPATCH ENTRIES
@@ -350,16 +381,44 @@ def distribute_by_priority(
     fym_id = row[0]
 
     # Fetch heat rate data early to avoid connection timeout
+    # Calculate financial year string
+    if month >= 4:
+        fy_string = f"{year}-{str(year + 1)[-2:]}"
+    else:
+        fy_string = f"{year - 1}-{str(year)[-2:]}"
+    
+    # Fetch heat rate data for the financial year
+    # Use GT-1 as the common heat rate curve for all GTs to ensure consistency
     cur.execute("""
         SELECT AssetName AS EquipType, UtilityId AS CPPUtility, GTLoad, FinalHeatRate AS HeatRate, FreeSteamFactor
         FROM CPP_GTHeatRate
-    """)
+        WHERE FinancialYear = ? AND AssetName = 'GT-1'
+    """, (fy_string,))
     heat_rows = cur.fetchall()
+    
+    # Fallback: try previous year if no data for current fiscal year
+    if not heat_rows:
+        prev_fy = f"{year - 1}-{str(year)[-2:]}" if month >= 4 else f"{year - 2}-{str(year - 1)[-2:]}"
+        cur.execute("""
+            SELECT AssetName AS EquipType, UtilityId AS CPPUtility, GTLoad, FinalHeatRate AS HeatRate, FreeSteamFactor
+            FROM CPP_GTHeatRate
+            WHERE FinancialYear = ? AND AssetName = 'GT-1'
+        """, (prev_fy,))
+        heat_rows = cur.fetchall()
+        if heat_rows:
+            print(f"  [HEAT RATE] Using fallback data for FY {prev_fy} (no data for {fy_string})")
+        else:
+            print(f"  [HEAT RATE] No heat rate data found for {fy_string} or {prev_fy}")
 
     heat_df = None
     if heat_rows:
         heat_cols = ["EquipType", "CPPUtility", "GTLoad", "HeatRate", "FreeSteamFactor"]
         heat_df = pd.DataFrame.from_records(heat_rows, columns=heat_cols)
+        print(f"  [HEAT RATE] Loaded {len(heat_rows)} rows for FY {fy_string}")
+        # Show sample data
+        if not heat_df.empty:
+            sample = heat_df.iloc[0]
+            print(f"  [HEAT RATE] Sample: Load={sample['GTLoad']} MW, HeatRate={sample['HeatRate']} KCAL/KWH, FreeSteam={sample['FreeSteamFactor']}")
 
         # Ensure numeric and sorted
         heat_df["GTLoad"] = heat_df["GTLoad"].astype(float)
