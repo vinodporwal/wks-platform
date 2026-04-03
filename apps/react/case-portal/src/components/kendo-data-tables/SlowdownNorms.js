@@ -68,6 +68,10 @@ const SlowdownNorms = () => {
   const IS_PE_NMD =
     ['pe'].includes(VERTICAL_NAME_LOWERCASE) &&
     ['nmd'].includes(SITE_NAME_LOWERCASE)
+  const IS_AROMATICS_SEZ_PX4 =
+    VERTICAL_NAME_LOWERCASE === 'aromatics' &&
+    SITE_NAME_LOWERCASE === 'sez' &&
+    PLANT_NAME_LOWERCASE === 'px4'
 
   const [open1, setOpen1] = useState(false)
   // const [deleteId, setDeleteId] = useState(null)
@@ -492,13 +496,14 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           gradeId,
+          `${EXCEL_EXPORT_TITLE}-Slowdown Consumption_${AOP_YEAR}`,
         )
       } else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
         // Use slowdownconsumptionExport for PE/PP
@@ -539,7 +544,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
           keycloak,
@@ -654,6 +659,7 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
@@ -662,6 +668,7 @@ const SlowdownNorms = () => {
         IS_PTA ||
         IS_CHEMICAL ||
         // (IS_PE_PP && !IS_PE_NMD)
+        IS_AROMATICS_SEZ_PX4 ||
         IS_PE_PP
           ? true
           : false,
@@ -670,6 +677,7 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_ELASTOMER_JMD_HIIR
           ? true
           : false,

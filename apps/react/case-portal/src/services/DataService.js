@@ -3509,6 +3509,7 @@ export async function slowdownconsumptionExportVCM(
   plantId,
   year,
   gradeId,
+  excelName
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-slowdown-consumption?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}` +
@@ -3531,7 +3532,7 @@ export async function slowdownconsumptionExportVCM(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Slowdown_consumption.xlsx'
+    a.download = excelName ? `${excelName}.xlsx` : 'Slowdown_consumption.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
