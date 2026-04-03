@@ -962,12 +962,28 @@ const UserForm = ({ keycloak }) => {
                                         [`${verticalId}-${siteIndex}`]: true,
                                       }))
                                     }
-                                    onClose={() =>
+                                    onClose={() => {
                                       setSiteOpen((prev) => ({
                                         ...prev,
                                         [`${verticalId}-${siteIndex}`]: false,
                                       }))
-                                    }
+                                      if (siteEntry.site && siteEntry.site.length > 1) {
+                                        const currentSites = siteEntry.site;
+                                        handleSiteChange(
+                                          verticalId,
+                                          siteIndex,
+                                          'site',
+                                          [currentSites[0]],
+                                        )
+                                        currentSites.slice(1).forEach((id) => {
+                                          addSiteEntry(
+                                            verticalId,
+                                            siteEntry,
+                                            [id],
+                                          )
+                                        })
+                                      }
+                                    }}
                                     value={siteEntry.site || []}
                                     sx={{ height: '40px' }}
                                     MenuProps={{ disableScrollLock: true }}
@@ -1115,12 +1131,30 @@ const UserForm = ({ keycloak }) => {
                                                 [`${verticalId}-${siteIndex}-${plantIndex}`]: true,
                                               }))
                                             }
-                                            onClose={() =>
+                                            onClose={() => {
                                               setPlantOpen((prev) => ({
                                                 ...prev,
                                                 [`${verticalId}-${siteIndex}-${plantIndex}`]: false,
                                               }))
-                                            }
+                                              if (plantEntry.plantId && plantEntry.plantId.length > 1) {
+                                                const currentPlants = plantEntry.plantId;
+                                                handlePlantChange(
+                                                  verticalId,
+                                                  siteIndex,
+                                                  plantIndex,
+                                                  'plantId',
+                                                  [currentPlants[0]],
+                                                )
+                                                currentPlants.slice(1).forEach((id) => {
+                                                  addPlantEntry(
+                                                    verticalId,
+                                                    siteIndex,
+                                                    plantEntry,
+                                                    [id],
+                                                  )
+                                                })
+                                              }
+                                            }}
                                             value={plantEntry.plantId || []}
                                             MenuProps={{
                                               disableScrollLock: true,
