@@ -806,7 +806,9 @@ const ShutdownNorms = () => {
 
       //VCM(VMD) && elastomer we required to show calculate btn
       showCalculate:
-        lowerVertName == 'elastomer' && SITE_NAME_LOWERCASE != 'jmd'
+        lowerVertName == 'elastomer' &&
+        SITE_NAME_LOWERCASE != 'jmd' &&
+        !(SITE_NAME_LOWERCASE === 'hmd' && PLANT_NAME_LOWERCASE === 'sbr')
           ? true
           : lowerVertName == 'meg' ||
               lowerVertName == 'vcm' ||
@@ -888,6 +890,7 @@ const ShutdownNorms = () => {
         IS_PVC_VMD ||
         IS_ELASTOMER_JMD_HIIR ||
         IS_AROMATICS_SEZ_PX4 ||
+        IS_ELASTOMER_HMD_SBR ||
         IS_PVC_DMD
           ? true
           : false,
