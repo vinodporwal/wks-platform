@@ -195,13 +195,6 @@ const ProductionNormsBasis = () => {
   const [start, end] = AOP_YEAR ? AOP_YEAR.split('-').map(Number) : [0, 0]
   const prevYearFormatted = `${start - 1}-${(start - 1 + 1).toString().slice(-2)}`
 
-  // Hardcoded tabs (commented - now using API)
-  // const tablist = [
-  //   'Configuration',
-  //   'Constants',
-  //   `Report Manual Entry (${prevYearFormatted})`,
-  // ]
-
   // Helper function to get tab display name by matching the UUID from tabs array
   const getTabName = (tabId) => {
     if (!tabId || !availableTabs.length) return null
@@ -212,34 +205,37 @@ const ProductionNormsBasis = () => {
   }
 
   // Dynamic tab list from API (filtered to exclude 'Report Manual Entry')
-  const tablist = tabs
+  const filteredTabs = tabs
     .map((tabId) => {
-      if (!tabId || !availableTabs.length) return ''
       const tabInfo = availableTabs.find(
         (tab) => tab.id.toLowerCase() === tabId.toLowerCase(),
       )
 
-      if (tabInfo) {
-        const originalName = tabInfo.displayName
-        // Filter out Report Manual Entry
-        if (originalName === 'Report Manual Entry') {
-          return null
-        }
-        return originalName
+      if (!tabInfo) return null
+
+      const name = tabInfo.displayName
+
+      if (name === 'Report Manual Entry' || name === 'Configuration') {
+        return null
       }
-      return tabId
+
+      return {
+        id: tabId,
+        name,
+      }
     })
-    .filter((tab) => tab !== null)
+    .filter(Boolean)
 
   const renderTab = () => {
-    if (!tabs.length || !availableTabs.length) {
+    if (!filteredTabs.length || !availableTabs.length) {
       return null
     }
 
-    const currentTabId = tabs[tabIndex]
+    const currentTabId = filteredTabs[tabIndex]?.id
     if (!currentTabId) return null
 
-    const currentTabName = getTabName(currentTabId)
+    const tabData = getTabName(currentTabId)
+    const currentTabName = typeof tabData === 'object' ? tabData.name : tabData
 
     switch (currentTabName) {
       case 'Configuration':
@@ -261,6 +257,7 @@ const ProductionNormsBasis = () => {
     }
   }
 
+  console.log('filteredTabs', filteredTabs)
   return (
     <div>
       <Stack sx={{ mt: 1, mb: 1 }}>
@@ -284,7 +281,7 @@ const ProductionNormsBasis = () => {
           <TabSection
             tabIndex={tabIndex}
             setTabIndex={setTabIndex}
-            tabs={tablist}
+            tabs={filteredTabs}
           />
         </Stack>
       )}

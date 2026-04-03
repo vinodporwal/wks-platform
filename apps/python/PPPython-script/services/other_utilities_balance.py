@@ -38,12 +38,9 @@ def extract_bfw_balance_data(month: int, year: int, calculation_result: dict) ->
     hrsg2_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'Boiler Feed Water')
     hrsg3_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'HRSG3_SHP STEAM', 'Boiler Feed Water')
     
-    if hrsg1_bfw > 0:
-        u4u_items.append({'name': 'HRSG1', 'quantity': hrsg1_bfw, 'norm': hrsg1_norm})
-    if hrsg2_bfw > 0:
-        u4u_items.append({'name': 'HRSG2', 'quantity': hrsg2_bfw, 'norm': hrsg2_norm})
-    if hrsg3_bfw > 0:
-        u4u_items.append({'name': 'HRSG3', 'quantity': hrsg3_bfw, 'norm': hrsg3_norm})
+    u4u_items.append({'name': 'HRSG1', 'quantity': hrsg1_bfw, 'norm': hrsg1_norm})
+    u4u_items.append({'name': 'HRSG2', 'quantity': hrsg2_bfw, 'norm': hrsg2_norm})
+    u4u_items.append({'name': 'HRSG3', 'quantity': hrsg3_bfw, 'norm': hrsg3_norm})
     
     # PRDS BFW consumption
     hp_prds_bfw = bfw_data.get('hp_prds_m3', 0)
@@ -54,12 +51,9 @@ def extract_bfw_balance_data(month: int, year: int, calculation_result: dict) ->
     mp_prds_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'MP Steam PRDS SHP', 'Boiler Feed Water')
     lp_prds_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'LP Steam PRDS', 'Boiler Feed Water')
     
-    if hp_prds_bfw > 0:
-        u4u_items.append({'name': 'HP PRDS', 'quantity': hp_prds_bfw, 'norm': hp_prds_norm})
-    if mp_prds_bfw > 0:
-        u4u_items.append({'name': 'MP PRDS', 'quantity': mp_prds_bfw, 'norm': mp_prds_norm})
-    if lp_prds_bfw > 0:
-        u4u_items.append({'name': 'LP PRDS', 'quantity': lp_prds_bfw, 'norm': lp_prds_norm})
+    u4u_items.append({'name': 'HP PRDS', 'quantity': hp_prds_bfw, 'norm': hp_prds_norm})
+    u4u_items.append({'name': 'MP PRDS', 'quantity': mp_prds_bfw, 'norm': mp_prds_norm})
+    u4u_items.append({'name': 'LP PRDS', 'quantity': lp_prds_bfw, 'norm': lp_prds_norm})
     
     # Process and Fixed demands (from database)
     process_items = get_plant_wise_demand(month, year, 'Boiler Feed Water')
@@ -107,16 +101,10 @@ def extract_dm_water_balance_data(month: int, year: int, calculation_result: dic
     dm_for_bfw = dm_data.get('for_bfw_m3', 0)
     dm_bfw_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'D M Water')
     
-    if dm_for_bfw > 0:
-        u4u_items.append({'name': 'For BFW Production', 'quantity': dm_for_bfw, 'norm': dm_bfw_norm})
+    u4u_items.append({'name': 'For BFW Production', 'quantity': dm_for_bfw, 'norm': dm_bfw_norm})
     
-    # Process demand - get from utility_consumption (already calculated and stored)
-    process_items = []
-    dm_process = dm_data.get('process_m3', 0)
-    if dm_process > 0:
-        # Get plant-wise breakdown from database for display
-        plant_wise = get_plant_wise_demand(month, year, 'D M Water')
-        process_items = plant_wise
+    # Process demand - always fetch plant-wise breakdown from database
+    process_items = get_plant_wise_demand(month, year, 'D M Water')
     
     # Fixed demands
     fixed_items = get_fixed_consumption_details(month, year, 'D M Water')
@@ -150,16 +138,37 @@ def extract_cooling_water_1_balance_data(month: int, year: int, calculation_resu
     """
     utility_consumption = calculation_result.get('utility_consumption', {})
     cw_data = utility_consumption.get('cooling_water', {})
-    
+    up_data = utility_consumption.get('utility_plant', {})
+    raw_water_data = utility_consumption.get('raw_water', {})
+    air_data = utility_consumption.get('compressed_air', {})
+
+    # U4U Demand components for CW1
+    u4u_items = []
+
+    # Power consumed by CW1 plant (convert KWH to MWH for display)
+    cw1_power_kwh = up_data.get('cw1_kwh', 0)
+    cw1_power_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'Power_Dis')
+    u4u_items.append({'name': 'CW1 Power Plant', 'quantity': round(cw1_power_kwh / 1000, 2), 'norm': cw1_power_norm})
+
+    # Raw water for CW1
+    cw1_raw_water = raw_water_data.get('cw1_m3', 0)
+    cw1_water_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'Water')
+    u4u_items.append({'name': 'CW1 Raw Water', 'quantity': cw1_raw_water, 'norm': cw1_water_norm})
+
+    # Compressed air for CW1
+    cw1_air = air_data.get('cw1_nm3', 0)
+    cw1_air_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'COMPRESSED AIR')
+    u4u_items.append({'name': 'CW1 Compressed Air', 'quantity': cw1_air, 'norm': cw1_air_norm})
+
     # Process demands
     process_items = get_plant_wise_demand(month, year, 'Cooling Water 1')
     fixed_items = get_fixed_consumption_details(month, year, 'Cooling Water 1')
-    
+
     total_demand = cw_data.get('cw1_total_km3', 0)
-    
+
     return {
         'demand': {
-            'u4u_items': [],
+            'u4u_items': u4u_items,
             'process_items': process_items,
             'fixed_items': fixed_items,
             'total': total_demand
@@ -203,30 +212,23 @@ def extract_cooling_water_2_balance_data(month: int, year: int, calculation_resu
     gt_cw2_norm = get_utility_norm_from_db(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'Cooling Water 2')
     stg_cw2_norm = get_utility_norm_from_db(month, year, 'NMD - STG Power Plant', 'POWERGEN', 'Cooling Water 2')
     
-    if gt1_cw2 > 0:
-        u4u_items.append({'name': 'GT1', 'quantity': gt1_cw2, 'norm': gt_cw2_norm})
-    if gt2_cw2 > 0:
-        u4u_items.append({'name': 'GT2', 'quantity': gt2_cw2, 'norm': gt_cw2_norm})
-    if gt3_cw2 > 0:
-        u4u_items.append({'name': 'GT3', 'quantity': gt3_cw2, 'norm': gt_cw2_norm})
-    if stg_cw2 > 0:
-        u4u_items.append({'name': 'STG', 'quantity': stg_cw2, 'norm': stg_cw2_norm})
-    
+    u4u_items.append({'name': 'GT1', 'quantity': gt1_cw2, 'norm': gt_cw2_norm})
+    u4u_items.append({'name': 'GT2', 'quantity': gt2_cw2, 'norm': gt_cw2_norm})
+    u4u_items.append({'name': 'GT3', 'quantity': gt3_cw2, 'norm': gt_cw2_norm})
+    u4u_items.append({'name': 'STG', 'quantity': stg_cw2, 'norm': stg_cw2_norm})
+
     # Utility plants CW2
     bfw_cw2 = cw_data.get('cw2_bfw_km3', 0)
     air_cw2 = cw_data.get('cw2_air_km3', 0)
     oxygen_cw2 = cw_data.get('cw2_oxygen_km3', 0)
-    
+
     bfw_cw2_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Boiler Feed Water', 'Cooling Water 2')
     air_cw2_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'COMPRESSED AIR', 'Cooling Water 2')
     oxygen_cw2_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Oxygen', 'Cooling Water 2')
-    
-    if bfw_cw2 > 0:
-        u4u_items.append({'name': 'BFW Plant', 'quantity': bfw_cw2, 'norm': bfw_cw2_norm})
-    if air_cw2 > 0:
-        u4u_items.append({'name': 'Compressed Air Plant', 'quantity': air_cw2, 'norm': air_cw2_norm})
-    if oxygen_cw2 > 0:
-        u4u_items.append({'name': 'Oxygen Plant', 'quantity': oxygen_cw2, 'norm': oxygen_cw2_norm})
+
+    u4u_items.append({'name': 'BFW Plant', 'quantity': bfw_cw2, 'norm': bfw_cw2_norm})
+    u4u_items.append({'name': 'Compressed Air Plant', 'quantity': air_cw2, 'norm': air_cw2_norm})
+    u4u_items.append({'name': 'Oxygen Plant', 'quantity': oxygen_cw2, 'norm': oxygen_cw2_norm})
     
     # Process and Fixed demands
     process_items = get_plant_wise_demand(month, year, 'Cooling Water 2')
@@ -280,14 +282,10 @@ def extract_compressed_air_balance_data(month: int, year: int, calculation_resul
     gt_air_norm = get_utility_norm_from_db(month, year, 'NMD - Power Plant 2', 'POWERGEN', 'COMPRESSED AIR')
     stg_air_norm = get_utility_norm_from_db(month, year, 'NMD - STG Power Plant', 'POWERGEN', 'COMPRESSED AIR')
     
-    if gt1_air > 0:
-        u4u_items.append({'name': 'GT1', 'quantity': gt1_air, 'norm': gt_air_norm})
-    if gt2_air > 0:
-        u4u_items.append({'name': 'GT2', 'quantity': gt2_air, 'norm': gt_air_norm})
-    if gt3_air > 0:
-        u4u_items.append({'name': 'GT3', 'quantity': gt3_air, 'norm': gt_air_norm})
-    if stg_air > 0:
-        u4u_items.append({'name': 'STG', 'quantity': stg_air, 'norm': stg_air_norm})
+    u4u_items.append({'name': 'GT1', 'quantity': gt1_air, 'norm': gt_air_norm})
+    u4u_items.append({'name': 'GT2', 'quantity': gt2_air, 'norm': gt_air_norm})
+    u4u_items.append({'name': 'GT3', 'quantity': gt3_air, 'norm': gt_air_norm})
+    u4u_items.append({'name': 'STG', 'quantity': stg_air, 'norm': stg_air_norm})
     
     # HRSGs
     hrsg1_air = air_data.get('hrsg1_nm3', 0)
@@ -296,12 +294,9 @@ def extract_compressed_air_balance_data(month: int, year: int, calculation_resul
     
     hrsg_air_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'COMPRESSED AIR')
     
-    if hrsg1_air > 0:
-        u4u_items.append({'name': 'HRSG1', 'quantity': hrsg1_air, 'norm': hrsg_air_norm})
-    if hrsg2_air > 0:
-        u4u_items.append({'name': 'HRSG2', 'quantity': hrsg2_air, 'norm': hrsg_air_norm})
-    if hrsg3_air > 0:
-        u4u_items.append({'name': 'HRSG3', 'quantity': hrsg3_air, 'norm': hrsg_air_norm})
+    u4u_items.append({'name': 'HRSG1', 'quantity': hrsg1_air, 'norm': hrsg_air_norm})
+    u4u_items.append({'name': 'HRSG2', 'quantity': hrsg2_air, 'norm': hrsg_air_norm})
+    u4u_items.append({'name': 'HRSG3', 'quantity': hrsg3_air, 'norm': hrsg_air_norm})
     
     # Utility plants
     cw1_air = air_data.get('cw1_nm3', 0)
@@ -310,10 +305,8 @@ def extract_compressed_air_balance_data(month: int, year: int, calculation_resul
     cw1_air_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'COMPRESSED AIR')
     cw2_air_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Cooling Water 2', 'COMPRESSED AIR')
     
-    if cw1_air > 0:
-        u4u_items.append({'name': 'CW1 Plant', 'quantity': cw1_air, 'norm': cw1_air_norm})
-    if cw2_air > 0:
-        u4u_items.append({'name': 'CW2 Plant', 'quantity': cw2_air, 'norm': cw2_air_norm})
+    u4u_items.append({'name': 'CW1 Plant', 'quantity': cw1_air, 'norm': cw1_air_norm})
+    u4u_items.append({'name': 'CW2 Plant', 'quantity': cw2_air, 'norm': cw2_air_norm})
     
     # Process and Fixed demands
     process_items = get_plant_wise_demand(month, year, 'COMPRESSED AIR')
@@ -430,17 +423,14 @@ def extract_raw_water_balance_data(month: int, year: int, calculation_result: di
     cw1_water_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Cooling Water 1', 'Water')
     cw2_water_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Cooling Water 2', 'Water')
     
-    if cw1_water > 0:
-        u4u_items.append({'name': 'CW1 Plant', 'quantity': cw1_water, 'norm': cw1_water_norm})
-    if cw2_water > 0:
-        u4u_items.append({'name': 'CW2 Plant', 'quantity': cw2_water, 'norm': cw2_water_norm})
+    u4u_items.append({'name': 'CW1 Plant', 'quantity': cw1_water, 'norm': cw1_water_norm})
+    u4u_items.append({'name': 'CW2 Plant', 'quantity': cw2_water, 'norm': cw2_water_norm})
     
     # DM Water plant
     dm_water = raw_water_data.get('dm_m3', 0)
     dm_water_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'D M Water', 'Water')
     
-    if dm_water > 0:
-        u4u_items.append({'name': 'DM Water Plant', 'quantity': dm_water, 'norm': dm_water_norm})
+    u4u_items.append({'name': 'DM Water Plant', 'quantity': dm_water, 'norm': dm_water_norm})
     
     # HRSGs
     hrsg2_water = raw_water_data.get('hrsg2_m3', 0)
@@ -448,17 +438,14 @@ def extract_raw_water_balance_data(month: int, year: int, calculation_result: di
     
     hrsg_water_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'HRSG2_SHP STEAM', 'Water')
     
-    if hrsg2_water > 0:
-        u4u_items.append({'name': 'HRSG2', 'quantity': hrsg2_water, 'norm': hrsg_water_norm})
-    if hrsg3_water > 0:
-        u4u_items.append({'name': 'HRSG3', 'quantity': hrsg3_water, 'norm': hrsg_water_norm})
+    u4u_items.append({'name': 'HRSG2', 'quantity': hrsg2_water, 'norm': hrsg_water_norm})
+    u4u_items.append({'name': 'HRSG3', 'quantity': hrsg3_water, 'norm': hrsg_water_norm})
     
     # Effluent
     effluent_water = raw_water_data.get('effluent_m3', 0)
     effluent_water_norm = get_utility_norm_from_db(month, year, 'NMD - Utility Plant', 'Effluent Treated', 'Water')
     
-    if effluent_water > 0:
-        u4u_items.append({'name': 'Effluent Treatment', 'quantity': effluent_water, 'norm': effluent_water_norm})
+    u4u_items.append({'name': 'Effluent Treatment', 'quantity': effluent_water, 'norm': effluent_water_norm})
     
     # Process and Fixed demands (typically none for raw water)
     process_items = get_plant_wise_demand(month, year, 'Water')
@@ -474,7 +461,8 @@ def extract_raw_water_balance_data(month: int, year: int, calculation_result: di
             'total': total_demand
         },
         'supply': {
-            'plant_production': total_demand
+            'plant_production': total_demand,
+            'label': 'Raw Water Intake (External Source)'
         },
         'balance': 0.0,
         'unit': 'M3'

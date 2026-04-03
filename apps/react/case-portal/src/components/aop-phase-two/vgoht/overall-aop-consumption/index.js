@@ -4,7 +4,9 @@ import { useSelector } from 'react-redux'
 import { useSession } from 'SessionStoreContext'
 import AdvanceKendoTable from '../../common/AdvanceKendoTable/index'
 import { generateHeaderNames } from '../../common/utilities/generateHeaders'
-import ValueFormatterPhaseTwo from '../../common/ValueFormatterPhaseTwo'
+import ValueFormatterPhaseTwo, {
+  customValueFormatterPhaseTwo,
+} from '../../common/ValueFormatterPhaseTwo'
 import { OverallAopConsumptionApiService } from '../../services/vgoht/overallAopConsumptionApiService'
 import { overAllAOpResponse } from '../dummyData'
 
@@ -24,14 +26,14 @@ const OverallAopConsumption = () => {
   })
   const [snackbarOpen, setSnackbarOpen] = useState(false)
 
-  const valueFormat = ValueFormatterPhaseTwo()
+  const valueFormat = customValueFormatterPhaseTwo(5)
   const headerMap = generateHeaderNames(AOP_YEAR)
 
   const columns = [
     {
       field: 'productName',
       title: 'Particulars',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -40,7 +42,7 @@ const OverallAopConsumption = () => {
     {
       field: 'normParameterTypeDisplayName',
       title: 'normParameterTypeDisplayName',
-      widthT: 250,
+      // widthT: 250,
       minWidth: 200,
       type: 'text',
       editable: false,
@@ -50,16 +52,16 @@ const OverallAopConsumption = () => {
     {
       field: 'UOM',
       title: 'UOM',
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 100,
       type: 'text',
       editable: false,
     },
     {
       field: 'april',
       title: headerMap[4],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -67,8 +69,8 @@ const OverallAopConsumption = () => {
     {
       field: 'may',
       title: headerMap[5],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -76,8 +78,8 @@ const OverallAopConsumption = () => {
     {
       field: 'june',
       title: headerMap[6],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -85,8 +87,8 @@ const OverallAopConsumption = () => {
     {
       field: 'july',
       title: headerMap[7],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -94,8 +96,8 @@ const OverallAopConsumption = () => {
     {
       field: 'august',
       title: headerMap[8],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -103,8 +105,8 @@ const OverallAopConsumption = () => {
     {
       field: 'september',
       title: headerMap[9],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -112,8 +114,8 @@ const OverallAopConsumption = () => {
     {
       field: 'october',
       title: headerMap[10],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -121,8 +123,8 @@ const OverallAopConsumption = () => {
     {
       field: 'november',
       title: headerMap[11],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -130,8 +132,8 @@ const OverallAopConsumption = () => {
     {
       field: 'december',
       title: headerMap[12],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -139,8 +141,8 @@ const OverallAopConsumption = () => {
     {
       field: 'january',
       title: headerMap[1],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -148,8 +150,8 @@ const OverallAopConsumption = () => {
     {
       field: 'february',
       title: headerMap[2],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -157,8 +159,8 @@ const OverallAopConsumption = () => {
     {
       field: 'march',
       title: headerMap[3],
-      widthT: 100,
-      minWidth: 80,
+      // widthT: 100,
+      minWidth: 120,
       type: 'number1',
       editable: false,
       format: valueFormat,
@@ -174,22 +176,20 @@ const OverallAopConsumption = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      // const response =
-      //   await OverallAopConsumptionApiService.getOverallAopConsumption(
-      //     keycloak,
-      //     PLANT_ID,
-      //     AOP_YEAR,
-      //   )
-
-      const response = overAllAOpResponse.data?.mcuNormsValueDTOList?.map(
-        (item) => {
+      const response =
+        await OverallAopConsumptionApiService.getOverallAopConsumption(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      const data =
+        response?.data?.aopConsumptionNormDTOList?.map((item) => {
           return {
             ...item,
-            isEditaable: false,
+            isEditable: false,
           }
-        },
-      )
-      setRows(response)
+        }) || []
+      setRows(data)
     } catch (error) {
       console.error('Error fetching overall AOP consumption data:', error)
       setSnackbarOpen(true)
@@ -217,11 +217,11 @@ const OverallAopConsumption = () => {
           PLANT_ID,
           AOP_YEAR,
         )
-      setRows(calculatedData)
       setSnackbarData({
         message: 'Calculation completed successfully!',
         severity: 'success',
       })
+      await fetchData()
     } catch (error) {
       console.error('Error calculating overall AOP consumption:', error)
       setSnackbarData({
@@ -233,50 +233,14 @@ const OverallAopConsumption = () => {
     }
   }
 
-  const handleExport = async () => {
-    setSnackbarOpen(true)
-    setSnackbarData({
-      message: 'Excel export started!',
-      severity: 'info',
-    })
-
-    try {
-      const blob =
-        await OverallAopConsumptionApiService.exportOverallAopConsumption(
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `Overall_AOP_Consumption_${AOP_YEAR}.xlsx`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      setSnackbarData({
-        message: 'Excel download completed successfully!',
-        severity: 'success',
-      })
-    } catch (error) {
-      console.error('Error exporting overall AOP consumption data:', error)
-      setSnackbarData({
-        message: 'Excel download failed. Please try again.',
-        severity: 'error',
-      })
-    }
-  }
-
   const permissions = {
     showAction: false,
     addButton: false,
     deleteButton: false,
     editButton: false,
     saveBtn: false,
-    allAction: false,
-    showExport: true,
+    allAction: true,
+    downloadExcelBtnFromUI: true,
     showCalculate: true,
     ExcelName: `Overall_AOP_Consumption_${AOP_YEAR}`,
     showImport: false,
@@ -301,7 +265,6 @@ const OverallAopConsumption = () => {
         setRows={setRows}
         title={permissions.showTitle ? permissions.titleName : ''}
         permissions={permissions}
-        handleExport={handleExport}
         handleCalculate={handleCalculate}
         snackbarData={snackbarData}
         snackbarOpen={snackbarOpen}
