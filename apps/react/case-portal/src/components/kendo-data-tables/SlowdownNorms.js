@@ -489,13 +489,14 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
         // Use slowdownconsumptionExportVCM for VCM
         response = await DataService.slowdownconsumptionExportVCM(
           keycloak,
           PLANT_ID,
           AOP_YEAR,
           gradeId,
+          `${EXCEL_EXPORT_TITLE}-Slowdown Consumption_${AOP_YEAR}`,
         )
       } else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
         // Use slowdownconsumptionExport for PE/PP
@@ -527,8 +528,7 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL) {
-        // Use saveShutdownNormsExcelNonGrade for VCM
+      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
           keycloak,
@@ -643,16 +643,25 @@ const SlowdownNorms = () => {
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
       uploadExcelBtn:
-        lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL ? true : false,
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_CHEMICAL ||
+        // (IS_PE_PP && !IS_PE_NMD)
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_PE_PP
+          ? true
+          : false,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_ELASTOMER_JMD_HIIR
           ? true
           : false,

@@ -1379,6 +1379,7 @@ const ConfigurationTable = () => {
               case getTheId('Configuration'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={configurationRows}
                     loading={loading}
                     fetchData={fetchData}
@@ -1394,6 +1395,7 @@ const ConfigurationTable = () => {
               case getTheId('StartupLosses'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={startUpRows}
                     loading={loading}
                     fetchData={fetchData}
@@ -1409,6 +1411,7 @@ const ConfigurationTable = () => {
               case getTheId('Otherlosses'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={otherLossRows}
                     loading={loading}
                     fetchData={fetchData}
@@ -1424,6 +1427,7 @@ const ConfigurationTable = () => {
               case getTheId('ShutdownNorms'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={shutdownNormsRows}
                     loading={loading}
                     setRows={setShutdownRows}
@@ -1439,6 +1443,7 @@ const ConfigurationTable = () => {
               case getTheId('Constant'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={constantsRows}
                     loading={loading}
                     setRows={setConstantsRows}
@@ -1454,6 +1459,7 @@ const ConfigurationTable = () => {
               case getTheId('Receipe'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={gradeData}
                     loading={loading}
                     fetchData={fetchGradeData}
@@ -1469,6 +1475,7 @@ const ConfigurationTable = () => {
               case getTheId('ContineGradeChange'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={continiousGradeData}
                     loading={loading}
                     setRows={setContiniousGradeData}
@@ -1483,6 +1490,7 @@ const ConfigurationTable = () => {
               case getTheId('DisContineGradeChange'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={discontiniousGradeData}
                     loading={loading}
                     setRows={setDiscontiniousGradeData}
@@ -1498,6 +1506,7 @@ const ConfigurationTable = () => {
               case getTheId('Report Manual Entry'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={reportManualEntry}
                     loading={loading}
                     setRows={setReportManualEntry}
@@ -1514,6 +1523,7 @@ const ConfigurationTable = () => {
               case getTheId('PIO Impact'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={PIO}
                     loading={loading}
                     setRows={setPIO}
@@ -1528,6 +1538,7 @@ const ConfigurationTable = () => {
               case getTheId('Constants'):
                 return (
                   <SelectivityData
+                    revision={revision}
                     rows={productionRowsConstants}
                     loading={loading}
                     fetchData={fetchDataConstants}
