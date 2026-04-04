@@ -166,22 +166,7 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	    List<ShutDownPlanDTO> shutDownPlanDTOs = new ArrayList<>();
 
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-	    	Map<String, String> idToMonth = new HashMap<>();
-	    	try {
-	    		List<ShutDownPlanDTO> existing = shutDownPlanService.findMaintenanceDetailsByPlantIdAndType(plantFKId, "Shutdown", year);
-	    		for (ShutDownPlanDTO existingDto : existing) {
-	    			if (existingDto == null || existingDto.getId() == null || existingDto.getMaintStartDateTime() == null) {
-	    				continue;
-	    			}
-	    			int monthValue = existingDto.getMaintStartDateTime()
-	    					.toInstant()
-	    					.atZone(java.time.ZoneId.systemDefault())
-	    					.getMonthValue();
-	    			String monthName = java.time.Month.of(monthValue).name(); // e.g., JANUARY
-	    			idToMonth.put(existingDto.getId(), monthName);
-	    		}
-	    	} catch (Exception ignored) {
-	    	}
+	    	
 
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Iterator<Row> rowIterator = sheet.iterator();
@@ -209,10 +194,6 @@ public class ShutdownSlowdownExportImportServiceImpl implements ShutdownSlowdown
 	                dto.setSaveStatus("Failed");
 	            }
 
-	            if (dto.getId() != null) {
-	            	String monthName = idToMonth.get(dto.getId());
-	            	dto.setMonth(monthName);
-	            }
 	            shutDownPlanDTOs.add(dto);
 	        }
 
