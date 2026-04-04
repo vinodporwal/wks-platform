@@ -2679,14 +2679,18 @@ public class ShutDownPlanServiceImpl implements ShutDownPlanService {
 							Date dtoEndDate = shutDownPlanDTO.getMaintEndDateTime();
 							if (!(entityEndDate != null && dtoEndDate != null
 									&& entityEndDate.compareTo(dtoEndDate) == 0)) {
-								changed = true;
+								if(!elastomer) {
+									changed = true;
+								}
 							}
 							plantMaintenanceTransaction.setMaintEndDateTime(shutDownPlanDTO.getMaintEndDateTime());
 							Date entityStartDate = plantMaintenanceTransaction.getMaintStartDateTime();
 							Date dtoStartDate = shutDownPlanDTO.getMaintStartDateTime();
 							if (!(entityStartDate != null && dtoStartDate != null
 									&& entityStartDate.compareTo(dtoStartDate) == 0)) {
-								changed = true;
+								if(!elastomer) {
+									changed = true;
+								}
 							}
 							plantMaintenanceTransaction.setMaintStartDateTime(shutDownPlanDTO.getMaintStartDateTime());
 							if(plantMaintenanceTransaction.getLineFKId()!=null && shutDownPlanDTO.getLineId()!=null && !plantMaintenanceTransaction.getLineFKId().toString().equalsIgnoreCase(shutDownPlanDTO.getLineId())) {
