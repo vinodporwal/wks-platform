@@ -513,7 +513,11 @@ const SlowdownNorms = () => {
           gradeId,
           `${EXCEL_EXPORT_TITLE}-Slowdown Consumption_${AOP_YEAR}`,
         )
-      } else if (lowerVertName === 'pp' || lowerVertName === 'pe') {
+      } else if (
+        lowerVertName === 'pp' ||
+        lowerVertName === 'pe' ||
+        IS_ELASTOMER_JMD_HIIR
+      ) {
         // Use slowdownconsumptionExport for PE/PP
         response = await DataService.slowdownconsumptionExportAllGrade(
           keycloak,
@@ -529,7 +533,7 @@ const SlowdownNorms = () => {
       //     AOP_YEAR,
       //   )
       // }
-      else if (IS_ELASTOMER_JMD_HIIR) {
+      else if (IS_ELASTOMER_JMD_IIR) {
         response = await DataService.slowdownDetailsElastomerExport(
           keycloak,
           PLANT_ID,
@@ -552,7 +556,15 @@ const SlowdownNorms = () => {
     try {
       let response
 
-      if (lowerVertName === 'vcm' || IS_PTA || IS_CHEMICAL || IS_AROMATICS_SEZ_PX4) {
+      if (
+        lowerVertName === 'vcm' ||
+        IS_PTA ||
+        IS_AROMATICS_SEZ_PX4 ||
+        IS_CHEMICAL ||
+        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD_HIIR) ||
+        !IS_PE_PP
+      ) {
+        // Use saveShutdownNormsExcelNonGrade for VCM
         response = await DataService.saveSlowdownNormsExcel(
           rawFile,
           keycloak,
@@ -560,14 +572,15 @@ const SlowdownNorms = () => {
           AOP_YEAR,
           gradeId,
         )
-      } else if (IS_ELASTOMER_JMD_HIIR) {
-        response = await DataService.ImportSlowdownElastomerDetails(
-          rawFile,
-          keycloak,
-          PLANT_ID,
-          AOP_YEAR,
-        )
       }
+      // else if ((IS_PE_PP || IS_PE_NMD) || IS_ELASTOMER_JMD_HIIR) {
+      //   response = await DataService.saveSlowdownNormsExcelAllGrade(
+      //     rawFile,
+      //     keycloak,
+      //     PLANT_ID,
+      //     AOP_YEAR,
+      //   )
+      // }
 
       if (response?.code === 200) {
         setSnackbarOpen(true)
@@ -671,22 +684,15 @@ const SlowdownNorms = () => {
         IS_ELASTOMER_JMD_HIIR
           ? false
           : true,
-      uploadExcelBtn:
-        lowerVertName === 'vcm' ||
-        IS_PTA ||
-        IS_CHEMICAL ||
-        // (IS_PE_PP && !IS_PE_NMD)
-        IS_AROMATICS_SEZ_PX4 ||
-        IS_PE_PP
-          ? true
-          : false,
+      uploadExcelBtn: IS_ELASTOMER_JMD_HIIR || IS_PE_PP ? false : true,
       downloadExcelBtn:
         IS_PE_PP ||
         lowerVertName === 'vcm' ||
         IS_PTA ||
         IS_CHEMICAL ||
         IS_AROMATICS_SEZ_PX4 ||
-        IS_ELASTOMER_JMD_HIIR
+        IS_ELASTOMER_JMD_HIIR ||
+        IS_ELASTOMER_HMD_SBR
           ? true
           : false,
       showG: IS_PE_PP || IS_ELASTOMER_JMD_HIIR ? true : false,
