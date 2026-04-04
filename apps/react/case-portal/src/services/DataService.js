@@ -189,6 +189,7 @@ export const DataService = {
   getFurnaceDropdownData,
   getMaintenanceActivityData,
   slowdownconsumptionExportAllGrade,
+  saveSlowdownNormsExcelAllGrade,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -4376,5 +4377,37 @@ export async function slowdownconsumptionExportAllGrade(
   } catch (e) {
     console.error('Error exporting Shutdown Excel:', e)
     return Promise.reject(e)
+  }
+}
+async function saveSlowdownNormsExcelAllGrade(
+  file,
+  keycloak,
+  PLANT_ID,
+  AOP_YEAR,
+  GRADE_ID,
+) {
+  let url = ''
+  url = `${Config.CaseEngineUrl}/task/slowdown-consumption-import?plantId=${PLANT_ID}&year=${AOP_YEAR}`
+
+  if (GRADE_ID) {
+    url += `&gradeId=${GRADE_ID}`
+  }
+
+  const formData = new FormData()
+  formData.append('file', file)
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    })
+    return json(keycloak, resp)
+  } catch (e) {
+    console.log(e)
+    return await Promise.reject(e)
   }
 }
