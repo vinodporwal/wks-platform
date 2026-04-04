@@ -31,5 +31,7 @@ public class NormConfigurationDTO {
     private Boolean isEditable;
     private String displayName;
     private String type;
+    private String saveStatus;
+    private String errDescription;
 }
 

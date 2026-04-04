@@ -201,8 +201,8 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       saveWithRemark: true,
       saveBtn: true,
       allAction: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
       showTitleNameBusiness: true,
       showCalculate: false,
       //Object.keys(calculationObject || {}).length > 0 ? true : false,
@@ -217,8 +217,8 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       saveWithRemark: true,
       saveBtn: false,
       allAction: true,
-      downloadExcelBtn: false,
-      uploadExcelBtn: false,
+      downloadExcelBtn: true,
+      uploadExcelBtn: true,
       showTitleNameBusiness: true,
       titleName: 'Norms Configuration - Calculated',
       showCalculate: false,
@@ -355,6 +355,105 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
       setLoading(false)
     }
   }
+  const downloadExcelForConfiguration = async () => {
+    if (!PLANT_ID || !AOP_YEAR) return
+
+    setSnackbarOpen(true)
+    setSnackbarData({
+      message: 'Excel download started!',
+      severity: 'success',
+    })
+
+    try {
+      await ProductionRangeApiService.getProductionRangeExcel(
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+        EXCEL_EXPORT_TITLE,
+      )
+
+      setSnackbarData({
+        message: 'Excel download completed successfully!',
+        severity: 'success',
+      })
+    } catch (error) {
+      console.error('Error!', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Failed to download Excel.',
+        severity: 'error',
+      })
+    }
+  }
+  const handleExcelUpload = (rawFile) => {
+    uploadProductionRange(rawFile)
+  }
+  const uploadProductionRange = async (rawFile) => {
+    setLoading(true)
+
+    try {
+      let response = await ProductionRangeApiService.productionRangeImport(
+        rawFile,
+        keycloak,
+        PLANT_ID,
+        AOP_YEAR,
+      )
+      console.log('Upload response:', response)
+
+      if (response?.code === 200) {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Uploaded Successfully!',
+          severity: 'success',
+        })
+        setModifiedCells({})
+        fetchData()
+      } else if (response?.code === 400 && response?.data) {
+        const byteCharacters = atob(response.data)
+        const byteNumbers = Array.from(byteCharacters, (char) =>
+          char.charCodeAt(0),
+        )
+        const byteArray = new Uint8Array(byteNumbers)
+
+        const blob = new Blob([byteArray], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        })
+
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', 'Error File - Production Range.xlsx')
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Partial data saved. Error file downloaded.',
+          severity: 'warning',
+        })
+        fetchData()
+      } else {
+        setSnackbarOpen(true)
+        setSnackbarData({
+          message: 'Upload Failed!',
+          severity: 'error',
+        })
+      }
+
+      return response
+    } catch (error) {
+      console.error('Error uploading Excel:', error)
+      setSnackbarOpen(true)
+      setSnackbarData({
+        message: 'Unexpected error occurred!',
+        severity: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <Box>
@@ -391,6 +490,8 @@ const ProductionRange = ({ summary, summaryEdited, setSummaryEdited }) => {
           summaryEdited={summaryEdited}
           groupBy={'normTypeName'}
           saveChanges={saveChanges}
+          downloadExcelForConfiguration={() => downloadExcelForConfiguration()}
+          handleExcelUpload={handleExcelUpload}
         />
       </Box>
     </Box>

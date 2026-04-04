@@ -18,7 +18,8 @@ import {
 } from 'components/colums/ShutdownColumn'
 import {
   ShutDownAllColumns,
-  ShutDown_Elastomer_JMD_Columns,
+  ShutDown_Elastomer_JMD_HIIR_Columns,
+  ShutDown_Elastomer_JMD_IIR_Columns,
 } from 'components/colums/ShutdownColumn'
 import {
   ShutDownPTAColumns,
@@ -75,7 +76,14 @@ const ShutDown = ({ permissions }) => {
   const isOldYear = false
   const IS_OLD_YEAR = oldYear?.oldYear
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
-
+  const IS_ELASTOMER_JMD_IIR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'jmd' &&
+    lowerPlantName === 'iir'
+  const IS_ELASTOMER_JMD_HIIR =
+    lowerVertName === 'elastomer' &&
+    lowerSiteName === 'jmd' &&
+    lowerPlantName === 'hiir'
   const IS_NON_PRODUCT_VERTICAL =
     lowerVertName === 'elastomer' ||
     IS_PVC_VMD ||
@@ -86,7 +94,8 @@ const ShutDown = ({ permissions }) => {
     lowerVertName === 'meg' ||
     lowerVertName === 'pe' ||
     lowerVertName === 'pp' ||
-    lowerVertName === 'chemical'
+    lowerVertName === 'chemical' ||
+    IS_ELASTOMER_JMD_IIR
   const IS_PTA = lowerVertName === 'pta'
   const IS_CHEMICAL = lowerVertName === 'chemical'
   const IS_PTA_DMD = lowerVertName === 'pta' && lowerSiteName === 'dmd'
@@ -178,7 +187,7 @@ const ShutDown = ({ permissions }) => {
             : new Date(record.maintEndDateTime)
 
         // Validate date format: dd/mm/yyyy (by parsing and checking)
-        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD) {
+        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR) {
           if (
             startLimit &&
             endLimit &&
@@ -210,7 +219,7 @@ const ShutDown = ({ permissions }) => {
         } else {
           requiredFields = ['discription', 'remark']
         }
-      } else if (IS_PTA || IS_CHEMICAL) {
+      } else if (IS_PTA || IS_CHEMICAL || IS_ELASTOMER_JMD_HIIR) {
         requiredFields = ['discription', 'monthly', 'remark']
       } else if (lowerVertName === 'pta') {
         requiredFields = ['discription', 'remark']
@@ -292,7 +301,7 @@ const ShutDown = ({ permissions }) => {
       //5 START DATE END DATE MANDATORY
       const allRecords = [...rows]
       const timeErrorRows = new Set() // Add this line
-      if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD) {
+      if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR) {
         for (const record of data) {
           // Date required validation (before checking time order)
           const dateRequiredRows = new Set()
@@ -351,7 +360,7 @@ const ShutDown = ({ permissions }) => {
           lowerVertName != 'vcm' &&
           !IS_PTA &&
           !IS_CHEMICAL &&
-          !IS_ELASTOMER_JMD
+          !IS_ELASTOMER_JMD_HIIR
         ) {
           for (const row of allRecords) {
             const start = new Date(row.maintStartDateTime)
@@ -383,7 +392,7 @@ const ShutDown = ({ permissions }) => {
         }
 
         //Shutdown timeframe overlapping of same time.
-        if (!IS_PTA && !IS_CHEMICAL) {
+        if (!IS_PTA && !IS_CHEMICAL && !IS_ELASTOMER_JMD_HIIR) {
           for (let i = 0; i < allRecords.length; i++) {
             const a = allRecords[i]
             const aStart = new Date(a.maintStartDateTime).getTime()
@@ -423,7 +432,8 @@ const ShutDown = ({ permissions }) => {
           !IS_PET &&
           !IS_PVC_VMD &&
           !IS_CHEMICAL &&
-          !IS_PP_SEZ
+          !IS_PP_SEZ &&
+          !IS_ELASTOMER_JMD_HIIR
         ) {
           for (let i = 0; i < rows.length; i++) {
             const a = rows[i]
@@ -473,13 +483,48 @@ const ShutDown = ({ permissions }) => {
     date.setUTCMinutes(date.getUTCMinutes() + 30)
     return date
   }
+  function getMonthStartEndFromFiscal(monthName, fiscalYear) {
+    if (!monthName || !fiscalYear) return [null, null]
 
+    const monthIndexMap = {
+      january: 0,
+      february: 1,
+      march: 2,
+      april: 3,
+      may: 4,
+      june: 5,
+      july: 6,
+      august: 7,
+      september: 8,
+      october: 9,
+      november: 10,
+      december: 11,
+    }
+    const m = monthIndexMap[(monthName || '').toLowerCase()]
+    if (m === undefined) return [null, null]
+
+    // parse fiscalYear like "2026-27" -> startYear = 2026
+    let startYear = fiscalYear
+    if (typeof fiscalYear === 'string' && fiscalYear.includes('-')) {
+      startYear = parseInt(fiscalYear.split('-')[0], 10)
+    }
+    startYear = Number(startYear)
+    if (isNaN(startYear)) return [null, null]
+
+    // months Apr(3)..Dec(11) belong to startYear, Jan(0)..Mar(2) belong to startYear+1
+    const yearForMonth = m >= 3 ? startYear : startYear + 1
+
+    const start = new Date(yearForMonth, m, 1, 0, 0, 0, 0)
+    const end = new Date(yearForMonth, m + 1, 0, 23, 59, 59, 999) // last day of month
+
+    return [start, end]
+  }
   const saveShutdownData = async (newRow) => {
     setLoading(true)
     try {
       let shutdownDetails
 
-      if (IS_PTA || IS_CHEMICAL) {
+      if (IS_PTA || IS_CHEMICAL || IS_ELASTOMER_JMD_HIIR) {
         // PTA DMD: Use month instead of dates
         shutdownDetails = newRow.map((row) => ({
           discription: row.discription || row.discriptionDrpdwn,
@@ -512,13 +557,9 @@ const ShutDown = ({ permissions }) => {
           remark: row.remark || 'null',
           lineId: row.lineId,
         }))
-      } else if (IS_ELASTOMER_JMD) {
+      } else if (IS_ELASTOMER_JMD_IIR) {
         // For Elastomer JMD, set start date to previous day and end date to today
         shutdownDetails = newRow.map((row) => {
-          const today = new Date()
-          const prevDay = new Date()
-          prevDay.setDate(today.getDate() - 1)
-
           return {
             discription: row.discription || row.discriptionDrpdwn,
             durationInHrs: (() => {
@@ -527,13 +568,29 @@ const ShutDown = ({ permissions }) => {
               const [h = '00', m = '00'] = String(v).split('.')
               return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
             })(),
-            maintStartDateTime: prevDay,
-            maintEndDateTime: today,
+            maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+            maintStartDateTime: addTimeOffset(row.maintStartDateTime),
             audityear: AOP_YEAR,
             id: row.idFromApi || null,
             remark: row.remark || 'null',
-            lineId: row.lineId,
-            productId: row.productId,
+          }
+        })
+      } else if (IS_ELASTOMER_JMD_IIR) {
+        // For Elastomer JMD, set start date to previous day and end date to today
+        shutdownDetails = newRow.map((row) => {
+          return {
+            discription: row.discription || row.discriptionDrpdwn,
+            durationInHrs: (() => {
+              const v = findDuration('1', row)
+              if (!v) return null
+              const [h = '00', m = '00'] = String(v).split('.')
+              return `${h.padStart(2, '0')}.${m.padStart(2, '0')}`
+            })(),
+            maintEndDateTime: addTimeOffset(row.maintEndDateTime),
+            maintStartDateTime: addTimeOffset(row.maintStartDateTime),
+            audityear: AOP_YEAR,
+            id: row.idFromApi || null,
+            remark: row.remark || 'null',
           }
         })
       } else {
@@ -722,7 +779,7 @@ const ShutDown = ({ permissions }) => {
                 : ''),
           }
         }
-        if (lowerVertName == 'chemical') {
+        if (lowerVertName == 'chemical' || IS_ELASTOMER_JMD_HIIR) {
           return {
             ...item,
             idFromApi: item?.id,
@@ -941,8 +998,14 @@ const ShutDown = ({ permissions }) => {
         return IS_CHEMICAL ? ShutDownChemicalColumns : ShutDownAllColumns
       case verticalEnums.PVC:
         return IS_PVC_DMD ? ShutDownPpDtaColumns : ShutDownPpColumns
+
       case verticalEnums.ELASTOMER:
-        return IS_ELASTOMER_JMD ? ShutDown_Elastomer_JMD_Columns : []
+        return IS_ELASTOMER_JMD_HIIR
+          ? ShutDown_Elastomer_JMD_HIIR_Columns
+          : IS_ELASTOMER_JMD_IIR
+            ? ShutDown_Elastomer_JMD_IIR_Columns
+            : []
+
       default:
         return ShutDownAllColumns
     }
@@ -992,7 +1055,14 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_ELASTOMER_JMD_HIIR) {
+        response = await DtaDataService.exportShutdownElastomerjmd(
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+          EXCEL_EXPORT_TITLE,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.exportShutdownLineWise(
           keycloak,
           PLANT_ID,
@@ -1030,7 +1100,14 @@ const ShutDown = ({ permissions }) => {
 
     try {
       let response
-      if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
+      if (IS_ELASTOMER_JMD_HIIR) {
+        response = await DtaDataService.ImportShutdownElastomerjmd(
+          rawFile,
+          keycloak,
+          PLANT_ID,
+          AOP_YEAR,
+        )
+      } else if (IS_PP_DTA || IS_PP_SEZ || IS_PVC_DMD || IS_PP_HMD) {
         response = await DtaDataService.ImportShutdownLineWise(
           rawFile,
           keycloak,
@@ -1141,7 +1218,7 @@ const ShutDown = ({ permissions }) => {
       saveBtn: permissions?.saveBtn ?? true,
       customHeight: permissions?.customHeight,
       allAction: true,
-      downloadExcelBtn: IS_ELASTOMER_JMD ? false : true,
+      downloadExcelBtn: true,
       showNoteWhileDeleting:
         IS_PE_PP_VERTICAL || IS_PET_VERTICAL || IS_PVC_VMD ? true : false,
 
@@ -1151,7 +1228,7 @@ const ShutDown = ({ permissions }) => {
       uploadExcelBtn:
         lowerVertName === 'pe' ||
         lowerVertName === 'pp' ||
-        (lowerVertName === 'elastomer' && !IS_ELASTOMER_JMD) ||
+        lowerVertName === 'elastomer' ||
         lowerVertName === 'vcm' ||
         lowerVertName === 'pta' ||
         lowerVertName === 'chemical' ||

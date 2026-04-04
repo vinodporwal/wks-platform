@@ -183,6 +183,7 @@ export const DataService = {
   getNaphthatabDate,
   getShutdownData,
   getShutdownSummary,
+  slowdownconsumptionExportAllGrade,
 }
 
 async function handleRefresh(year, plantId, keycloak) {
@@ -3503,6 +3504,7 @@ export async function slowdownconsumptionExportVCM(
   plantId,
   year,
   gradeId,
+  excelName
 ) {
   const url =
     `${Config.CaseEngineUrl}/task/export-slowdown-consumption?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}` +
@@ -3525,7 +3527,7 @@ export async function slowdownconsumptionExportVCM(
     const urlBlob = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = urlBlob
-    a.download = 'Slowdown_consumption.xlsx'
+    a.download = excelName ? `${excelName}.xlsx` : 'Slowdown_consumption.xlsx'
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -4242,6 +4244,39 @@ export async function getShutdownSummary(keycloak, PLANT_ID, AOP_YEAR) {
     return json(keycloak, resp)
   } catch (e) {
     console.error(e)
+    return Promise.reject(e)
+  }
+}
+export async function slowdownconsumptionExportAllGrade(
+  keycloak,
+  plantId,
+  year,
+) {
+  const url = `${Config.CaseEngineUrl}/task/slowdown-consumption-export-all-grades?year=${encodeURIComponent(year)}&plantId=${encodeURIComponent(plantId)}`
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    Authorization: `Bearer ${keycloak.token}`,
+  }
+  try {
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+    if (!resp.ok) {
+      throw new Error(`Export failed: ${resp.status} ${resp.statusText}`)
+    }
+    const blob = await resp.blob()
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = urlBlob
+    a.download = 'Slowdown_consumption.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(urlBlob)
+  } catch (e) {
+    console.error('Error exporting Shutdown Excel:', e)
     return Promise.reject(e)
   }
 }

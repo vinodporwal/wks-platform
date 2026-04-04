@@ -104,6 +104,8 @@ const SlowDown = ({ permissions }) => {
   const IS_PVC_VMD = lowerVertName === 'pvc' && lowerSiteName === 'vmd'
   const IS_ELASTOMER_JMD =
     lowerVertName === 'elastomer' && lowerSiteName === 'jmd'
+  const IS_AROMATICS_SEZ_PX4 =
+    lowerVertName === 'aromatics' && lowerSiteName === 'sez' && lowerPlantName === 'px4'
   const IS_PVC_DMD = lowerVertName === 'pvc' && lowerSiteName === 'dmd'
   const SHOW_EXCEL_UPLOAD_BUTTON =
     lowerVertName === 'pe' ||
@@ -114,6 +116,7 @@ const SlowDown = ({ permissions }) => {
     lowerVertName == 'pta' ||
     lowerVertName == 'chemical' ||
     lowerVertName == 'meg' ||
+    IS_AROMATICS_SEZ_PX4 ||
     IS_PVC_VMD ||
     IS_PVC_DMD
 
@@ -1433,6 +1436,7 @@ const SlowDown = ({ permissions }) => {
         (lowerVertName == 'elastomer' && !IS_ELASTOMER_HMD_SBR) ||
         lowerVertName == 'vcm' ||
         lowerVertName == 'pta' ||
+        IS_AROMATICS_SEZ_PX4 ||
         IS_CHEMICAL
       ) {
         response = await DataService.ImportSlowdownElastomerDetails(
