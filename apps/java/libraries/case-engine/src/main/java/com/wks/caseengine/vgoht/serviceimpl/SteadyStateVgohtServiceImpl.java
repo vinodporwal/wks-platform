@@ -47,10 +47,9 @@ public class SteadyStateVgohtServiceImpl implements SteadyStateVgohtService {
 
 	@Autowired
 	private AopCalculationRepository aopCalculationRepository;
-    
+ 
 
-    @Override
-	@Transactional
+	@Override
 	public AOPMessageVM calculateExpressionConsumptionNorms(String year, String plantId) {
 		AOPMessageVM aopMessageVM = new AOPMessageVM();
 		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
@@ -58,8 +57,8 @@ public class SteadyStateVgohtServiceImpl implements SteadyStateVgohtService {
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 
 		
-    	//VGOHT_DTA_VGIOHT1__NormCalculation
-		String storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() +"__NormCalculation";
+    	//VGOHT_DTA_VGIOHT1_NormCalculation
+		String storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() +"_NormCalculation";
 		
 
 		System.out.println("storedProcedure" + storedProcedure);
@@ -72,6 +71,32 @@ public class SteadyStateVgohtServiceImpl implements SteadyStateVgohtService {
                     aopMessageVM.setMessage(errorMessage);
                     return aopMessageVM;
                 }
+		return calculateExpressionConsumptionNormsSaveDate(year, plantId);
+	}
+
+    
+	@Transactional
+	public AOPMessageVM calculateExpressionConsumptionNormsSaveDate(String year, String plantId) {
+		AOPMessageVM aopMessageVM = new AOPMessageVM();
+		Plants plant = plantsRepository.findById(UUID.fromString(plantId)).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+
+		
+    	//VGOHT_DTA_VGIOHT1__NormCalculation
+		// String storedProcedure = vertical.getName() + "_" + site.getName() + "_" + plant.getName() +"__NormCalculation";
+		
+
+		// System.out.println("storedProcedure" + storedProcedure);
+		// String errorMessage = executeDynamicUpdateProcedure(storedProcedure, plantId, site.getId().toString(),
+		// 		vertical.getId().toString(), year);
+
+
+        //         if(errorMessage != null) {
+        //             aopMessageVM.setCode(422);
+        //             aopMessageVM.setMessage(errorMessage);
+        //             return aopMessageVM;
+        //         }
 
 
 		aopCalculationRepository.deleteByPlantIdAndAopYearAndCalculationScreen(UUID.fromString(plantId), year,
