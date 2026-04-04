@@ -48,7 +48,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
-
+import com.wks.caseengine.dto.ShutdownNormsValueDTO;
 import com.wks.caseengine.dto.SlowdownNormsValueDTO;
 import com.wks.caseengine.entity.AopCalculation;
 import com.wks.caseengine.entity.Plants;
@@ -426,6 +426,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	            headers.addAll(Utility.getAcademicYearMonths(year));
 	            headers.add("Remarks");
 	            headers.add("Id");
+	            headers.add("Material Id");
 	            if (isAfterSave) {
 	                headers.add("Status");
 	                headers.add("Error Description");
@@ -462,6 +463,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                rowValues.add(dto.getMarch());
 	                rowValues.add(dto.getRemarks());
 	                rowValues.add(dto.getId());
+	                rowValues.add(dto.getMaterialFkId());
 
 	                if (isAfterSave) {
 	                    rowValues.add(dto.getSaveStatus());
@@ -483,14 +485,13 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                    } else {
 	                        cell.setCellValue(val != null ? val.toString() : "");
 	                    }
-
-	                    
 	                    cell.setCellStyle(rowStyle);
 	                }
 	            }
 
 	           
 	            sheet.setColumnHidden(16, true); 
+	            sheet.setColumnHidden(17, true); 
 	            for (int i = 0; i < 3; i++) { 
 	                sheet.autoSizeColumn(i); 
 	            }
@@ -629,6 +630,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	                slowdownNormsValue.setFebruary(Optional.ofNullable(slowdownNormsValueDTO.getFebruary()).orElse(0.0));
 	                slowdownNormsValue.setMarch(Optional.ofNullable(slowdownNormsValueDTO.getMarch()).orElse(0.0));
 	            } catch (Exception e) {
+	            	e.printStackTrace();
 	                slowdownNormsValueDTO.setSaveStatus("Failed");
 	                slowdownNormsValueDTO.setErrDescription("Please enter numeric values");
 	                failedList.add(slowdownNormsValueDTO);
@@ -1101,6 +1103,139 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 
 	    return configList;
 	}
+	
+	@Override
+	public AOPMessageVM gradeWiseImportExcel(String year, UUID plantFKId, MultipartFile file) {
+		// TODO Auto-generated method stub
+		try {
+			Plants plant = plantsRepository.findById(plantFKId).get();
+			List<SlowdownNormsValueDTO> data=null;
+			Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+			
+				 data= readSlowdownConsumption(file.getInputStream(), plantFKId, year);
+				 List<SlowdownNormsValueDTO> failedRecords = saveSlowdownNormsData(data);
+			
+			
+			AOPMessageVM aopMessageVM = new AOPMessageVM();
+			if (failedRecords != null && failedRecords.size() > 0) {
+				byte[] fileByteArray = null;
+				 
+					exportSlowdownNormsAllGrades(
+					         year, 
+					         plantFKId, 
+					         true, 
+					         failedRecords);
+
+				
+				String base64File = Base64.getEncoder().encodeToString(fileByteArray);
+				aopMessageVM.setData(base64File);
+				aopMessageVM.setCode(400);
+				aopMessageVM.setMessage("Partial data has been saved");
+			} else {
+				// aopMessageVM.setData();
+				aopMessageVM.setCode(200);
+				aopMessageVM.setMessage("All data has been saved");
+			}
+			return aopMessageVM;
+			// return ResponseEntity.ok(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+			// return ResponseEntity.internalServerError().build();
+		}
+		return null;
+	}
+	
+	public List<SlowdownNormsValueDTO> readSlowdownConsumption(InputStream inputStream, UUID plantFKId, String year) {
+	    List<SlowdownNormsValueDTO> configList = new ArrayList<>();
+	    Plants plant = plantsRepository.findById(plantFKId).get();
+		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
+		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
+		
+	    Map<String, String> gradeMap = getGradeNameIdMap(year, plantFKId);
+	    Set<Integer> activeMonths = new HashSet<>();
+	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
+	    	for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+	            Sheet sheet = workbook.getSheetAt(i);
+	            if (sheet == null) {
+	                continue;
+	            }
+	            String sheetName = sheet.getSheetName();
+	            String gradeId = gradeMap.get(Utility.sanitizeSheetName(sheetName));
+                List<Integer> slowdown = getSlowdownMonthsImport(plantFKId, "Slowdown",year);
+                if (slowdown != null) activeMonths.addAll(slowdown);
+	    	}
+	        
+	        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+	            Sheet sheet = workbook.getSheetAt(i);
+	            if (sheet == null) {
+	                continue;
+	            }
+	            String sheetName = sheet.getSheetName();
+	            String gradeId = gradeMap.get(Utility.sanitizeSheetName(sheetName));
+	            Iterator<Row> rowIterator = sheet.iterator();
+	            if (rowIterator.hasNext()) {
+	                rowIterator.next(); 
+	            }
+	            while (rowIterator.hasNext()) {
+	                Row row = rowIterator.next();
+	                if (row.getPhysicalNumberOfCells() == 0) {
+	                    continue; 
+	                }
+	                SlowdownNormsValueDTO dto = new SlowdownNormsValueDTO();
+	                try {
+	                    dto.setNormParameterTypeDisplayName(getStringCellValue(row.getCell(0), dto));
+	                    dto.setProductName(getStringCellValue(row.getCell(1), dto));
+	                    dto.setUOM(getStringCellValue(row.getCell(2), dto));
+	                    dto.setFinancialYear(year);
+	                    dto.setPlantFkId(plantFKId.toString());
+	                    if (activeMonths.contains(4)) dto.setApril(getNumericCellValue(row.getCell(3), dto));
+	                    if (activeMonths.contains(5)) dto.setMay(getNumericCellValue(row.getCell(4), dto));
+	                    if (activeMonths.contains(6)) dto.setJune(getNumericCellValue(row.getCell(5), dto));
+	                    if (activeMonths.contains(7)) dto.setJuly(getNumericCellValue(row.getCell(6), dto));
+	                    if (activeMonths.contains(8)) dto.setAugust(getNumericCellValue(row.getCell(7), dto));
+	                    if (activeMonths.contains(9)) dto.setSeptember(getNumericCellValue(row.getCell(8), dto));
+	                    if (activeMonths.contains(10)) dto.setOctober(getNumericCellValue(row.getCell(9), dto));
+	                    if (activeMonths.contains(11)) dto.setNovember(getNumericCellValue(row.getCell(10), dto));
+	                    if (activeMonths.contains(12)) dto.setDecember(getNumericCellValue(row.getCell(11), dto));
+	                    if (activeMonths.contains(1)) dto.setJanuary(getNumericCellValue(row.getCell(12), dto));
+	                    if (activeMonths.contains(2)) dto.setFebruary(getNumericCellValue(row.getCell(13), dto));
+	                    if (activeMonths.contains(3)) dto.setMarch(getNumericCellValue(row.getCell(14), dto));
+	                    dto.setRemarks(getStringCellValue(row.getCell(15), dto));
+	                    dto.setId(getStringCellValue(row.getCell(16), dto)); 
+	                    dto.setMaterialFkId(getStringCellValue(row.getCell(17), dto));
+	                    dto.setSiteFkId(site.getId().toString());
+	                    dto.setVerticalFkId(vertical.getId().toString());
+	                    dto.setGradeId(gradeId);
+
+	                } catch (Exception e) {
+	                    e.printStackTrace();
+	                    dto.setErrDescription(e.getMessage());
+	                    dto.setSaveStatus("Failed");
+	                }
+	                configList.add(dto);
+	            }
+	        } 
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return configList;
+	}
+	
+	private Map<String, String> getGradeNameIdMap(String year, UUID plantFKId) {
+	    AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
+	    List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM); 
+
+	    Map<String, String> nameIdMap = new HashMap<>();
+	    for (Map<String, String> info : gradeInfoList) {
+			String sanitizedName = Utility.sanitizeSheetName(info.get("name"));
+	        nameIdMap.put(sanitizedName, info.get("gradeId"));
+	    }
+	    return nameIdMap;
+	}
+
 	
 	private static String getStringCellValue(Cell cell, SlowdownNormsValueDTO dto) {
 	    try {
