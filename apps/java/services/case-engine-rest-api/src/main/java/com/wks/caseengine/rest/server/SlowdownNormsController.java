@@ -130,6 +130,11 @@ public class SlowdownNormsController {
 		return	slowdownNormsService.saveSlowdownNormsData(slowdownNormsValueDTOList);
 	}
 	
+	@PostMapping(value="/slowdown-norms-hiir")
+	public List<SlowdownNormsValueDTO> saveSlowdownNorms(@RequestBody List<SlowdownNormsValueDTO> slowdownNormsValueDTOList){
+		return	slowdownNormsService.saveSlowdownNormsDataHIIR(slowdownNormsValueDTOList);
+	}
+	
 	@GetMapping(value="/getSlowdownNormsSPData")
 	public List<SlowdownNormsValueDTO> getSlowdownNormsSPData(@RequestParam String year,@RequestParam String plantId){
 		return	slowdownNormsService.getSlowdownNormsSPData(year, plantId);

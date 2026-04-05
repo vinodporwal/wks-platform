@@ -51,6 +51,7 @@ import com.wks.caseengine.dto.NormAttributeTransactionsDTO;
 import com.wks.caseengine.dto.ShutdownNormsValueDTO;
 import com.wks.caseengine.dto.SlowdownNormsValueDTO;
 import com.wks.caseengine.entity.AopCalculation;
+import com.wks.caseengine.entity.GradeSlowdownNormsValue;
 import com.wks.caseengine.entity.Plants;
 import com.wks.caseengine.entity.ScreenMapping;
 import com.wks.caseengine.entity.Sites;
@@ -69,7 +70,7 @@ import com.wks.caseengine.repository.SlowdownConsumptionRepository;
 import com.wks.caseengine.repository.SlowdownNormsRepository;
 import com.wks.caseengine.repository.VerticalsRepository;
 import com.wks.caseengine.utility.Utility;
-
+import com.wks.caseengine.repository.GradeSlowdownNormsValuesRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -113,6 +114,9 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	
 	@Autowired
 	private  PlantService plantService;
+	
+	@Autowired
+	private GradeSlowdownNormsValuesRepository gradeSlowdownNormsValuesRepository;
 
 	public SlowdownNormsServiceImpl(DataSource dataSource) {
 		this.dataSource = dataSource;
@@ -676,7 +680,124 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	        throw new RuntimeException("Failed to update data", ex);
 	    }
 	} 
-	
+
+	@Override
+	public List<SlowdownNormsValueDTO> saveSlowdownNormsDataHIIR(List<SlowdownNormsValueDTO> slowdownNormsValueDTOList) {
+	    String year = null;
+	    UUID plantId = null;
+	    List<SlowdownNormsValueDTO> failedList = new ArrayList<SlowdownNormsValueDTO>();
+	    try {
+	        for (SlowdownNormsValueDTO slowdownNormsValueDTO : slowdownNormsValueDTOList) {
+	            if (slowdownNormsValueDTO.getSaveStatus() != null
+	                    && slowdownNormsValueDTO.getSaveStatus().equalsIgnoreCase("Failed")) {
+	                failedList.add(slowdownNormsValueDTO);
+	                continue;
+	            }
+
+	            year = slowdownNormsValueDTO.getFinancialYear();
+	            plantId = UUID.fromString(slowdownNormsValueDTO.getPlantFkId());
+	            GradeSlowdownNormsValue existingEntity = null;
+	            if (slowdownNormsValueDTO.getId() != null && !slowdownNormsValueDTO.getId().isEmpty()) {
+	                existingEntity = gradeSlowdownNormsValuesRepository.findById(UUID.fromString(slowdownNormsValueDTO.getId())).orElse(null);
+	            } else {
+	                UUID siteId = slowdownNormsValueDTO.getSiteFkId() != null ? UUID.fromString(slowdownNormsValueDTO.getSiteFkId()) : null;
+	                UUID verticalId = slowdownNormsValueDTO.getVerticalFkId() != null ? UUID.fromString(slowdownNormsValueDTO.getVerticalFkId()) : null;
+	                UUID materialId = slowdownNormsValueDTO.getMaterialFkId() != null ? UUID.fromString(slowdownNormsValueDTO.getMaterialFkId()) : null;
+	                
+	                UUID existingId = gradeSlowdownNormsValuesRepository.findIdByFilters(plantId, siteId, verticalId, materialId, year);
+	                if (existingId != null) {
+	                    existingEntity = gradeSlowdownNormsValuesRepository.findById(existingId).orElse(null);
+	                }
+	            }
+	            if (existingEntity != null) {
+	                boolean monthChanged = false;
+
+	                if (!Objects.equals(existingEntity.getApril(), Optional.ofNullable(slowdownNormsValueDTO.getApril()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getMay(), Optional.ofNullable(slowdownNormsValueDTO.getMay()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getJune(), Optional.ofNullable(slowdownNormsValueDTO.getJune()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getJuly(), Optional.ofNullable(slowdownNormsValueDTO.getJuly()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getAugust(), Optional.ofNullable(slowdownNormsValueDTO.getAugust()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getSeptember(), Optional.ofNullable(slowdownNormsValueDTO.getSeptember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getOctober(), Optional.ofNullable(slowdownNormsValueDTO.getOctober()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getNovember(), Optional.ofNullable(slowdownNormsValueDTO.getNovember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getDecember(), Optional.ofNullable(slowdownNormsValueDTO.getDecember()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getJanuary(), Optional.ofNullable(slowdownNormsValueDTO.getJanuary()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getFebruary(), Optional.ofNullable(slowdownNormsValueDTO.getFebruary()).orElse(0.0))) monthChanged = true;
+	                if (!Objects.equals(existingEntity.getMarch(), Optional.ofNullable(slowdownNormsValueDTO.getMarch()).orElse(0.0))) monthChanged = true;
+
+	                boolean remarkChanged = !Objects.equals(existingEntity.getRemarks(), slowdownNormsValueDTO.getRemarks());
+
+	                if (monthChanged && !remarkChanged) {
+	                    slowdownNormsValueDTO.setSaveStatus("Failed");
+	                    slowdownNormsValueDTO.setErrDescription("Please update remark");
+	                    failedList.add(slowdownNormsValueDTO);
+	                    continue; 
+	                }
+	            }
+
+	            GradeSlowdownNormsValue slowdownNormsValue = (existingEntity != null) ? existingEntity : new GradeSlowdownNormsValue();
+	            
+	            try {
+	                slowdownNormsValue.setApril(Optional.ofNullable(slowdownNormsValueDTO.getApril()).orElse(0.0));
+	                slowdownNormsValue.setMay(Optional.ofNullable(slowdownNormsValueDTO.getMay()).orElse(0.0));
+	                slowdownNormsValue.setJune(Optional.ofNullable(slowdownNormsValueDTO.getJune()).orElse(0.0));
+	                slowdownNormsValue.setJuly(Optional.ofNullable(slowdownNormsValueDTO.getJuly()).orElse(0.0));
+	                slowdownNormsValue.setAugust(Optional.ofNullable(slowdownNormsValueDTO.getAugust()).orElse(0.0));
+	                slowdownNormsValue.setSeptember(Optional.ofNullable(slowdownNormsValueDTO.getSeptember()).orElse(0.0));
+	                slowdownNormsValue.setOctober(Optional.ofNullable(slowdownNormsValueDTO.getOctober()).orElse(0.0));
+	                slowdownNormsValue.setNovember(Optional.ofNullable(slowdownNormsValueDTO.getNovember()).orElse(0.0));
+	                slowdownNormsValue.setDecember(Optional.ofNullable(slowdownNormsValueDTO.getDecember()).orElse(0.0));
+	                slowdownNormsValue.setJanuary(Optional.ofNullable(slowdownNormsValueDTO.getJanuary()).orElse(0.0));
+	                slowdownNormsValue.setFebruary(Optional.ofNullable(slowdownNormsValueDTO.getFebruary()).orElse(0.0));
+	                slowdownNormsValue.setMarch(Optional.ofNullable(slowdownNormsValueDTO.getMarch()).orElse(0.0));
+	            } catch (Exception e) {
+	            	e.printStackTrace();
+	                slowdownNormsValueDTO.setSaveStatus("Failed");
+	                slowdownNormsValueDTO.setErrDescription("Please enter numeric values");
+	                failedList.add(slowdownNormsValueDTO);
+	                continue;
+	            }
+
+	            if (existingEntity != null) {
+	                slowdownNormsValue.setModifiedOn(new Date());
+	            } else {
+	                slowdownNormsValue.setCreatedOn(new Date());
+	                if (slowdownNormsValueDTO.getSiteFkId() != null) slowdownNormsValue.setSiteFkId(UUID.fromString(slowdownNormsValueDTO.getSiteFkId()));
+	                if (slowdownNormsValueDTO.getPlantFkId() != null) slowdownNormsValue.setPlantFkId(UUID.fromString(slowdownNormsValueDTO.getPlantFkId()));
+	                if (slowdownNormsValueDTO.getVerticalFkId() != null) slowdownNormsValue.setVerticalFkId(UUID.fromString(slowdownNormsValueDTO.getVerticalFkId()));
+	                if (slowdownNormsValueDTO.getMaterialFkId() != null) slowdownNormsValue.setMaterialFkId(UUID.fromString(slowdownNormsValueDTO.getMaterialFkId()));
+	                if (slowdownNormsValueDTO.getNormParameterTypeId() != null) {
+	                    slowdownNormsValue.setNormParameterTypeFkId(UUID.fromString(slowdownNormsValueDTO.getNormParameterTypeId()));
+	                }
+	            }
+
+	            slowdownNormsValue.setFinancialYear(year);
+	            slowdownNormsValue.setRemarks(slowdownNormsValueDTO.getRemarks());
+	            slowdownNormsValue.setMcuVersion("V1");
+	            slowdownNormsValue.setUpdatedBy(Utility.getUserName());
+
+	            gradeSlowdownNormsValuesRepository.save(slowdownNormsValue);
+	            System.out.println("Data Saved Successfully");
+	        }
+
+	        List<ScreenMapping> screenMappingList = screenMappingRepository.findByDependentScreen("slowdown-norms");
+	        for (ScreenMapping screenMapping : screenMappingList) {
+	            AopCalculation aopCalculation = new AopCalculation();
+	            aopCalculation.setAopYear(year);
+	            aopCalculation.setIsChanged(true);
+	            aopCalculation.setCalculationScreen(screenMapping.getCalculationScreen());
+	            aopCalculation.setPlantId(plantId);
+	            aopCalculation.setUpdatedScreen(screenMapping.getDependentScreen());
+	            aopCalculationRepository.save(aopCalculation);
+	        }
+
+	        return failedList;
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	        throw new RuntimeException("Failed to update data", ex);
+	    }
+	} 
+
 	@Override
 	@Transactional
 	public List<SlowdownNormsValueDTO> getSlowdownNormsSPData(String year, String plantId) {
@@ -1114,7 +1235,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 			Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 			
 				 data= readSlowdownConsumption(file.getInputStream(), plantFKId, year);
-				 List<SlowdownNormsValueDTO> failedRecords = saveSlowdownNormsData(data);
+				 List<SlowdownNormsValueDTO> failedRecords = saveSlowdownNormsDataHIIR(data);
 			
 			
 			AOPMessageVM aopMessageVM = new AOPMessageVM();
@@ -1152,7 +1273,7 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 		Sites site = siteRepository.findById(plant.getSiteFkId()).get();
 		Verticals vertical = verticalRepository.findById(plant.getVerticalFKId()).get();
 		
-	    Map<String, String> gradeMap = getGradeNameIdMap(year, plantFKId);
+	    Map<String, String> gradeMap = getGradeNameId(year, plantFKId);
 	    Set<Integer> activeMonths = new HashSet<>();
 	    try (Workbook workbook = new XSSFWorkbook(inputStream)) {
 	    	for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
@@ -1235,7 +1356,21 @@ public class SlowdownNormsServiceImpl implements SlowdownNormsService {
 	    }
 	    return nameIdMap;
 	}
+	
+	private Map<String, String> getGradeNameId(String year, UUID plantFKId) {
+	    AOPMessageVM gradesVM = getUniqueGrades(year, plantFKId.toString());
+	    List<Map<String, String>> gradeInfoList = extractGradeInfo(gradesVM); 
 
+	    Map<String, String> nameIdMap = new HashMap<>();
+	    for (Map<String, String> info : gradeInfoList) {
+	        String originalName = info.get("displayName"); 
+	        if (originalName != null) {
+	            String sanitizedName = Utility.sanitizeSheetName(originalName);
+	            nameIdMap.put(sanitizedName, info.get("gradeId"));
+	        }
+	    }
+	    return nameIdMap;
+	}
 	
 	private static String getStringCellValue(Cell cell, SlowdownNormsValueDTO dto) {
 	    try {
